@@ -313,7 +313,9 @@ object ProcessTestData {
     CanonicalProcess(
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       List.empty
@@ -325,7 +327,7 @@ object ProcessTestData {
     MetaData(sampleFragmentName.value, FragmentSpecificData()),
     List(
       canonicalnode.FlatNode(
-        FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+        FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
       ),
       canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
     ),
@@ -336,7 +338,9 @@ object ProcessTestData {
     CanonicalProcess(
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String])))
+        ),
         SplitNode(
           Split("split"),
           List(
@@ -353,7 +357,9 @@ object ProcessTestData {
     CanonicalProcess(
       MetaData(sampleFragmentName.value, FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param2", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param2"), FragmentClazzRef[String])))
+        ),
         SplitNode(
           Split("split"),
           List(

@@ -18,31 +18,31 @@ object BaseComponentValidationHelper {
 
   def validateBoolean(
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
-      fieldName: String
+      paramName: ParameterName
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validateOrValid(NotNullParameterValidator, expression, fieldName)
+    validateOrValid(NotNullParameterValidator, expression, paramName)
   }
 
   def validateVariableValue(
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
-      fieldName: String
+      paramName: ParameterName
   )(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    validateOrValid(MandatoryParameterValidator, expression, fieldName)
+    validateOrValid(MandatoryParameterValidator, expression, paramName)
   }
 
   private def validateOrValid(
       validator: ParameterValidator,
       expression: ValidatedNel[ProcessCompilationError, TypedExpression],
-      fieldName: String
+      paramName: ParameterName
   )(implicit nodeId: NodeId) = {
     expression
       .map { expr =>
         Validations
-          .validate(List(validator), TypedParameter(ParameterName(fieldName), expr))
+          .validate(List(validator), TypedParameter(paramName, expr))
           .map(_ => ())
       }
       .getOrElse(valid(()))

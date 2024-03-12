@@ -33,7 +33,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
       .fragmentOneOut("sub2", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", "sink1")
 
-    val suprocessParameters = List(FragmentParameter("ala", FragmentClazzRef[String]))
+    val suprocessParameters = List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String]))
 
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
@@ -71,7 +71,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment2", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode
           .FilterNode(Filter("f1", "#param == 'a'"), List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
@@ -82,7 +84,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val nested = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.Fragment(
           FragmentInput("sub2", FragmentRef("fragment2", List(NodeParameter(ParameterName("param"), "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
@@ -117,7 +121,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(FragmentOutputDefinition("out1", "badoutput", List.empty))
       ),
@@ -148,7 +154,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         canonicalnode.SplitNode(
           Split("s"),
@@ -177,7 +185,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(Sink("disabledFragmentMockedSink", SinkRef("disabledFragmentMockedSink", List())))
       ),
@@ -209,7 +219,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val emptyFragment = CanonicalProcess(
       MetaData("emptyFragment", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       List.empty
@@ -217,7 +229,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
@@ -305,7 +319,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("ala"), FragmentClazzRef[String])))
+        ),
         canonicalnode.SplitNode(
           Split("split"),
           List(

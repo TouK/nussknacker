@@ -66,7 +66,7 @@ class TestDataPreparer(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
     expressionCompiler
-      .compile(expression, Some(parameter.name.value), validationContext, parameter.typ)(nodeId)
+      .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
       .map { typedExpression =>
         val param = CompiledParameter(typedExpression, parameter)
         evaluator.evaluateParameter(param, dumbContext)(nodeId, metaData).value

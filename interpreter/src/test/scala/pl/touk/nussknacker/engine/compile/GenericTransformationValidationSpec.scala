@@ -232,7 +232,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         ExpressionParserCompilationError(
           message = s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
           nodeId = "generic",
-          fieldName = Some("par1"),
+          paramName = Some(ParameterName("par1")),
           originalExpr = "12",
           details = None
         )
@@ -293,7 +293,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         ExpressionParserCompilationError(
           message = s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
           nodeId = "generic",
-          fieldName = Some("par1"),
+          paramName = Some(ParameterName("par1")),
           originalExpr = "12",
           details = None
         )

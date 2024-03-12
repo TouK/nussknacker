@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -92,7 +93,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                fieldName = Some("Expression"),
+                paramName = Some(ParameterName("Expression")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -116,7 +117,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                fieldName = Some("Expression"),
+                paramName = Some(ParameterName("Expression")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -143,7 +144,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
-                fieldName = Some("Basic Decision Table"),
+                paramName = Some(ParameterName("Basic Decision Table")),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
                 details = Some(
                   TabularDataDefinitionParserErrorDetails(

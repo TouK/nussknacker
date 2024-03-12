@@ -174,7 +174,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
 
     substituteDictKeyExpression(nodeParam.expression, definition.editor, nodeParam.name).andThen { finalExpr =>
       enrichContext(ctxToUse, definition).andThen { finalCtx =>
-        compile(finalExpr, Some(nodeParam.name.value), finalCtx, definition.typ)
+        compile(finalExpr, Some(nodeParam.name), finalCtx, definition.typ)
           .map(TypedParameter(nodeParam.name, _))
       }
     }
@@ -192,7 +192,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
         substituteDictKeyExpression(expression, definition.editor, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level
-            compile(finalExpr, Some(paramName.value), finalCtx, definition.typ).map(branchId -> _)
+            compile(finalExpr, Some(paramName), finalCtx, definition.typ).map(branchId -> _)
           }
         }
       }
@@ -254,7 +254,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
   ): Validated[NonEmptyList[PartSubGraphCompilationError], ValidationExpressionParameterValidator] =
     compile(
       toCompileValidator.validationExpression,
-      fieldName = Some(paramName.value),
+      paramName = Some(paramName),
       validationCtx = ValidationContext(
         // TODO in the future, we'd like to support more references, see ValidationExpressionParameterValidator
         Map(ValidationExpressionParameterValidator.variableName -> paramType)
@@ -292,7 +292,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
 
   def compile(
       n: Expression,
-      fieldName: Option[String],
+      paramName: Option[ParameterName],
       validationCtx: ValidationContext,
       expectedType: TypingResult
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedExpression] = {
@@ -307,13 +307,13 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
         .parse(n.expression, validationCtx, expectedType)
         .leftMap(errs =>
           errs.map(err =>
-            ProcessCompilationError.ExpressionParserCompilationError(err.message, fieldName, n.expression, err.details)
+            ProcessCompilationError.ExpressionParserCompilationError(err.message, paramName, n.expression, err.details)
           )
         )
     }
   }
 
-  def compileWithoutContextValidation(n: Expression, fieldName: String, expectedType: TypingResult)(
+  def compileWithoutContextValidation(n: Expression, paramName: ParameterName, expectedType: TypingResult)(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, CompiledExpression] = {
     val validParser = expressionParsers
@@ -328,7 +328,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
         .leftMap(errs =>
           errs.map(err =>
             ProcessCompilationError
-              .ExpressionParserCompilationError(err.message, Some(fieldName), n.expression, err.details)
+              .ExpressionParserCompilationError(err.message, Some(paramName), n.expression, err.details)
           )
         )
     }

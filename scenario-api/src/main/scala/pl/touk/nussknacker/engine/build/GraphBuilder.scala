@@ -102,7 +102,10 @@ trait GraphBuilder[R] {
   def fragmentInput(id: String, params: (String, Class[_])*): GraphBuilder[SourceNode] =
     new SimpleGraphBuilder(
       SourceNode(
-        FragmentInputDefinition(id, params.map(kv => FragmentParameter(kv._1, FragmentClazzRef(kv._2.getName))).toList),
+        FragmentInputDefinition(
+          id = id,
+          parameters = params.map(kv => FragmentParameter(ParameterName(kv._1), FragmentClazzRef(kv._2.getName))).toList
+        ),
         _
       )
     )

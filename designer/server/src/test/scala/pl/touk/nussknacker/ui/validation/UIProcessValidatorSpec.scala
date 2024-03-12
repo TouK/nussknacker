@@ -453,7 +453,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "in",
               List(
                 FragmentParameter(
-                  "subParam1",
+                  ParameterName("subParam1"),
                   FragmentClazzRef("thisTypeDoesntExist"),
                   initialValue = None,
                   hintText = None,
@@ -499,7 +499,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "in",
               List(
                 FragmentParameter(
-                  "subParam1",
+                  ParameterName("subParam1"),
                   FragmentClazzRef[String],
                   initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
                   hintText = None,
@@ -512,7 +512,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
-                  "subParam2",
+                  ParameterName("subParam2"),
                   FragmentClazzRef[java.lang.Boolean],
                   initialValue = None,
                   hintText = None,
@@ -572,7 +572,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "in",
               List(
                 FragmentParameter(
-                  "subParam1",
+                  ParameterName("subParam1"),
                   FragmentClazzRef[java.lang.String],
                   initialValue = None,
                   hintText = None,
@@ -581,7 +581,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
                 ),
                 FragmentParameter(
-                  "subParam2",
+                  ParameterName("subParam2"),
                   FragmentClazzRef[java.lang.String],
                   initialValue = None,
                   hintText = None,
@@ -635,7 +635,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val invalidFragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[Long])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[Long])))
+        ),
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
@@ -676,7 +678,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             "in",
             List(
               FragmentParameter(
-                "subParam1",
+                ParameterName("subParam1"),
                 FragmentClazzRef[String],
                 required = true,
                 initialValue = None,
@@ -763,7 +765,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val invalidFragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("fragment1", List(FragmentParameter("param1", FragmentClazzRef[Long])))),
+        FlatNode(
+          FragmentInputDefinition("fragment1", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[Long])))
+        ),
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
@@ -798,7 +802,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("subParam1", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("subParam1"), FragmentClazzRef[String])))
+        ),
         SplitNode(
           Split("split"),
           List(
@@ -1230,7 +1236,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("subParam1", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("subParam1"), FragmentClazzRef[String])))
+        ),
         FlatNode(FragmentOutputDefinition("subOut1", "out", List(Field("foo", "42L"))))
       ),
       additionalBranches = List.empty
@@ -1283,7 +1291,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
+      createFragmentDefinition(fragmentId, List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short])))
     val processWithFragment =
       createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "123")))
 
@@ -1299,7 +1307,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragmentId = "fragment1"
 
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
+      createFragmentDefinition(
+        fragmentId,
+        List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short]).copy(required = true))
+      )
     val processWithFragment =
       createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "")))
 
@@ -1332,8 +1343,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragmentDefinition: CanonicalProcess = createFragmentDefinition(
       fragmentId,
       List(
-        FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true),
-        FragmentParameter("P2", FragmentClazzRef[String]).copy(required = true)
+        FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short]).copy(required = true),
+        FragmentParameter(ParameterName("P2"), FragmentClazzRef[String]).copy(required = true)
       )
     )
 
@@ -1383,7 +1394,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentId,
         List(
           FragmentParameter(
-            paramName,
+            ParameterName(paramName),
             FragmentClazzRef[java.lang.String],
             initialValue = None,
             hintText = None,
@@ -1420,7 +1431,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentId,
         List(
           FragmentParameter(
-            paramName,
+            ParameterName(paramName),
             FragmentClazzRef[java.lang.String],
             initialValue = None,
             hintText = None,

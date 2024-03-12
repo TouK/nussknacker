@@ -88,7 +88,7 @@ object ProcessCompilationError {
   final case class ExpressionParserCompilationError(
       message: String,
       nodeId: String,
-      fieldName: Option[String],
+      paramName: Option[ParameterName],
       originalExpr: String,
       details: Option[ErrorDetails]
   ) extends PartSubGraphCompilationError
@@ -113,14 +113,14 @@ object ProcessCompilationError {
 
   object ExpressionParserCompilationError {
 
-    def apply(message: String, fieldName: Option[String], originalExpr: String, details: Option[ErrorDetails])(
+    def apply(message: String, paramName: Option[ParameterName], originalExpr: String, details: Option[ErrorDetails])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
-      ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr, details)
+      ExpressionParserCompilationError(message, nodeId.id, paramName, originalExpr, details)
 
   }
 
-  final case class FragmentParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)
+  final case class FragmentParamClassLoadError(paramName: ParameterName, refClazzName: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -276,22 +276,30 @@ object ProcessCompilationError {
 
   }
 
-  final case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[String])
+  final case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[ParameterName])
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object OverwrittenVariable {
-    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+
+    def apply(variableName: String, paramName: Option[ParameterName])(
+        implicit nodeId: NodeId
+    ): PartSubGraphCompilationError =
       OverwrittenVariable(variableName, nodeId.id, paramName)
+
   }
 
-  final case class InvalidVariableName(name: String, nodeId: String, paramName: Option[String])
+  final case class InvalidVariableName(name: String, nodeId: String, paramName: Option[ParameterName])
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object InvalidVariableName {
-    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+
+    def apply(variableName: String, paramName: Option[ParameterName])(
+        implicit nodeId: NodeId
+    ): PartSubGraphCompilationError =
       InvalidVariableName(variableName, nodeId.id, paramName)
+
   }
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
@@ -398,7 +406,7 @@ object ProcessCompilationError {
       extends ProcessCompilationError
       with ScenarioPropertiesError
 
-  final case class SpecificDataValidationError(fieldName: String, message: String)
+  final case class SpecificDataValidationError(paramName: ParameterName, message: String)
       extends ProcessCompilationError
       with ScenarioPropertiesError
 

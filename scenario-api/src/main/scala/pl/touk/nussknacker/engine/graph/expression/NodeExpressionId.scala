@@ -10,7 +10,7 @@ object NodeExpressionId {
   def apply(expressionId: String)(implicit nodeId: NodeId): NodeExpressionId =
     NodeExpressionId(nodeId, expressionId)
 
-  val DefaultExpressionId: String = "$expression"
+  val DefaultExpressionIdParamName: ParameterName = ParameterName("$expression")
 
   def branchParameterExpressionId(paramName: ParameterName, branch: String): String = {
     s"${paramName.value}-$branch"

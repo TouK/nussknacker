@@ -66,7 +66,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   private val defaultFragmentDef: CanonicalProcess = CanonicalProcess(
     MetaData(defaultFragmentId, FragmentSpecificData()),
     List(
-      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+      FlatNode(
+        FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String])))
+      ),
       FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     )
   )
@@ -189,7 +191,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 EmptyMandatoryParameter(
                   "This field is required and can not be null",
                   _,
-                  ParameterName(NodeExpressionId.DefaultExpressionId),
+                  NodeExpressionId.DefaultExpressionIdParamName,
                   "filter"
                 )
               ) :: Nil,
@@ -278,9 +280,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "fooNode",
           ServiceRef(
             "missingParamHandleGenericNodeTransformation",
-            List(
-              par("param1", "'foo'")
-            )
+            List(par("param1", "'foo'"))
           )
         ),
         ValidationContext.empty
@@ -304,7 +304,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
                 EmptyMandatoryParameter(
                   "This field is mandatory and can not be empty",
                   _,
-                  ParameterName(NodeExpressionId.DefaultExpressionId),
+                  NodeExpressionId.DefaultExpressionIdParamName,
                   "var1"
                 )
               ) :: Nil,
@@ -401,7 +401,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
             ExpressionParserCompilationError(
               "Non reference 'unresolvedReference' occurred. Maybe you missed '#' in front of it?",
               "recordVariable",
-              Some("$fields-0-$value"),
+              Some(ParameterName("$fields-0-$value")),
               "unresolvedReference",
               None
             ) ::
@@ -489,7 +489,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(ExpressionParserCompilationError(message, "frInput", Some("param1"), "145", None)),
+            List(ExpressionParserCompilationError(message, "frInput", Some(ParameterName("param1")), "145", None)),
             None,
             None
           ) =>
@@ -508,7 +508,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
     val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(
       MetaData(fragmentId, FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("P1", FragmentClazzRef[Short])))),
+        FlatNode(FragmentInputDefinition("in", List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short])))),
         FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
       )
     )
@@ -539,7 +539,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       MetaData(fragmentId, FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("in", List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
+          FragmentInputDefinition(
+            "in",
+            List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short]).copy(required = true))
+          )
         ),
         FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
       )
@@ -586,8 +589,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           FragmentInputDefinition(
             "in",
             List(
-              FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true),
-              FragmentParameter("P2", FragmentClazzRef[String]).copy(required = true)
+              FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short]).copy(required = true),
+              FragmentParameter(ParameterName("P2"), FragmentClazzRef[String]).copy(required = true)
             )
           )
         ),
@@ -662,7 +665,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(InvalidVariableName("very bad var name", "frInput", Some("ref.outputVariableNames.out1"))),
+            List(
+              InvalidVariableName("very bad var name", "frInput", Some(ParameterName("ref.outputVariableNames.out1")))
+            ),
             None,
             None
           ) =>
@@ -684,7 +689,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       )
     ) {
       case ValidationPerformed(
-            List(OverwrittenVariable("var1", "frInput", Some("ref.outputVariableNames.out1"))),
+            List(OverwrittenVariable("var1", "frInput", Some(ParameterName("ref.outputVariableNames.out1")))),
             None,
             None
           ) =>
@@ -721,14 +726,14 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               ExpressionParserCompilationError(
                 "Non reference 'input' occurred. Maybe you missed '#' in front of it?",
                 "switchId",
-                Some("$expression"),
+                Some(ParameterName("$expression")),
                 "input",
                 None
               ),
               ExpressionParserCompilationError(
                 "Non reference 'notExist' occurred. Maybe you missed '#' in front of it?",
                 "switchId",
-                Some("caseTarget1"),
+                Some(ParameterName("caseTarget1")),
                 "notExist",
                 None
               )
@@ -780,7 +785,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[Int],
               required = false,
               initialValue = None,
@@ -819,7 +824,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
@@ -860,7 +865,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[java.lang.Boolean],
               required = false,
               initialValue = Some(FixedExpressionValue(stringExpression, "stringButShouldBeBoolean")),
@@ -889,7 +894,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[java.lang.Boolean],
               required = false,
               initialValue = None,
@@ -924,7 +929,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              "otherStringParam",
+              ParameterName("otherStringParam"),
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
@@ -933,7 +938,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               valueCompileTimeValidation = None
             ),
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue(referencingExpression, "referencingExpression")),
@@ -962,7 +967,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = Some(FixedExpressionValue(invalidReferencingExpression, "invalidReferencingExpression")),
@@ -992,7 +997,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              paramName,
+              ParameterName(paramName),
               FragmentClazzRef(invalidType),
               required = false,
               initialValue = None,
@@ -1007,7 +1012,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
         outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1"))))
       )
     ) { case ValidationPerformed((error: FragmentParamClassLoadError) :: _, None, None) =>
-      error.fieldName shouldBe paramName
+      error.paramName shouldBe paramName
       error.refClazzName shouldBe invalidType
       error.nodeIds shouldBe Set(nodeId)
     }
@@ -1023,7 +1028,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              paramName,
+              ParameterName(paramName),
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
@@ -1056,7 +1061,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "in",
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
@@ -1099,7 +1104,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "in",
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
@@ -1142,7 +1147,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "in",
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
@@ -1187,7 +1192,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "in",
           List(
             FragmentParameter(
-              "param1",
+              ParameterName("param1"),
               FragmentClazzRef[String],
               required = false,
               initialValue = None,
@@ -1227,7 +1232,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "in",
           List(
             FragmentParameter(
-              "1",
+              ParameterName("1"),
               FragmentClazzRef[String]
             )
           ),
@@ -1242,7 +1247,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               InvalidVariableName(
                 "1",
                 "in",
-                Some("$param.1.$name")
+                Some(ParameterName("$param.1.$name"))
               )
             ),
             None,
@@ -1253,7 +1258,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
 
   test("should return error on duplicated parameter name") {
     val duplicatedParam = FragmentParameter(
-      "paramName",
+      ParameterName("paramName"),
       FragmentClazzRef[String]
     )
     inside(
@@ -1287,7 +1292,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           "in",
           List(
             FragmentParameter(
-              name = "paramName",
+              name = ParameterName("paramName"),
               typ = FragmentClazzRef[String],
               initialValue = None,
               hintText = None,
@@ -1300,7 +1305,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
               )
             ),
             FragmentParameter(
-              "paramName",
+              ParameterName("paramName"),
               FragmentClazzRef[String],
             )
           ),

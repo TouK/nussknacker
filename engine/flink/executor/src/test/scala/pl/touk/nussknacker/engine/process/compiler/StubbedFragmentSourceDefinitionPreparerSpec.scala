@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TestWithParametersSupport
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -24,8 +25,8 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameter("name", FragmentClazzRef[String]),
-        FragmentParameter("age", FragmentClazzRef[Long]),
+        FragmentParameter(ParameterName("name"), FragmentClazzRef[String]),
+        FragmentParameter(ParameterName("age"), FragmentClazzRef[Long]),
       )
     )
     val stubbedSourcePreparer = new StubbedFragmentSourceDefinitionPreparer(
