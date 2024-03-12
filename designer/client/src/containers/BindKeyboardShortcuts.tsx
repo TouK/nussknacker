@@ -19,13 +19,20 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
             Z: (e) => ((e.ctrlKey || e.metaKey) && e.shiftKey ? userActions.redo(e) : userActions.undo(e)),
             DELETE: userActions.delete,
             BACKSPACE: userActions.delete,
+            ESCAPE: userActions.deselectAll,
         }),
         [userActions],
     );
 
     const eventHandlers = useMemo(
         () => ({
-            keydown: (event) => isInputEvent(event) || keyHandlers?.[event.key.toUpperCase()]?.(event),
+            keydown: (event) => {
+                if (isInputEvent(event)) {
+                    return;
+                }
+                const keyHandler = keyHandlers?.[event.key.toUpperCase()];
+                return keyHandler?.(event);
+            },
             copy: (event) => (userActions.copy ? userActions.copy(event) : null),
             paste: (event) => (userActions.paste ? userActions.paste(event) : null),
             cut: (event) => (userActions.cut ? userActions.cut(event) : null),

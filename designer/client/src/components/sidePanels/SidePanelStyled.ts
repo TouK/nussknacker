@@ -58,7 +58,7 @@ export const styledScrollTogglePanelWrapper = (theme: Theme) => css`
         justify-content: space-around;
     }
 
-    .droppable:first-child {
+    .droppable:first-of-type {
         justify-content: flex-start;
     }
 
@@ -148,7 +148,7 @@ export const styledScrollTogglePanelWrapper = (theme: Theme) => css`
     .draggable {
         padding: calc(${TOOLBARS_GAP} / 2) 0;
 
-        &:first-child {
+        &:first-of-type {
             padding-top: 0;
         }
 
