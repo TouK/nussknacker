@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.SpecificDataValidationError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
@@ -38,7 +39,7 @@ class RequestResponseScenarioValidator(nussknackerInstanceName: Option[String]) 
       (),
       NonEmptyList.of(
         SpecificDataValidationError(
-          RequestResponseMetaData.slugName,
+          ParameterName(RequestResponseMetaData.slugName),
           "Allowed characters include lowercase letters, digits, hyphen, " +
             s"name must start and end alphanumeric character, total length ${if (prefix.isEmpty) s"(including prefix '$prefix') "
               else ""}cannot be more than ${K8sUtils.maxObjectNameLength}"

@@ -178,7 +178,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         .getComponent(ComponentType.CustomComponent, "transformer1")
         .value
         .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-    val parameter = definition.parameters.find(_.name.value == "param1")
+    val parameter = definition.parameters.find(_.name == ParameterName("param1"))
     parameter.map(_.validators) shouldBe Some(
       List(
         MandatoryParameterValidator,

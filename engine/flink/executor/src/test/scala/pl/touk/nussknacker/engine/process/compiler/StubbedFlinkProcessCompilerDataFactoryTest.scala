@@ -141,7 +141,10 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   test("stubbing for test purpose should work for one source using parameter record") {
     val scenarioTestData = ScenarioTestData(
       List(1, 2, 3).map(v =>
-        ScenarioTestParametersRecord(NodeId("left-source"), Map("input" -> Expression(Language.Spel, v.toString)))
+        ScenarioTestParametersRecord(
+          NodeId("left-source"),
+          Map(ParameterName("input") -> Expression(Language.Spel, v.toString))
+        )
       )
     )
     val compiledProcess = testCompile(scenarioWithSingleTestParametersSource, scenarioTestData)

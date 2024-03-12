@@ -4,6 +4,7 @@ import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -93,10 +94,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       .streamingLite("scenario1")
       .source("source1", "parametersSupport")
       .emptySink("end", "end", "value" -> "#input")
-    val parameterExpressions: Map[String, Expression] = Map(
-      "contextId"        -> Expression(Language.Spel, "'some-ctx-id'"),
-      "numbers"          -> Expression(Language.Spel, "{1L, 2L, 3L}"),
-      "additionalParams" -> Expression(Language.Spel, "{unoDosTres: 123}")
+    val parameterExpressions = Map(
+      ParameterName("contextId")        -> Expression(Language.Spel, "'some-ctx-id'"),
+      ParameterName("numbers")          -> Expression(Language.Spel, "{1L, 2L, 3L}"),
+      ParameterName("additionalParams") -> Expression(Language.Spel, "{unoDosTres: 123}")
     )
     val scenarioTestData = ScenarioTestData("source1", parameterExpressions)
     val results          = sample.test(scenario, scenarioTestData)
@@ -126,10 +127,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
         "value" -> "#sum + #input.additionalParams.extraValue + #UTIL.largestListElement(#input.numbers)"
       )
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "contextId"        -> Expression(Language.Spel, "'some-ctx-id'"),
-      "numbers"          -> Expression(Language.Spel, "{1L, 2L, 3L, 4L, 5L}"),
-      "additionalParams" -> Expression(Language.Spel, "{extraValue: 100}")
+    val parameterExpressions = Map(
+      ParameterName("contextId")        -> Expression(Language.Spel, "'some-ctx-id'"),
+      ParameterName("numbers")          -> Expression(Language.Spel, "{1L, 2L, 3L, 4L, 5L}"),
+      ParameterName("additionalParams") -> Expression(Language.Spel, "{extraValue: 100}")
     )
     val scenarioTestData = ScenarioTestData("source1", parameterExpressions)
     val results          = sample.test(scenario, scenarioTestData)
@@ -158,8 +159,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       .filter("filter", "#in != 'stop'")
       .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "in" -> Expression(Language.Spel, "'some-text-id'")
+    val parameterExpressions = Map(
+      ParameterName("in") -> Expression(Language.Spel, "'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = sample.test(fragment, scenarioTestData)
@@ -179,8 +180,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       .fragment("fragment1", "in" -> classOf[Int])
       .fragmentOutput("fragmentEnd", "output", "out" -> "4 / #in", "out_2" -> "8 / #in")
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "in" -> Expression(Language.Spel, "0")
+    val parameterExpressions = Map(
+      ParameterName("in") -> Expression(Language.Spel, "0")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = sample.test(fragment, scenarioTestData)

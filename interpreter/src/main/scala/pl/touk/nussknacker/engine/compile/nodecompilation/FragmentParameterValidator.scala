@@ -25,7 +25,7 @@ object FragmentParameterValidator {
       valueEditor: ValueInputWithFixedValues,
       initialValue: Option[FixedExpressionValue],
       refClazz: FragmentClazzRef,
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
     validateFixedValuesSupportedType(refClazz, paramName, nodeIds)
@@ -41,19 +41,14 @@ object FragmentParameterValidator {
 
   private def validateFixedValuesSupportedType(
       refClazz: FragmentClazzRef,
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
     if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(refClazz)) {
       Valid(())
-    } else
-      invalidNel(
-        UnsupportedFixedValuesType(
-          ParameterName(paramName),
-          refClazz.refClazzName,
-          nodeIds
-        )
-      )
+    } else {
+      invalidNel(UnsupportedFixedValuesType(paramName, refClazz.refClazzName, nodeIds))
+    }
 
   def validateFixedExpressionValues(
       fragmentParameter: FragmentParameter,

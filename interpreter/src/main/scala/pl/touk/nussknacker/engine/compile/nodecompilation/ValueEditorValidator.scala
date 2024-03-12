@@ -19,7 +19,7 @@ object ValueEditorValidator {
   def validateAndGetEditor( // this method doesn't validate the compilation validity of FixedExpressionValues (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
       valueEditor: ValueInputWithFixedValues,
       initialValue: Option[FixedExpressionValue],
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
     validateFixedValuesList(valueEditor, initialValue, paramName, nodeIds)
@@ -39,16 +39,16 @@ object ValueEditorValidator {
   private def validateFixedValuesList(
       valueEditor: ValueInputWithFixedValues,
       initialValue: Option[FixedExpressionValue],
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
     if (!valueEditor.allowOtherValue) {
       List(
         if (valueEditor.fixedValuesList.isEmpty)
-          invalidNel(RequireValueFromEmptyFixedList(ParameterName(paramName), nodeIds))
+          invalidNel(RequireValueFromEmptyFixedList(paramName, nodeIds))
         else Valid(()),
         if (initialValueNotPresentInPossibleValues(valueEditor, initialValue))
-          invalidNel(InitialValueNotPresentInPossibleValues(ParameterName(paramName), nodeIds))
+          invalidNel(InitialValueNotPresentInPossibleValues(paramName, nodeIds))
         else Valid(())
       ).sequence.map(_ => ())
     } else { Valid(()) }

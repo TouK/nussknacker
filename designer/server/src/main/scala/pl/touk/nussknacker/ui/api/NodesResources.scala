@@ -3,14 +3,15 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Decoder
+import io.circe.{Codec, Decoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveUnwrappedCodec}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -26,7 +27,7 @@ import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
-
+import TestSourceParameters._
 import scala.concurrent.ExecutionContext
 
 /** This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
@@ -163,6 +164,7 @@ object NodesResources {
   }
 
   def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
+    implicit val parameterNameDecoder: Decoder[ParameterName]
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
     implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
       deriveConfiguredDecoder[TestSourceParameters]
@@ -176,9 +178,13 @@ object NodesResources {
 
 }
 
+object TestSourceParameters {
+  implicit val parameterNameCodec: Codec[ParameterName] = deriveUnwrappedCodec
+}
+
 @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
     sourceId: String,
-    parameterExpressions: Map[String, Expression]
+    parameterExpressions: Map[ParameterName, Expression]
 )
 
 @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(

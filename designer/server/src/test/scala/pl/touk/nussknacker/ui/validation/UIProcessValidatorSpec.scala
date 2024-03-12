@@ -149,12 +149,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.invalidNodes shouldBe Map(
       "subIn" -> List(
         NodeValidationError(
-          "NonUniqueEdge",
-          "Edges are not unique",
-          "Node subIn has duplicate outgoing edges to: out2, it cannot be saved properly",
-          None,
-          SaveNotAllowed,
-          None
+          typ = "NonUniqueEdge",
+          message = "Edges are not unique",
+          description = "Node subIn has duplicate outgoing edges to: out2, it cannot be saved properly",
+          fieldName = None,
+          errorType = SaveNotAllowed,
+          details = None
         )
       )
     )
@@ -174,12 +174,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
-          "LooseNode",
-          "Loose node",
-          "Node loose is not connected to source, it cannot be saved properly",
-          None,
-          SaveNotAllowed,
-          None
+          typ = "LooseNode",
+          message = "Loose node",
+          description = "Node loose is not connected to source, it cannot be saved properly",
+          fieldName = None,
+          errorType = SaveNotAllowed,
+          details = None
         ),
         List("loose")
       )
@@ -223,12 +223,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings.invalidNodes shouldBe Map(
       "filter" -> List(
         NodeValidationError(
-          "DisabledNode",
-          "Node filter is disabled",
-          "Deploying scenario with disabled node can have unexpected consequences",
-          None,
-          SaveAllowed,
-          None
+          typ = "DisabledNode",
+          message = "Node filter is disabled",
+          description = "Deploying scenario with disabled node can have unexpected consequences",
+          fieldName = None,
+          errorType = SaveAllowed,
+          details = None
         )
       )
     )
@@ -248,12 +248,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
-          "DuplicatedNodeIds",
-          "Two nodes cannot have same id",
-          "Duplicate node ids: inID",
-          None,
-          RenderNotAllowed,
-          None
+          typ = "DuplicatedNodeIds",
+          message = "Two nodes cannot have same id",
+          description = "Duplicate node ids: inID",
+          fieldName = None,
+          errorType = RenderNotAllowed,
+          details = None
         ),
         List("inID")
       )
@@ -280,12 +280,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
-          "DuplicatedNodeIds",
-          "Two nodes cannot have same id",
-          "Duplicate node ids: switchID",
-          None,
-          RenderNotAllowed,
-          None
+          typ = "DuplicatedNodeIds",
+          message = "Two nodes cannot have same id",
+          description = "Duplicate node ids: switchID",
+          fieldName = None,
+          errorType = RenderNotAllowed,
+          details = None
         ),
         List("switchID")
       )
@@ -897,7 +897,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           additionalConfigsFromProvider = Map(
             DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
               parameterConfigs = Map(
-                "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+                ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
               )
             )
           )
@@ -940,7 +940,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           additionalConfigsFromProvider = Map(
             DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
               parameterConfigs = Map(
-                "optionalParam" -> ParameterAdditionalUIConfig(
+                ParameterName("optionalParam") -> ParameterAdditionalUIConfig(
                   required = false,
                   initialValue = None,
                   hintText = None,
@@ -1904,7 +1904,7 @@ private object UIProcessValidatorSpec {
   }
 
   object SampleCustomProcessValidator extends CustomProcessValidator {
-    val badName = ProcessName("badName")
+    val badName: ProcessName = ProcessName("badName")
 
     val badNameError: ScenarioNameValidationError = ScenarioNameValidationError("BadName", "BadName")
 

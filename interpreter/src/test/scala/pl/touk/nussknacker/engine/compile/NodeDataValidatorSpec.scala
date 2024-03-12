@@ -95,7 +95,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
       additionalConfigsFromProvider = Map(
         DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
-            "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+            ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
           )
         )
       )
