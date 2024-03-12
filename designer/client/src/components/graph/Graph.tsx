@@ -29,6 +29,7 @@ import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { Scenario } from "../Process/types";
+import { nodeFocused, nodeValidationError } from "./focusableStyled";
 
 type Props = GraphProps & {
     processCategory: string;
@@ -201,12 +202,12 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.freeze();
 
         const links = this.graph.getLinks();
-        links.forEach((l) => this.unhighlightCell(l, styles.dragHovered));
+        links.forEach((l) => this.#unhighlightCell(l, styles.dragHovered));
 
         if (!forceDisable) {
             const [active] = filterDragHovered(links);
             if (active) {
-                this.highlightCell(active, styles.dragHovered);
+                this.#highlightCell(active, styles.dragHovered);
                 active.toBack();
             }
         }
@@ -326,7 +327,7 @@ export class Graph extends React.Component<Props> {
         }
 
         this.bindEventHandlers();
-        this.highlightNodes();
+        this.#highlightNodes();
         this.updateNodesCounts();
 
         this.graph.on(Events.CHANGE_DRAG_OVER, () => {
@@ -370,7 +371,7 @@ export class Graph extends React.Component<Props> {
         //when e.g. layout changed we have to remember to highlight nodes
         const selectedNodesChanged = !isEqual(this.props.selectionState, nextProps.selectionState);
         if (processChanged || selectedNodesChanged) {
-            this.highlightNodes(nextProps.selectionState, nextProps.scenario);
+            this.#highlightNodes(nextProps.selectionState, nextProps.scenario);
         }
     }
 
@@ -493,13 +494,12 @@ export class Graph extends React.Component<Props> {
         };
     };
 
-    highlightNodes = (selectedNodeIds: string[] = [], process = this.props.scenario): void => {
+    #highlightNodes = (selectedNodeIds: string[] = [], process = this.props.scenario): void => {
         this.processGraphPaper.freeze();
         const elements = this.graph.getElements();
         elements.forEach((cell) => {
-            this.unhighlightCell(cell, "node-validation-error");
-            this.unhighlightCell(cell, "node-focused");
-            this.unhighlightCell(cell, "node-focused-with-validation-error");
+            this.#unhighlightCell(cell, nodeValidationError);
+            this.#unhighlightCell(cell, nodeFocused);
         });
 
         const validationErrors = ProcessUtils.getValidationErrors(process);
@@ -513,21 +513,13 @@ export class Graph extends React.Component<Props> {
             }
         });
 
-        invalidNodeIds.forEach((id) =>
-            selectedNodeIds.includes(id)
-                ? this.highlightNode(id, "node-focused-with-validation-error")
-                : this.highlightNode(id, "node-validation-error"),
-        );
+        invalidNodeIds.forEach((id) => this.highlightNode(id, nodeValidationError));
+        selectedNodeIds.forEach((id) => this.highlightNode(id, nodeFocused));
 
-        selectedNodeIds.forEach((id) => {
-            if (!invalidNodeIds.includes(id)) {
-                this.highlightNode(id, "node-focused");
-            }
-        });
         this.processGraphPaper.unfreeze();
     };
 
-    highlightCell(cell: dia.Cell, className: string): void {
+    #highlightCell(cell: dia.Cell, className: string): void {
         this.processGraphPaper.findViewByModel(cell).highlight(null, {
             highlighter: {
                 name: "addClass",
@@ -536,7 +528,7 @@ export class Graph extends React.Component<Props> {
         });
     }
 
-    unhighlightCell(cell: dia.Cell, className: string): void {
+    #unhighlightCell(cell: dia.Cell, className: string): void {
         this.processGraphPaper.findViewByModel(cell).unhighlight(null, {
             highlighter: {
                 name: "addClass",
@@ -548,8 +540,14 @@ export class Graph extends React.Component<Props> {
     highlightNode = (nodeId: NodeId, highlightClass: string): void => {
         const cell = this.graph.getCell(nodeId);
         if (cell) {
-            //prevent `properties` node highlighting
-            this.highlightCell(cell, highlightClass);
+            this.#highlightCell(cell, highlightClass);
+        }
+    };
+
+    unhighlightNode = (nodeId: NodeId, highlightClass: string): void => {
+        const cell = this.graph.getCell(nodeId);
+        if (cell) {
+            this.#unhighlightCell(cell, highlightClass);
         }
     };
 

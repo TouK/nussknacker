@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
-import { styled, css, Theme } from "@mui/material";
-import { alpha } from "../../containers/theme/helpers";
+import { css, styled, Theme } from "@mui/material";
+import { alpha, tint } from "../../containers/theme/helpers";
 import { ButtonWithFocus } from "../withFocus";
 
 export const buttonBase = (theme: Theme) => css`
@@ -56,49 +56,89 @@ const modalContent = (errorColor: CSSProperties["color"], hrColor: CSSProperties
     }
 `;
 
-const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) => css`
-    .body {
-        stroke: ${strokeColor};
-        stroke-width: 2px;
-    }
-    .background {
-        fill: ${backgroundFill};
-    }
-    .joint-port-body {
-        stroke-width: 3px;
-        fill: ${backgroundFill};
-        stroke: ${strokeColor};
-    }
-`;
+export const nodeValidationError = "node-validation-error";
+export const nodeFound = "node-found";
+export const nodeFoundHover = "node-found-hover";
+export const nodeFocused = "node-focused";
+const nodeStyles = (theme: Theme) => {
+    const error = theme.palette.error.main;
+    const found = theme.palette.warning.dark;
+    const focused = theme.custom.colors.cobalt;
+
+    return css`
+        .joint-type-esp-model {
+            &,
+            .body,
+            .background,
+            .joint-port-body {
+                transition: filter 0.5s, fill 0.25s, stroke 0.25s;
+            }
+
+            .body {
+                stroke-width: 2px;
+            }
+            .joint-port-body {
+                stroke-width: 3px;
+            }
+        }
+
+        .${nodeValidationError} {
+            filter: drop-shadow(0 0 6px ${error});
+
+            .body,
+            .joint-port-body {
+                stroke: ${error};
+            }
+        }
+
+        .${nodeFocused} {
+            .background,
+            .joint-port-body {
+                fill: ${tint(focused, 0.9)};
+            }
+        }
+
+        .${nodeValidationError} {
+            .background,
+            .joint-port-body {
+                fill: ${tint(error, 0.8)};
+            }
+        }
+
+        .${nodeFound} {
+            .body,
+            .joint-port-body {
+                stroke: ${found};
+            }
+            .background,
+            .joint-port-body {
+                fill: ${tint(found, 0.8)};
+            }
+        }
+
+        .${nodeFocused} {
+            .body,
+            .joint-port-body {
+                stroke: ${focused};
+            }
+        }
+
+        .${nodeFoundHover} {
+            .background,
+            .joint-port-body {
+                fill: ${tint(found, 0.6)};
+            }
+        }
+    `;
+};
 
 export const FocusableStyled = styled("div")(
     ({ theme, id }) =>
         css`
             width: 100% !important;
             height: 100% !important;
-          
-            .node-validation-error {
-                ${nodeHighlight(theme.custom.colors.error, theme.custom.colors.cinderella)}
-            }
 
-            .node-focused-with-validation-error {
-                ${nodeHighlight(theme.custom.colors.cobalt, theme.custom.colors.bizarre)}
-            }
-
-            .node-grouping {
-                ${nodeHighlight(theme.custom.colors.apple, theme.custom.colors.blueRomance)}
-            }
-
-            .node-focused {
-                ${nodeHighlight(theme.custom.colors.cobalt, theme.custom.colors.zumthor)}
-            }
-
-            .joint-type-basic-rect.node-focused {
-                & rect {
-                    stroke-width: 2;
-                    opacity: 0.2;
-                }
-            }
+            ${nodeStyles(theme)}
 
             .modalContentDark {
                 ${modalContent(theme.custom.colors.error, theme.custom.colors.boulder)}
@@ -110,6 +150,7 @@ export const FocusableStyled = styled("div")(
 
             .element {
                 cursor: pointer;
+
                 &:active {
                     cursor: -moz-grabbing;
                     cursor: -webkit-grabbing;
@@ -130,10 +171,12 @@ export const FocusableStyled = styled("div")(
                     .connection {
                         stroke: ${theme.custom.colors.scooter};
                     }
+
                     .marker-target,
                     .marker-source {
                         fill: ${theme.custom.colors.scooter}
                     }
+
                     .marker-vertices circle {
                         fill: ${theme.custom.colors.nobel}
                         r: 6px;
@@ -150,6 +193,7 @@ export const FocusableStyled = styled("div")(
                 background-color: ${theme.custom.colors.secondaryBackground};
                 min-height: 35px;
                 outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
+
                 &.focused {
                     outline: 2px solid ${theme.custom.colors.cobalt} !important;
                     outline-offset: -1px !important;
@@ -180,6 +224,7 @@ export const FocusableStyled = styled("div")(
             .branch-parameter-expr {
                 display: inline-flex;
                 width: 100%;
+
                 .node-value {
                     width: 100% !important;
                 }
@@ -204,30 +249,28 @@ export const FocusableStyled = styled("div")(
                 height: 100px;
             }
 
-          .joint-paper-background {
-            overflow-y: auto;
-            overflow-x: auto;
-            background-color: ${theme.custom.colors.canvasBackground};
-          }
-          #svg-pan-zoom-controls {
-            transform: translate(0, 0px) scale(0.75);
-          }
-          & svg {
-            width: 100%;
-            height: 100%;
-          }
-          
-          ${
-              id === "nk-graph-main" &&
-              `height: 100% !important;
+            .joint-paper-background {
+                overflow-y: auto;
+                overflow-x: auto;
+                background-color: ${theme.custom.colors.canvasBackground};
+            }
+
+            & svg {
+                width: 100%;
+                height: 100%;
+            }
+
+            ${
+                id === "nk-graph-main" &&
+                `height: 100% !important;
                 `
-          }
-          ${
-              id === "nk-graph-fragment" &&
-              `width: 100% !important;
+            }
+            ${
+                id === "nk-graph-fragment" &&
+                `width: 100% !important;
                 #svg-pan-zoom-controls {
                     transform: translate(0, 0px) scale(0.5);
                 }`
-          }
+            }
         `,
 );

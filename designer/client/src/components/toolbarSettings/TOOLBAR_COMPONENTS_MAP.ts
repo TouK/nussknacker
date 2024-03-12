@@ -10,6 +10,7 @@ import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { VersionsPanel } from "../toolbars/VersionsPanel";
 import loadable from "@loadable/component";
 import ProcessActions from "../toolbars/actions/ProcessActions";
+import { SearchPanel } from "../toolbars/search/SearchPanel";
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
     DefaultPanel: DefaultToolbarPanel,
@@ -20,6 +21,7 @@ export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelPr
     // no buttons at all
     "tips-panel": TipsPanel,
     "creator-panel": CreatorPanel,
+    "search-panel": SearchPanel,
     "versions-panel": VersionsPanel,
     "comments-panel": CommentsPanel,
     "attachments-panel": AttachmentsPanel,
