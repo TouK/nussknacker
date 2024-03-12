@@ -88,11 +88,8 @@ class DeploymentServiceImpl(
       // 3. common for all commands/actions
       _ = runActionAndHandleResults(
         actionType,
-        ctx.actionId,
-        ctx.versionOnWhichActionIsDone,
         deploymentComment,
-        ctx.processDetails,
-        ctx.buildInfoProcessingType
+        ctx
       ) {
         dispatcher
           .deploymentManagerUnsafe(ctx.processDetails.processingType)
@@ -132,16 +129,13 @@ class DeploymentServiceImpl(
       // TODO: move validateBeforeDeploy before creating an action
       result <- validateBeforeDeploy(ctx.processDetails, deployedScenarioData).transformWith {
         case Failure(ex) =>
-          dbioRunner.runInTransaction(actionRepository.removeAction(ctx.actionId)).transform(_ => Failure(ex))
+          removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
         case Success(_) =>
           // we notify of deployment finish/fail only if initial validation succeeded
           val deploymentFuture = runActionAndHandleResults(
             actionType,
-            ctx.actionId,
-            ctx.versionOnWhichActionIsDone,
             validatedComment,
-            ctx.processDetails,
-            ctx.buildInfoProcessingType
+            ctx
           ) {
             dispatcher
               .deploymentManagerUnsafe(ctx.processDetails.processingType)
@@ -263,16 +257,16 @@ class DeploymentServiceImpl(
   private def allowedActionsForState[PS: ScenarioShapeFetchStrategy](
       processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState
-  )(implicit user: LoggedUser): List[ScenarioActionName] = {
-    val defaultStateActions = ps.allowedActions.map(ScenarioActionName(_))
-    val customActions = dispatcher
+  )(implicit user: LoggedUser): Set[ScenarioActionName] = {
+    val actionsDefinedInState = ps.allowedActions.map(ScenarioActionName(_)).toSet
+    val actionsDefinedInCustomActions = dispatcher
       .deploymentManagerUnsafe(processDetails.processingType)
       .customActionsDefinitions
       .collect {
         case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
       }
-      .distinct
-    defaultStateActions ++ customActions
+      .toSet
+    actionsDefinedInState ++ actionsDefinedInCustomActions
   }
 
   protected def prepareDeployedScenarioData(
@@ -302,36 +296,33 @@ class DeploymentServiceImpl(
 
   private def runActionAndHandleResults[T, PS: ScenarioShapeFetchStrategy](
       actionType: ProcessActionType,
-      actionId: ProcessActionId,
-      versionOnWhichActionIsDoneOpt: Option[VersionId],
       deploymentComment: Option[DeploymentComment],
-      processDetails: ScenarioWithDetailsEntity[PS],
-      buildInfoProcessingType: Option[ProcessingType]
+      ctx: CommandContext[PS]
   )(runAction: => Future[T])(implicit user: LoggedUser, ec: ExecutionContext): Future[T] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionFuture                        = runAction
-    val actionString = s"${actionType.toString.toLowerCase} (id: ${actionId.value}) of ${processDetails.name}"
+    val actionString = s"${actionType.toString.toLowerCase} (id: ${ctx.actionId.value}) of ${ctx.processDetails.name}"
     actionFuture.transformWith {
       case Failure(exception) =>
         logger.error(s"Action: $actionString finished with failure", exception)
         val performedAt = clock.instant()
         // TODO: rename to OnActionFailed
-        processChangeListener.handle(OnDeployActionFailed(processDetails.processId, exception))
+        processChangeListener.handle(OnDeployActionFailed(ctx.processDetails.processId, exception))
         dbioRunner
           .runInTransaction(
             actionRepository.markActionAsFailed(
-              actionId,
-              processDetails.processId,
+              ctx.actionId,
+              ctx.processDetails.processId,
               actionType,
-              versionOnWhichActionIsDoneOpt,
+              ctx.versionOnWhichActionIsDone,
               performedAt,
               exception.getMessage,
-              buildInfoProcessingType
+              ctx.buildInfoProcessingType
             )
           )
           .transform(_ => Failure(exception))
       case Success(result) =>
-        versionOnWhichActionIsDoneOpt
+        ctx.versionOnWhichActionIsDone
           .map { versionOnWhichActionIsDone =>
             logger.info(s"Finishing $actionString")
             val performedAt = clock.instant()
@@ -339,7 +330,7 @@ class DeploymentServiceImpl(
             // TODO: rename to OnActionSuccess
             processChangeListener.handle(
               OnDeployActionSuccess(
-                processDetails.processId,
+                ctx.processDetails.processId,
                 versionOnWhichActionIsDone,
                 comment,
                 performedAt,
@@ -348,13 +339,13 @@ class DeploymentServiceImpl(
             )
             dbioRunner.runInTransaction(
               actionRepository.markActionAsFinished(
-                actionId,
-                processDetails.processId,
+                ctx.actionId,
+                ctx.processDetails.processId,
                 actionType,
                 versionOnWhichActionIsDone,
                 performedAt,
                 comment,
-                buildInfoProcessingType
+                ctx.buildInfoProcessingType
               )
             )
           }
@@ -365,10 +356,14 @@ class DeploymentServiceImpl(
             //       Before we can do that we should check if we somewhere rely on fact that version is always defined -
             //       see ProcessAction.processVersionId
             logger.info(s"Action $actionString finished for action without version id - skipping listener notification")
-            dbioRunner.runInTransaction(actionRepository.removeAction(actionId))
+            removeInvalidAction(ctx.actionId)
           }
           .map(_ => result)
     }
+  }
+
+  private def removeInvalidAction(actionId: ProcessActionId): Future[Unit] = {
+    dbioRunner.runInTransaction(actionRepository.removeAction(actionId))
   }
 
   // TODO: check deployment id to be sure that returned status is for given deployment
