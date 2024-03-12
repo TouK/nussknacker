@@ -12,12 +12,11 @@ import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, 
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.SqlDataSourcesDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceTableDefinition
+import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory._
 
 class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynamicComponent[Source] with SourceFactory {
 
   override type State = DataSourceTableDefinition
-
-  private val tableNameParamName = "Table"
 
   private val tableNameParam: ParameterWithExtractor[String] = {
     val possibleTableParamValues =
@@ -64,4 +63,8 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
       .find(_.tableName == tableName)
       .getOrElse(throw new IllegalStateException("Table with selected name not found."))
 
+}
+
+object SqlSourceFactory {
+  val tableNameParamName: String = "Table"
 }

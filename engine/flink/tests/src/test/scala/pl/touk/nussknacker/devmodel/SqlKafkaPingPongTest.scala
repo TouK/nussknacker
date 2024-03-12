@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.SqlComponentProvider
+import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -21,13 +22,14 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
 
   import spel.Implicits._
 
-  private val testNameTopicPart: String = "sql-pp"
-  private val topicNaming1: String      = s"$testNameTopicPart.test1"
-  private lazy val inputTopicNameTest1  = TopicConfig.inputTopicName(topicNaming1)
+  private val testNameTopicPart: String   = "sql-pp"
+  private val topicNaming1: String        = s"$testNameTopicPart.test1"
+  private lazy val inputTopicNameTest1    = TopicConfig.inputTopicName(topicNaming1)
+  private lazy val sqlInputTableNameTest1 = "testTable_input"
 
   private lazy val sqlTablesConfig =
     s"""
-       |CREATE TABLE testTable (
+       |CREATE TABLE $sqlInputTableNameTest1 (
        |   someInt     INT,
        |   someString  STRING
        | ) WITH (
@@ -64,7 +66,7 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
-      .source("start", "tableApi-source-sql")
+      .source("start", "tableApi-source-sql", SqlSourceFactory.tableNameParamName -> s"'$sqlInputTableNameTest1'")
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "output",
