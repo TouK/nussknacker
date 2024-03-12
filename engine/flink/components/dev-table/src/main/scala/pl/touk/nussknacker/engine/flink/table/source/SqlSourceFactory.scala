@@ -22,7 +22,7 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
     val possibleTableParamValues =
       defs.tableDefinitions.map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
     val parameter = Parameter[String](
-      name = tableNameParamName
+      name = TableNameParamName
     ).copy(editor = Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues)))
     ParameterWithExtractor(parameter)
   }
@@ -36,7 +36,7 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
         errors = List.empty,
         state = None
       )
-    case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
+    case TransformationStep((TableNameParamName, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
       val selectedTable = getSelectedTableUnsafe(tableName)
       val typingResult  = selectedTable.schemaTypingResult
       val initializer   = new BasicContextInitializer(typingResult)
@@ -66,5 +66,5 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
 }
 
 object SqlSourceFactory {
-  val tableNameParamName: String = "Table"
+  val TableNameParamName: String = "Table"
 }

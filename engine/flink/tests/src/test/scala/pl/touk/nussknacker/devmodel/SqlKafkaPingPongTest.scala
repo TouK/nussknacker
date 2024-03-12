@@ -66,7 +66,7 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
-      .source("start", "tableApi-source-sql", SqlSourceFactory.tableNameParamName -> s"'$sqlInputTableNameTest1'")
+      .source("start", "tableApi-source-sql", SqlSourceFactory.TableNameParamName -> s"'$sqlInputTableNameTest1'")
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "output",
