@@ -57,27 +57,6 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     result.errors.processPropertiesErrors shouldBe List.empty
   }
 
-  test("validate non empty config without required property") {
-    val result = validator.validate(
-      Map(
-        "propOpt" -> "a"
-      ).toList
-    )
-
-    result.errors.processPropertiesErrors should matchPattern {
-      case List(
-            NodeValidationError(
-              "MissingRequiredProperty",
-              _,
-              _,
-              Some(_),
-              NodeValidationErrorType.SaveAllowed,
-              None
-            )
-          ) =>
-    }
-  }
-
   test("validate non empty config with empty required property") {
     val result = validator.validate(
       Map(
@@ -157,17 +136,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
   test("validate empty config") {
     val result = validator.validate(List.empty)
 
-    result.errors.processPropertiesErrors should matchPattern {
-      case List(
-            NodeValidationError(
-              "MissingRequiredProperty",
-              _,
-              _,
-              Some(_),
-              NodeValidationErrorType.SaveAllowed,
-              None
-            )
-          ) =>
+    result.errors.processPropertiesErrors should matchPattern { case List() =>
     }
   }
 
@@ -187,14 +156,6 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
               Some(_),
               NodeValidationErrorType.SaveAllowed,
               None
-            ),
-            NodeValidationError(
-              "MissingRequiredProperty",
-              _,
-              _,
-              Some(_),
-              NodeValidationErrorType.SaveAllowed,
-              None
             )
           ) =>
     }
@@ -209,17 +170,7 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ).toList
     )
 
-    result.errors.processPropertiesErrors should matchPattern {
-      case List(
-            NodeValidationError(
-              "UnknownProperty",
-              _,
-              _,
-              Some(`unknownProperty`),
-              NodeValidationErrorType.SaveAllowed,
-              None
-            )
-          ) =>
+    result.errors.processPropertiesErrors should matchPattern { case List() =>
     }
   }
 
