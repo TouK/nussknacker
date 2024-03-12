@@ -948,7 +948,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .emptySink("id2", "sink")
 
     inside(validate(process, definitionWithTypedSource).result) {
-      case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) => missingParam shouldBe Set("par1")
+      case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) =>
+        missingParam shouldBe Set(ParameterName("par1"))
     }
   }
 
@@ -1198,7 +1199,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
+      case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set(ParameterName("OutputVariable")) =>
     }
   }
 
@@ -1212,7 +1213,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil)) if vars == Set("OutputVariable") =>
+      case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil))
+          if vars == Set(ParameterName("OutputVariable")) =>
     }
   }
 
