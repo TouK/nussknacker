@@ -109,10 +109,10 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): AnyRef = {
-    val role      = params.extractMandatory[Map[String, String]](roleParameter)
+    val role      = params.extractUnsafe[Map[String, String]](roleParameter)
     val leftName  = left(role)
     val rightName = right(role)
-    val key       = params.extractMandatory[Map[String, LazyParameter[String]]](keyParameter)
+    val key       = params.extractUnsafe[Map[String, LazyParameter[String]]](keyParameter)
     new FlinkCustomJoinTransformation {
       override def transform(
           inputs: Map[String, DataStream[Context]],
@@ -126,7 +126,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
           .keyBy((v: ValueWithContext[String]) => v.value, (v: ValueWithContext[String]) => v.value)
           .process(
             new EnrichWithAdditionalDataFunction(
-              params.extractMandatory(additionalDataValueParameter),
+              params.extractUnsafe(additionalDataValueParameter),
               context.lazyParameterHelper
             )
           )

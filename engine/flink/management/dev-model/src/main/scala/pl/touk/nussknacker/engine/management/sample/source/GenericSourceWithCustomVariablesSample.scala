@@ -80,7 +80,7 @@ object GenericSourceWithCustomVariablesSample
       finalState: Option[State]
   ): Source = {
     import scala.jdk.CollectionConverters._
-    val elements = params.extractMandatory[java.util.List[String]](`elementsParamName`).asScala.toList
+    val elements = params.extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
 
     new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))
       with TestDataGenerator
