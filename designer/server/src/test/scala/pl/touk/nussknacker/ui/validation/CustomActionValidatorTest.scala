@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.process.deployment.ValidationError
 
 class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
@@ -32,7 +31,10 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
       testCustomActionParams
     )
 
-  private val validator = new CustomActionValidator(testCustomAction :: Nil)
+  private val noParamsCustomAction =
+    CustomActionDefinition(ScenarioActionName("noparams"), "testStatus" :: Nil, Nil)
+
+  private val validator = new CustomActionValidator(noParamsCustomAction :: testCustomAction :: Nil)
 
   type TestParams = Map[String, String]
 
@@ -100,6 +102,16 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     caughtException.getMessage shouldBe
       "No such parameter should be defined for this action: " + testCustomAction.name
+  }
+
+  test("should not fail when provided with empty params for no params action") {
+    val validTestParams = None
+
+    val validRequest = CustomActionRequest(ScenarioActionName("noparams"), validTestParams)
+
+    val result: Unit = validator.validateCustomActionParams(validRequest)
+    result should be((): Unit)
+
   }
 
 }

@@ -39,7 +39,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
+import pl.touk.nussknacker.ui.validation.{
+  CustomActionNonExisting,
+  CustomActionValidator,
+  UIProcessValidator,
+  ValidationError
+}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -624,7 +629,3 @@ class DeploymentServiceImpl(
 }
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
-
-private case class CustomActionNonExisting(actionName: ScenarioActionName)
-    extends NotFoundError(s"$actionName is not existing")
-case class ValidationError(message: String) extends BadRequestError(message)

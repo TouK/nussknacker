@@ -1,19 +1,22 @@
 package pl.touk.nussknacker.ui.services
 
 import cats.data.EitherT
+import com.github.fge.jsonschema.core.exceptions.ProcessingException
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints
 import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.NoScenario
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, ValidationError}
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.util.EitherTImplicits.EitherTFromOptionInstance
-import pl.touk.nussknacker.ui.validation.CustomActionValidator
+import pl.touk.nussknacker.ui.validation.{CustomActionNonExisting, CustomActionValidator, ValidationError}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 class ManagementApiHttpService(
     config: Config,
@@ -28,42 +31,43 @@ class ManagementApiHttpService(
 
   expose {
     managementApiEndpoints.customActionValidationEndpoint
-      .serverSecurityLogic(authorizeKnownUser[ValidationError])
+      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (processName, req) =>
           for {
             processIdWithName <- getProcessId(processName)
-            actionsList <- EitherT.fromOption[Future](
-              dispatcher.deploymentManagerUnsafe(processIdWithName).map(x => x.customActionsDefinitions),
-              Nil
-            )
-            validator = new CustomActionValidator(actionsList)
-            validationResult <- Try(validator.validateCustomActionParams(req)) match {
-              case util.Success(_)         => Right(())
-              case util.Failure(exception) => Left(ValidationError(exception.getMessage))
+            actionsList       <- getActionsList(processIdWithName)
+          } yield {
+            val validator = new CustomActionValidator(actionsList)
+            Try(validator.validateCustomActionParams(req)) match {
+              case Success(_)                           => ()
+              case Failure(ve: ValidationError)         => ValidationError(ve.getMessage)
+              case Failure(na: CustomActionNonExisting) => CustomActionNonExisting(na.actionName)
+              case Failure(exception)                   => throw exception
             }
-          } yield validationResult
-        /* val actionsList = dispatcher.deploymentManagerUnsafe(getProcessId(processName)).customActionsDefinitions
-          val validator   = new CustomActionValidator(actionsList)
-          val result: Either[ValidationError, Unit] = Try(validator.validateCustomActionParams(req)) match {
-            case util.Success(_)         => Right(())
-            case util.Failure(exception) => Left(ValidationError(exception.getMessage))
           }
-          EitherT.fromEither[Future](result)*/
         }
       }
   }
 
-  private def getProcessId(processName: ProcessName): EitherT[Future, NoScenario, ProcessIdWithName] = {
+  private def getActionsList(
+      processIdWithName: ProcessIdWithName
+  )(implicit loggedUser: LoggedUser): EitherT[Future, NuDesignerError, List[CustomActionDefinition]] = {
+    EitherT.right[NuDesignerError](
+      dispatcher.deploymentManagerUnsafe(processIdWithName).map(x => x.customActionsDefinitions)
+    )
+  }
+
+  private def getProcessId(processName: ProcessName): EitherT[Future, NuDesignerError, ProcessIdWithName] = {
     for {
       scenarioId <- getScenarioIdByName(processName)
     } yield ProcessIdWithName(scenarioId, processName)
   }
 
-  private def getScenarioIdByName(scenarioName: ProcessName) = {
+  private def getScenarioIdByName(scenarioName: ProcessName): EitherT[Future, NuDesignerError, ProcessId] = {
     processService
       .getProcessId(scenarioName)
-      .toRightEitherT(NoScenario(scenarioName))
+      .toRightEitherT(ValidationError("Can't find scenario id for scenario: " + scenarioName))
   }
 
 }

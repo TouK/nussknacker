@@ -264,7 +264,8 @@ class AkkaHttpBasedRouteProvider(
       val managementApiHttpService = new ManagementApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
-        dispatcher = dmDispatcher
+        dispatcher = dmDispatcher,
+        processService = processService
       )
 
       val notificationApiHttpService = new NotificationApiHttpService(
