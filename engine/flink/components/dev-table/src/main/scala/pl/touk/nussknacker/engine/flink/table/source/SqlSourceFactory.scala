@@ -24,10 +24,7 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
       defs.tableDefinitions.map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
     val parameter = Parameter[String](
       name = tableNameParamName
-    ).copy(
-      editor = Some(FixedValuesParameterEditor(possibleTableParamValues)),
-      validators = List(FixedValuesValidator(possibleTableParamValues))
-    )
+    ).copy(editor = Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues)))
     ParameterWithExtractor(parameter)
   }
 
