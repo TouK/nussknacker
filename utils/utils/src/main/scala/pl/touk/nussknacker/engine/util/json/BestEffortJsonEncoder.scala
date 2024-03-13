@@ -71,34 +71,15 @@ case class BestEffortJsonEncoder(
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
-          case a: java.util.Map[java.util.Map[_, _] @unchecked, _] if allTheKeysAreJavaMaps(a.keySet()) =>
-            val keys = a.keySet().asScala.toList
-            val m = keys.map { keyMap =>
-              val v              = a.get(keyMap)
-              val encodedKey     = encode(keyMap)
-              val stringifiedKey = encodedKey.noSpaces
-              (stringifiedKey, v)
-            }.toMap
-
-            encodeMap(m)
-          case a: scala.collection.Map[scala.collection.Map[_, _] @unchecked, _] if allTheKeysAreScalaMaps(a.keySet) =>
-            val keys = a.keySet.toList
-
-            val m = keys.map { keyMap =>
-              val v              = a.get(keyMap)
-              val encodedKey     = encode(keyMap)
-              val stringifiedKey = encodedKey.noSpaces
-              (stringifiedKey, v)
-            }.toMap
-
-            encodeMap(m)
-          case a: scala.collection.Map[String @unchecked, _] => encodeMap(a.toMap)
-          case a: java.util.Map[String @unchecked, _]        => encodeMap(a.asScala.toMap)
-          case a: Iterable[_]                                => fromValues(a.map(encode))
-          case a: Enum[_]                                    => safeString(a.toString)
-          case a: java.util.Collection[_]                    => fromValues(a.asScala.map(encode))
-          case a: Array[_]                                   => fromValues(a.map(encode))
-          case _ if !failOnUnknown                           => safeString(any.toString)
+          case a: java.util.Map[_, _] if allTheKeysAreJavaMaps(a.keySet())       => encodeComplexJavaMap(a)
+          case a: scala.collection.Map[_, _] if allTheKeysAreScalaMaps(a.keySet) => encodeComplexScalaMap(a)
+          case a: scala.collection.Map[String @unchecked, _]                     => encodeMap(a.toMap)
+          case a: java.util.Map[String @unchecked, _]                            => encodeMap(a.asScala.toMap)
+          case a: Iterable[_]                                                    => fromValues(a.map(encode))
+          case a: Enum[_]                                                        => safeString(a.toString)
+          case a: java.util.Collection[_]                                        => fromValues(a.asScala.map(encode))
+          case a: Array[_]                                                       => fromValues(a.map(encode))
+          case _ if !failOnUnknown                                               => safeString(any.toString)
           case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
         }
     )
@@ -108,6 +89,33 @@ case class BestEffortJsonEncoder(
       case Some(realValue) => fun(realValue)
       case None            => Null
     }
+
+  private def encodeComplexJavaMap(a: java.util.Map[_, _]) = {
+    val castedMap = a.asInstanceOf[java.util.Map[java.util.Map[String, _], _]]
+    val keys      = castedMap.keySet().asScala.toList
+    val m = keys.map { keyMap =>
+      val v              = castedMap.get(keyMap)
+      val encodedKey     = encode(keyMap)
+      val stringifiedKey = encodedKey.noSpaces
+      (stringifiedKey, v)
+    }.toMap
+
+    encodeMap(m)
+  }
+
+  private def encodeComplexScalaMap(a: scala.collection.Map[_, _]) = {
+    val castedMap = a.asInstanceOf[scala.collection.Map[scala.collection.Map[String, _], _]]
+    val keys      = castedMap.keySet.toList
+
+    val m = keys.map { keyMap =>
+      val v: Any         = castedMap(keyMap)
+      val encodedKey     = encode(keyMap)
+      val stringifiedKey = encodedKey.noSpaces
+      (stringifiedKey, v)
+    }.toMap
+
+    encodeMap(m)
+  }
 
   private def encodeMap(map: Map[String, _]) = {
     fromFields(map.mapValuesNow(encode))
