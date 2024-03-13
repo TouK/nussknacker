@@ -10,9 +10,9 @@ sidebar_position: 5
 
 Computations in different forms of time windows are the very essence of stream processing. Results of functions applied to all events which fall into the particular time window can bring valuable insights in fraud detection, IoT events, clickstream analysis, etc. A good introduction to aggregating events in streams can be found in this [article](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/time/#windowing).
 
-Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only).
+Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so watch out for the differences. 
 
-Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bear in mind the differences. 
+Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only).
 
 
 ## Common behavior
@@ -176,7 +176,7 @@ A frequent requirement is to access a field from the groupBy clause downstream t
 
 ![alt_text](img/keyExtraction.png "extracting key from the composite key")
 
-The subscriberId will be available in `#totalTransfers.subscriberId` variable.
+The subscriberId will be available in a `#totalTransfers.subscriberId` variable.
 
 ## Single-side-join
 
