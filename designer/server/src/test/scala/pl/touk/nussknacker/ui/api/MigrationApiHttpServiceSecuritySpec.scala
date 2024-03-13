@@ -55,7 +55,7 @@ class MigrationApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
+          .equalsPlainBody("User doesn't have access to the given category")
       }
       "forbid access for user with limited writing permissions" in {
         given()
@@ -83,7 +83,7 @@ class MigrationApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
+          .equalsPlainBody("User doesn't have access to the given category")
       }
     }
   }
@@ -105,7 +105,7 @@ class MigrationApiHttpServiceSecuritySpec
        |{
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
-       |  "engineSetupName": "Flink",
+       |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",
        |  "isFragment": false,
        |  "processingType": "streaming1",

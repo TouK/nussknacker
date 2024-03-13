@@ -184,7 +184,7 @@ class MigrationApiHttpServiceBusinessSpec
        |{
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
-       |  "engineSetupName": "Flink",
+       |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",
        |  "isFragment": $isFragment,
        |  "processingType": "streaming1",
