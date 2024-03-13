@@ -90,7 +90,7 @@ class FullOuterJoinTransformer(
               agg
                 .computeOutputType(aggregateByByBranchId(id))
                 .leftMap(x => {
-                  val branchParamId = ParameterNaming.getNameForBranchParameter(AggregateByParam.parameter, id)
+                  val branchParamId = AggregateByParam.parameter.name.withBranchId(id)
                   NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))
                 })
                 .map(id -> _)
