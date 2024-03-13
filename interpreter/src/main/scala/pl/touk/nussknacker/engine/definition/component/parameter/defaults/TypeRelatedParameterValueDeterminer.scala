@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 
 import pl.touk.nussknacker.engine.api.definition.{
+  DictParameterEditor,
+  DualParameterEditor,
   ParameterEditor,
-  RawParameterEditor,
   SpelTemplateParameterEditor,
-  SqlParameterEditor,
-  StringParameterEditor
+  SqlParameterEditor
 }
 import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
 
 protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultValueDeterminer {
 
@@ -45,6 +46,8 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
       .collect { // TODO: maybe some better way to specify language like Parameter.language
         case SpelTemplateParameterEditor => Expression.spelTemplate("") // template not need to be wrapped in ''
         case SqlParameterEditor          => Expression.spelTemplate("")
+        case DictParameterEditor(_)      => Expression(DictKeyWithLabel, "")
+        case DualParameterEditor(DictParameterEditor(_), _) => Expression(DictKeyWithLabel, "")
       }
       .getOrElse(Expression.spel("''"))
 

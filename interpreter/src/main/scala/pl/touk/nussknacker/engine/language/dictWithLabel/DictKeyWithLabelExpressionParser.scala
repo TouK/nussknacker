@@ -43,15 +43,19 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
 
   def parseDictKeyWithLabelExpression(
       keyWithLabelJson: String
-  ): Validated[NonEmptyList[KeyWithLabelExpressionParsingError], DictKeyWithLabelExpression] =
-    parser.parse(keyWithLabelJson) match {
-      case Left(e) => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
-      case Right(json) =>
-        json.as[DictKeyWithLabelExpression] match {
-          case Right(expr) => Valid(expr)
-          case Left(e)     => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
-        }
-    }
+  ): Validated[NonEmptyList[KeyWithLabelExpressionParsingError], DictKeyWithLabelExpression] = {
+    if (keyWithLabelJson.isBlank || keyWithLabelJson == "null")
+      Valid(DictKeyWithLabelExpression("", None))
+    else
+      parser.parse(keyWithLabelJson) match {
+        case Left(e) => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
+        case Right(json) =>
+          json.as[DictKeyWithLabelExpression] match {
+            case Right(expr) => Valid(expr)
+            case Left(e)     => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
+          }
+      }
+  }
 
   case class CompiledDictKeyExpression(key: String, expectedType: TypingResult) extends CompiledExpression {
     override def language: Language = languageId
@@ -64,7 +68,9 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
       } else if (expectedType.canBeSubclassOf(Typed[String])) {
         key.asInstanceOf[T]
       } else {
-        throw new IllegalStateException(s"DictKeyExpression of unsupported type: ${key.getClass}")
+        throw new IllegalStateException(
+          s"DictKeyExpression expected type: ${expectedType.display} is unsupported. It must be a subclass of Long, Boolean or String"
+        )
       }
     }
 

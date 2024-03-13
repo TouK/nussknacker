@@ -17,7 +17,7 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
         `type` = SimpleEditorType.DICT_EDITOR,
         dictId = "rgb"
       )
-      rgb: Option[String],
+      rgb: String,
       @ParamName("BooleanDict")
       @DualEditor(
         simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "boolean_dict"),
@@ -29,11 +29,18 @@ class ServiceWithDictParameterEditor extends Service with Serializable with Time
         `type` = SimpleEditorType.DICT_EDITOR,
         dictId = "long_dict"
       )
-      longDict: Option[java.lang.Long]
+      longDict: Option[java.lang.Long],
+      @ParamName("RGBDictRAW")
+      @DualEditor(
+        simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DICT_EDITOR, dictId = "rgb"),
+        defaultMode = DualEditorMode.RAW
+      )
+      rgbRaw: Option[String]
   ): Future[String] = {
-    Future.successful(s"""RGBDict value to lowercase: ${rgb.map(_.toLowerCase)}
+    Future.successful(s"""RGBDict value to lowercase: ${rgb.toLowerCase}
          |LongDict value + 1: ${longDict.map(_ + 1)}
-         |BooleanDict value negation: ${booleanDict.map(!_)}""".stripMargin)
+         |BooleanDict value negation: ${booleanDict.map(!_)}
+         |RGBDictRAW value to lowercase: ${rgbRaw.map(_.toLowerCase)}""".stripMargin)
   }
 
 }

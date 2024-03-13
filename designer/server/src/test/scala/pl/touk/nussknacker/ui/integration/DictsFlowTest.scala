@@ -76,16 +76,18 @@ class DictsFlowTest
         "serviceWithDictParameterEditor",
         "RGBDict"     -> Expression.dictKeyWithLabel("H000000", Some("Black")),
         "BooleanDict" -> Expression.dictKeyWithLabel("true", Some("OLD LABEL")),
-        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number"))
+        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number")),
+        "RGBDictRAW"  -> Expression.spel("'someOtherColour'"),
       )
       .emptySink(EndNodeId, "dead-end-lite")
 
     saveProcessAndTestIt(
       process,
       expressionUsingDictWithLabel = None,
-      expectedResult = """RGBDict value to lowercase: Some(h000000)
+      expectedResult = """RGBDict value to lowercase: h000000
          |LongDict value + 1: Some(-1500100899)
-         |BooleanDict value negation: Some(false)""".stripMargin,
+         |BooleanDict value negation: Some(false)
+         |RGBDictRAW value to lowercase: Some(someothercolour)""".stripMargin,
       variableToCheck = "data"
     )
 

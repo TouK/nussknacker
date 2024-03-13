@@ -222,11 +222,18 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
         )
     }
 
-    editor match {
-      case Some(DictParameterEditor(dictId))                         => substitute(dictId)
-      case Some(DualParameterEditor(DictParameterEditor(dictId), _)) => substitute(dictId)
-      case _                                                         => Valid(expression)
-    }
+    if (expression.language == Language.DictKeyWithLabel && !expression.expression.isBlank && expression.expression != "null") // TODO: this isn't the prettiest check
+      editor match {
+        case Some(DictParameterEditor(dictId)) => substitute(dictId)
+        case Some(DualParameterEditor(DictParameterEditor(dictId), _)) =>
+          substitute(dictId) // in `RAW` mode, expression.language is SpEL, and no substitution/validation is done
+        case editor =>
+          throw new IllegalStateException(
+            s"DictKeyWithLabel expression can only be used with DictParameterEditor, got $editor"
+          )
+      }
+    else
+      Valid(expression)
   }
 
   def compileValidator(
