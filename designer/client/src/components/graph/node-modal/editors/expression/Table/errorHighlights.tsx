@@ -1,10 +1,10 @@
+import { DataEditorRef, DrawCellCallback, GridSelection } from "@glideapps/glide-data-grid";
+import type { GridMouseEventArgs } from "@glideapps/glide-data-grid/src/internal/data-grid/event-args";
+import type { Highlight } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 import { alpha, styled, Tooltip, tooltipClasses, TooltipProps, useTheme } from "@mui/material";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { FieldError } from "../../Validators";
 import { DataColumn } from "./state/tableState";
-import { DataEditorRef, DrawCellCallback, GridSelection } from "@glideapps/glide-data-grid";
-import type { GridMouseEventArgs } from "@glideapps/glide-data-grid/src/internal/data-grid/event-args";
-import type { Highlight } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 
 // it's easier to fake children than creating something new
 const StyledTooltip = styled(({ className, ...props }: Omit<TooltipProps, "children">) => (
@@ -33,10 +33,10 @@ export function useErrorHighlights(fieldErrors: FieldError[], columns: DataColum
         () =>
             fieldErrors.flatMap((e) =>
                 e.details?.cellErrors
-                    ?.map(({ rowIdx, ...e }) => ({
+                    ?.map(({ rowIndex, ...e }) => ({
                         ...e,
                         x: columns.findIndex((c) => c.name === e.columnName),
-                        y: rowIdx,
+                        y: rowIndex,
                     }))
                     .filter((e) => e?.x >= 0),
             ),
@@ -75,7 +75,7 @@ export function useErrorHighlights(fieldErrors: FieldError[], columns: DataColum
             setTooltipOpen(() => {
                 if (rect && error) {
                     positionRef.current = rect;
-                    setTooltipMessage(error.message);
+                    setTooltipMessage(error.errorMessage);
                     return true;
                 } else {
                     return false;
