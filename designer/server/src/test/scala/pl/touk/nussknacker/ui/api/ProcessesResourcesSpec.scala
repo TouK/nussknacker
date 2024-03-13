@@ -161,6 +161,20 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("return non-validated process with state skipped") {
+    createEmptyScenario(processName, category = Category1)
+
+    Get(
+      s"/api/processes/$processName?skipValidateAndResolve=true&skipState=true"
+    ) ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val validated = responseAs[ScenarioWithDetails]
+      validated.name shouldBe processName
+      validated.validationResult shouldBe empty
+      validated.state shouldBe None
+    }
+  }
+
   // FIXME: Implement fragment validation
   ignore("not allow to archive still used fragment") {
     val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
