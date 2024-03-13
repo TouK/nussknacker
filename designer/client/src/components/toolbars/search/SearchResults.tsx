@@ -34,22 +34,31 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
         [dispatch, isNodeSelected, openNodeWindow, scenario],
     );
     const highlightNode = useCallback((node: NodeType) => () => setHoveredNodes([node.id]), []);
-    const clearHighlight = useCallback(() => setHoveredNodes([]), []);
+    const clearHighlight = useCallback(() => setHoveredNodes((current) => (!current?.length ? current : [])), []);
 
     useEffect(() => {
         const graph = graphGetter();
-        if (!graph) return;
+
+        if (!graph || !nodes.length) {
+            setHasFocus(false);
+            clearHighlight();
+            return;
+        }
 
         const nodeIds = nodes.map(({ data: [{ id }] }) => id);
         graph.panToNodes(nodeIds);
-        nodeIds.forEach((id) => graph.highlightNode(id, nodeFound));
-        hoveredNodes.forEach((id) => graph.highlightNode(id, nodeFoundHover));
+        nodeIds.forEach((id) => {
+            graph.highlightNode(id, nodeFound);
+            if (hoveredNodes.includes(id)) {
+                graph.highlightNode(id, nodeFoundHover);
+            }
+        });
 
         return () => {
             nodeIds.forEach((id) => graph.unhighlightNode(id, nodeFound));
             hoveredNodes.forEach((id) => graph.unhighlightNode(id, nodeFoundHover));
         };
-    }, [nodes, graphGetter, hoveredNodes]);
+    }, [nodes, graphGetter, hoveredNodes, clearHighlight]);
 
     return (
         <MenuList onFocus={() => setHasFocus(true)} onBlur={() => setHasFocus(false)} tabIndex={-1} sx={{ padding: 0 }}>
