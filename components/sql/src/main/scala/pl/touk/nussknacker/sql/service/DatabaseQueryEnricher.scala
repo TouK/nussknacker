@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import cats.Id
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import pl.touk.nussknacker.engine.api._
@@ -10,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
+import pl.touk.nussknacker.engine.api.definition.ParameterExtractor.IsPresent
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -31,7 +33,7 @@ object DatabaseQueryEnricher {
 
   final val cacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
-  final val cacheTTLParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
+  final val cacheTTLParamDeclaration: ParameterExtractor[IsPresent, Duration] with ParameterCreatorWithNoDependency =
     ParameterDeclaration
       .optional[Duration](cacheTTLParamName)
       .withCreator(
@@ -48,7 +50,7 @@ object DatabaseQueryEnricher {
 
   final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
-  final val resultStrategyParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
+  final val resultStrategyParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, String] = {
     ParameterDeclaration
       .mandatory[String](resultStrategyParamName)
       .withCreator(
@@ -244,10 +246,10 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     val state          = finalState.get
     val cacheTTLOption = cacheTTLParamDeclaration.extractValue(params)
     val createInvoker = cacheTTLOption match {
-      case None =>
-        new DatabaseEnricherInvoker(_, _, _, _, _, _, _, _, _)
-      case Some(cacheTTL) =>
+      case IsPresent.Yes(Some(cacheTTL)) =>
         new DatabaseEnricherInvokerWithCache(_, _, _, _, _, cacheTTL, _, _, _, _)
+      case IsPresent.No | IsPresent.Yes(None) =>
+        new DatabaseEnricherInvoker(_, _, _, _, _, _, _, _, _)
     }
     createInvoker(
       state.query,

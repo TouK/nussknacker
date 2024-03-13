@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.source.delayed
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.definition.ParameterExtractor.IsPresent
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -9,20 +10,19 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, Typ
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.util.TimestampUtils
 
-import java.lang
-
 object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
-  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[lang.Long] =
+  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[IsPresent, java.lang.Long] =
     ParameterDeclaration
       .optional[java.lang.Long](ParameterName("delayInMillis"))
       .withCreator(modify = _.copy(validators = delayValidators))
 
   final val timestampFieldParamName = ParameterName("timestampField")
 
-  final val fallbackTimestampFieldParameter: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
+  final val fallbackTimestampFieldParameter
+      : ParameterCreatorWithNoDependency with ParameterExtractor[IsPresent, String] =
     ParameterDeclaration
       .optional[String](timestampFieldParamName)
       .withCreator(modify =
@@ -36,7 +36,7 @@ object DelayedKafkaSourceFactory {
   // until sources will be migrated to non-deprecated Source APi.
   def timestampFieldParameter(
       kafkaRecordValueType: Option[TypingResult]
-  ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[IsPresent, String] = {
     val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
@@ -55,10 +55,11 @@ object DelayedKafkaSourceFactory {
       .withCreator(modify = _.copy(editor = editorOpt))
   }
 
-  // todo: fixme
-  def extractTimestampField(params: Params): Option[String] = fallbackTimestampFieldParameter.extractValue(params)
+  def extractTimestampField(params: Params): Option[String] =
+    fallbackTimestampFieldParameter.extractValue(params).toOption.flatten
 
-  def extractDelayInMillis(params: Params): Option[java.lang.Long] = delayParameter.extractValue(params)
+  def extractDelayInMillis(params: Params): Option[java.lang.Long] =
+    delayParameter.extractValue(params).toOption.flatten
 
   def validateTimestampField(field: String, typingResult: TypingResult)(
       implicit nodeId: NodeId

@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import FixedExpressionValue.nullFixedValue
+import cats.Id
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
@@ -66,7 +67,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def getTopicParam(
       implicit nodeId: NodeId
-  ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
+  ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[Id, String]] = {
     val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
@@ -102,7 +103,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def getVersionParam(
       preparedTopic: PreparedKafkaTopic
-  )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
+  )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[Id, String]] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
@@ -116,7 +117,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def getVersionParam(
       versions: List[Integer]
-  ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[Id, String] = {
     val versionValues =
       FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v =>
         FixedExpressionValue(s"'$v'", v.toString)
@@ -193,7 +194,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   // edge case - for some reason Topic is not defined
   @transient protected lazy val fallbackVersionOptionParam
-      : ParameterCreatorWithNoDependency with ParameterExtractor[String] =
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, String] =
     getVersionParam(Nil)
 
   // override it if you use other parameter name for topic

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.common.components
 
+import cats.Id
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -28,7 +29,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object BasicDecisionTableParameter {
     val name: ParameterName = ParameterName("Basic Decision Table")
 
-    val declaration: ParameterCreatorWithNoDependency with ParameterExtractor[TabularTypedData] =
+    val declaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, TabularTypedData] =
       ParameterDeclaration
         .mandatory[TabularTypedData](name)
         .withCreator(_.copy(editor = Some(TabularTypedDataEditor)))
@@ -38,7 +39,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object FilterDecisionTableExpressionParameter {
     val name: ParameterName = ParameterName("Expression")
 
-    val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
+    val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[Id, LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
         .lazyMandatory[java.lang.Boolean](name)
         .withAdvancedCreator[TabularTypedData](

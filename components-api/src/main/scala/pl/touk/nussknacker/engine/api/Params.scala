@@ -4,6 +4,8 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 final case class Params(nameToValueMap: Map[ParameterName, Any]) {
 
+  def isPresent(name: ParameterName): Boolean = nameToValueMap.get(name).isDefined
+
   def extract[T](name: ParameterName): Option[T] = {
     extractValue(name).map(cast[T])
   }

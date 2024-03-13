@@ -796,8 +796,8 @@ object SampleNodes {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
-      val aTypeValue   = aTypeDeclaration.extractValue(params)
-      val versionValue = versionDeclaration.extractValue(params)
+      val aTypeValue   = aTypeDeclaration.extractValueUnsafe(params)
+      val versionValue = versionDeclaration.extractValueUnsafe(params)
       val out          = s"$aTypeValue-$versionValue"
       CollectionSource(out :: Nil, None, Typed[String])
     }
@@ -960,8 +960,8 @@ object SampleNodes {
 
       type Value = String
 
-      private val typeValue    = aTypeParamDeclaration.extractValue(params)
-      private val versionValue = versionParamDeclaration.extractValue(params)
+      private val typeValue    = aTypeParamDeclaration.extractValueUnsafe(params)
+      private val versionValue = versionParamDeclaration.extractValueUnsafe(params)
 
       override def prepareValue(
           dataStream: DataStream[Context],

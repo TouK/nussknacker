@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.join
 
+import cats.Id
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -192,18 +193,20 @@ class SingleSideJoinTransformer(
 case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
 
   val BranchTypeParamName: ParameterName = ParameterName("branchType")
-  val BranchTypeParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, BranchType]] =
+
+  val BranchTypeParamDeclaration
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, BranchType]] =
     ParameterDeclaration.branchMandatory[BranchType](BranchTypeParamName).withCreator()
 
   val KeyParamName: ParameterName = ParameterName("key")
 
   val KeyParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[CharSequence]]] =
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, LazyParameter[CharSequence]]] =
     ParameterDeclaration.branchLazyMandatory[CharSequence](KeyParamName).withCreator()
 
   val AggregatorParamName: ParameterName = ParameterName("aggregator")
 
-  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Aggregator] =
+  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, Aggregator] =
     ParameterDeclaration
       .mandatory[Aggregator](AggregatorParamName)
       .withCreator(
@@ -214,7 +217,7 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
       )
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
-  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
+  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, Duration] =
     ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
 
   val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
