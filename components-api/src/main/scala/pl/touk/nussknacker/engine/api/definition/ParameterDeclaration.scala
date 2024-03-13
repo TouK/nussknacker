@@ -65,7 +65,7 @@ sealed trait ParameterCreatorWithNoDependency extends Serializable {
 
 sealed trait ParameterExtractor[+PARAMETER_VALUE_TYPE] extends Serializable {
   def parameterName: ParameterName
-  def extractValue(params: Params): PARAMETER_VALUE_TYPE
+  def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE]
 
   private[definition] def createBase: Parameter
 }
@@ -120,7 +120,7 @@ object ParameterExtractor {
 
   final class OptionalParamExtractor[PARAMETER_VALUE_TYPE: TypeTag] private[definition] (
       override val parameterName: ParameterName,
-  ) extends ParameterExtractor[Option[PARAMETER_VALUE_TYPE]] {
+  ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
     override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] =
       params.extract[PARAMETER_VALUE_TYPE](parameterName)
 
@@ -130,7 +130,7 @@ object ParameterExtractor {
 
   final class OptionalLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
       override val parameterName: ParameterName,
-  ) extends ParameterExtractor[Option[LazyParameter[PARAMETER_VALUE_TYPE]]] {
+  ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
     override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
       params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
 
@@ -140,7 +140,7 @@ object ParameterExtractor {
 
   final class OptionalBranchParamExtractor[PARAMETER_VALUE_TYPE: TypeTag] private[definition] (
       override val parameterName: ParameterName,
-  ) extends ParameterExtractor[Option[Map[String, PARAMETER_VALUE_TYPE]]] {
+  ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
     override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
       params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
@@ -150,7 +150,7 @@ object ParameterExtractor {
 
   final class OptionalBranchLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
       override val parameterName: ParameterName,
-  ) extends ParameterExtractor[Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]]] {
+  ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
 
     override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
       params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
