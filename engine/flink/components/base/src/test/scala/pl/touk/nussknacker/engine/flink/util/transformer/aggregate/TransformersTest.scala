@@ -325,7 +325,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     lazy val run = runProcess(model, resolvedScenario)
 
-    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input,None)"
+    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some(ParameterName($expression)),#input,None)"
   }
 
   test("sum tumbling aggregate emit on event, emit context of variables") {
