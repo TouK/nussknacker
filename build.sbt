@@ -19,7 +19,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 val scala212 = "2.12.10"
 val scala213 = "2.13.12"
 
-val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
+val defaultScalaV = sys.env.getOrElse("SCALA_VERSION", "2.13") match {
   case "2.12" => scala212
   case "2.13" => scala213
 }

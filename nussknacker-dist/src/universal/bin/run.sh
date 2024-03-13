@@ -30,6 +30,12 @@ export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}
 export GRAFANA_URL=${GRAFANA_URL:-http://localhost:3000}
 export INFLUXDB_URL=${INFLUXDB_URL:-http://localhost:8086}
 
+if [ "$JAVA_DEBUG_PORT" == "" ]; then
+  JAVA_DEBUG_OPTS=""
+else
+  JAVA_DEBUG_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$JAVA_DEBUG_PORT"
+fi
+
 if [ "$PROMETHEUS_METRICS_PORT" == "" ]; then
   JAVA_PROMETHEUS_OPTS=""
 else
@@ -53,7 +59,7 @@ if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo "Starting Nussknacker in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
+  exec java $JDK_JAVA_OPTIONS $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp >> $LOG_FILE 2>&1 &
   set +x
   echo $! > $PID_FILE
   echo "Nussknacker up and running"
@@ -61,6 +67,6 @@ else
   echo -e "JVM: `java -version`\n"
   echo "Starting Nussknacker"
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
+  exec java $JDK_JAVA_OPTIONS $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.ui.NussknackerApp
   set +x
 fi
