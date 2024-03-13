@@ -72,8 +72,10 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
                     onFocus={highlightNode(node)}
                     onMouseLeave={clearHighlight}
                     onBlur={clearHighlight}
+                    disableGutters
+                    divider
                 >
-                    <FoundNode node={node} edges={edges} highlights={filterValues} names={groups} />
+                    <FoundNode node={node} edges={edges} highlights={filterValues} fields={groups} />
                 </MenuItem>
             ))}
         </MenuList>

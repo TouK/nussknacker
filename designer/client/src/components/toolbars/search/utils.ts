@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { getScenario } from "../../../reducers/selectors/graph";
 import NodeUtils from "../../graph/NodeUtils";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 type SelectorResult = { expression: string } | string;
 type Selector = (data: [NodeType, Edge[]]) => SelectorResult | SelectorResult[];
@@ -49,7 +50,7 @@ const selectors: FilterSelector = [
         selector: ([node]) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.name),
     },
     {
-        name: "edge",
+        name: "edgeExpression",
         selector: ([, edges]) => {
             return edges.map((e) => e.edgeType?.condition);
         },
@@ -74,22 +75,35 @@ export function useFilteredNodes(filterValues: string[]): {
     groups: string[];
     data: [NodeType, Edge[]];
 }[] {
+    const { t } = useTranslation();
     const { scenarioGraph } = useSelector(getScenario);
     const nodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
+
+    const displayNames = useMemo(
+        () => ({
+            id: t("panels.search.field.id", "Name"),
+            description: t("panels.search.field.description", "Description"),
+            type: t("panels.search.field.type", "Type"),
+            paramName: t("panels.search.field.paramName", "Label"),
+            paramValue: t("panels.search.field.paramValue", "Value"),
+            outputValue: t("panels.search.field.outputValue", "Output"),
+            edgeExpression: t("panels.search.field.edgeExpression", "Edge"),
+        }),
+        [t],
+    );
 
     return useMemo(
         () =>
             nodes
                 .map((node) => {
                     const data: [NodeType, Edge[]] = [node, edges.filter((e) => e.from === node.id)];
-                    const groups = findFields(filterValues, data);
-                    return {
-                        data,
-                        groups,
-                    };
+                    const groups = findFields(filterValues, data)
+                        .map((name) => displayNames[name])
+                        .filter(Boolean);
+                    return { data, groups };
                 })
                 .filter(({ groups }) => groups.length),
-        [edges, filterValues, nodes],
+        [displayNames, edges, filterValues, nodes],
     );
 }

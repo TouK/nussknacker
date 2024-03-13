@@ -1,33 +1,33 @@
 import { Edge, NodeType } from "../../../types";
-import { ListItemText, Stack, Typography } from "@mui/material";
+import { Stack, styled, Typography } from "@mui/material";
 import React from "react";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
+import { ComponentIcon } from "../creator/ComponentIcon";
 
 type Props = {
     node: NodeType;
     edges: Edge[];
     highlights: string[];
-    names: string[];
+    fields: string[];
 };
 
-export function FoundNode({ node, edges, highlights, names }: Props) {
+const NodeIcon = styled(ComponentIcon)({
+    minWidth: "1.5em",
+    maxWidth: "1.5em",
+    minHeight: "1.5em",
+    maxHeight: "1.5em",
+});
+
+export function FoundNode({ node, edges, highlights, fields }: Props) {
     return (
-        <ListItemText
-            primary={<SearchHighlighter highlights={highlights}>{node.id}</SearchHighlighter>}
-            primaryTypographyProps={{ component: "span" }}
-            secondary={
-                <Stack spacing={1}>
-                    <SearchHighlighter highlights={highlights}>{node.additionalFields?.description}</SearchHighlighter>
-                    <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
-                        {names.map((n) => (
-                            <Typography component="span" key={n} variant="caption">
-                                {n.toUpperCase()}
-                            </Typography>
-                        ))}
-                    </Stack>
-                </Stack>
-            }
-            secondaryTypographyProps={{ component: "span" }}
-        />
+        <Stack spacing={0.5} padding={0.5}>
+            <Typography variant="body1" component={Stack} direction="row" spacing={0.5} whiteSpace="normal">
+                <NodeIcon node={node} sx={{}} />
+                <SearchHighlighter highlights={highlights}>{node.id}</SearchHighlighter>
+            </Typography>
+            <Typography variant="caption" paddingX={0.5} color={(t) => t.palette.text.disabled} whiteSpace="normal">
+                {fields.join(", ")}
+            </Typography>
+        </Stack>
     );
 }
