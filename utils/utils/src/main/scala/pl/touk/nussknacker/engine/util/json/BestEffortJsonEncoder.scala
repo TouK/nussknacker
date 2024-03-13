@@ -71,10 +71,10 @@ case class BestEffortJsonEncoder(
           case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
           case a: UUID           => safeString(a.toString)
           case a: DisplayJson    => a.asJson
+          case a: java.util.Map[String @unchecked, _] if allTheKeysAreStrings(a.keySet()) => encodeMap(a.asScala.toMap)
+          case a: scala.collection.Map[String @unchecked, _] if allTheKeysAreStrings(a.keySet) => encodeMap(a.toMap)
           case a: java.util.Map[_, _] if allTheKeysAreJavaMaps(a.keySet())       => encodeComplexJavaMap(a)
           case a: scala.collection.Map[_, _] if allTheKeysAreScalaMaps(a.keySet) => encodeComplexScalaMap(a)
-          case a: scala.collection.Map[String @unchecked, _]                     => encodeMap(a.toMap)
-          case a: java.util.Map[String @unchecked, _]                            => encodeMap(a.asScala.toMap)
           case a: Iterable[_]                                                    => fromValues(a.map(encode))
           case a: Enum[_]                                                        => safeString(a.toString)
           case a: java.util.Collection[_]                                        => fromValues(a.asScala.map(encode))
@@ -131,6 +131,18 @@ case class BestEffortJsonEncoder(
     keys.asScala.forall {
       case _: java.util.Map[String @unchecked, _] => true
       case _                                      => false
+    }
+
+  private def allTheKeysAreStrings(keys: java.util.Set[_]): Boolean =
+    keys.asScala.forall {
+      case _: String => true
+      case _         => false
+    }
+
+  private def allTheKeysAreStrings(keys: scala.collection.Set[_]): Boolean =
+    keys.forall {
+      case _: String => true
+      case _         => false
     }
 
 }
