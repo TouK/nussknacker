@@ -642,6 +642,12 @@ export class Graph extends React.Component<Props> {
         });
     }
 
+    panToNodes = (nodeIds: string[]) => {
+        // const cells = nodeIds.map((nodeId) => this.graph.getCell(nodeId));
+        // TODO: pan and zoom to filtered cells only
+        this.panAndZoom.fitSmallAndLargeGraphs();
+    };
+
     private viewportAdjustment: { left: number; right: number } = { left: 0, right: 0 };
     adjustViewport = (adjustment: { left?: number; right?: number } = {}) => {
         this.viewportAdjustment = { ...this.viewportAdjustment, ...adjustment };

@@ -25,7 +25,11 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
     const isNodeSelected = useCallback((node: NodeType) => selectionState.includes(node.id), [selectionState]);
     const selectOrOpen = useCallback(
         (node: NodeType) => () => {
-            isNodeSelected(node) ? openNodeWindow(node, scenario) : dispatch(resetSelection(node.id));
+            if (isNodeSelected(node)) {
+                openNodeWindow(node, scenario);
+            } else {
+                dispatch(resetSelection(node.id));
+            }
         },
         [dispatch, isNodeSelected, openNodeWindow, scenario],
     );
@@ -34,8 +38,10 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
 
     useEffect(() => {
         const graph = graphGetter();
-        const nodeIds = nodes.map(({ data: [{ id }] }) => id);
+        if (!graph) return;
 
+        const nodeIds = nodes.map(({ data: [{ id }] }) => id);
+        graph.panToNodes(nodeIds);
         nodeIds.forEach((id) => graph.highlightNode(id, nodeFound));
         hoveredNodes.forEach((id) => graph.highlightNode(id, nodeFoundHover));
 
