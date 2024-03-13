@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -638,25 +639,35 @@ object SampleNodes {
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
-          List(Parameter[String]("par1"), Parameter[java.lang.Boolean]("lazyPar1").copy(isLazyParameter = true))
+          List(
+            Parameter[String](ParameterName("par1")),
+            Parameter[java.lang.Boolean](ParameterName("lazyPar1")).copy(isLazyParameter = true)
+          )
         )
-      case TransformationStep(("par1", DefinedEagerParameter(value: String, _)) :: ("lazyPar1", _) :: Nil, None) =>
+      case TransformationStep(
+            (ParameterName("par1"), DefinedEagerParameter(value: String, _)) :: (ParameterName("lazyPar1"), _) :: Nil,
+            None
+          ) =>
         val split = value.split(",").toList
-        NextParameters(split.map(Parameter(_, Unknown)), state = Some(split))
-      case TransformationStep(("par1", FailedToDefineParameter) :: ("lazyPar1", _) :: Nil, None) =>
+        NextParameters(split.map(name => Parameter(ParameterName(name), Unknown)), state = Some(split))
+      case TransformationStep(
+            (ParameterName("par1"), FailedToDefineParameter) :: (ParameterName("lazyPar1"), _) :: Nil,
+            None
+          ) =>
         outputParameters(context, dependencies, Nil)
-      case TransformationStep(("par1", _) :: ("lazyPar1", _) :: rest, Some(names)) if rest.map(_._1) == names =>
+      case TransformationStep((ParameterName("par1"), _) :: (ParameterName("lazyPar1"), _) :: rest, Some(names))
+          if rest.map(_._1.value) == names =>
         outputParameters(context, dependencies, rest)
     }
 
     private def outputParameters(
         context: ValidationContext,
         dependencies: List[NodeDependencyValue],
-        rest: List[(String, BaseDefinedParameter)]
+        rest: List[(ParameterName, BaseDefinedParameter)]
     )(implicit nodeId: NodeId): this.FinalResults = {
       dependencies.collectFirst { case OutputVariableNameValue(name) => name } match {
         case Some(name) =>
-          val result = Typed.record(rest.map { case (k, v) => k -> v.returnType }.toMap)
+          val result = Typed.record(rest.map { case (k, v) => k.value -> v.returnType }.toMap)
           FinalResults.forValidation(context)(_.withVariable(OutputVar.customNode(name), result))
         case None =>
           FinalResults(context, errors = List(CustomNodeError("Output not defined", None)))
@@ -668,13 +679,14 @@ object SampleNodes {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): AnyRef = {
-      val map  = params.nameToValueMap.filterNot(k => List("par1", "lazyPar1").contains(k._1))
-      val bool = params.extractUnsafe[LazyParameter[java.lang.Boolean]]("lazyPar1")
+      val map =
+        params.nameToValueMap.filterNot(k => List(ParameterName("par1"), ParameterName("lazyPar1")).contains(k._1))
+      val bool = params.extractUnsafe[LazyParameter[java.lang.Boolean]](ParameterName("lazyPar1"))
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
           .map(
-            (ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx),
+            (ctx: Context) => ValueWithContext[AnyRef](TypedMap(map.map { case (k, v) => (k.value, v) }), ctx),
             fctx.valueWithContextInfo.forUnknown
           )
       })
@@ -734,7 +746,7 @@ object SampleNodes {
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
-          Parameter[String]("type")
+          Parameter[String](ParameterName("type"))
             .copy(editor =
               Some(
                 FixedValuesParameterEditor(
@@ -743,7 +755,7 @@ object SampleNodes {
               )
             ) :: Nil
         )
-      case TransformationStep(("type", DefinedEagerParameter(value: String, _)) :: Nil, None) =>
+      case TransformationStep((ParameterName("type"), DefinedEagerParameter(value: String, _)) :: Nil, None) =>
         // This is just sample, so we don't care about all cases, in *real* transformer we would e.g. take lists from config file, external service etc.
         val versions = value match {
           case "type1" => List(1, 2)
@@ -751,14 +763,14 @@ object SampleNodes {
           case _       => ???
         }
         NextParameters(
-          Parameter[Int]("version")
+          Parameter[Int](ParameterName("version"))
             .copy(editor =
               Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
             ) :: Nil
         )
-      case TransformationStep(("type", FailedToDefineParameter) :: Nil, None) =>
+      case TransformationStep((ParameterName("type"), FailedToDefineParameter) :: Nil, None) =>
         output(context, dependencies)
-      case TransformationStep(("type", _) :: ("version", _) :: Nil, None) =>
+      case TransformationStep((ParameterName("type"), _) :: (ParameterName("version"), _) :: Nil, None) =>
         output(context, dependencies)
     }
 
@@ -775,7 +787,8 @@ object SampleNodes {
         dependencies: List[NodeDependencyValue],
         finalState: Option[State]
     ): Source = {
-      val out = s"${params.extractUnsafe("type")}-${params.extractUnsafe("version")}"
+      val out =
+        s"${params.extractUnsafe(ParameterName("type"))}-${params.extractUnsafe(ParameterName("version"))}"
       CollectionSource(out :: Nil, None, Typed[String])
     }
 
@@ -828,7 +841,7 @@ object SampleNodes {
     override type State = Nothing
 
     // There is only one parameter in this source
-    private val elementsParamName = "elements"
+    private val elementsParamName = ParameterName("elements")
 
     private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
@@ -879,7 +892,8 @@ object SampleNodes {
     ): this.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(
-          Parameter[String]("value").copy(isLazyParameter = true) :: Parameter[String]("type")
+          Parameter[String](ParameterName("value"))
+            .copy(isLazyParameter = true) :: Parameter[String](ParameterName("type"))
             .copy(editor =
               Some(
                 FixedValuesParameterEditor(
@@ -888,20 +902,31 @@ object SampleNodes {
               )
             ) :: Nil
         )
-      case TransformationStep(("value", _) :: ("type", DefinedEagerParameter(value: String, _)) :: Nil, None) =>
+      case TransformationStep(
+            (ParameterName("value"), _) :: (ParameterName("type"), DefinedEagerParameter(value: String, _)) :: Nil,
+            None
+          ) =>
         val versions = value match {
           case "type1" => List(1, 2)
           case "type2" => List(3, 4)
           case _       => ???
         }
         NextParameters(
-          Parameter[Int]("version")
+          Parameter[Int](ParameterName("version"))
             .copy(editor =
               Some(FixedValuesParameterEditor(versions.map(v => FixedExpressionValue(v.toString, v.toString))))
             ) :: Nil
         )
-      case TransformationStep(("value", _) :: ("type", FailedToDefineParameter) :: Nil, None) => FinalResults(context)
-      case TransformationStep(("value", _) :: ("type", _) :: ("version", _) :: Nil, None)     => FinalResults(context)
+      case TransformationStep(
+            (ParameterName("value"), _) :: (ParameterName("type"), FailedToDefineParameter) :: Nil,
+            None
+          ) =>
+        FinalResults(context)
+      case TransformationStep(
+            (ParameterName("value"), _) :: (ParameterName("type"), _) :: (ParameterName("version"), _) :: Nil,
+            None
+          ) =>
+        FinalResults(context)
     }
 
     override def implementation(
@@ -912,8 +937,8 @@ object SampleNodes {
 
       type Value = String
 
-      private val typ     = params.extractUnsafe[String]("type")
-      private val version = params.extractUnsafe[Integer]("version")
+      private val typ     = params.extractUnsafe[String](ParameterName("type"))
+      private val version = params.extractUnsafe[Integer](ParameterName("version"))
 
       override def prepareValue(
           dataStream: DataStream[Context],
@@ -922,7 +947,7 @@ object SampleNodes {
         dataStream
           .flatMap(
             flinkNodeContext.lazyParameterHelper
-              .lazyMapFunction(params.extractUnsafe[LazyParameter[String]]("value"))
+              .lazyMapFunction(params.extractUnsafe[LazyParameter[String]](ParameterName("value")))
           )
           .map(
             (v: ValueWithContext[String]) =>

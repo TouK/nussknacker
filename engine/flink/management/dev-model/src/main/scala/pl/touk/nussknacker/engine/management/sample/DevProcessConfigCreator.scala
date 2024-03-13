@@ -5,7 +5,6 @@ import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
-import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
@@ -17,8 +16,8 @@ import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
   StringParameterEditor
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{
   EspDeserializationSchema,
@@ -34,13 +33,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializatio
 import pl.touk.nussknacker.engine.kafka.sink.KafkaSinkFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
-import pl.touk.nussknacker.engine.management.sample.dict.{
-  BooleanDictionary,
-  BusinessConfigDictionary,
-  LongDictionary,
-  RGBDictionary,
-  TestDictionary
-}
+import pl.touk.nussknacker.engine.management.sample.dict._
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
@@ -48,12 +41,6 @@ import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
-  MockSchemaRegistryClientFactory,
-  UniversalSchemaRegistryClientFactory
-}
 import pl.touk.nussknacker.engine.util.LoggingListener
 
 import java.nio.charset.StandardCharsets
@@ -62,9 +49,6 @@ import scala.reflect.ClassTag
 
 object DevProcessConfigCreator {
   val oneElementValue = "One element"
-
-  // This ConfigCreator is used in tests in quite a few places, where we don't have 'real' schema registry and we don't need it.
-  val emptyMockedSchemaRegistryProperty = "withMockedConfluent"
 }
 
 /**
@@ -97,7 +81,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  override def listeners(modelDependencies: ProcessObjectDependencies) = List(LoggingListener)
+  override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] = List(LoggingListener)
 
   override def sourceFactories(
       modelDependencies: ProcessObjectDependencies
@@ -124,19 +108,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def createSchemaRegistryClientFactory(
-      modelDependencies: ProcessObjectDependencies
-  ): SchemaRegistryClientFactory = {
-    val mockConfluent = modelDependencies.config
-      .getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty)
-      .contains(true)
-    if (mockConfluent) {
-      MockSchemaRegistryClientFactory.confluentBased(new MockSchemaRegistryClient)
-    } else {
-      UniversalSchemaRegistryClientFactory
-    }
-  }
-
   override def services(modelDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
     Map(
       "accountService" -> categories(EmptyService).withComponentConfig(
@@ -155,15 +126,15 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           SingleComponentConfig.zero.copy(
             params = Some(
               Map(
-                "foo" -> ParameterConfig(
-                  None,
-                  Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
-                  None,
-                  None,
-                  None
+                ParameterName("foo") -> ParameterConfig(
+                  defaultValue = None,
+                  editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+                  validators = None,
+                  label = None,
+                  hintText = None
                 ),
-                "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
-                "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
+                ParameterName("bar") -> ParameterConfig(None, Some(StringParameterEditor), None, None, None),
+                ParameterName("baz") -> ParameterConfig(None, Some(StringParameterEditor), None, None, None)
               )
             )
           )
@@ -173,7 +144,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           SingleComponentConfig.zero.copy(
             params = Some(
               Map(
-                "bar" -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
+                ParameterName("bar") -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None, None)
               )
             )
           )
@@ -192,19 +163,19 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
             componentGroup = Some(ComponentGroupName("types")),
             params = Some(
               Map(
-                "overriddenByDevConfigParam" -> ParameterConfig(
-                  None,
-                  None,
-                  Some(List(MandatoryParameterValidator)),
-                  None,
-                  None
+                ParameterName("overriddenByDevConfigParam") -> ParameterConfig(
+                  defaultValue = None,
+                  editor = None,
+                  validators = Some(List(MandatoryParameterValidator)),
+                  label = None,
+                  hintText = None
                 ),
-                "overriddenByFileConfigParam" -> ParameterConfig(
-                  None,
-                  None,
-                  Some(List(MandatoryParameterValidator)),
-                  None,
-                  None
+                ParameterName("overriddenByFileConfigParam") -> ParameterConfig(
+                  defaultValue = None,
+                  editor = None,
+                  validators = Some(List(MandatoryParameterValidator)),
+                  label = None,
+                  hintText = None
                 )
               )
             )

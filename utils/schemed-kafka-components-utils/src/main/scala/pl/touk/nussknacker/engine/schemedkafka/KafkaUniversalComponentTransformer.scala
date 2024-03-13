@@ -13,20 +13,21 @@ import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
 object KafkaUniversalComponentTransformer {
-  final val SchemaVersionParamName          = "Schema version"
-  final val TopicParamName                  = "Topic"
-  final val SinkKeyParamName                = "Key"
-  final val SinkValueParamName              = "Value"
-  final val SinkValidationModeParameterName = "Value validation mode"
-  final val SinkRawEditorParamName          = "Raw editor"
+  final val SchemaVersionParamName      = ParameterName("Schema version")
+  final val TopicParamName              = ParameterName("Topic")
+  final val SinkKeyParamName            = ParameterName("Key")
+  final val SinkValueParamName          = ParameterName("Value")
+  final val SinkValidationModeParamName = ParameterName("Value validation mode")
+  final val SinkRawEditorParamName      = ParameterName("Raw editor")
 
   def extractValidationMode(value: String): ValidationMode =
-    ValidationMode.fromString(value, SinkValidationModeParameterName)
+    ValidationMode.fromString(value, SinkValidationModeParamName)
 
 }
 
@@ -151,7 +152,9 @@ trait KafkaUniversalComponentTransformer[T]
       NextParameters(parameters = topicParam.value, errors = topicParam.written)
   }
 
-  protected def schemaParamStep(nextParams: List[Parameter])(implicit nodeId: NodeId): ContextTransformationDefinition = {
+  protected def schemaParamStep(
+      nextParams: List[Parameter]
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((topicParamName, DefinedEagerParameter(topic: String, _)) :: Nil, _) =>
       val preparedTopic = prepareTopic(topic)
       val versionParam  = getVersionParam(preparedTopic)
@@ -171,6 +174,6 @@ trait KafkaUniversalComponentTransformer[T]
   @transient protected lazy val fallbackVersionOptionParam: Parameter = getVersionParam(Nil)
 
   // override it if you use other parameter name for topic
-  @transient protected lazy val topicParamName: String = TopicParamName
+  @transient protected lazy val topicParamName: ParameterName = TopicParamName
 
 }

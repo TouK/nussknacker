@@ -4,6 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
@@ -27,7 +28,9 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("1 + 1", Some(2), true),
       )
     ) { (expression, value, expected) =>
-      MandatoryParameterValidator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+      MandatoryParameterValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
+        .isValid shouldBe expected
     }
   }
 
@@ -48,7 +51,9 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("1 + 1", Some(2), true),
       )
     ) { (expression, value, expected) =>
-      NotNullParameterValidator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+      NotNullParameterValidator
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
+        .isValid shouldBe expected
     }
   }
 
@@ -72,7 +77,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
       )
     ) { (expression, value, expected) =>
       NotBlankParameterValidator
-        .isValid("dummy", Expression.spel(expression), value, None)
+        .isValid(ParameterName("dummy"), Expression.spel(expression), value, None)
         .isValid shouldBe expected
     }
   }
@@ -101,7 +106,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("'c'", Some("c"), false),
       )
     ) { (expression, value, expected) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), value, None).isValid shouldBe expected
     }
   }
 
@@ -128,7 +133,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("'c'", Some("c"), false),
       )
     ) { (expression, value, expected) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), value, None).isValid shouldBe expected
     }
   }
 
@@ -144,7 +149,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("'ala'", "ala", false),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), Some(value), None).isValid shouldBe isValid
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), Some(value), None).isValid shouldBe isValid
     }
   }
 
@@ -160,7 +165,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("#input", None, false),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe isValid
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), value, None).isValid shouldBe isValid
     }
   }
 
@@ -178,7 +183,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("21.37", 21.37, true),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), Some(value), None).isValid shouldBe isValid
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), Some(value), None).isValid shouldBe isValid
     }
   }
 
@@ -196,7 +201,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("21.37", 21.37, false),
       )
     ) { (expression, value, isValid) =>
-      validator.isValid("dummy", Expression.spel(expression), Some(value), None).isValid shouldBe isValid
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), Some(value), None).isValid shouldBe isValid
     }
   }
 
@@ -217,7 +222,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
         ("'kot'", Some("kot"), alaValidator, false),
       )
     ) { (expression, value, validator, expected) =>
-      validator.isValid("dummy", Expression.spel(expression), value, None).isValid shouldBe expected
+      validator.isValid(ParameterName("dummy"), Expression.spel(expression), value, None).isValid shouldBe expected
     }
   }
 

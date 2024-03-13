@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
@@ -49,13 +50,19 @@ object MockableDeploymentManagerProvider {
   object MockableDeploymentManager extends DeploymentManager {
 
     private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults]](Map.empty)
 
     def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
       this.scenarioStatuses.set(scenarioStates)
     }
 
+    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults]): Unit = {
+      this.testResults.set(scenarioTestResults)
+    }
+
     def clean(): Unit = {
       this.scenarioStatuses.set(Map.empty)
+      this.testResults.set(Map.empty)
     }
 
     override def validate(
@@ -94,7 +101,14 @@ object MockableDeploymentManagerProvider {
         name: ProcessName,
         canonicalProcess: CanonicalProcess,
         scenarioTestData: ScenarioTestData
-    ): Future[TestProcess.TestResults] = ???
+    ): Future[TestProcess.TestResults] = Future.successful {
+      testResults
+        .get()
+        .getOrElse(
+          name.value,
+          throw new IllegalArgumentException(s"Tests results not mocked for scenario [${name.value}]")
+        )
+    }
 
     override def resolve(
         idWithName: ProcessIdWithName,

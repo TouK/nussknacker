@@ -9,13 +9,13 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 
 class UniversalSchemaSupportDispatcher private (kafkaConfig: KafkaConfig) {
 

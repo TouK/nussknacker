@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
@@ -36,8 +37,8 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
     val implementation = service.implementation(
       params = Params(
         Map(
-          CacheTTLParamName -> java.time.Duration.ofDays(1),
-          "arg1"            -> 1
+          CacheTTLParamName     -> java.time.Duration.ofDays(1),
+          ParameterName("arg1") -> 1
         )
       ),
       dependencies = Nil,

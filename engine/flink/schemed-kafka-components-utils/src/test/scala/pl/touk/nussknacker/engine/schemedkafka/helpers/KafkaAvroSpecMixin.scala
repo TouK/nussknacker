@@ -121,7 +121,7 @@ trait KafkaAvroSpecMixin
       source: SourceAvroParam,
       sink: UniversalSinkParam,
       filterExpression: Option[String] = None,
-      sourceTopicParamValue: String => String = topic => s"'${topic}'"
+      sourceTopicParamValue: String => String = topic => s"'$topic'"
   ): CanonicalProcess = {
     import spel.Implicits._
     val sourceParams = List(TopicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {
@@ -132,17 +132,17 @@ trait KafkaAvroSpecMixin
     })
 
     val baseSinkParams: List[(String, expression.Expression)] = List(
-      TopicParamName         -> s"'${sink.topic}'",
-      SchemaVersionParamName -> formatVersionParam(sink.versionOption),
-      SinkKeyParamName       -> sink.key
+      TopicParamName.value         -> s"'${sink.topic}'",
+      SchemaVersionParamName.value -> formatVersionParam(sink.versionOption),
+      SinkKeyParamName.value       -> sink.key
     )
 
     val editorParams: List[(String, expression.Expression)] = List(
-      SinkRawEditorParamName -> s"${sink.validationMode.isDefined}"
+      SinkRawEditorParamName.value -> s"${sink.validationMode.isDefined}"
     )
 
     val validationParams: List[(String, expression.Expression)] =
-      sink.validationMode.map(validation => SinkValidationModeParameterName -> validationModeParam(validation)).toList
+      sink.validationMode.map(validation => SinkValidationModeParamName.value -> validationModeParam(validation)).toList
 
     val builder = ScenarioBuilder
       .streaming(s"avro-test")
@@ -150,7 +150,7 @@ trait KafkaAvroSpecMixin
       .source(
         "start",
         source.sourceType,
-        sourceParams: _*
+        sourceParams.map { case (paramName, expr) => (paramName.value, expr) }: _*
       )
 
     val filteredBuilder = filterExpression
@@ -265,7 +265,7 @@ trait KafkaAvroSpecMixin
       new UniversalSinkParam(
         topicConfig.output,
         version,
-        (SinkValueParamName -> asSpelExpression(value)) :: Nil,
+        (SinkValueParamName.value -> asSpelExpression(value)) :: Nil,
         key,
         validationMode
       )

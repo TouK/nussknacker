@@ -42,8 +42,6 @@ import scala.language.higherKinds
  */
 object RequestResponseInterpreter {
 
-  type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
-
   def apply[Effect[_]: Monad: InterpreterShape: CapabilityTransformer](
       process: CanonicalProcess,
       processVersion: ProcessVersion,

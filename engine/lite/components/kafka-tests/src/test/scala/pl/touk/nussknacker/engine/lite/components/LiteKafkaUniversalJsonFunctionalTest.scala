@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -319,7 +320,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
-      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some("Value"), "#input['foo_int']", None))),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", None))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
@@ -344,7 +345,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   test("pattern properties validations should work in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
     }
 
     val objWithNestedPatternPropertiesMapSchema =
@@ -410,10 +411,12 @@ class LiteKafkaUniversalJsonFunctionalTest
         result: ValidatedNel[ProcessCompilationError, Map[String, Json]]
     ): Assertion =
       result shouldBe Valid(expectedObject)
+
     def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, Json]]): Assertion =
       result.invalidValue should matchPattern {
-        case NonEmptyList(EmptyMandatoryParameter(_, _, `ObjectFieldName`, `sinkName`), Nil) =>
+        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), `sinkName`), Nil) =>
       }
+
     forAll(
       Table[EveritSchema, String, ValidatedNel[ProcessCompilationError, Map[String, Json]] => Assertion](
         ("outputSchema", "fieldExpression", "expectationCheckingFun"),
@@ -539,10 +542,10 @@ class LiteKafkaUniversalJsonFunctionalTest
       fieldsExpressions: Map[String, String]
   ): CanonicalProcess = {
     val sinkParams = (Map(
-      TopicParamName         -> s"'${config.sinkTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName       -> "",
-      SinkRawEditorParamName -> "false",
+      TopicParamName.value         -> s"'${config.sinkTopic}'",
+      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      SinkKeyParamName.value       -> "",
+      SinkRawEditorParamName.value -> "false",
     ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
 
     ScenarioBuilder
@@ -550,8 +553,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'${config.sourceTopic}'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
   }
@@ -651,18 +654,18 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'${config.sourceTopic}'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        TopicParamName                  -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkValueParamName              -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> s"'${config.validationModeName}'"
+        TopicParamName.value              -> s"'${config.sinkTopic}'",
+        SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName.value            -> "",
+        SinkValueParamName.value          -> s"${config.sinkDefinition}",
+        SinkRawEditorParamName.value      -> "true",
+        SinkValidationModeParamName.value -> s"'${config.validationModeName}'"
       )
 
   case class ScenarioConfig(

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -26,11 +27,11 @@ import java.time.temporal.ChronoUnit
 object DatabaseQueryEnricher {
   final val ArgPrefix: String = "arg"
 
-  final val CacheTTLParamName: String = "Cache TTL"
+  final val CacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
-  final val QueryParamName: String = "Query"
+  final val QueryParamName: ParameterName = ParameterName("Query")
 
-  final val ResultStrategyParamName: String = "Result strategy"
+  final val ResultStrategyParamName: ParameterName = ParameterName("Result strategy")
 
   val metaData: TypedNodeDependency[MetaData] = TypedNodeDependency[MetaData]
 
@@ -85,7 +86,8 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     (argsCount: Int, params: Params, context: Context) => {
       QueryArguments(
         (1 to argsCount).map { argNo =>
-          QueryArgument(index = argNo, value = params.extractOrEvaluateUnsafe(s"$ArgPrefix$argNo", context))
+          val paramName = ParameterName(s"$ArgPrefix$argNo")
+          QueryArgument(index = argNo, value = params.extractOrEvaluateUnsafe(paramName, context))
         }.toList
       )
     }
@@ -197,7 +199,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   private def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
     (1 to dbParameterMetaData.parameterCount).map { paramNo =>
-      Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
+      Parameter(ParameterName(s"$ArgPrefix$paramNo"), typing.Unknown).copy(isLazyParameter = true)
     }.toList
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(

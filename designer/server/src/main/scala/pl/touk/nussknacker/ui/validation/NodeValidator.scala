@@ -59,8 +59,9 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
         // We don't return MissingParameter error when we are returning those missing parameters to be added - since
         // it's not really exception ATM
         def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
-          case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
-          case _                            => false
+          case MissingParameters(params, _) =>
+            params.forall(missing => uiParams.exists(_.exists(_.name == missing.value)))
+          case _ => false
         }
 
         val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)

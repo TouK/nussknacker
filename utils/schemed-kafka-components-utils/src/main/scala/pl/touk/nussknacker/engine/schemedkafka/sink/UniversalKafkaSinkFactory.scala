@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.engine.schemedkafka.{
   SchemaDeterminerErrorHandler
 }
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
 /**
@@ -56,10 +56,15 @@ class UniversalKafkaSinkFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
 
-  private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
+  private val rawValue = ParameterWithExtractor.lazyMandatory[AnyRef](SinkValueParamName)
 
-  private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(editor =
-    Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))
+  private val validationMode = ParameterWithExtractor.mandatory[String](
+    name = SinkValidationModeParamName,
+    modify = _.copy(editor =
+      Some(
+        FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
+      )
+    )
   )
 
   private val restrictedParamNames: Set[ParameterName] = Set(
@@ -67,7 +72,7 @@ class UniversalKafkaSinkFactory(
     SchemaVersionParamName,
     SinkKeyParamName,
     SinkRawEditorParamName,
-    SinkValidationModeParameterName
+    SinkValidationModeParamName
   )
 
   protected def rawEditorParameterStep(
@@ -80,13 +85,13 @@ class UniversalKafkaSinkFactory(
           ) :: Nil,
           _
         ) =>
-      NextParameters(validationModeParam :: rawValueParam :: Nil)
+      NextParameters(validationMode.parameter :: rawValue.parameter :: Nil)
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
           (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
           (SinkKeyParamName, _) ::
           (SinkRawEditorParamName, _) ::
-          (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
+          (SinkValidationModeParamName, DefinedEagerParameter(mode: String, _)) ::
           (SinkValueParamName, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
@@ -104,7 +109,7 @@ class UniversalKafkaSinkFactory(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
-              rawParameter = rawValueParam,
+              rawParameter = rawValue.parameter,
               restrictedParamNames
             )
             .map { extractedSinkParameter =>
@@ -127,7 +132,7 @@ class UniversalKafkaSinkFactory(
             SinkRawEditorParamName,
             _
           ) ::
-          (SinkValidationModeParameterName, _) :: (SinkValueParamName, _) :: Nil,
+          (SinkValidationModeParamName, _) :: (SinkValueParamName, _) :: Nil,
           _
         ) =>
       FinalResults(context, Nil)
@@ -158,7 +163,7 @@ class UniversalKafkaSinkFactory(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
-              rawValueParam,
+              rawValue.parameter,
               restrictedParamNames
             )
             .map { valueParam =>
@@ -221,7 +226,7 @@ class UniversalKafkaSinkFactory(
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
     val validationMode = extractValidationMode(
-      params.extract[String](SinkValidationModeParameterName).getOrElse(ValidationMode.strict.name)
+      params.extract[String](SinkValidationModeParamName).getOrElse(ValidationMode.strict.name)
     )
 
     implProvider.createSink(

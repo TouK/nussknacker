@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -24,7 +25,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private type Output = java.util.List[java.util.Map[String, Any]]
 
   private object BasicDecisionTableParameter {
-    val name = "Basic Decision Table"
+    val name: ParameterName = ParameterName("Basic Decision Table")
 
     val declaration: Parameter =
       Parameter(name, Typed[TabularTypedData])
@@ -33,7 +34,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   }
 
   private object FilterDecisionTableExpressionParameter {
-    val name = "Expression"
+    val name: ParameterName = ParameterName("Expression")
 
     def declaration(data: TabularTypedData): Parameter =
       Parameter(name, Typed[java.lang.Boolean])

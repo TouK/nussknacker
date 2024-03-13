@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -237,16 +238,22 @@ object sample {
         input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
 
       override def testParametersDefinition: List[Parameter] = List(
-        Parameter("contextId", Typed.apply[String]),
-        Parameter("numbers", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))),
-        Parameter("additionalParams", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)))
+        Parameter(ParameterName("contextId"), Typed.apply[String]),
+        Parameter(
+          ParameterName("numbers"),
+          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))
+        ),
+        Parameter(
+          ParameterName("additionalParams"),
+          Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
+        )
       )
 
-      override def parametersToTestData(params: Map[String, AnyRef]): SampleInputWithListAndMap =
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): SampleInputWithListAndMap =
         SampleInputWithListAndMap(
-          params("contextId").asInstanceOf[String],
-          params("numbers").asInstanceOf[java.util.List[Long]],
-          params("additionalParams").asInstanceOf[java.util.Map[String, Any]]
+          params(ParameterName("contextId")).asInstanceOf[String],
+          params(ParameterName("numbers")).asInstanceOf[java.util.List[Long]],
+          params(ParameterName("additionalParams")).asInstanceOf[java.util.Map[String, Any]]
         )
 
     }

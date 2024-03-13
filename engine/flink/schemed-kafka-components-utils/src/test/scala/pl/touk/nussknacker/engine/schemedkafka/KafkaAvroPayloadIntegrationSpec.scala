@@ -90,9 +90,11 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process     = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"'invalid-topic'")
 
-    intercept[Exception] {
+    val message = intercept[Exception] {
       runAndVerifyResultSingleEvent(process, topicConfig, "fooBar", "fooBar")
-    }.getMessage should include("InvalidPropertyFixedValue(Topic,None,'invalid-topic',")
+    }.getMessage
+
+    message should include("InvalidPropertyFixedValue(ParameterName(Topic),None,'invalid-topic',")
   }
 
   test("should handle null value for mandatory parameter") {
@@ -101,10 +103,12 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process     = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"")
 
-    intercept[Exception] {
+    val message = intercept[Exception] {
       runAndVerifyResultSingleEvent(process, topicConfig, "fooBar", "fooBar")
-    }.getMessage should include(
-      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,Topic,start"
+    }.getMessage
+
+    message should include(
+      "EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(Topic),start"
     )
   }
 
@@ -289,8 +293,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'${topicConfig.input}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'${topicConfig.input}'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode(
         "transform",
@@ -301,12 +305,12 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .emptySink(
         "end",
         "kafka",
-        TopicParamName                  -> s"'${topicConfig.output}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-        SinkValueParamName              -> s"{field: #extractedTimestamp}"
+        TopicParamName.value              -> s"'${topicConfig.output}'",
+        SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName.value            -> "",
+        SinkRawEditorParamName.value      -> "true",
+        SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+        SinkValueParamName.value          -> s"{field: #extractedTimestamp}"
       )
 
     pushMessage(LongFieldV1.record, topicConfig.input)
@@ -327,19 +331,19 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'${topicConfig.input}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        TopicParamName.value         -> s"'${topicConfig.input}'",
+        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "10000")
       .emptySink(
         "end",
         "kafka",
-        TopicParamName                  -> s"'${topicConfig.output}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
-        SinkValueParamName              -> s"{field: #extractedTimestamp}"
+        TopicParamName.value              -> s"'${topicConfig.output}'",
+        SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName.value            -> "",
+        SinkRawEditorParamName.value      -> "true",
+        SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+        SinkValueParamName.value          -> s"{field: #extractedTimestamp}"
       )
 
     // Can't be too long ago, otherwise retention could delete it

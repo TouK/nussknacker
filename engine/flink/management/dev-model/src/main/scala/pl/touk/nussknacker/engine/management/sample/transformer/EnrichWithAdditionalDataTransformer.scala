@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{
   Context,
   CustomStreamTransformer,
@@ -31,11 +32,11 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
  */
 object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent[AnyRef] {
 
-  private val roleParameter = "role"
+  private val roleParameter = ParameterName("role")
 
-  private val additionalDataValueParameter = "additional data value"
+  private val additionalDataValueParameter = ParameterName("additional data value")
 
-  private val keyParameter = "key"
+  private val keyParameter = ParameterName("key")
 
   private val roleValues = List("Events", "Additional data")
 

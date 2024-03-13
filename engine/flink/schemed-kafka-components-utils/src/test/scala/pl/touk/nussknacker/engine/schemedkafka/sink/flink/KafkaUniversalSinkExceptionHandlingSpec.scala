@@ -60,22 +60,22 @@ class KafkaUniversalSinkExceptionHandlingSpec
           GraphBuilder.emptySink(
             "avro-raw",
             "kafka",
-            TopicParamName                  -> s"'$topic'",
-            SchemaVersionParamName          -> "'1'",
-            SinkValueParamName              -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
-            SinkKeyParamName                -> generator.throwFromString(),
-            SinkRawEditorParamName          -> s"true",
-            SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'"
+            TopicParamName.value              -> s"'$topic'",
+            SchemaVersionParamName.value      -> "'1'",
+            SinkValueParamName.value          -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
+            SinkKeyParamName.value            -> generator.throwFromString(),
+            SinkRawEditorParamName.value      -> s"true",
+            SinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'"
           ),
           GraphBuilder.emptySink(
             "avro",
             "kafka",
-            TopicParamName         -> s"'$topic'",
-            SchemaVersionParamName -> "'1'",
-            SinkKeyParamName       -> generator.throwFromString(),
-            SinkRawEditorParamName -> s"false",
-            "first"                -> generator.throwFromString(),
-            "last"                 -> generator.throwFromString()
+            TopicParamName.value         -> s"'$topic'",
+            SchemaVersionParamName.value -> "'1'",
+            SinkKeyParamName.value       -> generator.throwFromString(),
+            SinkRawEditorParamName.value -> s"false",
+            "first"                      -> generator.throwFromString(),
+            "last"                       -> generator.throwFromString()
           ),
         )
       )
