@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.common.components
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.scalatest.Inside
+import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -26,53 +27,62 @@ import java.util.{List => JList, Map => JMap}
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
-trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDetailedMessage with Inside {
+trait DecisionTableSpec
+    extends AnyFreeSpec
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with Inside
+    with Eventually {
 
   import spel.Implicits._
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
-      val result = execute[TestMessage, SCENARIO_RESULT](
-        scenario = decisionTableExampleScenario(
-          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
-        ),
-        withData = List(
-          TestMessage(id = "1", minAge = 30),
-          TestMessage(id = "2", minAge = 18)
-        )
-      )
-
-      inside(result) { case Validated.Valid(r) =>
-        r.errors should be(List.empty)
-        r.successes should be(
-          List(
-            rows(
-              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-            ),
-            rows(
-              rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
-              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-            )
+      eventually {
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
           )
         )
+
+        inside(result) { case Validated.Valid(r) =>
+          r.errors should be(List.empty)
+          r.successes should be(
+            List(
+              rows(
+                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+              ),
+              rows(
+                rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
+                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+              )
+            )
+          )
+        }
       }
     }
 
     "return proper typingResult as java list which allows to run method on" in {
-      val result = execute[TestMessage, SCENARIO_RESULT](
-        scenario = decisionTableExampleScenario(
-          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
-          sinkValueExpression = "#dtResult.size"
-        ),
-        withData = List(
-          TestMessage(id = "1", minAge = 30),
-          TestMessage(id = "2", minAge = 18)
+      eventually {
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
+            sinkValueExpression = "#dtResult.size"
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
+          )
         )
-      )
 
-      inside(result) { case Validated.Valid(r) =>
-        r.errors should be(List.empty)
-        r.successes should be(List(1, 2))
+        inside(result) { case Validated.Valid(r) =>
+          r.errors should be(List.empty)
+          r.successes should be(List(1, 2))
+        }
       }
     }
 
