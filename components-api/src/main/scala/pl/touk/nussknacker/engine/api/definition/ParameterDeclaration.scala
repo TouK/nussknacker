@@ -65,7 +65,7 @@ sealed trait ParameterCreatorWithNoDependency extends Serializable {
   def createParameter(): Parameter
 }
 
-sealed trait ParameterExtractor[F[_], PARAMETER_VALUE_TYPE] extends Serializable {
+sealed abstract class ParameterExtractor[F[_], PARAMETER_VALUE_TYPE] extends Serializable {
 
   def parameterName: ParameterName
 
@@ -90,44 +90,46 @@ object ParameterExtractor {
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[Id, PARAMETER_VALUE_TYPE] {
 
+    override private[definition] implicit val fFunctor: Functor[Id] = cats.catsRepresentableForId.F
+
     override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] =
       params.extract[PARAMETER_VALUE_TYPE](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
-
-    override private[definition] implicit val fFunctor: Functor[Id] = implicitly[Functor[Id]]
   }
 
   final class MandatoryBranchParamExtractor[PARAMETER_VALUE_TYPE: TypeTag] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[Id, Map[String, PARAMETER_VALUE_TYPE]] {
 
+    override private[definition] implicit val fFunctor: Functor[Id] = cats.catsRepresentableForId.F
+
     override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
       params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[Map[String, PARAMETER_VALUE_TYPE]](parameterName).copy(branchParam = true)
-
-    override private[definition] implicit val fFunctor: Functor[Id] = implicitly[Functor[Id]]
   }
 
   final class MandatoryLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[Id, LazyParameter[PARAMETER_VALUE_TYPE]] {
 
+    override private[definition] implicit val fFunctor: Functor[Id] = cats.catsRepresentableForId.F
+
     override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
       params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName).copy(isLazyParameter = true)
-
-    override private[definition] implicit val fFunctor: Functor[Id] = implicitly[Functor[Id]]
   }
 
   final class MandatoryBranchLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[Id, Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
+
+    override private[definition] implicit val fFunctor: Functor[Id] = cats.catsRepresentableForId.F
 
     override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
       params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
@@ -136,7 +138,6 @@ object ParameterExtractor {
       Parameter[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
         .copy(isLazyParameter = true, branchParam = true)
 
-    override private[definition] implicit val fFunctor: Functor[Id] = implicitly[Functor[Id]]
   }
 
   sealed trait IsPresent[+T]
@@ -174,6 +175,8 @@ object ParameterExtractor {
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[IsPresent, PARAMETER_VALUE_TYPE] {
 
+    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
+
     override def extractValue(params: Params): IsPresent[Option[PARAMETER_VALUE_TYPE]] = {
       IsPresent.when(params.isPresent(parameterName)) {
         params.extract[PARAMETER_VALUE_TYPE](parameterName)
@@ -182,13 +185,13 @@ object ParameterExtractor {
 
     override private[definition] def createBase: Parameter =
       Parameter.optional[PARAMETER_VALUE_TYPE](parameterName)
-
-    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
   }
 
   final class OptionalLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[IsPresent, LazyParameter[PARAMETER_VALUE_TYPE]] {
+
+    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
 
     override def extractValue(params: Params): IsPresent[Option[LazyParameter[PARAMETER_VALUE_TYPE]]] =
       IsPresent.when(params.isPresent(parameterName)) {
@@ -197,13 +200,13 @@ object ParameterExtractor {
 
     override private[definition] def createBase: Parameter =
       Parameter.optional[PARAMETER_VALUE_TYPE](parameterName).copy(isLazyParameter = true)
-
-    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
   }
 
   final class OptionalBranchParamExtractor[PARAMETER_VALUE_TYPE: TypeTag] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[IsPresent, Map[String, PARAMETER_VALUE_TYPE]] {
+
+    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
 
     override def extractValue(params: Params): IsPresent[Option[Map[String, PARAMETER_VALUE_TYPE]]] =
       IsPresent.when(params.isPresent(parameterName)) {
@@ -212,13 +215,13 @@ object ParameterExtractor {
 
     override private[definition] def createBase: Parameter =
       Parameter.optional[PARAMETER_VALUE_TYPE](parameterName).copy(branchParam = true)
-
-    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
   }
 
   final class OptionalBranchLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[IsPresent, Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
+
+    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
 
     override def extractValue(params: Params): IsPresent[Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]]] =
       IsPresent.when(params.isPresent(parameterName)) {
@@ -231,7 +234,6 @@ object ParameterExtractor {
         .copy(isLazyParameter = true, branchParam = true)
     }
 
-    override private[definition] implicit val fFunctor: Functor[IsPresent] = IsPresent.functor
   }
 
 }
@@ -241,25 +243,25 @@ class ParameterDeclarationBuilder[F[_], T <: ParamType[F]] private[definition] (
   def withCreator(
       modify: Parameter => Parameter = identity
   ): ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE] with ParameterCreatorWithNoDependency = {
-    val underlying: ParameterExtractor[F, paramType.EXTRACTED_VALUE_TYPE] = paramType.extractor
+    val underlying: ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE] =
+      paramType.extractor.asInstanceOf[ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE]]
     new ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE] with ParameterCreatorWithNoDependency {
-      override def parameterName: ParameterName = underlying.parameterName
-      override def extractValue(params: Params): F[Option[T#EXTRACTED_VALUE_TYPE]] =
-        underlying.extractValue(params).map(_.map(_.asInstanceOf[T#EXTRACTED_VALUE_TYPE]))
-      override def createParameter(): Parameter                      = modify(underlying.createBase)
-      override private[definition] implicit def fFunctor: Functor[F] = underlying.fFunctor
-      override private[definition] def createBase: Parameter         = underlying.createBase
+      override def parameterName: ParameterName                                    = underlying.parameterName
+      override def extractValue(params: Params): F[Option[T#EXTRACTED_VALUE_TYPE]] = underlying.extractValue(params)
+      override def createParameter(): Parameter                                    = modify(underlying.createBase)
+      override private[definition] implicit def fFunctor: Functor[F]               = underlying.fFunctor
+      override private[definition] def createBase: Parameter                       = underlying.createBase
     }
   }
 
   def withAdvancedCreator[DEPENDENCY](
       create: DEPENDENCY => Parameter => Parameter
   ): ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE] with ParameterCreator[DEPENDENCY] = {
-    val underlying: ParameterExtractor[F, paramType.EXTRACTED_VALUE_TYPE] = paramType.extractor
+    val underlying: ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE] =
+      paramType.extractor.asInstanceOf[ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE]]
     new ParameterExtractor[F, T#EXTRACTED_VALUE_TYPE] with ParameterCreator[DEPENDENCY] {
-      override def parameterName: ParameterName = underlying.parameterName
-      override def extractValue(params: Params): F[Option[T#EXTRACTED_VALUE_TYPE]] =
-        underlying.extractValue(params).map(_.map(_.asInstanceOf[T#EXTRACTED_VALUE_TYPE]))
+      override def parameterName: ParameterName                                    = underlying.parameterName
+      override def extractValue(params: Params): F[Option[T#EXTRACTED_VALUE_TYPE]] = underlying.extractValue(params)
       override def createParameter: DEPENDENCY => Parameter = dependency => create(dependency)(underlying.createBase)
       override private[definition] implicit def fFunctor: Functor[F] = underlying.fFunctor
       override private[definition] def createBase: Parameter         = underlying.createBase

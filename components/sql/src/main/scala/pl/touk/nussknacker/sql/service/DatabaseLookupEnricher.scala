@@ -72,7 +72,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       QueryArguments(
         QueryArgument(
           index = 1,
-          value = params.extractOrEvaluateLazyParamUnsafe(KeyValueParamName, context)
+          value = params.extractOrEvaluateLazyParam(KeyValueParamName, context)
         ) :: Nil
       )
     }
