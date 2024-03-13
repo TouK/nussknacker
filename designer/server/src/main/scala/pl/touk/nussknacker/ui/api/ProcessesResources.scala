@@ -156,13 +156,13 @@ class ProcessesResources(
               }
             }
           } ~ (get & skipValidateAndResolveParameter & skipNodeResultsParameter & skipStateParameter) {
-            (skipValidateAndResolve, skipNodeResults, skipFetchState) =>
+            (skipValidateAndResolve, skipNodeResults, skipState) =>
               complete {
                 processService.getLatestProcessWithDetails(
                   processId,
                   GetScenarioWithDetailsOptions(
                     FetchScenarioGraph(validationFlagsToMode(skipValidateAndResolve, skipNodeResults)),
-                    fetchState = !skipFetchState
+                    fetchState = !skipState
                   )
                 )
               }
