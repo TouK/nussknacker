@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.migrations
 
+import cats.data.Validated
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   UpdateScenarioCommand
 }
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
-import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -36,6 +37,7 @@ class MigrationService(
     processResolver: ProcessingTypeDataProvider[UIProcessResolver, _],
     processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener,
+    scenarioParametersService: ProcessingTypeDataProvider[_, ScenarioParametersService],
     useLegacyCreateScenarioApi: Boolean
 )(implicit val ec: ExecutionContext) {
 
@@ -51,7 +53,6 @@ class MigrationService(
       migrateScenarioRequest.processCategory,
       migrateScenarioRequest.engineSetupName
     )
-    val processingType    = migrateScenarioRequest.processingType
     val scenarioGraph     = migrateScenarioRequest.scenarioGraph
     val processName       = migrateScenarioRequest.processName
     val isFragment        = migrateScenarioRequest.isFragment
@@ -62,7 +63,15 @@ class MigrationService(
     val updateScenarioCommand =
       UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsername)
 
+    val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
+      Some(parameters.category),
+      Some(parameters.processingMode),
+      Some(parameters.engineSetupName)
+    )
+
     val future: Future[Unit] = for {
+
+      processingType <- resolveValidatedProcessingType(processingTypeValidated)
 
       validation <-
         processResolver
@@ -146,6 +155,11 @@ class MigrationService(
 
     transformedFuture
   }
+
+  private def resolveValidatedProcessingType(
+      validatedProcessingType: Validated[NuDesignerError, ProcessingType]
+  ): Future[ProcessingType] =
+    validatedProcessingType.fold(Future.failed, Future.successful)
 
   private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
 

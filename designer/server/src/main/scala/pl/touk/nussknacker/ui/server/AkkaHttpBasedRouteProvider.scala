@@ -258,6 +258,7 @@ class AkkaHttpBasedRouteProvider(
         processResolver = processResolver,
         processAuthorizer = processAuthorizer,
         processChangeListener = processChangeListener,
+        scenarioParametersService = typeToConfig.mapCombined(_.parametersService),
         useLegacyCreateScenarioApi = true
       )
 
