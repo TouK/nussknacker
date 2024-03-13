@@ -96,8 +96,7 @@ class FullOuterJoinTransformer(
               agg
                 .computeOutputType(aggregateByByBranchId(id))
                 .leftMap(x => {
-                  val branchParamId =
-                    ParameterNaming.getNameForBranchParameter(AggregateByParamDeclaration.createParameter(), id)
+                  val branchParamId = AggregateByParamDeclaration.parameterName.withBranchId(id)
                   NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))
                 })
                 .map(id -> _)
@@ -125,10 +124,11 @@ class FullOuterJoinTransformer(
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
-    val keyByBranchId: Map[String, LazyParameter[CharSequence]]   = KeyParamDeclaration.extractValue(params)
-    val aggregatorByBranchId: Map[String, Aggregator]             = AggregatorParamDeclaration.extractValue(params)
-    val aggregateByByBranchId: Map[String, LazyParameter[AnyRef]] = AggregateByParamDeclaration.extractValue(params)
-    val window: Duration                                          = WindowLengthParamDeclaration.extractValue(params)
+    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParamDeclaration.extractValueUnsafe(params)
+    val aggregatorByBranchId: Map[String, Aggregator]           = AggregatorParamDeclaration.extractValueUnsafe(params)
+    val aggregateByByBranchId: Map[String, LazyParameter[AnyRef]] =
+      AggregateByParamDeclaration.extractValueUnsafe(params)
+    val window: Duration = WindowLengthParamDeclaration.extractValueUnsafe(params)
 
     val aggregator: Aggregator = new MapAggregator(
       aggregatorByBranchId.mapValuesNow(new OptionAggregator(_).asInstanceOf[Aggregator]).asJava

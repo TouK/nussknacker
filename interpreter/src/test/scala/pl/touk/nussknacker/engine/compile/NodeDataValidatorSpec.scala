@@ -989,7 +989,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
   test("should fail on unresolvable type in FragmentInputDefinition parameter") {
     val nodeId: String = "in"
     val invalidType    = "thisTypeDoesntExist"
-    val paramName      = "param1"
+    val paramName      = ParameterName("param1")
 
     inside(
       validate(
@@ -997,7 +997,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside with T
           nodeId,
           List(
             FragmentParameter(
-              ParameterName(paramName),
+              paramName,
               FragmentClazzRef(invalidType),
               required = false,
               initialValue = None,

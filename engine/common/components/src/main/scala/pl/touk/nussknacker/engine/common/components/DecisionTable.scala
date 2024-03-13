@@ -70,8 +70,8 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
   ): ServiceInvoker = {
-    val tabularTypedData = BasicDecisionTableParameter.declaration.extractValue(params)
-    val filterExpression = FilterDecisionTableExpressionParameter.declaration.extractValue(params)
+    val tabularTypedData = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
+    val filterExpression = FilterDecisionTableExpressionParameter.declaration.extractValueUnsafe(params)
     new DecisionTableImplementation(tabularTypedData, filterExpression)
   }
 

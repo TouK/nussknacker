@@ -15,14 +15,14 @@ object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
-  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[Option[lang.Long]] =
+  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[lang.Long] =
     ParameterDeclaration
       .optional[java.lang.Long](ParameterName("delayInMillis"))
       .withCreator(modify = _.copy(validators = delayValidators))
 
   final val timestampFieldParamName = ParameterName("timestampField")
 
-  final val fallbackTimestampFieldParameter: ParameterCreatorWithNoDependency with ParameterExtractor[Option[String]] =
+  final val fallbackTimestampFieldParameter: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
     ParameterDeclaration
       .optional[String](timestampFieldParamName)
       .withCreator(modify =
@@ -36,7 +36,7 @@ object DelayedKafkaSourceFactory {
   // until sources will be migrated to non-deprecated Source APi.
   def timestampFieldParameter(
       kafkaRecordValueType: Option[TypingResult]
-  ): ParameterCreatorWithNoDependency with ParameterExtractor[Option[String]] = {
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
     val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.definition.{Parameter, Validator}
 import pl.touk.nussknacker.engine.api.expression.{TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -72,7 +72,7 @@ object Validations {
       case tem: TypedExpressionMap =>
         tem.valueByKey.toList.map { case (branchName, expression) =>
           (
-            ParameterNaming.getNameForBranchParameter(parameter.name, branchName),
+            parameter.name.withBranchId(branchName),
             expression.returnType.valueOpt,
             expression.expression
           )

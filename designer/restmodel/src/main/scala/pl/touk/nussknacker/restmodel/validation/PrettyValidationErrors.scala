@@ -30,7 +30,8 @@ object PrettyValidationErrors {
       case ExpressionParserCompilationError(message, _, paramName, _, details) =>
         node(
           message = s"Failed to parse expression: $message",
-          description = s"There is problem with expression in field $paramName - it could not be parsed.",
+          description =
+            s"There is problem with expression in field ${paramName.map(_.value)} - it could not be parsed.",
           paramName = paramName,
           details = details
         )
@@ -122,7 +123,7 @@ object PrettyValidationErrors {
         node(
           message = s"Wrong parameters",
           description =
-            s"Please provide ${requiredParameters.mkString(", ")} instead of ${passedParameters.mkString(", ")}"
+            s"Please provide ${requiredParameters.map(_.value).mkString(", ")} instead of ${passedParameters.map(_.value).mkString(", ")}"
         )
       case OverwrittenVariable(varName, _, paramName) =>
         node(

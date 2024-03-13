@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.expression.{
 }
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{NodeId, ParameterNaming}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledParameter, TypedParameter}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator
@@ -187,8 +187,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, TypedParameter] = {
     branchIdAndExpressions
       .map { case (branchId, expression) =>
-        val paramName = ParameterNaming.getNameForBranchParameter(definition, branchId)
-
+        val paramName = definition.name.withBranchId(branchId)
         substituteDictKeyExpression(expression, definition.editor, paramName).andThen { finalExpr =>
           enrichContext(branchContexts(branchId), definition).andThen { finalCtx =>
             // TODO JOIN: branch id on error field level

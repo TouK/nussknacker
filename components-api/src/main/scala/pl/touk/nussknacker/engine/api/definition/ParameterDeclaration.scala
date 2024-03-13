@@ -67,6 +67,10 @@ sealed trait ParameterExtractor[+PARAMETER_VALUE_TYPE] extends Serializable {
   def parameterName: ParameterName
   def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE]
 
+  def extractValueUnsafe(params: Params): PARAMETER_VALUE_TYPE =
+    extractValue(params)
+      .getOrElse(throw new IllegalArgumentException(s"Parameter [${parameterName.value}] doesn't expect to be null!"))
+
   private[definition] def createBase: Parameter
 }
 
@@ -76,8 +80,8 @@ object ParameterExtractor {
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
 
-    override def extractValue(params: Params): PARAMETER_VALUE_TYPE =
-      params.extractUnsafe[PARAMETER_VALUE_TYPE](parameterName)
+    override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] =
+      params.extract[PARAMETER_VALUE_TYPE](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName)
@@ -87,8 +91,8 @@ object ParameterExtractor {
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
 
-    override def extractValue(params: Params): Map[String, PARAMETER_VALUE_TYPE] =
-      params.extractUnsafe[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+    override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
+      params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[Map[String, PARAMETER_VALUE_TYPE]](parameterName).copy(branchParam = true)
@@ -98,8 +102,8 @@ object ParameterExtractor {
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
 
-    override def extractValue(params: Params): LazyParameter[PARAMETER_VALUE_TYPE] =
-      params.extractUnsafe[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
+    override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
+      params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[PARAMETER_VALUE_TYPE](parameterName).copy(isLazyParameter = true)
@@ -109,8 +113,8 @@ object ParameterExtractor {
       override val parameterName: ParameterName,
   ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
 
-    override def extractValue(params: Params): Map[String, LazyParameter[PARAMETER_VALUE_TYPE]] =
-      params.extractUnsafe[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+    override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
+      params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
 
     override private[definition] def createBase: Parameter =
       Parameter[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
@@ -172,10 +176,10 @@ class ParameterDeclarationBuilder[T <: ParamType] private[definition] (paramType
   ): ParameterExtractor[T#EXTRACTED_VALUE_TYPE] with ParameterCreatorWithNoDependency = {
     val underlying = paramType.extractor
     new ParameterExtractor[T#EXTRACTED_VALUE_TYPE] with ParameterCreatorWithNoDependency {
-      override def parameterName: ParameterName                         = underlying.parameterName
-      override def extractValue(params: Params): T#EXTRACTED_VALUE_TYPE = underlying.extractValue(params)
-      override def createParameter(): Parameter                         = modify(underlying.createBase)
-      override def createBase: Parameter                                = underlying.createBase
+      override def parameterName: ParameterName                                 = underlying.parameterName
+      override def extractValue(params: Params): Option[T#EXTRACTED_VALUE_TYPE] = underlying.extractValue(params)
+      override def createParameter(): Parameter                                 = modify(underlying.createBase)
+      override def createBase: Parameter                                        = underlying.createBase
     }
   }
 
@@ -184,8 +188,8 @@ class ParameterDeclarationBuilder[T <: ParamType] private[definition] (paramType
   ): ParameterExtractor[T#EXTRACTED_VALUE_TYPE] with ParameterCreator[DEPENDENCY] = {
     val underlying = paramType.extractor
     new ParameterExtractor[T#EXTRACTED_VALUE_TYPE] with ParameterCreator[DEPENDENCY] {
-      override def parameterName: ParameterName                         = underlying.parameterName
-      override def extractValue(params: Params): T#EXTRACTED_VALUE_TYPE = underlying.extractValue(params)
+      override def parameterName: ParameterName                                 = underlying.parameterName
+      override def extractValue(params: Params): Option[T#EXTRACTED_VALUE_TYPE] = underlying.extractValue(params)
       override def createParameter: DEPENDENCY => Parameter = dependency => create(dependency)(underlying.createBase)
       override def createBase: Parameter                    = underlying.createBase
     }
@@ -228,28 +232,28 @@ object ParameterDeclarationBuilder {
     }
 
     final case class Optional[T: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
-      override type EXTRACTED_VALUE_TYPE = Option[T]
-      override lazy val extractor: ParameterExtractor[Option[T]] = new OptionalParamExtractor[T](parameterName)
+      override type EXTRACTED_VALUE_TYPE = T
+      override lazy val extractor: ParameterExtractor[T] = new OptionalParamExtractor[T](parameterName)
     }
 
     final case class LazyOptional[T <: AnyRef: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
-      override type EXTRACTED_VALUE_TYPE = Option[LazyParameter[T]]
-      override lazy val extractor: ParameterExtractor[Option[LazyParameter[T]]] =
+      override type EXTRACTED_VALUE_TYPE = LazyParameter[T]
+      override lazy val extractor: ParameterExtractor[LazyParameter[T]] =
         new OptionalLazyParamExtractor[T](parameterName)
     }
 
     final case class BranchOptional[T: TypeTag: NotNothing](parameterName: ParameterName) extends ParamType {
-      override type EXTRACTED_VALUE_TYPE = Option[Map[String, T]]
+      override type EXTRACTED_VALUE_TYPE = Map[String, T]
 
-      override lazy val extractor: ParameterExtractor[Option[Map[String, T]]] =
+      override lazy val extractor: ParameterExtractor[Map[String, T]] =
         new OptionalBranchParamExtractor(parameterName)
 
     }
 
     final case class BranchLazyOptional[T <: AnyRef: TypeTag: NotNothing](parameterName: ParameterName)
         extends ParamType {
-      override type EXTRACTED_VALUE_TYPE = Option[Map[String, LazyParameter[T]]]
-      override lazy val extractor: ParameterExtractor[Option[Map[String, LazyParameter[T]]]] =
+      override type EXTRACTED_VALUE_TYPE = Map[String, LazyParameter[T]]
+      override lazy val extractor: ParameterExtractor[Map[String, LazyParameter[T]]] =
         new OptionalBranchLazyParamExtractor[T](parameterName)
     }
 

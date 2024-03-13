@@ -80,9 +80,9 @@ object LastVariableFilterTransformer
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomStreamTransformation = {
-    val value     = valueParameterDeclaration.extractValue(params)
+    val value     = valueParameterDeclaration.extractValueUnsafe(params)
     val condition = params.extractUnsafe[LazyParameter[java.lang.Boolean]](conditionParameterName)
-    val groupBy   = groupByParameterDeclaration.extractValue(params)
+    val groupBy   = groupByParameterDeclaration.extractValueUnsafe(params)
 
     FlinkCustomStreamTransformation((str: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       str

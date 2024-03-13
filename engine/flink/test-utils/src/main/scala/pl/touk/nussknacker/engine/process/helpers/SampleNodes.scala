@@ -679,7 +679,7 @@ object SampleNodes {
         finalState: Option[State]
     ): AnyRef = {
       val map  = params.nameToValueMap.filterNot(k => List(par1ParamName, lazyPar1ParamName).contains(k._1))
-      val bool = lazyPar1Declaration.extractValue(params)
+      val bool = lazyPar1Declaration.extractValueUnsafe(params)
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
@@ -871,7 +871,7 @@ object SampleNodes {
         finalState: Option[State]
     ): Source = {
       import scala.jdk.CollectionConverters._
-      val elementsValue = elementsDeclaration.extractValue(params).asScala.toList
+      val elementsValue = elementsDeclaration.extractValueUnsafe(params).asScala.toList
 
       new CollectionSource(elementsValue, None, Typed[String])
         with TestDataGenerator
@@ -969,7 +969,7 @@ object SampleNodes {
       ): DataStream[ValueWithContext[Value]] = {
         dataStream
           .flatMap(
-            flinkNodeContext.lazyParameterHelper.lazyMapFunction(valueParamDeclaration.extractValue(params))
+            flinkNodeContext.lazyParameterHelper.lazyMapFunction(valueParamDeclaration.extractValueUnsafe(params))
           )
           .map(
             (v: ValueWithContext[String]) =>

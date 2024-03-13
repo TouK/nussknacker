@@ -31,7 +31,7 @@ object DatabaseQueryEnricher {
 
   final val cacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
-  final val cacheTTLParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Option[Duration]] =
+  final val cacheTTLParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
     ParameterDeclaration
       .optional[Duration](cacheTTLParamName)
       .withCreator(

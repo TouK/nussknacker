@@ -1218,9 +1218,9 @@ object InterpreterSpec {
     ): ServiceInvoker = {
 
       val dynamicParamDeclaration = createDynamicParamDeclaration(
-        ParameterName(staticParamDeclaration.extractValue(params))
+        ParameterName(staticParamDeclaration.extractValueUnsafe(params))
       )
-      val lazyDynamicParamValue = dynamicParamDeclaration.extractValue(params)
+      val lazyDynamicParamValue = dynamicParamDeclaration.extractValueUnsafe(params)
 
       new ServiceInvoker {
         override def invoke(context: Context)(

@@ -84,7 +84,7 @@ object GenericSourceWithCustomVariablesSample
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {
-    val elementsValue = elementsParamDeclaration.extractValue(params).asScala.toList
+    val elementsValue = elementsParamDeclaration.extractValueUnsafe(params).asScala.toList
 
     new CollectionSource[String](elementsValue, None, Typed[String])(TypeInformation.of(classOf[String]))
       with TestDataGenerator

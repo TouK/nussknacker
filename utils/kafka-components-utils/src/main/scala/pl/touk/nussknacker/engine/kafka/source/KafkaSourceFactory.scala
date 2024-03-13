@@ -190,7 +190,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     * Extracts topics from default topic parameter.
     */
   protected def extractTopics(params: Params): List[String] = {
-    val paramValue = topicParameterDeclaration.extractValue(params)
+    val paramValue = topicParameterDeclaration.extractValueUnsafe(params)
     paramValue.split(topicNameSeparator).map(_.trim).toList
   }
 

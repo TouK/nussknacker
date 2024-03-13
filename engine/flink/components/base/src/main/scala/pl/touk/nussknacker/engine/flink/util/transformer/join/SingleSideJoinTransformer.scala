@@ -108,10 +108,10 @@ class SingleSideJoinTransformer(
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
-    val branchTypeByBranchId: Map[String, BranchType]           = BranchTypeParamDeclaration.extractValue(params)
-    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParamDeclaration.extractValue(params)
-    val aggregator: Aggregator                                  = AggregatorParamDeclaration.extractValue(params)
-    val window: Duration                                        = WindowLengthParamDeclaration.extractValue(params)
+    val branchTypeByBranchId: Map[String, BranchType]           = BranchTypeParamDeclaration.extractValueUnsafe(params)
+    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParamDeclaration.extractValueUnsafe(params)
+    val aggregator: Aggregator                                  = AggregatorParamDeclaration.extractValueUnsafe(params)
+    val window: Duration                   = WindowLengthParamDeclaration.extractValueUnsafe(params)
     val aggregateBy: LazyParameter[AnyRef] = params.extractUnsafe[LazyParameter[AnyRef]](AggregateByParamName)
     val outputType                         = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
