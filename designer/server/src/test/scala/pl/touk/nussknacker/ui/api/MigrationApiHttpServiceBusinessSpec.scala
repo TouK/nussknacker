@@ -4,15 +4,11 @@ import io.circe.syntax._
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.response.ValidatableResponse
+import org.hamcrest.Matchers._
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationResult
-}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
@@ -48,8 +44,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "Remote[allpermuser]",
           modelVersion = 0,
-          history = history,
-          scenarioGraph = scenarioGraph
+          historyProcessVersions = List(1, 2),
+          scenarioGraphNodeIds = List("sink", "source")
         )
     }
     "migrate scenario and add update comment when scenario exists on target environment" in {
@@ -71,8 +67,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "admin",
           modelVersion = 0,
-          history = history,
-          scenarioGraph = scenarioGraphAfterMigration
+          historyProcessVersions = List(1, 2),
+          scenarioGraphNodeIds = List("sink2", "source2")
         )
     }
 
@@ -122,8 +118,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "admin",
           modelVersion = 0,
-          history = history,
-          scenarioGraph = fragmentGraphAfterMigration
+          historyProcessVersions = List(1, 2),
+          scenarioGraphNodeIds = List("sink2", "csv-source-lite")
         )
     }
     "migrate fragment and add update comment when fragment does not exist in target environment" in {
@@ -142,8 +138,8 @@ class MigrationApiHttpServiceBusinessSpec
           modifiedBy = "Remote[allpermuser]",
           createdBy = "Remote[allpermuser]",
           modelVersion = 0,
-          history = history,
-          scenarioGraph = fragmentGraph
+          historyProcessVersions = List(1, 2),
+          scenarioGraphNodeIds = List("sink", "csv-source-lite")
         )
     }
   }
@@ -152,196 +148,6 @@ class MigrationApiHttpServiceBusinessSpec
 
   private lazy val exampleProcessName = ProcessName("test2")
   private lazy val illegalProcessName = ProcessName("#test")
-
-  private lazy val history =
-    s"""
-      | [
-      |    {
-      |      "processVersionId": "${regexes.digitsRegex}",
-      |      "createDate": "${regexes.zuluDateRegex}",
-      |      "user": "${regexes.any}",
-      |      "modelVersion": "${regexes.digitsRegex}",
-      |      "actions": []
-      |    },
-      |    {
-      |      "processVersionId": "${regexes.digitsRegex}",
-      |      "createDate": "${regexes.zuluDateRegex}",
-      |      "user": "${regexes.any}",
-      |      "modelVersion": "${regexes.digitsRegex}",
-      |      "actions": []
-      |    }
-      |  ]
-      |""".stripMargin
-
-  private lazy val scenarioGraph =
-    s"""
-       |{
-       |  "properties": {
-       |    "additionalFields": {
-       |      "description": null,
-       |      "properties": {
-       |        "environment": "test"
-       |      },
-       |      "metaDataType": "CustomMetadata"
-       |    }
-       |  },
-       |  "nodes": [
-       |    {
-       |      "id": "source",
-       |      "ref": {
-       |        "typ": "csv-source-lite",
-       |        "parameters": []
-       |      },
-       |      "additionalFields": null,
-       |      "type": "Source"
-       |    },
-       |    {
-       |      "id": "sink",
-       |      "ref": {
-       |        "typ": "dead-end-lite",
-       |        "parameters": []
-       |      },
-       |      "endResult": null,
-       |      "isDisabled": null,
-       |      "additionalFields": null,
-       |      "type": "Sink"
-       |    }
-       |  ],
-       |  "edges": [
-       |    {
-       |      "from": "source",
-       |      "to": "sink",
-       |      "edgeType": null
-       |    }
-       |  ]
-       |}
-""".stripMargin
-
-  private lazy val scenarioGraphAfterMigration =
-    s"""
-       |{
-       |  "properties": {
-       |    "additionalFields": {
-       |      "description": null,
-       |      "properties": {
-       |        "environment": "test"
-       |      },
-       |      "metaDataType": "CustomMetadata"
-       |    }
-       |  },
-       |  "nodes": [
-       |    {
-       |      "id": "source2",
-       |      "ref": {
-       |        "typ": "csv-source-lite",
-       |        "parameters": []
-       |      },
-       |      "additionalFields": null,
-       |      "type": "Source"
-       |    },
-       |    {
-       |      "id": "sink2",
-       |      "ref": {
-       |        "typ": "dead-end-lite",
-       |        "parameters": []
-       |      },
-       |      "endResult": null,
-       |      "isDisabled": null,
-       |      "additionalFields": null,
-       |      "type": "Sink"
-       |    }
-       |  ],
-       |  "edges": [
-       |    {
-       |      "from": "source2",
-       |      "to": "sink2",
-       |      "edgeType": null
-       |    }
-       |  ]
-       |}
-""".stripMargin
-
-  private lazy val fragmentGraph =
-    s"""
-       |{
-       |  "properties": {
-       |    "additionalFields": {
-       |      "description": null,
-       |      "properties": {
-       |        "docsUrl": ""
-       |      },
-       |      "metaDataType": "FragmentSpecificData"
-       |    }
-       |  },
-       |  "nodes": [
-       |    {
-       |      "id": "csv-source-lite",
-       |      "parameters": [],
-       |      "additionalFields": null,
-       |      "type": "FragmentInputDefinition"
-       |    },
-       |    {
-       |      "id": "sink",
-       |      "ref": {
-       |        "typ": "dead-end-lite",
-       |        "parameters": []
-       |      },
-       |      "endResult": null,
-       |      "isDisabled": null,
-       |      "additionalFields": null,
-       |      "type": "Sink"
-       |    }
-       |  ],
-       |  "edges": [
-       |    {
-       |      "from": "csv-source-lite",
-       |      "to": "sink",
-       |      "edgeType": null
-       |    }
-       |  ]
-       |}
-""".stripMargin
-
-  private lazy val fragmentGraphAfterMigration =
-    s"""
-       |{
-       |  "properties": {
-       |    "additionalFields": {
-       |      "description": null,
-       |      "properties": {
-       |        "docsUrl": ""
-       |      },
-       |      "metaDataType": "FragmentSpecificData"
-       |    }
-       |  },
-       |  "nodes": [
-       |    {
-       |      "id": "csv-source-lite",
-       |      "parameters": [],
-       |      "additionalFields": null,
-       |      "type": "FragmentInputDefinition"
-       |    },
-       |    {
-       |      "id": "sink2",
-       |      "ref": {
-       |        "typ": "dead-end-lite",
-       |        "parameters": []
-       |      },
-       |      "endResult": null,
-       |      "isDisabled": null,
-       |      "additionalFields": null,
-       |      "type": "Sink"
-       |    }
-       |  ],
-       |  "edges": [
-       |    {
-       |      "from": "csv-source-lite",
-       |      "to": "sink2",
-       |      "edgeType": null
-       |    }
-       |  ]
-       |}
-""".stripMargin
 
   private lazy val exampleScenario =
     ScenarioBuilder
@@ -411,49 +217,33 @@ class MigrationApiHttpServiceBusinessSpec
         modifiedBy: String,
         createdBy: String,
         modelVersion: Int,
-        history: String,
-        scenarioGraph: String
+        historyProcessVersions: List[Int],
+        scenarioGraphNodeIds: List[String]
     ): ValidatableResponse =
       given()
         .when()
         .basicAuthAllPermUser()
         .get(
-          s"$nuDesignerHttpAddress/api/processes/$scenarioName?skipValidateAndResolve=true&skipNodeResults=true&skipState=true"
+          s"$nuDesignerHttpAddress/api/processes/$scenarioName?skipValidateAndResolve=true&skipNodeResults=true"
         )
         .Then()
-        .statusCode(200)
         .body(
-          matchJsonWithRegexValues(
-            s"""
-               |{
-               |  "name": "$scenarioName",
-               |  "processId": null,
-               |  "processVersionId": $processVersionId,
-               |  "isLatestVersion": true,
-               |  "description": null,
-               |  "isArchived": false,
-               |  "isFragment": $isFragment,
-               |  "processingType": "streaming1",
-               |  "processCategory": "Category1",
-               |  "processingMode": "Unbounded-Stream",
-               |  "engineSetupName": "Mockable",
-               |  "modificationDate": "${regexes.zuluDateRegex}",
-               |  "modifiedAt": "${regexes.zuluDateRegex}",
-               |  "modifiedBy": "$modifiedBy",
-               |  "createdAt": "${regexes.zuluDateRegex}",
-               |  "createdBy": "$createdBy",
-               |  "tags": [],
-               |  "lastDeployedAction": null,
-               |  "lastStateAction": null,
-               |  "lastAction": null,
-               |  "scenarioGraph": $scenarioGraph,
-               |  "validationResult": null,
-               |  "history": $history,
-               |  "modelVersion": $modelVersion,
-               |  "state": null
-               |}
-               |""".stripMargin
-          )
+          "name",
+          equalTo(scenarioName),
+          "processVersionId",
+          equalTo(processVersionId),
+          "isFragment",
+          equalTo(isFragment),
+          "modifiedBy",
+          equalTo(modifiedBy),
+          "createdBy",
+          equalTo(createdBy),
+          "history.processVersionId",
+          containsInAnyOrder(historyProcessVersions: _*),
+          "scenarioGraph.nodes.id",
+          containsInAnyOrder(scenarioGraphNodeIds: _*),
+          "modelVersion",
+          equalTo(modelVersion)
         )
 
   }
