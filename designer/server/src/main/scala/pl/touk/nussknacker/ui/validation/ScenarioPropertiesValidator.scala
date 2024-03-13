@@ -111,9 +111,11 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
   def isValid(propertyName: String, label: Option[String] = None)(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
-
-    if (actualPropertyNames.contains(propertyName)) valid(())
-    else invalid(MissingRequiredProperty(ParameterName(propertyName), label))
+    if (actualPropertyNames.contains(propertyName)) {
+      valid(())
+    } else {
+      invalid(MissingRequiredProperty(ParameterName(propertyName), label))
+    }
   }
 
 }
@@ -121,8 +123,11 @@ private final case class MissingRequiredPropertyValidator(actualPropertyNames: L
 private final case class UnknownPropertyValidator(config: Map[String, ScenarioPropertyConfig]) {
 
   def isValid(propertyName: String)(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-
-    if (config.contains(propertyName)) valid(()) else invalid(UnknownProperty(ParameterName(propertyName)))
+    if (config.contains(propertyName)) {
+      valid(())
+    } else {
+      invalid(UnknownProperty(ParameterName(propertyName)))
+    }
   }
 
 }

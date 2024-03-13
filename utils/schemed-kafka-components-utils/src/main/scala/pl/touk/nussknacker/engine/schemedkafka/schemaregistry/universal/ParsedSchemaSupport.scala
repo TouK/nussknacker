@@ -9,6 +9,7 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
@@ -28,7 +29,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
