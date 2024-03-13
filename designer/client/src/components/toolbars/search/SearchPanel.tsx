@@ -38,12 +38,17 @@ export function SearchPanel(): ReactElement {
     useDocumentListeners({
         keydown: (e) => {
             switch (e.key.toUpperCase()) {
+                case "ESCAPE": {
+                    clearFilter();
+                    break;
+                }
                 case "F": {
                     if (!e.ctrlKey && !e.metaKey) return;
                     e.preventDefault();
                     e.stopPropagation();
                     dispatch(toggleToolbar(id, toolbarsConfigId, false));
                     searchRef.current?.focus();
+                    break;
                 }
             }
         },
