@@ -5,12 +5,12 @@ import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedTaggedValue}
 import pl.touk.nussknacker.test.WithTestHttpClient
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
-import pl.touk.nussknacker.ui.api.DictResources.{DictListRequest, TypingResultJson}
+import pl.touk.nussknacker.ui.api.DictResources.{DictListElement, DictListRequest, TypingResultJson}
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{MediaType, StatusCode}
 
@@ -27,7 +27,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
+          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -39,9 +39,9 @@ class DictsResourcesTest
 
     response.code shouldEqual StatusCode.Ok
     response.bodyAsJson shouldEqual Json.arr(
-      Json.fromString("rgb"),
-      Json.fromString("bc"),
-      Json.fromString("dict"),
+      DictListElement("rgb", TypedTaggedValue(underlying = Typed.typedClass[String], tag = "dictValue:rgb")).asJson,
+      DictListElement("bc", TypedTaggedValue(underlying = Typed.typedClass[String], tag = "dictValue:bc")).asJson,
+      DictListElement("dict", TypedTaggedValue(underlying = Typed.typedClass[String], tag = "dictValue:dict")).asJson
     )
   }
 
@@ -49,7 +49,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
+          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -61,7 +61,7 @@ class DictsResourcesTest
 
     response.code shouldEqual StatusCode.Ok
     response.bodyAsJson shouldEqual Json.arr(
-      Json.fromString("long_dict")
+      DictListElement("long_dict", Typed[java.lang.Long]).asJson,
     )
 
   }
@@ -70,7 +70,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
+          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -89,8 +89,7 @@ class DictsResourcesTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dict/$DictId/entry?label=${"Black"
-              .take(2)}"
+          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/$DictId/entry?label=${"Black".take(2)}"
         )
         .auth
         .basic("admin", "admin")
@@ -114,7 +113,7 @@ class DictsResourcesTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dict/$DictId/entry?label=thisPrefixDoesntExist"
+          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/$DictId/entry?label=thisPrefixDoesntExist"
         )
         .auth
         .basic("admin", "admin")

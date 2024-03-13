@@ -332,7 +332,13 @@ class AkkaHttpBasedRouteProvider(
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                   fragmentRepository
-                ),
+                )
+              )
+            }
+          ),
+          new DictResources(
+            typeToConfig.mapValues { processingTypeData =>
+              (
                 processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
                 processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
                 processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
