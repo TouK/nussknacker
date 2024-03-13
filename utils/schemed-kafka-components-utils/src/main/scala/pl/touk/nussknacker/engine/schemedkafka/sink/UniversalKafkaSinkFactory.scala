@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.engine.schemedkafka.{
   SchemaDeterminerErrorHandler
 }
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
 /**

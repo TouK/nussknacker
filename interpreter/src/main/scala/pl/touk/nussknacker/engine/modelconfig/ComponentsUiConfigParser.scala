@@ -15,6 +15,7 @@ object ComponentsUiConfigParser {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   private implicit val componentsUiGroupNameReader: ValueReader[ComponentGroupName] =
     ValueReader[String].map(ComponentGroupName.apply)
@@ -30,17 +31,11 @@ object ComponentsUiConfigParser {
         }
       }
 
-  implicit val parameterConfigReader: ValueReader[ParameterConfig] =
-    ValueReader[ParameterConfig]
-
   implicit val parameterConfigMapReader: ValueReader[Map[ParameterName, ParameterConfig]] =
     ValueReader[Map[String, ParameterConfig]]
       .map { mapping =>
         mapping.map { case (key, value) => ParameterName(key) -> value }
       }
-
-  implicit val parameterNameReader: ValueReader[ParameterName] =
-    ValueReader[String].map(ParameterName.apply)
 
   private val ComponentsUiConfigPath = "componentsUiConfig"
 

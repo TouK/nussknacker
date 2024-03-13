@@ -29,7 +29,6 @@ sealed trait SchemaBasedParameter {
 
 object SchemaBasedParameter {
   type RecordFieldName = String
-  type ParameterName   = pl.touk.nussknacker.engine.api.parameter.ParameterName
 }
 
 case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultValidator) extends SchemaBasedParameter {

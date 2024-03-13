@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Codec, Decoder, KeyDecoder}
+import io.circe.{Codec, Decoder, KeyDecoder, KeyEncoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveUnwrappedCodec}
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -165,8 +165,8 @@ object NodesResources {
   }
 
   def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
-    implicit val parameterNameDecoder               = KeyDecoder.decodeKeyString.map(ParameterName.apply)
-    implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
+    implicit val typeDecoder: Decoder[TypingResult]              = prepareTypingResultDecoder(modelData)
     implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
       deriveConfiguredDecoder[TestSourceParameters]
     deriveConfiguredDecoder[TestFromParametersRequest]
@@ -180,7 +180,7 @@ object NodesResources {
 }
 
 object TestSourceParameters {
-  implicit val parameterNameCodec: Codec[ParameterName] = deriveUnwrappedCodec
+  implicit val parameterNameCodec: KeyEncoder[ParameterName] = KeyEncoder.encodeKeyString.contramap(_.value)
 }
 
 @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
