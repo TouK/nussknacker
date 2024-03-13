@@ -37,8 +37,8 @@ type ErrorType = "RenderNotAllowed" | "SaveNotAllowed" | "SaveAllowed";
 
 type CellError = {
     columnName: string;
-    rowIdx: number;
-    message: string;
+    rowIndex: number;
+    errorMessage: string;
 };
 type TabularDataDefinitionParserErrorDetails = {
     cellErrors: CellError[];
