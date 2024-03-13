@@ -39,6 +39,6 @@ else
   echo "Using local environment"
 fi
 
-export JAVA_DEBUG_PORT=5006
+export JAVA_DEBUG_PORT=5005
 
 $DIST_BASE_DIR/bin/run.sh

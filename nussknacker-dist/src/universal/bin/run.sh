@@ -53,7 +53,6 @@ export USAGE_REPORTS_SOURCE="binaries"
 mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 
-
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo -e "JVM: `java -version`\n" >> $LOG_FILE 2>&1
   echo "Starting Nussknacker in background"
