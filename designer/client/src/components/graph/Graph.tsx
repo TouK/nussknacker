@@ -544,7 +544,7 @@ export class Graph extends React.Component<Props> {
     };
 
     #highlightCell(cell: dia.Cell, className: string): void {
-        this.processGraphPaper.findViewByModel(cell).highlight(null, {
+        this.processGraphPaper.findViewByModel(cell)?.highlight(null, {
             highlighter: {
                 name: "addClass",
                 options: { className },
@@ -553,7 +553,7 @@ export class Graph extends React.Component<Props> {
     }
 
     #unhighlightCell(cell: dia.Cell, className: string): void {
-        this.processGraphPaper.findViewByModel(cell).unhighlight(null, {
+        this.processGraphPaper.findViewByModel(cell)?.unhighlight(null, {
             highlighter: {
                 name: "addClass",
                 options: { className },
