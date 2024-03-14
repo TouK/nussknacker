@@ -13,7 +13,7 @@ import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.util.EitherTImplicits.{EitherTFromMonad, EitherTFromOptionInstance}
-import pl.touk.nussknacker.ui.validation.CustomActionValidator
+import pl.touk.nussknacker.ui.validation.{CustomActionValidationError, CustomActionValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,7 +30,7 @@ class ManagementApiHttpService(
 
   expose {
     managementApiEndpoints.customActionValidationEndpoint
-      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
+      .serverSecurityLogic(authorizeKnownUser[CustomActionValidationError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (processName, req) =>
           for {
@@ -43,22 +43,26 @@ class ManagementApiHttpService(
       }
   }
 
-  private def getProcessId(processName: ProcessName): EitherT[Future, NuDesignerError, ProcessIdWithName] = {
+  private def getProcessId(
+      processName: ProcessName
+  ): EitherT[Future, CustomActionValidationError, ProcessIdWithName] = {
     for {
       scenarioId <- getScenarioIdByName(processName)
     } yield ProcessIdWithName(scenarioId, processName)
   }
 
-  private def getScenarioIdByName(scenarioName: ProcessName): EitherT[Future, NuDesignerError, ProcessId] = {
+  private def getScenarioIdByName(
+      scenarioName: ProcessName
+  ): EitherT[Future, CustomActionValidationError, ProcessId] = {
     processService
       .getProcessId(scenarioName)
-      .toRightEitherT(ProcessNotFoundError(scenarioName))
+      .toRightEitherT(CustomActionValidationError(scenarioName.value))
   }
 
   private def getActionsList(
       processIdWithName: ProcessIdWithName
-  )(implicit loggedUser: LoggedUser): EitherT[Future, NuDesignerError, List[CustomActionDefinition]] = {
-    EitherT.right[NuDesignerError](
+  )(implicit loggedUser: LoggedUser): EitherT[Future, CustomActionValidationError, List[CustomActionDefinition]] = {
+    EitherT.right[CustomActionValidationError](
       dispatcher.deploymentManagerUnsafe(processIdWithName).map(x => x.customActionsDefinitions)
     )
   }

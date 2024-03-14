@@ -40,10 +40,10 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.{
-  CustomActionNonExisting,
+  CustomActionNonExistingError,
+  CustomActionValidationError,
   CustomActionValidator,
-  UIProcessValidator,
-  ValidationError
+  UIProcessValidator
 }
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
@@ -156,7 +156,7 @@ class DeploymentServiceImpl(
   private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
     DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
       case Valid(deploymentComment) => Future.successful(deploymentComment)
-      case Invalid(exc)             => Future.failed(ValidationError(exc.getMessage))
+      case Invalid(exc)             => Future.failed(CustomActionValidationError(exc.message))
     }
 
   protected def validateBeforeDeploy(
@@ -602,7 +602,7 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
+        _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(actionName.value))
         validator = new CustomActionValidator(manager.customActionsDefinitions)
         _         = validator.validateCustomActionParams(actionCommand)
         _         = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
