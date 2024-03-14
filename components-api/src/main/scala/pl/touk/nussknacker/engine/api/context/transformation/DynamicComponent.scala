@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, WrongParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 
 /*
@@ -48,7 +49,7 @@ sealed trait DynamicComponent[T] extends Component {
       outputVariable: Option[String]
   )(implicit nodeId: NodeId): FinalResults = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
-    // if some parameters are failed to define, then probably it just missing implementantion of this corner case and we can just use fallback
+    // if some parameters are failed to define, then probably it just missing implementation of this corner case and we can just use fallback
     if (step.parameters.map(_._2).contains(FailedToDefineParameter)) {
       fallback
     } else {
@@ -125,7 +126,7 @@ sealed trait DynamicComponent[T] extends Component {
 
   }
 
-  case class TransformationStep(parameters: List[(String, DefinedParameter)], state: Option[State])
+  case class TransformationStep(parameters: List[(ParameterName, DefinedParameter)], state: Option[State])
 
 }
 

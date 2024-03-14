@@ -66,16 +66,16 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
-      .source("start", "tableApi-source-sql", SqlSourceFactory.TableNameParamName -> s"'$sqlInputTableNameTest1'")
+      .source("start", "tableApi-source-sql", SqlSourceFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'")
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "output",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topics.output}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
+        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topics.output}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true",
       )
 
     run(process) {

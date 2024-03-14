@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -37,7 +38,7 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
       )
     ) { (validationExpression, paramName, inputExpression, value, isValid) =>
       ValidationExpressionParameterValidator(new TestSpelExpression(validationExpression), None)
-        .isValid(paramName, Expression.spel(inputExpression), value, None)(nodeId)
+        .isValid(ParameterName(paramName), Expression.spel(inputExpression), value, None)(nodeId)
         .isValid shouldBe isValid
     }
   }

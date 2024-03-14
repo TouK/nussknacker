@@ -6,6 +6,7 @@ import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
@@ -25,7 +26,7 @@ object JsonSchemaBasedParameter {
 
   import scala.jdk.CollectionConverters._
 
-  type FieldName = String
+  type FieldName = ParameterName
 
   // Extract editor form from JSON schema
   def apply(schema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(
@@ -46,7 +47,7 @@ object JsonSchemaBasedParameter {
 
     def toSchemaBasedParameter(
         schema: Schema,
-        paramName: Option[String],
+        paramName: Option[ParameterName],
         defaultValue: Option[Expression],
         isRequired: Option[Boolean]
     ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
@@ -66,7 +67,7 @@ object JsonSchemaBasedParameter {
 
     private def createJsonSinkSingleValueParameter(
         schema: Schema,
-        paramName: String,
+        paramName: ParameterName,
         defaultValue: Option[Expression],
         isRequired: Option[Boolean]
     ): SingleSchemaBasedParameter = {
@@ -85,7 +86,7 @@ object JsonSchemaBasedParameter {
 
     private def objectSchemaToSchemaBasedParameter(
         schema: ObjectSchema,
-        paramName: Option[String],
+        paramName: Option[ParameterName],
         isRequired: Option[Boolean]
     ): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
       import cats.implicits.{catsStdInstancesForList, toTraverseOps}
@@ -94,7 +95,9 @@ object JsonSchemaBasedParameter {
           : List[Validated[NonEmptyList[ProcessCompilationError], (String, SchemaBasedParameter)]] =
         schema.getPropertySchemas.asScala.map { case (fieldName, fieldSchema) =>
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
-          val concatName = paramName.fold(fieldName)(pn => TestingParametersSupport.joinWithDelimiter(pn, fieldName))
+          val concatName = ParameterName(
+            paramName.fold(fieldName)(pn => TestingParametersSupport.joinWithDelimiter(pn.value, fieldName))
+          )
           val isRequired = Option(schema.getRequiredProperties.contains(fieldName))
           val schemaBasedValidated = getDefaultValue(fieldSchema, paramName).andThen { defaultValue =>
             toSchemaBasedParameter(
@@ -111,7 +114,7 @@ object JsonSchemaBasedParameter {
 
     private def getDefaultValue(
         fieldSchema: Schema,
-        paramName: Option[String]
+        paramName: Option[ParameterName]
     ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
       JsonDefaultExpressionDeterminer
         .determineWithHandlingNotSupportedTypes(fieldSchema, paramName)

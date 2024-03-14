@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
+// TODO: all these tests should be migrated to ManagementApiHttpServiceBusinessSpec or ManagementApiHttpServiceSecuritySpec
 class ManagementResourcesSpec
     extends AnyFunSuite
     with ScalatestRouteTest
@@ -245,7 +246,7 @@ class ManagementResourcesSpec
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "#input != null", Some(true))
-      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#input")
+      .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'", SinkValueParamName.value -> "#input")
 
     saveCanonicalProcessAndAssertSuccess(processWithDisabledFilter)
     deployProcess(processName) ~> check {
@@ -258,7 +259,7 @@ class ManagementResourcesSpec
       .streaming(processName.value)
       .parallelism(1)
       .source("start", "not existing")
-      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
+      .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'", SinkValueParamName.value -> "#output")
     saveCanonicalProcessAndAssertSuccess(invalidScenario)
 
     deploymentManager.withEmptyProcessState(invalidScenario.name) {
@@ -359,7 +360,7 @@ class ManagementResourcesSpec
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "new java.math.BigDecimal(null) == 0")
-      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "''")
+      .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'", SinkValueParamName.value -> "''")
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |"bela"""".stripMargin
@@ -379,7 +380,7 @@ class ManagementResourcesSpec
         .streaming(processName.value)
         .parallelism(1)
         .source("startProcess", "csv-source")
-        .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
+        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'")
     }
     saveCanonicalProcessAndAssertSuccess(process)
     val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))

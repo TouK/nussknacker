@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValues}
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -25,7 +25,7 @@ object FragmentParameterValidator {
       valueEditor: ValueInputWithFixedValues,
       initialValue: Option[FixedExpressionValue],
       refClazz: FragmentClazzRef,
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
     validateFixedValuesSupportedType(refClazz, paramName, nodeIds)
@@ -41,19 +41,14 @@ object FragmentParameterValidator {
 
   private def validateFixedValuesSupportedType(
       refClazz: FragmentClazzRef,
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
     if (List(FragmentClazzRef[java.lang.Boolean], FragmentClazzRef[String]).contains(refClazz)) {
       Valid(())
-    } else
-      invalidNel(
-        UnsupportedFixedValuesType(
-          paramName,
-          refClazz.refClazzName,
-          nodeIds
-        )
-      )
+    } else {
+      invalidNel(UnsupportedFixedValuesType(paramName, refClazz.refClazzName, nodeIds))
+    }
 
   def validateFixedExpressionValues(
       fragmentParameter: FragmentParameter,
@@ -68,9 +63,9 @@ object FragmentParameterValidator {
         .map { fixedExpressionValue =>
           expressionCompiler.compile(
             Expression.spel(fixedExpressionValue.expression),
-            fieldName = Some(fragmentParameter.name),
+            paramName = Some(fragmentParameter.name),
             validationCtx = validationContext,
-            expectedType = validationContext(fragmentParameter.name),
+            expectedType = validationContext(fragmentParameter.name.value),
           )
         }
         .toList
@@ -78,11 +73,11 @@ object FragmentParameterValidator {
         .leftMap(_.map {
           case e: ExpressionParserCompilationError =>
             ExpressionParserCompilationErrorInFragmentDefinition(
-              e.message,
-              nodeId.id,
-              fragmentParameter.name,
-              subFieldName,
-              e.originalExpr
+              message = e.message,
+              nodeId = nodeId.id,
+              paramName = fragmentParameter.name,
+              subFieldName = subFieldName,
+              originalExpr = e.originalExpr
             )
           case e => e
         })
@@ -111,7 +106,7 @@ object FragmentParameterValidator {
           invalid(DuplicateFragmentInputParameter(paramName, nodeId.toString)).toValidatedNel
         } else valid(())
         val validIdentifierError = validateVariableName(
-          paramName,
+          paramName.value,
           Some(qualifiedParamFieldName(paramName, Some(ParameterNameFieldName)))
         ).map(_ => ())
         acc.combine(duplicationError).combine(validIdentifierError)

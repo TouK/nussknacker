@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkKeyParamName,
-  SinkRawEditorParamName,
-  SinkValidationModeParameterName,
-  SinkValueParamName,
-  TopicParamName
+  schemaVersionParamName,
+  sinkKeyParamName,
+  sinkRawEditorParamName,
+  sinkValidationModeParamName,
+  sinkValueParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
@@ -21,7 +21,7 @@ object NuKafkaRuntimeTestSamples {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val pingPongScenarioName = ProcessName("universal-ping-pong")
+  val pingPongScenarioName: ProcessName = ProcessName("universal-ping-pong")
 
   def pingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
     .streamingLite(pingPongScenarioName.value)
@@ -29,12 +29,12 @@ object NuKafkaRuntimeTestSamples {
     .emptySink(
       "sink",
       "kafka",
-      TopicParamName                  -> s"'$outputTopic'",
-      SchemaVersionParamName          -> "'latest'",
-      SinkRawEditorParamName          -> s"true",
-      SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
-      SinkKeyParamName                -> "",
-      SinkValueParamName              -> "#input"
+      topicParamName.value              -> s"'$outputTopic'",
+      schemaVersionParamName.value      -> "'latest'",
+      sinkRawEditorParamName.value      -> s"true",
+      sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> "#input"
     )
 
   val jsonPingMessage: String =

@@ -40,19 +40,19 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     .source(
       "my-source",
       KafkaUniversalName,
-      TopicParamName         -> s"'$inputTopic'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'$inputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
       "my-sink",
       KafkaUniversalName,
-      TopicParamName         -> s"'$outputTopic'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName       -> "",
-      SinkRawEditorParamName -> "false",
-      "first"                -> s"#input.first",
-      "last"                 -> "#input.last",
-      "age"                  -> "#input.age"
+      topicParamName.value         -> s"'$outputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "false",
+      "first"                      -> s"#input.first",
+      "last"                       -> "#input.last",
+      "age"                        -> "#input.age"
     )
 
   private val scenarioWithRawEditor = ScenarioBuilder
@@ -60,17 +60,17 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     .source(
       "my-source",
       KafkaUniversalName,
-      TopicParamName         -> s"'$inputTopic'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'$inputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
       "my-sink",
       KafkaUniversalName,
-      TopicParamName         -> s"'$outputTopic'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName       -> "",
-      SinkRawEditorParamName -> "true",
-      SinkValueParamName     -> s"#input"
+      topicParamName.value         -> s"'$outputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "true",
+      sinkValueParamName.value     -> s"#input"
     )
 
   test("should mix avro schema source and json schema sink") {
