@@ -213,13 +213,12 @@ object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
   val KeyParamName: ParameterName = ParameterName("key")
 
   val KeyParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, LazyParameter[CharSequence]]] =
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[CharSequence]]] =
     ParameterDeclaration.branchLazyMandatory[CharSequence](KeyParamName).withCreator()
 
   val AggregatorParamName: ParameterName = ParameterName("aggregator")
 
-  val AggregatorParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, Aggregator]] =
+  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, Aggregator]] =
     ParameterDeclaration
       .branchMandatory[Aggregator](AggregatorParamName)
       .withCreator(
@@ -232,11 +231,11 @@ object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
   val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
 
   val AggregateByParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, LazyParameter[AnyRef]]] =
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[AnyRef]]] =
     ParameterDeclaration.branchLazyMandatory[AnyRef](AggregateByParamName).withCreator()
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
-  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, Duration] =
+  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
     ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
 
 }

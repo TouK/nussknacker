@@ -182,7 +182,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     */
   protected def prepareInitialParameters: List[Parameter] = topicParameterDeclaration.createParameter() :: Nil
 
-  protected val topicParameterDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, String] =
+  protected val topicParameterDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
     ParameterDeclaration
       .mandatory[String](TopicParamName)
       .withCreator(modify = _.copy(validators = List(MandatoryParameterValidator, NotBlankParameterValidator)))

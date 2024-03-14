@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.common.components
 
-import cats.Id
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -8,13 +7,13 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
+import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 
 import java.lang
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +28,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object BasicDecisionTableParameter {
     val name: ParameterName = ParameterName("Basic Decision Table")
 
-    val declaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, TabularTypedData] =
+    val declaration: ParameterExtractor[TabularTypedData] with ParameterCreatorWithNoDependency =
       ParameterDeclaration
         .mandatory[TabularTypedData](name)
         .withCreator(_.copy(editor = Some(TabularTypedDataEditor)))
@@ -39,7 +38,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object FilterDecisionTableExpressionParameter {
     val name: ParameterName = ParameterName("Expression")
 
-    val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[Id, LazyParameter[lang.Boolean]] = {
+    val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
         .lazyMandatory[java.lang.Boolean](name)
         .withAdvancedCreator[TabularTypedData](

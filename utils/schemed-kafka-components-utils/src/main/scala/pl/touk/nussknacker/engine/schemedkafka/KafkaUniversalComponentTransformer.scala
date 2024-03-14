@@ -67,7 +67,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def getTopicParam(
       implicit nodeId: NodeId
-  ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[Id, String]] = {
+  ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
@@ -103,7 +103,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def getVersionParam(
       preparedTopic: PreparedKafkaTopic
-  )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[Id, String]] = {
+  )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
@@ -117,7 +117,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   protected def getVersionParam(
       versions: List[Integer]
-  ): ParameterCreatorWithNoDependency with ParameterExtractor[Id, String] = {
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
     val versionValues =
       FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v =>
         FixedExpressionValue(s"'$v'", v.toString)
@@ -194,7 +194,7 @@ trait KafkaUniversalComponentTransformer[T]
 
   // edge case - for some reason Topic is not defined
   @transient protected lazy val fallbackVersionOptionParam
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, String] =
+      : ParameterCreatorWithNoDependency with ParameterExtractor[String] =
     getVersionParam(Nil)
 
   // override it if you use other parameter name for topic

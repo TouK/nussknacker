@@ -194,19 +194,18 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
 
   val BranchTypeParamName: ParameterName = ParameterName("branchType")
 
-  val BranchTypeParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, BranchType]] =
+  val BranchTypeParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, BranchType]] =
     ParameterDeclaration.branchMandatory[BranchType](BranchTypeParamName).withCreator()
 
   val KeyParamName: ParameterName = ParameterName("key")
 
   val KeyParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Id, Map[String, LazyParameter[CharSequence]]] =
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[CharSequence]]] =
     ParameterDeclaration.branchLazyMandatory[CharSequence](KeyParamName).withCreator()
 
   val AggregatorParamName: ParameterName = ParameterName("aggregator")
 
-  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, Aggregator] =
+  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Aggregator] =
     ParameterDeclaration
       .mandatory[Aggregator](AggregatorParamName)
       .withCreator(
@@ -217,7 +216,7 @@ case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
       )
 
   val WindowLengthParamName: ParameterName = ParameterName("windowLength")
-  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Id, Duration] =
+  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
     ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
 
   val AggregateByParamName: ParameterName = ParameterName("aggregateBy")

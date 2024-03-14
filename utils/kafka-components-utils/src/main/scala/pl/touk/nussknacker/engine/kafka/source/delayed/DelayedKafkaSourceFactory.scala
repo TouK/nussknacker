@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.source.delayed
 
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.definition.ParameterExtractor.IsPresent
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -14,15 +13,14 @@ object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
-  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[IsPresent, java.lang.Long] =
+  final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[java.lang.Long] =
     ParameterDeclaration
       .optional[java.lang.Long](ParameterName("delayInMillis"))
       .withCreator(modify = _.copy(validators = delayValidators))
 
   final val timestampFieldParamName = ParameterName("timestampField")
 
-  final val fallbackTimestampFieldParameter
-      : ParameterCreatorWithNoDependency with ParameterExtractor[IsPresent, String] =
+  final val fallbackTimestampFieldParameter: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
     ParameterDeclaration
       .optional[String](timestampFieldParamName)
       .withCreator(modify =
@@ -36,7 +34,7 @@ object DelayedKafkaSourceFactory {
   // until sources will be migrated to non-deprecated Source APi.
   def timestampFieldParameter(
       kafkaRecordValueType: Option[TypingResult]
-  ): ParameterCreatorWithNoDependency with ParameterExtractor[IsPresent, String] = {
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
     val editorOpt = kafkaRecordValueType
       .collect { case TypedObjectTypingResult(fields, _, _) => fields.toList }
       .map(_.collect {
@@ -56,10 +54,10 @@ object DelayedKafkaSourceFactory {
   }
 
   def extractTimestampField(params: Params): Option[String] =
-    fallbackTimestampFieldParameter.extractValue(params).toOption.flatten
+    fallbackTimestampFieldParameter.extractValue(params)
 
   def extractDelayInMillis(params: Params): Option[java.lang.Long] =
-    delayParameter.extractValue(params).toOption.flatten
+    delayParameter.extractValue(params)
 
   def validateTimestampField(field: String, typingResult: TypingResult)(
       implicit nodeId: NodeId
