@@ -60,7 +60,7 @@ class UniversalKafkaSinkFactory(
 
   private val validationModeParamDeclaration =
     ParameterDeclaration
-      .optional[String](sinkValidationModeParamName)
+      .mandatory[String](sinkValidationModeParamName)
       .withCreator(
         modify = _.copy(editor =
           Some(
@@ -95,12 +95,11 @@ class UniversalKafkaSinkFactory(
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) ::
           (`sinkKeyParamName`, _) ::
           (`sinkRawEditorParamName`, _) ::
-          (`sinkValidationModeParamName`, DefinedEagerParameter(mode, _)) ::
+          (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) ::
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
       // edge case - for some reason Topic/Version is not defined
-      val validationMode = Option(mode.asInstanceOf[String]).map(extractValidationMode).getOrElse(ValidationMode.strict)
       getSchema(topic, version)
         .andThen { runtimeSchemaData =>
           schemaBasedMessagesSerdeProvider.schemaValidator
@@ -114,7 +113,7 @@ class UniversalKafkaSinkFactory(
             .extractParameter(
               runtimeSchemaData.schema,
               rawMode = true,
-              validationMode = validationMode,
+              validationMode = extractValidationMode(mode),
               rawParameter = rawValueParamDeclaration.createParameter(),
               restrictedParamNames
             )

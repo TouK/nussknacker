@@ -25,7 +25,8 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
     .load()
     .withValue("namespace", fromAnyRef(namespaceName))
 
-  private val schema = new JsonSchema("""{
+  private val schema =
+    new JsonSchema("""{
                                         |  "type": "object",
                                         |  "properties": {
                                         |    "value" : { "type": "string" }

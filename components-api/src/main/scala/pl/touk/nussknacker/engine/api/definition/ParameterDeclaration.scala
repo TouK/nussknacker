@@ -188,11 +188,11 @@ object ParameterExtractor {
 
   // todo: rename and add explanation
   private def extractParamValueHack[T](parameterName: ParameterName, params: Params) = {
-    Option
-      .when(params.isPresent(parameterName)) {
-        params.extract[T](parameterName)
-      }
-      .flatten
+    if (params.isPresent(parameterName)) {
+      params.extract[T](parameterName)
+    } else {
+      None
+    }
   }
 
 }
