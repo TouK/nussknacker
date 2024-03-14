@@ -458,12 +458,12 @@ export class Graph extends React.Component<Props> {
     };
 
     disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
-        if (this.props.isFragment !== true && this.graphContainsEdge(from, to)) {
+        if (this.props.isFragment !== true && this.#graphContainsEdge(from, to)) {
             this.props.nodesDisconnected(from, to);
         }
     };
 
-    graphContainsEdge(from: NodeId, to: NodeId): boolean {
+    #graphContainsEdge(from: NodeId, to: NodeId): boolean {
         return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
     }
 

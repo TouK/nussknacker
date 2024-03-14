@@ -1,4 +1,4 @@
-import { Edge, NodeType } from "../../../types";
+import { NodeType } from "../../../types";
 import { Stack, styled, Typography } from "@mui/material";
 import React from "react";
 import { SearchHighlighter } from "../creator/SearchHighlighter";
@@ -6,7 +6,6 @@ import { ComponentIcon } from "../creator/ComponentIcon";
 
 type Props = {
     node: NodeType;
-    edges: Edge[];
     highlights: string[];
     fields: string[];
 };
@@ -18,7 +17,7 @@ const NodeIcon = styled(ComponentIcon)({
     maxHeight: "1.5em",
 });
 
-export function FoundNode({ node, edges, highlights, fields }: Props) {
+export function FoundNode({ node, highlights, fields }: Props) {
     return (
         <Stack spacing={0.5} padding={0.5}>
             <Typography variant="body1" component={Stack} direction="row" spacing={0.5} whiteSpace="normal">

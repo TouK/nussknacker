@@ -27,11 +27,9 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
     const eventHandlers = useMemo(
         () => ({
             keydown: (event) => {
-                if (isInputEvent(event)) {
-                    return;
-                }
                 const keyHandler = keyHandlers?.[event.key.toUpperCase()];
-                return keyHandler?.(event);
+                if (isInputEvent(event) || !keyHandler) return;
+                return keyHandler(event);
             },
             copy: (event) => (userActions.copy ? userActions.copy(event) : null),
             paste: (event) => (userActions.paste ? userActions.paste(event) : null),
