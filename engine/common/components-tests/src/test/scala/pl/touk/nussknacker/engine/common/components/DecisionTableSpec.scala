@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
 import java.time.LocalDate
 import java.util.{List => JList, Map => JMap}
@@ -32,7 +32,8 @@ trait DecisionTableSpec
     with Matchers
     with ValidatedValuesDetailedMessage
     with Inside
-    with Eventually {
+    with Eventually
+    with VeryPatientScalaFutures {
 
   import spel.Implicits._
 
