@@ -1,6 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.ui.validation.{CustomActionNonExisting, ValidationError}
+import pl.touk.nussknacker.ui.validation.{
+  CustomActionNonExisting,
+  CustomActionValidationResponse,
+  ValidationError,
+  ValidationNotPerformed,
+  ValidationPerformed
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, CustomActionRequest}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -11,6 +17,7 @@ import sttp.model.StatusCode.Ok
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 import io.circe.generic.auto._
+import pl.touk.nussknacker.engine.deployment.CustomActionValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import sttp.tapir._
 import sttp.model.StatusCode
@@ -28,17 +35,15 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .in("customAction" / path[ProcessName]("scenarioName") / "validation")
       .in(jsonBody[CustomActionRequest])
       .out(
-        statusCode(Ok)
+        statusCode(Ok).and(
+          jsonBody[CustomActionValidationResult]
+        )
       )
       .errorOut(
         oneOf[NuDesignerError](
           oneOfVariantFromMatchType(
             StatusCode.BadRequest,
-            jsonBody[ValidationError]
-          ),
-          oneOfVariantFromMatchType(
-            StatusCode.BadRequest,
-            jsonBody[CustomActionNonExisting]
+            jsonBody[NuDesignerError]
           )
         )
       )
