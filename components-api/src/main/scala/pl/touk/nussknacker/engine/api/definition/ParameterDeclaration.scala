@@ -168,7 +168,7 @@ object ParameterExtractor {
 
       def toOption: Option[T] = isPresent match {
         case Yes(value) => Some(value)
-        case No         => None
+        case No         => ???
       }
 
     }

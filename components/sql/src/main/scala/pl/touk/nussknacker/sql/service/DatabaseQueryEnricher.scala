@@ -248,8 +248,10 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     val createInvoker = cacheTTLOption match {
       case IsPresent.Yes(Some(cacheTTL)) =>
         new DatabaseEnricherInvokerWithCache(_, _, _, _, _, cacheTTL, _, _, _, _)
-      case IsPresent.No | IsPresent.Yes(None) =>
+      case IsPresent.Yes(None) =>
         new DatabaseEnricherInvoker(_, _, _, _, _, _, _, _, _)
+      case IsPresent.No =>
+        ???
     }
     createInvoker(
       state.query,
