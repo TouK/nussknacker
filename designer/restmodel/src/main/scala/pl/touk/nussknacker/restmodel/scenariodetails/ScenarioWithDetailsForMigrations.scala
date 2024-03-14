@@ -29,23 +29,6 @@ import sttp.tapir.Schema
     validationResult.getOrElse(throw new IllegalStateException("Missing validation result"))
 }
 
-object ScenarioWithDetailsForMigrations {
-
-  def fromScenarioWithDetails(scenarioWithDetails: ScenarioWithDetails): ScenarioWithDetailsForMigrations =
-    ScenarioWithDetailsForMigrations(
-      name = scenarioWithDetails.name,
-      isArchived = scenarioWithDetails.isArchived,
-      isFragment = scenarioWithDetails.isFragment,
-      processingType = scenarioWithDetails.processingType,
-      processCategory = scenarioWithDetails.processCategory,
-      scenarioGraph = scenarioWithDetails.scenarioGraph,
-      validationResult = scenarioWithDetails.validationResult,
-      history = scenarioWithDetails.history,
-      modelVersion = scenarioWithDetails.modelVersion
-    )
-
-}
-
 // This trait is extracted for easier monitoring changes in the /processes api that have an influence on the migration API
 trait BaseScenarioWithDetailsForMigrations {
   def name: ProcessName
