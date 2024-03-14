@@ -13,6 +13,8 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     return (
         <WindowManagerProvider
             theme={{
+                backgroundOpacity: 1,
+                backdropFilter: "none",
                 spacing: {
                     baseUnit: spacing.baseUnit,
                 },
