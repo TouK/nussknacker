@@ -18,7 +18,6 @@ class DefinitionResources(
     with NuPathMatchers
     with RouteWithUser {
 
-
   def securedRoute(implicit user: LoggedUser): Route = encodeResponse {
     pathPrefix("processDefinitionData" / Segment) { processingType =>
       definitionsServices

@@ -14,7 +14,8 @@ class NuDesignerExposedApiHttpService(
     notificationApiHttpService: NotificationApiHttpService,
     scenarioActivityApiHttpService: ScenarioActivityApiHttpService,
     scenarioParametersHttpService: ScenarioParametersApiHttpService,
-    nodesApiHttpService: NodesApiHttpService
+    nodesApiHttpService: NodesApiHttpService,
+    dictResourcesHttpService: DictResourcesHttpService
 ) {
 
   private val apiEndpoints =
@@ -24,7 +25,8 @@ class NuDesignerExposedApiHttpService(
       notificationApiHttpService.serverEndpoints ++
       scenarioActivityApiHttpService.serverEndpoints ++
       scenarioParametersHttpService.serverEndpoints ++
-      nodesApiHttpService.serverEndpoints
+      nodesApiHttpService.serverEndpoints ++
+      dictResourcesHttpService.serverEndpoints
 
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 

@@ -44,7 +44,7 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
   def parseDictKeyWithLabelExpression(
       keyWithLabelJson: String
   ): Validated[NonEmptyList[KeyWithLabelExpressionParsingError], DictKeyWithLabelExpression] = {
-    if (keyWithLabelJson.isBlank || keyWithLabelJson == "null")
+    if (keyWithLabelJson.isBlank)
       Valid(DictKeyWithLabelExpression("", None))
     else
       parser.parse(keyWithLabelJson) match {

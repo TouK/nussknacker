@@ -296,6 +296,17 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
+      val dictResourcesHttpService = new DictResourcesHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        processingTypeData = typeToConfig.mapValues { processingTypeData =>
+          (
+            processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
+            processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
+            processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
+          )
+        }
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -333,15 +344,6 @@ class AkkaHttpBasedRouteProvider(
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                   fragmentRepository
                 )
-              )
-            }
-          ),
-          new DictResources(
-            typeToConfig.mapValues { processingTypeData =>
-              (
-                processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
-                processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
-                processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
               )
             }
           ),
@@ -402,7 +404,8 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          nodesApiHttpService
+          nodesApiHttpService,
+          dictResourcesHttpService
         )
 
       val akkaHttpServerInterpreter = {

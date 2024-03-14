@@ -434,6 +434,137 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/dicts/{processingType}/{dictId}/entry:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiDictsProcessingtypeDictidEntry
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: query parameter label'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
+  /api/dicts/{processingType}:
+    post:
+      tags:
+      - Dictionary
+      summary: Get list of available dictionaries with value type compatible with
+        expected type
+      operationId: postApiDictsProcessingtype
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DictListRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
@@ -1459,6 +1590,23 @@ components:
           type: string
         valueType:
           $ref: '#/components/schemas/TypedTaggedValue'
+    DictEntry:
+      required:
+      - key
+      - label
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+    DictListRequestDto:
+      required:
+      - expectedType
+      type: object
+      properties:
+        expectedType:
+          $ref: '#/components/schemas/TypingResult'
     DictParameterEditor:
       required:
       - dictId

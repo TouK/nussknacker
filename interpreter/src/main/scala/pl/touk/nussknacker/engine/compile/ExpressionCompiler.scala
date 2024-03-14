@@ -222,7 +222,7 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
         )
     }
 
-    if (expression.language == Language.DictKeyWithLabel && !expression.expression.isBlank && expression.expression != "null") // TODO: this isn't the prettiest check
+    if (expression.language == Language.DictKeyWithLabel && !expression.expression.isBlank)
       editor match {
         case Some(DictParameterEditor(dictId)) => substitute(dictId)
         case Some(DualParameterEditor(DictParameterEditor(dictId), _)) =>
