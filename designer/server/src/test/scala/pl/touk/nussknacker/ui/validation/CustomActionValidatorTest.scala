@@ -64,7 +64,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooFewParams)
 
-    val caughtException = intercept[ValidationError] {
+    val caughtException = intercept[CustomActionValidationError] {
       validator.validateCustomActionParams(invalidRequestTooFewParams)
     }
 
@@ -80,7 +80,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidValues)
 
-    val caughtException = intercept[ValidationError] {
+    val caughtException = intercept[CustomActionValidationError] {
       validator.validateCustomActionParams(invalidRequestInvalidValues)
     }
 
@@ -96,7 +96,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidParamNames)
 
-    val caughtException = intercept[ValidationError] {
+    val caughtException = intercept[CustomActionValidationError] {
       validator.validateCustomActionParams(invalidRequestInvalidValues)
     }
 

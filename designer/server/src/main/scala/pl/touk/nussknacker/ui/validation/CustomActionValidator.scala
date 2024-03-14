@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.Validated.Invalid
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -17,10 +18,10 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
   def validateCustomActionParams(
       request: CustomActionRequest
-  ): Either[NuDesignerError, CustomActionValidationResult] = {
+  ): Either[CustomActionValidationError, CustomActionValidationResult] = {
 
     val checkedCustomAction =
-      allowedActions.find(_.name == request.actionName).toRight(CustomActionNonExisting(request.actionName))
+      allowedActions.find(_.name == request.actionName).toRight(CustomActionNonExistingError(request.actionName.value))
 
     checkedCustomAction match {
       case Left(notFoundAction) => Left(notFoundAction)
@@ -37,8 +38,8 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   }
 
   private def getValidationResult(
-      validatedParams: Either[ValidationError, Map[String, List[PartSubGraphCompilationError]]]
-  ): Either[NuDesignerError, CustomActionValidationResult] = {
+      validatedParams: Either[CustomActionValidationError, Map[String, List[PartSubGraphCompilationError]]]
+  ): Either[CustomActionValidationError, CustomActionValidationResult] = {
     val hasErrors = validatedParams.map { m => m.exists { case (_, errorList) => errorList.nonEmpty } }
 
     hasErrors match {
@@ -54,24 +55,24 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
       case (true, Some(paramsMap)) =>
         if (paramsMap.keys.size != customActionParams.size) {
           Left(
-            ValidationError(
+            MismatchedParamsError(
               s"Validation requires different count of custom action parameters than provided in request for: ${request.actionName}"
             )
           )
         }
         Right(paramsMap)
       case (true, None) =>
-        Left(ValidationError(s"Missing required params for action: ${request.actionName}"))
+        Left(MismatchedParamsError(s"Missing required params for action: ${request.actionName}"))
       case (false, Some(_)) =>
-        Left(ValidationError(s"Params found for no params action: ${request.actionName}"))
+        Left(MismatchedParamsError(s"Params found for no params action: ${request.actionName}"))
       case _ => Right(Map.empty[String, String])
     }
   }
 
   private def validateParams(
-      requestParamsMap: Either[ValidationError, Map[String, String]],
+      requestParamsMap: Either[CustomActionValidationError, Map[String, String]],
       customActionParams: List[CustomActionParameter]
-  )(implicit nodeId: NodeId): Either[ValidationError, Map[String, List[PartSubGraphCompilationError]]] = {
+  )(implicit nodeId: NodeId): Either[CustomActionValidationError, Map[String, List[PartSubGraphCompilationError]]] = {
     val checkedParamsMap = checkForMissingKeys(requestParamsMap, customActionParams)
 
     checkedParamsMap.map { m =>
@@ -95,15 +96,15 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   }
 
   private def checkForMissingKeys(
-      requestParamsMap: Either[ValidationError, Map[String, String]],
+      requestParamsMap: Either[CustomActionValidationError, Map[String, String]],
       customActionParams: List[CustomActionParameter]
-  )(implicit nodeId: NodeId): Either[ValidationError, Map[String, String]] = {
+  )(implicit nodeId: NodeId): Either[CustomActionValidationError, Map[String, String]] = {
     requestParamsMap.flatMap { map =>
       val nameList    = customActionParams.map(_.name)
       val missingKeys = nameList.filterNot(map.contains)
       missingKeys match {
         case Nil => Right(map)
-        case _   => Left(ValidationError(s"Missing params: ${missingKeys.mkString(", ")} for action: ${nodeId.id}"))
+        case _ => Left(MismatchedParamsError(s"Missing params: ${missingKeys.mkString(", ")} for action: ${nodeId.id}"))
       }
     }
   }
@@ -123,6 +124,12 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
 }
 
-case class ValidationError(message: String) extends BadRequestError(message)
+object CustomActionValidationError {
+  def apply(message: String): CustomActionValidationError = new CustomActionValidationError(message)
+}
 
-case class CustomActionNonExisting(actionName: ScenarioActionName) extends NotFoundError(s"$actionName is not existing")
+@JsonCodec sealed class CustomActionValidationError(message: String) extends BadRequestError(message)
+
+case class CustomActionNonExistingError(message: String) extends CustomActionValidationError(message)
+
+case class MismatchedParamsError(message: String) extends CustomActionValidationError(message)

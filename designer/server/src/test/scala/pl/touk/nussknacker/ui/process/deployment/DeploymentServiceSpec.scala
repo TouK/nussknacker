@@ -34,7 +34,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.validation.ValidationError
+import pl.touk.nussknacker.ui.validation.CustomActionValidationError
 import slick.dbio.DBIOAction
 
 import java.util.UUID
@@ -136,7 +136,7 @@ class DeploymentServiceSpec
 
     val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
 
-    result shouldBe a[ValidationError]
+    result shouldBe a[CustomActionValidationError]
     result.getMessage.trim shouldBe "Comment is required."
 
     eventually {
@@ -194,7 +194,7 @@ class DeploymentServiceSpec
 
     deploymentManager.withWaitForCancelFinish {
       val result = deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
-      result shouldBe a[ValidationError]
+      result shouldBe a[CustomActionValidationError]
       result.getMessage.trim shouldBe "Comment is required."
     }
   }
