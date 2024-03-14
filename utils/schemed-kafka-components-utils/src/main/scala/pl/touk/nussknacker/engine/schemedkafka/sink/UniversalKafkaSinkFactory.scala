@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue
 }
+import pl.touk.nussknacker.engine.api.definition.ParameterExtractor.IsPresent
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
@@ -60,7 +61,7 @@ class UniversalKafkaSinkFactory(
 
   private val validationModeParamDeclaration =
     ParameterDeclaration
-      .mandatory[String](SinkValidationModeParamName)
+      .optional[String](SinkValidationModeParamName)
       .withCreator(
         modify = _.copy(editor =
           Some(
@@ -229,9 +230,10 @@ class UniversalKafkaSinkFactory(
       kafkaConfig
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
-    val validationMode = extractValidationMode(
-      params.extract[String](SinkValidationModeParamName).getOrElse(ValidationMode.strict.name)
-    )
+    val validationMode = validationModeParamDeclaration.extractValue(params) match {
+      case IsPresent.Yes(Some(validationMode)) => extractValidationMode(validationMode)
+      case IsPresent.No | IsPresent.Yes(None)  => ValidationMode.strict
+    }
 
     implProvider.createSink(
       preparedTopic,
