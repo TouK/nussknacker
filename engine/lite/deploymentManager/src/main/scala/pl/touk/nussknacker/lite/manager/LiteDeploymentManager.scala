@@ -14,14 +14,15 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
 
   protected implicit def executionContext: ExecutionContext
 
-  protected def processTestActionCommand(command: TestScenarioCommand): Future[TestProcess.TestResults] = {
+  protected def processTestActionCommand[T](command: TestScenarioCommand[T]): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
         // TODO: handle scenario testing in RR as well
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(
           modelData.asInvokableModelData,
           command.scenarioTestData,
-          command.canonicalProcess
+          command.canonicalProcess,
+          command.variableEncoder
         )
       }
     }

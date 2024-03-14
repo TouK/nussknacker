@@ -87,7 +87,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     case command: CancelScenarioCommand  => cancelScenario(command)
     case command: CustomActionCommand    => invokeCustomAction(command)
     case _: MakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
-    case _: TestScenarioCommand          => notImplemented
+    case _: TestScenarioCommand[_]       => notImplemented
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {

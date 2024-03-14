@@ -35,8 +35,6 @@ case class BestEffortJsonEncoder(
   private val safeBigInt     = safeJson[java.math.BigInteger](a => fromBigInt(a))
   private val safeNumber     = safeJson[Number](a => fromDoubleOrNull(a.doubleValue())) // is it correct?
 
-  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
-
   private val optionalEncoders =
     ServiceLoader.load(classOf[ToJsonEncoder], classLoader).asScala.map(_.encoder(this.encode))
 

@@ -142,13 +142,14 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
 
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
         LocalModelData(config, List.empty, configCreator = creator),
         process,
         scenarioTestData,
-        FlinkTestConfiguration.configuration()
+        FlinkTestConfiguration.configuration(),
+        identity
       )
     }
   }

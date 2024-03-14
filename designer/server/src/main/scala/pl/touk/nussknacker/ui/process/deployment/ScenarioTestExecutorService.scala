@@ -11,25 +11,32 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ScenarioTestExecutorService {
 
-  def testProcess(
+  /**
+    * NU-1455: Variable encoding must be done on the engine, because of classLoader's problems
+    */
+  def testProcess[T](
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults]
+      variableEncoder: Any => T,
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
 
 }
 
 class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, deploymentManager: DeploymentManager)
     extends ScenarioTestExecutorService {
 
-  override def testProcess(
+  override def testProcess[T](
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults] = {
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T,
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
-      testResult <- deploymentManager.processCommand(TestScenarioCommand(id.name, resolvedProcess, scenarioTestData))
+      testResult <- deploymentManager.processCommand(
+        TestScenarioCommand(id.name, resolvedProcess, scenarioTestData, variableEncoder)
+      )
     } yield testResult
   }
 
