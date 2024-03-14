@@ -25,30 +25,30 @@ class SqlSinkFactory(definition: SqlDataSourcesDefinition) extends SingleInputDy
   override type State = TableDefinition
 
   // TODO: add non-raw value parameters
-  private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](ValueParamName)
+  private val RawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](ValueParamName)
 
   private val tableNameParam: ParameterWithExtractor[String] =
     SqlComponentFactory.buildTableNameParam(definition.tableDefinitions)
-  private val tableNameParamName = tableNameParam.parameter.name
+  private val TableNameParamName = tableNameParam.parameter.name
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
-        parameters = rawValueParam.parameter :: tableNameParam.parameter :: Nil,
+        parameters = RawValueParam.parameter :: tableNameParam.parameter :: Nil,
         errors = List.empty,
         state = None
       )
     case TransformationStep(
-          (`ValueParamName`, rawValueParamValue) ::
-          (`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
+          (ValueParamName, rawValueParamValue) ::
+          (TableNameParamName, DefinedEagerParameter(tableName: String, _)) :: Nil,
           _
         ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
 
       val valueParameterTypeErrors = SingleSchemaBasedParameter(
-        rawValueParam.parameter,
+        RawValueParam.parameter,
         TypingResultOutputValidator.validate(_, selectedTable.typingResult)
       ).validateParams(Map(ValueParamName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
 
@@ -60,7 +60,7 @@ class SqlSinkFactory(definition: SqlDataSourcesDefinition) extends SingleInputDy
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Sink = {
-    val lazyValueParam = rawValueParam.extractValue(params)
+    val lazyValueParam = RawValueParam.extractValue(params)
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
