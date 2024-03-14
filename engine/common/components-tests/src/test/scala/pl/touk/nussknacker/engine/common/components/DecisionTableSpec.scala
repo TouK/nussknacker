@@ -39,7 +39,7 @@ trait DecisionTableSpec
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
-      eventually {
+      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
         val result = execute[TestMessage, SCENARIO_RESULT](
           scenario = decisionTableExampleScenario(
             expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
@@ -68,7 +68,7 @@ trait DecisionTableSpec
     }
 
     "return proper typingResult as java list which allows to run method on" in {
-      eventually {
+      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
         val result = execute[TestMessage, SCENARIO_RESULT](
           scenario = decisionTableExampleScenario(
             expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
