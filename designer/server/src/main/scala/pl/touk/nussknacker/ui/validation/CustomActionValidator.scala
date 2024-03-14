@@ -41,9 +41,11 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   ): Either[NuDesignerError, CustomActionValidationResult] = {
     val hasErrors = validatedParams.map { m => m.exists { case (_, errorList) => errorList.nonEmpty } }
 
-    hasErrors.right match {
-      case true  => Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw IllegalStateException)))
-      case false => Right(CustomActionValidationResult.Valid)
+    hasErrors match {
+      case Right(true) =>
+        Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw IllegalStateException)))
+      case Right(false) => Right(CustomActionValidationResult.Valid)
+      case Left(_)      => _
     }
   }
 

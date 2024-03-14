@@ -1,12 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.ui.validation.{
-  CustomActionNonExisting,
-  CustomActionValidationResponse,
-  ValidationError,
-  ValidationNotPerformed,
-  ValidationPerformed
-}
+import pl.touk.nussknacker.ui.validation.{CustomActionNonExisting, ValidationError}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.{BaseEndpointDefinitions, CustomActionRequest}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -27,7 +21,7 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
   private lazy val baseProcessManagementEndpoint = baseNuApiEndpoint.in("processManagement")
 
   lazy val customActionValidationEndpoint
-      : SecuredEndpoint[(ProcessName, CustomActionRequest), NuDesignerError, Unit, Any] = {
+      : SecuredEndpoint[(ProcessName, CustomActionRequest), NuDesignerError, CustomActionValidationResult, Any] = {
     baseProcessManagementEndpoint
       .summary("Endpoint to validate input in custom action fields")
       .tag("CustomAction")
