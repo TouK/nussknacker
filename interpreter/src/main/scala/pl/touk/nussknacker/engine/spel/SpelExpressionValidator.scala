@@ -20,7 +20,8 @@ class SpelExpressionValidator(typer: Typer) {
       collected.finalResult.typingResult match {
         case a: TypingResult if a.canBeSubclassOf(expectedType) || expectedType == Typed[SpelExpressionRepr] =>
           Valid(collected)
-        case a: TypingResult => Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))
+        case a: TypingResult =>
+          Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, a)))
       }
     }
   }

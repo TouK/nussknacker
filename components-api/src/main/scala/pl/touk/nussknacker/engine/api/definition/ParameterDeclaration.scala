@@ -109,7 +109,9 @@ object ParameterExtractor {
       params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
-      Parameter[Map[String, PARAMETER_VALUE_TYPE]](parameterName).copy(branchParam = true)
+      Parameter[PARAMETER_VALUE_TYPE](parameterName)
+        .copy(branchParam = true)
+
   }
 
   final class MandatoryLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
@@ -122,7 +124,9 @@ object ParameterExtractor {
       params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
 
     override private[definition] def createBase: Parameter =
-      Parameter[PARAMETER_VALUE_TYPE](parameterName).copy(isLazyParameter = true)
+      Parameter[PARAMETER_VALUE_TYPE](parameterName)
+        .copy(isLazyParameter = true)
+
   }
 
   final class MandatoryBranchLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
@@ -135,7 +139,7 @@ object ParameterExtractor {
       params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
 
     override private[definition] def createBase: Parameter =
-      Parameter[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+      Parameter[PARAMETER_VALUE_TYPE](parameterName)
         .copy(isLazyParameter = true, branchParam = true)
 
   }
@@ -199,7 +203,10 @@ object ParameterExtractor {
       }
 
     override private[definition] def createBase: Parameter =
-      Parameter.optional[PARAMETER_VALUE_TYPE](parameterName).copy(isLazyParameter = true)
+      Parameter
+        .optional[PARAMETER_VALUE_TYPE](parameterName)
+        .copy(isLazyParameter = true)
+
   }
 
   final class OptionalBranchParamExtractor[PARAMETER_VALUE_TYPE: TypeTag] private[definition] (
@@ -214,7 +221,10 @@ object ParameterExtractor {
       }
 
     override private[definition] def createBase: Parameter =
-      Parameter.optional[PARAMETER_VALUE_TYPE](parameterName).copy(branchParam = true)
+      Parameter
+        .optional[PARAMETER_VALUE_TYPE](parameterName)
+        .copy(branchParam = true)
+
   }
 
   final class OptionalBranchLazyParamExtractor[PARAMETER_VALUE_TYPE <: AnyRef: TypeTag] private[definition] (
@@ -230,7 +240,7 @@ object ParameterExtractor {
 
     override private[definition] def createBase: Parameter = {
       Parameter
-        .optional[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+        .optional[PARAMETER_VALUE_TYPE](parameterName)
         .copy(isLazyParameter = true, branchParam = true)
     }
 
