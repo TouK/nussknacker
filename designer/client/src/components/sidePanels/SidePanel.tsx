@@ -1,14 +1,14 @@
-import React, { forwardRef, PropsWithChildren, useEffect, useRef, useState } from "react";
-import ErrorBoundary from "../common/ErrorBoundary";
-import { ScrollbarsExtended } from "./ScrollbarsExtended";
-import TogglePanel from "../TogglePanel";
-import { useDispatch, useSelector } from "react-redux";
-import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/toolbars";
-import { togglePanel } from "../../actions/nk";
-import { useGraph } from "../graph/GraphContext";
-import { Graph } from "../graph/Graph";
-import { StyledScrollToggle, StyledScrollToggleChild, styledScrollTogglePanelWrapper } from "./SidePanelStyled";
 import { useTheme } from "@mui/material";
+import React, { createContext, forwardRef, PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { togglePanel } from "../../actions/nk";
+import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/toolbars";
+import ErrorBoundary from "../common/ErrorBoundary";
+import { Graph } from "../graph/Graph";
+import { useGraph } from "../graph/GraphContext";
+import TogglePanel from "../TogglePanel";
+import { ScrollbarsExtended } from "./ScrollbarsExtended";
+import { StyledScrollToggle, StyledScrollToggleChild, styledScrollTogglePanelWrapper } from "./SidePanelStyled";
 
 export enum PanelSide {
     Right = "RIGHT",
@@ -64,6 +64,20 @@ function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], isO
     return ref;
 }
 
+const SidePanelContext = createContext<PanelSide>(null);
+
+export const useSidePanel = () => {
+    const side = useContext(SidePanelContext);
+
+    if (!side) {
+        throw new Error(`${useSidePanel.name} was used outside of ${SidePanelContext.displayName} provider`);
+    }
+
+    const { isOpened, onToggle } = useSidePanelToggle(side);
+
+    return useMemo(() => ({ side, isOpened, onToggle }), [isOpened, onToggle, side]);
+};
+
 export function SidePanel(props: PropsWithChildren<SidePanelProps>) {
     const { children, side, className } = props;
     const { isOpened, onToggle } = useSidePanelToggle(side);
@@ -72,7 +86,7 @@ export function SidePanel(props: PropsWithChildren<SidePanelProps>) {
 
     const ref = useGraphViewportAdjustment(side === PanelSide.Left ? "left" : "right", isOpened && showToggle);
     return (
-        <>
+        <SidePanelContext.Provider value={side}>
             {!isOpened || showToggle ? <TogglePanel type={side} isOpened={isOpened} onToggle={onToggle} /> : null}
             <ScrollTogglePanel
                 className={styledScrollTogglePanelWrapper(theme)}
@@ -84,6 +98,6 @@ export function SidePanel(props: PropsWithChildren<SidePanelProps>) {
             >
                 {children}
             </ScrollTogglePanel>
-        </>
+        </SidePanelContext.Provider>
     );
 }
