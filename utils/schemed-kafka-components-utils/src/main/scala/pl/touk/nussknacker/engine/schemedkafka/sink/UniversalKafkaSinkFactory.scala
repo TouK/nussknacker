@@ -230,11 +230,16 @@ class UniversalKafkaSinkFactory(
       kafkaConfig
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
-    val validationMode = validationModeParamDeclaration.extractValue(params) match {
-      case IsPresent.Yes(Some(validationMode)) => extractValidationMode(validationMode)
-      case IsPresent.No | IsPresent.Yes(None)  => ValidationMode.strict
+    // validation mode is visible only when raw editor is turned on
+    val validationMode = if (params.extractUnsafe[Boolean](SinkRawEditorParamName)) {
+      validationModeParamDeclaration.extractValue(params) match {
+        case IsPresent.Yes(Some(validationMode)) => extractValidationMode(validationMode)
+        case IsPresent.Yes(None)                 => ValidationMode.strict
+        case IsPresent.No                        => ???
+      }
+    } else {
+      ValidationMode.strict
     }
-
     implProvider.createSink(
       preparedTopic,
       key,
