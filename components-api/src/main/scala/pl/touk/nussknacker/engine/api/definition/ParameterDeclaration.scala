@@ -204,11 +204,11 @@ object ParameterExtractor {
       parameterName: ParameterName,
       params: Params
   ) = {
-    if (params.isPresent(parameterName)) {
+//    if (params.isPresent(parameterName)) {
       params.extract[T](parameterName)
-    } else {
-      None
-    }
+//    } else {
+//      None
+//    }
   }
 
 }
