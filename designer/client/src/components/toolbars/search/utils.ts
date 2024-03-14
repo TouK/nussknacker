@@ -5,80 +5,75 @@ import { getScenario } from "../../../reducers/selectors/graph";
 import NodeUtils from "../../graph/NodeUtils";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { ensureArray } from "../../../common/arrayUtils";
 
 type SelectorResult = { expression: string } | string;
-type Selector = (data: [NodeType, Edge[]]) => SelectorResult | SelectorResult[];
+type Selector = (node: NodeType) => SelectorResult | SelectorResult[];
 type FilterSelector = { name: string; selector: Selector }[];
 
-function selectValues(data: [NodeType, Edge[]], selector: Selector): string[] {
-    const resolveExpression = (value) => (typeof value === "string" ? value : value?.expression);
-    const value = selector(data);
-    const result = value instanceof Array ? value.map((v) => resolveExpression(v)) : [resolveExpression(value)];
-    return result.filter(Boolean);
-}
-
-const selectors: FilterSelector = [
-    { name: "id", selector: ([node]) => node.id },
-    { name: "description", selector: ([node]) => node.additionalFields?.description },
+const fieldsSelectors: FilterSelector = [
+    {
+        name: "id",
+        selector: (node) => node.id,
+    },
+    {
+        name: "description",
+        selector: (node) => node.additionalFields?.description,
+    },
     {
         name: "type",
-        selector: ([node]) => node.type,
+        selector: (node) => node.type,
     },
     {
         name: "paramValue",
-        selector: ([node]) => node.ref?.outputVariableNames && Object.values(node.ref?.outputVariableNames),
+        selector: (node) => node.ref?.outputVariableNames && Object.values(node.ref?.outputVariableNames),
     },
     {
         name: "paramName",
-        selector: ([node]) => node.ref?.outputVariableNames && Object.keys(node.ref?.outputVariableNames),
+        selector: (node) => node.ref?.outputVariableNames && Object.keys(node.ref?.outputVariableNames),
     },
     {
         name: "paramValue",
-        selector: ([node]) => [node.expression, node.exprVal],
+        selector: (node) => [node.expression, node.exprVal],
     },
     {
         name: "outputValue",
-        selector: ([node]) => [node.outputName, node.output, node.outputVar, node.varName, node.value],
+        selector: (node) => [node.outputName, node.output, node.outputVar, node.varName, node.value],
     },
     {
         name: "paramValue",
-        selector: ([node]) =>
-            [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.expression),
+        selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.expression),
     },
     {
         name: "paramName",
-        selector: ([node]) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.name),
-    },
-    {
-        name: "edgeExpression",
-        selector: ([, edges]) => {
-            return edges.map((e) => e.edgeType?.condition);
-        },
+        selector: (node) => [node.parameters, node.ref?.parameters, node.service?.parameters, node.fields].flat().map((p) => p?.name),
     },
 ];
 
-export const findFields = (filterValues: string[], data: [NodeType, Edge[]]) => {
-    if (!filterValues?.length) {
-        return [];
-    }
+function matchFilters(value: SelectorResult, filterValues: string[]): boolean {
+    const resolved = typeof value === "string" ? value : value?.expression;
+    return filterValues.length && filterValues.every((filter) => resolved?.toLowerCase().includes(filter.toLowerCase()));
+}
 
+export const findFields = (filterValues: string[], node: NodeType) => {
     return uniq(
-        selectors.flatMap(({ name, selector }) =>
-            selectValues(data, selector)
-                .map((v) => (filterValues.every((f) => v?.toLowerCase().includes(f.toLowerCase())) ? name : null))
-                .filter(Boolean),
+        fieldsSelectors.flatMap(({ name, selector }) =>
+            ensureArray(selector(node))
+                .filter((v) => matchFilters(v, filterValues))
+                .map(() => name),
         ),
     );
 };
 
 export function useFilteredNodes(filterValues: string[]): {
     groups: string[];
-    data: [NodeType, Edge[]];
+    node: NodeType;
+    edges: Edge[];
 }[] {
     const { t } = useTranslation();
     const { scenarioGraph } = useSelector(getScenario);
-    const nodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
-    const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
+    const allNodes = NodeUtils.nodesFromScenarioGraph(scenarioGraph);
+    const allEdges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
 
     const displayNames = useMemo(
         () => ({
@@ -95,15 +90,20 @@ export function useFilteredNodes(filterValues: string[]): {
 
     return useMemo(
         () =>
-            nodes
+            allNodes
                 .map((node) => {
-                    const data: [NodeType, Edge[]] = [node, edges.filter((e) => e.from === node.id)];
-                    const groups = findFields(filterValues, data)
+                    const edges = allEdges
+                        .filter((e) => e.from === node.id)
+                        .filter((e) => matchFilters(e.edgeType?.condition, filterValues));
+
+                    const groups = findFields(filterValues, node)
+                        .concat(edges.length ? "edgeExpression" : null)
                         .map((name) => displayNames[name])
                         .filter(Boolean);
-                    return { data, groups };
+
+                    return { node, edges, groups };
                 })
                 .filter(({ groups }) => groups.length),
-        [displayNames, edges, filterValues, nodes],
+        [displayNames, allEdges, filterValues, allNodes],
     );
 }
