@@ -18,7 +18,7 @@ import { handleGraphEvent } from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { rafThrottle } from "./rafThrottle";
 import { isEdgeEditable } from "../../common/EdgeUtils";
-import { NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
 import User from "../../common/models/User";
@@ -31,6 +31,7 @@ import { createUniqueArrowMarker } from "./arrowMarker";
 import { Scenario } from "../Process/types";
 import { nodeFocused, nodeValidationError } from "./focusableStyled";
 import { dragHovered } from "./GraphStyled";
+import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 
 // TODO: this is needed here due to our webpack config - needs fixing.
 styles;
@@ -467,6 +468,25 @@ export class Graph extends React.Component<Props> {
         return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
     }
 
+    #findLinkForEdge(edge: Edge): dia.Link {
+        if (!isEdgeConnected(edge) || !this.#graphContainsEdge(edge.from, edge.to)) {
+            return null;
+        }
+        const links = this.graph.getLinks();
+        return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
+    }
+
+    highlightEdge(edge: Edge, className: string): void {
+        const link = this.#findLinkForEdge(edge);
+        link?.toFront();
+        this.#highlightCell(link, className);
+    }
+
+    unhighlightEdge(edge: Edge, className: string): void {
+        const link = this.#findLinkForEdge(edge);
+        this.#unhighlightCell(link, className);
+    }
+
     handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
         if (this.props.isFragment === true) return;
 
@@ -541,18 +561,14 @@ export class Graph extends React.Component<Props> {
         });
     }
 
-    highlightNode = (nodeId: NodeId, highlightClass: string): void => {
+    highlightNode = (nodeId: NodeId, className: string): void => {
         const cell = this.graph.getCell(nodeId);
-        if (cell) {
-            this.#highlightCell(cell, highlightClass);
-        }
+        this.#highlightCell(cell, className);
     };
 
-    unhighlightNode = (nodeId: NodeId, highlightClass: string): void => {
+    unhighlightNode = (nodeId: NodeId, className: string): void => {
         const cell = this.graph.getCell(nodeId);
-        if (cell) {
-            this.#unhighlightCell(cell, highlightClass);
-        }
+        this.#unhighlightCell(cell, className);
     };
 
     changeLayoutIfNeeded = (): void => {

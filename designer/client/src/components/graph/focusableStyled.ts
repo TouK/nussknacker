@@ -106,10 +106,12 @@ const nodeStyles = (theme: Theme) => {
         }
 
         .${nodeFound} {
+            .label rect,
             .body,
             .joint-port-body {
                 stroke: ${found};
             }
+            .label rect,
             .background,
             .joint-port-body {
                 fill: ${tint(found, 0.8)};
@@ -124,6 +126,7 @@ const nodeStyles = (theme: Theme) => {
         }
 
         .${nodeFoundHover} {
+            .label rect,
             .background,
             .joint-port-body {
                 fill: ${tint(found, 0.6)};

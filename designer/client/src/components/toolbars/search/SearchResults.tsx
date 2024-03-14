@@ -45,24 +45,33 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
             return;
         }
 
-        const nodeIds = nodes.map(({ data: [{ id }] }) => id);
+        const nodeIds = nodes.map((n) => n.node.id);
         graph.panToNodes(nodeIds);
-        nodeIds.forEach((id) => {
-            graph.highlightNode(id, nodeFound);
-            if (hoveredNodes.includes(id)) {
-                graph.highlightNode(id, nodeFoundHover);
+
+        nodes.forEach(({ node, edges }) => {
+            graph.highlightNode(node.id, nodeFound);
+            edges.forEach((e) => graph.highlightEdge(e, nodeFound));
+            if (hoveredNodes.includes(node.id)) {
+                edges.forEach((e) => graph.highlightEdge(e, nodeFoundHover));
+                graph.highlightNode(node.id, nodeFoundHover);
             }
         });
 
         return () => {
-            nodeIds.forEach((id) => graph.unhighlightNode(id, nodeFound));
-            hoveredNodes.forEach((id) => graph.unhighlightNode(id, nodeFoundHover));
+            nodes.forEach(({ node, edges }) => {
+                graph.unhighlightNode(node.id, nodeFound);
+                graph.unhighlightNode(node.id, nodeFoundHover);
+                edges.forEach((e) => {
+                    graph.unhighlightEdge(e, nodeFound);
+                    graph.unhighlightEdge(e, nodeFoundHover);
+                });
+            });
         };
     }, [nodes, graphGetter, hoveredNodes, clearHighlight]);
 
     return (
         <MenuList onFocus={() => setHasFocus(true)} onBlur={() => setHasFocus(false)} tabIndex={-1} sx={{ padding: 0 }}>
-            {nodes.map(({ data: [node, edges], groups }) => (
+            {nodes.map(({ node, groups }) => (
                 <MenuItem
                     key={node.id}
                     tabIndex={hasFocus ? -1 : 0}
