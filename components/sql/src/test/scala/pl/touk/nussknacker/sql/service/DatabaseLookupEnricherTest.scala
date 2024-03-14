@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.ResultSetStrategy
 import pl.touk.nussknacker.sql.db.schema.{JdbcMetaDataProvider, MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.cacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
@@ -43,7 +44,7 @@ class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val implementation = service.implementation(
-      params = Params(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L)),
+      params = Params(Map(cacheTTLParamName -> null, DatabaseLookupEnricher.KeyValueParamName -> 1L)),
       dependencies = Nil,
       finalState = Some(state)
     )

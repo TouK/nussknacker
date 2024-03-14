@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.cacheTTLParamName
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
 import scala.concurrent.Await
@@ -34,7 +35,11 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       strategy = ResultSetStrategy
     )
     val implementation =
-      service.implementation(Params(Map(ParameterName("arg1") -> 1)), dependencies = Nil, Some(state))
+      service.implementation(
+        Params(Map(cacheTTLParamName -> null, ParameterName("arg1") -> 1)),
+        dependencies = Nil,
+        Some(state)
+      )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
@@ -61,7 +66,11 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       strategy = UpdateResultStrategy
     )
     val implementation =
-      service.implementation(Params(Map(ParameterName("arg1") -> 1)), dependencies = Nil, Some(state))
+      service.implementation(
+        Params(Map(cacheTTLParamName -> null, ParameterName("arg1") -> 1)),
+        dependencies = Nil,
+        Some(state)
+      )
     returnType(service, state).display shouldBe "Integer"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
