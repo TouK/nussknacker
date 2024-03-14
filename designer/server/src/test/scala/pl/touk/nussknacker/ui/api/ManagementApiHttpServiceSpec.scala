@@ -52,6 +52,12 @@ class ManagementApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
         .Then()
         .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |  "buga": "buga"
+             |}
+             |""".stripMargin
+        )
 
     }
     "return error for wrong request params" in {
@@ -74,6 +80,12 @@ class ManagementApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
         .Then()
         .statusCode(200)
+        .equalsJsonBody(
+          s"""{
+             |  "buga": "buga"
+             |}
+             |""".stripMargin
+        )
     }
     "return error for non existing action" in {
       given()
@@ -95,6 +107,12 @@ class ManagementApiHttpServiceSpec
         .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
         .Then()
         .statusCode(404)
+        .equalsJsonBody(
+          s"""{
+             |  "buga": "buga"
+             |}
+             |""".stripMargin
+        )
     }
   }
 

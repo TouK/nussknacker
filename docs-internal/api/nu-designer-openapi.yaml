@@ -434,6 +434,61 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/processManagement/customAction/{scenarioName}/validation:
+    post:
+      tags:
+      - CustomAction
+      summary: Endpoint to validate input in custom action fields
+      operationId: postApiProcessmanagementCustomactionScenarionameValidation
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomActionRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '400':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomActionNonExisting'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - {}
+      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
@@ -1419,6 +1474,22 @@ components:
           $ref: '#/components/schemas/ProcessAction'
     CronParameterEditor:
       type: object
+    CustomActionNonExisting:
+      required:
+      - actionName
+      type: object
+      properties:
+        actionName:
+          type: string
+    CustomActionRequest:
+      required:
+      - actionName
+      type: object
+      properties:
+        actionName:
+          type: string
+        params:
+          $ref: '#/components/schemas/Map_String'
     CustomNode:
       required:
       - id
@@ -1804,6 +1875,13 @@ components:
           type:
           - array
           - 'null'
+          items:
+            type: string
+    Invalid:
+      type: object
+      properties:
+        customMessage:
+          type: array
           items:
             type: string
     Join:
@@ -2577,6 +2655,12 @@ components:
           - 'null'
         layoutData:
           $ref: '#/components/schemas/LayoutData'
+    Valid:
+      type: object
+    ValidationResult:
+      oneOf:
+      - $ref: '#/components/schemas/Invalid'
+      - $ref: '#/components/schemas/Valid'
     ValueInputWithFixedValues:
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'

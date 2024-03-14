@@ -1,56 +1,107 @@
 package pl.touk.nussknacker.ui.validation
 
+import cats.data.Validated.Invalid
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionCommand, ScenarioActionName}
-import pl.touk.nussknacker.engine.api.{NodeId, ProcessVersion}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, User}
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionParameter,
+  CustomActionValidationResult
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError, NuDesignerError}
 
 class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
-  // TODO: maybe pass around List[ParameterValidationError] in order to provide all information about the errors.
-  // Currently we just throw the first that occurs.
-  def validateCustomActionParams(request: CustomActionRequest): Unit = {
+  def validateCustomActionParams(
+      request: CustomActionRequest
+  ): Either[NuDesignerError, CustomActionValidationResult] = {
 
-    val customActionOpt     = allowedActions.find(_.name == request.actionName)
-    val checkedCustomAction = existsOrFail(customActionOpt, CustomActionNonExisting(request.actionName))
+    val checkedCustomAction =
+      allowedActions.find(_.name == request.actionName).toRight(CustomActionNonExisting(request.actionName))
 
-    implicit val nodeId: NodeId = NodeId(checkedCustomAction.name.value)
-    val customActionParams      = checkedCustomAction.parameters
+    checkedCustomAction match {
+      case Left(notFoundAction) => Left(notFoundAction)
 
-    val requestParamsMap = (customActionParams.nonEmpty, request.params) match {
+      case Right(foundAction) => {
+        implicit val nodeId: NodeId = NodeId(foundAction.name.value)
+        val customActionParams      = foundAction.parameters
+        val requestParamsMap        = getRequestParamsMap(request, customActionParams)
+
+        val validated = validateParams(requestParamsMap, customActionParams)
+        getValidationResult(validated)
+      }
+    }
+  }
+
+  private def getValidationResult(
+      validatedParams: Either[ValidationError, Map[String, List[PartSubGraphCompilationError]]]
+  ): Either[NuDesignerError, CustomActionValidationResult] = {
+    val hasErrors = validatedParams.map { m => m.exists { case (_, errorList) => errorList.nonEmpty } }
+
+    hasErrors.right match {
+      case true  => Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw IllegalStateException)))
+      case false => Right(CustomActionValidationResult.Valid)
+    }
+  }
+
+  private def getRequestParamsMap(request: CustomActionRequest, customActionParams: List[CustomActionParameter]) = {
+    (customActionParams.nonEmpty, request.params) match {
       case (true, Some(paramsMap)) =>
         if (paramsMap.keys.size != customActionParams.size) {
-          throw ValidationError(
-            s"Different count of custom action parameters than provided in request for: ${request.actionName}"
+          Left(
+            ValidationError(
+              s"Validation requires different count of custom action parameters than provided in request for: ${request.actionName}"
+            )
           )
         }
-        paramsMap
+        Right(paramsMap)
       case (true, None) =>
-        throw ValidationError(s"No params defined for action: ${request.actionName}")
+        Left(ValidationError(s"Missing required params for action: ${request.actionName}"))
       case (false, Some(_)) =>
-        throw ValidationError(s"Params found for no params action: ${request.actionName}")
-      case _ => Map.empty[String, String]
+        Left(ValidationError(s"Params found for no params action: ${request.actionName}"))
+      case _ => Right(Map.empty[String, String])
     }
+  }
 
-    requestParamsMap.foreach { case (k, v) =>
-      customActionParams.find(_.name == k) match {
-        case Some(param) =>
-          param.validators.foreach { validators =>
-            if (validators.nonEmpty) {
-              validators.foreach(
-                _.isValid(paramName = k, expression = Expression.spel("None"), value = Some(v), label = None)
-                  .fold(
-                    error => throw ValidationError(error.toString),
-                    _ => ()
-                  )
-              )
-            }
+  private def validateParams(
+      requestParamsMap: Either[ValidationError, Map[String, String]],
+      customActionParams: List[CustomActionParameter]
+  )(implicit nodeId: NodeId): Either[ValidationError, Map[String, List[PartSubGraphCompilationError]]] = {
+    val checkedParamsMap = checkForMissingKeys(requestParamsMap, customActionParams)
+
+    checkedParamsMap.map { m =>
+      m.map { case (k, v) =>
+        (
+          k,
+          customActionParams.find(_.name == k) match {
+            case Some(param) =>
+              param.validators
+                .getOrElse(Nil)
+                .map {
+                  _.isValid(paramName = k, expression = Expression.spel("None"), value = Some(v), label = None)
+                }
+                .collect { case Invalid(i) => i }
+            case None =>
+              throw IllegalStateException
           }
-        case None =>
-          throw ValidationError("No such parameter should be defined for this action: " + checkedCustomAction.name)
+        )
+      }
+    }
+  }
+
+  private def checkForMissingKeys(
+      requestParamsMap: Either[ValidationError, Map[String, String]],
+      customActionParams: List[CustomActionParameter]
+  )(implicit nodeId: NodeId): Either[ValidationError, Map[String, String]] = {
+    requestParamsMap.flatMap { map =>
+      val nameList    = customActionParams.map(_.name)
+      val missingKeys = nameList.filterNot(map.contains)
+      missingKeys match {
+        case Nil => Right(map)
+        case _   => Left(ValidationError(s"Missing params: ${missingKeys.mkString(", ")} for action: ${nodeId.id}"))
       }
     }
   }
@@ -66,13 +117,6 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
       customActionCommand.actionName,
       Some(customActionCommand.params)
     )
-  }
-
-  private def existsOrFail[T](checkThisOpt: Option[T], failWith: Exception): T = {
-    checkThisOpt match {
-      case Some(checked) => checked
-      case None          => throw failWith
-    }
   }
 
 }
