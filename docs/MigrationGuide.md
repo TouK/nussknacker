@@ -116,6 +116,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
 * [#5707](https://github.com/TouK/nussknacker/pull/5707) `ParameterName` data class was introduced. It replaces `String` in whole places where it's used as a parameter name
+* [#5694](https://github.com/TouK/nussknacker/pull/5694) `ParameterWithExtractor` util was replaced with `ParameterDeclaration`. `Params` data class, in its extraction methods, assumes that a parameter with the given name exists in the underlying Map
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
