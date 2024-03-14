@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
-import pl.touk.nussknacker.test.processes.WithRichScenarioActivitySpecAsserts
+import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
@@ -22,7 +22,7 @@ class MigrationApiHttpServiceBusinessSpec
     with WithRichDesignerConfig
     with WithRichConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithRichScenarioActivitySpecAsserts
+    with WithScenarioActivitySpecAsserts
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
@@ -36,7 +36,7 @@ class MigrationApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
-        .verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser")
+        .verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
         .verifyScenarioAfterMigration(
           exampleProcessName.value,
           processVersionId = 2,
@@ -59,7 +59,7 @@ class MigrationApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
-        .verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser")
+        .verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
         .verifyScenarioAfterMigration(
           exampleProcessName.value,
           processVersionId = 2,
@@ -110,7 +110,7 @@ class MigrationApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
-        .verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by allpermuser")
+        .verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
         .verifyScenarioAfterMigration(
           validFragment.name.value,
           processVersionId = 2,
@@ -130,7 +130,7 @@ class MigrationApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/migrate")
         .Then()
         .statusCode(200)
-        .verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by allpermuser")
+        .verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
         .verifyScenarioAfterMigration(
           validFragment.name.value,
           processVersionId = 2,

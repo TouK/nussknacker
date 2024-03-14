@@ -17,8 +17,6 @@ trait NuRestAssureMatchers {
     val zuluDateRegex = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}(?:\\\\.\\\\d{3,6})?Z$$"
     // ujson treats all numbers as a double
     val digitsRegex = "^\\\\d+\\\\.0$$"
-
-    val any = "^.*$$"
   }
 
   def equalsJson(expectedJsonString: String): Matcher[ValidatableResponse] =

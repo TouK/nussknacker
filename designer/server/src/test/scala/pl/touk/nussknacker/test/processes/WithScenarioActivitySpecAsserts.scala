@@ -8,7 +8,7 @@ import pl.touk.nussknacker.test.NuRestAssureMatchers
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
 
-trait WithRichScenarioActivitySpecAsserts
+trait WithScenarioActivitySpecAsserts
     extends AnyFreeSpecLike
     with NuItTest
     with WithRichDesignerConfig
@@ -17,7 +17,7 @@ trait WithRichScenarioActivitySpecAsserts
 
   implicit class VerifyCommentExists[T <: ValidatableResponse](validatableResponse: T) {
 
-    def verifyCommentExists(scenarioName: String, commentContent: String): ValidatableResponse = {
+    def verifyCommentExists(scenarioName: String, commentContent: String, commentUser: String): ValidatableResponse = {
       given()
         .when()
         .basicAuthAllPermUser()
@@ -33,7 +33,7 @@ trait WithRichScenarioActivitySpecAsserts
                |      "id": "${regexes.digitsRegex}",
                |      "processVersionId": "${regexes.digitsRegex}",
                |      "content": "$commentContent",
-               |      "user": "allpermuser",
+               |      "user": "${commentUser}",
                |      "createDate": "${regexes.zuluDateRegex}"
                |    }
                |  ],
