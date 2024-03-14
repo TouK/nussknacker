@@ -75,7 +75,7 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
                     disableGutters
                     divider
                 >
-                    <FoundNode node={node} edges={edges} highlights={filterValues} fields={groups} />
+                    <FoundNode node={node} highlights={filterValues} fields={groups} />
                 </MenuItem>
             ))}
         </MenuList>
