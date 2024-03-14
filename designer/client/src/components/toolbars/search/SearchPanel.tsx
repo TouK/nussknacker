@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import React, { ReactElement, useCallback, useRef, useState } from "react";
+import { useSidePanel } from "../../sidePanels/SidePanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { useDocumentListeners } from "../../../containers/useDocumentListeners";
 import { toggleToolbar } from "../../../actions/nk/toolbars";
@@ -34,6 +35,7 @@ export function SearchPanel(): ReactElement {
     const clearFilter = useCallback(() => setFilter(""), []);
 
     const searchRef = useRef<Focusable>();
+    const sidePanel = useSidePanel();
 
     useDocumentListeners({
         keydown: (e) => {
@@ -46,6 +48,9 @@ export function SearchPanel(): ReactElement {
                     if (!e.ctrlKey && !e.metaKey) return;
                     e.preventDefault();
                     e.stopPropagation();
+                    if (!sidePanel.isOpened) {
+                        sidePanel.onToggle();
+                    }
                     dispatch(toggleToolbar(id, toolbarsConfigId, false));
                     searchRef.current?.focus();
                     break;
