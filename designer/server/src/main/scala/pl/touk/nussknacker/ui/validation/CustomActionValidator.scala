@@ -43,9 +43,9 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
     hasErrors match {
       case Right(true) =>
-        Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw IllegalStateException)))
+        Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw new IllegalStateException)))
       case Right(false) => Right(CustomActionValidationResult.Valid)
-      case Left(_)      => _
+      case Left(va)     => Left(va)
     }
   }
 
@@ -87,7 +87,7 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
                 }
                 .collect { case Invalid(i) => i }
             case None =>
-              throw IllegalStateException
+              throw new IllegalStateException
           }
         )
       }

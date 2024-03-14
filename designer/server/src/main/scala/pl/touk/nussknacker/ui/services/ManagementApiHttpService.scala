@@ -4,7 +4,8 @@ import cats.data.EitherT
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionValidationResult}
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -36,7 +37,7 @@ class ManagementApiHttpService(
             processIdWithName <- getProcessId(processName)
             actionsList       <- getActionsList(processIdWithName)
             validator = new CustomActionValidator(actionsList)
-            validationResult <- Future.successful(validator.validateCustomActionParams(req)).eitherT()
+            validationResult <- EitherT.fromEither[Future](validator.validateCustomActionParams(req))
           } yield validationResult
         }
       }
