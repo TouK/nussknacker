@@ -30,6 +30,10 @@ import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { Scenario } from "../Process/types";
 import { nodeFocused, nodeValidationError } from "./focusableStyled";
+import { dragHovered } from "./GraphStyled";
+
+// TODO: this is needed here due to our webpack config - needs fixing.
+styles;
 
 type Props = GraphProps & {
     processCategory: string;
@@ -202,12 +206,12 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.freeze();
 
         const links = this.graph.getLinks();
-        links.forEach((l) => this.#unhighlightCell(l, styles.dragHovered));
+        links.forEach((l) => this.#unhighlightCell(l, dragHovered));
 
         if (!forceDisable) {
             const [active] = filterDragHovered(links);
             if (active) {
-                this.#highlightCell(active, styles.dragHovered);
+                this.#highlightCell(active, dragHovered);
                 active.toBack();
             }
         }
