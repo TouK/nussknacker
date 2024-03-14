@@ -3,6 +3,7 @@ import React, { forwardRef, Ref } from "react";
 import { ValueFieldProps } from "../valueField";
 import { NodeInput } from "../withFocus";
 import { lighten, useTheme } from "@mui/material";
+import { blendLighten } from "../../containers/theme/nuTheme";
 
 export type InputProps = ValueFieldProps<string> & {
     placeholder?: string;
@@ -34,7 +35,7 @@ export const ThemedInput = forwardRef(function ThemedInput(
     return (
         <NodeInput
             ref={ref}
-            sx={(theme) => ({ background: lighten(theme.palette.background.paper, 0.1) })}
+            sx={(theme) => ({ background: blendLighten(theme.palette.background.paper, 0.04) })}
             type="text"
             placeholder={placeholder}
             className={cx(styles, className)}

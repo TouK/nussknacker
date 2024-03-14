@@ -115,6 +115,8 @@ export const styledScrollTogglePanelWrapper = (theme: Theme) => css`
     }
 
     .draggable {
+        background-color: ${theme.palette.background.default};
+
         &.is-dragging:focus {
             outline: none;
         }

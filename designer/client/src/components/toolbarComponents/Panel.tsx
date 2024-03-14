@@ -1,8 +1,9 @@
-import { Collapse, darken, lighten, styled } from "@mui/material";
+import { Collapse, styled } from "@mui/material";
+import { blendDarken, blendLighten } from "../../containers/theme/nuTheme";
 
 export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) => ({
     display: "flex",
-    background: lighten(color, 0.025),
+    background: blendLighten(color, 0.08),
     color: theme.typography.overline.color,
     justifyContent: "space-between",
     padding: theme.spacing(0.25, 0.5),
@@ -16,7 +17,7 @@ export const Panel = styled("div")<{ expanded?: boolean; color?: string; width?:
     ({ expanded, color, width = 200, theme }) => ({
         pointerEvents: "auto",
         width,
-        borderColor: darken(color, 0.25),
+        borderColor: blendDarken(color, 0.25),
         background: color,
         opacity: expanded ? 1 : 0.86,
         transition: theme.transitions.create("all", { easing: "ease-in-out" }),

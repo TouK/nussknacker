@@ -1,5 +1,6 @@
 import { tintPrimary } from "./helpers";
-import { createTheme, Theme } from "@mui/material";
+import { createTheme, rgbToHex, Theme } from "@mui/material";
+import { blend } from "@mui/system";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -20,6 +21,9 @@ declare module "@mui/material/styles" {
         custom?: typeof custom;
     }
 }
+
+export const blendDarken = (color: string, opacity: number) => rgbToHex(blend(color, "#000000", opacity));
+export const blendLighten = (color: string, opacity: number) => rgbToHex(blend(color, "#ffffff", opacity));
 
 const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
     // eslint-disable-next-line i18next/no-literal-string
