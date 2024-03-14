@@ -33,8 +33,16 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
-    val implementation =
-      service.implementation(Params(Map(ParameterName("arg1") -> 1)), dependencies = Nil, Some(state))
+    val implementation = service.implementation(
+      params = Params(
+        Map(
+          DatabaseQueryEnricher.cacheTTLParamName -> null,
+          ParameterName("arg1")                   -> 1
+        )
+      ),
+      dependencies = Nil,
+      finalState = Some(state)
+    )
     returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
@@ -60,8 +68,16 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
       tableDef = TableDefinition(Nil),
       strategy = UpdateResultStrategy
     )
-    val implementation =
-      service.implementation(Params(Map(ParameterName("arg1") -> 1)), dependencies = Nil, Some(state))
+    val implementation = service.implementation(
+      params = Params(
+        Map(
+          DatabaseQueryEnricher.cacheTTLParamName -> null,
+          ParameterName("arg1")                   -> 1
+        )
+      ),
+      dependencies = Nil,
+      finalState = Some(state)
+    )
     returnType(service, state).display shouldBe "Integer"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
