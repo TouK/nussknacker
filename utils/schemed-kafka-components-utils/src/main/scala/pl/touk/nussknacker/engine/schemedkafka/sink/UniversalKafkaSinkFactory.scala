@@ -95,10 +95,12 @@ class UniversalKafkaSinkFactory(
           (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) ::
           (`sinkKeyParamName`, _) ::
           (`sinkRawEditorParamName`, _) ::
-          (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) ::
+          (`sinkValidationModeParamName`, DefinedEagerParameter(mode, _)) ::
           (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
+      // edge case - for some reason Topic/Version is not defined
+      val validationMode = Option(mode.asInstanceOf[String]).map(extractValidationMode).getOrElse(ValidationMode.strict)
       getSchema(topic, version)
         .andThen { runtimeSchemaData =>
           schemaBasedMessagesSerdeProvider.schemaValidator
@@ -112,7 +114,7 @@ class UniversalKafkaSinkFactory(
             .extractParameter(
               runtimeSchemaData.schema,
               rawMode = true,
-              validationMode = extractValidationMode(mode),
+              validationMode = validationMode,
               rawParameter = rawValueParamDeclaration.createParameter(),
               restrictedParamNames
             )
@@ -129,8 +131,9 @@ class UniversalKafkaSinkFactory(
               )
             }
         }
-        .valueOr(e => FinalResults(context, e.toList))
-    // edge case - for some reason Topic/Version is not defined
+        .valueOr { errors =>
+          FinalResults(context, errors.toList)
+        }
     case TransformationStep(
           (`topicParamName`, _) ::
           (`schemaVersionParamName`, _) ::
