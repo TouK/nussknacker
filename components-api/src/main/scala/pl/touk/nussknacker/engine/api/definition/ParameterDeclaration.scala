@@ -136,7 +136,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
 
     override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] = {
-      extractParamValueHack[PARAMETER_VALUE_TYPE](parameterName, params)
+      extractParamValueOrFlattenNonPresentParamCaseAndNullValueCase[PARAMETER_VALUE_TYPE](parameterName, params)
     }
 
     override private[definition] def createBase: Parameter =
@@ -148,7 +148,10 @@ object ParameterExtractor {
   ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
-      extractParamValueHack[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName, params)
+      extractParamValueOrFlattenNonPresentParamCaseAndNullValueCase[LazyParameter[PARAMETER_VALUE_TYPE]](
+        parameterName,
+        params
+      )
 
     override private[definition] def createBase: Parameter =
       Parameter
@@ -162,7 +165,10 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
-      extractParamValueHack[Map[String, PARAMETER_VALUE_TYPE]](parameterName, params)
+      extractParamValueOrFlattenNonPresentParamCaseAndNullValueCase[Map[String, PARAMETER_VALUE_TYPE]](
+        parameterName,
+        params
+      )
 
     override private[definition] def createBase: Parameter =
       Parameter
@@ -176,7 +182,10 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
 
     override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
-      extractParamValueHack[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName, params)
+      extractParamValueOrFlattenNonPresentParamCaseAndNullValueCase[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](
+        parameterName,
+        params
+      )
 
     override private[definition] def createBase: Parameter = {
       Parameter
@@ -186,8 +195,15 @@ object ParameterExtractor {
 
   }
 
-  // todo: rename and add explanation
-  private def extractParamValueHack[T](parameterName: ParameterName, params: Params) = {
+  // TODO: At the moment Optional parameter extraction method flattens two cases:
+  //       1. when the value of a given parameter is null
+  //       2. when the parameter is absent in the params map
+  //       The second case is rather rare but still real. It occurs when a parameter depends on value of the other
+  //       parameter. We will improve it in the future by introducing depending parameters in the code domain.
+  private def extractParamValueOrFlattenNonPresentParamCaseAndNullValueCase[T](
+      parameterName: ParameterName,
+      params: Params
+  ) = {
     if (params.isPresent(parameterName)) {
       params.extract[T](parameterName)
     } else {
