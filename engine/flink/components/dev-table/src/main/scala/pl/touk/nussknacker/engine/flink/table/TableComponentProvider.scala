@@ -8,7 +8,10 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.TableComponentProvider.ConfigIndependentComponents
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
-import pl.touk.nussknacker.engine.flink.table.source.{HardcodedValuesTableSourceFactory, TableSourceFactory}
+import pl.touk.nussknacker.engine.flink.table.source.{
+  HardcodedSchemaTableSourceFactory,
+  HardcodedValuesTableSourceFactory
+}
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 import scala.util.{Failure, Success, Try}
@@ -27,7 +30,7 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
       componentDefinitions <- List(
         ComponentDefinition(
           tableDataSourceComponentId("source", dataSourceConfig),
-          new TableSourceFactory(dataSourceConfig)
+          new HardcodedSchemaTableSourceFactory(dataSourceConfig)
         ),
         ComponentDefinition(
           tableDataSourceComponentId("sink", dataSourceConfig),
@@ -39,9 +42,8 @@ class TableComponentProvider extends ComponentProvider with LazyLogging {
     ConfigIndependentComponents ::: dataSourceComponents
   }
 
-  private def tableDataSourceComponentId(componentType: String, config: DataSourceConfig): String = {
+  private def tableDataSourceComponentId(componentType: String, config: DataSourceConfig): String =
     s"tableApi-$componentType-${config.connector}-${config.name}"
-  }
 
   private def parseConfigOpt(config: Config): Option[TableDataSourcesConfig] = {
     val tryParse = Try(config.rootAs[TableDataSourcesConfig]) match {
