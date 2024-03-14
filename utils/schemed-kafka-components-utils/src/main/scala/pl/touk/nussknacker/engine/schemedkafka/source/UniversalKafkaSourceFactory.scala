@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.source._
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
@@ -60,7 +60,7 @@ class UniversalKafkaSourceFactory(
   ): ContextTransformationDefinition = {
     case step @ TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) :: _,
+          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) :: _,
           state
         ) =>
       val preparedTopic = prepareTopic(topic)
@@ -71,12 +71,12 @@ class UniversalKafkaSourceFactory(
           case _ =>
             determineSchemaAndType(
               prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption),
-              Some(SchemaVersionParamName)
+              Some(schemaVersionParamName)
             )
         }
 
       prepareSourceFinalResults(preparedTopic, valueValidationResult, context, dependencies, step.parameters, Nil)
-    case step @ TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: _, _) =>
+    case step @ TransformationStep((`topicParamName`, _) :: (`schemaVersionParamName`, _) :: _, _) =>
       // Edge case - for some reason Topic/Version is not defined, e.g. when topic or version does not match DefinedEagerParameter(String, _):
       // 1. FailedToDefineParameter
       // 2. not resolved as a valid String

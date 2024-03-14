@@ -71,16 +71,16 @@ class UniversalSourceJsonSchemaLiteTest
     .source(
       sourceName,
       KafkaUniversalName,
-      TopicParamName.value         -> s"'$inputTopic'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'$inputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
       sinkName,
       KafkaUniversalName,
-      TopicParamName.value         -> s"'$outputTopic'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName.value       -> "",
-      SinkRawEditorParamName.value -> "false",
+      topicParamName.value         -> s"'$outputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "false",
       "first"                      -> s"#input.first",
       "last"                       -> "#input.last",
       "age"                        -> "#input.age",
@@ -92,17 +92,17 @@ class UniversalSourceJsonSchemaLiteTest
     .source(
       sourceName,
       KafkaUniversalName,
-      TopicParamName.value         -> s"'$inputTopic'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'$inputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
       sinkName,
       KafkaUniversalName,
-      TopicParamName.value         -> s"'$outputTopic'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName.value       -> "",
-      SinkRawEditorParamName.value -> "true",
-      SinkValueParamName.value     -> s"#input"
+      topicParamName.value         -> s"'$outputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "true",
+      sinkValueParamName.value     -> s"#input"
     )
 
   test("should read data on json schema based universal source when schemaId in header") {

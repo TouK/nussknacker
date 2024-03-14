@@ -40,16 +40,16 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     .source(
       "my-source",
       KafkaUniversalName,
-      TopicParamName.value         -> s"'$inputTopic'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'$inputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
       "my-sink",
       KafkaUniversalName,
-      TopicParamName.value         -> s"'$outputTopic'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName.value       -> "",
-      SinkRawEditorParamName.value -> "false",
+      topicParamName.value         -> s"'$outputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "false",
       "first"                      -> s"#input.first",
       "last"                       -> "#input.last",
       "age"                        -> "#input.age"

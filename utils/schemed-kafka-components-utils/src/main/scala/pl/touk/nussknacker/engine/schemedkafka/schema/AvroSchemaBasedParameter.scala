@@ -99,7 +99,7 @@ object AvroSinkSingleValueParameter {
       defaultValue: Option[Expression]
   ): SingleSchemaBasedParameter = {
     val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-    val name   = paramName.getOrElse(SinkValueParamName)
+    val name   = paramName.getOrElse(sinkValueParamName)
     val parameter = (
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
     ).copy(

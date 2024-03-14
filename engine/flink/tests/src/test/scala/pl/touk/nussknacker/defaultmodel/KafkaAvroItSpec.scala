@@ -44,19 +44,19 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'${topicConfig.input}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName.value -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName.value       -> "",
-        KafkaUniversalComponentTransformer.SinkRawEditorParamName.value -> "true",
-        KafkaUniversalComponentTransformer.SinkValueParamName.value     -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'${topicConfig.output}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.SinkValidationModeParamName.value -> s"'${validationMode.name}'"
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
+        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${validationMode.name}'"
       )
 
   private def avroFromScratchProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption) =
@@ -66,18 +66,18 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'${topicConfig.input}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName.value -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(versionOption)
       )
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName.value       -> "",
-        KafkaUniversalComponentTransformer.SinkRawEditorParamName.value -> "true",
-        KafkaUniversalComponentTransformer.SinkValueParamName.value     -> s"{first: #input.first, last: #input.last}",
-        KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'${topicConfig.output}'",
-        KafkaUniversalComponentTransformer.SinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName.value      -> "'1'"
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
+        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> s"{first: #input.first, last: #input.last}",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value      -> "'1'"
       )
 
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {

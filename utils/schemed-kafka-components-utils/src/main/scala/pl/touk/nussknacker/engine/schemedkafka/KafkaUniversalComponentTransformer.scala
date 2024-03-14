@@ -2,40 +2,31 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
-import pl.touk.nussknacker.engine.api.definition.{
-  FixedExpressionValue,
-  FixedValuesParameterEditor,
-  Parameter,
-  ParameterCreatorWithNoDependency,
-  ParameterDeclaration,
-  ParameterExtractor
-}
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import FixedExpressionValue.nullFixedValue
-import cats.Id
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
 object KafkaUniversalComponentTransformer {
-  final val SchemaVersionParamName      = ParameterName("Schema version")
-  final val TopicParamName              = ParameterName("Topic")
-  final val SinkKeyParamName            = ParameterName("Key")
-  final val SinkValueParamName          = ParameterName("Value")
-  final val SinkValidationModeParamName = ParameterName("Value validation mode")
-  final val SinkRawEditorParamName      = ParameterName("Raw editor")
+  final val schemaVersionParamName      = ParameterName("Schema version")
+  final val topicParamName              = ParameterName("Topic")
+  final val sinkKeyParamName            = ParameterName("Key")
+  final val sinkValueParamName          = ParameterName("Value")
+  final val sinkValidationModeParamName = ParameterName("Value validation mode")
+  final val sinkRawEditorParamName      = ParameterName("Raw editor")
 
   def extractValidationMode(value: String): ValidationMode =
-    ValidationMode.fromString(value, SinkValidationModeParamName)
+    ValidationMode.fromString(value, sinkValidationModeParamName)
 
 }
 
@@ -124,7 +115,7 @@ trait KafkaUniversalComponentTransformer[T]
       )
 
     ParameterDeclaration
-      .mandatory[String](KafkaUniversalComponentTransformer.SchemaVersionParamName)
+      .mandatory[String](KafkaUniversalComponentTransformer.schemaVersionParamName)
       .withCreator(
         modify = _.copy(editor = Some(FixedValuesParameterEditor(versionValues)))
       )
@@ -198,6 +189,6 @@ trait KafkaUniversalComponentTransformer[T]
     getVersionParam(Nil)
 
   // override it if you use other parameter name for topic
-  @transient protected lazy val topicParamName: ParameterName = TopicParamName
+  @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
 
 }

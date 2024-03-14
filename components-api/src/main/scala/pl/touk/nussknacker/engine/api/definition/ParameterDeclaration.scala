@@ -136,7 +136,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[PARAMETER_VALUE_TYPE] {
 
     override def extractValue(params: Params): Option[PARAMETER_VALUE_TYPE] = {
-      params.extract[PARAMETER_VALUE_TYPE](parameterName)
+      extractParamValueHack[PARAMETER_VALUE_TYPE](parameterName, params)
     }
 
     override private[definition] def createBase: Parameter =
@@ -148,7 +148,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[LazyParameter[PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[LazyParameter[PARAMETER_VALUE_TYPE]] =
-      params.extract[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName)
+      extractParamValueHack[LazyParameter[PARAMETER_VALUE_TYPE]](parameterName, params)
 
     override private[definition] def createBase: Parameter =
       Parameter
@@ -162,7 +162,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, PARAMETER_VALUE_TYPE]] {
 
     override def extractValue(params: Params): Option[Map[String, PARAMETER_VALUE_TYPE]] =
-      params.extract[Map[String, PARAMETER_VALUE_TYPE]](parameterName)
+      extractParamValueHack[Map[String, PARAMETER_VALUE_TYPE]](parameterName, params)
 
     override private[definition] def createBase: Parameter =
       Parameter
@@ -176,7 +176,7 @@ object ParameterExtractor {
   ) extends ParameterExtractor[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] {
 
     override def extractValue(params: Params): Option[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]] =
-      params.extract[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName)
+      extractParamValueHack[Map[String, LazyParameter[PARAMETER_VALUE_TYPE]]](parameterName, params)
 
     override private[definition] def createBase: Parameter = {
       Parameter
@@ -184,6 +184,15 @@ object ParameterExtractor {
         .copy(isLazyParameter = true, branchParam = true)
     }
 
+  }
+
+  // todo: rename and add explanation
+  private def extractParamValueHack[T](parameterName: ParameterName, params: Params) = {
+    Option
+      .when(params.isPresent(parameterName)) {
+        params.extract[T](parameterName)
+      }
+      .flatten
   }
 
 }

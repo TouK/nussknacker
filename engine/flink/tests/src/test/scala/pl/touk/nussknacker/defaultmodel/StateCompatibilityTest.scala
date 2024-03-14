@@ -72,19 +72,19 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     .source(
       "start",
       "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName.value         -> s"'$inTopic'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName.value -> versionOptionParam(ExistingSchemaVersion(1))
+      KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$inTopic'",
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(ExistingSchemaVersion(1))
     )
     .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
     .emptySink(
       "sink",
       "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName.value              -> s"'$outTopic'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName.value      -> "'latest'",
-      KafkaUniversalComponentTransformer.SinkKeyParamName.value            -> "",
-      KafkaUniversalComponentTransformer.SinkRawEditorParamName.value      -> s"true",
-      KafkaUniversalComponentTransformer.SinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'",
-      KafkaUniversalComponentTransformer.SinkValueParamName.value -> "{ input: #input, previousInput: #previousValue }"
+      KafkaUniversalComponentTransformer.topicParamName.value              -> s"'$outTopic'",
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value      -> "'latest'",
+      KafkaUniversalComponentTransformer.sinkKeyParamName.value            -> "",
+      KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> s"true",
+      KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'",
+      KafkaUniversalComponentTransformer.sinkValueParamName.value -> "{ input: #input, previousInput: #previousValue }"
     )
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")

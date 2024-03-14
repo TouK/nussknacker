@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkKeyParamName,
-  SinkRawEditorParamName,
-  SinkValidationModeParamName,
-  SinkValueParamName,
-  TopicParamName
+  schemaVersionParamName,
+  sinkKeyParamName,
+  sinkRawEditorParamName,
+  sinkValidationModeParamName,
+  sinkValueParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
@@ -29,12 +29,12 @@ object NuKafkaRuntimeTestSamples {
     .emptySink(
       "sink",
       "kafka",
-      TopicParamName.value              -> s"'$outputTopic'",
-      SchemaVersionParamName.value      -> "'latest'",
-      SinkRawEditorParamName.value      -> s"true",
-      SinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
-      SinkKeyParamName.value            -> "",
-      SinkValueParamName.value          -> "#input"
+      topicParamName.value              -> s"'$outputTopic'",
+      schemaVersionParamName.value      -> "'latest'",
+      sinkRawEditorParamName.value      -> s"true",
+      sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> "#input"
     )
 
   val jsonPingMessage: String =
