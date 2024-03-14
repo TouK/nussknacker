@@ -69,11 +69,12 @@ case class CustomActionCommand(
 
 // TODO Commands below will be legacy in some future because they operate on the scenario level instead of deployment level -
 //      we should replace them by commands operating on deployment
-case class TestScenarioCommand(
+case class TestScenarioCommand[T](
     scenarioName: ProcessName,
     canonicalProcess: CanonicalProcess,
-    scenarioTestData: ScenarioTestData
-) extends ScenarioCommand[TestResults]
+    scenarioTestData: ScenarioTestData,
+    variableEncoder: Any => T, // NU-1455: We encode variable on the engine, because of classLoader's problems
+) extends ScenarioCommand[TestResults[T]]
 
 case class MakeScenarioSavepointCommand(scenarioName: ProcessName, savepointDir: Option[String])
     extends ScenarioCommand[SavepointResult]

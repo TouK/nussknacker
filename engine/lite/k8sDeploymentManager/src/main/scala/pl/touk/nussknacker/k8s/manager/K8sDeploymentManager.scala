@@ -112,7 +112,7 @@ class K8sDeploymentManager(
       case command: ValidateScenarioCommand => validate(command)
       case command: RunDeploymentCommand    => runDeployment(command)
       case command: CancelScenarioCommand   => cancelScenario(command)
-      case command: TestScenarioCommand     => processTestActionCommand(command)
+      case command: TestScenarioCommand[_]  => processTestActionCommand(command)
       case _: CancelDeploymentCommand | _: StopDeploymentCommand | _: StopScenarioCommand |
           _: MakeScenarioSavepointCommand | _: CustomActionCommand =>
         notImplemented

@@ -88,7 +88,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       OneRecord(key, 1, 123)
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
 
     input1.add(OneRecord(key, 0, -1))
@@ -101,10 +101,11 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
     stoppableEnv.waitForJobState(id.getJobID, process.name.value, ExecutionState.FINISHED)()
 
-    val outValues = collectingListener.results
+    val outValues = collectingListener
+      .results[Any]
       .nodeResults(EndNodeId)
-      .filter(_.get[String](KeyVariableName).contains(key))
-      .map(_.get[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
+      .filter(_.variableTyped(KeyVariableName).contains(key))
+      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
 
     outValues shouldEqual List(
       Map("approxCardinality" -> 0, "last" -> null, "list" -> emptyList(), "sum"        -> 0),

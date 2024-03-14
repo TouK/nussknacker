@@ -114,8 +114,8 @@ abstract class FlinkDeploymentManager(
         requireSingleRunningJob(processName, _ => true) {
           makeSavepoint(_, savepointDir)
         }
-      case TestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
-        testRunner.test(canonicalProcess, scenarioTestData)
+      case TestScenarioCommand(_, canonicalProcess, scenarioTestData, variableEncoder) =>
+        testRunner.test(canonicalProcess, scenarioTestData, variableEncoder)
       case command: CustomActionCommand => processCustomAction(command)
     }
 

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListener,
   ResultsCollectingListenerHolder,
@@ -68,7 +69,7 @@ object TestScenarioCollectorHandler {
 
   def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
 
-    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
       new TestServiceInvocationCollector(resultsCollectingListener.runId)
@@ -104,14 +105,14 @@ object RunResult {
 }
 
 sealed trait RunResult {
-  def errors: List[NuExceptionInfo[_]]
+  def errors: List[ExceptionResult[_]]
 }
 
-case class RunListResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) extends RunResult {
+case class RunListResult[T](errors: List[ExceptionResult[_]], successes: List[T]) extends RunResult {
 
   def mapSuccesses[U](f: T => U): RunListResult[U] =
     copy(successes = successes.map(f))
 
 }
 
-case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult
+case class RunUnitResult(errors: List[ExceptionResult[_]]) extends RunResult
