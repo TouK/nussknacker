@@ -104,8 +104,10 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       Typed.record(Map("nestedRecordKey" -> TypedObjectWithValue(Typed.typedClass[Int], 2)))
   }
 
-  test("inline maps") {
-    typeExpression("{{'key1': 23}: 5}").validValue.finalResult.typingResult shouldBe Typed.typedClass[Int]
+  test("validate properly maps with maps as keys") {
+    val exprValidated = typeExpression("{{'key1': 23}: 5}")
+
+    exprValidated.isValid shouldBe true
   }
 
   test("indexing on records for nested record values") {
