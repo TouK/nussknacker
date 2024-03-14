@@ -52,7 +52,7 @@ class DictsFlowTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/dict/$DictId/entry?label=${"Black"
+          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/$DictId/entry?label=${"Black"
               .take(3)}"
         )
         .auth
