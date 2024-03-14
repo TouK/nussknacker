@@ -1189,15 +1189,18 @@ object InterpreterSpec {
 
     final val staticParamName: ParameterName = ParameterName("static")
 
-    private val staticParam = ParameterWithExtractor.mandatory[String](staticParamName)
+    private val staticParamDeclaration = ParameterDeclaration
+      .mandatory[String](staticParamName)
+      .withCreator()
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
     ): DynamicEagerService.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(List(staticParam.parameter))
+        NextParameters(List(staticParamDeclaration.createParameter()))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
-        NextParameters(dynamicParam(ParameterName(value)).parameter :: Nil)
+        val dynamicParamDeclaration = createDynamicParamDeclaration(ParameterName(value))
+        NextParameters(dynamicParamDeclaration.createParameter() :: Nil)
       case TransformationStep(
             (`staticParamName`, DefinedEagerParameter(value: String, _)) ::
             (otherName, DefinedLazyParameter(expression)) :: Nil,
@@ -1214,7 +1217,10 @@ object InterpreterSpec {
         finalState: Option[Nothing]
     ): ServiceInvoker = {
 
-      val paramName = ParameterName(staticParam.extractValue(params))
+      val dynamicParamDeclaration = createDynamicParamDeclaration(
+        ParameterName(staticParamDeclaration.extractValueUnsafe(params))
+      )
+      val lazyDynamicParamValue = dynamicParamDeclaration.extractValueUnsafe(params)
 
       new ServiceInvoker {
         override def invoke(context: Context)(
@@ -1222,14 +1228,15 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val value = params.extractOrEvaluateUnsafe[AnyRef](paramName, context)
-          Future.successful(value)
+          Future.successful(lazyDynamicParamValue.evaluate(context))
         }
       }
     }
 
-    private def dynamicParam(name: ParameterName) =
-      ParameterWithExtractor.lazyMandatory[AnyRef](name)
+    private def createDynamicParamDeclaration(name: ParameterName) =
+      ParameterDeclaration
+        .lazyMandatory[AnyRef](name)
+        .withCreator()
 
     override def nodeDependencies: List[NodeDependency] = Nil
 

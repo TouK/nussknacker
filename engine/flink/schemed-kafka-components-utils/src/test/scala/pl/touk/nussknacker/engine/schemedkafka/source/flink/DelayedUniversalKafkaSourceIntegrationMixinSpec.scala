@@ -9,17 +9,17 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
-  DelayParameterName,
-  TimestampFieldParamName
+  delayParameter,
+  timestampFieldParamName
 }
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkValueParamName,
-  TopicParamName
+  schemaVersionParamName,
+  sinkValueParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
@@ -84,12 +84,12 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        TopicParamName.value          -> s"'$topic'",
-        SchemaVersionParamName.value  -> asSpelExpression(formatVersionParam(version)),
-        TimestampFieldParamName.value -> timestampField,
-        DelayParameterName.value      -> delay
+        topicParamName.value               -> s"'$topic'",
+        schemaVersionParamName.value       -> asSpelExpression(formatVersionParam(version)),
+        timestampFieldParamName.value      -> timestampField,
+        delayParameter.parameterName.value -> delay
       )
-      .emptySink("out", "sinkForLongs", SinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", sinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
 }

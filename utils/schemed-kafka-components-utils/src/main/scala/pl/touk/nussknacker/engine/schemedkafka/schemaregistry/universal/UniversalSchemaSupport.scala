@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 
@@ -56,7 +56,7 @@ trait UniversalSchemaSupport {
       schema,
       rawMode = false,
       validationMode = ValidationMode.lax,
-      rawParameter = Parameter[AnyRef](SinkValueParamName),
+      rawParameter = Parameter[AnyRef](sinkValueParamName),
       restrictedParamNames = Set.empty
     ).map(_.toParameters)
   }

@@ -19,11 +19,11 @@ import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider.Kaf
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, KafkaConsumerRecord}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkKeyParamName,
-  SinkRawEditorParamName,
-  SinkValueParamName,
-  TopicParamName
+  schemaVersionParamName,
+  sinkKeyParamName,
+  sinkRawEditorParamName,
+  sinkValueParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{
   AzureSchemaRegistryClientFactory,
@@ -153,17 +153,17 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        TopicParamName.value         -> s"'$inputTopic'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$inputTopic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        TopicParamName.value         -> s"'$outputTopic'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName.value       -> "",
-        SinkRawEditorParamName.value -> "true",
-        SinkValueParamName.value     -> "#input"
+        topicParamName.value         -> s"'$outputTopic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value       -> "",
+        sinkRawEditorParamName.value -> "true",
+        sinkValueParamName.value     -> "#input"
       )
     (inputTopic, inputSchema, inputSchemaId, outputTopic, outputSchema, outputSchemaId, scenario)
   }
@@ -186,17 +186,17 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        TopicParamName.value         -> s"'$inputTopic'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$inputTopic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        TopicParamName.value         -> s"'$outputTopic'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName.value       -> "",
-        SinkRawEditorParamName.value -> "true",
-        SinkValueParamName.value     -> "#input"
+        topicParamName.value         -> s"'$outputTopic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value       -> "",
+        sinkRawEditorParamName.value -> "true",
+        sinkValueParamName.value     -> "#input"
       )
 
     val inputValue          = 123
@@ -243,18 +243,18 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        TopicParamName.value         -> s"'$inputTopic'",
-        SchemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'"
+        topicParamName.value         -> s"'$inputTopic'",
+        schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'"
       )
       .filter("filter-b-default", s"#input.b == '$bDefaultValue'")
       .emptySink(
         "sink",
         KafkaUniversalName,
-        TopicParamName.value         -> s"'$outputTopic'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName.value       -> "",
-        SinkRawEditorParamName.value -> "true",
-        SinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}"
+        topicParamName.value         -> s"'$outputTopic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value       -> "",
+        sinkRawEditorParamName.value -> "true",
+        sinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}"
       )
 
     val inputValue = new GenericRecordBuilder(inputSchemaV1)

@@ -1178,18 +1178,18 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName.value         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic}'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        TopicParamName.value              -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName.value            -> "",
-        SinkValueParamName.value          -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName.value      -> "true",
-        SinkValidationModeParamName.value -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic}'",
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value            -> "",
+        sinkValueParamName.value          -> s"${config.sinkDefinition}",
+        sinkRawEditorParamName.value      -> "true",
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'"
       )
 
   case class ScenarioConfig(

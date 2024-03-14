@@ -293,8 +293,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        TopicParamName.value         -> s"'${topicConfig.input}'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topicConfig.input}'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode(
         "transform",
@@ -305,12 +305,12 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .emptySink(
         "end",
         "kafka",
-        TopicParamName.value              -> s"'${topicConfig.output}'",
-        SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName.value            -> "",
-        SinkRawEditorParamName.value      -> "true",
-        SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-        SinkValueParamName.value          -> s"{field: #extractedTimestamp}"
+        topicParamName.value              -> s"'${topicConfig.output}'",
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value            -> "",
+        sinkRawEditorParamName.value      -> "true",
+        sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+        sinkValueParamName.value          -> s"{field: #extractedTimestamp}"
       )
 
     pushMessage(LongFieldV1.record, topicConfig.input)
@@ -331,19 +331,19 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        TopicParamName.value         -> s"'${topicConfig.input}'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topicConfig.input}'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "10000")
       .emptySink(
         "end",
         "kafka",
-        TopicParamName.value              -> s"'${topicConfig.output}'",
-        SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName.value            -> "",
-        SinkRawEditorParamName.value      -> "true",
-        SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-        SinkValueParamName.value          -> s"{field: #extractedTimestamp}"
+        topicParamName.value              -> s"'${topicConfig.output}'",
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value            -> "",
+        sinkRawEditorParamName.value      -> "true",
+        sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+        sinkValueParamName.value          -> s"{field: #extractedTimestamp}"
       )
 
     // Can't be too long ago, otherwise retention could delete it

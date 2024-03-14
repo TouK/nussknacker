@@ -91,14 +91,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     The `String` to `URL` converting logic is now inside `ModelClassLoader.apply`
 * [#5505](https://github.com/TouK/nussknacker/pull/5505) anonymous access functionality for Tapir-based API 
   * `AuthenticationResources` & `AnonymousAccess` traits were changed to be able to introduce anonymous access feature
-  * `AuthCredentials` class was changed too
-* [#5373](https://github.com/TouK/nussknacker/pull/5373) changes related to `Component`s and `LazyParameter`s:
+  * `AuthCredentials` class was changed too 
+* [#5373](https://github.com/TouK/nussknacker/pull/5373)[#5694](https://github.com/TouK/nussknacker/pull/5694) changes related to `Component`s and `LazyParameter`s:
   * `LazyParameter` can be evaluated on request thanks to its `evaluate` method 
-  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`
+  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`. `Params` data class, in its extraction methods, assumes that a parameter with the given name exists in the underlying Map.
   * `TypedExpression` was removed from `BaseDefinedParameter` hierarchy in favour of `TypingResult` 
   * `TypedExpression` doesn't depend on `ExpressionTypingInfo` anymore 
   * `ServiceInvoker` refactoring (parameters map was removed, a context is passed to its method)
   * `ProcessListener` interface changed slightly
+  * `ParameterWithExtractor` util was replaced with `ParameterDeclaration`.
   * classes renaming:
     * `LazyParameterInterpreter` to `LazyParameterInterpreter`
     * `GenericNodeTransformation` to `DynamicComponent`

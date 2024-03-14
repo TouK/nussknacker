@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.migration.NodeMigration
 case class ProcessSplitterMigration(migratedNodeType: String = "split") extends NodeMigration {
 
   override val description = "ProcessSplitterMigration"
-
-  private val newNodeType = "for-each"
+  private val newNodeType  = "for-each"
 
   private val oldElementsParameterName = ParameterName("parts")
   private val newElementsParameterName = ParameterName("Elements")

@@ -47,12 +47,12 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
   test("should validate specific version") {
     val result = validate(
-      SinkKeyParamName.value            -> "",
-      SinkValueParamName.value          -> FullNameV1.exampleData.toSpELLiteral,
-      SinkRawEditorParamName.value      -> "true",
-      SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-      TopicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName.value      -> "'1'"
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> FullNameV1.exampleData.toSpELLiteral,
+      sinkRawEditorParamName.value      -> "true",
+      sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+      topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      schemaVersionParamName.value      -> "'1'"
     )
 
     result.errors shouldBe Nil
@@ -60,12 +60,12 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
   test("should validate latest version") {
     val result = validate(
-      SinkKeyParamName.value            -> "",
-      SinkValueParamName.value          -> PaymentV1.exampleData.toSpELLiteral,
-      SinkRawEditorParamName.value      -> "true",
-      SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-      TopicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'"
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> PaymentV1.exampleData.toSpELLiteral,
+      sinkRawEditorParamName.value      -> "true",
+      sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+      topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
 
     result.errors shouldBe Nil
@@ -73,24 +73,24 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
   test("should return sane error on invalid topic") {
     val result = validate(
-      SinkKeyParamName.value            -> "",
-      SinkValueParamName.value          -> "null",
-      SinkRawEditorParamName.value      -> "true",
-      SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-      TopicParamName.value              -> "'tereferer'",
-      SchemaVersionParamName.value      -> "'1'"
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> "null",
+      sinkRawEditorParamName.value      -> "true",
+      sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+      topicParamName.value              -> "'tereferer'",
+      schemaVersionParamName.value      -> "'1'"
     )
 
     result.errors shouldBe List(
       InvalidPropertyFixedValue(
-        paramName = TopicParamName,
+        paramName = topicParamName,
         label = None,
         value = "'tereferer'",
         values = List("", "'fullname'"),
         nodeId = "id"
       ),
       InvalidPropertyFixedValue(
-        paramName = SchemaVersionParamName,
+        paramName = schemaVersionParamName,
         label = None,
         value = "'1'",
         values = List("'latest'"),
@@ -101,16 +101,16 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
   test("should return sane error on invalid version") {
     val result = validate(
-      SinkKeyParamName.value            -> "",
-      SinkValueParamName.value          -> "null",
-      SinkRawEditorParamName.value      -> "true",
-      SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-      TopicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName.value      -> "'343543'"
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> "null",
+      sinkRawEditorParamName.value      -> "true",
+      sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+      topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      schemaVersionParamName.value      -> "'343543'"
     )
 
     result.errors shouldBe InvalidPropertyFixedValue(
-      paramName = SchemaVersionParamName,
+      paramName = schemaVersionParamName,
       label = None,
       value = "'343543'",
       values = List("'latest'", "'1'", "'2'", "'3'"),
@@ -120,18 +120,18 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
 
   test("should validate value") {
     val result = validate(
-      SinkKeyParamName.value            -> "",
-      SinkValueParamName.value          -> "''",
-      SinkRawEditorParamName.value      -> "true",
-      SinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-      TopicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
-      SchemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'"
+      sinkKeyParamName.value            -> "",
+      sinkValueParamName.value          -> "''",
+      sinkRawEditorParamName.value      -> "true",
+      sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
+      topicParamName.value              -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
+      schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
 
     result.errors shouldBe CustomNodeError(
       "id",
       "Provided value does not match scenario output - errors:\nIncorrect type: actual: 'String()' expected: 'Record{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: Record{name: String, address: Record{street: String, city: String}}, products: List[Record{id: String, name: String, price: Double}], vat: Integer | Null}'.",
-      Some(SinkValueParamName)
+      Some(sinkValueParamName)
     ) :: Nil
   }
 

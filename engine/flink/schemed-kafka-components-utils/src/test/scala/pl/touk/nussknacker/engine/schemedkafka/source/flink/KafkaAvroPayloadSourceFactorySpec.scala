@@ -16,8 +16,8 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParamet
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  TopicParamName
+  schemaVersionParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
@@ -280,8 +280,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("Should validate specific version") {
     val result =
       validate(
-        TopicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-        SchemaVersionParamName.value -> "'1'"
+        topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+        schemaVersionParamName.value -> "'1'"
       )
 
     result.errors shouldBe Nil
@@ -289,8 +289,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should validate latest version") {
     val result = validate(
-      TopicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
 
     result.errors shouldBe Nil
@@ -299,13 +299,13 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("Should return sane error on invalid topic") {
     val result =
       validate(
-        TopicParamName.value         -> "'terefere'",
-        SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> "'terefere'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
 
     result.errors shouldBe
       InvalidPropertyFixedValue(
-        TopicParamName,
+        topicParamName,
         None,
         "'terefere'",
         List(
@@ -331,12 +331,12 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should return sane error on invalid version") {
     val result = validate(
-      TopicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName.value -> "'12345'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+      schemaVersionParamName.value -> "'12345'"
     )
 
     result.errors shouldBe InvalidPropertyFixedValue(
-      paramName = SchemaVersionParamName,
+      paramName = schemaVersionParamName,
       label = None,
       value = "'12345'",
       values = List("'latest'", "'1'", "'2'"),
@@ -352,8 +352,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should properly detect input type") {
     val result = validate(
-      TopicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
 
     result.errors shouldBe Nil

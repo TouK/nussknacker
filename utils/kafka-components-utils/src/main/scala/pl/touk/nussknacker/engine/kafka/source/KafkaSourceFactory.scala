@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import cats.Id
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
@@ -179,19 +180,18 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     * Basic implementation of definition of single topic parameter.
     * In case of fetching topics from external repository: return list of topics or raise exception.
     */
-  protected def prepareInitialParameters: List[Parameter] = topicParameter.parameter :: Nil
+  protected def prepareInitialParameters: List[Parameter] = topicParameterDeclaration.createParameter() :: Nil
 
-  protected val topicParameter: ParameterWithExtractor[String] =
-    ParameterWithExtractor.mandatory[String](
-      TopicParamName,
-      _.copy(validators = List(MandatoryParameterValidator, NotBlankParameterValidator))
-    )
+  protected val topicParameterDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
+    ParameterDeclaration
+      .mandatory[String](TopicParamName)
+      .withCreator(modify = _.copy(validators = List(MandatoryParameterValidator, NotBlankParameterValidator)))
 
   /**
     * Extracts topics from default topic parameter.
     */
   protected def extractTopics(params: Params): List[String] = {
-    val paramValue = topicParameter.extractValue(params)
+    val paramValue = topicParameterDeclaration.extractValueUnsafe(params)
     paramValue.split(topicNameSeparator).map(_.trim).toList
   }
 

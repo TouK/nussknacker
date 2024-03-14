@@ -91,18 +91,18 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
       result.toParameters,
       Map.empty
     ) shouldBe List(
-      Parameter(name = SinkValueParamName, typ = typing.Typed[Long])
+      Parameter(name = sinkValueParamName, typ = typing.Typed[Long])
         .copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0")))
     )
   }
 
   test("typed object with restricted field names") {
     val restrictedNames: Set[ParameterName] =
-      Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParamName, TopicParamName)
+      Set(schemaVersionParamName, sinkKeyParamName, sinkValidationModeParamName, topicParamName)
     val recordSchema = SchemaBuilder
       .record("A")
       .fields()
-      .name(SinkKeyParamName.value)
+      .name(sinkKeyParamName.value)
       .`type`()
       .stringType()
       .noDefault()

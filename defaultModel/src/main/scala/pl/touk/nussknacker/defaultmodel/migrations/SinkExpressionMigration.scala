@@ -18,6 +18,6 @@ object SinkExpressionMigration extends NodeMigration {
       )
   }
 
-  override def description: String = "Remove endResult from kafka-json"
+  override val description: String = "Remove endResult from kafka-json"
 
 }

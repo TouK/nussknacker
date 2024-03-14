@@ -18,16 +18,16 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", TopicParamName.value -> s"'$inputTopic'", SchemaVersionParamName.value -> "'latest'")
+      .source("source", "kafka", topicParamName.value -> s"'$inputTopic'", schemaVersionParamName.value -> "'latest'")
       .emptySink(
         "sink",
         "kafka",
-        TopicParamName.value              -> s"'$outputTopic'",
-        SchemaVersionParamName.value      -> "'latest'",
+        topicParamName.value              -> s"'$outputTopic'",
+        schemaVersionParamName.value      -> "'latest'",
         "Key"                             -> "null",
-        SinkRawEditorParamName.value      -> "true",
-        SinkValidationModeParamName.value -> "'strict'",
-        SinkValueParamName.value          -> "#input"
+        sinkRawEditorParamName.value      -> "true",
+        sinkValidationModeParamName.value -> "'strict'",
+        sinkValueParamName.value          -> "#input"
       )
 
     wrapInFailingLoader {

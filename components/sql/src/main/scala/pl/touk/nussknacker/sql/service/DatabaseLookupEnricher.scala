@@ -12,7 +12,11 @@ import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
-import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{
+  TransformationState,
+  cacheTTLParamDeclaration,
+  cacheTTLParamName
+}
 
 import scala.util.control.NonFatal
 
@@ -68,7 +72,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       QueryArguments(
         QueryArgument(
           index = 1,
-          value = params.extractOrEvaluateUnsafe(KeyValueParamName, context)
+          value = params.extractOrEvaluateLazyParam(KeyValueParamName, context)
         ) :: Nil
       )
     }
@@ -76,14 +80,14 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
-    NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
+    NextParameters(parameters = tableParam() :: cacheTTLParamDeclaration.createParameter() :: Nil)
   }
 
   private def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(
-          (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil,
+          (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (`cacheTTLParamName`, _) :: Nil,
           None
         ) =>
       if (tableName.isEmpty) {
@@ -121,7 +125,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(
-          (TableParamName, _) :: (CacheTTLParamName, _) :: (
+          (TableParamName, _) :: (`cacheTTLParamName`, _) :: (
             KeyColumnParamName,
             DefinedEagerParameter(keyColumn: String, _)
           ) :: Nil,

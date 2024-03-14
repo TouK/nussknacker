@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId, Params}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordValue, SinkSingleValue, SinkValue}
@@ -54,7 +54,7 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
   test("sink params to SinkSingleValue") {
     val longSchema      = SchemaBuilder.builder().longType()
     val value           = LazyParameter.pure(java.lang.Long.valueOf(1L), Typed[java.lang.Long])
-    val parameterValues = Params(Map(SinkValueParamName -> value))
+    val parameterValues = Params(Map(sinkValueParamName -> value))
     val sinkParam       = AvroSchemaBasedParameter(longSchema, Set.empty).valueOr(e => fail(e.toString))
 
     SinkValue

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
@@ -16,6 +16,8 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+
+import scala.jdk.CollectionConverters._
 
 object GenericSourceWithCustomVariablesSample
     extends SourceFactory
@@ -63,13 +65,16 @@ object GenericSourceWithCustomVariablesSample
 
   // There is only one parameter in this source
   private val elementsParamName = ParameterName("elements")
+  private val elementsParamDeclaration =
+    ParameterDeclaration.mandatory[java.util.List[String]](elementsParamName).withCreator()
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): GenericSourceWithCustomVariablesSample.ContextTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
+    case TransformationStep(Nil, _) =>
+      NextParameters(elementsParamDeclaration.createParameter() :: Nil)
     case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
@@ -79,16 +84,17 @@ object GenericSourceWithCustomVariablesSample
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {
-    import scala.jdk.CollectionConverters._
-    val elements = params.extractUnsafe[java.util.List[String]](`elementsParamName`).asScala.toList
+    val elementsValue = elementsParamDeclaration.extractValueUnsafe(params).asScala.toList
 
-    new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))
+    new CollectionSource[String](elementsValue, None, Typed[String])(TypeInformation.of(classOf[String]))
       with TestDataGenerator
       with FlinkSourceTestSupport[String] {
 
       override val contextInitializer: ContextInitializer[String] = customContextInitializer
 
-      override def generateTestData(size: Int): TestData = TestData(elements.map(el => TestRecord(Json.fromString(el))))
+      override def generateTestData(size: Int): TestData = TestData(
+        elementsValue.map(el => TestRecord(Json.fromString(el)))
+      )
 
       override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
         CirceUtil.decodeJsonUnsafe[String](testRecord.json)
