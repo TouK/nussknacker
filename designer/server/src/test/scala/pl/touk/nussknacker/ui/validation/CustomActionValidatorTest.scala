@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.IorT.left
-import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.{
   NotBlankParameterValidator,
   NotNullParameterValidator,

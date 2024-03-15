@@ -34,85 +34,126 @@ class ManagementApiHttpServiceSpec
     .source("sourceId", "barSource")
     .emptySink("sinkId", "barSink")
 
-  // TODO: add tests
   "The endpoint for nodes validation should " - {
-    "validate proper request without errors " in {
-      given()
-        .applicationState {
-          createDeployedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(
-          s"""{
+    "validate proper request without errors" - {
+      "and return Valid for valid data " in {
+        given()
+          .applicationState {
+            createDeployedScenario(exampleScenario)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
              | "actionName": "hello",
              | "params": null
              |}""".stripMargin
-        )
-        .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |  "buga": "buga"
-             |}
-             |""".stripMargin
-        )
+          )
+          .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+             |    "Valid": {
+             |
+             |    }
+             |}""".stripMargin
+          )
 
-    }
-    "return error for wrong request params" in {
-      given()
-        .applicationState {
-          createDeployedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(
-          s"""{
-             |  "actionName": "hello",
+      }
+      "and return invalid for invalid data" in {
+        given()
+          .applicationState {
+            createDeployedScenario(exampleScenario)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+             |  "actionName": "some-params-action",
              |  "params": {
-             |    "property1": "abc",
-             |    "property2": "xyz"
+             |    "param1": ""
              |  }
              |}
              |""".stripMargin
-        )
-        .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
-        .Then()
-        .statusCode(200)
-        .equalsJsonBody(
-          s"""{
-             |  "buga": "buga"
-             |}
-             |""".stripMargin
-        )
+          )
+          .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+             |    "Invalid": {
+             |        "errorMap": {
+             |            "param1": [
+             |                {
+             |                    "BlankParameter": {
+             |                        "message": "This field value is required and can not be blank",
+             |                        "description": "Please fill field value for this parameter",
+             |                        "paramName": "param1",
+             |                        "nodeId": "some-params-action"
+             |                    }
+             |                }
+             |            ]
+             |        }
+             |    }
+             |}""".stripMargin
+          )
+      }
     }
-    "return error for non existing action" in {
-      given()
-        .applicationState {
-          createDeployedScenario(exampleScenario)
-        }
-        .when()
-        .basicAuthAllPermUser()
-        .jsonBody(
-          s"""{
-             |  "actionName": "non-existing",
-             |  "params": {
-             |    "property1": "abc",
-             |    "property2": "xyz"
-             |  }
-             |}
-             |""".stripMargin
-        )
-        .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
-        .Then()
-        .statusCode(404)
-        .equalsJsonBody(
-          s"""{
-             |  "buga": "buga"
-             |}
-             |""".stripMargin
-        )
+
+    "return error for" - {
+      "wrong request params" in {
+        given()
+          .applicationState {
+            createDeployedScenario(exampleScenario)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+               |  "actionName": "hello",
+               |  "params": {
+               |    "property1": "abc",
+               |    "property2": "xyz"
+               |  }
+               |}
+               |""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
+          .Then()
+          .statusCode(400)
+          .equalsJsonBody(
+            s"""{
+               |    "message": "Params found for no params action: hello"
+               |}""".stripMargin
+          )
+      }
+      "non existing action" in {
+        given()
+          .applicationState {
+            createDeployedScenario(exampleScenario)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+               |  "actionName": "non-existing",
+               |  "params": {
+               |    "property1": "abc",
+               |    "property2": "xyz"
+               |  }
+               |}
+               |""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
+          .Then()
+          .statusCode(400)
+          .equalsJsonBody(
+            s"""{
+               |    "message": "Couldn't find this action: non-existing"
+               |}""".stripMargin
+          )
+      }
     }
   }
 
