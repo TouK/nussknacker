@@ -4,6 +4,7 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.definition.WithJobData
@@ -28,7 +29,13 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
     val mock       = new MockService(jobData)
     val definition = ComponentDefinitionWithImplementation.withEmptyConfig("foo", mock)
     val invoker =
-      new MethodBasedServiceInvoker(metadata, nodeId, None, definition, _ => Params(Map("foo" -> "aa", "bar" -> 1)))
+      new MethodBasedServiceInvoker(
+        metaData = metadata,
+        nodeId = nodeId,
+        outputVariableNameOpt = None,
+        componentDefinition = definition,
+        parametersProvider = _ => Params(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> 1))
+      )
 
     whenReady(invoker.invoke(context)) { _ =>
       mock.invoked.value.shouldEqual(("aa", 1, metadata))
@@ -43,7 +50,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
       nodeId = nodeId,
       outputVariableNameOpt = None,
       componentDefinition = definition,
-      parametersProvider = _ => Params(Map("foo" -> "aa", "bar" -> "terefere"))
+      parametersProvider = _ => Params(Map(ParameterName("foo") -> "aa", ParameterName("bar") -> "terefere"))
     )
 
     intercept[IllegalArgumentException](

@@ -4,9 +4,10 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.Semigroup
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 case class SingleComponentConfig(
-    params: Option[Map[String, ParameterConfig]],
+    params: Option[Map[ParameterName, ParameterConfig]],
     icon: Option[String],
     docsUrl: Option[String],
     componentGroup: Option[ComponentGroupName],

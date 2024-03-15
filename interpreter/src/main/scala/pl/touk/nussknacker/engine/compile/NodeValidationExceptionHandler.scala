@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
   MissingParameters
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, MissingOutputVariableException}
 
 import scala.util.control.NonFatal
@@ -27,11 +28,12 @@ object NodeValidationExceptionHandler extends LazyLogging {
       f
     } catch {
       case MissingOutputVariableException =>
-        Validated.invalidNel(MissingParameters(Set("OutputVariable"), nodeId.id))
+        Validated.invalidNel(MissingParameters(Set(ParameterName("OutputVariable")), nodeId.id))
       case exc: CustomNodeValidationException =>
         Validated.invalidNel(CustomNodeError(exc.message, exc.paramName))
       case NonFatal(e) =>
         // TODO: better message?
+        logger.error("Exception during validation handling", e)
         Validated.invalidNel(CannotCreateObjectError(e.getMessage, nodeId.id))
     }
   }

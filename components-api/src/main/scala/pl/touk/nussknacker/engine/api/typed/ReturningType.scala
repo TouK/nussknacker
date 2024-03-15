@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 /**
@@ -17,14 +18,14 @@ trait ReturningType {
 
 case object MissingOutputVariableException extends Exception("Missing output variable name")
 
-case class CustomNodeValidationException(message: String, paramName: Option[String], parent: Throwable)
+case class CustomNodeValidationException(message: String, paramName: Option[ParameterName], parent: Throwable)
     extends RuntimeException(message, parent)
 
 object CustomNodeValidationException {
 
-  def apply(message: String, paramName: Option[String]): CustomNodeValidationException =
+  def apply(message: String, paramName: Option[ParameterName]): CustomNodeValidationException =
     CustomNodeValidationException(message, paramName, null)
 
-  def apply(exc: Exception, paramName: Option[String]): CustomNodeValidationException =
+  def apply(exc: Exception, paramName: Option[ParameterName]): CustomNodeValidationException =
     CustomNodeValidationException(exc.getMessage, paramName, exc)
 }

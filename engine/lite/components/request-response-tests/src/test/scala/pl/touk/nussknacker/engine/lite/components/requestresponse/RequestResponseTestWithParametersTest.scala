@@ -46,7 +46,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam("age", Typed[Long], None)
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editor)
     ) should contain theSameElementsAs expectedParameters
   }
 
@@ -83,7 +83,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       )
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editor)
     ) should contain theSameElementsAs expectedParameters
   }
 
@@ -117,7 +117,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val source = createSource(combinedSchema)
     val expectedParameters = List(
       SimplifiedParam(
-        SinkRawValueParamName,
+        SinkRawValueParamName.value,
         Typed(
           TypedObjectTypingResult(
             Map("result" -> Typed[String]),
@@ -132,7 +132,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       )
     )
     source.testParametersDefinition.map(p =>
-      SimplifiedParam(p.name, p.typ, p.editor)
+      SimplifiedParam(p.name.value, p.typ, p.editor)
     ) should contain theSameElementsAs expectedParameters
   }
 
