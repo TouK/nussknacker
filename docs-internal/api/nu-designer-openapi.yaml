@@ -1796,7 +1796,15 @@ components:
         timeRangeComponents:
           type: array
           items:
+            required:
+            - name
+            - duration
             type: object
+            properties:
+              name:
+                type: string
+              duration:
+                type: string
     Edge:
       required:
       - from
@@ -2166,7 +2174,7 @@ components:
     Map_TypingResult:
       type: object
       additionalProperties:
-        $ref: '#'
+        $ref: '#/components/schemas/TypingResult'
     Map_TypingResultInJson:
       type: object
       additionalProperties:
@@ -2249,7 +2257,7 @@ components:
       type: object
       properties:
         nodeData:
-          type: object
+          $ref: '#/components/schemas/NodeData'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
         branchVariableTypes:
@@ -2399,7 +2407,15 @@ components:
         timeRangeComponents:
           type: array
           items:
+            required:
+            - name
+            - duration
             type: object
+            properties:
+              name:
+                type: string
+              duration:
+                type: string
     ProcessAction:
       required:
       - id
@@ -2719,13 +2735,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types4'
+          $ref: '#/components/schemas/Types1'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
     TypedDict:
       title: TypedDict
       required:
@@ -2736,7 +2752,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types3'
+          $ref: '#/components/schemas/Types2'
         dict:
           $ref: '#/components/schemas/Dict'
     TypedNull:
@@ -2748,13 +2764,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types1'
+          $ref: '#/components/schemas/Types6'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
     TypedObjectTypingResult:
       title: TypedObjectTypingResult
       required:
@@ -2766,7 +2782,7 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types2'
+          $ref: '#/components/schemas/Types3'
         fields:
           $ref: '#/components/schemas/Map_TypingResult'
         refClazzName:
@@ -2774,7 +2790,7 @@ components:
         params:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
     TypedObjectWithValue:
       title: TypedObjectWithValue
       required:
@@ -2787,13 +2803,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types5'
+          $ref: '#/components/schemas/Types4'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
     TypedTaggedValue:
       title: TypedTaggedValue
       required:
@@ -2807,13 +2823,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types6'
+          $ref: '#/components/schemas/Types5'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
     TypedUnion:
       title: TypedUnion
       required:
@@ -2824,11 +2840,53 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types7'
+          $ref: '#/components/schemas/Types7'
         union:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
+    Types:
+      type: string
+      enum:
+      - Unknown
+    Types1:
+      type: string
+      enum:
+      - TypedClass
+    Types2:
+      type: string
+      enum:
+      - TypedDict
+    Types3:
+      type: string
+      enum:
+      - TypedObjectTypingResult
+    Types4:
+      type: string
+      enum:
+      - TypedObjectWithValue
+    Types5:
+      type: string
+      enum:
+      - TypedTaggedValue
+    Types6:
+      type: string
+      enum:
+      - TypedNull
+    Types7:
+      type: string
+      enum:
+      - TypedUnion
+    TypingResult:
+      oneOf:
+      - $ref: '#/components/schemas/TypedClass'
+      - $ref: '#/components/schemas/TypedDict'
+      - $ref: '#/components/schemas/TypedNull'
+      - $ref: '#/components/schemas/TypedObjectTypingResult'
+      - $ref: '#/components/schemas/TypedObjectWithValue'
+      - $ref: '#/components/schemas/TypedTaggedValue'
+      - $ref: '#/components/schemas/TypedUnion'
+      - $ref: '#/components/schemas/Unknown'
     UIParameter:
       required:
       - name
@@ -2900,13 +2958,13 @@ components:
         display:
           type: string
         type:
-          $ref: '#/components/schemas/types'
+          $ref: '#/components/schemas/Types'
         refClazzName:
           type: string
         params:
           type: array
           items:
-            $ref: '#'
+            $ref: '#/components/schemas/TypingResult'
     UserDefinedAdditionalNodeFields:
       type: object
       properties:
@@ -2969,38 +3027,6 @@ components:
         value:
           type: integer
           format: int64
-    types:
-      type: string
-      enum:
-      - Unknown
-    types1:
-      type: string
-      enum:
-      - TypedNull
-    types2:
-      type: string
-      enum:
-      - TypedObjectTypingResult
-    types3:
-      type: string
-      enum:
-      - TypedDict
-    types4:
-      type: string
-      enum:
-      - TypedClass
-    types5:
-      type: string
-      enum:
-      - TypedObjectWithValue
-    types6:
-      type: string
-      enum:
-      - TypedTaggedValue
-    types7:
-      type: string
-      enum:
-      - TypedUnion
   securitySchemes:
     httpAuth:
       type: http
