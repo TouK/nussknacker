@@ -22,12 +22,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `stop` without `deploymentId` argument - `StopScenarioCommand`
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
-* [#5739](https://github.com/TouK/nussknacker/pull/5739) Fix test from file, revert 0d9b600, cleanup TestResults
-  * Changed signature `TestScenarioCommand` accepts new `variableEncoder` param
-  * Classes `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
-  * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
-  * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
-  * Added `variableEncoder` to `ResultsCollectingListenerHolder.registerRun`
 
 ### Other changes
 
@@ -145,7 +139,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
   * type `NodeTransformationDefinition` (inside `DynamicComponent`) renamed to `ContextTransformationDefinition`
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
-* [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String` 
+* [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
+* [#5739](https://github.com/TouK/nussknacker/pull/5739) Fix test from file, revert 0d9b600, cleanup TestResults
+    * Changed signature `TestScenarioCommand` accepts new `variableEncoder` param
+    * Classes `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
+    * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
+    * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
+    * Added `variableEncoder` to `ResultsCollectingListenerHolder.registerRun`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
