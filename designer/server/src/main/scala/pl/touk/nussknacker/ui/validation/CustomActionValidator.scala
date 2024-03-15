@@ -1,12 +1,10 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.Validated.Invalid
-import io.circe.{Codec, Decoder, Encoder, HCursor, Json}
-import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto._
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.deployment.{CustomActionCommand, ScenarioActionName}
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
+import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
   CustomActionParameter,
@@ -14,7 +12,7 @@ import pl.touk.nussknacker.engine.deployment.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError, NuDesignerError}
+import pl.touk.nussknacker.ui.BadRequestError
 
 class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
@@ -23,7 +21,9 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   ): Either[CustomActionValidationError, CustomActionValidationResult] = {
 
     val checkedCustomAction =
-      allowedActions.find(_.name == request.actionName).toRight(CustomActionNonExistingError(request.actionName.value))
+      allowedActions
+        .find(_.name == request.actionName)
+        .toRight(CustomActionNonExistingError("Couldn't find this action: " + request.actionName.value))
 
     checkedCustomAction match {
       case Left(notFoundAction) => Left(notFoundAction)
