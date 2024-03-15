@@ -8,6 +8,7 @@ import TextIcon from "./icons/code_off.svg";
 import ListIcon from "./icons/list.svg";
 import ScheduleIcon from "./icons/schedule.svg";
 import DateIcon from "./icons/date_range.svg";
+import { blendLighten } from "../../../../../containers/theme/nuTheme";
 
 export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     width: 35,
@@ -20,6 +21,10 @@ export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important`,
+    "&:focus": {
+        outline: `1px solid ${theme.palette.primary.main} !important`,
+    },
     "& > svg": {
         width: "100%",
     },

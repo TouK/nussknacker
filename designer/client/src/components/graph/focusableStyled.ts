@@ -1,15 +1,18 @@
 import { CSSProperties } from "react";
 import { styled, css, Theme } from "@mui/material";
-import { alpha } from "../../containers/theme/helpers";
 import { ButtonWithFocus } from "../withFocus";
+import { blendLighten } from "../../containers/theme/nuTheme";
 
 export const buttonBase = (theme: Theme) => css`
-    border: 1px solid ${theme.custom.colors.doveGray};
+    border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
     border-radius: 0;
     background-color: ${theme.palette.background.paper};
     color: ${theme.custom.colors.secondaryColor};
     transition: background-color 0.2s;
     user-select: none;
+    &:focus {
+        border: 1px solid ${theme.palette.primary.main};
+    }
     &:disabled,
     &.disabled {
         opacity: 0.3;
@@ -18,7 +21,7 @@ export const buttonBase = (theme: Theme) => css`
 
     &:not(:disabled):hover,
     &:not(.disabled):hover {
-        background-color: ${theme.custom.colors.charcoal};
+        background-color: ${theme.palette.action.hover};
     }
 `;
 
@@ -82,7 +85,7 @@ export const FocusableStyled = styled("div")(
             }
 
             .node-focused-with-validation-error {
-                ${nodeHighlight(theme.custom.colors.cobalt, theme.custom.colors.bizarre)}
+                ${nodeHighlight(theme.palette.primary.main, theme.custom.colors.bizarre)}
             }
 
             .node-grouping {
@@ -90,7 +93,7 @@ export const FocusableStyled = styled("div")(
             }
 
             .node-focused {
-                ${nodeHighlight(theme.custom.colors.cobalt, theme.custom.colors.zumthor)}
+                ${nodeHighlight(theme.palette.primary.main, theme.custom.colors.zumthor)}
             }
 
             .joint-type-basic-rect.node-focused {

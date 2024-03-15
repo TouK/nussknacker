@@ -1,5 +1,8 @@
-export const customCheckbox = (checkboxWidth) => `
-    input[type='checkbox'] {
+import { css, Theme } from "@mui/material";
+import { blendLighten } from "../../../../containers/theme/nuTheme";
+
+export const customCheckbox = (checkboxWidth: string, theme: Theme) => css`
+    input[type="checkbox"] {
         text-rendering: optimizeSpeed;
         width: ${checkboxWidth};
         height: ${checkboxWidth};
@@ -12,7 +15,7 @@ export const customCheckbox = (checkboxWidth) => `
         border: none;
     }
 
-    input[type='checkbox']:after {
+    input[type="checkbox"]:after {
         content: "";
         vertical-align: middle;
         text-align: center;
@@ -22,17 +25,23 @@ export const customCheckbox = (checkboxWidth) => `
         height: ${checkboxWidth};
         width: ${checkboxWidth};
         font-size: calc(${checkboxWidth} - 6);
-        box-shadow: inset 0px 1px 1px #000, 0px 1px 0px #444;
-        background: #333;
+        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
+        background: ${theme.palette.background.paper};
     }
-    input[type='checkbox']:checked::after {
-        background: #333;
-        content: '\\2714';
-        color: #fff;
+    input[type="checkbox"]:checked::after {
+        content: "\\2713";
+        font-size: 1rem;
     }
 
-    input[type='checkbox']:disabled {
+    input[type="checkbox"]:disabled {
         opacity: 0.3;
         cursor: auto;
     }
- `;
+
+    input[type="checkbox"]:focus {
+        border: none;
+        &:after {
+            outline: 1px solid ${theme.palette.primary.main};
+        }
+    }
+`;

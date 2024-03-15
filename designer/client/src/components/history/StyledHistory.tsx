@@ -74,7 +74,7 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
         `}
 
         &:hover {
-            background-color: ${theme.custom.colors.charcoal};
+            background-color: ${theme.palette.action.hover};
             box-sizing: border-box;
 
             &::after {

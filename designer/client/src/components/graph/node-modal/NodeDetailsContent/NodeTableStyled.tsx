@@ -1,5 +1,6 @@
 import { css, styled } from "@mui/material";
 import { customCheckbox } from "./CustomCheckbox";
+import { blendLighten } from "../../../../containers/theme/nuTheme";
 
 export const HIDDEN_TEXTAREA_PIXEL_HEIGHT = 100;
 export const NodeTableStyled = styled("div")(
@@ -26,7 +27,6 @@ export const NodeTableStyled = styled("div")(
             flex: 1;
             flex-basis: 60%;
             display: inline-block;
-            color: ${theme.custom.colors.dimGray};
             textarea {
                 overflow: hidden;
                 height: auto;
@@ -43,7 +43,7 @@ export const NodeTableStyled = styled("div")(
             input:read-only {
                 background-color: ${theme.custom.colors.tundora} !important;
             }
-            ${customCheckbox("20px")};
+            ${customCheckbox("20px", theme)};
             input[type="checkbox"] {
                 margin-top: 7px;
                 margin-bottom: 7px;
@@ -56,7 +56,7 @@ export const NodeTableStyled = styled("div")(
             &.node-value-type-select {
                 width: 100%;
                 max-height: 35;
-                outline: 1px solid rgba(255, 255, 255, 0.075);
+                outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
                 &.switchable {
                     width: 70%;
                 }
@@ -92,23 +92,26 @@ export const NodeTableStyled = styled("div")(
             color: ${theme.custom.colors.secondaryColor};
             font-weight: 400;
             font-size: 14px;
-            outline: 1px solid rgba(255, 255, 255, 0.075);
+            outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
+            :focus {
+                outline: 1px solid ${theme.palette.primary.main} !important;
+            }
         }
 
         .row-ace-editor {
-            color: ${theme.custom.colors.dimGray};
             padding-top: 8px;
             padding-bottom: 8px;
             padding-left: 5px;
             padding-right: 5px;
             background-color: ${theme.palette.background.paper};
             min-height: 35px;
-            outline: 1px solid rgba(255, 255, 255, 0.075);
+            border: none;
+            outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             .ace_editor {
                 background-color: ${theme.palette.background.paper};
             }
             &.focused {
-                outline: 2px solid ${theme.custom.colors.cobalt};
+                outline: 1px solid ${theme.palette.primary.main};
                 outline-offset: -1px;
             }
         }

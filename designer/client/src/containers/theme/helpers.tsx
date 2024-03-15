@@ -31,7 +31,7 @@ export const useFocus = () => {
     return css({
         ":focus, :active:focus": {
             outline: "none",
-            borderColor: theme.custom.colors.focusColor,
+            borderColor: theme.palette.primary.main,
             boxShadow: `0 0 0 1px ${theme.custom.colors.focusColor}`,
         },
     });

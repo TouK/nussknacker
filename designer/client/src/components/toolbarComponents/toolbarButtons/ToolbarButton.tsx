@@ -5,7 +5,7 @@ import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./ind
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
 import { Icon } from "./ToolbarButtonStyled";
-import { lighten, Typography, useTheme } from "@mui/material";
+import { Typography, useTheme } from "@mui/material";
 
 const { buttonSize, rightPanelButtonFontSize, buttonSmallSize } = variables;
 
@@ -40,7 +40,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 
         borderColor: hasError ? colors.error : "transparent",
         ":focus": {
-            borderColor: colors.cobalt,
+            borderColor: palette.primary.main,
         },
 
         color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,

@@ -1,7 +1,7 @@
-import { css, darken, Theme } from "@mui/material";
+import { alpha, css, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
-import { alpha } from "../containers/theme/helpers";
+import { blendDarken, blendLighten } from "../containers/theme/nuTheme";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
@@ -20,19 +20,18 @@ export const selectStyled = (theme: Theme) => {
         background-color: ${theme.palette.background.paper};
         max-height: 35px;
         min-height: 35px;
-        border: 0;
+        border: none;
         border-radius: 0;
         color: ${theme.custom.colors.secondaryColor};
         box-shadow: 0;
-
+        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
         ${isFocused &&
         css`
-            outline: 2px solid ${theme.custom.colors.cobalt} !important;
-            outline-offset: -1px !important;
+            outline: 1px solid ${theme.palette.primary.main} !important;
         `}
         ${isDisabled &&
         css`
-            background-color: ${theme.custom.colors.charcoal} !important;
+            opacity: 20% !important;
         `}
     `;
 
@@ -46,15 +45,15 @@ export const selectStyled = (theme: Theme) => {
 
         ${isSelected &&
         css`
-            background-color: ${theme.custom.colors.cobalt};
+            background-color: ${blendDarken(theme.palette.primary.main, 0.5)};
         `}
 
         ${isFocused &&
         css`
-            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
+            background-color: ${blendDarken(theme.palette.primary.main, 0.75)};
         `}
     &:hover {
-            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
+            background-color: ${theme.palette.action.hover};
         }
     `;
 
@@ -64,15 +63,11 @@ export const selectStyled = (theme: Theme) => {
         outline: none;
     `;
 
-    const singleValue = (base: CSSObjectWithLabel, isDisabled: boolean) => css`
+    const singleValue = (base: CSSObjectWithLabel) => css`
         ${base};
         ${commonNodeInput("0")}; //TODO input hides partially due to padding...
         position: absolute;
         outline: none;
-        ${isDisabled &&
-        css`
-            background-color: ${theme.custom.colors.charcoal} !important;
-        `}
     `;
 
     const menuList = (base: CSSObjectWithLabel) => css`

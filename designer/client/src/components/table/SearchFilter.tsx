@@ -17,7 +17,7 @@ export function SearchIcon(props: { isEmpty?: boolean }): JSX.Element {
                 flex,
                 css({
                     ".icon-fill": {
-                        fill: props.isEmpty ? theme.custom.colors.secondaryColor : theme.palette.success.main,
+                        fill: props.isEmpty ? theme.palette.text.secondary : theme.palette.primary.main,
                     },
                 }),
             )}

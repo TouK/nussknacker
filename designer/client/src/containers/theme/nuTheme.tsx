@@ -47,14 +47,11 @@ const colors = {
     mutedColor: base,
     focusColor: d1,
     baseColor: l4,
-    evenBackground: d3,
-    cobalt: "#0058A9",
     tundora: d3,
     scorpion: "#5D5D5D",
     silverChalice: "#afafaf",
     cerulean: "#0E9AE0",
     doveGray: d4,
-    charcoal: "#444444",
     accent: "#668547",
     eclipse: "#393939",
     nightRider: "#2d2d2d",
@@ -65,7 +62,6 @@ const colors = {
     dustyGray: l4,
     gallery: "#eeeeee",
     boulder: "#777777",
-    dimGray: "#686868",
     eucalyptus: "#33A369",
     seaGarden: "#2D8E54",
     lawnGreen: "#7EDB0D",
@@ -279,6 +275,9 @@ export const nuTheme = createTheme({
         background: {
             paper: "#242F3E",
             default: "#131A25",
+        },
+        action: {
+            hover: blendLighten("#242F3E", 0.15),
         },
     },
     typography: {

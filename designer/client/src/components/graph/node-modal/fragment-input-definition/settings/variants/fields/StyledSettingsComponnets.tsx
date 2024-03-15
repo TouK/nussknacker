@@ -2,14 +2,15 @@ import React from "react";
 import { Switch, styled, FormLabel, css } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { StyledNodeTip } from "../../../../FieldLabel";
+import { blendLighten } from "../../../../../../../containers/theme/nuTheme";
 
-export const SettingsWrapper = styled("div")`
-    padding: 10px;
-    border: 1px solid #ffffff1f;
-    width: 100%;
-    display: block;
-    margin-bottom: 20px;
-`;
+export const SettingsWrapper = styled("div")(({ theme }) => ({
+    padding: "10px",
+    border: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+    width: "100%",
+    display: "block",
+    marginBottom: "20px",
+}));
 
 export const SettingLabelStyled = styled(FormLabel)(
     ({ theme }) => css`
