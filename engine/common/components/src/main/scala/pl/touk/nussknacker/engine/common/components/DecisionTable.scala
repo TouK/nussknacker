@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.common.components
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
+  FailedToDefineParameter,
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
@@ -62,7 +64,10 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
-    prepare orElse basicDecisionTableParameterReady orElse allParametersReady(context, dependencies)
+    prepare orElse basicDecisionTableParameterReady(context) orElse allParametersReady(
+      context,
+      dependencies
+    ) orElse catchall
   }
 
   override def implementation(
@@ -83,13 +88,56 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     )
   }
 
-  private lazy val basicDecisionTableParameterReady: ContextTransformationDefinition = {
+  private lazy val catchall: ContextTransformationDefinition = { case TransformationStep(aaa, ddd) =>
+    throw new IllegalStateException(s"ddd + $aaa + $ddd")
+  }
+
+  private def basicDecisionTableParameterReady(
+      context: ValidationContext
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
       NextParameters(
         parameters = FilterDecisionTableExpressionParameter.declaration.createParameter(data) :: Nil,
         errors = List.empty,
         state = None
+      )
+    case TransformationStep(
+          (name, FailedToDefineParameter) ::
+          (secondParamName, _) :: Nil,
+          _
+        )
+        if name == BasicDecisionTableParameter.name &&
+          secondParamName == FilterDecisionTableExpressionParameter.name =>
+      FinalResults(
+        finalContext = context,
+        errors = CustomParameterValidationError("ERROR!!!", "error desc", name, nodeId.id) :: Nil,
+        state = None
+      )
+    case TransformationStep((name, FailedToDefineParameter) :: Nil, _) if name == BasicDecisionTableParameter.name =>
+      FinalResults(
+        finalContext = context,
+        errors = CustomParameterValidationError("ERROR!!!", "error desc", name, nodeId.id) :: Nil,
+        state = None
+      )
+  }
+
+  private def allParametersReady(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): ContextTransformationDefinition = {
+    case TransformationStep(
+          (firstParamName, DefinedEagerParameter(data: TabularTypedData, _)) ::
+          (secondParamName, _) :: Nil,
+          _
+        )
+        if firstParamName == BasicDecisionTableParameter.name &&
+          secondParamName == FilterDecisionTableExpressionParameter.name =>
+      FinalResults.forValidation(context)(
+        _.withVariable(
+          name = OutputVariableNameDependency.extract(dependencies),
+          value = componentResultTypingResult(data.columnDefinitions),
+          paramName = None
+        )
       )
   }
 
@@ -124,25 +172,6 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
         .asJava
     }
 
-  }
-
-  private def allParametersReady(context: ValidationContext, dependencies: List[NodeDependencyValue])(
-      implicit nodeId: NodeId
-  ): ContextTransformationDefinition = {
-    case TransformationStep(
-          (firstParamName, DefinedEagerParameter(data: TabularTypedData, _)) ::
-          (secondParamName, _) :: Nil,
-          _
-        )
-        if firstParamName == BasicDecisionTableParameter.name &&
-          secondParamName == FilterDecisionTableExpressionParameter.name =>
-      FinalResults.forValidation(context)(
-        _.withVariable(
-          name = OutputVariableNameDependency.extract(dependencies),
-          value = componentResultTypingResult(data.columnDefinitions),
-          paramName = None
-        )
-      )
   }
 
   private def componentResultTypingResult(columnDefinitions: Iterable[Column.Definition]): TypingResult = {
