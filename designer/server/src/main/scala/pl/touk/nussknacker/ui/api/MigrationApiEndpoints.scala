@@ -163,7 +163,6 @@ object MigrationApiEndpoints {
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
-        processingType: ProcessingType,
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,

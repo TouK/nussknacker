@@ -17,14 +17,18 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequestV2
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.BuildInfoDto
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequest, MigrateScenarioRequestV2}
+import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
+import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -104,7 +108,8 @@ final case class HttpRemoteEnvironmentConfig(
 class HttpRemoteEnvironment(
     httpConfig: HttpRemoteEnvironmentConfig,
     val testModelMigrations: TestModelMigrations,
-    val environmentId: String
+    val environmentId: String,
+    migrationApiAdapterService: MigrationApiAdapterService
 )(implicit as: ActorSystem, val materializer: Materializer)
     extends StandardRemoteEnvironment
     with LazyLogging
@@ -197,7 +202,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processName: ProcessName,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val migrateScenarioRequest: MigrateScenarioRequestV2 =
+    val migrateScenarioRequestV2: MigrateScenarioRequestV2 =
       MigrateScenarioRequestV2(
         environmentId,
         processingMode,
@@ -207,14 +212,52 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         processName,
         isFragment
       )
-    invokeForSuccess(
-      HttpMethods.POST,
-      List("migrate"),
-      Query.Empty,
-      HttpEntity(migrateScenarioRequest.asJson.noSpaces),
-      List.empty
-    )
+
+    for {
+      remoteNuVersionE <- fetchRemoteNuVersion.map {
+        case Left(e)             => Left(e)
+        case Right(buildInfoDto) => Right(buildInfoDto.version)
+      }
+
+      localNuVersion = BuildInfo.version
+
+      versionsComparisonResult = compareNuVersions(localNuVersion, "TODO")
+
+      migrateScenarioRequest = decideMigrationRequestDto(migrateScenarioRequestV2, versionsComparisonResult)
+
+      res <- invokeForSuccess(
+        HttpMethods.POST,
+        List("migrate"),
+        Query.Empty,
+        HttpEntity(migrateScenarioRequest.asJson.noSpaces),
+        List.empty
+      )
+
+    } yield res
   }
+
+  // compare(x, y) = -1 <=> x < y && compare(x, y) = 0 <=> x = y && compare(x, y) = +1 <=> x > y
+  private def compareNuVersions(localNuVersion: String, remoteNuVersion: String): Int = ???
+
+  private def decideMigrationRequestDto(
+      migrateScenarioRequestV2: MigrateScenarioRequestV2,
+      versionComparisionResult: Int
+  ): MigrateScenarioRequest = {
+    // TODO: Inject this service in a normal way...
+    val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
+    if (versionComparisionResult <= 0) {
+      migrateScenarioRequestV2
+    } else {
+      migrationApiAdapterService.adaptToLowerVersion(migrateScenarioRequestV2)
+    }
+  }
+
+  private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Either[NuDesignerError, BuildInfoDto]] =
+    invokeJson[BuildInfoDto](
+      HttpMethods.GET,
+      List("app", "buildInfo"),
+      Query.Empty
+    )
 
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(

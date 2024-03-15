@@ -27,29 +27,11 @@ class MigrationApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
       .serverLogicEitherT { implicit loggedUser =>
         {
-          case migrateScenarioRequestV2 @ MigrateScenarioRequestV2(_, _, _, _, _, _, _, _) =>
+          case migrateScenarioRequestV2 @ MigrateScenarioRequestV2(_, _, _, _, _, _, _) =>
             EitherT(migrationService.migrate(migrateScenarioRequestV2))
-          case migrateScenarioRequestV1 @ MigrateScenarioRequestV1(
-                sourceEnvironmentId,
-                processingMode,
-                engineSetupName,
-                processCategory,
-                processingType,
-                scenarioGraph,
-                processName,
-                isFragment
-              ) =>
-            val tmp = MigrateScenarioRequestV2(
-              sourceEnvironmentId,
-              processingMode,
-              engineSetupName,
-              processCategory,
-              processingType,
-              scenarioGraph,
-              processName,
-              isFragment
-            )
-            EitherT(migrationService.migrate(tmp))
+          case migrateScenarioRequestV1 @ MigrateScenarioRequestV1(_, _, _, _, _, _, _) =>
+            val migrateScenarioRequestV2 = migrationApiAdapterService.adaptToHigherVersion(migrateScenarioRequestV1)
+            EitherT(migrationService.migrate(migrateScenarioRequestV2))
         }
       }
   }
