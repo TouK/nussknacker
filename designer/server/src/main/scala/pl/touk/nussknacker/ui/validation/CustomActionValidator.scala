@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.validation
 
 import cats.data.Validated.Invalid
+import io.circe.{Codec, Decoder, Encoder, HCursor, Json}
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto._
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.deployment.{CustomActionCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -59,8 +61,7 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
               s"Validation requires different count of custom action parameters than provided in request for: ${request.actionName}"
             )
           )
-        }
-        Right(paramsMap)
+        } else { Right(paramsMap) }
       case (true, None) =>
         Left(MismatchedParamsError(s"Missing required params for action: ${request.actionName}"))
       case (false, Some(_)) =>
@@ -126,9 +127,20 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
 
 object CustomActionValidationError {
   def apply(message: String): CustomActionValidationError = new CustomActionValidationError(message)
+
+  implicit val encodeCustomActionValidationError: Encoder[CustomActionValidationError] =
+    (error: CustomActionValidationError) => Json.obj("message" -> Json.fromString(error.getMessage))
+
+  // Decoder
+  implicit val decodeCustomActionValidationError: Decoder[CustomActionValidationError] =
+    (c: HCursor) =>
+      for {
+        message <- c.downField("message").as[String]
+      } yield new CustomActionValidationError(message)
+
 }
 
-@JsonCodec sealed class CustomActionValidationError(message: String) extends BadRequestError(message)
+sealed class CustomActionValidationError(message: String) extends BadRequestError(message)
 
 case class CustomActionNonExistingError(message: String) extends CustomActionValidationError(message)
 
