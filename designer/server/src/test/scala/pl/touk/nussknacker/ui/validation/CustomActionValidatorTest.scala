@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.validation
 
+import cats.data.IorT.left
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -9,7 +11,11 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
+  CustomActionParameter,
+  CustomActionValidationResult
+}
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 
 class CustomActionValidatorTest extends AnyFunSuite with Matchers {
@@ -53,26 +59,31 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private val validRequest = customActionRequest(validTestParams)
 
   test("should pass when validating correct data") {
-    val result: Unit = validator.validateCustomActionParams(validRequest)
-    result should be((): Unit)
+    val result = validator.validateCustomActionParams(validRequest)
+    result should be(Right(CustomActionValidationResult.Valid))
   }
 
-  test("should fail when requestParams list doesn't match customActionParams list") {
+  test("should fail(return left) when requestParams list doesn't match customActionParams list") {
     val invalidTestParamsTooFewParams = Map(
       "testParam1" -> "validVal1"
     )
 
     val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooFewParams)
 
-    val caughtException = intercept[CustomActionValidationError] {
+    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
       validator.validateCustomActionParams(invalidRequestTooFewParams)
+    result match {
+      case Left(_: MismatchedParamsError) =>
+      // pass
+      case Left(_) | Right(_) =>
+        fail("Expected Left[MismatchedParamsError] but got different result type")
     }
 
-    caughtException.getMessage shouldBe
-      "Different count of custom action parameters than provided in request for: " + invalidRequestTooFewParams.actionName
+    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
+      "Validation requires different count of custom action parameters than provided in request for: " + invalidRequestTooFewParams.actionName
   }
 
-  test("should fail when validating incorrect data") {
+  test("should return Right(Invalid) when validating invalid data but proper request") {
     val invalidTestParamsInvalidValues = Map(
       "testParam1" -> null,
       "testParam2" -> "ValidVal2"
@@ -80,28 +91,37 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidValues)
 
-    val caughtException = intercept[CustomActionValidationError] {
+    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
       validator.validateCustomActionParams(invalidRequestInvalidValues)
+    result match {
+      case Right(_: CustomActionValidationResult.Invalid) =>
+      // pass
+      case Left(_) | Right(_) =>
+        fail("Expected Right[Invalid] but got different result type")
     }
 
-    caughtException.getMessage shouldBe
-      "EmptyMandatoryParameter(This field is required and can not be null,Please fill field for this parameter,testParam1,testCustomAction)"
+    result.getOrElse(fail("should be right and have message")).toString shouldBe
+      "Invalid(Map(testParam1 -> List(EmptyMandatoryParameter(This field is required and can not be null,Please fill field for this parameter,testParam1,testCustomAction)), testParam2 -> List()))"
   }
 
-  test("should fail when provided with incorrect param names") {
+  test("should fail(return left) when provided with incorrect param names") {
     val invalidTestParamsInvalidParamNames = Map(
       "testParam3" -> "validVal",
       "testParam2" -> "ValidVal2"
     )
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidParamNames)
-
-    val caughtException = intercept[CustomActionValidationError] {
+    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
       validator.validateCustomActionParams(invalidRequestInvalidValues)
+    result match {
+      case Left(_: MismatchedParamsError) =>
+      // pass
+      case Left(_) | Right(_) =>
+        fail("Expected Left[MismatchedParamsError] but got different result type")
     }
 
-    caughtException.getMessage shouldBe
-      "No such parameter should be defined for this action: " + testCustomAction.name
+    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
+      "Missing params: testParam1 for action: " + invalidRequestInvalidValues.actionName
   }
 
   test("should not fail when provided with empty params for no params action") {
@@ -109,8 +129,27 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val validRequest = CustomActionRequest(ScenarioActionName("noparams"), validTestParams)
 
-    val result: Unit = validator.validateCustomActionParams(validRequest)
-    result should be((): Unit)
+    val result = validator.validateCustomActionParams(validRequest)
+    result should be(Right(CustomActionValidationResult.Valid))
+  }
+
+  test("should fail(return left) when trying to validate a non existing action") {
+    val nonExistingActionRequest = CustomActionRequest(
+      ScenarioActionName("notInAnyDBHere"),
+      None
+    )
+
+    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
+      validator.validateCustomActionParams(nonExistingActionRequest)
+    result match {
+      case Left(_: CustomActionNonExistingError) =>
+      // pass
+      case Left(_) | Right(_) =>
+        fail("Expected Left[CustomActionNonExistingError] but got different result type")
+    }
+
+    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
+      nonExistingActionRequest.actionName.toString
 
   }
 
