@@ -7,22 +7,23 @@ import { ComponentGroup } from "../../../types";
 import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 import Tool from "./Tool";
 import { useTranslation } from "react-i18next";
-import { darken, lighten, styled } from "@mui/material";
+import { lighten, styled } from "@mui/material";
+import { blendLighten } from "../../../containers/theme/nuTheme";
 
 const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
     fontWeight: "600",
     padding: 0,
-    paddingBottom: "0.5em",
     minHeight: "2.5em",
-
     ".tree-view": {
         backgroundColor: theme.palette.background.paper,
     },
 
     ".tree-view_item": {
         backgroundColor: theme.palette.background.paper,
-        border: `1px solid ${darken(theme.palette.background.paper, 0.2)}`,
+        borderBottom: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        borderLeft: 0,
+        borderRight: 0,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
@@ -58,16 +59,14 @@ const StyledToolbox = styled("div")(({ theme }) => ({
 
     ".tool": {
         ...theme.typography.body2,
-        marginBottom: "-1px",
-        height: "28px",
-        padding: "0 5px",
-        lineHeight: "28px",
-        border: `1px solid ${darken(theme.palette.background.paper, 0.2)}`,
+        padding: theme.spacing(0.5, 0.5),
+        borderBottom: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        borderLeft: 0,
+        borderRight: 0,
         "&.disabled": {
             opacity: 0.4,
             cursor: "not-allowed !important",
         },
-
         "&:not(.disabled)": {
             cursor: "grab",
             "&:active": {
