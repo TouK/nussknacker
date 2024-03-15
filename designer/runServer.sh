@@ -35,7 +35,6 @@ if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   export GRAFANA_URL="http://localhost:8081/grafana"
   export INFLUXDB_URL="http://localhost:3086/query"
   export INPUT_CONFIG_RESOLVE_ENV_VARIABLES="false"
-  export SQL_DATASOURCES_FILE_PATH="${CONF_DIR}/tables-definition.sql"
 else
   echo "Using local environment"
 fi
