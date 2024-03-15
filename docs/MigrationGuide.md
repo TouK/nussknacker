@@ -3,6 +3,11 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.13.1 (Not released yet)
+
+### Code API changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
+
 ## In version 1.13.0 
 
 ### Code API changes
@@ -98,6 +103,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Boolean expressions in `Switch` and `Filter` nodes are required not null values
   * Variable values in `MapVariable`, `FragmentOutput` and `Variable` are mandatory
   * Field names in `MapVariable`, `FragmentOutput` are required to be unique
+
+## In version 1.12.6
+
+### Other changes
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13
 
 ## In version 1.12.x
 

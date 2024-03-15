@@ -1,5 +1,14 @@
 # Changelog
 
+
+1.13.2 (7 Mar 2024)
+------------------------
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+ 
+1.13.1 (7 Mar 2024)
+-------------------------
+[this version was skipped, please use 1.13.2 instead]
+
 1.13.0 (12 Jan 2024)
 -------------------------
 * [#5051](https://github.com/TouK/nussknacker/pull/5051) Allow users to perform inserts/updates on db by adding `Updates count` strategy to db-query service
@@ -45,6 +54,10 @@
 * [#5197](https://github.com/TouK/nussknacker/pull/5197) Improved accessing fields in records in expressions - fields can now be statically accessed using indexing
 * [#5312](https://github.com/TouK/nussknacker/pull/5312) Collect component clears context variables
 * [#5313](https://github.com/TouK/nussknacker/pull/5313) Added CountWhen and Average aggregations
+
+1.12.6 (29 Jan 2024)
+------------------------
+* [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
 
 1.12.5 (1 Dec 2023)
 ------------------------
