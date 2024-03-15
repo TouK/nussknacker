@@ -2,6 +2,7 @@ import React, { ComponentType, ForwardedRef, forwardRef, SVGProps } from "react"
 import { Box, Checkbox, MenuItem, Paper, Typography } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { SvgIconComponent } from "@mui/icons-material";
+import { blendLighten } from "../../containers/theme/nuTheme";
 
 interface Props {
     label: string;
@@ -23,7 +24,7 @@ export const CustomRadio = forwardRef(({ label, value, Icon, disabled, active }:
                 sx={(theme) => ({
                     backgroundColor: theme.palette.background.paper,
                     p: [1, 2],
-                    borderColor: active && theme.palette.primary.main,
+                    borderColor: active ? theme.palette.primary.main : blendLighten(theme.palette.background.paper, 0.25),
                     cursor: "pointer",
                     display: "flex",
                     justifyContent: "center",
