@@ -44,12 +44,13 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.processCommand(TestScenarioCommand(processName, process, scenarioTestData))) { r =>
-      r.nodeResults shouldBe Map(
-        "startProcess" -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "nightFilter"  -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "endSend"      -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
-      )
+    whenReady(deploymentManager.processCommand(TestScenarioCommand(processName, process, scenarioTestData, identity))) {
+      r =>
+        r.nodeResults shouldBe Map(
+          "startProcess" -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
+          "nightFilter"  -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
+          "endSend"      -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
+        )
     }
   }
 
@@ -65,7 +66,9 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.processCommand(TestScenarioCommand(ProcessName(processId), process, scenarioTestData)),
+        deploymentManager.processCommand(
+          TestScenarioCommand(ProcessName(processId), process, scenarioTestData, identity)
+        ),
         patienceConfig.timeout
       )
     }
