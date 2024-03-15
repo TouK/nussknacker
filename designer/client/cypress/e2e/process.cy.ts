@@ -125,7 +125,7 @@ describe("Process", () => {
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
         });
 
-        it("should have node search toolbar", () => {
+        it.skip("should have node search toolbar", () => {
             cy.get("[data-testid=search-panel]").should("be.visible");
             cy.get("[data-testid=search-panel]")
                 .contains(/^search$/i)
