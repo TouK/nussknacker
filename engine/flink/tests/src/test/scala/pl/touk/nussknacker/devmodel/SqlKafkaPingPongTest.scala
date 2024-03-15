@@ -2,6 +2,7 @@ package pl.touk.nussknacker.devmodel
 
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.defaultmodel.{FlinkWithKafkaSuite, TopicConfig}
 import pl.touk.nussknacker.devmodel.TestData._
@@ -152,5 +153,30 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
       result.head shouldBe parseJson(record2)
     }
   }
+
+}
+
+object TestData {
+
+  val simpleTypesSchema: JsonSchema = new JsonSchema("""{
+                                                       |  "type": "object",
+                                                       |  "properties": {
+                                                       |    "someInt" : { "type": "integer" },
+                                                       |    "someString" : { "type": "string" }
+                                                       |  }
+                                                       |}
+                                                       |""".stripMargin)
+
+  val record1: String =
+    """{
+      |  "someInt": 1,
+      |  "someString": "AAA"
+      |}""".stripMargin
+
+  val record2: String =
+    """{
+      |  "someInt": 2,
+      |  "someString": "BBB"
+      |}""".stripMargin
 
 }

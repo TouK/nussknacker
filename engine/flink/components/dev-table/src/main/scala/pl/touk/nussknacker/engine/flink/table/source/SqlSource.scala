@@ -13,9 +13,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.flink.table.source.SqlSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
+// TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
 class SqlSource(tableDefinition: TableDefinition, sqlStatements: List[SqlStatement]) extends FlinkSource {
 
   override def sourceStream(
@@ -48,7 +49,7 @@ class SqlSource(tableDefinition: TableDefinition, sqlStatements: List[SqlStateme
 
 }
 
-object TableSourceFactory {
+object SqlSource {
 
   type RECORD = java.util.Map[String, Any]
 

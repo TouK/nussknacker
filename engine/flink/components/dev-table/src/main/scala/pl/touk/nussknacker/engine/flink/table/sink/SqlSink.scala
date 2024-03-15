@@ -37,12 +37,27 @@ class SqlSink(
     val env      = dataStream.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
 
-    val streamOfRows: SingleOutputStreamOperator[Row] =
-      dataStream
-        .map(valueWithContext => valueWithContext.value.asInstanceOf[java.util.Map[String, Any]])
-        .returns(classOf[java.util.Map[String, Any]])
-        .map(value => { mapToRowUnsafe(value, tableDefinition.columns) })
+    /*
+      DataStream to Table transformation:
+      1. Map the dataStream to dataStream[Row] to fit schema in later step
+      2. Map dataStream[Row] to intermediate table with row nested inside "f0" column. This deals with converting from
+         RAW type - don't see other simple solutions
+      3. Map the table with nesting to a flattened table
+      4. Add sink table to environment
+      5. Insert the input value table into the sink table
+      6. Put the insert operation in the statementSet and do attachAsDataStream on it
+      7. Continue with a DiscardingSink as DataStream
+     */
+    val streamOfRows: SingleOutputStreamOperator[Row] = dataStream
+      .map(valueWithContext => {
+        mapToRowUnsafe(valueWithContext.value.asInstanceOf[java.util.Map[String, Any]], tableDefinition.columns)
+      })
 
+    /*
+     This "f0" value is name given by flink at conversion of one element stream. For details read:
+     https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
+     */
+    // TODO: avoid this step by mapping DataStream directly without this intermediate table with nested row
     val nestedRowSchema = columnsToSingleRowFlinkSchema(tableDefinition.columns)
 
     val tableWithNestedRow: Table = tableEnv.fromDataStream(
@@ -59,6 +74,10 @@ class SqlSink(
     statementSet.add(inputValueTable.insertInto(tableDefinition.tableName))
     statementSet.attachAsDataStream()
 
+    /*
+      Flink docs show something like this when integrating table api with inserts into dataStream. For details read:
+      https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
+     */
     dataStream.addSink(new DiscardingSink())
   }
 

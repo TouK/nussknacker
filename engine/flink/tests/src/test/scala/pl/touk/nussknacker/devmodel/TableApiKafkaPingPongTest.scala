@@ -86,11 +86,11 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
-        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topics.output}'",
-        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true",
+        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topics.output}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
       )
 
     run(process) {
@@ -118,7 +118,7 @@ class TableApiKafkaSourceTest extends FlinkWithKafkaSuite {
       .emptySink(
         "end",
         "tableApi-sink-kafka-output-test2",
-        TableSinkFactory.rawValueParamName.value -> "#input"
+        HardcodedSchemaTableSinkFactory.RawValueParamName -> "#input"
       )
 
     run(process) {
