@@ -123,6 +123,7 @@ export function AddProcessForm({
                             type="text"
                             id="newProcessName"
                             value={value.processName}
+                            className={"node-input"}
                             onChange={(e) => onFieldChange("processName", e.target.value)}
                             onBlur={() => {
                                 onBlurChange("processName", true);
@@ -139,6 +140,7 @@ export function AddProcessForm({
                         <div className="node-value">
                             <SelectNodeWithFocus
                                 id="processCategory"
+                                className={"node-input"}
                                 value={value.processCategory}
                                 onChange={(e) => {
                                     onFieldChange("processCategory", e.target.value);
@@ -185,6 +187,7 @@ export function AddProcessForm({
                             <SelectNodeWithFocus
                                 id="processEngine"
                                 value={value.processEngine}
+                                className={"node-input"}
                                 onChange={(e) => {
                                     onFieldChange("processEngine", e.target.value);
                                 }}
