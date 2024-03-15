@@ -19,11 +19,15 @@ Nussknacker configuration is divided into several configuration areas, each area
 
 * [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
-  * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration, 
   * [Model](/about/GLOSSARY#model) configuration.
-  * [Category](/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) configuration
+  * [Deployment](/about/GLOSSARY#deployment-manager) configuration,
+  * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
-The Scenario Type is a convenient umbrella term for a particular Deployment Manager configuration and the associated model configuration. Diagram below presents main relationships between configuration areas.
+[Model](/about/GLOSSARY#model) configuration defines which components and which [Processing Mode](/about/ProcessingModes) will be available for the user. 
+[Deployment](/about/GLOSSARY#deployment-manager) configuration defines how scenario using these components will be deployed on the [Engine](/about/engine).
+[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given setup.
+
+The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
 ![Configuration areas](img/configuration_areas.png "configuration areas")
 
@@ -46,26 +50,26 @@ scenarioTypes {"{"}  <br/>
 {" "} "scenario-type-1": {"{"}<br/>
 {" "}   # Configuration of DeploymentManager (Flink used as example here)  <br/>
 {" "}   <b>deploymentConfig:</b> {"{"} <br/>
-{" "}       type: "flinkStreaming" <br/>
-{" "}       restUrl: "http://localhost:8081" <br/> 
-{" "}       } <br/>
+{" "}     type: "flinkStreaming" <br/>
+{" "}     restUrl: "http://localhost:8081" <br/> 
+{" "}   } <br/>
 {" "}   # Configuration of model <br/>
 {" "}   <b>modelConfig</b>: {"{"} <br/>
-{" "}       classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
-{" "}       restartStrategy.default.strategy: disable <br/>
-{" "}       components {"{"} <br/>
+{" "}     classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
+{" "}     restartStrategy.default.strategy: disable <br/>
+{" "}     components {"{"} <br/>
 {" "}       ... <br/>
-{" "}       } <br/>
-{" "}    } <br/>
-{" "}    category: "Default" <br/>
-{" "}  } <br/>
+{" "}     } <br/>
+{" "}   } <br/>
+{" "}   category: "Default" <br/>
+{" "} } <br/>
 } <br/>
 </pre>
 
-It is worth noting that one Nussknacker Designer instance may be used to work with multiple Scenario Types which:
+It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
 
-* can be deployed with various Deployment Managers to e.g. different Flink clusters
-* use different components and Model configurations 
+* To use different set of components depending on the category
+* To deploy scenarios on different [Engines](/about/engine)
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.                   
 

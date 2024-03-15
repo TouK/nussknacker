@@ -31,7 +31,7 @@ If you want to see Nussknacker in action without Kafka, using embedded Request-R
 ```bash
 docker run -it -p 8080:8080 -p 8181:8181 touk/nussknacker:latest
 ```
-After it started go to http://localhost:8080 and login using credentials: admin/admin.
+After it started go to [http://localhost:8080](http://localhost:8080) and login using credentials: admin/admin.
 REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
 
 More information you can find at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/)
