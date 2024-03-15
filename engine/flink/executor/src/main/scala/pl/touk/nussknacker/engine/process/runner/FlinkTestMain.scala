@@ -27,7 +27,7 @@ object FlinkTestMain extends FlinkRunner {
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       configuration: Configuration,
-      variableEncoder: Any => T
+      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
   ): TestResults[T] = {
     val processVersion = ProcessVersion.empty.copy(processName =
       ProcessName("snapshot version")

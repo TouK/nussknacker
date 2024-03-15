@@ -22,6 +22,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `stop` without `deploymentId` argument - `StopScenarioCommand`
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
+* [#5739](https://github.com/TouK/nussknacker/pull/5739) Fix test from file, revert 0d9b600, cleanup TestResults
+  * Changed signature `TestScenarioCommand` accepts new `variableEncoder` param
+  * Classes `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
+  * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
+  * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
+  * Added `variableEncoder` to `ResultsCollectingListenerHolder.registerRun`
 
 ### Other changes
 

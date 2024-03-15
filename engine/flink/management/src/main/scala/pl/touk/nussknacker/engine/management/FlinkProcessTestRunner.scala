@@ -16,6 +16,7 @@ class FlinkProcessTestRunner(modelData: ModelData)
       "run"
     ) {
 
+  // NU-1455: We encode variable on the engine, because of classLoader's problems
   def test[T](canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T)(
       implicit ec: ExecutionContext
   ): Future[TestResults[T]] =
