@@ -20,14 +20,14 @@ const StyledToolbox = styled("div")(({ theme }) => ({
     },
 
     ".tree-view_item": {
-        backgroundColor: theme.palette.background.paper,
-        borderBottom: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        backgroundColor: blendLighten(theme.palette.background.paper, 0.04),
+        border: "none",
         borderLeft: 0,
         borderRight: 0,
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
-        padding: "0 5px",
+        padding: theme.spacing(0, 2),
         height: "28px",
         lineHeight: "28px",
 
@@ -39,16 +39,26 @@ const StyledToolbox = styled("div")(({ theme }) => ({
 
     ".tree-view_children": {
         backgroundColor: theme.palette.background.paper,
-
+        margin: theme.spacing(0.5, 0, 0.5, 4),
         "&:hover": {
             backgroundColor: theme.palette.background.paper,
             color: theme.custom.colors.secondaryColor,
         },
+        "&-collapsed": {
+            margin: 0,
+        },
     },
     ".tree-view_arrow": {
         cursor: "inherit",
+        transform: "rotate(-90deg)",
+        marginRight: theme.spacing(2),
+        "&:after": {
+            content: "'‹'",
+        },
+        "&-collapsed": {
+            transform: "rotate(-180deg)",
+        },
     },
-
     ".toolWrapper": {
         backgroundColor: theme.palette.background.paper,
         fontWeight: 400,
@@ -59,9 +69,8 @@ const StyledToolbox = styled("div")(({ theme }) => ({
 
     ".tool": {
         ...theme.typography.body2,
-        padding: theme.spacing(0.5, 0.5),
-        borderBottom: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
-        borderLeft: 0,
+        padding: theme.spacing(0.75, 0.5),
+        border: "none",
         borderRight: 0,
         "&.disabled": {
             opacity: 0.4,

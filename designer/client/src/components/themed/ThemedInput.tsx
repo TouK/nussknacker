@@ -2,7 +2,7 @@ import { css, cx } from "@emotion/css";
 import React, { forwardRef, Ref } from "react";
 import { ValueFieldProps } from "../valueField";
 import { NodeInput } from "../withFocus";
-import { lighten, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import { blendLighten } from "../../containers/theme/nuTheme";
 
 export type InputProps = ValueFieldProps<string> & {

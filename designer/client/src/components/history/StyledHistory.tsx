@@ -2,6 +2,7 @@ import { css, styled } from "@mui/material";
 import { VersionType } from "./HistoryItem";
 import Badge from "../deployed.svg";
 import color from "color";
+import { blendDarken, blendLighten } from "../../containers/theme/nuTheme";
 
 export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
     ({ theme, type }) => css`
@@ -44,8 +45,8 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
             top: 14px;
             width: 16px;
             height: 16px;
-            background: ${theme.custom.colors.tundora};
-            border: 2px solid ${theme.custom.colors.secondaryColor};
+            background: ${theme.palette.background.paper};
+            border: 2px solid ${theme.palette.primary.main};
             border-radius: 50%;
             padding-left: 10px;
         }
@@ -56,21 +57,21 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
         css`
             color: ${theme.custom.colors.secondaryColor};
             &:hover::after {
-                background-color: ${theme.custom.colors.secondaryColor} !important;
+                background-color: ${blendLighten(theme.palette.primary.main, 0.05)} !important;
             }
             &::after {
-                background-color: ${theme.custom.colors.secondaryColor};
+                background-color: ${theme.palette.primary.main};
             }
         `}
 
         ${type === VersionType.past &&
         css`
-            color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.8);
+            color: rgba(${color.rgb(theme.palette.primary.main).array()}, 0.8);
         `}
 
   ${type === VersionType.future &&
         css`
-            color: rgba(${color.rgb(theme.custom.colors.secondaryColor).array()}, 0.3);
+            color: rgba(${color.rgb(theme.palette.primary.main).array()}, 0.3);
         `}
 
         &:hover {
@@ -78,7 +79,7 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
             box-sizing: border-box;
 
             &::after {
-                background-color: ${theme.custom.colors.mutedColor};
+                background-color: ${blendDarken(theme.palette.primary.main, 0.2)};
             }
         }
     `,

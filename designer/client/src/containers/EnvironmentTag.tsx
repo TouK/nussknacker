@@ -3,6 +3,14 @@ import { getEnvironmentAlert } from "../reducers/selectors/settings";
 import React from "react";
 import { styled, Typography } from "@mui/material";
 
+// TODO: get rid of 'indicator-', maybe rename to "warn", "prod" etc.
+export enum EnvironmentTagColor {
+    green = "indicator-green",
+    red = "indicator-red",
+    blue = "indicator-blue",
+    yellow = "indicator-yellow",
+}
+
 const Tag = styled(Typography)(({ theme }) => ({
     backgroundColor: theme.palette.primary.main,
     whiteSpace: "nowrap",
