@@ -203,7 +203,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         processingMode,
         engineSetupName,
         processCategory,
-        processingType,
         scenarioGraph,
         processName,
         isFragment

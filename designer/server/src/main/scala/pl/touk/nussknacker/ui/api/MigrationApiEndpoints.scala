@@ -41,7 +41,6 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
               processingMode = ProcessingMode.UnboundedStream,
               engineSetupName = EngineSetupName("Flink"),
               processCategory = "Category1",
-              processingType = "streaming1",
               scenarioGraph = exampleGraph,
               processName = ProcessName("test"),
               isFragment = false
@@ -153,7 +152,6 @@ object MigrationApiEndpoints {
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
-        processingType: ProcessingType,
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,
