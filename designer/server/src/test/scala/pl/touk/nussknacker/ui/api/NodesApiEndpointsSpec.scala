@@ -6,35 +6,41 @@ import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.{SchemaClient, SchemaLoader}
 import org.json.JSONObject
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.{MatchResult, Matcher}
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import sttp.tapir.docs.apispec.schema.TapirSchemaToJsonSchema
 import sttp.apispec.circe._
-
 import java.net.URI
 import scala.util.{Success, Try}
 
-class NodesApiEndpointsSpec extends AnyFreeSpecLike {
+class NodesApiEndpointsSpec extends AnyFreeSpecLike with ScalaCheckDrivenPropertyChecks with Matchers {
+
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
+    PropertyCheckConfiguration(minSuccessful = 5, minSize = 0)
 
   "TypingResult schemas shouldn't go out of sync with Codecs" in {
     val schema = prepareSchemaForTypingResult()
 
-    for (_ <- 1 to 10) {
-      TypingResultGen.typingResultGen(EnabledTypedFeatures.All).sample match {
-        case Some(sample) =>
-          val sampleJson        = TypingResult.encoder.apply(sample)
-          val sampleStr: String = Printer.spaces2.print(sampleJson.deepDropNullValues)
-          val sampleJsonObject  = new JSONObject(sampleStr)
+    forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures.All)) { typingResult =>
+      val json = createJsonObjectFromTypingResult(typingResult)
 
-          Try(schema.validate(sampleJsonObject)) shouldBe Success(())
-
-        case None =>
-      }
+      schema should validateJson(json)
     }
   }
 
-  def prepareSchemaForTypingResult(): Schema = {
+  def validateJson(json: JSONObject): Matcher[Schema] = (left: Schema) => {
+    MatchResult(
+      Try(left.validate(json)) == Success(()),
+      s"JSON $json cannot be validated by schema $left",
+      s"JSON $json can be validated by schema $left"
+    )
+
+  }
+
+  private def prepareSchemaForTypingResult(): Schema = {
     val typingSchema = TypingDtoSchemas.typingResult
 
     val jsonSchema = TapirSchemaToJsonSchema(
@@ -55,6 +61,12 @@ class NodesApiEndpointsSpec extends AnyFreeSpecLike {
       .load()
       .build()
       .asInstanceOf[Schema]
+  }
+
+  private def createJsonObjectFromTypingResult(typingResult: TypingResult): JSONObject = {
+    val sampleJson        = TypingResult.encoder.apply(typingResult)
+    val sampleStr: String = Printer.spaces2.print(sampleJson.deepDropNullValues)
+    new JSONObject(sampleStr)
   }
 
 }
