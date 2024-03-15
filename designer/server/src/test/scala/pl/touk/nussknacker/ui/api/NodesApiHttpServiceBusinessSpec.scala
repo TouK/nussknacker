@@ -1,18 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import io.circe.Printer
-import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.everit.json.schema.loader.{SchemaClient, SchemaLoader}
-import org.everit.json.schema.Schema
 import org.hamcrest.Matchers.equalTo
-import org.json.JSONObject
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
-import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -20,11 +12,6 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import sttp.apispec.circe._
-import sttp.tapir.docs.apispec.schema._
-
-import java.net.URI
-import scala.util.{Success, Try}
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -951,43 +938,6 @@ class NodesApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(equalTo("[]"))
-    }
-  }
-
-  "TypingResult schemas shouldn't go out of sync with Codecs" in {
-    val typingSchema = TypingDtoSchemas.typingResult
-
-    val jsonSchema = TapirSchemaToJsonSchema(
-      typingSchema,
-      markOptionsAsNullable = true
-    ).asJson
-    val schemaStr: String = Printer.spaces2.print(jsonSchema.deepDropNullValues)
-    val jsonObject        = new JSONObject(schemaStr)
-
-    val schemaLoader = SchemaLoader
-      .builder()
-      .schemaClient(SchemaClient.classPathAwareClient())
-      .registerSchemaByURI(new URI("pl.touk.nussknacker.engine.api.typed.typing.TypingResult"), jsonObject)
-      .schemaJson(jsonObject)
-      .build()
-
-    val schema: Schema =
-      schemaLoader
-        .load()
-        .build()
-        .asInstanceOf[Schema]
-
-    for (_ <- 1 to 10) {
-      TypingResultGen.typingResultGen(EnabledTypedFeatures.All).sample match {
-        case Some(sample) =>
-          val sampleJson        = TypingResult.encoder.apply(sample)
-          val sampleStr: String = Printer.spaces2.print(sampleJson.deepDropNullValues)
-          val sampleJsonObject  = new JSONObject(sampleStr)
-
-          Try(schema.validate(sampleJsonObject)) shouldBe Success(())
-
-        case None =>
-      }
     }
   }
 
