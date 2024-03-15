@@ -27,12 +27,17 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
   private val testNameTopicPart: String    = "sql-pp"
   private val topicNaming1: String         = s"$testNameTopicPart.test1"
   private val topicNaming2: String         = s"$testNameTopicPart.test2"
+  private val topicNaming3: String         = s"$testNameTopicPart.test3"
   private lazy val inputTopicNameTest1     = TopicConfig.inputTopicName(topicNaming1)
   private lazy val inputTopicNameTest2     = TopicConfig.inputTopicName(topicNaming2)
   private lazy val outputTopicNameTest2    = TopicConfig.outputTopicName(topicNaming2)
+  private lazy val inputTopicNameTest3     = TopicConfig.inputTopicName(topicNaming3)
+  private lazy val outputTopicNameTest3    = TopicConfig.outputTopicName(topicNaming3)
   private lazy val sqlInputTableNameTest1  = "input_test1"
   private lazy val sqlInputTableNameTest2  = "input_test2"
   private lazy val sqlOutputTableNameTest2 = "output_test2"
+  private lazy val sqlInputTableNameTest3  = "input_test3"
+  private lazy val sqlOutputTableNameTest3 = "output_test3"
 
   private lazy val sqlTablesConfig =
     s"""
@@ -73,6 +78,32 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
        |  'scan.startup.mode' = 'earliest-offset',
        |  'format' = 'json'
        |);
+       |
+       |CREATE TABLE $sqlInputTableNameTest3
+       | (
+       |   someInt     INT,
+       |   someString  STRING
+       | ) WITH (
+       |  'connector' = 'kafka',
+       |  'topic' = '$inputTopicNameTest3',
+       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.group.id' = 'someConsumerGroupId',
+       |  'scan.startup.mode' = 'earliest-offset',
+       |  'format' = 'json'
+       |);
+       |
+       |CREATE TABLE $sqlOutputTableNameTest3
+       | (
+       |   someInt     INT,
+       |   someString  STRING
+       | ) WITH (
+       |  'connector' = 'kafka',
+       |  'topic' = '$outputTopicNameTest3',
+       |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
+       |  'properties.group.id' = 'someConsumerGroupId',
+       |  'scan.startup.mode' = 'earliest-offset',
+       |  'format' = 'json'
+       |);
        |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -91,7 +122,7 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     ProcessObjectDependencies.withConfig(tableKafkaComponentsConfig)
   )
 
-  test("should ping-pong with sql kafka source and dataStream kafka sink") {
+  test("should ping-pong with sql kafka source and DataStream kafka sink") {
     val topics = createAndRegisterTopicConfig(topicNaming1, simpleTypesSchema)
 
     sendAsJson(record1, topics.input)
@@ -141,6 +172,33 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
         "tableApi-sink-sql",
         SqlComponentFactory.TableNameParamName -> s"'$sqlOutputTableNameTest2'",
         SqlSinkFactory.ValueParamName          -> "#input"
+      )
+
+    run(process) {
+      val result = kafkaClient
+        .createConsumer()
+        .consumeWithJson[Json](topics.output)
+        .take(1)
+        .map(_.message())
+
+      result.head shouldBe parseJson(record2)
+    }
+  }
+
+  test("should pong with explicit spel record and DataStream kafka sink") {
+    val topics = createAndRegisterTopicConfig(topicNaming3, simpleTypesSchema)
+
+    sendAsJson(record1, topics.input)
+
+    val process = ScenarioBuilder
+      .streaming("testScenario")
+      .parallelism(1)
+      .source("start", "tableApi-source-sql", SqlComponentFactory.TableNameParamName -> s"'$sqlInputTableNameTest3'")
+      .emptySink(
+        "end",
+        "tableApi-sink-sql",
+        SqlComponentFactory.TableNameParamName -> s"'$sqlOutputTableNameTest3'",
+        SqlSinkFactory.ValueParamName          -> s"$record2"
       )
 
     run(process) {
