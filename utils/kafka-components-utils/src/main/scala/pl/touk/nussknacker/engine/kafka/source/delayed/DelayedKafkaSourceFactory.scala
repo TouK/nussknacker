@@ -13,9 +13,11 @@ object DelayedKafkaSourceFactory {
 
   private final val delayValidators = List(MinimalNumberValidator(0), MaximalNumberValidator(Long.MaxValue))
 
+  final val delayParamName = ParameterName("delayInMillis")
+
   final val delayParameter: ParameterCreatorWithNoDependency with ParameterExtractor[java.lang.Long] =
     ParameterDeclaration
-      .optional[java.lang.Long](ParameterName("delayInMillis"))
+      .optional[java.lang.Long](delayParamName)
       .withCreator(modify = _.copy(validators = delayValidators))
 
   final val timestampFieldParamName = ParameterName("timestampField")
