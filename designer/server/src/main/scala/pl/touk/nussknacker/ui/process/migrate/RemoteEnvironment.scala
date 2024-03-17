@@ -108,8 +108,7 @@ final case class HttpRemoteEnvironmentConfig(
 class HttpRemoteEnvironment(
     httpConfig: HttpRemoteEnvironmentConfig,
     val testModelMigrations: TestModelMigrations,
-    val environmentId: String,
-    migrationApiAdapterService: MigrationApiAdapterService
+    val environmentId: String
 )(implicit as: ActorSystem, val materializer: Materializer)
     extends StandardRemoteEnvironment
     with LazyLogging
@@ -214,14 +213,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       )
 
     for {
-      remoteNuVersionE <- fetchRemoteNuVersion.map {
-        case Left(e)             => Left(e)
-        case Right(buildInfoDto) => Right(buildInfoDto.version)
+      remoteNuVersion <- fetchRemoteNuVersion.flatMap {
+        case Left(e)             => Future.failed(e)
+        case Right(buildInfoDto) => Future.successful(buildInfoDto.version)
       }
 
       localNuVersion = BuildInfo.version
 
-      versionsComparisonResult = compareNuVersions(localNuVersion, "TODO")
+      versionsComparisonResult = compareNuVersions(localNuVersion, remoteNuVersion)
 
       migrateScenarioRequest = decideMigrationRequestDto(migrateScenarioRequestV2, versionsComparisonResult)
 
