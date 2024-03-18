@@ -11,8 +11,10 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.{SqlDataSourcesDefinition, TableDefinition}
+import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory.tableNameParamName
+import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory._
+import pl.touk.nussknacker.engine.flink.table.{SqlDataSourcesDefinition, TableDefinition}
 
 class SqlSourceFactory(definition: SqlDataSourcesDefinition)
     extends SingleInputDynamicComponent[Source]
@@ -20,17 +22,7 @@ class SqlSourceFactory(definition: SqlDataSourcesDefinition)
 
   override type State = TableDefinition
 
-  private val tableNameParamDeclaration = {
-    val possibleTableParamValues = defs.tableDefinitions
-      .map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
-    ParameterDeclaration
-      .mandatory[String](tableNameParamName)
-      .withCreator(
-        modify = _.copy(editor =
-          Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues))
-        )
-      )
-  }
+  private val tableNameParamDeclaration = SqlComponentFactory.buildTableNameParam(definition.tableDefinitions)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -62,11 +54,6 @@ class SqlSourceFactory(definition: SqlDataSourcesDefinition)
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])
 
   override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
-
-  private def getSelectedTableUnsafe(tableName: String): DataSourceTableDefinition =
-    defs.tableDefinitions
-      .find(_.tableName == tableName)
-      .getOrElse(throw new IllegalStateException("Table with selected name not found."))
 
 }
 

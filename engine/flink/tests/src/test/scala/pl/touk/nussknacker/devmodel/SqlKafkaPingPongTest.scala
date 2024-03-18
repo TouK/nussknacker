@@ -131,7 +131,11 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
-      .source("start", "tableApi-source-sql", SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'")
+      .source(
+        "start",
+        "tableApi-source-sql",
+        SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'"
+      )
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "output",
@@ -165,13 +169,17 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming(scenarioId)
       .parallelism(1)
-      .source(sourceId, "tableApi-source-sql", SqlComponentFactory.TableNameParamName -> s"'$sqlInputTableNameTest2'")
+      .source(
+        sourceId,
+        "tableApi-source-sql",
+        SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest2'"
+      )
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "end",
         "tableApi-sink-sql",
-        SqlComponentFactory.TableNameParamName -> s"'$sqlOutputTableNameTest2'",
-        SqlSinkFactory.ValueParamName          -> "#input"
+        SqlComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest2'",
+        SqlSinkFactory.valueParameterName.value      -> "#input"
       )
 
     run(process) {
@@ -193,12 +201,16 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     val process = ScenarioBuilder
       .streaming("testScenario")
       .parallelism(1)
-      .source("start", "tableApi-source-sql", SqlComponentFactory.TableNameParamName -> s"'$sqlInputTableNameTest3'")
+      .source(
+        "start",
+        "tableApi-source-sql",
+        SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest3'"
+      )
       .emptySink(
         "end",
         "tableApi-sink-sql",
-        SqlComponentFactory.TableNameParamName -> s"'$sqlOutputTableNameTest3'",
-        SqlSinkFactory.ValueParamName          -> s"$record2"
+        SqlComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'",
+        SqlSinkFactory.valueParameterName.value      -> s"$record2"
       )
 
     run(process) {

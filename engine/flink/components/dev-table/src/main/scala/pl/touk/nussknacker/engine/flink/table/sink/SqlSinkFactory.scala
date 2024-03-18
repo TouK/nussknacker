@@ -7,50 +7,51 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue,
   SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterWithExtractor, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.sink.SqlSinkFactory.ValueParamName
+import pl.touk.nussknacker.engine.flink.table.sink.SqlSinkFactory.{rawValueParameterDeclaration, valueParameterName}
 import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory.getSelectedTableUnsafe
 import pl.touk.nussknacker.engine.flink.table.{SqlDataSourcesDefinition, TableDefinition}
 import pl.touk.nussknacker.engine.util.parameters.SingleSchemaBasedParameter
 
 object SqlSinkFactory {
-  val ValueParamName = "Value"
+  // TODO: add non-raw value parameters
+  val valueParameterName: ParameterName = ParameterName("Value")
+  private val rawValueParameterDeclaration =
+    ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
 }
 
 class SqlSinkFactory(definition: SqlDataSourcesDefinition) extends SingleInputDynamicComponent[Sink] with SinkFactory {
 
   override type State = TableDefinition
 
-  // TODO: add non-raw value parameters
-  private val RawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](ValueParamName)
-
-  private val tableNameParam: ParameterWithExtractor[String] =
-    SqlComponentFactory.buildTableNameParam(definition.tableDefinitions)
-  private val TableNameParamName = tableNameParam.parameter.name
+  private val tableNameParameterDeclaration = SqlComponentFactory.buildTableNameParam(definition.tableDefinitions)
+  private val tableNameParameterName        = tableNameParameterDeclaration.parameterName
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
-        parameters = RawValueParam.parameter :: tableNameParam.parameter :: Nil,
+        parameters =
+          rawValueParameterDeclaration.createParameter() :: tableNameParameterDeclaration.createParameter() :: Nil,
         errors = List.empty,
         state = None
       )
     case TransformationStep(
-          (ValueParamName, rawValueParamValue) ::
-          (TableNameParamName, DefinedEagerParameter(tableName: String, _)) :: Nil,
+          (`valueParameterName`, rawValueParamValue) ::
+          (`tableNameParameterName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
           _
         ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
 
       val valueParameterTypeErrors = SingleSchemaBasedParameter(
-        RawValueParam.parameter,
+        rawValueParameterDeclaration.createParameter(),
         TypingResultOutputValidator.validate(_, selectedTable.typingResult)
-      ).validateParams(Map(ValueParamName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
+      ).validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
 
       FinalResults(context, valueParameterTypeErrors, Some(selectedTable))
   }
@@ -60,7 +61,7 @@ class SqlSinkFactory(definition: SqlDataSourcesDefinition) extends SingleInputDy
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Sink = {
-    val lazyValueParam = RawValueParam.extractValue(params)
+    val lazyValueParam = rawValueParameterDeclaration.extractValueUnsafe(params)
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
