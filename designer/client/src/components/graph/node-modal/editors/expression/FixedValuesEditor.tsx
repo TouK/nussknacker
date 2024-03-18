@@ -83,7 +83,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                     valueContainer: (base, props) => ({
                         ...valueContainer(base, props.hasValue),
                     }),
-                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                    singleValue: (base) => ({ ...singleValue(base) }),
                 }}
             />
 

@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import React, { PropsWithChildren, useState, useEffect } from "react";
 import Scrollbars from "react-scrollbars-custom";
-import { styled } from "@mui/material";
+import { lighten, styled } from "@mui/material";
 import { Side, PanelSide } from "./SidePanel";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
@@ -29,12 +29,12 @@ const thumbYStyleProps = {
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
 
-const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({
+const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({ theme }) => ({
     minHeight: "100%",
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: isScrollPossible && "#646464",
+    background: isScrollPossible && lighten(theme.palette.background.paper, 0.4),
     pointerEvents: isScrollPossible ? "auto" : "inherit",
 }));
 

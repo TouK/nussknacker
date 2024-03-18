@@ -5,8 +5,9 @@ import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
-import { Box, FormControl, FormLabel } from "@mui/material";
+import { Box, FormControl, FormLabel, Link } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { Download } from "@mui/icons-material";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const { t } = useTranslation();
@@ -45,15 +46,15 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                   ))
                 : null}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForEveryContext) ? (
-                <span className="testResultDownload">
-                    <a
-                        download={`${nodeId}-all-inputs.log`}
-                        href={downloadableHref(mergedMockedResults(results.testResultsToShow.externalInvocationResultsForEveryContext))}
-                    >
-                        <span className="glyphicon glyphicon-download" />
-                        {t("testResults.resultsForAllInputs", "Results for all inputs")}
-                    </a>
-                </span>
+                <Link
+                    display={"flex"}
+                    alignItems={"center"}
+                    download={`${nodeId}-all-inputs.log`}
+                    href={downloadableHref(mergedMockedResults(results.testResultsToShow.externalInvocationResultsForEveryContext))}
+                >
+                    <Download />
+                    {t("testResults.resultsForAllInputs", "Results for all inputs")}
+                </Link>
             ) : null}
         </Box>
     );

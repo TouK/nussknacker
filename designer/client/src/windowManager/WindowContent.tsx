@@ -30,8 +30,6 @@ export function WindowContent({ children, ...props }: PropsWithChildren<DefaultC
             }),
             footer: css({
                 justifyContent: "flex-end",
-                background: theme.custom.colors.secondaryBackground,
-                borderTop: `${theme.custom.spacing.baseUnit / 3}px solid ${theme.custom.colors.borderColor}`,
             }),
             ...props.classnames,
         }),

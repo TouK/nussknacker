@@ -1,5 +1,5 @@
 import { css, styled } from "@mui/material";
-import { alpha } from "../../../../../../containers/theme/helpers";
+import { blendLighten } from "../../../../../../containers/theme/nuTheme";
 
 export const TimeRangeStyled = styled("div")(
     ({ theme }) => css`
@@ -19,12 +19,14 @@ export const TimeRangeStyled = styled("div")(
         .time-range-input {
             width: 45px !important;
             border: none !important;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             color: ${theme.custom.colors.secondaryColor};
             text-align: center;
             padding-left: 12px;
-            outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
             height: 35px;
+            &:focus {
+                outline: 1px solid ${theme.palette.primary.main};
+            }
         }
 
         .time-range-components {

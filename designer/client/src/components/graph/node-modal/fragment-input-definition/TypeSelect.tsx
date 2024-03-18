@@ -77,7 +77,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange, place
                     valueContainer: (base, props) => ({
                         ...valueContainer(base, props.hasValue),
                     }),
-                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                    singleValue: (base) => ({ ...singleValue(base) }),
                 }}
             />
             <ValidationLabels fieldErrors={fieldErrors} />

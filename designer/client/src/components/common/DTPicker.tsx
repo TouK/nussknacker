@@ -20,7 +20,6 @@ const style = {
     display: "flex",
     padding: "0 10px",
     alignItems: "center",
-    outline: "none",
 };
 
 export function DTPicker({ dateFormat, timeFormat, inputProps, onChange, value }: DateTimePicker.DatetimepickerProps): JSX.Element {

@@ -1,5 +1,6 @@
 import { css, styled } from "@mui/material";
 import { alpha } from "../../../../../../containers/theme/helpers";
+import { blendLighten } from "../../../../../../containers/theme/nuTheme";
 
 export const CronEditorStyled = styled("div")(
     ({ theme }) => css`
@@ -15,7 +16,7 @@ export const CronEditorStyled = styled("div")(
         }
         .cron_builder {
             width: 100%;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
             border: none;
             * {
@@ -26,7 +27,7 @@ export const CronEditorStyled = styled("div")(
             display: flex;
             align-items: center;
             background-color: ${theme.custom.colors.eclipse} !important;
-            border: 1px solid ${theme.custom.colors.doveGray} !important;
+            border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
             margin-bottom: 8px !important;
             border-radius: 0 !important;
             padding: 12px !important;
@@ -83,7 +84,7 @@ export const CronEditorStyled = styled("div")(
         }
         .cron_builder_bordering input[type="number"] {
             height: 26px;
-            border: 1px solid ${theme.custom.colors.doveGray};
+            border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             width: 12% !important;
         }
         .span6 {
@@ -101,9 +102,9 @@ export const CronEditorStyled = styled("div")(
         }
         .nav-tabs > li > a {
             border-radius: 0;
-            border-right: 1px solid ${theme.custom.colors.doveGray};
-            border-left: 1px solid ${theme.custom.colors.doveGray};
-            border-top: 1px solid ${theme.custom.colors.doveGray};
+            border-right: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
+            border-left: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
+            border-top: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-bottom: 0;
             color: ${theme.custom.colors.curiousBlue} !important;
         }
@@ -115,25 +116,25 @@ export const CronEditorStyled = styled("div")(
         .nav-tabs > li.active > a:hover,
         .nav-tabs > li.active > a:focus {
             background: ${theme.custom.colors.abbey};
-            border-right: 1px solid ${theme.custom.colors.doveGray};
-            border-left: 1px solid ${theme.custom.colors.doveGray};
-            border-top: 1px solid ${theme.custom.colors.doveGray};
+            border-right: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
+            border-left: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
+            border-top: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-bottom: 0;
             color: ${theme.custom.colors.dustyGray};
         }
         .cron_builder .nav-tabs > li.active > a {
             color: ${theme.custom.colors.secondaryColor};
-            border-bottom: 1px solid ${theme.custom.colors.doveGray};
+            border-bottom: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
         }
         .cron-builder-bg {
-            background-color: ${theme.custom.colors.secondaryBackground} !important;
+            background-color: ${theme.palette.background.paper} !important;
             margin-top: 8px;
         }
         .minutes,
         .hours {
             background: ${theme.custom.colors.nightRider};
             border-radius: 0;
-            border: 1px solid ${theme.custom.colors.doveGray};
+            border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             margin-left: 8px;
         }
         .col-md-offset-2 {

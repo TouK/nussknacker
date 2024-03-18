@@ -6,37 +6,37 @@ import { SearchIcon } from "../../table/SearchFilter";
 import { InputWithIcon } from "../../themed/InputWithIcon";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
+import { styled } from "@mui/material";
 
 export function CreatorPanel(): JSX.Element {
     const { t } = useTranslation();
 
-    const styles = css({
+    const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
         borderRadius: 0,
         height: "36px !important",
         color: "#FFFFFF",
         padding: "6px 12px !important",
-        backgroundColor: "#333333",
+        backgroundColor: `${theme.palette.background.paper} !important`,
         border: "none",
         outline: "none !important",
         "&:focus": {
             boxShadow: "none",
         },
-    });
+    }));
 
     const [filter, setFilter] = useState("");
     const clearFilter = useCallback(() => setFilter(""), []);
 
     return (
         <ToolbarWrapper id="creator-panel" title={t("panels.creator.title", "Creator panel")}>
-            <InputWithIcon
-                className={styles}
+            <SearchInputWithIcon
                 onChange={setFilter}
                 onClear={clearFilter}
                 value={filter}
                 placeholder={t("panels.creator.filter.placeholder", "type here to filter...")}
             >
                 <SearchIcon isEmpty={isEmpty(filter)} />
-            </InputWithIcon>
+            </SearchInputWithIcon>
             <ToolBox filter={filter} />
         </ToolbarWrapper>
     );

@@ -15,6 +15,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
     const {
+        palette,
         custom: { colors },
     } = useTheme();
 
@@ -38,15 +39,12 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         outline: "none",
 
         borderColor: hasError ? colors.error : "transparent",
-        ":focus": {
-            borderColor: colors.cobalt,
-        },
 
         color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
 
-        backgroundColor: colors.primaryBackground,
+        backgroundColor: palette.background.paper,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
+            backgroundColor: disabled ? "inherit" : palette.action.hover,
         },
     });
 

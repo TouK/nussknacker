@@ -47,7 +47,7 @@ export default function Tool(props: OwnProps): JSX.Element {
                     highlightStyle={{
                         ...theme.typography.body2,
                         color: theme.custom.colors.warning,
-                        background: theme.custom.colors.secondaryBackground,
+                        background: theme.palette.background.paper,
                         fontWeight: "bold",
                     }}
                     unhighlightStyle={{

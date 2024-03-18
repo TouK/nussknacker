@@ -18,7 +18,7 @@ export default function SettingsButton({ isOpen, toggleIsOpen }: SettingsButton)
                 alignItems: "center",
                 display: "flex",
                 marginRight: 5,
-                backgroundColor: isOpen && theme.custom.colors.charcoal,
+                backgroundColor: isOpen && theme.palette.action.focus,
             }}
             title={"Options"}
             onClick={toggleIsOpen}

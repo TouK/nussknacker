@@ -26,7 +26,6 @@ export const NodeTableStyled = styled("div")(
             flex: 1;
             flex-basis: 60%;
             display: inline-block;
-            color: ${theme.custom.colors.dimGray};
             textarea {
                 overflow: hidden;
                 height: auto;
@@ -43,7 +42,7 @@ export const NodeTableStyled = styled("div")(
             input:read-only {
                 background-color: ${theme.custom.colors.tundora} !important;
             }
-            ${customCheckbox("20px")};
+            ${customCheckbox("20px", theme)};
             input[type="checkbox"] {
                 margin-top: 7px;
                 margin-bottom: 7px;
@@ -56,7 +55,6 @@ export const NodeTableStyled = styled("div")(
             &.node-value-type-select {
                 width: 100%;
                 max-height: 35;
-                outline: 1px solid rgba(255, 255, 255, 0.075);
                 &.switchable {
                     width: 70%;
                 }
@@ -87,25 +85,24 @@ export const NodeTableStyled = styled("div")(
             height: 35px;
             width: 100%;
             padding: 0 10px;
-            border: none;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             color: ${theme.custom.colors.secondaryColor};
             font-weight: 400;
             font-size: 14px;
-            outline: 1px solid rgba(255, 255, 255, 0.075);
         }
 
         .row-ace-editor {
-            color: ${theme.custom.colors.dimGray};
             padding-top: 8px;
             padding-bottom: 8px;
             padding-left: 5px;
             padding-right: 5px;
-            background-color: ${theme.custom.colors.secondaryBackground};
+            background-color: ${theme.palette.background.paper};
             min-height: 35px;
-            outline: 1px solid rgba(255, 255, 255, 0.075);
+            .ace_editor {
+                background-color: ${theme.palette.background.paper};
+            }
             &.focused {
-                outline: 2px solid ${theme.custom.colors.cobalt};
+                outline: 1px solid ${theme.palette.primary.main};
                 outline-offset: -1px;
             }
         }
@@ -143,18 +140,6 @@ export const NodeTableStyled = styled("div")(
             outline: 1px solid ${theme.custom.colors.error} !important;
             outline-offset: initial !important;
             border-radius: 2px;
-        }
-        .testResultDownload {
-            padding-left: 15px;
-            font-size: 14px;
-            a {
-                color: ${theme.custom.colors.canvasBackground};
-                text-decoration: none;
-
-                &:hover {
-                    color: ${theme.custom.colors.info};
-                }
-            }
         }
         .marked {
             border: 2px solid ${theme.custom.colors.ok} !important;

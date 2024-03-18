@@ -32,11 +32,6 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
         width: size / 2,
         height: size / 2,
         marginLeft: size / 4,
-        svg: {
-            boxShadow: `0 0 ${size / 4}px ${size / 8}px ${theme.custom.colors.secondaryBackground}, 0 0 ${size / 2}px ${size / 2}px ${
-                theme.custom.colors.secondaryBackground
-            } inset`,
-        },
     });
 
     const ref = useRef<HTMLInputElement>();

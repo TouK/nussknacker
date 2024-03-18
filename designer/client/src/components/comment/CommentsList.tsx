@@ -32,7 +32,6 @@ export default function CommentsList({ deleteComment }: CommentsListProps) {
                             component={"span"}
                             variant={"overline"}
                             ml={0.5}
-                            sx={(theme) => ({ color: theme.custom.colors.silverChalice })}
                         >{`| v${comment.processVersionId} | ${comment.user}`}</Typography>
                         {comment.user != loggedUser.id ? null : <RemoveButton onClick={() => deleteComment(comment)} />}
                     </div>

@@ -76,6 +76,7 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
                         <NodeInput
                             {...inputProps}
                             className={cx(
+                                "node-input",
                                 inputProps.className,
                                 showValidation && !isValid && "node-input-with-error",
                                 readOnly && "read-only",

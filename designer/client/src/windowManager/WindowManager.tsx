@@ -6,12 +6,15 @@ import { ContentGetter } from "./ContentGetter";
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {
         zIndex,
+        palette,
         custom: { spacing, colors },
     } = useTheme();
 
     return (
         <WindowManagerProvider
             theme={{
+                backgroundOpacity: 1,
+                backdropFilter: "none",
                 spacing: {
                     baseUnit: spacing.baseUnit,
                 },
@@ -19,8 +22,8 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
                     borderColor: colors.borderColor,
                     focusColor: colors.focusColor,
                     mutedColor: colors.mutedColor,
-                    primaryBackground: colors.primaryBackground,
-                    secondaryBackground: colors.secondaryBackground,
+                    primaryBackground: palette.background.paper,
+                    secondaryBackground: palette.background.paper,
                 },
                 zIndex: zIndex.modal,
             }}

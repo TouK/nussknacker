@@ -14,26 +14,15 @@ import { useFocus } from "../containers/theme/helpers";
 
 export type InputWithFocusProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
-export const InputWithFocus = forwardRef(function InputWithFocus(
-    { className, ...props }: InputWithFocusProps,
-    ref: React.Ref<HTMLInputElement>,
-): JSX.Element {
-    const withFocus = useFocus();
-
-    return <input ref={ref} {...props} className={cx(withFocus, className)} />;
-});
-
-export const NodeInput = styled(InputWithFocus)(({ theme }) => `${NodeInputCss(theme).styles}`);
+export const NodeInput = styled("input")(({ theme }) => `${NodeInputCss(theme).styles}`);
 
 export type TextAreaWithFocusProps = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 
-export function TextAreaWithFocus({ className, ...props }: TextAreaWithFocusProps): JSX.Element {
-    const withFocus = useFocus();
-
-    return <textarea {...props} className={cx(withFocus, className)} />;
+export function TextArea({ className, ...props }: TextAreaWithFocusProps): JSX.Element {
+    return <textarea {...props} className={cx(className)} />;
 }
 
-export const TextAreaNodeWithFocus = styled(TextAreaWithFocus)(({ theme }) => `${NodeInputCss(theme).styles}`);
+export const TextAreaNodeWithFocus = styled(TextArea)(({ theme }) => `${NodeInputCss(theme).styles}`);
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 

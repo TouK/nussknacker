@@ -38,11 +38,11 @@ const TruncateButton = styled("button")(({ theme }) => ({
     height: "100%",
     padding: 0,
     ":hover": {
-        backgroundColor: alpha(theme.palette.common.white, 0.08),
+        backgroundColor: theme.palette.action.hover,
     },
     ":focus-visible": {
         outline: "none",
-        backgroundColor: alpha(theme.palette.common.white, 0.08),
+        backgroundColor: theme.palette.action.hover,
     },
 }));
 

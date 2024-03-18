@@ -1,15 +1,17 @@
 import { CSSProperties } from "react";
 import { styled, css, Theme } from "@mui/material";
-import { alpha } from "../../containers/theme/helpers";
 import { ButtonWithFocus } from "../withFocus";
+import { blendLighten } from "../../containers/theme/nuTheme";
 
 export const buttonBase = (theme: Theme) => css`
-    border: 1px solid ${theme.custom.colors.doveGray};
     border-radius: 0;
-    background-color: ${theme.custom.colors.primaryBackground};
+    background-color: ${theme.palette.background.paper};
     color: ${theme.custom.colors.secondaryColor};
     transition: background-color 0.2s;
     user-select: none;
+    &:focus {
+        border: 1px solid ${theme.palette.primary.main};
+    }
     &:disabled,
     &.disabled {
         opacity: 0.3;
@@ -18,7 +20,7 @@ export const buttonBase = (theme: Theme) => css`
 
     &:not(:disabled):hover,
     &:not(.disabled):hover {
-        background-color: ${theme.custom.colors.charcoal};
+        background-color: ${theme.palette.action.hover};
     }
 `;
 
@@ -82,7 +84,7 @@ export const FocusableStyled = styled("div")(
             }
 
             .node-focused-with-validation-error {
-                ${nodeHighlight(theme.custom.colors.cobalt, theme.custom.colors.bizarre)}
+                ${nodeHighlight(theme.palette.primary.main, theme.custom.colors.bizarre)}
             }
 
             .node-grouping {
@@ -90,7 +92,7 @@ export const FocusableStyled = styled("div")(
             }
 
             .node-focused {
-                ${nodeHighlight(theme.custom.colors.cobalt, theme.custom.colors.zumthor)}
+                ${nodeHighlight(theme.palette.primary.main, theme.custom.colors.zumthor)}
             }
 
             .joint-type-basic-rect.node-focused {
@@ -141,21 +143,6 @@ export const FocusableStyled = styled("div")(
                 }
             }
 
-            .row-ace-editor {
-                color: ${theme.custom.colors.dimGray};
-                padding-top: 8px;
-                padding-bottom: 8px;
-                padding-left: 5px;
-                padding-right: 5px;
-                background-color: ${theme.custom.colors.secondaryBackground};
-                min-height: 35px;
-                outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
-                &.focused {
-                    outline: 2px solid ${theme.custom.colors.cobalt} !important;
-                    outline-offset: -1px !important;
-                }
-            }
-
             .testResultsSummary {
                 font-size: 13px;
                 font-weight: bold;
@@ -194,7 +181,7 @@ export const FocusableStyled = styled("div")(
                 width: 100%;
                 padding: 0 10px;
                 border: none;
-                background-color: ${theme.custom.colors.secondaryBackground};
+                background-color: ${theme.palette.background.paper};
                 color: ${theme.custom.colors.secondaryColor};
                 font-weight: 400;
                 font-size: 16px;
@@ -207,7 +194,7 @@ export const FocusableStyled = styled("div")(
           .joint-paper-background {
             overflow-y: auto;
             overflow-x: auto;
-            background-color: ${theme.custom.colors.canvasBackground};
+            background-color: ${theme.palette.background.default};
           }
           #svg-pan-zoom-controls {
             transform: translate(0, 0px) scale(0.75);
