@@ -38,7 +38,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
   private lazy val sqlOutputTableNameTest2 = "output_test2"
   private lazy val sqlInputTableNameTest3  = "input_test3"
   private lazy val sqlOutputTableNameTest3 = "output_test3"
-  private val tableComponentName = "table"
+  private val tableComponentName           = "table"
 
   private lazy val sqlTablesConfig =
     s"""
@@ -126,8 +126,8 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
   test("should ping-pong with sql kafka source and DataStream kafka sink") {
     val topics = createAndRegisterTopicConfig(topicNaming1, simpleTypesSchema)
 
-    sendAsJson(record1, topics.input)
-    sendAsJson(record2, topics.input)
+    sendAsJson("""{"someInt": 1, "someString": "AAA"}""", topics.input)
+    sendAsJson("""{"someInt": 2, "someString": "BBB"}""", topics.input)
 
     val process = ScenarioBuilder
       .streaming("testScenario")
@@ -145,7 +145,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
         KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topics.output}'",
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true",
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
       )
 
     run(process) {
@@ -155,15 +155,15 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         .take(1)
         .map(_.message())
 
-      result.head shouldBe parseJson(record2)
+      result.head shouldBe parseJson("""{"someInt": 2, "someString": "BBB"}""")
     }
   }
 
   test("should ping-pong with sql kafka source and sql kafka sink") {
     val topics = createAndRegisterTopicConfig(topicNaming2, simpleTypesSchema)
 
-    sendAsJson(record1, topics.input)
-    sendAsJson(record2, topics.input)
+    sendAsJson("""{"someInt": 1, "someString": "AAA"}""", topics.input)
+    sendAsJson("""{"someInt": 2, "someString": "BBB"}""", topics.input)
 
     val scenarioId = "scenarioId"
     val sourceId   = "input"
@@ -190,14 +190,14 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         .take(1)
         .map(_.message())
 
-      result.head shouldBe parseJson(record2)
+      result.head shouldBe parseJson("""{"someInt": 2, "someString": "BBB"}""")
     }
   }
 
   test("should pong with explicit spel record and DataStream kafka sink") {
     val topics = createAndRegisterTopicConfig(topicNaming3, simpleTypesSchema)
 
-    sendAsJson(record1, topics.input)
+    sendAsJson("""{"someInt": 1, "someString": "AAA"}""", topics.input)
 
     val process = ScenarioBuilder
       .streaming("testScenario")
@@ -211,13 +211,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         "end",
         tableComponentName,
         TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'",
-        TableSinkFactory.valueParameterName.value ->
-          s"""
-             |{
-             |  "someInt": 2,
-             |  "someString": "BBB"
-             |}
-             |""".stripMargin
+        TableSinkFactory.valueParameterName.value      -> "{someInt: 2, someString: 'BBB'}"
       )
 
     run(process) {
@@ -227,8 +221,9 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         .take(1)
         .map(_.message())
 
-      result.head shouldBe parseJson(record2)
+      result.head shouldBe parseJson("""{"someInt": 2, "someString": "BBB"}""")
     }
+
   }
 
 }
@@ -243,17 +238,5 @@ object TestData {
                                                        |  }
                                                        |}
                                                        |""".stripMargin)
-
-  val record1: String =
-    """{
-      |  "someInt": 1,
-      |  "someString": "AAA"
-      |}""".stripMargin
-
-  val record2: String =
-    """{
-      |  "someInt": 2,
-      |  "someString": "BBB"
-      |}""".stripMargin
 
 }
