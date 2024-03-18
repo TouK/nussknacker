@@ -71,7 +71,7 @@ class MigrationService(
 
     val future: Future[Unit] = for {
 
-      processingType <- resolveValidatedProcessingType(processingTypeValidated)
+      processingType <- Future.fromTry(processingTypeValidated.toEither.toTry)
 
       validation <-
         processResolver
@@ -155,11 +155,6 @@ class MigrationService(
 
     transformedFuture
   }
-
-  private def resolveValidatedProcessingType(
-      validatedProcessingType: Validated[NuDesignerError, ProcessingType]
-  ): Future[ProcessingType] =
-    validatedProcessingType.fold(Future.failed, Future.successful)
 
   private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
 

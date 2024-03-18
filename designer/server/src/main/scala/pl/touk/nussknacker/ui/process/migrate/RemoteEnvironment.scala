@@ -51,7 +51,6 @@ trait RemoteEnvironment {
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
       processCategory: String,
-      processingType: ProcessingType,
       scenarioGraph: ScenarioGraph,
       processName: ProcessName,
       isFragment: Boolean
@@ -192,7 +191,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processingMode: ProcessingMode,
       engineSetupName: EngineSetupName,
       processCategory: String,
-      processingType: ProcessingType,
       scenarioGraph: ScenarioGraph,
       processName: ProcessName,
       isFragment: Boolean
