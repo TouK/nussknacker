@@ -64,17 +64,14 @@ export const DownloadButton = styled(NkButton)(
 );
 
 export const AttachHeader = styled("div")(
-    ({ theme }) => `
+    () => `
     span {
-        color: ${theme.custom.colors.silverChalice};
         &.date {
-            color: ${theme.custom.colors.silverChalice};
             font-style: italic;
         }
     }
     p {
         font-style: italic;
-        color: ${theme.custom.colors.mutedColor};
     }
 `,
 );
