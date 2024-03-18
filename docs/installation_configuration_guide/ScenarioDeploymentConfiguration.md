@@ -8,7 +8,7 @@ sidebar_position: 3
 In order to deploy scenario on the given [Engine](/about/engine), you need to configure the deployment.
 
 For the scenario's deployment is responsible Designer's extension called [Deployment Manager](/about/GLOSSARY#deployment-manager).
-To enable given [Deployment Manager](/about/GLOSSARY#deployment-manager) you need to place their jar package in the Designer's classpath.
+To enable given [Deployment Manager](/about/GLOSSARY#deployment-manager) you need to place its jar package in the Designer's classpath.
 Nussknacker is distributed with three default [Deployment Managers](/about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers`
 directory. Parameters available in the deployment configuration, depends on which [Deployment Manager](/about/GLOSSARY#deployment-manager) you've selected.
 
