@@ -5,6 +5,7 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
@@ -22,7 +23,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
     val collectingListener = ResultsCollectingListenerHolder.registerListener
     val model = LocalModelData(
       ConfigFactory.empty(),
-      FlinkBaseComponentProvider.Components,
+      FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener),
     )
     val scenario = ScenarioBuilder

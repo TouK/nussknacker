@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
@@ -66,7 +67,10 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       ConfigFactory
         .empty()
         .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
-      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.Components,
+      ComponentDefinition(
+        "start",
+        sourceComponent
+      ) :: FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
       new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }

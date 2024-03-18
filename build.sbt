@@ -466,6 +466,7 @@ lazy val componentArtifacts = taskKey[List[(File, String)]]("component artifacts
 componentArtifacts := {
   List(
     (flinkBaseComponents / assembly).value           -> "components/flink/flinkBase.jar",
+    (flinkBaseUnboundedComponents / assembly).value  -> "components/flink/flinkBaseUnbounded.jar",
     (flinkKafkaComponents / assembly).value          -> "components/flink/flinkKafka.jar",
     (liteBaseComponents / assembly).value            -> "components/lite/liteBase.jar",
     (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
@@ -1009,6 +1010,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     flinkExecutor,
     flinkTestUtils,
     flinkBaseComponents,
+    flinkBaseUnboundedComponents,
     defaultModel
   )
 
@@ -1713,6 +1715,25 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
     kafkaTestUtils       % Test
   )
 
+lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbounded"))
+  .settings(commonSettings)
+  .settings(assemblyNoScala("flinkBaseUnbounded.jar"): _*)
+  .settings(publishAssemblySettings: _*)
+  .settings(
+    name := "nussknacker-flink-base-unbounded-components",
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest" % scalaTestV % Test,
+    )
+  )
+  .dependsOn(
+    flinkBaseComponents,
+    commonComponents     % Provided,
+    flinkComponentsUtils % Provided,
+    componentsUtils      % Provided,
+    flinkTestUtils       % Test,
+    flinkExecutor        % Test,
+  )
+
 lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(commonSettings)
   .settings(
@@ -2024,6 +2045,7 @@ lazy val modules = List[ProjectReference](
   commonComponentsTests,
   flinkBaseComponents,
   flinkBaseComponentsTests,
+  flinkBaseUnboundedComponents,
   flinkKafkaComponents,
   liteComponentsApi,
   liteEngineKafkaComponentsApi,
