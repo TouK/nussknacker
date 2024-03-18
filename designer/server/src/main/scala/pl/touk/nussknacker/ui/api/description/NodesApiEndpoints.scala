@@ -568,8 +568,8 @@ object NodesApiEndpoints {
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema(
         SProduct(
           List(
-            SProductField(FieldName("name"), Schema.schemaForString, sth => Some(sth.name())),
-            SProductField(FieldName("duration"), durationSchema, sth => Some(sth.getDuration))
+            SProductField(FieldName("name"), Schema.schemaForString, chronoUnit => Some(chronoUnit.name())),
+            SProductField(FieldName("duration"), durationSchema, chronoUnit => Some(chronoUnit.getDuration))
           )
         )
       )
