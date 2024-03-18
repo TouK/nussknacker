@@ -3,26 +3,32 @@ title: Deployment
 sidebar_position: 3
 ---
 
-# Deployment Manager configuration
+# Scenario Deployment configuration
 
-Deployment Manager deploys scenarios from the Designer to the engine on which scenarios are processed.
-Check [configuration areas](./Common.md#configuration-areas) to understand where Deployment Manager configuration should be
-placed in Nussknacker configuration.
+In order to deploy scenario on the given [Engine](/about/engine), you need to configure the deployment.
 
-Below you can find a snippet of Deployment Manager configuration.
+For the scenario's deployment is responsible Designer's extension called [Deployment Manager](/about/GLOSSARY#deployment-manager).
+To enable given [Deployment Manager](/about/GLOSSARY#deployment-manager) you need to place their jar package in the Designer's classpath.
+Nussknacker is distributed with three default [Deployment Managers](/about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers`
+directory. Parameters available in the deployment configuration, depends on which [Deployment Manager](/about/GLOSSARY#deployment-manager) you've selected.
+
+Section with `deploymentConfig` need to be placed in the correct place in the Designer's configuration. Check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration.
+
+Below you can find a snippet of scenario deployment configuration.
 
 ```
 deploymentConfig {     
   type: "flinkStreaming"
-  restUrl: "http://localhost:8081"
   engineSetupName: "My Flink Cluster"
   
-  # additional configuration goes here
+  # Deployment Manager's specific configuration goes here
+  restUrl: "http://localhost:8081"
 }
 ```
 
-`type` parameter determines engine to which the scenario is deployed. It is set in the [minimal configuration file](./Common.md#minimal-configuration-file) (docker image, binary distribution) and in the Helm chart - you will not need to set it on your own.
-`engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified, default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).   
+Parameters:
+- `type` parameter determines the type of the [Deployment Manager](/about/GLOSSARY#deployment-manager). Possible options are: `flinkStreaming`, `lite-k8s`, `lite-embedded`
+- `engineSetupName` parameter is optional. It specifies how the engine will be displayed in the GUI. If not specified, default name will be used instead (e.g. `Flink` for `flinkStreaming` Deployment Manager).   
 
 ## Kubernetes native Lite engine configuration
 
@@ -38,25 +44,23 @@ The table below contains configuration options for the Lite engine. If you insta
 &nbsp;
 If you install Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration.
 
-
-
-| Parameter                     | Type                                                | Default value                     | Description                                                                              |
-|-------------------------------|-----------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------|
-| mode                          | string                                              |                                   | Processing mode: either streaming or request-response                                                     |
-| dockerImageName               | string                                              | touk/nussknacker-lite-runtime-app | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
-| dockerImageTag                | string                                              | current nussknacker version       |                                                                                          |
-| scalingConfig *(Streaming processing mode)*| {tasksPerReplica: int}                   | { tasksPerReplica: 4 }            | see [below](#configuring-replicas-count)                                                 |
-| scalingConfig *(Request - Response processing mode)*| {fixedReplicasCount: int}       | { fixedReplicasCount: 2 }            | see [below](#configuring-replicas-count)                                                 |
-| configExecutionOverrides      | config                                              | {}                                | see [below](#overriding-configuration-passed-to-runtime)                                 |
-| k8sDeploymentConfig           | config                                              | {}                                | see [below](#customizing-k8s-deployment-resource-definition)                             |
-| nussknackerInstanceName       | string                                              | {?NUSSKNACKER_INSTANCE_NAME}      | see [below](#nussknacker-instance-name)                                                  |
-| logbackConfigPath             | string                                              | {}                                | see [below](#configuring-runtime-logging)                                                |
-| commonConfigMapForLogback     | string                                              | {}                                | see [below](#configuring-runtime-logging)                                                |
-| ingress                       | config                                              | {enabled: false}                  | (Request-Response only) see [below](#configuring-runtime-ingress)                        |
-| servicePort                   | int                                                 | 80                                | (Request-Response only) Port of service exposed                                          |
-| scenarioStateCaching.enabled  | boolean                                             | true                              | Enables scenario state caching in scenario list view                                     |
-| scenarioStateCaching.cacheTTL | duration                                            | 10 seconds                        | TimeToLeave for scenario state cache entries                                             |
-| scenarioStateIdleTimeout      | duration                                            | 3 seconds                         | Idle timeout for fetching scenario state from K8s                                        |
+| Parameter                                            | Type                      | Default value                     | Description                                                                              |
+|------------------------------------------------------|---------------------------|-----------------------------------|------------------------------------------------------------------------------------------|
+| mode                                                 | string                    |                                   | Processing mode: either streaming or request-response                                    |
+| dockerImageName                                      | string                    | touk/nussknacker-lite-runtime-app | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
+| dockerImageTag                                       | string                    | current nussknacker version       |                                                                                          |
+| scalingConfig *(Streaming processing mode)*          | {tasksPerReplica: int}    | { tasksPerReplica: 4 }            | see [below](#configuring-replicas-count)                                                 |
+| scalingConfig *(Request - Response processing mode)* | {fixedReplicasCount: int} | { fixedReplicasCount: 2 }         | see [below](#configuring-replicas-count)                                                 |
+| configExecutionOverrides                             | config                    | {}                                | see [below](#overriding-configuration-passed-to-runtime)                                 |
+| k8sDeploymentConfig                                  | config                    | {}                                | see [below](#customizing-k8s-deployment-resource-definition)                             |
+| nussknackerInstanceName                              | string                    | {?NUSSKNACKER_INSTANCE_NAME}      | see [below](#nussknacker-instance-name)                                                  |
+| logbackConfigPath                                    | string                    | {}                                | see [below](#configuring-runtime-logging)                                                |
+| commonConfigMapForLogback                            | string                    | {}                                | see [below](#configuring-runtime-logging)                                                |
+| ingress                                              | config                    | {enabled: false}                  | (Request-Response only) see [below](#configuring-runtime-ingress)                        |
+| servicePort                                          | int                       | 80                                | (Request-Response only) Port of service exposed                                          |
+| scenarioStateCaching.enabled                         | boolean                   | true                              | Enables scenario state caching in scenario list view                                     |
+| scenarioStateCaching.cacheTTL                        | duration                  | 10 seconds                        | TimeToLeave for scenario state cache entries                                             |
+| scenarioStateIdleTimeout                             | duration                  | 3 seconds                         | Idle timeout for fetching scenario state from K8s                                        |
 
 ### Customizing K8s deployment resource definition
 

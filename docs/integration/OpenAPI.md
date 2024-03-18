@@ -89,4 +89,4 @@ Enricher level logging can be enabled:
 - in Flink
   TaskManager [configuration](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/flink/log4j-console.properties)
 - in Lite
-  runtime [configuration](../installation_configuration_guide/DeploymentManagerConfiguration.md#configuring-runtime-logging)
+  runtime [configuration](../installation_configuration_guide/ScenarioDeploymentConfiguration.md#configuring-runtime-logging)

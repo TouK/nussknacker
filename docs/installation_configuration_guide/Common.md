@@ -20,12 +20,12 @@ Nussknacker configuration is divided into several configuration areas, each area
 * [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
   * [Model](/about/GLOSSARY#model) configuration.
-  * [Deployment](/about/GLOSSARY#deployment-manager) configuration,
+  * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
   * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
 [Model](/about/GLOSSARY#model) configuration defines which components and which [Processing Mode](/about/ProcessingModes) will be available for the user. 
-[Deployment](/about/GLOSSARY#deployment-manager) configuration defines how scenario using these components will be deployed on the [Engine](/about/engine).
-[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given setup.
+[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](/about/engine).
+[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](/about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
 
 The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
@@ -48,7 +48,7 @@ environment: "local"  <br/>
 # Each scenario type is configured here  <br/>
 scenarioTypes {"{"}  <br/>
 {" "} "scenario-type-1": {"{"}<br/>
-{" "}   # Configuration of DeploymentManager (Flink used as example here)  <br/>
+{" "}   # Configuration of scenario deployment (Flink used as example here)  <br/>
 {" "}   <b>deploymentConfig:</b> {"{"} <br/>
 {" "}     type: "flinkStreaming" <br/>
 {" "}     restUrl: "http://localhost:8081" <br/> 
@@ -61,7 +61,7 @@ scenarioTypes {"{"}  <br/>
 {" "}       ... <br/>
 {" "}     } <br/>
 {" "}   } <br/>
-{" "}   category: "Default" <br/>
+{" "}   <b>category</b>: "Default" <br/>
 {" "} } <br/>
 } <br/>
 </pre>
