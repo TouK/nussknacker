@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.BuildInfoDto
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.{BuildInfoDto, NuVersion}
 import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequest, MigrateScenarioRequestV2}
 import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.BuildInfoDto._
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -164,6 +165,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
 
+  private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
+
   def environmentId: String
 
   def config: StandardRemoteEnvironmentConfig
@@ -223,15 +226,22 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
     val f = for {
       remoteNuVersion <- fetchRemoteNuVersion.flatMap {
-        case Left(e)             => Future.failed(e)
-        case Right(buildInfoDto) => Future.successful(buildInfoDto.version)
+        case Left(e)          => Future.failed(e)
+        case Right(nuVersion) => Future.successful(nuVersion.value)
       }
 
       localNuVersion = BuildInfo.version
 
-      versionsComparisonResult <- compareNuVersions(localNuVersion, remoteNuVersion)
+      versionComparisonResultE = migrationApiAdapterService.compareNuVersions(localNuVersion, remoteNuVersion)
+      versionComparisonResult <- versionComparisonResultE.fold(
+        e => Future.failed(e),
+        version => Future.successful(version)
+      )
 
-      migrateScenarioRequest = decideMigrationRequestDto(migrateScenarioRequestV2, versionsComparisonResult)
+      migrateScenarioRequest = migrationApiAdapterService.decideMigrationRequestDto(
+        migrateScenarioRequestV2,
+        versionComparisonResult
+      )
 
       res <- invokeForSuccess(
         HttpMethods.POST,
@@ -248,57 +258,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
-  // compare(local, remote) <= 0 <=> local <= remote
-  private def compareNuVersions(localNuVersion: String, remoteNuVersion: String): Future[Int] = {
-    val versionPattern = """(\d+)\.(\d+)\.(\d+).*""".r
-
-    val localResult: Try[Regex.Match]  = Try(versionPattern.findFirstMatchIn(localNuVersion).get)
-    val remoteResult: Try[Regex.Match] = Try(versionPattern.findFirstMatchIn(remoteNuVersion).get)
-
-    localResult match {
-      case Success(localVersionPatternMatch) =>
-        remoteResult match {
-          case Success(remoteVersionPatternMatch) =>
-            val localMajorVersion = localVersionPatternMatch.group(1).toInt
-            val localMinorVersion = localVersionPatternMatch.group(2).toInt
-            val localPatchVersion = localVersionPatternMatch.group(3).toInt
-
-            val remoteMajorVersion = remoteVersionPatternMatch.group(1).toInt
-            val remoteMinorVersion = remoteVersionPatternMatch.group(2).toInt
-            val remotePatchVersion = remoteVersionPatternMatch.group(3).toInt
-
-            val res = if (remoteMajorVersion != localMajorVersion) {
-              localMajorVersion - remoteMajorVersion
-            } else if (remoteMinorVersion != localMinorVersion) {
-              localMinorVersion - remoteMinorVersion
-            } else {
-              localPatchVersion - remotePatchVersion
-            }
-
-            Future.successful(res)
-          case Failure(_) => Future.failed(NuVersionDeserializationError(remoteNuVersion))
-        }
-      case Failure(_) => Future.failed(NuVersionDeserializationError(localNuVersion))
-    }
-  }
-
-  private def decideMigrationRequestDto(
-      migrateScenarioRequestV2: MigrateScenarioRequestV2,
-      versionComparisionResult: Int
-  ): MigrateScenarioRequest = {
-    // TODO: Inject this service in a normal way...
-    val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
-    if (versionComparisionResult <= 0) {
-      migrateScenarioRequestV2
-    } else {
-      migrationApiAdapterService.adaptToLowerVersion(migrateScenarioRequestV2)
-    }
-  }
-
-  private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Either[NuDesignerError, BuildInfoDto]] =
-    invokeJson[BuildInfoDto](
+  private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Either[NuDesignerError, NuVersion]] =
+    invokeJson[NuVersion](
       HttpMethods.GET,
-      List("app", "buildInfo"),
+      List("app", "version"),
       Query.Empty
     )
 
