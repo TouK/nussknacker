@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.ui.services
 
 import cats.data.EitherT
+import cats.syntax.all._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionValidationResult}
 import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.ManagementApiEndpoints
+import pl.touk.nussknacker.ui.api.{CustomActionValidationDto, ManagementApiEndpoints}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -36,9 +40,8 @@ class ManagementApiHttpService(
           for {
             processIdWithName <- getProcessId(processName)
             actionsList       <- getActionsList(processIdWithName)
-            validator = new CustomActionValidator(actionsList)
-            validationResult <- EitherT.fromEither[Future](validator.validateCustomActionParams(req))
-          } yield validationResult
+            resultsDto        <- getValidationsResultDto(actionsList, req)
+          } yield resultsDto
         }
       }
   }
@@ -65,6 +68,34 @@ class ManagementApiHttpService(
     EitherT.right[CustomActionValidationError](
       dispatcher.deploymentManagerUnsafe(processIdWithName).map(x => x.customActionsDefinitions)
     )
+  }
+
+  private def getValidationsResultDto(
+      actionList: List[CustomActionDefinition],
+      request: CustomActionRequest
+  ): EitherT[Future, CustomActionValidationError, CustomActionValidationDto] = {
+    val validator        = new CustomActionValidator(actionList)
+    val validationResult = validator.validateCustomActionParams(request)
+    fromValidationResult(validationResult).toEitherT[Future]
+  }
+
+  private def fromValidationResult(
+      errorOrResult: Either[CustomActionValidationError, CustomActionValidationResult]
+  ): Either[CustomActionValidationError, CustomActionValidationDto] = {
+    def errorList(errorMap: Map[String, List[PartSubGraphCompilationError]]): List[NodeValidationError] = {
+      errorMap.values.toList
+        .reduce { (a: List[PartSubGraphCompilationError], b: List[PartSubGraphCompilationError]) => a ::: b }
+        .map { err: PartSubGraphCompilationError => PrettyValidationErrors.formatErrorMessage(err) }
+    }
+
+    errorOrResult match {
+      case Right(v: CustomActionValidationResult.Valid.type) =>
+        CustomActionValidationDto(Nil, validationPerformed = true).asRight[CustomActionValidationError]
+      case Right(inv: CustomActionValidationResult.Invalid) =>
+        CustomActionValidationDto(errorList(inv.errorMap), validationPerformed = true)
+          .asRight[CustomActionValidationError]
+      case Left(exc) => exc.asLeft[CustomActionValidationDto]
+    }
   }
 
 }

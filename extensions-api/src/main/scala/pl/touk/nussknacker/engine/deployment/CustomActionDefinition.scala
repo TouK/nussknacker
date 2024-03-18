@@ -28,9 +28,6 @@ case class CustomActionDefinition(
     icon: Option[URI] = None
 )
 
-//TODO: add validation that parameters are distinct
-object CustomAction {}
-
 case class CustomActionParameter(name: String, editor: ParameterEditor, validators: Option[List[ParameterValidator]])
 
 case class CustomActionResult(msg: String)
