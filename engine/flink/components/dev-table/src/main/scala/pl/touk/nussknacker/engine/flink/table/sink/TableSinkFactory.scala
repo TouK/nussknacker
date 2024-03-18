@@ -1,8 +1,12 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.component.AllProcessingModesComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputDynamicComponent}
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
+}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
@@ -24,7 +28,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
     extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     // TODO: Should be BoundedStreamComponent - change it and move to a batch category
-    with UnboundedStreamComponent {
+    with AllProcessingModesComponent {
 
   override type State = TableDefinition
 
