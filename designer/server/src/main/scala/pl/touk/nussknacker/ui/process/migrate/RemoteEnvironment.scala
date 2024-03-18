@@ -160,7 +160,7 @@ final case class StandardRemoteEnvironmentConfig(
 )
 
 //TODO: extract interface to remote environment?
-trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
+trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment with LazyLogging {
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
 
@@ -231,15 +231,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       localNuVersion = BuildInfo.version
 
       versionComparisonResultE = migrationApiAdapterService.compareNuVersions(localNuVersion, remoteNuVersion)
-      versionComparisonResult <- versionComparisonResultE.fold(
-        e => Future.failed(e),
-        version => Future.successful(version)
-      )
+      versionComparisonResult <- Future.fromTry(versionComparisonResultE.toTry)
 
       migrateScenarioRequest = migrationApiAdapterService.decideMigrationRequestDto(
         migrateScenarioRequestV2,
         versionComparisonResult
       )
+
+      _ <- Future.successful(logger.debug("Migrating scenario {}", migrateScenarioRequest.toString))
 
       res <- invokeForSuccess(
         HttpMethods.POST,
