@@ -7,21 +7,21 @@ import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWr
 import ToolBox from "./ToolBox";
 import { styled } from "@mui/material";
 
+const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
+    borderRadius: 0,
+    height: "36px !important",
+    color: theme.palette.text.secondary,
+    padding: "6px 12px !important",
+    backgroundColor: `${theme.palette.background.paper} !important`,
+    border: "none",
+    outline: "none !important",
+    "&:focus": {
+        boxShadow: "none",
+    },
+}));
+
 export function CreatorPanel(): JSX.Element {
     const { t } = useTranslation();
-
-    const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
-        borderRadius: 0,
-        height: "36px !important",
-        color: theme.palette.text.secondary,
-        padding: "6px 12px !important",
-        backgroundColor: `${theme.palette.background.paper} !important`,
-        border: "none",
-        outline: "none !important",
-        "&:focus": {
-            boxShadow: "none",
-        },
-    }));
 
     const [filter, setFilter] = useState("");
     const clearFilter = useCallback(() => setFilter(""), []);
