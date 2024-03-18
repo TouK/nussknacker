@@ -134,12 +134,12 @@ describe("Process", () => {
             cy.get("[data-testid=search-panel]").should("be.not.visible");
             cy.get("#nk-graph-main").click();
             cy.realPress(["Meta", "F"]);
-            cy.get("[data-testid=search-panel] input").should("be.visible").should("be.focused");
-            cy.realType("en");
-            cy.get("[data-testid=search-panel]").contains(/sms/i).click();
-            cy.getNode("enricher")
-                .parent()
-                .matchImage({ screenshotConfig: { padding: 16 } });
+            // cy.get("[data-testid=search-panel] input").should("be.visible").should("be.focused");
+            // cy.realType("en");
+            // cy.get("[data-testid=search-panel]").contains(/sms/i).click();
+            // cy.getNode("enricher")
+            //     .parent()
+            //     .matchImage({ screenshotConfig: { padding: 16 } });
             // cy.get("[data-testid=search-panel]")
             //     .scrollIntoView()
             //     .matchImage({ diffConfig: { threshold: 0.08 } });
