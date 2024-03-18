@@ -1,4 +1,3 @@
-import { css } from "@emotion/css";
 import { isEmpty } from "lodash";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,7 +13,7 @@ export function CreatorPanel(): JSX.Element {
     const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
         borderRadius: 0,
         height: "36px !important",
-        color: "#FFFFFF",
+        color: theme.palette.text.secondary,
         padding: "6px 12px !important",
         backgroundColor: `${theme.palette.background.paper} !important`,
         border: "none",

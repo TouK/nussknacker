@@ -1,10 +1,8 @@
 import React from "react";
 import { cx } from "@emotion/css";
 import { UnknownFunction } from "../../../../../../types/common";
-import { InputWithFocus } from "../../../../../withFocus";
 import { Duration } from "./DurationEditor";
 import { Period } from "./PeriodEditor";
-import Input from "../../field/Input";
 
 export type TimeRangeComponentType = {
     label: string;
