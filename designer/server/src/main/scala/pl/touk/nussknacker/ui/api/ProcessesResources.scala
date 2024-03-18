@@ -18,18 +18,16 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
   FetchScenarioGraph,
   GetScenarioWithDetailsOptions,
-  SkipScenarioGraph,
   UpdateScenarioCommand
 }
+import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
 
 import scala.concurrent.{ExecutionContext, Future}
-import ScenarioWithDetailsConversions._
 
 class ProcessesResources(
     protected val processService: ProcessService,
