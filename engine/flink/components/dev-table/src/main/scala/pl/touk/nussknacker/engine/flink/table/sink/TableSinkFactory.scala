@@ -46,8 +46,8 @@ class TableSinkFactory(definition: TableSqlDefinitions)
         state = None
       )
     case TransformationStep(
-          (`valueParameterName`, rawValueParamValue) ::
-          (`tableNameParameterName`, DefinedEagerParameter(tableName: String, _)) :: Nil,
+          (`tableNameParameterName`, DefinedEagerParameter(tableName: String, _)) ::
+          (`valueParameterName`, rawValueParamValue) :: Nil,
           _
         ) =>
       val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
