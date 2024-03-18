@@ -54,10 +54,11 @@ class ManagementApiHttpServiceSpec
           .statusCode(200)
           .equalsJsonBody(
             s"""{
-             |    "Valid": {
-             |
-             |    }
-             |}""".stripMargin
+               |    "errors": [
+               |
+               |    ],
+               |    "validationPerformed": true
+               |}""".stripMargin
           )
 
       }
@@ -82,21 +83,17 @@ class ManagementApiHttpServiceSpec
           .statusCode(200)
           .equalsJsonBody(
             s"""{
-             |    "Invalid": {
-             |        "errorMap": {
-             |            "param1": [
-             |                {
-             |                    "BlankParameter": {
-             |                        "message": "This field value is required and can not be blank",
-             |                        "description": "Please fill field value for this parameter",
-             |                        "paramName": "param1",
-             |                        "nodeId": "some-params-action"
-             |                    }
-             |                }
-             |            ]
-             |        }
-             |    }
-             |}""".stripMargin
+               |    "errors": [
+               |        {
+               |            "typ": "BlankParameter",
+               |            "message": "This field value is required and can not be blank",
+               |            "description": "Please fill field value for this parameter",
+               |            "fieldName": "param1",
+               |            "errorType": "SaveAllowed"
+               |        }
+               |    ],
+               |    "validationPerformed": true
+               |}""".stripMargin
           )
       }
     }
