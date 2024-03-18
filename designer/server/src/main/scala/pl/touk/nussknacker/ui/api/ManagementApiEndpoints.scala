@@ -15,6 +15,8 @@ import pl.touk.nussknacker.engine.deployment.CustomActionValidationResult
 import pl.touk.nussknacker.ui.NuDesignerError
 import sttp.tapir._
 import sttp.model.StatusCode
+import sttp.tapir.generic.auto._
+import sttp.tapir.json.circe.jsonBody
 
 class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
