@@ -41,7 +41,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
     case TransformationStep(Nil, _) =>
       NextParameters(
         parameters =
-          rawValueParameterDeclaration.createParameter() :: tableNameParameterDeclaration.createParameter() :: Nil,
+          tableNameParameterDeclaration.createParameter() :: rawValueParameterDeclaration.createParameter() :: Nil,
         errors = List.empty,
         state = None
       )
