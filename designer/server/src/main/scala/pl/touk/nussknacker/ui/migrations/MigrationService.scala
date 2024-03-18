@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.FatalValidationError
-import pl.touk.nussknacker.ui.{MissingProcessResolverError, NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -85,7 +85,14 @@ class MigrationService(
                     uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
                   )
                 )
-              case None => Future.successful(Left(new MissingProcessResolverError(loggedUser, processingType)))
+              case None =>
+                Future.successful(
+                  Left(
+                    new IllegalStateException(
+                      s"Error while providing process resolver for processing type $processingType requested by user ${loggedUser.username}"
+                    )
+                  )
+                )
             }
 
         }
