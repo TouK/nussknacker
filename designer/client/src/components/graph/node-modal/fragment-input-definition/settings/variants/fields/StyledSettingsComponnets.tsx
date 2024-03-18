@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, styled, FormLabel, css } from "@mui/material";
+import { Switch, styled, FormLabel, css, alpha } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { StyledNodeTip } from "../../../../FieldLabel";
 import { blendLighten } from "../../../../../../../containers/theme/nuTheme";
@@ -26,30 +26,36 @@ export const ListItemContainer = styled("div")`
     justify-content: flex-start;
 `;
 
-export const ListItemWrapper = styled("div")`
-    display: flex;
-    justify-content: flex-start;
-    max-height: 100px;
-    flex-wrap: wrap;
-    overflow: auto;
-    margin-top: 10px;
-    ::-webkit-scrollbar-track {
-        width: 15px;
-        height: 100px;
-        background: rgba(51, 51, 51, 1);
-    }
-    ::-webkit-scrollbar-thumb {
-        background: rgba(173, 173, 173, 1);
-        background-clip: content-box;
-        border: 3.5px solid transparent;
-        border-radius: 100px;
-        height: 60px;
-    }
-    ::-webkit-scrollbar {
-        width: 15px;
-        height: 100px;
-    }
-`;
+export const ListItemWrapper = styled("div")(
+    ({ theme }) => css`
+        display: flex;
+        justify-content: flex-start;
+        max-height: 100px;
+        flex-wrap: wrap;
+        overflow: auto;
+        margin-top: 10px;
+        ::-webkit-scrollbar-track {
+            width: 15px;
+            height: 100px;
+            background: ${blendLighten(theme.palette.background.paper, 0.5)};
+        }
+        ::-webkit-scrollbar-thumb {
+            background: ${alpha(theme.palette.background.paper, 0.85)};
+            background-clip: content-box;
+            border: 3.5px solid transparent;
+            border-radius: 100px;
+            height: 60px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: ${theme.palette.action.hover};
+        }
+        ::-webkit-scrollbar {
+            width: 15px;
+            height: 100px;
+        }
+    `,
+);
 
 export const CustomSwitch = styled(Switch)`
     input[type="checkbox"] {

@@ -81,15 +81,15 @@ export const selectStyled = (theme: Theme) => {
         }
 
         ::-webkit-scrollbar-track {
-            background: ${theme.custom.colors.doveGray};
+            background: ${blendLighten(theme.palette.background.paper, 0.5)};
         }
 
         ::-webkit-scrollbar-thumb {
-            background: ${theme.custom.colors.gray};
+            background: ${alpha(theme.palette.background.paper, 0.85)};
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: ${theme.custom.colors.emperor};
+            background: ${theme.palette.action.hover};
         }
     `;
 
