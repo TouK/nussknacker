@@ -48,10 +48,7 @@ const colors = {
     focusColor: d1,
     baseColor: l4,
     tundora: d3,
-    doveGray: d4,
     accent: "#668547",
-    eclipse: "#393939",
-    nightRider: "#2d2d2d",
     revolver: "#333344",
     curiousBlue: "#337AB7",
     pictonBlue: "#359AF1",
@@ -77,9 +74,7 @@ const colors = {
     yellowOrange: "#fbb03b",
     scooter: "#46bfdb",
     nobel: "#b5b5b5",
-    gray: "#888888",
     emperor: "#555555",
-    arsenic: "#434343",
 };
 
 const selectColors = {

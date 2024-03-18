@@ -10,6 +10,7 @@ export const CronEditorStyled = styled("div")(
             border: none;
             padding: 8px 0 0 0;
             text-align: left;
+            background: ${theme.palette.background.paper};
         }
         .container-fluid {
             padding: 0;
@@ -26,7 +27,7 @@ export const CronEditorStyled = styled("div")(
         .well {
             display: flex;
             align-items: center;
-            background-color: ${theme.custom.colors.eclipse} !important;
+            background-color: ${theme.palette.background.paper} !important;
             border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
             margin-bottom: 8px !important;
             border-radius: 0 !important;
@@ -76,16 +77,27 @@ export const CronEditorStyled = styled("div")(
         }
         .cron_builder_bordering input {
             border-radius: 0;
-            background: ${theme.custom.colors.nightRider};
+            background: ${theme.palette.background.paper};
         }
         .cron_builder_bordering input[type="radio"] {
             margin-top: 2px;
             vertical-align: text-top;
+            accent-color: ${theme.palette.primary.main};
+            margin-right: ${theme.spacing(1)};
+        }
+
+        .cron_builder_bordering input[type="checkbox"] {
+            accent-color: ${theme.palette.primary.main};
+            margin-right: ${theme.spacing(1)};
         }
         .cron_builder_bordering input[type="number"] {
             height: 26px;
             border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             width: 12% !important;
+        }
+
+        .cron_builder_bordering input {
+            border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
         }
         .span6 {
             width: 50%;
@@ -106,7 +118,7 @@ export const CronEditorStyled = styled("div")(
             border-left: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-top: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-bottom: 0;
-            color: ${theme.custom.colors.curiousBlue} !important;
+            color: ${theme.palette.text.secondary} !important;
         }
         .nav-tabs > li.active > a,
         .nav-tabs > li.active > a:hover,
@@ -115,7 +127,7 @@ export const CronEditorStyled = styled("div")(
         .cron_builder .nav-tabs > li.active > a,
         .nav-tabs > li.active > a:hover,
         .nav-tabs > li.active > a:focus {
-            background: ${theme.custom.colors.abbey};
+            background: ${theme.palette.action.hover} !important;
             border-right: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-left: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-top: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
@@ -132,7 +144,7 @@ export const CronEditorStyled = styled("div")(
         }
         .minutes,
         .hours {
-            background: ${theme.custom.colors.nightRider};
+            background: ${theme.palette.background.paper};
             border-radius: 0;
             border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             margin-left: 8px;
@@ -143,6 +155,11 @@ export const CronEditorStyled = styled("div")(
         .col-md-6 {
             width: 100% !important;
             padding-left: 0 !important;
+        }
+        .nav-link.active {
+            background-color: inherit !important;
+            color: ${theme.palette.primary.main} !important;
+            border-color: ${theme.palette.primary.main} !important;
         }
     `,
 );
