@@ -6,10 +6,10 @@ import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
 
 import java.util.UUID
@@ -43,11 +43,11 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.test(processName, process, scenarioTestData)) { r =>
+    whenReady(deploymentManager.test(processName, process, scenarioTestData, identity)) { r =>
       r.nodeResults shouldBe Map(
-        "startProcess" -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "nightFilter"  -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "endSend"      -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
+        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
+        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
+        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
       )
     }
   }
@@ -64,7 +64,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.test(ProcessName(processId), process, scenarioTestData),
+        deploymentManager.test(ProcessName(processId), process, scenarioTestData, identity),
         patienceConfig.timeout
       )
     }

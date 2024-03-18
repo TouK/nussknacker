@@ -105,7 +105,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       }
     }
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
 
     input.foreach {
@@ -118,9 +118,10 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     stoppableEnv.waitForJobState(id.getJobID, process.name.value, ExecutionState.FINISHED)()
 
-    val outValues = collectingListener.results
+    val outValues = collectingListener
+      .results[AnyRef]
       .nodeResults(EndNodeId)
-      .map(_.get[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
+      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
       .map(_.mapValuesNow {
         case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
         case x                                                      => x
@@ -456,7 +457,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
@@ -502,7 +503,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val sourceFoo          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)

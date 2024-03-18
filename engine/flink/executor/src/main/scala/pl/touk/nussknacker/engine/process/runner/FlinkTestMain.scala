@@ -22,16 +22,18 @@ import scala.util.Using
 
 object FlinkTestMain extends FlinkRunner {
 
-  def run(
+  def run[T](
       modelData: ModelData,
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      configuration: Configuration
-  ): TestResults = {
+      configuration: Configuration,
+      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
+  ): TestResults[T] = {
     val processVersion = ProcessVersion.empty.copy(processName =
       ProcessName("snapshot version")
     ) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration).runTest
+    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration)
+      .runTest(variableEncoder)
   }
 
 }
@@ -45,8 +47,8 @@ class FlinkTestMain(
     val configuration: Configuration
 ) extends FlinkStubbedRunner {
 
-  def runTest: TestResults =
-    Using.resource(ResultsCollectingListenerHolder.registerRun) { collectingListener =>
+  def runTest[T](variableEncoder: Any => T): TestResults[T] =
+    Using.resource(ResultsCollectingListenerHolder.registerRun(variableEncoder)) { collectingListener =>
       val resultCollector = new TestServiceInvocationCollector(collectingListener.runId)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv

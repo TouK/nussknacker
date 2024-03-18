@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
@@ -53,11 +54,12 @@ class DeploymentManagerStub extends DeploymentManager {
 
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
 
-  override def test(
+  override def test[T](
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = ???
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestProcess.TestResults[T]] = ???
 
   // We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
   override def resolve(

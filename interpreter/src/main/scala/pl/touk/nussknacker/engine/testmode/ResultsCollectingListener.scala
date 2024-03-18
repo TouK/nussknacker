@@ -17,7 +17,7 @@ case class TestRunId(id: String)
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
 case class ResultsCollectingListener(holderClass: String, runId: TestRunId) extends ProcessListener with Serializable {
 
-  def results: TestResults = ResultsCollectingListenerHolder.resultsForId(runId)
+  def results[T]: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
 
   def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
 
@@ -67,18 +67,18 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
 object ResultsCollectingListenerHolder {
 
-  private var results = Map[TestRunId, TestResults]()
+  private var results = Map[TestRunId, TestResults[_]]()
 
   // TODO: casting is not so nice, but currently no other idea...
-  def resultsForId(id: TestRunId): TestResults = results(id)
+  def resultsForId[T](id: TestRunId): TestResults[T] = results(id).asInstanceOf[TestResults[T]]
 
-  def registerRun: ResultsCollectingListener = synchronized {
+  def registerRun[T](variableEncoder: Any => T): ResultsCollectingListener = synchronized {
     val runId = TestRunId.generate
-    results += (runId -> TestResults(Map(), Map(), Map(), List()))
+    results += (runId -> TestResults(Map(), Map(), Map(), List(), variableEncoder))
     ResultsCollectingListener(getClass.getCanonicalName, runId)
   }
 
-  private[testmode] def updateResults(runId: TestRunId, action: TestResults => TestResults): Unit = synchronized {
+  private[testmode] def updateResults(runId: TestRunId, action: TestResults[_] => TestResults[_]): Unit = synchronized {
     val current = results.getOrElse(runId, throw new IllegalArgumentException("Run was not registered..."))
     results += (runId -> action(current))
   }

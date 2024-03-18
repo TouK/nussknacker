@@ -16,12 +16,13 @@ class FlinkProcessTestRunner(modelData: ModelData)
       "run"
     ) {
 
-  def test(canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData)(
+  // NU-1455: We encode variable on the engine, because of classLoader's problems
+  def test[T](canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T)(
       implicit ec: ExecutionContext
-  ): Future[TestResults] =
+  ): Future[TestResults[T]] =
     Future {
-      tryToInvoke(modelData, canonicalProcess, scenarioTestData, new Configuration())
-        .asInstanceOf[TestResults]
+      tryToInvoke(modelData, canonicalProcess, scenarioTestData, new Configuration(), variableEncoder)
+        .asInstanceOf[TestResults[T]]
     }
 
 }

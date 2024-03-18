@@ -59,11 +59,12 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = stubbedActionResponse
 
-  override def test(
+  override def test[T](
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = stubbedActionResponse
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestProcess.TestResults[T]] = stubbedActionResponse
 
   override def customActions: List[CustomAction] = List.empty
 

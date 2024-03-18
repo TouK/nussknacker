@@ -41,11 +41,12 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
 
-  override def test(
+  override def test[T](
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = ???
+      scenarioTestData: ScenarioTestData,
+      variableEncoder: Any => T
+  ): Future[TestProcess.TestResults[T]] = ???
 
   override def resolve(
       idWithName: ProcessIdWithName,

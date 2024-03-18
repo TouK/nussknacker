@@ -6,7 +6,6 @@ import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -245,12 +244,12 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       results.exceptions should have length 2
 
       val exceptionFromExpression = results.exceptions.head
-      exceptionFromExpression.nodeComponentInfo.map(_.nodeId) shouldBe Some("filter")
+      exceptionFromExpression.nodeId shouldBe Some("filter")
       exceptionFromExpression.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "1"
       exceptionFromExpression.throwable.getMessage shouldBe "Expression [1 / #input.value1 >= 0] evaluation failed, message: / by zero"
 
       val exceptionFromService = results.exceptions.last
-      exceptionFromService.nodeComponentInfo.map(_.nodeId) shouldBe Some("failing")
+      exceptionFromService.nodeId shouldBe Some("failing")
       exceptionFromService.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "2"
       exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
     }
@@ -380,7 +379,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))), useIOMonadInInterpreter)
 
       results.exceptions should have length 1
-      results.exceptions.head.nodeComponentInfo.map(_.nodeId) shouldBe Some("out")
+      results.exceptions.head.nodeId shouldBe Some("out")
       results.exceptions.head.throwable.getMessage should include("message: / by zero")
 
       SimpleProcessConfigCreator.sinkForIntsResultsHolder.results should have length 0
@@ -638,29 +637,29 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       scenarioTestData: ScenarioTestData,
       useIOMonadInInterpreter: Boolean,
       enrichDefaultConfig: Config => Config = identity
-  ): TestResults = {
+  ): TestResults[_] = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
     // We need to set context loader to avoid forking in sbt
     val modelData = ModelData.duringFlinkExecution(config)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
+      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration(), identity)
     }
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): Context =
+  private def nodeResult(count: Int, vars: (String, Any)*): ResultContext[_] =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): Context =
-    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): ResultContext[_] =
+    ResultContext(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
 
   private def nodeResult(
       count: Int,
       sourceId: String,
       branchId: String,
       vars: (String, Any)*
-  ): Context =
-    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
+  ): ResultContext[_] =
+    ResultContext(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
 
 }

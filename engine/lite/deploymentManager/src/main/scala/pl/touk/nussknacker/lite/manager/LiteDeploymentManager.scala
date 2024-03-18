@@ -17,18 +17,20 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
 
   protected implicit def executionContext: ExecutionContext
 
-  override def test(
+  override def test[T](
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-  ): Future[TestProcess.TestResults] = {
+      variableEncoder: Any => T,
+  ): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
         // TODO: handle scenario testing in RR as well
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(
           modelData.asInvokableModelData,
           scenarioTestData,
-          canonicalProcess
+          canonicalProcess,
+          variableEncoder
         )
       }
     }

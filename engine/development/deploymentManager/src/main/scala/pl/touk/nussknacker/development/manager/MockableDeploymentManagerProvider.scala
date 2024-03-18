@@ -50,13 +50,13 @@ object MockableDeploymentManagerProvider {
   object MockableDeploymentManager extends DeploymentManager {
 
     private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults]](Map.empty)
+    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[_]]](Map.empty)
 
     def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
       this.scenarioStatuses.set(scenarioStates)
     }
 
-    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults]): Unit = {
+    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[_]]): Unit = {
       this.testResults.set(scenarioTestResults)
     }
 
@@ -97,17 +97,19 @@ object MockableDeploymentManagerProvider {
     override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
       Future.successful(())
 
-    override def test(
+    override def test[T](
         name: ProcessName,
         canonicalProcess: CanonicalProcess,
-        scenarioTestData: ScenarioTestData
-    ): Future[TestProcess.TestResults] = Future.successful {
+        scenarioTestData: ScenarioTestData,
+        variableEncoder: Any => T
+    ): Future[TestProcess.TestResults[T]] = Future.successful {
       testResults
         .get()
         .getOrElse(
           name.value,
           throw new IllegalArgumentException(s"Tests results not mocked for scenario [${name.value}]")
         )
+        .asInstanceOf[TestProcess.TestResults[T]]
     }
 
     override def resolve(
