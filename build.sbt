@@ -1095,6 +1095,10 @@ lazy val testUtils = (project in utils("test-utils"))
         "io.circe"                      %% "circe-parser"            % circeV,
         "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
         "com.lihaoyi"                   %% "ujson"                   % "3.1.2",
+        "com.github.erosb"               % "everit-json-schema"      % "1.14.4",
+        "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % "0.6.0",
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
