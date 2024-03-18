@@ -39,19 +39,6 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
     }
   }
 
-  private def getValidationResult(
-      validatedParams: Either[CustomActionValidationError, Map[String, List[PartSubGraphCompilationError]]]
-  ): Either[CustomActionValidationError, CustomActionValidationResult] = {
-    val hasErrors = validatedParams.map { m => m.exists { case (_, errorList) => errorList.nonEmpty } }
-
-    hasErrors match {
-      case Right(true) =>
-        Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw new IllegalStateException)))
-      case Right(false) => Right(CustomActionValidationResult.Valid)
-      case Left(va)     => Left(va)
-    }
-  }
-
   private def getRequestParamsMap(request: CustomActionRequest, customActionParams: List[CustomActionParameter]) = {
     (customActionParams.nonEmpty, request.params) match {
       case (true, Some(paramsMap)) =>
@@ -110,7 +97,22 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
     }
   }
 
-  def validateCustomActionParams(command: CustomActionCommand): Unit = {
+  private def getValidationResult(
+      validatedParams: Either[CustomActionValidationError, Map[String, List[PartSubGraphCompilationError]]]
+  ): Either[CustomActionValidationError, CustomActionValidationResult] = {
+    val hasErrors = validatedParams.map { m => m.exists { case (_, errorList) => errorList.nonEmpty } }
+
+    hasErrors match {
+      case Right(true) =>
+        Right(CustomActionValidationResult.Invalid(validatedParams.getOrElse(throw new IllegalStateException)))
+      case Right(false) => Right(CustomActionValidationResult.Valid)
+      case Left(va)     => Left(va)
+    }
+  }
+
+  def validateCustomActionParams(
+      command: CustomActionCommand
+  ): Either[CustomActionValidationError, CustomActionValidationResult] = {
     this.validateCustomActionParams(
       fromCommand(command)
     )

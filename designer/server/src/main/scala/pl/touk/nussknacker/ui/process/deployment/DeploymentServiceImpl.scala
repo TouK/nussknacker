@@ -14,9 +14,10 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
   CustomActionResult,
+  CustomActionValidationResult,
   DeploymentData,
   DeploymentId,
   ExternalDeploymentId,
@@ -604,8 +605,14 @@ class DeploymentServiceImpl(
         customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(actionName.value))
         validator = new CustomActionValidator(manager.customActionsDefinitions)
-        _         = validator.validateCustomActionParams(actionCommand)
-        _         = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
+        // TODO: remove this validation prosthesis
+        validationResult = validator.validateCustomActionParams(actionCommand)
+        validationFlag <- DBIOAction.from(Future.successful(validationResult))
+        _ <- validationFlag match {
+          case Right(CustomActionValidationResult.Valid) => DBIOAction.successful(())
+          case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionName}"))
+        }
+        _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
