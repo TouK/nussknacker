@@ -36,6 +36,8 @@ import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+import scala.util.matching.Regex
 
 trait RemoteEnvironment {
 
@@ -74,6 +76,13 @@ trait RemoteEnvironment {
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
 
 }
+
+final case class NuVersionDeserializationError(nuVersionRaw: String)
+    extends FatalError({
+      val message = s"Cannot migrate, problem occurred while interpreting $nuVersionRaw as Nu version."
+
+      message
+    })
 
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String)
     extends FatalError(message)
@@ -212,7 +221,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         isFragment
       )
 
-    for {
+    val f = for {
       remoteNuVersion <- fetchRemoteNuVersion.flatMap {
         case Left(e)             => Future.failed(e)
         case Right(buildInfoDto) => Future.successful(buildInfoDto.version)
@@ -220,7 +229,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
       localNuVersion = BuildInfo.version
 
-      versionsComparisonResult = compareNuVersions(localNuVersion, remoteNuVersion)
+      versionsComparisonResult <- compareNuVersions(localNuVersion, remoteNuVersion)
 
       migrateScenarioRequest = decideMigrationRequestDto(migrateScenarioRequestV2, versionsComparisonResult)
 
@@ -233,10 +242,45 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       )
 
     } yield res
+
+    f.recover[Either[NuDesignerError, Unit]] { case e: NuDesignerError =>
+      Left(e)
+    }
   }
 
-  // compare(x, y) = -1 <=> x < y && compare(x, y) = 0 <=> x = y && compare(x, y) = +1 <=> x > y
-  private def compareNuVersions(localNuVersion: String, remoteNuVersion: String): Int = ???
+  // compare(local, remote) <= 0 <=> local <= remote
+  private def compareNuVersions(localNuVersion: String, remoteNuVersion: String): Future[Int] = {
+    val versionPattern = """(\d+)\.(\d+)\.(\d+).*""".r
+
+    val localResult: Try[Regex.Match]  = Try(versionPattern.findFirstMatchIn(localNuVersion).get)
+    val remoteResult: Try[Regex.Match] = Try(versionPattern.findFirstMatchIn(remoteNuVersion).get)
+
+    localResult match {
+      case Success(localVersionPatternMatch) =>
+        remoteResult match {
+          case Success(remoteVersionPatternMatch) =>
+            val localMajorVersion = localVersionPatternMatch.group(1).toInt
+            val localMinorVersion = localVersionPatternMatch.group(2).toInt
+            val localPatchVersion = localVersionPatternMatch.group(3).toInt
+
+            val remoteMajorVersion = remoteVersionPatternMatch.group(1).toInt
+            val remoteMinorVersion = remoteVersionPatternMatch.group(2).toInt
+            val remotePatchVersion = remoteVersionPatternMatch.group(3).toInt
+
+            val res = if (remoteMajorVersion != localMajorVersion) {
+              localMajorVersion - remoteMajorVersion
+            } else if (remoteMinorVersion != localMinorVersion) {
+              localMinorVersion - remoteMinorVersion
+            } else {
+              localPatchVersion - remotePatchVersion
+            }
+
+            Future.successful(res)
+          case Failure(_) => Future.failed(NuVersionDeserializationError(remoteNuVersion))
+        }
+      case Failure(_) => Future.failed(NuVersionDeserializationError(localNuVersion))
+    }
+  }
 
   private def decideMigrationRequestDto(
       migrateScenarioRequestV2: MigrateScenarioRequestV2,
