@@ -1,22 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{
-  AverageAggregator,
-  CountWhenAggregator,
-  FirstAggregator,
-  LastAggregator,
-  ListAggregator,
-  MapAggregator,
-  MaxAggregator,
-  MinAggregator,
-  OptionAggregator,
-  SetAggregator,
-  SumAggregator
-}
+import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.lang.{Integer => JInt, Long => JLong}

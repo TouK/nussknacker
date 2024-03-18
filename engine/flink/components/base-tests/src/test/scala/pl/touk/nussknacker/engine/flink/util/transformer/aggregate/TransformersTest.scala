@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
 import pl.touk.nussknacker.engine.definition.component.parameter.editor.ParameterTypeEditorDeterminer
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
@@ -58,10 +59,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     )
     LocalModelData(
       config,
-      ComponentDefinition("start", sourceComponent) :: FlinkBaseComponentProvider.create(
+      ComponentDefinition("start", sourceComponent) :: FlinkBaseUnboundedComponentProvider.create(
         DocsConfig.Default,
         aggregateWindowsConfig
-      ),
+      ) ::: FlinkBaseComponentProvider.Components,
       configCreator = new ConfigCreatorWithCollectingListener(collectingListener)
     )
   }

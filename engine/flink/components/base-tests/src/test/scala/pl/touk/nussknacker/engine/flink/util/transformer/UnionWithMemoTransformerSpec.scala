@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
@@ -225,7 +226,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   ): List[ComponentDefinition] = {
     ComponentDefinition("start-foo", SourceFactory.noParamUnboundedStreamFactory[OneRecord](fooRecordsSource)) ::
       ComponentDefinition("start-bar", SourceFactory.noParamUnboundedStreamFactory[OneRecord](barRecordsSource)) ::
-      FlinkBaseComponentProvider.Components
+      FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components
   }
 
 }

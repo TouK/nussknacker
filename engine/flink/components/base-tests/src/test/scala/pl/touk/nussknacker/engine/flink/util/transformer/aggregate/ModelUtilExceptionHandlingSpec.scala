@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, NodeCompon
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
@@ -29,63 +30,64 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
 
   test("should handle exceptions in aggregate keys") {
-    checkExceptions(FlinkBaseComponentProvider.Components) { case (graph, generator) =>
-      NonEmptyList.one(
-        graph
-          .customNode(
-            "previousValue",
-            "out1",
-            "previousValue",
-            "groupBy" -> generator.throwFromString(),
-            "value"   -> generator.throwFromString()
-          )
-          .customNode(
-            "aggregate-sliding",
-            "out2",
-            "aggregate-sliding",
-            "groupBy"           -> generator.throwFromString(),
-            "aggregateBy"       -> generator.throwFromString(),
-            "aggregator"        -> "#AGG.first",
-            "windowLength"      -> durationExpression,
-            "emitWhenEventLeft" -> "false"
-          )
-          .customNodeNoOutput(
-            "delay",
-            "delay",
-            "key"   -> generator.throwFromString(),
-            "delay" -> "T(java.time.Duration).parse('PT0M')",
-          )
-          .split(
-            "branches",
-            GraphBuilder
-              .customNode(
-                "aggregate-tumbling",
-                "out3",
-                "aggregate-tumbling",
-                "groupBy"      -> generator.throwFromString(),
-                "aggregateBy"  -> generator.throwFromString(),
-                "aggregator"   -> "#AGG.first",
-                "windowLength" -> durationExpression,
-                "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent"
-              )
-              .emptySink("end", "dead-end"),
-            GraphBuilder
-              .customNode(
-                "aggregate-session",
-                "out3",
-                "aggregate-session",
-                "groupBy"             -> generator.throwFromString(),
-                "aggregateBy"         -> generator.throwFromString(),
-                "aggregator"          -> "#AGG.first",
-                "sessionTimeout"      -> durationExpression,
-                "endSessionCondition" -> "true",
-                "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
-              )
-              .emptySink("end2", "dead-end"),
-            GraphBuilder.branchEnd("union1", "union1"),
-            GraphBuilder.branchEnd("union2", "union2"),
-          )
-      )
+    checkExceptions(FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components) {
+      case (graph, generator) =>
+        NonEmptyList.one(
+          graph
+            .customNode(
+              "previousValue",
+              "out1",
+              "previousValue",
+              "groupBy" -> generator.throwFromString(),
+              "value"   -> generator.throwFromString()
+            )
+            .customNode(
+              "aggregate-sliding",
+              "out2",
+              "aggregate-sliding",
+              "groupBy"           -> generator.throwFromString(),
+              "aggregateBy"       -> generator.throwFromString(),
+              "aggregator"        -> "#AGG.first",
+              "windowLength"      -> durationExpression,
+              "emitWhenEventLeft" -> "false"
+            )
+            .customNodeNoOutput(
+              "delay",
+              "delay",
+              "key"   -> generator.throwFromString(),
+              "delay" -> "T(java.time.Duration).parse('PT0M')",
+            )
+            .split(
+              "branches",
+              GraphBuilder
+                .customNode(
+                  "aggregate-tumbling",
+                  "out3",
+                  "aggregate-tumbling",
+                  "groupBy"      -> generator.throwFromString(),
+                  "aggregateBy"  -> generator.throwFromString(),
+                  "aggregator"   -> "#AGG.first",
+                  "windowLength" -> durationExpression,
+                  "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent"
+                )
+                .emptySink("end", "dead-end"),
+              GraphBuilder
+                .customNode(
+                  "aggregate-session",
+                  "out3",
+                  "aggregate-session",
+                  "groupBy"             -> generator.throwFromString(),
+                  "aggregateBy"         -> generator.throwFromString(),
+                  "aggregator"          -> "#AGG.first",
+                  "sessionTimeout"      -> durationExpression,
+                  "endSessionCondition" -> "true",
+                  "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
+                )
+                .emptySink("end2", "dead-end"),
+              GraphBuilder.branchEnd("union1", "union1"),
+              GraphBuilder.branchEnd("union2", "union2"),
+            )
+        )
     }
   }
 
@@ -132,8 +134,9 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
     val runId  = UUID.randomUUID().toString
     val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.empty(), consumerId = runId)
     val sourceComponentDefinition = ComponentDefinition("source", SamplesComponent.create(generator.count))
-    val enrichedComponents        = sourceComponentDefinition :: FlinkBaseComponentProvider.Components
-    val env                       = flinkMiniCluster.createExecutionEnvironment()
+    val enrichedComponents = sourceComponentDefinition :: FlinkBaseComponentProvider.Components :::
+      FlinkBaseUnboundedComponentProvider.Components
+    val env = flinkMiniCluster.createExecutionEnvironment()
     registerInEnvironment(env, LocalModelData(config, enrichedComponents), scenario)
 
     env.executeAndWaitForFinished("test")()
