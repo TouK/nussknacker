@@ -133,7 +133,7 @@ describe("Process", () => {
             cy.get("[title='toggle left panel']").click();
             cy.get("[data-testid=search-panel]").should("be.not.visible");
             cy.get("#nk-graph-main").click();
-            cy.realPress(["F"]);
+            cy.realPress("F");
             // cy.get("[data-testid=search-panel] input").should("be.visible").should("be.focused");
             // cy.realType("en");
             // cy.get("[data-testid=search-panel]").contains(/sms/i).click();
