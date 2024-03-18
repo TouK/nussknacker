@@ -12,7 +12,7 @@ To enable given [Deployment Manager](/about/GLOSSARY#deployment-manager) you nee
 Nussknacker is distributed with three default [Deployment Managers](/about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers`
 directory. Parameters available in the deployment configuration, depends on which [Deployment Manager](/about/GLOSSARY#deployment-manager) you've selected.
 
-Section with `deploymentConfig` need to be placed in the correct place in the Designer's configuration. Check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration.
+Section with `deploymentConfig` needs to be placed in the correct place in the Designer's configuration. Check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration.
 
 Below you can find a snippet of scenario deployment configuration.
 
