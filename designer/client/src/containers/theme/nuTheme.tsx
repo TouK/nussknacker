@@ -48,7 +48,6 @@ const colors = {
     focusColor: d1,
     baseColor: l4,
     tundora: d3,
-    cerulean: "#0E9AE0",
     doveGray: d4,
     accent: "#668547",
     eclipse: "#393939",

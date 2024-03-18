@@ -3,7 +3,7 @@ import { css, styled, Typography } from "@mui/material";
 import ProblemOccurredSvg from "./problem-occurred.svg";
 import { ErrorBoundary as ErrorBoundaryLibrary, ErrorBoundaryProps } from "react-error-boundary";
 import { t } from "i18next";
-import { StyledBlueButton } from "../../containers/errors/StyledBlueButton";
+import { LoadingButton } from "../../windowManager/LoadingButton";
 
 type RootErrorPageProps = {
     message: string;
@@ -128,9 +128,7 @@ export default function RootErrorBoundary({ children }: PropsWithChildren<Partia
                 "Please refresh the page. If the problem persists, please contact your system administrator.",
             )}
         >
-            <StyledBlueButton style={{ border: "none", textAlign: "center" }} onClick={() => window.location.reload()}>
-                {t("InitializeError.buttonLabel", "Refresh the page")}
-            </StyledBlueButton>
+            <LoadingButton title={t("InitializeError.buttonLabel", "Refresh the page")} action={() => window.location.reload()} />
         </RootErrorPage>
     );
 
