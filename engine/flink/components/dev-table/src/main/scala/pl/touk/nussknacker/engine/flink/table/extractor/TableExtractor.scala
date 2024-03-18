@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.table.extractor.TypeExtractor.extractTyp
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.{Failure, Success, Try}
 
-object DataSourceSqlExtractor extends LazyLogging {
+object TableExtractor extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
@@ -18,7 +18,7 @@ object DataSourceSqlExtractor extends LazyLogging {
   // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
   def extractTablesFromFlinkRuntime(
       sqlStatements: List[SqlStatement]
-  ): DataSourceSqlExtractorResult = {
+  ): TableExtractorResult = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
@@ -47,12 +47,12 @@ object DataSourceSqlExtractor extends LazyLogging {
       typedTable = extractTypingResult(table)
     } yield TableDefinition(tableName, typedTable.typingResult, typedTable.columns)
 
-    DataSourceSqlExtractorResult(tableDefinitions, sqlErrors)
+    TableExtractorResult(tableDefinitions, sqlErrors)
   }
 
 }
 
-final case class DataSourceSqlExtractorResult(
+final case class TableExtractorResult(
     tableDefinitions: List[TableDefinition],
     sqlStatementExecutionErrors: List[SqlStatementNotExecutedError]
 )

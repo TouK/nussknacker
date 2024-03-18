@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.flink.table.SqlTestData.SimpleTypesTestCase.{t
 import pl.touk.nussknacker.engine.flink.table.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
 import pl.touk.nussknacker.engine.flink.table.extractor._
 
-class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
+class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
     val statements        = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement)
-    val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
+    val dataSourceConfigs = TableExtractor.extractTablesFromFlinkRuntime(statements)
 
-    val expectedResult = DataSourceSqlExtractorResult(
+    val expectedResult = TableExtractorResult(
       tableDefinitions = List(tableDefinition),
       sqlStatementExecutionErrors = List.empty
     )
@@ -41,7 +41,7 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
        |);""".stripMargin
 
     val statements        = SqlStatementReader.readSql(statementsStr)
-    val extractionResults = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
+    val extractionResults = TableExtractor.extractTablesFromFlinkRuntime(statements)
 
     extractionResults.sqlStatementExecutionErrors shouldBe empty
     extractionResults.tableDefinitions shouldBe List(
@@ -58,7 +58,7 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
       val parsedStatement   = SqlStatementReader.readSql(invalidStatement)
-      val extractionResults = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(parsedStatement)
+      val extractionResults = TableExtractor.extractTablesFromFlinkRuntime(parsedStatement)
 
       extractionResults.sqlStatementExecutionErrors.size shouldBe 1
       extractionResults.tableDefinitions shouldBe empty

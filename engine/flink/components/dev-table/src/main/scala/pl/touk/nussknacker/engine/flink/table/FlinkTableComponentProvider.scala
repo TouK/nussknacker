@@ -5,11 +5,11 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceSqlExtractor.extractTablesFromFlinkRuntime
+import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.sink.SqlSinkFactory
-import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory
+import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
+import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
@@ -26,29 +26,30 @@ import scala.util.{Failure, Success, Try}
  *  kafka and schema registry addresses are provided as environment variables that are different for designer and
  *  jobmanager/taskmanager services. For reference see the nussknacker-quickstart repository.
  */
-class SqlComponentProvider extends ComponentProvider with LazyLogging {
+ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
 
-  override def providerName: String = "sqlFile"
+  override def providerName: String = "flinkTable"
+  private val tableComponentName = "table"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val parsedConfig = config.rootAs[SqlFileDataSourcesConfig]
+    val parsedConfig = config.rootAs[TableComponentProviderConfig]
 
-    val definition = extractDataSourcesDefinitionFromSqlFileOrThrow(parsedConfig.sqlFilePath)
+    val definition = extractTableDefinitionsFromSqlFileOrThrow(parsedConfig.tableDefinitionFilePath)
 
     ComponentDefinition(
-      "tableApi-source-sql",
-      new SqlSourceFactory(definition)
+      tableComponentName,
+      new TableSourceFactory(definition)
     ) :: ComponentDefinition(
-      "tableApi-sink-sql",
-      new SqlSinkFactory(definition)
+      tableComponentName,
+      new TableSinkFactory(definition)
     ) :: Nil
   }
 
-  private def extractDataSourcesDefinitionFromSqlFileOrThrow(filePath: String) = {
+  private def extractTableDefinitionsFromSqlFileOrThrow(filePath: String) = {
     val sqlStatements = readSqlFromFile(Paths.get(filePath))
     val results       = extractTablesFromFlinkRuntime(sqlStatements)
 
@@ -60,7 +61,7 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
       )
     }
 
-    SqlDataSourcesDefinition(results.tableDefinitions, sqlStatements)
+    TableSqlDefinitions(results.tableDefinitions, sqlStatements)
   }
 
   private def readSqlFromFile(pathToFile: Path) = Try(ResourceLoader.load(pathToFile)) match {
@@ -79,9 +80,9 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
 
 }
 
-final case class SqlDataSourcesDefinition(
+final case class TableSqlDefinitions(
     tableDefinitions: List[TableDefinition],
     sqlStatements: List[SqlStatement]
 )
 
-final case class SqlFileDataSourcesConfig(sqlFilePath: String)
+final case class TableComponentProviderConfig(tableDefinitionFilePath: String)

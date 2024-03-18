@@ -1,34 +1,34 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  NodeDependencyValue,
-  SingleInputDynamicComponent
-}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputDynamicComponent}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.sink.SqlSinkFactory.{rawValueParameterDeclaration, valueParameterName}
-import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory
-import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory.getSelectedTableUnsafe
-import pl.touk.nussknacker.engine.flink.table.{SqlDataSourcesDefinition, TableDefinition}
+import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory.{rawValueParameterDeclaration, valueParameterName}
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
+import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 import pl.touk.nussknacker.engine.util.parameters.SingleSchemaBasedParameter
 
-object SqlSinkFactory {
+object TableSinkFactory {
   // TODO: add non-raw value parameters
   val valueParameterName: ParameterName = ParameterName("Value")
   private val rawValueParameterDeclaration =
     ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
 }
 
-class SqlSinkFactory(definition: SqlDataSourcesDefinition) extends SingleInputDynamicComponent[Sink] with SinkFactory {
+class TableSinkFactory(definition: TableSqlDefinitions)
+    extends SingleInputDynamicComponent[Sink]
+    with SinkFactory
+    // TODO: Should be BoundedStreamComponent - change it and move to a batch category
+    with UnboundedStreamComponent {
 
   override type State = TableDefinition
 
-  private val tableNameParameterDeclaration = SqlComponentFactory.buildTableNameParam(definition.tableDefinitions)
+  private val tableNameParameterDeclaration = TableComponentFactory.buildTableNameParam(definition.tableDefinitions)
   private val tableNameParameterName        = tableNameParameterDeclaration.parameterName
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -65,11 +65,9 @@ class SqlSinkFactory(definition: SqlDataSourcesDefinition) extends SingleInputDy
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new SqlSink(selectedTable, definition.sqlStatements, lazyValueParam)
+    new TableSink(selectedTable, definition.sqlStatements, lazyValueParam)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])
-
-  override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
+  override def nodeDependencies: List[NodeDependency] = List.empty
 
 }

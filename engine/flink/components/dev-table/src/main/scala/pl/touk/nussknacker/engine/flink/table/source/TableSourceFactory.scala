@@ -1,28 +1,26 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  NodeDependencyValue,
-  SingleInputDynamicComponent
-}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory.tableNameParamName
-import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory
-import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory._
-import pl.touk.nussknacker.engine.flink.table.{SqlDataSourcesDefinition, TableDefinition}
+import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
+import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 
-class SqlSourceFactory(definition: SqlDataSourcesDefinition)
+class TableSourceFactory(definition: TableSqlDefinitions)
     extends SingleInputDynamicComponent[Source]
-    with SourceFactory {
+    with SourceFactory
+    // TODO: Should be BoundedStreamComponent - change it and move to a batch category
+    with UnboundedStreamComponent {
 
   override type State = TableDefinition
 
-  private val tableNameParamDeclaration = SqlComponentFactory.buildTableNameParam(definition.tableDefinitions)
+  private val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(definition.tableDefinitions)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -48,15 +46,13 @@ class SqlSourceFactory(definition: SqlDataSourcesDefinition)
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new SqlSource(selectedTable, definition.sqlStatements)
+    new TableSource(selectedTable, definition.sqlStatements)
   }
 
-  override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])
-
-  override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
+  override def nodeDependencies: List[NodeDependency] = List.empty
 
 }
 
-object SqlSourceFactory {
+object TableSourceFactory {
   val tableNameParamName: ParameterName = ParameterName("Table")
 }

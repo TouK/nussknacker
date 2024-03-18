@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 
-object SqlComponentFactory {
+object TableComponentFactory {
 
   val tableNameParamName: ParameterName = ParameterName("Table")
 

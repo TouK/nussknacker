@@ -1,1 +1,1 @@
-pl.touk.nussknacker.engine.flink.table.SqlComponentProvider
+pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider

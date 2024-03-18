@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlSt
 import pl.touk.nussknacker.engine.flink.table.utils.NestedRowConversions._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.mapToRowUnsafe
 
-class SqlSink(
+class TableSink(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
     value: LazyParameter[AnyRef]

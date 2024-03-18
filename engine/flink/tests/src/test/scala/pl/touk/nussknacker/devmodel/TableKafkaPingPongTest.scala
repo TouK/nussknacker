@@ -9,9 +9,9 @@ import pl.touk.nussknacker.devmodel.TestData._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.SqlComponentProvider
-import pl.touk.nussknacker.engine.flink.table.sink.SqlSinkFactory
-import pl.touk.nussknacker.engine.flink.table.utils.SqlComponentFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -20,11 +20,11 @@ import pl.touk.nussknacker.engine.spel
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
+class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
 
   import spel.Implicits._
 
-  private val testNameTopicPart: String    = "sql-pp"
+  private val testNameTopicPart: String    = "table-ping-pong"
   private val topicNaming1: String         = s"$testNameTopicPart.test1"
   private val topicNaming2: String         = s"$testNameTopicPart.test2"
   private val topicNaming3: String         = s"$testNameTopicPart.test3"
@@ -38,6 +38,7 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
   private lazy val sqlOutputTableNameTest2 = "output_test2"
   private lazy val sqlInputTableNameTest3  = "input_test3"
   private lazy val sqlOutputTableNameTest3 = "output_test3"
+  private val tableComponentName = "table"
 
   private lazy val sqlTablesConfig =
     s"""
@@ -113,11 +114,11 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
     tempFile.toPath
   }
 
-  private lazy val kafkaTableConfig = s"sqlFilePath: $sqlTablesDefinitionFilePath"
+  private lazy val kafkaTableConfig = s"tableDefinitionFilePath: $sqlTablesDefinitionFilePath"
 
   private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
 
-  override lazy val additionalComponents: List[ComponentDefinition] = new SqlComponentProvider().create(
+  override lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
     tableKafkaComponentsConfig,
     ProcessObjectDependencies.withConfig(tableKafkaComponentsConfig)
   )
@@ -133,8 +134,8 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
       .parallelism(1)
       .source(
         "start",
-        "tableApi-source-sql",
-        SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'"
+        tableComponentName,
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest1'"
       )
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
@@ -171,15 +172,15 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
       .parallelism(1)
       .source(
         sourceId,
-        "tableApi-source-sql",
-        SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest2'"
+        tableComponentName,
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest2'"
       )
       .filter("filterId", "#input.someInt != 1")
       .emptySink(
         "end",
-        "tableApi-sink-sql",
-        SqlComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest2'",
-        SqlSinkFactory.valueParameterName.value      -> "#input"
+        tableComponentName,
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest2'",
+        TableSinkFactory.valueParameterName.value      -> "#input"
       )
 
     run(process) {
@@ -203,14 +204,20 @@ class SqlKafkaPingPongTest extends FlinkWithKafkaSuite {
       .parallelism(1)
       .source(
         "start",
-        "tableApi-source-sql",
-        SqlComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest3'"
+        tableComponentName,
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlInputTableNameTest3'"
       )
       .emptySink(
         "end",
-        "tableApi-sink-sql",
-        SqlComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'",
-        SqlSinkFactory.valueParameterName.value      -> s"$record2"
+        tableComponentName,
+        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'",
+        TableSinkFactory.valueParameterName.value ->
+          s"""
+             |{
+             |  "someInt": 2,
+             |  "someString": "BBB"
+             |}
+             |""".stripMargin
       )
 
     run(process) {
