@@ -15,14 +15,14 @@ class MigrationApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
 
   private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
 
-  it should "adaptToLowerVersion should adapt lower version of request DTO into higher version" in {
+  it should "adapt lower version of request DTO into higher version" in {
     val adaptedDTO  = migrationApiAdapterService.adaptToLowerVersion(migrateScenarioRequestV2)
     val expectedDTO = migrateScenarioRequestV1
 
     adaptedDTO shouldEqual expectedDTO
   }
 
-  it should "adaptToHigherVersion should adapt higher version of request DTO into lower version" in {
+  it should "adapt higher version of request DTO into lower version" in {
     val adaptedDTO  = migrationApiAdapterService.adaptToHigherVersion(migrateScenarioRequestV1)
     val expectedDTO = migrateScenarioRequestV2
 
