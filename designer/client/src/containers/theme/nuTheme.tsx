@@ -48,7 +48,6 @@ const colors = {
     focusColor: d1,
     baseColor: l4,
     tundora: d3,
-    silverChalice: "#afafaf",
     cerulean: "#0E9AE0",
     doveGray: d4,
     accent: "#668547",
@@ -279,7 +278,7 @@ export const nuTheme = createTheme({
             hover: blendLighten("#242F3E", 0.15),
         },
     },
-    typography: {
+    typography: (palette) => ({
         fontFamily,
         h1: { ...headerCommonStyle },
         h2: { ...headerCommonStyle },
@@ -298,9 +297,9 @@ export const nuTheme = createTheme({
             letterSpacing: "inherit",
             lineHeight: "inherit",
             textTransform: "inherit",
-            color: custom.colors.silverChalice,
+            color: palette.text.secondary,
         },
-    },
+    }),
     components: {
         MuiSwitch: {
             styleOverrides: {
