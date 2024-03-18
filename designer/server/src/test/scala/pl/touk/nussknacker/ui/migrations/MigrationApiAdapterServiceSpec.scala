@@ -36,49 +36,49 @@ class MigrationApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
     actualVersionComparsionResult shouldEqual expectedComparsionResult
   }
 
-  it should "return negative versions difference when local version is smaller than remote version at the major level" in {
+  it should "return negative versions difference when local Nu version is smaller than remote Nu version at the major level" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(localNuVersion = nuVersion1, remoteNuVersion = nuVersion2)
 
     actualVersionComparsionResult shouldEqual Right(-2)
   }
 
-  it should "return negative versions difference when local version is smaller than remote version at the minor level" in {
+  it should "return negative versions difference when local Nu version is smaller than remote Nu version at the minor level" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(localNuVersion = nuVersion3, remoteNuVersion = nuVersion4)
 
     actualVersionComparsionResult shouldEqual Right(-1)
   }
 
-  it should "return negative versions difference when local version is smaller than remote version at the path level" in {
+  it should "return negative versions difference when local Nu version is smaller than remote Nu version at the path level" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(localNuVersion = nuVersion5, remoteNuVersion = nuVersion6)
 
     actualVersionComparsionResult shouldEqual Right(-7)
   }
 
-  it should "return positive versions difference when local version is greater than remote version at the major level" in {
+  it should "return positive versions difference when local Nu version is greater than remote Nu version at the major level" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(localNuVersion = nuVersion2, remoteNuVersion = nuVersion1)
 
     actualVersionComparsionResult shouldEqual Right(2)
   }
 
-  it should "return positive versions difference when local version is greater than remote version at the minor level" in {
+  it should "return positive versions difference when local Nu version is greater than remote Nu version at the minor level" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(localNuVersion = nuVersion4, remoteNuVersion = nuVersion3)
 
     actualVersionComparsionResult shouldEqual Right(1)
   }
 
-  it should "return positive versions difference when local version is greater than remote version at the path level" in {
+  it should "return positive versions difference when local Nu version is greater than remote Nu version at the path level" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(localNuVersion = nuVersion6, remoteNuVersion = nuVersion5)
 
     actualVersionComparsionResult shouldEqual Right(7)
   }
 
-  it should "fail when incorrect local nu version was provided" in {
+  it should "fail when incorrect local Nu version was provided" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(incorrectNuVersion, nuVersion3)
 
@@ -87,7 +87,7 @@ class MigrationApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
     )
   }
 
-  it should "fail when incorrect remote nu version was provided" in {
+  it should "fail when incorrect remote Nu version was provided" in {
     val actualVersionComparsionResult =
       migrationApiAdapterService.compareNuVersions(nuVersion3, incorrectNuVersion)
 
