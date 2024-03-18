@@ -4,7 +4,6 @@ import { ButtonWithFocus } from "../withFocus";
 import { blendLighten } from "../../containers/theme/nuTheme";
 
 export const buttonBase = (theme: Theme) => css`
-    border: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
     border-radius: 0;
     background-color: ${theme.palette.background.paper};
     color: ${theme.custom.colors.secondaryColor};

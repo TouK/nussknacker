@@ -25,7 +25,6 @@ export const customCheckbox = (checkboxWidth: string, theme: Theme) => css`
         height: ${checkboxWidth};
         width: ${checkboxWidth};
         font-size: calc(${checkboxWidth} - 6);
-        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
         background: ${theme.palette.background.paper};
     }
     input[type="checkbox"]:checked::after {

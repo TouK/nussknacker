@@ -14,7 +14,6 @@ const BackIcon = styled(ProcessBackIcon)(() => ({
 const ProcessLinkButton = styled(ProcessLink)(({ theme }) => ({
     color: theme.palette.text.primary,
     backgroundColor: blendLighten(theme.palette.background.paper, 0.2),
-    border: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
     display: "flex",
     alignItems: "center",
     padding: theme.spacing(0, 1),

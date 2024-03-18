@@ -21,7 +21,6 @@ export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important`,
     "&:focus": {
         outline: `1px solid ${theme.palette.primary.main} !important`,
     },

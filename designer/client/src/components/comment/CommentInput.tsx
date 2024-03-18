@@ -10,7 +10,7 @@ export const CommentInput = ({ onChange, value, defaultValue, ...props }: Props)
     return (
         <TextAreaNodeWithFocus
             {...props}
-            sx={(theme) => ({ background: lighten(theme.palette.background.paper, 0.1) })}
+            sx={(theme) => ({ background: lighten(theme.palette.background.paper, 0.1), outline: "none" })}
             value={value || ""}
             placeholder={defaultValue?.toString() || t("commentInput.placeholder", "Write a comment...")}
             onChange={onChange}

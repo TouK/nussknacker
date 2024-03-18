@@ -6,7 +6,6 @@ import { blendLighten } from "../../../../../../../containers/theme/nuTheme";
 
 export const SettingsWrapper = styled("div")(({ theme }) => ({
     padding: "10px",
-    border: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
     width: "100%",
     display: "block",
     marginBottom: "20px",

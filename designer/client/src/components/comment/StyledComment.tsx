@@ -36,9 +36,6 @@ export const AddCommentPanel = styled("div")(
         background-color: ${lighten(theme.palette.background.paper, 0.1)};
         padding: 4px 6px;
         resize: none;
-        &:focus {
-            outline-color: ${theme.custom.colors.secondaryColor};
-        }
     }
 `,
 );

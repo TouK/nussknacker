@@ -1,6 +1,5 @@
 import { css, styled } from "@mui/material";
 import { customCheckbox } from "./CustomCheckbox";
-import { blendLighten } from "../../../../containers/theme/nuTheme";
 
 export const HIDDEN_TEXTAREA_PIXEL_HEIGHT = 100;
 export const NodeTableStyled = styled("div")(
@@ -56,7 +55,6 @@ export const NodeTableStyled = styled("div")(
             &.node-value-type-select {
                 width: 100%;
                 max-height: 35;
-                outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
                 &.switchable {
                     width: 70%;
                 }
@@ -87,15 +85,10 @@ export const NodeTableStyled = styled("div")(
             height: 35px;
             width: 100%;
             padding: 0 10px;
-            border: none;
             background-color: ${theme.palette.background.paper};
             color: ${theme.custom.colors.secondaryColor};
             font-weight: 400;
             font-size: 14px;
-            outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
-            :focus {
-                outline: 1px solid ${theme.palette.primary.main} !important;
-            }
         }
 
         .row-ace-editor {
@@ -105,8 +98,6 @@ export const NodeTableStyled = styled("div")(
             padding-right: 5px;
             background-color: ${theme.palette.background.paper};
             min-height: 35px;
-            border: none;
-            outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             .ace_editor {
                 background-color: ${theme.palette.background.paper};
             }

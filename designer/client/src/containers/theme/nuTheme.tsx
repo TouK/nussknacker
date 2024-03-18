@@ -146,11 +146,21 @@ const globalStyles = (theme: Theme) => ({
         lineHeight: 1.428571429,
         fontFamily,
     },
-    "input, button, select, textarea": {
+    "input, button, select, textarea, .row-ace-editor": {
         fontFamily: "inherit",
         fontSize: "inherit",
         lineHeight: "inherit",
+        boxShadow: "none",
+        border: "none",
+        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        "&:hover": {
+            backgroundColor: theme.palette.action.hover,
+        },
+        "&:focus": {
+            outline: `1px solid ${theme.palette.primary.main}`,
+        },
     },
+
     " button,input,optgroup,select,textarea": {
         color: "inherit",
         font: "inherit",
@@ -160,6 +170,7 @@ const globalStyles = (theme: Theme) => ({
     button: {
         color: custom.colors.secondaryColor,
         lineHeight: 1.428571429,
+        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
         ":hover": {
             cursor: "pointer",
         },
