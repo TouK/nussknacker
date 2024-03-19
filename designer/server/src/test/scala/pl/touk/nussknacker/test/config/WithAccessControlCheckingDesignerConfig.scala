@@ -6,16 +6,17 @@ import io.restassured.specification.RequestSpecification
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.NuRestAssureExtensions
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.DesignerTestConfigValidator
 
-trait WithRichDesignerConfig extends WithDesignerConfig {
+// This trait shows setups with multiple categories allowing to verify cases such as access to some category but without access to another one
+trait WithAccessControlCheckingDesignerConfig extends WithDesignerConfig {
   this: Suite =>
 
   validateConsistency()
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/rich/rich-streaming-use-case-designer.conf")
+    ConfigFactory.parseResources("config/rich/access-control-checking-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
@@ -27,7 +28,7 @@ trait WithRichDesignerConfig extends WithDesignerConfig {
 
 }
 
-object WithRichDesignerConfig {
+object WithAccessControlCheckingDesignerConfig {
   sealed trait TestProcessingType extends EnumEntry
 
   object TestProcessingType extends Enum[TestProcessingType] {
@@ -77,7 +78,7 @@ object WithRichDesignerConfig {
         .apply(category)
     }
 
-    private[WithRichDesignerConfig] lazy val categoryByProcessingType =
+    private[WithAccessControlCheckingDesignerConfig] lazy val categoryByProcessingType =
       TestProcessingType.values.map { processingType =>
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap
@@ -86,8 +87,8 @@ object WithRichDesignerConfig {
 
 }
 
-trait WithRichConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
-  this: WithRichDesignerConfig =>
+trait WithAccessControlCheckingConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
+  this: WithAccessControlCheckingDesignerConfig =>
 
   implicit class UsersBasicAuth[T <: RequestSpecification](requestSpecification: T) {
 
