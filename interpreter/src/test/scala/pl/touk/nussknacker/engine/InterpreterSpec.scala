@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.api.definition.{AdditionalVariable => _, _}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -485,7 +486,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
           List(
@@ -520,7 +523,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[Any])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[Any])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == '333'"),
           List(
@@ -574,7 +579,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
           List(
@@ -609,7 +616,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         FlatNode(FragmentOutputDefinition("out1", "output", List(Field("result", "#param"))))
       ),
       List.empty
@@ -633,7 +642,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.FilterNode(
           Filter("f1", "#param == 'a'"),
           List(
@@ -649,9 +660,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val nested = CanonicalProcess(
       MetaData("fragment2", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.Fragment(
-          FragmentInput("sub2", FragmentRef("fragment1", List(NodeParameter("param", "#param")))),
+          FragmentInput("sub2", FragmentRef("fragment1", List(NodeParameter(ParameterName("param"), "#param")))),
           Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty))))
         )
       ),
@@ -688,7 +701,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         canonicalnode.SwitchNode(
           Switch("f1"),
           List(
@@ -725,7 +740,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
+        ),
         FlatNode(Variable("result", "result", "'result'")),
         FlatNode(Sink("end", SinkRef("dummySink", List())))
       ),
@@ -754,8 +771,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           FragmentInputDefinition(
             "start",
             List(
-              FragmentParameter("toMultiply", FragmentClazzRef[java.lang.Integer]),
-              FragmentParameter("multiplyBy", FragmentClazzRef[java.lang.Integer])
+              FragmentParameter(ParameterName("toMultiply"), FragmentClazzRef[java.lang.Integer]),
+              FragmentParameter(ParameterName("multiplyBy"), FragmentClazzRef[java.lang.Integer])
             )
           )
         ),
@@ -877,7 +894,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,expression,customNode)"
+    }.getMessage shouldBe "Compilation errors: EmptyMandatoryParameter(This field is mandatory and can not be empty,Please fill field for this parameter,ParameterName(expression),customNode)"
   }
 
   test("not accept blank expression for not blank parameter") {
@@ -890,7 +907,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     intercept[IllegalArgumentException] {
       interpretProcess(process, Transaction())
-    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,expression,customNode)"
+    }.getMessage shouldBe "Compilation errors: BlankParameter(This field value is required and can not be blank,Please fill field value for this parameter,ParameterName(expression),customNode)"
   }
 
   test("use eager service") {
@@ -919,8 +936,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         "customNode",
         "data",
         "dynamicEagerService",
-        DynamicEagerService.staticParamName -> "'param987'",
-        "param987"                          -> "{bool: '' == null}"
+        DynamicEagerService.staticParamName.value -> "'param987'",
+        "param987"                                -> "{bool: '' == null}"
       )
       .filter("filter", "!#data.bool")
       .buildSimpleVariable("result-end", resultVariable, "#data")
@@ -1053,18 +1070,18 @@ object InterpreterSpec {
 
   object WithExplicitDefinitionService extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def parameters: List[Parameter] = List(Parameter[Long]("param1"))
+    override def parameters: List[Parameter] = List(Parameter[Long](ParameterName("param1")))
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Params)(
+    override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.nameToValueMap.head._2.toString)
+      Future.successful(eagerParameters.head._2.toString)
     }
 
   }
@@ -1072,21 +1089,21 @@ object InterpreterSpec {
   object ServiceUsingSpelTemplate extends EagerServiceWithStaticParametersAndReturnType {
 
     private val spelTemplateParameter = Parameter
-      .optional[String]("template")
+      .optional[String](ParameterName("template"))
       .copy(isLazyParameter = true, editor = Some(SpelTemplateParameterEditor))
 
     override def parameters: List[Parameter] = List(spelTemplateParameter)
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Params)(
+    override def invoke(params: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: InvocationCollectors.ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[AnyRef] = {
-      Future.successful(params.nameToValueMap.head._2.toString)
+      Future.successful(params.head._2.toString)
     }
 
   }
@@ -1094,21 +1111,21 @@ object InterpreterSpec {
   object DictParameterEditorService extends EagerServiceWithStaticParametersAndReturnType {
 
     override def parameters: List[Parameter] = List(
-      Parameter[String]("param").copy(
+      Parameter[String](ParameterName("param")).copy(
         editor = Some(DictParameterEditor("someDictId"))
       )
     )
 
     override def returnType: typing.TypingResult = Typed[String]
 
-    override def invoke(params: Params)(
+    override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase
     ): Future[Any] = {
-      Future.successful(params.nameToValueMap.head._2.toString)
+      Future.successful(eagerParameters.head._2.toString)
     }
 
   }
@@ -1170,22 +1187,25 @@ object InterpreterSpec {
 
     override type State = Nothing
 
-    final val staticParamName = "static"
+    final val staticParamName: ParameterName = ParameterName("static")
 
-    private val staticParam = ParameterWithExtractor.mandatory[String](staticParamName)
+    private val staticParamDeclaration = ParameterDeclaration
+      .mandatory[String](staticParamName)
+      .withCreator()
 
     override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
         implicit nodeId: NodeId
     ): DynamicEagerService.ContextTransformationDefinition = {
       case TransformationStep(Nil, _) =>
-        NextParameters(List(staticParam.parameter))
+        NextParameters(List(staticParamDeclaration.createParameter()))
       case TransformationStep((`staticParamName`, DefinedEagerParameter(value: String, _)) :: Nil, _) =>
-        NextParameters(dynamicParam(value).parameter :: Nil)
+        val dynamicParamDeclaration = createDynamicParamDeclaration(ParameterName(value))
+        NextParameters(dynamicParamDeclaration.createParameter() :: Nil)
       case TransformationStep(
             (`staticParamName`, DefinedEagerParameter(value: String, _)) ::
             (otherName, DefinedLazyParameter(expression)) :: Nil,
             _
-          ) if value == otherName =>
+          ) if value == otherName.value =>
         FinalResults.forValidation(context)(
           _.withVariable(OutputVariableNameDependency.extract(dependencies), expression, None)
         )
@@ -1197,7 +1217,10 @@ object InterpreterSpec {
         finalState: Option[Nothing]
     ): ServiceInvoker = {
 
-      val paramName = staticParam.extractValue(params)
+      val dynamicParamDeclaration = createDynamicParamDeclaration(
+        ParameterName(staticParamDeclaration.extractValueUnsafe(params))
+      )
+      val lazyDynamicParamValue = dynamicParamDeclaration.extractValueUnsafe(params)
 
       new ServiceInvoker {
         override def invoke(context: Context)(
@@ -1205,13 +1228,15 @@ object InterpreterSpec {
             collector: InvocationCollectors.ServiceInvocationCollector,
             componentUseCase: ComponentUseCase
         ): Future[AnyRef] = {
-          val value = params.extractOrEvaluateUnsafe[AnyRef](paramName, context)
-          Future.successful(value)
+          Future.successful(lazyDynamicParamValue.evaluate(context))
         }
       }
     }
 
-    private def dynamicParam(name: String) = ParameterWithExtractor.lazyMandatory[AnyRef](name)
+    private def createDynamicParamDeclaration(name: ParameterName) =
+      ParameterDeclaration
+        .lazyMandatory[AnyRef](name)
+        .withCreator()
 
     override def nodeDependencies: List[NodeDependency] = Nil
 

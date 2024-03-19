@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.SpecificDataValidationError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -39,7 +40,7 @@ object IllegalRequestResponseSlug {
 
   def apply(slug: String): ProcessCompilationError = {
     SpecificDataValidationError(
-      RequestResponseMetaData.slugName,
+      ParameterName(RequestResponseMetaData.slugName),
       s"Illegal slug: $slug. Slug should contain only unreserved url path characters: ${UrlUtils.unreservedUrlCharactersRegex}"
     )
   }

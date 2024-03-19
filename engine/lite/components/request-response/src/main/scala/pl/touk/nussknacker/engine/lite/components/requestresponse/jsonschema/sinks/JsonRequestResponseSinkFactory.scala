@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
@@ -22,9 +23,9 @@ import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleS
 
 object JsonRequestResponseSink {
 
-  final val SinkRawValueParamName: String           = "Value"
-  final val SinkRawEditorParamName: String          = "Raw editor"
-  final val SinkValidationModeParameterName: String = "Value validation mode"
+  final val SinkRawValueParamName: ParameterName           = ParameterName("Value")
+  final val SinkRawEditorParamName: ParameterName          = ParameterName("Raw editor")
+  final val SinkValidationModeParameterName: ParameterName = ParameterName("Value validation mode")
 
 }
 
@@ -42,7 +43,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
     validators = List(MandatoryParameterValidator)
   )
 
-  private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](SinkRawValueParamName)
+  private val rawValueParam = ParameterDeclaration.lazyMandatory[AnyRef](SinkRawValueParamName).withCreator()
 
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(
     editor =
@@ -66,7 +67,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: Nil, _) =>
-      NextParameters(validationModeParam :: rawValueParam.parameter :: Nil)
+      NextParameters(validationModeParam :: rawValueParam.createParameter() :: Nil)
     case TransformationStep(
           (SinkRawEditorParamName, DefinedEagerParameter(true, _)) ::
           (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
@@ -77,7 +78,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
         .getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
           val valueParam = SingleSchemaBasedParameter(
-            rawValueParam.parameter,
+            rawValueParam.createParameter(),
             new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName))
               .validate(_, schema)
           )

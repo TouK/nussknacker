@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   SingleInputDynamicComponent
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.SqlDataSourcesDefinition
@@ -18,13 +19,16 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
 
   override type State = DataSourceTableDefinition
 
-  private val tableNameParam: ParameterWithExtractor[String] = {
-    val possibleTableParamValues =
-      defs.tableDefinitions.map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
-    val parameter = Parameter[String](
-      name = TableNameParamName
-    ).copy(editor = Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues)))
-    ParameterWithExtractor(parameter)
+  private val tableNameParamDeclaration = {
+    val possibleTableParamValues = defs.tableDefinitions
+      .map(c => FixedExpressionValue(s"'${c.tableName}'", c.tableName))
+    ParameterDeclaration
+      .mandatory[String](tableNameParamName)
+      .withCreator(
+        modify = _.copy(editor =
+          Some(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: possibleTableParamValues))
+        )
+      )
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -32,11 +36,11 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
   ): this.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
-        parameters = tableNameParam.parameter :: Nil,
+        parameters = tableNameParamDeclaration.createParameter() :: Nil,
         errors = List.empty,
         state = None
       )
-    case TransformationStep((TableNameParamName, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
+    case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
       val selectedTable = getSelectedTableUnsafe(tableName)
       val typingResult  = selectedTable.schemaTypingResult
       val initializer   = new BasicContextInitializer(typingResult)
@@ -66,5 +70,5 @@ class SqlSourceFactory(defs: SqlDataSourcesDefinition) extends SingleInputDynami
 }
 
 object SqlSourceFactory {
-  val TableNameParamName: String = "Table"
+  val tableNameParamName: ParameterName = ParameterName("Table")
 }

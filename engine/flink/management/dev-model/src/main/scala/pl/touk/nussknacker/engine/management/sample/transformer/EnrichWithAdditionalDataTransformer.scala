@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{
   Context,
   CustomStreamTransformer,
@@ -31,15 +32,36 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
  */
 object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with JoinDynamicComponent[AnyRef] {
 
-  private val roleParameter = "role"
-
-  private val additionalDataValueParameter = "additional data value"
-
-  private val keyParameter = "key"
-
   private val roleValues = List("Events", "Additional data")
 
-  override def canHaveManyInputs: Boolean = true
+  private val roleParamDeclaration = ParameterDeclaration
+    .branchMandatory[String](ParameterName("role"))
+    .withCreator(modify =
+      _.copy(
+        editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))
+      )
+    )
+
+  private val keyParamDeclaration = ParameterDeclaration.branchLazyMandatory[String](ParameterName("key")).withCreator()
+
+  private val additionalDataValueParameterName = ParameterName("additional data value")
+
+  private val additionalDataValueParamDeclaration =
+    ParameterDeclaration
+      .lazyMandatory[AnyRef](additionalDataValueParameterName)
+      .withAdvancedCreator[(Map[String, ValidationContext], Map[String, String])](
+        create = { case (contexts, byBranch) =>
+          _.copy(additionalVariables =
+            right(byBranch)
+              .map(contexts)
+              .getOrElse(ValidationContext())
+              .localVariables
+              .mapValuesNow(AdditionalVariableProvidedInRuntime(_))
+          )
+        }
+      )
+
+  override val canHaveManyInputs: Boolean = true
 
   override type State = Nothing
 
@@ -47,53 +69,31 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       implicit nodeId: NodeId
   ): EnrichWithAdditionalDataTransformer.ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      NextParameters(
-        List(
-          Parameter[String](roleParameter).copy(
-            branchParam = true,
-            editor = Some(FixedValuesParameterEditor(roleValues.map(role => FixedExpressionValue(s"'$role'", role))))
-          ),
-          Parameter[String](keyParameter).copy(branchParam = true, isLazyParameter = true)
-        )
-      )
+      NextParameters(List(roleParamDeclaration.createParameter(), keyParamDeclaration.createParameter()))
     case TransformationStep(
-          (`roleParameter`, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) :: (
-            `keyParameter`,
-            _
-          ) :: Nil,
+          (roleParamName, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) ::
+          (keyParamName, _) :: Nil,
           _
-        ) =>
+        ) if roleParamName == roleParamDeclaration.parameterName && keyParamName == keyParamDeclaration.parameterName =>
       val error =
         if (byBranch.values.toList.sorted != roleValues.sorted)
           List(
             CustomNodeError(
               s"Has to be exactly one Event and Additional data, got: ${byBranch.values.mkString(", ")}",
-              Some(roleParameter)
+              Some(roleParamDeclaration.parameterName)
             )
           )
         else Nil
-      NextParameters(
-        List(
-          Parameter[Any](additionalDataValueParameter).copy(
-            additionalVariables = right(byBranch)
-              .map(contexts)
-              .getOrElse(ValidationContext())
-              .localVariables
-              .mapValuesNow(AdditionalVariableProvidedInRuntime(_)),
-            isLazyParameter = true
-          )
-        ),
-        error
-      )
-    case TransformationStep((`roleParameter`, FailedToDefineParameter) :: (`keyParameter`, _) :: Nil, _) =>
+      NextParameters(List(additionalDataValueParamDeclaration.createParameter(contexts, byBranch)), error)
+    case TransformationStep((roleParamName, FailedToDefineParameter) :: (keyParamName, _) :: Nil, _)
+        if roleParamName == roleParamDeclaration.parameterName && keyParamName == keyParamDeclaration.parameterName =>
       FinalResults(ValidationContext())
     case TransformationStep(
-          (`roleParameter`, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) :: (
-            `keyParameter`,
-            _
-          ) :: (`additionalDataValueParameter`, rightValue: DefinedSingleParameter) :: Nil,
+          (roleParamName, DefinedEagerBranchParameter(byBranch: Map[String, String] @unchecked, _)) ::
+          (keyParamName, _) ::
+          (`additionalDataValueParameterName`, rightValue: DefinedSingleParameter) :: Nil,
           _
-        ) =>
+        ) if roleParamName == roleParamDeclaration.parameterName && keyParamName == keyParamDeclaration.parameterName =>
       val outName = OutputVariableNameDependency.extract(dependencies)
       val leftCtx = left(byBranch).map(contexts).getOrElse(ValidationContext())
       FinalResults.forValidation(leftCtx)(_.withVariable(OutputVar.customNode(outName), rightValue.returnType))
@@ -108,10 +108,10 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): AnyRef = {
-    val role      = params.extractUnsafe[Map[String, String]](roleParameter)
-    val leftName  = left(role)
-    val rightName = right(role)
-    val key       = params.extractUnsafe[Map[String, LazyParameter[String]]](keyParameter)
+    val roleValue = roleParamDeclaration.extractValueUnsafe(params)
+    val leftName  = left(roleValue)
+    val rightName = right(roleValue)
+    val keyValue  = keyParamDeclaration.extractValueUnsafe(params)
     new FlinkCustomJoinTransformation {
       override def transform(
           inputs: Map[String, DataStream[Context]],
@@ -120,12 +120,12 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         val leftSide  = inputs(leftName.get)
         val rightSide = inputs(rightName.get)
         leftSide
-          .flatMap(context.lazyParameterHelper.lazyMapFunction(key(leftName.get)))
-          .connect(rightSide.flatMap(context.lazyParameterHelper.lazyMapFunction(key(rightName.get))))
+          .flatMap(context.lazyParameterHelper.lazyMapFunction(keyValue(leftName.get)))
+          .connect(rightSide.flatMap(context.lazyParameterHelper.lazyMapFunction(keyValue(rightName.get))))
           .keyBy((v: ValueWithContext[String]) => v.value, (v: ValueWithContext[String]) => v.value)
           .process(
             new EnrichWithAdditionalDataFunction(
-              params.extractUnsafe(additionalDataValueParameter),
+              additionalDataValueParamDeclaration.extractValueUnsafe(params),
               context.lazyParameterHelper
             )
           )

@@ -40,19 +40,19 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     .source(
       "my-source",
       KafkaUniversalName,
-      TopicParamName         -> s"'$inputTopic'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'$inputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
       "my-sink",
       KafkaUniversalName,
-      TopicParamName         -> s"'$outputTopic'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName       -> "",
-      SinkRawEditorParamName -> "false",
-      "first"                -> s"#input.first",
-      "last"                 -> "#input.last",
-      "age"                  -> "#input.age"
+      topicParamName.value         -> s"'$outputTopic'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "false",
+      "first"                      -> s"#input.first",
+      "last"                       -> "#input.last",
+      "age"                        -> "#input.age"
     )
 
   test("should read data with json payload on avro schema based topic") {

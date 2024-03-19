@@ -8,6 +8,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,11 +18,11 @@ import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  TopicParamName
+  schemaVersionParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schema.Address
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -41,7 +42,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator =
     new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
-      override protected def schemaRegistryClientFactory =
+      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
         MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
     }
 
@@ -64,8 +65,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'$topic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$topic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
@@ -95,15 +96,15 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'$topic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$topic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "city"   -> Expression.spel("'Lublin'"),
-      "street" -> Expression.spel("'Lipowa'"),
+    val parameterExpressions = Map(
+      ParameterName("city")   -> Expression.spel("'Lublin'"),
+      ParameterName("street") -> Expression.spel("'Lipowa'"),
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
@@ -118,8 +119,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .filter("filter", "#in != 'stop'")
       .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "in" -> Expression.spel("'some-text-id'")
+    val parameterExpressions = Map(
+      ParameterName("in") -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = run(fragment, scenarioTestData)

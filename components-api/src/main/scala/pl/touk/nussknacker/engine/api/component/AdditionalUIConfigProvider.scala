@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.engine.api.component
 
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithFixedValues
+}
 
 /**
  * Trait allowing the provision of UI configuration for components and scenario properties.
@@ -22,7 +26,7 @@ object AdditionalUIConfigProvider {
 }
 
 case class ComponentAdditionalConfig(
-    parameterConfigs: Map[String, ParameterAdditionalUIConfig],
+    parameterConfigs: Map[ParameterName, ParameterAdditionalUIConfig],
     icon: Option[String] = None,
     docsUrl: Option[String] = None,
     componentGroup: Option[ComponentGroupName] = None,

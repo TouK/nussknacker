@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableWithFixedValue, Parameter => ParameterDef}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.nodecompilation.LazyParameterCreationStrategy.{
   EvaluableLazyParameterStrategy,
   PostponedEvaluatorLazyParameterStrategy
@@ -42,7 +43,7 @@ class ParameterEvaluator(
   def evaluate(
       parameters: Iterable[CompiledParameter],
       context: Context
-  )(implicit nodeId: NodeId, metaData: MetaData): Map[String, AnyRef] = {
+  )(implicit nodeId: NodeId, metaData: MetaData): Map[ParameterName, AnyRef] = {
     parameters
       .map(p => p.name -> runtimeExpressionEvaluator.evaluateParameter(p, context).value)
       .toMap

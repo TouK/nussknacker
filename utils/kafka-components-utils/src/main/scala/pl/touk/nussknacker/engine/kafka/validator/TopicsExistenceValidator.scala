@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
 import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.kafka.CachedTopicsExistenceValidatorConfig.AutoCreateTopicPropertyName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
@@ -93,6 +94,6 @@ class TopicExistenceValidationException(topics: List[String])
     extends RuntimeException(
       s"Topic${if (topics.size > 1) "s" else ""} ${topics.mkString(", ")} ${if (topics.size > 1) "do" else "does"} not exist"
     ) {
-  def toCustomNodeError(nodeId: String, paramName: Option[String]) =
+  def toCustomNodeError(nodeId: String, paramName: Option[ParameterName]) =
     new CustomNodeError(nodeId, super.getMessage, paramName)
 }

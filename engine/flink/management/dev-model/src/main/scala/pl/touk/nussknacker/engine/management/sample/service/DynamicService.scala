@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.management.sample.service
 
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Params}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
 import java.io.File
@@ -21,14 +22,14 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
 
   private val fileWithDefinition = new File(Properties.tmpDir, "nk-dynamic-params.lst")
 
-  override def invoke(params: Params)(
+  override def invoke(eagerParameters: Map[ParameterName, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,
       metaData: MetaData,
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] = {
-    val toCollect = params.nameToValueMap.values.mkString(",")
+    val toCollect = eagerParameters.values.mkString(",")
     val res       = ().asInstanceOf[AnyRef]
     collector.collect(toCollect, Some(res))(Future.successful(res))
   }
@@ -38,7 +39,7 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
     val paramNames = if (fileWithDefinition.exists()) {
       FileUtils.readLines(fileWithDefinition, StandardCharsets.UTF_8).asScala.toList
     } else Nil
-    paramNames.map(name => Parameter[String](name).copy(isLazyParameter = true))
+    paramNames.map(name => Parameter[String](ParameterName(name)).copy(isLazyParameter = true))
   }
 
   override def returnType: typing.TypingResult = Typed[Unit]
