@@ -146,7 +146,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
     }
 
     result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
-      nonExistingActionRequest.actionName.toString
+      s"Couldn't find this action: ${nonExistingActionRequest.actionName.toString}"
 
   }
 
