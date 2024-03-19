@@ -7,8 +7,8 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
@@ -19,7 +19,7 @@ class NotificationApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {

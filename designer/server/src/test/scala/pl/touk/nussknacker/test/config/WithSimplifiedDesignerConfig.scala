@@ -80,20 +80,3 @@ object WithSimplifiedDesignerConfig {
   }
 
 }
-
-trait WithSimplifiedConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
-  this: WithSimplifiedDesignerConfig =>
-
-  implicit class UsersBasicAuth[T <: RequestSpecification](requestSpecification: T) {
-
-    def basicAuthAdmin(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("admin", "admin")
-
-    def basicAuthAllPermUser(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("allpermuser", "allpermuser")
-
-    def basicAuthUnknownUser(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
-  }
-
-}

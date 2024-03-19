@@ -4,15 +4,18 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestCategory
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithCategoryUsedMoreThanOnceDesignerConfig
+}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class UserApiHttpServiceCategoryUsedMoreThanOnceConfigSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithCategoryUsedMoreThanOnceDesignerConfig
-    with NuRestAssureExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
@@ -22,8 +25,7 @@ class UserApiHttpServiceCategoryUsedMoreThanOnceConfigSpec
       "return not duplicated categories" in {
         given()
           .when()
-          .auth()
-          .basic("admin", "admin")
+          .basicAuthAdmin()
           .get(s"$nuDesignerHttpAddress/api/user")
           .Then()
           .statusCode(200)
