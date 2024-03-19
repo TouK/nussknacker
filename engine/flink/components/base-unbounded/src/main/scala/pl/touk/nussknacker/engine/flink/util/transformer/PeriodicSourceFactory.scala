@@ -11,15 +11,8 @@ import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkContextInitializingFunction,
-  FlinkCustomNodeContext,
-  FlinkSource
-}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
-  StandardTimestampWatermarkHandler,
-  TimestampWatermarkHandler
-}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
 
 import java.time.Duration

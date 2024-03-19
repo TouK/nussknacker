@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 
-import scala.concurrent.duration.Duration
-
 object AggregateWindowsConfig {
   val Default = AggregateWindowsConfig(tumblingWindowsOffset = None)
 
