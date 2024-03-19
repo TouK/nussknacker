@@ -653,7 +653,7 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(actionName.value))
+        _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(s"${actionName.value} doesn't exist"))
         // TODO: add custom action params validation
         validator = new CustomActionValidator(manager.customActionsDefinitions)
         // TODO: remove this validation prosthesis
