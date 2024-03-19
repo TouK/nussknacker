@@ -28,7 +28,7 @@ class UserApiHttpServiceCategoryUsedMoreThanOnceSetupSpec
     with PatientScalaFutures {
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/category-used-more-than-once/category-used-more-than-once-designer.conf")
+    ConfigFactory.parseResources("config/business-cases/category-used-more-than-once-designer.conf")
   )
 
   "In designer setup with multiple processing types using the same category" - {

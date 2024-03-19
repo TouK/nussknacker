@@ -16,7 +16,7 @@ trait WithAccessControlCheckingDesignerConfig extends WithDesignerConfig {
   validateConsistency()
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/rich/access-control-checking-designer.conf")
+    ConfigFactory.parseResources("config/access-control-checking/multiple-category-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
