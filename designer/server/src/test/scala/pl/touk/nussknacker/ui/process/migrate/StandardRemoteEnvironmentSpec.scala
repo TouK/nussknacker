@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.migrate
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.parser
@@ -11,22 +10,22 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationErrors,
-  ValidationResult
-}
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{sampleFragmentName, sampleProcessName, validProcess}
 import pl.touk.nussknacker.test.utils.domain.TestFactory.{flinkProcessValidator, mapProcessingTypeDataProvider}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenarioDetailsEntity
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
+import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.NuVersion
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
+  MigrateScenarioRequest,
+  MigrateScenarioRequestV1,
+  MigrateScenarioRequestV2
+}
+import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -113,6 +112,78 @@ class StandardRemoteEnvironmentSpec
 
   }
 
+  it should "request to migrate valid scenario when remote Nu version is lower than local Nu version" in {
+    val localNuVersion  = BuildInfo.version
+    val remoteNuVersion = modifyMinorVersion(localNuVersion, _ - 1)
+    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+      remoteEnvironmentMock(nuVersion = remoteNuVersion)
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.sampleScenarioParameters.processingMode,
+        ProcessTestData.sampleScenarioParameters.engineSetupName,
+        ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        false
+      )
+    ) { res =>
+      res shouldBe Right(())
+      remoteEnvironment.lastlySentMigrateScenarioRequest match {
+        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1]
+        case _                            => fail("lastly sent migrate scenario request should be non empty")
+      }
+    }
+  }
+
+  it should "request to migrate valid scenario when remote Nu version is the same as local Nu version" in {
+    val localNuVersion = BuildInfo.version
+    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+      remoteEnvironmentMock(nuVersion = localNuVersion)
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.sampleScenarioParameters.processingMode,
+        ProcessTestData.sampleScenarioParameters.engineSetupName,
+        ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        false
+      )
+    ) { res =>
+      res shouldBe Right(())
+      remoteEnvironment.lastlySentMigrateScenarioRequest match {
+        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV2]
+        case _                            => fail("lastly sent migrate scenario request should be non empty")
+      }
+    }
+  }
+
+  it should "request to migrate valid scenario when remote Nu version is higher than local Nu version" in {
+    val localNuVersion  = BuildInfo.version
+    val remoteNuVersion = modifyMinorVersion(localNuVersion, _ + 1)
+    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+      remoteEnvironmentMock(nuVersion = remoteNuVersion)
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.sampleScenarioParameters.processingMode,
+        ProcessTestData.sampleScenarioParameters.engineSetupName,
+        ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        false
+      )
+    ) { res =>
+      res shouldBe Right(())
+      remoteEnvironment.lastlySentMigrateScenarioRequest match {
+        case Some(migrateScenarioRequest) =>
+          migrateScenarioRequest shouldBe a[MigrateScenarioRequestV2] // should be V2!!!
+        case _ => fail("lastly sent migrate scenario request should be non empty")
+      }
+    }
+  }
+
   it should "test migration" in {
     val remoteEnvironment = environmentForTestMigration(
       processes = ProcessTestData.validScenarioDetailsForMigrations :: Nil,
@@ -159,18 +230,15 @@ class StandardRemoteEnvironmentSpec
 
   }
 
-  private trait TriedToAddProcess {
-    var triedToAddProcess: Boolean     = false
-    var addedFragment: Option[Boolean] = None
+  private trait LastSentMigrateScenarioRequest {
+    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioRequest] = None
   }
 
-  private def statefulEnvironment(
-      expectedProcessDetails: ScenarioWithDetailsForMigrations,
-      expectedProcessCategory: String,
-      initialRemoteProcessList: List[ProcessName],
-      onMigrate: Future[UpdateScenarioCommand] => Unit
-  ) = new MockRemoteEnvironment with TriedToAddProcess {
-    private var remoteProcessList = initialRemoteProcessList
+  private def remoteEnvironmentMock(
+      nuVersion: String
+  ) = new MockRemoteEnvironment with LastSentMigrateScenarioRequest {
+    private val localNuVersion = BuildInfo.version
+    private val apiAdapter     = new MigrationApiAdapterService()
 
     override protected def request(
         uri: Uri,
@@ -185,56 +253,42 @@ class StandardRemoteEnvironmentSpec
         uri.toString.startsWith(s"$baseUri$relative") && method == m
       }
 
-      object Validation {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processValidation/${expectedProcessDetails.name}", POST)
+      object GetNuVersion {
+        def unapply(arg: (String, HttpMethod)): Boolean = is("/app/version", GET)
       }
 
-      object UpdateProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", PUT)
-      }
-
-      object CheckProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.name}", GET)
-      }
-
-      object AddProcess {
-        def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
-          if (is(s"/processes", POST)) {
-            parseBodyToJson(request).hcursor.downField("isFragment").as[Boolean].toOption
-          } else {
-            None
-          }
-        }
+      object Migrate {
+        def unapply(args: (String, HttpMethod)): Boolean = is("/migrate", POST)
       }
       // end helpers
 
       (uri.toString(), method) match {
-        case Validation() =>
-          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
+        case GetNuVersion() =>
+          Marshal(NuVersion(value = nuVersion)).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
-        case CheckProcess() if remoteProcessList contains expectedProcessDetails.name =>
-          Marshal(expectedProcessDetails).to[RequestEntity].map { entity =>
-            HttpResponse(OK, entity = entity)
-          }
-        case CheckProcess() =>
-          Future.successful(HttpResponse(NotFound))
-        case AddProcess(isFragment) =>
-          remoteProcessList = expectedProcessDetails.name :: remoteProcessList
-          triedToAddProcess = true
-          addedFragment = Some(isFragment)
+        case Migrate() =>
+          // FIXME: We should not reproduce endpoint logic here. Using apiAdapter here is needed if and only if when these two DTOs coincide.
+          apiAdapter.compareNuVersions(localNuVersion, nuVersion) match {
+            case Right(value) if value <= 0 =>
+              parseBodyToJson(request).as[MigrateScenarioRequestV2] match {
+                case Left(_) => lastlySentMigrateScenarioRequest = None
+                case Right(migrateScenarioRequestV2) =>
+                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV2)
+              }
+            case Right(_) =>
+              parseBodyToJson(request).as[MigrateScenarioRequestV1] match {
+                case Left(_) => lastlySentMigrateScenarioRequest = None
+                case Right(migrateScenarioRequestV1) =>
+                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1)
+              }
 
-          Marshal(ProcessTestData.validScenarioDetailsForMigrations).to[RequestEntity].map { entity =>
-            HttpResponse(OK, entity = entity)
+            case Left(_) => throw new AssertionError(s"Error while comparing Nu versions")
           }
-        case UpdateProcess() if remoteProcessList contains expectedProcessDetails.name =>
-          onMigrate(Unmarshal(request).to[UpdateScenarioCommand])
 
-          Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
+          Marshal(Right[NuDesignerError, Unit](())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
-        case UpdateProcess() =>
-          Future.failed(new Exception("Scenario does not exist"))
         case _ =>
           throw new AssertionError(s"Not expected $uri")
       }
@@ -296,6 +350,18 @@ class StandardRemoteEnvironmentSpec
       }
     }
 
+  }
+
+  private def modifyMinorVersion(version: String, modifier: Int => Int): String = {
+    val parts = version.split("\\.")
+
+    val major = parts(0).toInt
+    val minor = parts(1).toInt
+    val patch = parts(2).takeWhile(_.isDigit).toInt
+
+    val newMinor = modifier(minor)
+
+    s"$major.$newMinor.$patch${parts(2).dropWhile(_.isDigit)}"
   }
 
 }
