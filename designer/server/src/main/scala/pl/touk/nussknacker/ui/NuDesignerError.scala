@@ -8,7 +8,7 @@ object NuDesignerError {
 
 }
 
-sealed abstract class NuDesignerError(message: String, cause: Throwable) extends Exception(message, cause) {
+abstract class NuDesignerError(message: String, cause: Throwable) extends Exception(message, cause) {
   def this(message: String) = this(message, null)
 }
 

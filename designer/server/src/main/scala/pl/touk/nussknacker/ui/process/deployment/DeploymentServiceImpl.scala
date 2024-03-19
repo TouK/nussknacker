@@ -7,6 +7,7 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -14,12 +15,15 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
   CustomActionResult,
+  CustomActionValidationResult,
   DeploymentData,
   DeploymentId,
   ExternalDeploymentId,
   User
 }
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
@@ -36,7 +40,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.validation.{
+  CustomActionNonExistingError,
+  CustomActionValidationError,
+  CustomActionValidator,
+  UIProcessValidator
+}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -148,7 +157,7 @@ class DeploymentServiceImpl(
   private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
     DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
       case Valid(deploymentComment) => Future.successful(deploymentComment)
-      case Invalid(exc)             => Future.failed(ValidationError(exc.getMessage))
+      case Invalid(exc)             => Future.failed(CustomActionValidationError(exc.message))
     }
 
   protected def validateBeforeDeploy(
@@ -574,6 +583,7 @@ class DeploymentServiceImpl(
       ec: ExecutionContext
   ): Future[CustomActionResult] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+
     dbioRunner.run(
       for {
         // Fetch and validate process details
@@ -593,11 +603,23 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
+        _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(s"${actionName.value} doesn't exist"))
+        validator = new CustomActionValidator(manager.customActionsDefinitions)
+        // TODO: remove this validation prosthesis
+        _ <- validateActionCommand(actionCommand, validator)
         _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
+  }
+
+  private def validateActionCommand(actionCommand: CustomActionCommand, validator: CustomActionValidator) = {
+    val validationResult = validator.validateCustomActionParams(actionCommand)
+    val validationFlag   = validationResult
+    validationFlag match {
+      case Right(CustomActionValidationResult.Valid) => DBIOAction.successful(())
+      case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionCommand.actionName}"))
+    }
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
@@ -618,7 +640,3 @@ class DeploymentServiceImpl(
 }
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
-
-private case class CustomActionNonExisting(actionName: ScenarioActionName)
-    extends NotFoundError(s"$actionName is not existing")
-case class ValidationError(message: String) extends BadRequestError(message)

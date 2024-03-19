@@ -10,21 +10,23 @@ import scala.concurrent.Future
 class NuDesignerExposedApiHttpService(
     appApiHttpService: AppApiHttpService,
     componentsApiHttpService: ComponentApiHttpService,
-    userApiHttpService: UserApiHttpService,
+    managementApiHttpService: ManagementApiHttpService,
+    nodesApiHttpService: NodesApiHttpService,
     notificationApiHttpService: NotificationApiHttpService,
     scenarioActivityApiHttpService: ScenarioActivityApiHttpService,
     scenarioParametersHttpService: ScenarioParametersApiHttpService,
-    nodesApiHttpService: NodesApiHttpService
+    userApiHttpService: UserApiHttpService
 ) {
 
   private val apiEndpoints =
     appApiHttpService.serverEndpoints ++
       componentsApiHttpService.serverEndpoints ++
-      userApiHttpService.serverEndpoints ++
+      managementApiHttpService.serverEndpoints ++
+      nodesApiHttpService.serverEndpoints ++
       notificationApiHttpService.serverEndpoints ++
       scenarioActivityApiHttpService.serverEndpoints ++
       scenarioParametersHttpService.serverEndpoints ++
-      nodesApiHttpService.serverEndpoints
+      userApiHttpService.serverEndpoints
 
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 
