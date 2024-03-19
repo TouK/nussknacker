@@ -179,7 +179,7 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest shouldBe a[MigrateScenarioRequestV2] // should be V2!!!
+          migrateScenarioRequest shouldBe a[MigrateScenarioRequestV2]
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
