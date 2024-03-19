@@ -60,7 +60,7 @@ export interface Expression {
 }
 
 //TODO: Add other process properties...
-export type PropertiesType = NodeType & {
+export type PropertiesType = Omit<NodeType, "id"> & {
     type: "Properties";
     additionalFields: ProcessAdditionalFields;
 };

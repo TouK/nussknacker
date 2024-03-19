@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { flatten, isEmpty, isEqual, map, omit, pickBy, transform } from "lodash";
+import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
 import {
     ComponentDefinition,
     NodeId,
