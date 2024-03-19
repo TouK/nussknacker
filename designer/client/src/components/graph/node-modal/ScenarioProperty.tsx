@@ -17,7 +17,11 @@ interface Props {
     propertyName: string;
     propertyConfig: ScenarioPropertyConfig;
     editedNode: PropertiesType;
-    onChange: <K extends keyof PropertiesType>(property: K, newValue: PropertiesType[K], defaultValue?: PropertiesType[K]) => void;
+    onChange: <K extends keyof PropertiesType["additionalFields"]["properties"]>(
+        property: K,
+        newValue: PropertiesType["additionalFields"]["properties"][K],
+        defaultValue?: PropertiesType["additionalFields"]["properties"][K],
+    ) => void;
     renderFieldLabel: (paramName: string) => JSX.Element;
     readOnly: boolean;
     errors: NodeValidationError[];
