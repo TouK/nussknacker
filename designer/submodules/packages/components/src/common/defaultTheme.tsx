@@ -95,6 +95,13 @@ export const useDefaultTheme = (parent = {}): Theme => {
                             },
                         },
                     },
+                    MuiOutlinedInput: {
+                        styleOverrides: {
+                            input: {
+                                outline: "none",
+                            },
+                        },
+                    },
                     MuiFilledInput: {
                         styleOverrides: {
                             root: {
