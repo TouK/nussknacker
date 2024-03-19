@@ -125,9 +125,14 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
   }
 
   private def fromCommand(customActionCommand: CustomActionCommand): CustomActionRequest = {
+    val checkedParams = customActionCommand.params match {
+      case empty if empty.isEmpty => None
+      case full if full.nonEmpty  => Some(full)
+    }
+
     CustomActionRequest(
       customActionCommand.actionName,
-      Some(customActionCommand.params)
+      checkedParams
     )
   }
 
