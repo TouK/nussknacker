@@ -89,7 +89,8 @@ class ManagementApiHttpServiceSpec
                |            "message": "This field value is required and can not be blank",
                |            "description": "Please fill field value for this parameter",
                |            "fieldName": "param1",
-               |            "errorType": "SaveAllowed"
+               |            "errorType": "SaveAllowed",
+               |            "details": null
                |        }
                |    ],
                |    "validationPerformed": true

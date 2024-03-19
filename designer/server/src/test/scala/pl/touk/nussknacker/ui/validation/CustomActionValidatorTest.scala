@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
   CustomActionParameter,
@@ -98,7 +99,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
     }
 
     result.getOrElse(fail("should be right and have message")).toString shouldBe
-      "Invalid(Map(testParam1 -> List(EmptyMandatoryParameter(This field is required and can not be null,Please fill field for this parameter,testParam1,testCustomAction)), testParam2 -> List()))"
+      s"Invalid(Map(testParam1 -> List(EmptyMandatoryParameter(This field is required and can not be null,Please fill field for this parameter,${ParameterName("testParam1")},testCustomAction)), testParam2 -> List()))"
   }
 
   test("should fail(return left) when provided with incorrect param names") {

@@ -606,16 +606,20 @@ class DeploymentServiceImpl(
         _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(actionName.value))
         validator = new CustomActionValidator(manager.customActionsDefinitions)
         // TODO: remove this validation prosthesis
-        validationResult = validator.validateCustomActionParams(actionCommand)
-        validationFlag <- DBIOAction.from(Future.successful(validationResult))
-        _ <- validationFlag match {
-          case Right(CustomActionValidationResult.Valid) => DBIOAction.successful(())
-          case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionName}"))
-        }
+        _ <- validateActionCommand(actionCommand, validator)
         _ = checkIfCanPerformCustomActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
+  }
+
+  private def validateActionCommand(actionCommand: CustomActionCommand, validator: CustomActionValidator) = {
+    val validationResult = validator.validateCustomActionParams(actionCommand)
+    val validationFlag   = validationResult
+    validationFlag match {
+      case Right(CustomActionValidationResult.Valid) => DBIOAction.successful(())
+      case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionCommand.actionName}"))
+    }
   }
 
   private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
