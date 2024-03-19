@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -11,27 +12,25 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ScenarioTestExecutorService {
 
-  def testProcess[T](
+  def testProcess(
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T, // NU-1455: Variable encoding must be done on the engine, because of classLoader's problems
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]]
 
 }
 
 class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, deploymentManager: DeploymentManager)
     extends ScenarioTestExecutorService {
 
-  override def testProcess[T](
+  override def testProcess(
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
-      testResult      <- deploymentManager.test(id.name, resolvedProcess, scenarioTestData, variableEncoder)
+      testResult      <- deploymentManager.test(id.name, resolvedProcess, scenarioTestData)
     } yield testResult
   }
 

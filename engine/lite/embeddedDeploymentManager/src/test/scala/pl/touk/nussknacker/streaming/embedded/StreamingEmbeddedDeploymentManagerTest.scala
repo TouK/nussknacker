@@ -3,7 +3,7 @@ package pl.touk.nussknacker.streaming.embedded
 import io.circe.Json
 import io.circe.Json.{fromInt, fromString, obj}
 import org.scalatest.OptionValues
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{DisplayJsonWithEncoder, ProcessVersion}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class StreamingEmbeddedDeploymentManagerTest
     extends BaseStreamingEmbeddedDeploymentManagerTest
@@ -262,20 +262,24 @@ class StreamingEmbeddedDeploymentManagerTest
 
     val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
     val results = wrapInFailingLoader {
-      manager.test(name, scenario, testData, identity).futureValue
+      manager.test(name, scenario, testData).futureValue
     }
     results.nodeResults("sink") should have length 2
     val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")
     val invocationResults = results.invocationResults("sink")
     val id1               = idGenerator.nextContextId()
     val id2               = idGenerator.nextContextId()
+
     invocationResults.toSet shouldBe Set(
-      ExpressionInvocationResult(id1, "Key", null),
-      ExpressionInvocationResult(id1, sinkValueParamName.value, Map("message" -> "1", "other" -> "1").asJava),
-      ExpressionInvocationResult(id2, "Key", null),
-      ExpressionInvocationResult(id2, sinkValueParamName.value, Map("message" -> "2", "other" -> "1").asJava)
+      ExpressionInvocationResult(id1, "Key", Json.Null),
+      ExpressionInvocationResult(id1, sinkValueParamName.value, variable(Map("message" -> "1", "other" -> "1"))),
+      ExpressionInvocationResult(id2, "Key", Json.Null),
+      ExpressionInvocationResult(id2, sinkValueParamName.value, variable(Map("message" -> "2", "other" -> "1")))
     )
 
   }
+
+  private def variable(value: Map[String, String]): Json =
+    Json.obj("pretty" -> Json.fromFields(value.mapValuesNow(Json.fromString)))
 
 }

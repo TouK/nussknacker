@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -60,12 +61,11 @@ trait DeploymentManager extends AutoCloseable {
 
   def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit]
 
-  def test[T](
+  def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
-  ): Future[TestResults[T]]
+      scenarioTestData: ScenarioTestData
+  ): Future[TestResults[Json]]
 
   final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
       implicit freshnessPolicy: DataFreshnessPolicy

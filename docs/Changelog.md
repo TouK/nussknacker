@@ -53,7 +53,7 @@
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) Fix: fetching/parsing batch periodic json only when needed (stop parsing during status check)
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) Added: Decision Table component - detailed validation
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
-* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix test from file, revert 0d9b600
+* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file, revert 0d9b600
 
 1.13.2 (7 Mar 2024)
 ------------------------

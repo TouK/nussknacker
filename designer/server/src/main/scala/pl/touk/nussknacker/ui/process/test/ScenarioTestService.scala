@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.test
 
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -69,13 +70,12 @@ class ScenarioTestService(
     } yield rawTestData
   }
 
-  def performTest[T](
+  def performTest(
       idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
       rawTestData: RawScenarioTestData,
-      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
     for {
       preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
         .deserialize(rawTestData)
@@ -88,7 +88,6 @@ class ScenarioTestService(
         idWithName,
         canonical,
         scenarioTestData,
-        variableEncoder
       )
       _ <- {
         assertTestResultsAreNotTooBig(testResults)
@@ -96,20 +95,18 @@ class ScenarioTestService(
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
   }
 
-  def performTest[T](
+  def performTest(
       idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
       parameterTestData: TestSourceParameters,
-      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
-  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+  )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
     val canonical = toCanonicalProcess(scenarioGraph, idWithName.name, isFragment)
     for {
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
         ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
-        variableEncoder
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))

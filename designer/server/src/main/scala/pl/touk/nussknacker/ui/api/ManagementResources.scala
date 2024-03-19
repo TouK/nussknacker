@@ -7,11 +7,19 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Decoder, Encoder, parser}
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.testmode.TestProcess.{
+  ExceptionResult,
+  ExpressionInvocationResult,
+  ExternalInvocationResult,
+  ResultContext,
+  TestResults
+}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
@@ -22,10 +30,44 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUse
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
-import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ScenarioTestService, TestResultsJsonEncoder}
+import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
+
+object ManagementResources {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  import io.circe.syntax._
+
+  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
+
+  private implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
+
+    implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
+
+    // TODO: do we want more information here?
+    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
+    implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
+
+    override def apply(a: TestResults[Json]): Json = a match {
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
+        Json.obj(
+          "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
+          "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+          "externalInvocationResults" -> externalInvocationResults.map { case (node, list) =>
+            node -> list.sortBy(_.contextId)
+          }.asJson,
+          "exceptions" -> exceptions.sortBy(_.context.id).asJson
+        )
+    }
+
+  }
+
+}
 
 class ManagementResources(
     val processAuthorizer: AuthorizeProcess,
@@ -43,6 +85,8 @@ class ManagementResources(
     with FailFastCirceSupport
     with AuthorizeProcessDirectives
     with ProcessDirectives {
+
+  import ManagementResources._
 
   // TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
@@ -146,9 +190,8 @@ class ManagementResources(
                               scenarioGraph,
                               details.isFragment,
                               RawScenarioTestData(testDataContent),
-                              TestResultsJsonEncoder.testResultsVariableEncoder
                             )
-                            .map(TestResultsJsonEncoder.encode)
+                            .flatMap(results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)))
                         case Left(error) =>
                           Future.failed(ProcessUnmarshallingError(error.toString))
                       }
@@ -181,9 +224,10 @@ class ManagementResources(
                                   scenarioGraph,
                                   details.isFragment,
                                   rawScenarioTestData,
-                                  TestResultsJsonEncoder.testResultsVariableEncoder
                                 )
-                                .map(TestResultsJsonEncoder.encode)
+                                .flatMap(results =>
+                                  Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                                )
                           }
                         }
                       }
@@ -210,9 +254,8 @@ class ManagementResources(
                             testParametersRequest.scenarioGraph,
                             process.isFragment,
                             testParametersRequest.sourceParameters,
-                            TestResultsJsonEncoder.testResultsVariableEncoder
                           )
-                          .map(TestResultsJsonEncoder.encode)
+                          .flatMap(results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)))
                       }
                     }
                   }

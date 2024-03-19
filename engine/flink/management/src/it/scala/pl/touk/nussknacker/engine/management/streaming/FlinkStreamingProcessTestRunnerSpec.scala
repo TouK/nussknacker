@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
-
 import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
@@ -43,11 +42,11 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.test(processName, process, scenarioTestData, identity)) { r =>
+    whenReady(deploymentManager.test(processName, process, scenarioTestData)) { r =>
       r.nodeResults shouldBe Map(
-        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
+        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))))
       )
     }
   }
@@ -64,11 +63,14 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.test(ProcessName(processId), process, scenarioTestData, identity),
+        deploymentManager.test(ProcessName(processId), process, scenarioTestData),
         patienceConfig.timeout
       )
     }
     caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }
+
+  private def variable(value: String): Json =
+    Json.obj("pretty" -> Json.fromString(value))
 
 }

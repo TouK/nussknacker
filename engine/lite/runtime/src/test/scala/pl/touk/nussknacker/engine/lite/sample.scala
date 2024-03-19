@@ -4,6 +4,7 @@ import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{State, StateT, ValidatedNel}
 import com.typesafe.config.ConfigFactory
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -112,7 +113,7 @@ object sample {
       override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
     }
     val testRunner = new InterpreterTestRunner[StateType, SampleInput, AnyRef]
-    testRunner.runTest(modelData, scenarioTestData, scenario, identity)
+    testRunner.runTest(modelData, scenarioTestData, scenario)
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double])

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.development.manager
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import io.circe.Json
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{
   BaseModelData,
@@ -97,19 +97,18 @@ object MockableDeploymentManagerProvider {
     override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
       Future.successful(())
 
-    override def test[T](
+    override def test(
         name: ProcessName,
         canonicalProcess: CanonicalProcess,
         scenarioTestData: ScenarioTestData,
-        variableEncoder: Any => T
-    ): Future[TestProcess.TestResults[T]] = Future.successful {
+    ): Future[TestResults[Json]] = Future.successful {
       testResults
         .get()
         .getOrElse(
           name.value,
           throw new IllegalArgumentException(s"Tests results not mocked for scenario [${name.value}]")
         )
-        .asInstanceOf[TestProcess.TestResults[T]]
+        .asInstanceOf[TestResults[Json]]
     }
 
     override def resolve(

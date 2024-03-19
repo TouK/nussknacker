@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListener,
   ResultsCollectingListenerHolder,
+  TestInterpreterRunner,
   TestServiceInvocationCollector
 }
 
@@ -22,18 +24,16 @@ import scala.util.Using
 
 object FlinkTestMain extends FlinkRunner {
 
-  def run[T](
+  def run(
       modelData: ModelData,
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       configuration: Configuration,
-      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
-  ): TestResults[T] = {
+  ): TestResults[Json] = {
     val processVersion = ProcessVersion.empty.copy(processName =
       ProcessName("snapshot version")
     ) // testing process may be unreleased, so it has no version
-    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration)
-      .runTest(variableEncoder)
+    new FlinkTestMain(modelData, process, scenarioTestData, processVersion, DeploymentData.empty, configuration).runTest
   }
 
 }
@@ -47,8 +47,8 @@ class FlinkTestMain(
     val configuration: Configuration
 ) extends FlinkStubbedRunner {
 
-  def runTest[T](variableEncoder: Any => T): TestResults[T] =
-    Using.resource(ResultsCollectingListenerHolder.registerRun(variableEncoder)) { collectingListener =>
+  def runTest: TestResults[Json] =
+    Using.resource(ResultsCollectingListenerHolder.registerTestRun) { collectingListener =>
       val resultCollector = new TestServiceInvocationCollector(collectingListener.runId)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv
@@ -58,7 +58,7 @@ class FlinkTestMain(
       collectingListener.results
     }
 
-  protected def prepareRegistrar[T](
+  protected def prepareRegistrar(
       collectingListener: ResultsCollectingListener,
       scenarioTestData: ScenarioTestData
   ): FlinkProcessRegistrar = {

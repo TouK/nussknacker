@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -41,12 +42,11 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] = ???
+  ): Future[TestProcess.TestResults[Json]] = ???
 
   override def resolve(
       idWithName: ProcessIdWithName,

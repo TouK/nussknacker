@@ -72,6 +72,10 @@ object ResultsCollectingListenerHolder {
   // TODO: casting is not so nice, but currently no other idea...
   def resultsForId[T](id: TestRunId): TestResults[T] = results(id).asInstanceOf[TestResults[T]]
 
+  def registerTestRun: ResultsCollectingListener = synchronized {
+    registerRun(TestInterpreterRunner.testResultsVariableEncoder)
+  }
+
   def registerRun[T](variableEncoder: Any => T): ResultsCollectingListener = synchronized {
     val runId = TestRunId.generate
     results += (runId -> TestResults(Map(), Map(), Map(), List(), variableEncoder))

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -176,13 +177,12 @@ abstract class FlinkDeploymentManager(
     }
   }
 
-  override def test[T](
+  override def test(
       processName: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestResults[T]] = {
-    testRunner.test(canonicalProcess, scenarioTestData, variableEncoder)
+      scenarioTestData: ScenarioTestData
+  ): Future[TestResults[Json]] = {
+    testRunner.test(canonicalProcess, scenarioTestData)
   }
 
   override def customActions: List[CustomAction] = List.empty

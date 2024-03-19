@@ -6,6 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -57,24 +58,24 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val secondId   = contextIds.nextContextId()
 
     results.nodeResults("filter1").toSet shouldBe Set(
-      ResultContext(firstId, Map("input" -> Request1("a", "b"))),
-      ResultContext(secondId, Map("input" -> Request1("c", "d")))
+      ResultContext(firstId, Map("input" -> variable(Request1("a", "b")))),
+      ResultContext(secondId, Map("input" -> variable(Request1("c", "d"))))
     )
 
     results.invocationResults("filter1").toSet shouldBe Set(
-      ExpressionInvocationResult(firstId, "expression", true),
-      ExpressionInvocationResult(secondId, "expression", false)
+      ExpressionInvocationResult(firstId, "expression", variable(true)),
+      ExpressionInvocationResult(secondId, "expression", variable(false))
     )
 
     results.externalInvocationResults("processor").toSet shouldBe Set(
-      ExternalInvocationResult(firstId, "processorService", "processor service invoked")
+      ExternalInvocationResult(firstId, "processorService", variable("processor service invoked"))
     )
     results.externalInvocationResults("eagerProcessor").toSet shouldBe Set(
-      ExternalInvocationResult(firstId, "collectingEager", "static-s-dynamic-a")
+      ExternalInvocationResult(firstId, "collectingEager", variable("static-s-dynamic-a"))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
-      ExternalInvocationResult(firstId, "endNodeIID", Response(s"alamakota-$firstId"))
+      ExternalInvocationResult(firstId, "endNodeIID", variable(Response(s"alamakota-$firstId")))
     )
 
     RequestResponseSampleComponents.processorService.get().invocationsCount.get shouldBe 0
@@ -100,12 +101,13 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = runTest(process, scenarioTestData)
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(
-      ExpressionInvocationResult(secondId, "expression", true)
+      ExpressionInvocationResult(secondId, "expression", variable(true))
     )
+
     results.exceptions should have size 1
     results.exceptions.head.context shouldBe ResultContext(
       firstId,
-      Map("input" -> Request1("a", "b"))
+      Map("input" -> variable(Request1("a", "b")))
     )
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
     results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true] evaluation failed, message: / by zero"""
@@ -126,15 +128,14 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity
     )
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
-      ResultContext(firstId, Map("input" -> Request1("a", "b")))
+      ResultContext(firstId, Map("input" -> variable(Request1("a", "b"))))
     )
 
     results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
-      ExternalInvocationResult(firstId, "endNodeIID", "a withRandomString")
+      ExternalInvocationResult(firstId, "endNodeIID", variable("a withRandomString"))
     )
 
   }
@@ -171,13 +172,16 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
     val sourceContextId = contextIdGenForFirstSource(process).nextContextId()
     results.nodeResults("union1") should have size 2
+
     val unionContextIds = results.nodeResults("union1").map(_.id)
     unionContextIds should contain only (s"$sourceContextId-$branch1NodeId", s"$sourceContextId-$branch2NodeId")
     unionContextIds should contain theSameElementsAs unionContextIds.toSet
     results.nodeResults("union1") shouldBe results.nodeResults("collect1")
+
     val endNodeIdInvocationResult = results.externalInvocationResults("endNodeIID").loneElement
     endNodeIdInvocationResult.contextId shouldBe contextIdGenForNodeId(process, "collect1").nextContextId()
-    endNodeIdInvocationResult.value.asInstanceOf[java.util.List[_]] should contain only ("aa", "bb")
+
+    endNodeIdInvocationResult.value shouldBe variable(List("bb", "aa"))
   }
 
   private def createTestRecord(field1: String, field2: String) = {
@@ -190,13 +194,25 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   private def contextIdGenForNodeId(scenario: CanonicalProcess, nodeId: String): IncContextIdGenerator =
     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, nodeId)
 
-  private def runTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
+  private def runTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Json] = {
     FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
       scenarioTestData = scenarioTestData,
-      variableEncoder = identity,
     )
+  }
+
+  private def variable(value: Any): Json = {
+    def toJson(v: Any): Json = v match {
+      case int: Int                               => Json.fromInt(int)
+      case str: String                            => Json.fromString(str)
+      case boolean: Boolean                       => Json.fromBoolean(boolean)
+      case list: List[_]                          => Json.fromValues(list.map(toJson))
+      case displayable: DisplayJsonWithEncoder[_] => displayable.asJson
+      case any                                    => Json.fromString(any.toString)
+    }
+
+    Json.obj("pretty" -> toJson(value))
   }
 
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
@@ -67,8 +68,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
     val testResultVars = results.nodeResults("end").head.variables
-    testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
-    testResultVars.get("inputMeta") shouldBe Some(inputMeta)
+    testResultVars("extractedTimestamp") shouldBe variable(expectedTimestamp)
+    testResultVars("inputMeta") shouldBe variable(inputMeta)
   }
 
   test("should test source emitting event extending DisplayWithEncoder") {
@@ -106,9 +107,20 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
         process,
         scenarioTestData,
         FlinkTestConfiguration.configuration(),
-        identity
       )
     }
+  }
+
+  private def variable(value: Any) = {
+    val json = value match {
+      case im: InputMeta[_] =>
+        new InputMetaToJson()
+          .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+          .apply(im)
+      case ln: Long => Json.fromLong(ln)
+      case any      => Json.fromString(any.toString)
+    }
+    Json.obj("pretty" -> json)
   }
 
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.cache
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext.Implicits._
@@ -74,13 +74,12 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
   override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
     delegate.cancel(name, deploymentId, user)
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] =
-    delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
+      scenarioTestData: ScenarioTestData
+  ): Future[TestProcess.TestResults[Json]] =
+    delegate.test(name, canonicalProcess, scenarioTestData)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
 

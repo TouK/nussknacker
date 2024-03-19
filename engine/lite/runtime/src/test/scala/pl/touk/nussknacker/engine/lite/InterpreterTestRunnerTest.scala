@@ -20,6 +20,8 @@ import scala.jdk.CollectionConverters._
 
 class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
+  import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+
   test("should test single source scenario") {
     val scenario = ScenarioBuilder
       .streamingLite("scenario1")
@@ -38,27 +40,29 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results = sample.test(scenario, scenarioTestData)
 
     results.nodeResults("start") shouldBe List(
-      ResultContext("A", Map("input" -> 2)),
-      ResultContext("B", Map("input" -> 1)),
-      ResultContext("C", Map("input" -> 3))
+      ResultContext("A", Map("input" -> variable(2))),
+      ResultContext("B", Map("input" -> variable(1))),
+      ResultContext("C", Map("input" -> variable(3)))
     )
+
     results.nodeResults("sum") shouldBe List(
-      ResultContext("A", Map("input" -> 2, "out1" -> 2)),
-      ResultContext("C", Map("input" -> 3, "out1" -> 3))
+      ResultContext("A", Map("input" -> 2, "out1" -> 2).mapValuesNow(variable)),
+      ResultContext("C", Map("input" -> 3, "out1" -> 3).mapValuesNow(variable))
     )
+
     results.nodeResults("end") shouldBe List(
-      ResultContext("A", Map("input" -> 2, "out1" -> 2, "sum" -> 2)),
-      ResultContext("C", Map("input" -> 3, "out1" -> 3, "sum" -> 5))
+      ResultContext("A", Map("input" -> 2, "out1" -> 2, "sum" -> 2).mapValuesNow(variable)),
+      ResultContext("C", Map("input" -> 3, "out1" -> 3, "sum" -> 5).mapValuesNow(variable))
     )
 
     results.invocationResults("sum") shouldBe List(
-      ExpressionInvocationResult("A", "value", 2),
-      ExpressionInvocationResult("C", "value", 3)
+      ExpressionInvocationResult("A", "value", variable(2)),
+      ExpressionInvocationResult("C", "value", variable(3))
     )
 
     results.externalInvocationResults("end") shouldBe List(
-      ExternalInvocationResult("A", "end", "2:2.0"),
-      ExternalInvocationResult("C", "end", "3:5.0")
+      ExternalInvocationResult("A", "end", variable("2:2.0")),
+      ExternalInvocationResult("C", "end", variable("3:5.0"))
     )
   }
 
@@ -80,16 +84,16 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val results = sample.test(scenario, scenarioTestData)
 
     results.nodeResults("source1") shouldBe List(
-      ResultContext("A", Map("input" -> 1)),
-      ResultContext("B", Map("input" -> 2))
+      ResultContext("A", Map("input" -> variable(1))),
+      ResultContext("B", Map("input" -> variable(2)))
     )
-    results.nodeResults("source2") shouldBe List(ResultContext("C", Map("input" -> 3)))
+    results.nodeResults("source2") shouldBe List(ResultContext("C", Map("input" -> variable(3))))
 
     results.externalInvocationResults("end1") shouldBe List(
-      ExternalInvocationResult("A", "end1", 1),
-      ExternalInvocationResult("B", "end1", 2)
+      ExternalInvocationResult("A", "end1", variable(1)),
+      ExternalInvocationResult("B", "end1", variable(2))
     )
-    results.externalInvocationResults("end2") shouldBe List(ExternalInvocationResult("C", "end2", 3))
+    results.externalInvocationResults("end2") shouldBe List(ExternalInvocationResult("C", "end2", variable(3)))
   }
 
   test("should accept and run scenario test with parameters") {
@@ -109,10 +113,12 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ResultContext(
         "some-ctx-id",
         Map(
-          "input" -> SampleInputWithListAndMap(
-            "some-ctx-id",
-            List(1L, 2L, 3L).asJava,
-            Map[String, Any]("unoDosTres" -> 123).asJava
+          "input" -> variable(
+            SampleInputWithListAndMap(
+              "some-ctx-id",
+              List(1L, 2L, 3L).asJava,
+              Map[String, Any]("unoDosTres" -> 123).asJava
+            )
           )
         )
       )
@@ -142,18 +148,24 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       ResultContext(
         "some-ctx-id",
         Map(
-          "input" -> SampleInputWithListAndMap(
-            "some-ctx-id",
-            List(1L, 2L, 3L, 4L, 5L).asJava,
-            Map[String, Any]("extraValue" -> 100).asJava
+          "input" -> variable(
+            SampleInputWithListAndMap(
+              "some-ctx-id",
+              List(1L, 2L, 3L, 4L, 5L).asJava,
+              Map[String, Any]("extraValue" -> 100).asJava
+            )
           )
         )
       )
     )
+
     results.invocationResults("sumNumbers") shouldBe List(
-      ExpressionInvocationResult("some-ctx-id", "value", List[java.lang.Long](1, 2, 3, 4, 5).asJava)
+      ExpressionInvocationResult("some-ctx-id", "value", variable(List(1, 2, 3, 4, 5)))
     )
-    results.externalInvocationResults("end") shouldBe List(ExternalInvocationResult("some-ctx-id", "end", 120))
+
+    results.externalInvocationResults("end") shouldBe List(
+      ExternalInvocationResult("some-ctx-id", "end", variable(120))
+    )
   }
 
   test("should handle fragment test parameters in test") {
@@ -168,12 +180,12 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = sample.test(fragment, scenarioTestData)
 
-    results.nodeResults("fragment1") shouldBe List(ResultContext("fragment1", Map("in" -> "some-text-id")))
+    results.nodeResults("fragment1") shouldBe List(ResultContext("fragment1", Map("in" -> variable("some-text-id"))))
     results.nodeResults("fragmentEnd") shouldBe List(
-      ResultContext("fragment1", Map("in" -> "some-text-id", "out" -> "some-text-id"))
+      ResultContext("fragment1", Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id")))
     )
     results.invocationResults("fragmentEnd") shouldBe List(
-      ExpressionInvocationResult("fragment1", "out", "some-text-id")
+      ExpressionInvocationResult("fragment1", "out", variable("some-text-id"))
     )
     results.exceptions shouldBe empty
   }
@@ -189,20 +201,32 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = sample.test(fragment, scenarioTestData)
 
-    results.nodeResults("fragment1") shouldBe List(ResultContext("fragment1", Map("in" -> 0)))
-    results.nodeResults("fragmentEnd") shouldBe List(ResultContext("fragment1", Map("in" -> 0)))
+    results.nodeResults("fragment1") shouldBe List(ResultContext("fragment1", Map("in" -> variable(0))))
+    results.nodeResults("fragmentEnd") shouldBe List(ResultContext("fragment1", Map("in" -> variable(0))))
     results.exceptions.map(e => (e.context, e.nodeId, e.throwable.getMessage)) shouldBe List(
       (
-        ResultContext("fragment1", Map("in" -> 0)),
+        ResultContext("fragment1", Map("in" -> variable(0))),
         Some("fragmentEnd"),
         "Expression [4 / #in] evaluation failed, message: / by zero"
       ),
       (
-        ResultContext("fragment1", Map("in" -> 0)),
+        ResultContext("fragment1", Map("in" -> variable(0))),
         Some("fragmentEnd"),
         "Expression [8 / #in] evaluation failed, message: / by zero"
       )
     )
+  }
+
+  private def variable(value: Any): Json = {
+    def toJson(v: Any): Json = v match {
+      case int: Int      => Json.fromInt(int)
+      case lng: Long     => Json.fromLong(lng)
+      case str: String   => Json.fromString(str)
+      case list: List[_] => Json.fromValues(list.map(toJson))
+      case any           => Json.fromString(any.toString)
+    }
+
+    Json.obj("pretty" -> toJson(value))
   }
 
 }

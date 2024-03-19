@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.lite.manager
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment.BaseDeploymentManager
@@ -17,12 +18,11 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
 
   protected implicit def executionContext: ExecutionContext
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T,
-  ): Future[TestProcess.TestResults[T]] = {
+  ): Future[TestProcess.TestResults[Json]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
         // TODO: handle scenario testing in RR as well
@@ -30,7 +30,6 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
           modelData.asInvokableModelData,
           scenarioTestData,
           canonicalProcess,
-          variableEncoder
         )
       }
     }

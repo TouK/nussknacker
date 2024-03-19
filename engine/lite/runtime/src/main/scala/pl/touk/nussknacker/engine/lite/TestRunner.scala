@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.{Id, Monad, ~>}
+import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source}
@@ -23,12 +24,11 @@ import scala.language.higherKinds
 
 trait TestRunner {
 
-  def runTest[T](
+  def runTest(
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
       process: CanonicalProcess,
-      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
-  ): TestResults[T]
+  ): TestResults[Json]
 
 }
 
@@ -36,15 +36,14 @@ trait TestRunner {
 class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer: EffectUnwrapper, Input, Res <: AnyRef]
     extends TestRunner {
 
-  def runTest[T](
+  def runTest(
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
       process: CanonicalProcess,
-      variableEncoder: Any => T
-  ): TestResults[T] = {
+  ): TestResults[Json] = {
 
     // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
+    val collectingListener = ResultsCollectingListenerHolder.registerTestRun
     // in tests we don't send metrics anywhere
     val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime

@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
   AfterRunningActionName,
   AfterRunningStatus,
@@ -159,12 +160,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     Future.unit
   }
 
-  override def test[T](
+  override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      variableEncoder: Any => T
-  ): Future[TestProcess.TestResults[T]] = ???
+  ): Future[TestProcess.TestResults[Json]] = ???
 
   override def getProcessStates(
       name: ProcessName
