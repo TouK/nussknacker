@@ -268,7 +268,7 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
-          // FIXME: We should not reproduce endpoint logic here. Using apiAdapter here is needed if and only if when these two DTOs coincide.
+          // FIXME: We should not reproduce endpoint logic here. Using apiAdapter here is needed if and only if these two DTOs coincide.
           apiAdapter.compareNuVersions(localNuVersion, nuVersion) match {
             case Right(value) if value <= 0 =>
               parseBodyToJson(request).as[MigrateScenarioRequestV2] match {
