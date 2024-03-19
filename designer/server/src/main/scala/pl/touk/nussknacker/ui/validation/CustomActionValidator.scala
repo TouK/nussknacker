@@ -5,6 +5,7 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
   CustomActionParameter,
@@ -72,7 +73,12 @@ class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
               param.validators
                 .getOrElse(Nil)
                 .map {
-                  _.isValid(paramName = k, expression = Expression.spel("None"), value = Some(v), label = None)
+                  _.isValid(
+                    paramName = ParameterName(k),
+                    expression = Expression.spel("None"),
+                    value = Some(v),
+                    label = None
+                  )
                 }
                 .collect { case Invalid(i) => i }
             case None =>
