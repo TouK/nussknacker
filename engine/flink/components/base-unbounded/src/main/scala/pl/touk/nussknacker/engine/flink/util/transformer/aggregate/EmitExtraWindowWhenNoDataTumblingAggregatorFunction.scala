@@ -9,12 +9,11 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{Context => NkContext, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{NodeId, ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.StateHolder
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
-import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.language.higherKinds
 

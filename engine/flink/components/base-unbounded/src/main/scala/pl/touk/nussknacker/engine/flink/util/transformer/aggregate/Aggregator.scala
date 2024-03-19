@@ -2,12 +2,11 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.functions.AggregateFunction
-import pl.touk.nussknacker.engine.api.{Hidden, LazyParameter}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.{Hidden, LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyEnricher
-import pl.touk.nussknacker.engine.api.NodeId
 
 /*
   This class serves two purposes:

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.join
 
-import cats.Id
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
