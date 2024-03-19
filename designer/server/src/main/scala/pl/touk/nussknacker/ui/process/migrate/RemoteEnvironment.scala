@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
@@ -22,7 +22,11 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.{BuildInfoDto, NuVersion}
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequest, MigrateScenarioRequestV2}
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
+  MigrateScenarioRequest,
+  MigrateScenarioRequestV1,
+  MigrateScenarioRequestV2
+}
 import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
@@ -30,6 +34,7 @@ import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.BuildInfoDto._
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -238,6 +243,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         versionComparisonResult
       )
 
+      versionTag = migrateScenarioRequest match {
+        case _: MigrateScenarioRequestV1 => "V1"
+        case _: MigrateScenarioRequestV2 => "V2"
+      }
+
       _ <- Future.successful(logger.debug("Migrating scenario {}", migrateScenarioRequest.toString))
 
       res <- invokeForSuccess(
@@ -245,7 +255,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         List("migrate"),
         Query.Empty,
         HttpEntity(migrateScenarioRequest.asJson.noSpaces),
-        List.empty
+        List(
+          RawHeader("X-MigrateDtoVersion", versionTag)
+        ) // Only for testing purposes, see: StandardRemoteEnvironmentSpec#remotgeEnvironmentMock
       )
 
     } yield res

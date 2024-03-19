@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.parser
@@ -268,22 +269,24 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
-          // FIXME: We should not reproduce endpoint logic here. Using apiAdapter here is needed if and only if these two DTOs coincide.
-          apiAdapter.compareNuVersions(localNuVersion, nuVersion) match {
-            case Right(value) if value <= 0 =>
-              parseBodyToJson(request).as[MigrateScenarioRequestV2] match {
-                case Left(_) => lastlySentMigrateScenarioRequest = None
-                case Right(migrateScenarioRequestV2) =>
-                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV2)
-              }
-            case Right(_) =>
+          header.find(_.name() == "X-MigrateDtoVersion") match {
+            case Some(RawHeader("X-MigrateDtoVersion", "V1")) =>
               parseBodyToJson(request).as[MigrateScenarioRequestV1] match {
-                case Left(_) => lastlySentMigrateScenarioRequest = None
                 case Right(migrateScenarioRequestV1) =>
                   lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1)
+                case Left(_) => lastlySentMigrateScenarioRequest = None
               }
-
-            case Left(_) => throw new AssertionError(s"Error while comparing Nu versions")
+            case Some(RawHeader("X-MigrateDtoVersion", "V2")) =>
+              parseBodyToJson(request).as[MigrateScenarioRequestV2] match {
+                case Right(migrateScenarioRequestV2) =>
+                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV2)
+                case Left(_) => lastlySentMigrateScenarioRequest = None
+              }
+            case Some(unexpectedHttpHeader) =>
+              throw new AssertionError(
+                s"Unexpected HTTP header: (${unexpectedHttpHeader.name()}, ${unexpectedHttpHeader.value()})"
+              )
+            case None => throw new AssertionError("Missing HTTP header: X-MigrateDtoVersion")
           }
 
           Marshal(Right[NuDesignerError, Unit](())).to[RequestEntity].map { entity =>
