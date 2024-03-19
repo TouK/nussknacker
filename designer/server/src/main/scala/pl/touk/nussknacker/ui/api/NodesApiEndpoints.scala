@@ -336,6 +336,8 @@ object NodesApiEndpoints {
     implicit val parametersValidationRequestDtoEncoder: Encoder[ParametersValidationRequestDto] =
       Encoder.encodeJson.contramap[ParametersValidationRequestDto](_ => throw new IllegalStateException)
 
+    private implicit def listSchema[T: Schema]: Typeclass[List[T]] = Schema.schemaForIterable[T, List]
+
     @derive(schema, encoder, decoder)
     final case class ParametersValidationResultDto(
         validationErrors: List[NodeValidationError],
