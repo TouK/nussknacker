@@ -39,7 +39,7 @@ const StyledToolbox = styled("div")(({ theme }) => ({
 
     ".tree-view_children": {
         backgroundColor: theme.palette.background.paper,
-        margin: theme.spacing(0.5, 0, 0.5, 4),
+        margin: theme.spacing(0.5, 0, 0.5, 0),
         "&:hover": {
             backgroundColor: theme.palette.background.paper,
             color: theme.custom.colors.secondaryColor,
@@ -60,7 +60,6 @@ const StyledToolbox = styled("div")(({ theme }) => ({
         },
     },
     ".toolWrapper": {
-        backgroundColor: theme.palette.background.paper,
         fontWeight: 400,
         whiteSpace: "nowrap",
         overflow: "hidden",
@@ -69,7 +68,8 @@ const StyledToolbox = styled("div")(({ theme }) => ({
 
     ".tool": {
         ...theme.typography.body2,
-        padding: theme.spacing(0.75, 0.5),
+        paddingLeft: theme.spacing(4),
+        padding: theme.spacing(0.75, 0.5, 0.75, 4),
         border: "none",
         borderRight: 0,
         "&.disabled": {
@@ -83,7 +83,7 @@ const StyledToolbox = styled("div")(({ theme }) => ({
             },
 
             "&:hover": {
-                backgroundColor: theme.palette.background.paper,
+                backgroundColor: theme.palette.action.hover,
                 color: lighten(theme.palette.text.primary, 0.2),
             },
         },
