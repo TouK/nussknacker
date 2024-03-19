@@ -4,7 +4,7 @@ import io.circe.{Decoder, Encoder, Json, parser}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -21,12 +21,12 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
         ProcessAdditionalFields(Some("a"), Map("field1" -> "value1"), StreamMetaData.typeName)
       ),
       List(
-        FragmentInputDefinition("proc1", List(FragmentParameter("param1", FragmentClazzRef[String]))),
+        FragmentInputDefinition("proc1", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]))),
         CustomNode(
           "id",
           Some("out1"),
           "typ1",
-          List(NodeParameter("name1", Expression.spel("11"))),
+          List(NodeParameter(ParameterName("name1"), Expression.spel("11"))),
           Some(UserDefinedAdditionalNodeFields(Some("desc"), None))
         )
       ),

@@ -35,10 +35,23 @@ export type GlobalValidationError = {
 
 type ErrorType = "RenderNotAllowed" | "SaveNotAllowed" | "SaveAllowed";
 
+type CellError = {
+    columnName: string;
+    rowIndex: number;
+    errorMessage: string;
+};
+type TabularDataDefinitionParserErrorDetails = {
+    cellErrors: CellError[];
+    type: "TabularDataDefinitionParserErrorDetails";
+};
+
+type Details = TabularDataDefinitionParserErrorDetails;
+
 export interface NodeValidationError {
     fieldName: string;
     message: string;
     description: string;
     typ: string;
+    details?: Details;
     errorType: ErrorType;
 }

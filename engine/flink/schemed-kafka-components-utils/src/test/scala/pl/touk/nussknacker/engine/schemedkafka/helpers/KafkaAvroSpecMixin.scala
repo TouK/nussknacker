@@ -121,28 +121,28 @@ trait KafkaAvroSpecMixin
       source: SourceAvroParam,
       sink: UniversalSinkParam,
       filterExpression: Option[String] = None,
-      sourceTopicParamValue: String => String = topic => s"'${topic}'"
+      sourceTopicParamValue: String => String = topic => s"'$topic'"
   ): CanonicalProcess = {
     import spel.Implicits._
-    val sourceParams = List(TopicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {
+    val sourceParams = List(topicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {
       case UniversalSourceParam(_, version) =>
-        List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+        List(schemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case UniversalSourceWithKeySupportParam(_, version) =>
-        List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+        List(schemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
     })
 
     val baseSinkParams: List[(String, expression.Expression)] = List(
-      TopicParamName         -> s"'${sink.topic}'",
-      SchemaVersionParamName -> formatVersionParam(sink.versionOption),
-      SinkKeyParamName       -> sink.key
+      topicParamName.value         -> s"'${sink.topic}'",
+      schemaVersionParamName.value -> formatVersionParam(sink.versionOption),
+      sinkKeyParamName.value       -> sink.key
     )
 
     val editorParams: List[(String, expression.Expression)] = List(
-      SinkRawEditorParamName -> s"${sink.validationMode.isDefined}"
+      sinkRawEditorParamName.value -> s"${sink.validationMode.isDefined}"
     )
 
     val validationParams: List[(String, expression.Expression)] =
-      sink.validationMode.map(validation => SinkValidationModeParameterName -> validationModeParam(validation)).toList
+      sink.validationMode.map(validation => sinkValidationModeParamName.value -> validationModeParam(validation)).toList
 
     val builder = ScenarioBuilder
       .streaming(s"avro-test")
@@ -150,7 +150,7 @@ trait KafkaAvroSpecMixin
       .source(
         "start",
         source.sourceType,
-        sourceParams: _*
+        sourceParams.map { case (paramName, expr) => (paramName.value, expr) }: _*
       )
 
     val filteredBuilder = filterExpression
@@ -265,7 +265,7 @@ trait KafkaAvroSpecMixin
       new UniversalSinkParam(
         topicConfig.output,
         version,
-        (SinkValueParamName -> asSpelExpression(value)) :: Nil,
+        (sinkValueParamName.value -> asSpelExpression(value)) :: Nil,
         key,
         validationMode
       )
@@ -293,8 +293,8 @@ trait KafkaAvroSpecMixin
   ): Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
     val parameterValues = Params(
       Map(
-        KafkaUniversalComponentTransformer.TopicParamName         -> topic,
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption)
+        KafkaUniversalComponentTransformer.topicParamName         -> topic,
+        KafkaUniversalComponentTransformer.schemaVersionParamName -> versionOptionToString(versionOption)
       )
     )
     createValidatedSource(sourceFactory, parameterValues)

@@ -5,7 +5,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
@@ -219,6 +220,8 @@ object NodesApiEndpoints {
 
   object Dtos {
 
+    implicit lazy val parameterNameSchema: Schema[ParameterName] = Schema.string
+
     case class TypingResultInJson(value: Json)
 
     object TypingResultInJson {
@@ -406,15 +409,18 @@ object NodesApiEndpoints {
     }
 
     def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
-      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+      implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
+      implicit val typeDecoder: Decoder[TypingResult]              = prepareTypingResultDecoder(modelData)
       implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
         deriveConfiguredDecoder[TestSourceParameters]
       deriveConfiguredDecoder[TestFromParametersRequest]
     }
 
+    implicit val parameterNameCodec: KeyEncoder[ParameterName] = KeyEncoder.encodeKeyString.contramap(_.value)
+
     @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
         sourceId: String,
-        parameterExpressions: Map[String, Expression]
+        parameterExpressions: Map[ParameterName, Expression]
     )
 
     @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(

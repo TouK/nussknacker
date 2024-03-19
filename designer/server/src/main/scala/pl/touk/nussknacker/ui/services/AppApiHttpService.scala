@@ -48,8 +48,11 @@ class AppApiHttpService(
             if (set.isEmpty) {
               success(HealthCheckProcessSuccessResponseDto())
             } else {
-              logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
-              logger.debug(s"Scenarios with status PROBLEM: $set")
+              if (logger.underlying.isDebugEnabled) {
+                logger.debug(s"Scenarios with status PROBLEM: $set")
+              } else {
+                logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
+              }
               businessError(
                 HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),

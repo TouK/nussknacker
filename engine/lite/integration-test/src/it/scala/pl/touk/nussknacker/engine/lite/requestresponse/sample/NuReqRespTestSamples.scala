@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.lite.requestresponse.sample
 
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkRawEditorParamName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.sinkRawEditorParamName
 
 object NuReqRespTestSamples {
 
@@ -33,7 +33,7 @@ object NuReqRespTestSamples {
       )
     )
     .source("source", "request")
-    .emptySink("sink", "response", SinkRawEditorParamName -> "false", "pong" -> "#input.ping")
+    .emptySink("sink", "response", sinkRawEditorParamName.value -> "false", "pong" -> "#input.ping")
 
   def jsonPingMessage(msg: String) = s"""{"ping":"$msg"}"""
   def jsonPongMessage(msg: String) = s"""{"pong":"$msg"}"""

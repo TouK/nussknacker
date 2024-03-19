@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.everit.json.schema.{CombinedSchema, Schema}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -78,27 +79,27 @@ class JsonSchemaRequestResponseSource(
       )
   }
 
-  override def parametersToTestData(params: Map[String, AnyRef]): Any = {
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): Any = {
     handleSchemaWithUnionTypes(params)
   }
 
   // TODO handle anyOf, allOf, oneOf schemas better than 'first matched schema' - now it works kinda' like "anyOf" for all combined schemas
   // 1. Improve editor to handle display of combined schemas e.g. by using raw mode when combined schema occurs
   // 2. In `JsonToNuStruct` handle different types of combined schema, not just first valid occurrence
-  private def handleSchemaWithUnionTypes(params: Map[String, AnyRef]): Any = {
+  private def handleSchemaWithUnionTypes(params: Map[ParameterName, AnyRef]): Any = {
     inputSchema match {
       case cs: CombinedSchema => {
         params
           .get(SinkRawValueParamName)
-          .map { params =>
-            val json                       = BestEffortJsonEncoder.defaultForTests.encode(params)
+          .map { paramValue =>
+            val json                       = BestEffortJsonEncoder.defaultForTests.encode(paramValue)
             val schema                     = getFirstMatchingSchemaForJson(cs, json)
             val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
             JsonToNuStruct(json, swaggerTyped)
           }
           .getOrElse {
             throw new IllegalArgumentException( // Should never happen since CombinedSchema is created using SinkRawValueParamName but still...
-              s"Expected combined schema with ${SinkRawValueParamName} parameter but ${cs} was found"
+              s"Expected combined schema with ${SinkRawValueParamName.value} parameter but $cs was found"
             )
           }
       }

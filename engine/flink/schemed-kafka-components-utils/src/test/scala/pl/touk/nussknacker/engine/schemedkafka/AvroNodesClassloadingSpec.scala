@@ -34,8 +34,8 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     .source(
       "source",
       "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName         -> "'not_exist'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      KafkaUniversalComponentTransformer.topicParamName.value         -> "'not_exist'",
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink("dead", "dead_end")
 
