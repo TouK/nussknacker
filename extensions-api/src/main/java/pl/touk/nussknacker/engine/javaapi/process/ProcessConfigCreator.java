@@ -19,9 +19,6 @@ public interface ProcessConfigCreator extends Serializable {
     Collection<ProcessListener> listeners(ProcessObjectDependencies processObjectDependencies);
     ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies);
     Map<String, String> buildInfo();
-    default Optional<AsyncExecutionContextPreparer> asyncExecutionContextPreparer(ProcessObjectDependencies processObjectDependencies) {
-      return Optional.empty();
-    }
     default ClassExtractionSettings classExtractionSettings(ProcessObjectDependencies processObjectDependencies) {
         return ClassExtractionSettings.DEFAULT;
     }
