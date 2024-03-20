@@ -60,7 +60,6 @@ import pl.touk.nussknacker.ui.security.api.{
   LoggedUser,
   NussknackerInternalUser
 }
-import pl.touk.nussknacker.ui.services._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver

@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Codec, _}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -26,13 +26,22 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoProcessingType,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.SchemaType.SString
+
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{decodeVariableTypes, prepareTypingResultDecoder}
+import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
 import sttp.tapir._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
