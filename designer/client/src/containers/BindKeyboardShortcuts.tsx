@@ -2,7 +2,9 @@ import { useMemo } from "react";
 import { useSelectionActions } from "../components/graph/SelectionContextProvider";
 import { useDocumentListeners } from "./useDocumentListeners";
 
-export const isInputEvent = (event: Event): boolean => ["INPUT", "SELECT", "TEXTAREA"].includes(event?.target["tagName"]);
+export const isInputTarget = (target: EventTarget): boolean => ["INPUT", "SELECT", "TEXTAREA"].includes(target?.["tagName"]);
+export const isInputEvent = (event: Event): boolean => isInputTarget(event?.target);
+
 type KeyboradShortcutsMap = Record<string, (event: KeyboardEvent) => void>;
 
 export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX.Element {
