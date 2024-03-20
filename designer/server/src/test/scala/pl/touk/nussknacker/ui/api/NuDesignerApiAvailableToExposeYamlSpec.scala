@@ -22,8 +22,7 @@ import scala.util.Try
 // using SBT's task: `sbt generateDesignerOpenApi`
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
-  // FIXME: detects differences on the GH Actions but locally not
-  ignore("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
+  test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
     val currentNuDesignerOpenApiYamlContent =
       (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
     NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)

@@ -3,14 +3,14 @@ package pl.touk.nussknacker.test.base.it
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.base.db.WithTestDb
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.domain.ScenarioHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait WithRichConfigScenarioHelper {
-  this: WithTestDb with WithRichDesignerConfig =>
+trait WithAccessControlCheckingConfigScenarioHelper {
+  this: WithTestDb with WithAccessControlCheckingDesignerConfig =>
 
   private val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
 

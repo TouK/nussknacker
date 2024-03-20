@@ -4,28 +4,27 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithRichConfigRestAssuredUsersExtensions,
-  WithRichDesignerConfig
+  WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 
 import java.util.UUID
 
 class ScenarioActivityApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
+    with WithSimplifiedDesignerConfig
+    with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithRichConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureExtensions
-    with NuRestAssureMatchers
     with WithScenarioActivitySpecAsserts
+    with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
 
   private val exampleScenarioName = UUID.randomUUID().toString
@@ -48,7 +47,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "return empty comments and attachment for existing process without them" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
@@ -79,7 +78,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "add comment in existing scenario" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
@@ -96,7 +95,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "return 404 for no existing scenario" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
@@ -112,7 +111,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "remove comment in existing scenario" in {
       val commentId = given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
           createComment(scenarioName = exampleScenarioName, commentContent = commentContent)
         }
         .when()
@@ -132,7 +131,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "return 500 for no existing comment" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
@@ -156,7 +155,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "add attachment to existing scenario" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
@@ -171,7 +170,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
       val fileContent2 = "very important content2"
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
           createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent1, fileName = fileName)
           createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent2, fileName = fileName)
         }
@@ -221,7 +220,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "download existing attachment" in {
       val attachmentId = given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
           createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
         }
         .when()
@@ -241,7 +240,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "not return existing attachment not connected to the scenario" in {
       val notRelevantScenarioId = given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
           createAttachment(scenarioName = exampleScenarioName, fileContent = fileContent)
         }
         .when()
@@ -252,7 +251,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
 
       given()
         .applicationState {
-          createSavedScenario(otherExampleScenario, Category1)
+          createSavedScenario(otherExampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
@@ -267,7 +266,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     "return empty body for no existing attachment" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         }
         .when()
         .basicAuthAllPermUser()
