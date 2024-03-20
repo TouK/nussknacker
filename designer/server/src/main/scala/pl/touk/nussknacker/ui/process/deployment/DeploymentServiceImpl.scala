@@ -654,8 +654,7 @@ class DeploymentServiceImpl(
         )
         customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(s"${actionName.value} doesn't exist"))
-        // TODO: add custom action params validation
-        validator = new CustomActionValidator(manager.customActionsDefinitions)
+        validator = new CustomActionValidator(customActionOpt.get)
         // TODO: remove this validation prosthesis
         _ <- validateActionCommand(actionCommand, validator)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
