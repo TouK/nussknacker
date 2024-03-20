@@ -24,7 +24,7 @@ class UserApiHttpService(
       .serverLogic { user: LoggedUser => _ =>
         Future(
           success(
-            DisplayableUser(user, categories.all(user).values)
+            DisplayableUser(user, categories.all(user).values.toList.distinct.sorted)
           )
         )
       }
