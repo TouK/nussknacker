@@ -34,7 +34,7 @@ To read more see [ComponentProvider API](./Components.md)
 The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/designer/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
 interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the Designer classpath.
 If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
-[DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration.md) 
+[Scenario Deployment Configuration page](../installation_configuration_guide/ScenarioDeploymentConfiguration.md) 
 
 ## Other SPIs for Nussknacker customization (documentation will follow soon...)
 

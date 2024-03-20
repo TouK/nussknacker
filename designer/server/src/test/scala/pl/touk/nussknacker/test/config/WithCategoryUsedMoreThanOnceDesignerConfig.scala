@@ -2,20 +2,17 @@ package pl.touk.nussknacker.test.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import enumeratum.{Enum, EnumEntry}
-import io.restassured.specification.RequestSpecification
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.test.NuRestAssureExtensions
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.DesignerTestConfigValidator
 
-trait WithSimplifiedDesignerConfig extends WithDesignerConfig {
-  this: Suite =>
+trait WithCategoryUsedMoreThanOnceDesignerConfig extends WithDesignerConfig { this: Suite =>
 
   validateConsistency()
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
+    ConfigFactory.parseResources("config/business-cases/category-used-more-than-once-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
@@ -27,25 +24,30 @@ trait WithSimplifiedDesignerConfig extends WithDesignerConfig {
 
 }
 
-object WithSimplifiedDesignerConfig {
+object WithCategoryUsedMoreThanOnceDesignerConfig {
+
   sealed trait TestProcessingType extends EnumEntry
 
   object TestProcessingType extends Enum[TestProcessingType] {
-    case object Streaming extends TestProcessingType
+    case object Streaming1 extends TestProcessingType
+
+    case object Streaming2 extends TestProcessingType
 
     override val values = findValues
 
     implicit class ProcessingTypeStringify(processingType: TestProcessingType) {
 
       def stringify: String = processingType match {
-        case TestProcessingType.Streaming => "streaming"
+        case TestProcessingType.Streaming1 => "streaming1"
+        case TestProcessingType.Streaming2 => "streaming2"
       }
 
     }
 
     def categoryBy(processingType: TestProcessingType): TestCategory = {
       processingType match {
-        case TestProcessingType.Streaming => TestCategory.Category1
+        case TestProcessingType.Streaming1 => TestCategory.Category1
+        case TestProcessingType.Streaming2 => TestCategory.Category1
       }
     }
 
@@ -72,7 +74,7 @@ object WithSimplifiedDesignerConfig {
         .apply(category)
     }
 
-    private[WithSimplifiedDesignerConfig] lazy val categoryByProcessingType =
+    private[WithCategoryUsedMoreThanOnceDesignerConfig] lazy val categoryByProcessingType =
       TestProcessingType.values.map { processingType =>
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap

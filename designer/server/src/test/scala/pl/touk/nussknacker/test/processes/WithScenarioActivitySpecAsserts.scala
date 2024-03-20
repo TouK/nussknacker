@@ -6,13 +6,13 @@ import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.NuRestAssureMatchers
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.{WithRichConfigRestAssuredUsersExtensions, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithDesignerConfig}
 
 trait WithScenarioActivitySpecAsserts
     extends AnyFreeSpecLike
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigRestAssuredUsersExtensions
+    with WithDesignerConfig
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers {
 
   implicit class VerifyCommentExists[T <: ValidatableResponse](validatableResponse: T) {

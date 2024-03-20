@@ -4,14 +4,14 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.{WithSimplifiedConfigRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
+import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class ScenarioParametersApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithSimplifiedDesignerConfig
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {

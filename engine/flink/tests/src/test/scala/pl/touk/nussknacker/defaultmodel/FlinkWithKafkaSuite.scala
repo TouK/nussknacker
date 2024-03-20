@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.transformer.{FlinkBaseComponentProvider, FlinkKafkaComponentProvider}
+import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,

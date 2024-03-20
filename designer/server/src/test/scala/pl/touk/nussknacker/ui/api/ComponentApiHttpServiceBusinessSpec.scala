@@ -19,8 +19,8 @@ import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioH
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
 
@@ -30,7 +30,7 @@ class ComponentApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
