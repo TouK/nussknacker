@@ -225,9 +225,7 @@ class RemoteEnvironmentResourcesSpec
       val localScenarioGraph = scenarioGraph
       migrateInvocations = localScenarioGraph :: migrateInvocations
       Future.successful(Right(()))
-    }.recover[Either[NuDesignerError, Unit]] { case e: IllegalStateException =>
-      Left(MissingScenarioGraphError(e.getMessage))
-    }(ec)
+    }
 
   }
 

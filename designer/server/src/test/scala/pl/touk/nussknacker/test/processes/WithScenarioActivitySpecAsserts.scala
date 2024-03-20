@@ -82,7 +82,7 @@ trait WithScenarioActivitySpecAsserts
                |  "attachments": [
                |    {
                |      "id": "${regexes.digitsRegex}",
-               |      "processVersionId": 1,
+               |      "processVersionId": "${regexes.digitsRegex}",
                |      "fileName": "important_file.txt",
                |      "user": "allpermuser",
                |      "createDate": "${regexes.zuluDateRegex}"
