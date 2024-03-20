@@ -238,8 +238,6 @@ class StandardRemoteEnvironmentSpec
   private def remoteEnvironmentMock(
       nuVersion: String
   ) = new MockRemoteEnvironment with LastSentMigrateScenarioRequest {
-    private val localNuVersion = BuildInfo.version
-    private val apiAdapter     = new MigrationApiAdapterService()
 
     override protected def request(
         uri: Uri,
