@@ -1,7 +1,6 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
@@ -13,29 +12,12 @@ import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{
-  ExpressionSuggestionDto,
-  NodeValidationRequest,
-  NodeValidationRequestDto,
-  NodeValidationResult,
-  NodeValidationResultDto,
-  NodesError,
-  ParametersValidationRequest,
-  ParametersValidationRequestDto,
-  ParametersValidationResultDto,
-  decodeVariableTypes,
-  prepareTypingResultDecoder
-}
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
-  MalformedTypingResult,
-  NoPermission,
-  NoProcessingType,
-  NoScenario
-}
-import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoPermission, NoProcessingType, NoScenario}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationRequest, NodeValidationRequestDto, NodeValidationResult, NodeValidationResultDto, NodesError, ParametersValidationRequest, ParametersValidationRequestDto, ParametersValidationResultDto, decodeVariableTypes, prepareTypingResultDecoder}
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
@@ -47,7 +29,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class NodesApiHttpService(
-    config: Config,
     authenticator: AuthenticationResources,
     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
     typeToProcessValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
@@ -56,7 +37,7 @@ class NodesApiHttpService(
     typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     protected val scenarioService: ProcessService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, authenticator)
+    extends BaseHttpService(authenticator)
     with LazyLogging {
   import EitherTImplicits._
 

@@ -12,12 +12,11 @@ import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import scala.concurrent.ExecutionContext
 
 class MigrationApiHttpService(
-    config: Config,
     authenticator: AuthenticationResources,
     migrationService: MigrationService,
     migrationApiAdapterService: MigrationApiAdapterService
 )(implicit val ec: ExecutionContext)
-    extends BaseHttpService(config, authenticator)
+    extends BaseHttpService(authenticator)
     with LazyLogging {
 
   private val remoteEnvironmentApiEndpoints = new MigrationApiEndpoints(authenticator.authenticationMethod())

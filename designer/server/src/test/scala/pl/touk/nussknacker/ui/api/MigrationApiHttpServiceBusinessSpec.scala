@@ -197,7 +197,6 @@ class MigrationApiHttpServiceBusinessSpec
        |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",
        |  "isFragment": $isFragment,
-       |  "processingType": "streaming1",
        |  "processCategory": "Category1",
        |  "scenarioGraph": ${scenarioGraph.asJson.noSpaces}
        |}

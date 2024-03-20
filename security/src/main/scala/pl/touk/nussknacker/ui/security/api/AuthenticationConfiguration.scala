@@ -3,9 +3,13 @@ package pl.touk.nussknacker.ui.security.api
 import java.net.URI
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigUser, getRules, usersConfigurationPath}
 import GlobalPermission.GlobalPermission
 import pl.touk.nussknacker.security.Permission.Permission
+
+import net.ceedubs.ficus.readers.EnumerationReader._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
 trait AuthenticationConfiguration {
   def name: String
@@ -13,23 +17,23 @@ trait AuthenticationConfiguration {
 
   def anonymousUserRole: Option[String]
 
-  lazy val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
+  private lazy val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
-  lazy val users: List[ConfigUser] = AuthenticationConfiguration
-    .getUsers(userConfig)
+  protected lazy val usersOpt: Option[List[ConfigUser]] =
+    userConfig.as[Option[List[ConfigUser]]](usersConfigurationPath)
+
+  lazy val users: List[ConfigUser] = usersOpt
     .getOrElse(
       throw new IllegalArgumentException(
         s"Missing field ${AuthenticationConfiguration.usersConfigurationPath} at ${userConfig.getConfig(AuthenticationConfiguration.usersConfigPath)} users config file."
       )
     )
 
+  lazy val rules: List[AuthenticationConfiguration.ConfigRule] = getRules(usersFile)
+
 }
 
 object AuthenticationConfiguration {
-
-  import net.ceedubs.ficus.readers.EnumerationReader._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   val authenticationConfigPath = "authentication"
   val methodConfigPath         = s"$authenticationConfigPath.method"
@@ -37,10 +41,8 @@ object AuthenticationConfiguration {
   val usersConfigurationPath   = "users"
   val rulesConfigurationPath   = "rules"
 
-  def getUsers(config: Config): Option[List[ConfigUser]] = config.as[Option[List[ConfigUser]]](usersConfigurationPath)
-  def getRules(usersFile: URI): List[ConfigRule] =
+  private[security] def getRules(usersFile: URI): List[ConfigRule] =
     ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
-  def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
   final case class ConfigUser(
       identity: String,

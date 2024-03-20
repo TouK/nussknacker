@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -6,13 +6,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
-  Attachment => DbAttachment,
-  Comment => DbComment,
-  ProcessActivity => DbProcessActivity
-}
+import pl.touk.nussknacker.ui.api.TapirCodecs
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment => DbAttachment, Comment => DbComment, ProcessActivity => DbProcessActivity}
 import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
-import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
 import sttp.tapir.EndpointIO.Example
