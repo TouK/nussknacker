@@ -1,5 +1,11 @@
 # Changelog
 
+1.15.0 (Not released yet)
+-------------------------
+* [#5760](https://github.com/TouK/nussknacker/pull/5760) Libraries bump:
+  * Tapir: 1.7.4 -> 1.9.11
+  * openapi-circe-yaml: 0.6.0 -> 0.7.4 
+
 1.14.0 (Not released yet)
 -------------------------
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
@@ -54,7 +60,7 @@
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) Added: Decision Table component - detailed validation
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
 
-1.13.1 (Not released yet)
+1.13.2 (7 Mar 2024)
 ------------------------
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
  
