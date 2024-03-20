@@ -15,26 +15,20 @@ import io.circe.Decoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.{BuildInfoDto, NuVersion}
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequest,
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
-}
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequestV1, MigrateScenarioRequestV2}
+import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
+import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
 import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
-import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.BuildInfoDto._
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -42,8 +36,6 @@ import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.collection.parallel.immutable.ParVector
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-import scala.util.matching.Regex
 
 trait RemoteEnvironment {
 

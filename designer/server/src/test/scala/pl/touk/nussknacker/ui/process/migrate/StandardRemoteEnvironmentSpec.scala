@@ -18,13 +18,12 @@ import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenar
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.NuVersion
 import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequest,
   MigrateScenarioRequestV1,
   MigrateScenarioRequestV2
 }
-import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
+import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
