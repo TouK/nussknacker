@@ -61,6 +61,7 @@ import pl.touk.nussknacker.ui.security.api.{
   LoggedUser,
   NussknackerInternalUser
 }
+import pl.touk.nussknacker.ui.services.{MigrationApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.services._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -249,6 +250,21 @@ class AkkaHttpBasedRouteProvider(
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
+
+      val migrationService = new MigrationService(
+        config = resolvedConfig,
+        processService = processService,
+        processResolver = processResolver,
+        processAuthorizer = processAuthorizer,
+        processChangeListener = processChangeListener,
+        scenarioParametersService = typeToConfig.mapCombined(_.parametersService),
+        useLegacyCreateScenarioApi = true
+      )
+
+      val migrationApiHttpService = new MigrationApiHttpService(
+        authenticator = authenticationResources,
+        migrationService = migrationService
+      )
       val componentsApiHttpService = new ComponentApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
@@ -392,6 +408,8 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
+          migrationApiHttpService,
+          nodesApiHttpService
         )
 
       val akkaHttpServerInterpreter = {
