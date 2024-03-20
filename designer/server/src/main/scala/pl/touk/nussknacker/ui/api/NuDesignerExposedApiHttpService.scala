@@ -8,26 +8,10 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import scala.concurrent.Future
 
 class NuDesignerExposedApiHttpService(
-    appApiHttpService: AppApiHttpService,
-    componentsApiHttpService: ComponentApiHttpService,
-    userApiHttpService: UserApiHttpService,
-    notificationApiHttpService: NotificationApiHttpService,
-    scenarioActivityApiHttpService: ScenarioActivityApiHttpService,
-    scenarioParametersHttpService: ScenarioParametersApiHttpService,
-    migrationApiHttpService: MigrationApiHttpService,
-    nodesApiHttpService: NodesApiHttpService
+    services: BaseHttpService*
 ) {
 
-  private val apiEndpoints =
-    appApiHttpService.serverEndpoints ++
-      componentsApiHttpService.serverEndpoints ++
-      userApiHttpService.serverEndpoints ++
-      notificationApiHttpService.serverEndpoints ++
-      scenarioActivityApiHttpService.serverEndpoints ++
-      scenarioParametersHttpService.serverEndpoints ++
-      migrationApiHttpService.serverEndpoints ++
-      scenarioParametersHttpService.serverEndpoints ++
-      nodesApiHttpService.serverEndpoints
+  private val apiEndpoints = services.flatMap(_.serverEndpoints)
 
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 
@@ -39,13 +23,13 @@ class NuDesignerExposedApiHttpService(
       ),
       openAPIInterpreterOptions = NuDesignerExposedApiHttpService.openAPIDocsOptions
     ).fromEndpoints(
-      endpointDefinitions,
+      endpointDefinitions.toList,
       NuDesignerExposedApiHttpService.openApiDocumentTitle,
       "" // we don't want to have versioning of this API yet
     )
 
   def allEndpoints: List[ServerEndpoint[Any, Future]] = {
-    swaggerEndpoints ::: apiEndpoints
+    swaggerEndpoints ::: apiEndpoints.toList
   }
 
 }
