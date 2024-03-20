@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
 
@@ -19,7 +19,7 @@ class NodesApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
