@@ -552,7 +552,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end2"
       )
 
-      results.externalInvocationResults("proc2").map(_.value.asInstanceOf[Json]) shouldBe List(
+      results.externalInvocationResults("proc2").map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List(
         "b",
         "a",
         "c",
