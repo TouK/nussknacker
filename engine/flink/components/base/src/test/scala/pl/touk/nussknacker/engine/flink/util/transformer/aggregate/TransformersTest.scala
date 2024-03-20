@@ -47,7 +47,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   def modelData(
       list: List[TestRecord] = List(),
       aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
-      collectingListener: => ResultsCollectingListener = ResultsCollectingListenerHolder.registerListener
+      collectingListener: => ResultsCollectingListener[Any] = ResultsCollectingListenerHolder.registerListener
   ): LocalModelData = {
     val config = ConfigFactory
       .empty()
@@ -597,7 +597,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   private def variablesForKey(
-      collectingListener: ResultsCollectingListener,
+      collectingListener: ResultsCollectingListener[Any],
       key: String
   ): List[TestProcess.ResultContext[Any]] = {
     collectingListener.results

@@ -102,8 +102,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 
     stoppableEnv.waitForJobState(id.getJobID, process.name.value, ExecutionState.FINISHED)()
 
-    val outValues = collectingListener
-      .results[Any]
+    val outValues = collectingListener.results
       .nodeResults(EndNodeId)
       .filter(_.variableTyped(KeyVariableName).contains(key))
       .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
@@ -118,7 +117,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       testProcess: CanonicalProcess,
       input1: BlockingQueueSource[OneRecord],
       input2: List[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ): (JobExecutionResult, MiniClusterExecutionEnvironment) = {
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
@@ -130,7 +129,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
   private def modelData(
       input1: BlockingQueueSource[OneRecord],
       input2: List[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ) =
     LocalModelData(
       ConfigFactory.empty(),

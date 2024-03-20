@@ -51,15 +51,14 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
 
     runProcess(model, process)
 
-    val result = collectingListener
-      .results[Record]
+    val result = collectingListener.results
       .nodeResults("end")
-      .map(_.variableTyped("input"))
+      .map(_.variableTyped[Record]("input"))
 
     result shouldBe List(Some(record))
   }
 
-  def modelData(collectingListener: ResultsCollectingListener, list: List[Record] = List()): LocalModelData = {
+  def modelData(collectingListener: ResultsCollectingListener[Any], list: List[Record] = List()): LocalModelData = {
     val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[Record](
       CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])(TypeInformation.of(classOf[Record]))
     )

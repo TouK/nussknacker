@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.language.higherKinds
 
-class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectingListener) extends ResultCollector {
+class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectingListener[_]) extends ResultCollector {
 
   override def collectWithResponse[A, F[_]: Monad](
       contextId: ContextId,
@@ -58,7 +58,7 @@ class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectin
 
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
 final class SinkInvocationCollector(
-    resultsCollectingListener: ResultsCollectingListener,
+    resultsCollectingListener: ResultsCollectingListener[_],
     nodeId: String,
     ref: String
 ) extends Serializable {

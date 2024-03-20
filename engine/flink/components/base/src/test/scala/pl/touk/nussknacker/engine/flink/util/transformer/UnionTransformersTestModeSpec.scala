@@ -107,7 +107,7 @@ class UnionTransformersTestModeSpec
 
   private def createModelData(
       inputElements: List[String] = List(),
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ): LocalModelData = {
     val sourceComponent = ComponentDefinition(
       "start",
@@ -127,7 +127,7 @@ class UnionTransformersTestModeSpec
   private def collectTestResults[T](
       modelData: LocalModelData,
       testProcess: CanonicalProcess,
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[T]
   ): TestProcess.TestResults[T] = {
     runProcess(modelData, testProcess)
     collectingListener.results

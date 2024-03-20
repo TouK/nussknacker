@@ -47,7 +47,7 @@ class FlinkTestMain(
 ) extends FlinkStubbedRunner {
 
   def runTest: TestResults[Json] =
-    Using.resource(ResultsCollectingListenerHolder.registerForTestEngineRunner) { collectingListener =>
+    Using.resource(ResultsCollectingListenerHolder.registerTestEngineListener) { collectingListener =>
       val resultCollector = new TestServiceInvocationCollector(collectingListener)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv
@@ -58,7 +58,7 @@ class FlinkTestMain(
     }
 
   protected def prepareRegistrar(
-      collectingListener: ResultsCollectingListener,
+      collectingListener: ResultsCollectingListener[Json],
       scenarioTestData: ScenarioTestData
   ): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(

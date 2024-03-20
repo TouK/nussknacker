@@ -22,7 +22,7 @@ object TestFlinkProcessCompilerDataFactory {
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       modelData: ModelData,
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[_]
   ): FlinkProcessCompilerDataFactory = {
     new StubbedFlinkProcessCompilerDataFactory(
       process,

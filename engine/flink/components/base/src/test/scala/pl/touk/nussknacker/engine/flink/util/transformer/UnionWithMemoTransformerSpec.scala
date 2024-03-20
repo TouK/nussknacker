@@ -77,8 +77,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     def outValues = {
-      collectingListener
-        .results[Any]
+      collectingListener.results
         .nodeResults(EndNodeId)
         .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
     }
@@ -208,7 +207,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       testProcess: CanonicalProcess,
       sourceFoo: BlockingQueueSource[OneRecord],
       sourceBar: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   )(action: => Unit): Unit = {
     val model = LocalModelData(
       ConfigFactory.empty(),

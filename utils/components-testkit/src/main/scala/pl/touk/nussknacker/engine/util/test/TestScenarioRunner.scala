@@ -83,7 +83,7 @@ object TestScenarioCollectorHandler {
 
   final class TestScenarioCollectorHandler(
       val resultCollector: ResultCollector,
-      val resultsCollectingListener: ResultsCollectingListener
+      val resultsCollectingListener: ResultsCollectingListener[Any]
   ) extends AutoCloseable {
     def close(): Unit = resultsCollectingListener.close()
   }

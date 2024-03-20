@@ -15,11 +15,11 @@ object TestRunId {
 case class TestRunId(id: String)
 
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
-case class ResultsCollectingListener(holderClass: String, runId: TestRunId, variableEncoder: Any => Any)
+case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, variableEncoder: Any => T)
     extends ProcessListener
     with Serializable {
 
-  def results[T]: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
+  def results: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
 
   def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
 
@@ -74,11 +74,11 @@ object ResultsCollectingListenerHolder {
   // TODO: casting is not so nice, but currently no other idea...
   def resultsForId[T](id: TestRunId): TestResults[T] = results(id).asInstanceOf[TestResults[T]]
 
-  def registerForTestEngineRunner: ResultsCollectingListener = synchronized {
+  def registerTestEngineListener: ResultsCollectingListener[Json] = synchronized {
     registerListener(TestInterpreterRunner.testResultsVariableEncoder)
   }
 
-  def registerListener: ResultsCollectingListener = synchronized {
+  def registerListener: ResultsCollectingListener[Any] = synchronized {
     registerListener(identity)
   }
 
@@ -86,7 +86,7 @@ object ResultsCollectingListenerHolder {
     results -= runId
   }
 
-  private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener = synchronized {
+  private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = synchronized {
     val runId = TestRunId.generate
     results += (runId -> TestResults(Map(), Map(), Map(), List()))
     ResultsCollectingListener(getClass.getCanonicalName, runId, variableEncoder)

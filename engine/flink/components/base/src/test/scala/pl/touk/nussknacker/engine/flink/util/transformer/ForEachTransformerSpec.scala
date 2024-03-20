@@ -78,7 +78,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def modelData(
       list: List[TestRecord] = List(),
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ): LocalModelData = {
     val modelConfig = ConfigFactory
       .empty()
@@ -110,7 +110,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def collectTestResults[T](
       model: LocalModelData,
       testProcess: CanonicalProcess,
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[T]
   ): TestProcess.TestResults[T] = {
     runProcess(model, testProcess)
     collectingListener.results

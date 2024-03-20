@@ -118,8 +118,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     stoppableEnv.waitForJobState(id.getJobID, process.name.value, ExecutionState.FINISHED)()
 
-    val outValues = collectingListener
-      .results[Any]
+    val outValues = collectingListener.results
       .nodeResults(EndNodeId)
       .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
       .map(_.mapValuesNow {
@@ -515,7 +514,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       testProcess: CanonicalProcess,
       input1: BlockingQueueSource[OneRecord],
       input2: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ) = {
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
@@ -527,7 +526,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   private def modelData(
       input1: BlockingQueueSource[OneRecord],
       input2: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ) = {
     val creator = new ConfigCreatorWithCollectingListener(collectingListener)
     LocalModelData(ConfigFactory.empty(), prepareComponents(input1, input2), configCreator = creator)

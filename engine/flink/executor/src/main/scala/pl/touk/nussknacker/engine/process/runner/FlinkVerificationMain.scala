@@ -36,7 +36,7 @@ class FlinkVerificationMain(
 ) extends FlinkStubbedRunner {
 
   def runTest(): Unit = {
-    val collectingListener = ResultsCollectingListenerHolder.registerForTestEngineRunner
+    val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     val resultCollector    = new TestServiceInvocationCollector(collectingListener)
     val registrar          = prepareRegistrar()
     val env                = createEnv
