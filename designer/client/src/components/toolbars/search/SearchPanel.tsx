@@ -1,16 +1,16 @@
-import { useTranslation } from "react-i18next";
-import React, { ReactElement, useCallback, useRef, useState } from "react";
-import { useSidePanel } from "../../sidePanels/SidePanel";
-import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { useDocumentListeners } from "../../../containers/useDocumentListeners";
-import { toggleToolbar } from "../../../actions/nk/toolbars";
-import { useDispatch, useSelector } from "react-redux";
-import { getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { Focusable, InputWithIcon } from "../../themed/InputWithIcon";
-import { SearchIcon } from "../../table/SearchFilter";
-import { isEmpty } from "lodash";
-import { SearchResults } from "./SearchResults";
 import { css } from "@emotion/css";
+import { isEmpty } from "lodash";
+import React, { ReactElement, useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { toggleToolbar } from "../../../actions/nk/toolbars";
+import { useDocumentListeners } from "../../../containers/useDocumentListeners";
+import { getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
+import { useSidePanel } from "../../sidePanels/SidePanel";
+import { SearchIcon } from "../../table/SearchFilter";
+import { Focusable, InputWithIcon } from "../../themed/InputWithIcon";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { SearchResults } from "./SearchResults";
 
 export function SearchPanel(): ReactElement {
     const { t } = useTranslation();
@@ -41,7 +41,13 @@ export function SearchPanel(): ReactElement {
         keydown: (e) => {
             switch (e.key.toUpperCase()) {
                 case "ESCAPE": {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     clearFilter();
+                    const target = e.composedPath().shift();
+                    if (target instanceof HTMLElement) {
+                        target.blur();
+                    }
                     break;
                 }
                 case "F": {

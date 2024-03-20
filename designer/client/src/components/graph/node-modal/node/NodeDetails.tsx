@@ -3,23 +3,25 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { useKey } from "rooks";
+import urljoin from "url-join";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
+import { BASE_PATH } from "../../../../config";
+import { isInputTarget } from "../../../../containers/BindKeyboardShortcuts";
+import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
+import { RootState } from "../../../../reducers";
+import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
+import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import ErrorBoundary from "../../../common/ErrorBoundary";
+import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
+import { applyIdFromFakeName } from "../IdField";
 import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import urljoin from "url-join";
-import { BASE_PATH } from "../../../../config";
-import { RootState } from "../../../../reducers";
-import { applyIdFromFakeName } from "../IdField";
-import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
-import { Scenario } from "../../../Process/types";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -84,6 +86,13 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
+
+    useKey("Escape", (e) => {
+        e.preventDefault();
+        if (!isInputTarget(e.composedPath().shift())) {
+            props.close();
+        }
+    });
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [openFragmentButtonData, cancelButtonData, applyButtonData].filter(Boolean),
