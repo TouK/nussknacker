@@ -289,6 +289,7 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
+      val deploymentHttpService = new DeploymentApiHttpService(authenticationResources)
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -387,7 +388,8 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          nodesApiHttpService
+          nodesApiHttpService,
+          deploymentHttpService
         )
 
       val akkaHttpServerInterpreter = {
