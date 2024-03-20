@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.ui.api.DictResourcesEndpoints
 import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.DictError
 import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.DictError.{MalformedTypingResult, NoDict, NoProcessingType}
+import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.Dtos.DictListElementDto
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
@@ -60,7 +61,7 @@ class DictResourcesHttpService(
                   success(
                     dictionaries
                       .filter { case (id, definition) => definition.valueType(id).canBeSubclassOf(expectedType) }
-                      .keys
+                      .map { case (id, _) => DictListElementDto(id) }
                       .toList
                   )
                 }

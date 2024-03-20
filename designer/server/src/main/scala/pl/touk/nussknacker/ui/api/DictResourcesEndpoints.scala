@@ -47,7 +47,8 @@ class DictResourcesEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
-  lazy val dictionaryListEndpoint: SecuredEndpoint[(String, DictListRequestDto), DictError, List[String], Any] =
+  lazy val dictionaryListEndpoint
+      : SecuredEndpoint[(String, DictListRequestDto), DictError, List[DictListElementDto], Any] =
     baseNuApiEndpoint
       .summary("Get list of available dictionaries with value type compatible with expected type")
       .tag("Dictionary")
@@ -56,7 +57,7 @@ class DictResourcesEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .in(jsonBody[DictListRequestDto])
       .out(
         statusCode(Ok).and(
-          jsonBody[List[String]]
+          jsonBody[List[DictListElementDto]]
         )
       )
       .errorOut(
@@ -85,9 +86,15 @@ object DictResourcesEndpoints {
     @JsonCodec
     case class DictListRequestDto(expectedType: TypingResultInJson)
 
+    @JsonCodec
+    case class DictListElementDto(
+        dictId: String // TODO: we could introduce labels for dictionaries, currently we display them by id
+    )
+
     implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
     implicit lazy val dictEntrySchema: Schema[DictEntry]                   = Schema.derived
     implicit lazy val dictListRequestDtoSchema: Schema[DictListRequestDto] = Schema.derived
+    implicit lazy val dictListElementDtoSchema: Schema[DictListElementDto] = Schema.derived
 
   }
 

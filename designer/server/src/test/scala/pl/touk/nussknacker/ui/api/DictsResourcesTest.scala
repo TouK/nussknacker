@@ -39,9 +39,9 @@ class DictsResourcesTest
 
     response.code shouldEqual StatusCode.Ok
     response.bodyAsJson shouldEqual Json.arr(
-      Json.fromString("rgb"),
-      Json.fromString("bc"),
-      Json.fromString("dict")
+      Map("dictId" -> "rgb").asJson,
+      Map("dictId" -> "bc").asJson,
+      Map("dictId" -> "dict").asJson
     )
   }
 
@@ -61,7 +61,7 @@ class DictsResourcesTest
 
     response.code shouldEqual StatusCode.Ok
     response.bodyAsJson shouldEqual Json.arr(
-      Json.fromString("long_dict")
+      Map("dictId" -> "long_dict").asJson
     )
 
   }
