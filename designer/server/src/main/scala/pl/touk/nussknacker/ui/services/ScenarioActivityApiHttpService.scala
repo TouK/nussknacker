@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.services
 
 import cats.data.EitherT
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.security.Permission
@@ -26,7 +25,6 @@ import java.net.URLConnection
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
-    config: Config,
     authenticator: AuthenticationResources,
     scenarioActivityRepository: ProcessActivityRepository,
     scenarioService: ProcessService,
@@ -34,7 +32,7 @@ class ScenarioActivityApiHttpService(
     attachmentService: ScenarioAttachmentService,
     streamEndpointProvider: TapirStreamEndpointProvider
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, authenticator)
+    extends BaseHttpService(authenticator)
     with LazyLogging {
   import EitherTImplicits._
 

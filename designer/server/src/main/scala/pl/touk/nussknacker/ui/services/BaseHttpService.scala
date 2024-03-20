@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(
-    config: Config,
     authenticator: AuthenticationResources
 )(implicit executionContext: ExecutionContext) {
 
@@ -21,7 +20,6 @@ abstract class BaseHttpService(
   type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
 
   private val allServerEndpoints = new AtomicReference(List.empty[NoRequirementServerEndpoint])
-  private val authConfigRules    = AuthenticationConfiguration.getRules(config)
 
   protected def expose(serverEndpoint: NoRequirementServerEndpoint): Unit = {
     allServerEndpoints
@@ -55,7 +53,9 @@ abstract class BaseHttpService(
       .authenticate(credentials)
       .map {
         case Some(user) if user.roles.nonEmpty =>
-          success(LoggedUser(user, authConfigRules))
+          // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
+          //       creation of another user representation based on authenticator.configuration. Shouldn't we just return the LoggedUser?
+          success(LoggedUser(user, authenticator.configuration.rules))
         case Some(_) =>
           securityError(AuthorizationError)
         case None =>
