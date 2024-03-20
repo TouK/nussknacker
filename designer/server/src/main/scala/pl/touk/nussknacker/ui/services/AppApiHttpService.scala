@@ -27,7 +27,7 @@ class AppApiHttpService(
     processService: ProcessService,
     shouldExposeConfig: Boolean
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, authenticator)
+    extends BaseHttpService(authenticator)
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
