@@ -38,10 +38,11 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         description: "",
         typ: "",
     }));
-    const { categories, engines, processingModes, isEngineFieldVisible, isCategoryFieldVisible } = useProcessFormDataOptions({
-        allCombinations,
-        value,
-    });
+    const { categories, engines, processingModes, isEngineFieldVisible, isCategoryFieldVisible, isProcessingModeBatchAvailable } =
+        useProcessFormDataOptions({
+            allCombinations,
+            value,
+        });
 
     const [isFormSubmitted, setIsFormSubmitted] = useState<boolean>(false);
     const validationErrors = flow(
@@ -133,6 +134,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 engines={isEngineFieldVisible ? engines : []}
                 touched={touched}
                 handleSetTouched={handleSetTouched}
+                isProcessingModeBatchAvailable={isProcessingModeBatchAvailable}
             />
         </WindowContent>
     );

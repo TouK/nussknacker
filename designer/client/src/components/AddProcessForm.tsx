@@ -26,6 +26,7 @@ interface AddProcessFormProps extends ChangeableValue<FormValue> {
     engines: string[];
     handleSetTouched: (touched: TouchedValue) => void;
     touched: TouchedValue;
+    isProcessingModeBatchAvailable?: boolean;
 }
 
 export function AddProcessForm({
@@ -37,6 +38,7 @@ export function AddProcessForm({
     categories,
     engines,
     processingModes,
+    isProcessingModeBatchAvailable,
 }: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
     const onFieldChange = useCallback(
@@ -91,7 +93,7 @@ export function AddProcessForm({
                                 active={value.processingMode === ProcessingMode.requestResponse}
                             />
                             {/*TODO: Remove condition when batch processing mode ready */}
-                            {processingModes.includes(ProcessingMode.batch) && (
+                            {isProcessingModeBatchAvailable && (
                                 <CustomRadio
                                     disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}
                                     label={t("addProcessForm.label.batch", "Batch")}

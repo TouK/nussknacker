@@ -1,7 +1,7 @@
 import { FormValue } from "./AddProcessForm";
 import { useMemo } from "react";
 import { every, groupBy, map, some, uniq, uniqBy } from "lodash";
-import { ScenarioParametersCombination } from "../http/HttpService";
+import { ProcessingMode, ScenarioParametersCombination } from "../http/HttpService";
 
 const getFilteredValues = (allCombinations: ScenarioParametersCombination[], value: Partial<FormValue>) => {
     let availableCombinations = allCombinations;
@@ -70,5 +70,7 @@ export const useProcessFormDataOptions = ({ allCombinations, value }: Props) => 
 
     const isCategoryFieldVisible = categories.length > 1;
 
-    return { processingModes, categories, engines, isEngineFieldVisible, isCategoryFieldVisible };
+    const isProcessingModeBatchAvailable = allCombinations.some((allCombination) => allCombination.processingMode === ProcessingMode.batch);
+
+    return { processingModes, categories, engines, isEngineFieldVisible, isCategoryFieldVisible, isProcessingModeBatchAvailable };
 };
