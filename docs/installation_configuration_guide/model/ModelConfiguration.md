@@ -16,9 +16,9 @@ Model defines how to configure [components](/about/GLOSSARY#component) and certa
 
 Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
 
-By default, the following configuration is used:
+By default, in case of Flink streaming scenario type, the following configuration is used:
 ```
-classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common"]
+classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common", "flink-dropwizard-metrics-deps/"]
 ```
 Make sure you have all necessary entries properly configured:
 - Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
@@ -30,7 +30,7 @@ Note that as classPath elements you can use:
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](../../installation/Installation.md#basic-environment-variables).
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../installation/Installation.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming
