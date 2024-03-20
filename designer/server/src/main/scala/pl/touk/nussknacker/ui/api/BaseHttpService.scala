@@ -1,12 +1,11 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
-import com.typesafe.config.Config
 import pl.touk.nussknacker.restmodel.SecurityError
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
 import pl.touk.nussknacker.ui.security.api._
-import pl.touk.nussknacker.ui.services.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
 import java.util.concurrent.atomic.AtomicReference

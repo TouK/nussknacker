@@ -1,17 +1,13 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
-import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.{
-  NoComment,
-  NoPermission,
-  NoScenario
-}
-import pl.touk.nussknacker.ui.api.ScenarioActivityApiEndpoints.Dtos._
-import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ScenarioActivityApiEndpoints}
+import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints
+import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.{NoComment, NoPermission, NoScenario}
+import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
@@ -8,7 +8,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.ScenarioParametersApiEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
+import pl.touk.nussknacker.ui.api.description.ScenarioParametersApiEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
