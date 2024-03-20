@@ -9,9 +9,19 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.base.it.{
+  NuItTest,
+  WithAccessControlCheckingConfigScenarioHelper,
+  WithSimplifiedConfigScenarioHelper
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.{
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig,
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithMockableDeploymentManager,
+  WithSimplifiedDesignerConfig
+}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -19,10 +29,10 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 class MigrationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
-    with WithMockableDeploymentManager
+    with WithAccessControlCheckingDesignerConfig
     with WithScenarioActivitySpecAsserts
+    with WithAccessControlCheckingConfigScenarioHelper
+    with WithMockableDeploymentManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {

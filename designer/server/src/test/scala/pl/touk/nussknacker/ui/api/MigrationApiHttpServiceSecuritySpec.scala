@@ -6,12 +6,17 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.base.it.{
+  NuItTest,
+  WithAccessControlCheckingConfigScenarioHelper,
+  WithSimplifiedConfigScenarioHelper
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{
-  WithMockableDeploymentManager,
-  WithRichConfigRestAssuredUsersExtensions,
-  WithRichDesignerConfig
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig,
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithMockableDeploymentManager
 }
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -19,11 +24,10 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 class MigrationApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
+    with WithAccessControlCheckingDesignerConfig
+    with WithAccessControlCheckingConfigScenarioHelper
+    with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with WithMockableDeploymentManager
-    with WithRichConfigRestAssuredUsersExtensions
-    with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
 
