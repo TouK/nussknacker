@@ -23,7 +23,11 @@ class DictResourcesEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .summary("Get list of dictionary entries matching the label pattern")
       .tag("Dictionary")
       .get
-      .in("dicts" / path[String]("processingType") / path[String]("dictId") / "entry" / query[String]("label"))
+      .in(
+        "processDefinitionData" / path[String]("processingType") / "dicts" / path[String]("dictId") / "entry" / query[
+          String
+        ]("label")
+      )
       .out(
         statusCode(Ok).and(
           jsonBody[List[DictEntry]]
@@ -48,7 +52,7 @@ class DictResourcesEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .summary("Get list of available dictionaries with value type compatible with expected type")
       .tag("Dictionary")
       .post
-      .in("dicts" / path[String]("processingType"))
+      .in("processDefinitionData" / path[String]("processingType") / "dicts")
       .in(jsonBody[DictListRequestDto])
       .out(
         statusCode(Ok).and(

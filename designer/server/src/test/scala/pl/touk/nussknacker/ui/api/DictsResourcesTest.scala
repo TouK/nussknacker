@@ -27,7 +27,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -49,7 +49,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -70,7 +70,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -88,7 +88,7 @@ class DictsResourcesTest
     val response = httpClient.send(
       quickRequest
         .post(
-          uri"$nuDesignerHttpAddress/api/dicts/ThisProcessingTypeDoesNotExist"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/thisProcessingTypeDoesNotExist/dicts"
         )
         .contentType(MediaType.ApplicationJson)
         .body(
@@ -99,7 +99,7 @@ class DictsResourcesTest
     )
 
     response.code shouldEqual StatusCode.NotFound
-    response.body shouldEqual s"Processing type: ThisProcessingTypeDoesNotExist not found"
+    response.body shouldEqual s"Processing type: thisProcessingTypeDoesNotExist not found"
   }
 
   test("return suggestions for existing prefix") {
@@ -108,7 +108,8 @@ class DictsResourcesTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/$dictId/entry?label=${"Black".take(2)}"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts/$dictId/entry?label=${"Black"
+              .take(2)}"
         )
         .auth
         .basic("admin", "admin")
@@ -132,7 +133,7 @@ class DictsResourcesTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/$dictId/entry?label=thisPrefixDoesntExist"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts/$dictId/entry?label=thisPrefixDoesNotExist"
         )
         .auth
         .basic("admin", "admin")
@@ -147,7 +148,7 @@ class DictsResourcesTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/dicts/${Streaming.stringify}/$dictId/entry?label=a"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts/$dictId/entry?label=a"
         )
         .auth
         .basic("admin", "admin")
@@ -157,13 +158,13 @@ class DictsResourcesTest
   }
 
   test("fail to return entry suggestions for non-existing processingType") {
-    val dictId         = "thisDictDoesNotExist"
+    val dictId         = "rgb"
     val processingType = "thisProcessingTypeDoesNotExist"
 
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/dicts/${processingType}/$dictId/entry?label=a"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/$processingType/dicts/$dictId/entry?label=a"
         )
         .auth
         .basic("admin", "admin")
