@@ -112,7 +112,7 @@ class MigrationApiHttpServiceSecuritySpec
        |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",
        |  "isFragment": false,
-       |  "processCategory": "Category1",
+       |  "processCategory": "${Category1.stringify}",
        |  "scenarioGraph": ${exampleGraph.asJson.noSpaces}
        |}
        |""".stripMargin

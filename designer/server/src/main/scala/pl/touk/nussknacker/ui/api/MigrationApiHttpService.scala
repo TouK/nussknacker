@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.services
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.{BaseHttpService, MigrationApiEndpoints}
+import pl.touk.nussknacker.ui.api.BaseHttpService
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
 import pl.touk.nussknacker.ui.migrations.MigrationService
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
