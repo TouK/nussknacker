@@ -114,13 +114,6 @@ class AppApiHttpService(
       }
   }
 
-  expose {
-    appApiEndpoints.nuVersionEndpoint
-      .serverLogicSuccess { _ =>
-        Future.successful(NuVersion(value = BuildInfo.version))
-      }
-  }
-
   expose(when = shouldExposeConfig) {
     appApiEndpoints.serverConfigEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])

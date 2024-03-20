@@ -2,23 +2,49 @@ package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SimpleParameterEditor}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequest,
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
+import pl.touk.nussknacker.engine.graph.EdgeType
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{
+  BranchEndData,
+  BranchEndDefinition,
+  FragmentOutputVarDefinition,
+  Join,
+  NodeData,
+  Source,
+  UserDefinedAdditionalNodeFields
 }
+import pl.touk.nussknacker.engine.graph.service.ServiceRef
+import pl.touk.nussknacker.engine.graph.sink.SinkRef
+import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeTypingData,
+  NodeValidationError,
+  UIGlobalError,
+  ValidationErrors,
+  ValidationResult,
+  ValidationWarnings
+}
+import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.auto._
-import io.circe.syntax._
-import cats.syntax.functor._
-
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos
 
 object TapirCodecs {
 
@@ -118,30 +144,9 @@ object TapirCodecs {
     implicit val processNameSchema: Schema[ProcessName] = Schema.string
   }
 
-  object MigrateScenarioRequestV1Codec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestV1] = Schema.anyObject
-  }
-
-  object MigrateScenarioRequestV2Codec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestV2] = Schema.anyObject
-  }
-
   object MigrateScenarioRequestCodec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
     implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
-
-    implicit val migrateScenarioRequestEncoder: Encoder[MigrateScenarioRequest] = Encoder.instance {
-      case v1 @ MigrateScenarioRequestV1(_, _, _, _, _, _, _) => v1.asJson
-      case v2 @ MigrateScenarioRequestV2(_, _, _, _, _, _, _) => v2.asJson
-    }
-
-    implicit val migrateScenarioRequestDecoder: Decoder[MigrateScenarioRequest] = List[Decoder[MigrateScenarioRequest]](
-      Decoder[MigrateScenarioRequestV1].widen,
-      Decoder[MigrateScenarioRequestV2].widen,
-    ).reduceLeft(_ or _)
-
   }
 
 }
