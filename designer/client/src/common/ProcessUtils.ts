@@ -1,14 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
-import { flatten, isEmpty, isEqual, map, omit, pickBy, transform } from "lodash";
+import { flatten, isEmpty, isEqual, omit, pickBy, transform } from "lodash";
 import {
     ComponentDefinition,
     NodeId,
     NodeResults,
     NodeType,
-    ScenarioGraph,
     ReturnedType,
+    ScenarioGraph,
     TypingResult,
     UIParameter,
+    ValidationErrors,
     ValidationResult,
     VariableTypes,
 } from "../types";
@@ -66,7 +67,16 @@ class ProcessUtils {
     };
 
     getValidationResult = (scenario: Scenario): ValidationResult =>
-        scenario?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
+        scenario?.validationResult || {
+            validationErrors: [],
+            validationWarnings: [],
+            nodeResults: {},
+            errors: {
+                globalErrors: [],
+                processPropertiesErrors: [],
+                invalidNodes: {},
+            },
+        };
 
     hasNoWarnings = (scenario: Scenario) => {
         const warnings = this.getValidationResult(scenario).warnings;
@@ -77,7 +87,7 @@ class ProcessUtils {
         return isEmpty(this.getValidationErrors(scenario)?.processPropertiesErrors);
     };
 
-    getValidationErrors(scenario: Scenario) {
+    getValidationErrors(scenario: Scenario): ValidationErrors {
         return this.getValidationResult(scenario).errors;
     }
 
@@ -267,7 +277,7 @@ class ProcessUtils {
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
     _findPreviousNodes = (nodeId: NodeId, scenarioGraph: ScenarioGraph): NodeId[] => {
-        const nodeEdge = scenarioGraph.edges.find((edge) => edge.to === nodeId);
+        const nodeEdge = scenarioGraph.edges?.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];
         } else {

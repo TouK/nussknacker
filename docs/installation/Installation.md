@@ -31,7 +31,7 @@ If you want to see Nussknacker in action without Kafka, using embedded Request-R
 ```bash
 docker run -it -p 8080:8080 -p 8181:8181 touk/nussknacker:latest
 ```
-After it started go to http://localhost:8080 and login using credentials: admin/admin.
+After it started go to [http://localhost:8080](http://localhost:8080) and login using credentials: admin/admin.
 REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
 
 More information you can find at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/)
@@ -258,7 +258,7 @@ If you want to install them from the scratch or use already installed at your or
   - Telegraf's configuration - some metric tags and names need to be cleaned
   - Importing scenario dashboard to Grafana configuration
 - Flink savepoint configuration. To be able to use scenario verification
-  (see `shouldVerifyBeforeDeploy` property in [Deployment Manager documentation](../installation_configuration_guide/DeploymentManagerConfiguration.md))
+  (see `shouldVerifyBeforeDeploy` property in [scenario deployment configuration](../installation_configuration_guide/ScenarioDeploymentConfiguration.md))
   you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart
   setup)
 

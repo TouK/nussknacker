@@ -9,12 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.api.component.{
-  AdditionalUIConfigProvider,
-  AdditionalUIConfigProviderFactory,
-  DesignerWideComponentId,
-  EmptyAdditionalUIConfigProviderFactory
-}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, AdditionalUIConfigProviderFactory, DesignerWideComponentId, EmptyAdditionalUIConfigProviderFactory}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
@@ -26,20 +21,10 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.{
-  AnalyticsConfig,
-  AttachmentsConfig,
-  ComponentLinksConfigExtractor,
-  FeatureTogglesConfig,
-  UsageStatisticsReportsConfig
-}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
-import pl.touk.nussknacker.ui.definition.{
-  AlignedComponentsDefinitionProvider,
-  DefinitionsService,
-  ScenarioPropertiesConfigFinalizer
-}
+import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -54,13 +39,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{
-  AuthenticationConfiguration,
-  AuthenticationResources,
-  LoggedUser,
-  NussknackerInternalUser
-}
-import pl.touk.nussknacker.ui.services._
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -250,22 +229,18 @@ class AkkaHttpBasedRouteProvider(
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
       val componentsApiHttpService = new ComponentApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         componentService = componentService
       )
       val userApiHttpService = new UserApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         categories = typeToConfig.mapValues(_.category)
       )
       val notificationApiHttpService = new NotificationApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         notificationService = notificationService
       )
       val nodesApiHttpService = new NodesApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData),
         typeToProcessValidator = processValidator,
@@ -280,7 +255,6 @@ class AkkaHttpBasedRouteProvider(
         scenarioService = processService
       )
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioActivityRepository = processActivityRepository,
         scenarioService = processService,
@@ -292,12 +266,10 @@ class AkkaHttpBasedRouteProvider(
         new AkkaHttpBasedTapirStreamEndpointProvider()
       )
       val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
       val dictResourcesHttpService = new DictResourcesHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         processingTypeData = typeToConfig.mapValues { processingTypeData =>
           (
@@ -463,7 +435,7 @@ class AkkaHttpBasedRouteProvider(
             authorize(authenticatedUser.roles.nonEmpty) {
               val loggedUser = LoggedUser(
                 authenticatedUser = authenticatedUser,
-                rules = AuthenticationConfiguration.getRules(resolvedConfig)
+                rules = authenticationResources.configuration.rules
               )
               apiResourcesWithAuthentication.map(_.securedRouteWithErrorHandling(loggedUser)).reduce(_ ~ _)
             }

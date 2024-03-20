@@ -10,6 +10,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.DictError
 import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.DictError.{MalformedTypingResult, NoDict, NoProcessingType}
 import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir._
 import sttp.tapir.json.circe.jsonBody

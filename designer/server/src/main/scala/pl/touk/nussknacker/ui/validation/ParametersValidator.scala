@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.ParametersValidationRequest
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationRequest
 
 class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterable[String]) {
 

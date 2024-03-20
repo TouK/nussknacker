@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
 
@@ -21,7 +21,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
