@@ -3,6 +3,7 @@ package pl.touk.nussknacker.development.manager
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import io.circe.Json
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{
   BaseModelData,
@@ -50,13 +50,13 @@ object MockableDeploymentManagerProvider {
   object MockableDeploymentManager extends DeploymentManager {
 
     private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults]](Map.empty)
+    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[_]]](Map.empty)
 
     def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
       this.scenarioStatuses.set(scenarioStates)
     }
 
-    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults]): Unit = {
+    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[_]]): Unit = {
       this.testResults.set(scenarioTestResults)
     }
 
@@ -100,14 +100,15 @@ object MockableDeploymentManagerProvider {
     override def test(
         name: ProcessName,
         canonicalProcess: CanonicalProcess,
-        scenarioTestData: ScenarioTestData
-    ): Future[TestProcess.TestResults] = Future.successful {
+        scenarioTestData: ScenarioTestData,
+    ): Future[TestResults[Json]] = Future.successful {
       testResults
         .get()
         .getOrElse(
           name.value,
           throw new IllegalArgumentException(s"Tests results not mocked for scenario [${name.value}]")
         )
+        .asInstanceOf[TestResults[Json]]
     }
 
     override def resolve(

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -64,7 +65,7 @@ trait DeploymentManager extends AutoCloseable {
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData
-  ): Future[TestResults]
+  ): Future[TestResults[Json]]
 
   final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
       implicit freshnessPolicy: DataFreshnessPolicy

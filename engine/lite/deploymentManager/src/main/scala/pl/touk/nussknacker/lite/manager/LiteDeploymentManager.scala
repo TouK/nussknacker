@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.lite.manager
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment.BaseDeploymentManager
@@ -21,14 +22,14 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-  ): Future[TestProcess.TestResults] = {
+  ): Future[TestProcess.TestResults[Json]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
         // TODO: handle scenario testing in RR as well
         KafkaTransactionalScenarioInterpreter.testRunner.runTest(
           modelData.asInvokableModelData,
           scenarioTestData,
-          canonicalProcess
+          canonicalProcess,
         )
       }
     }

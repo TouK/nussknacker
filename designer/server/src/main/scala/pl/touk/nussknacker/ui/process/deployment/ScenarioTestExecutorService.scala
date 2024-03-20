@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -15,7 +16,7 @@ trait ScenarioTestExecutorService {
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults]
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]]
 
 }
 
@@ -25,8 +26,8 @@ class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, deploy
   override def testProcess(
       id: ProcessIdWithName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults] = {
+      scenarioTestData: ScenarioTestData,
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
       testResult      <- deploymentManager.test(id.name, resolvedProcess, scenarioTestData)

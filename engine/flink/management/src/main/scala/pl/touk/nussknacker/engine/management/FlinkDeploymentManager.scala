@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -180,7 +181,7 @@ abstract class FlinkDeploymentManager(
       processName: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData
-  ): Future[TestResults] = {
+  ): Future[TestResults[Json]] = {
     testRunner.test(canonicalProcess, scenarioTestData)
   }
 

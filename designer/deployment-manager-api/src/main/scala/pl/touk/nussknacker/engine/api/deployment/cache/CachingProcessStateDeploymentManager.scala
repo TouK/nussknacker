@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.cache
 import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -77,7 +78,7 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
       scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] =
+  ): Future[TestProcess.TestResults[Json]] =
     delegate.test(name, canonicalProcess, scenarioTestData)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager

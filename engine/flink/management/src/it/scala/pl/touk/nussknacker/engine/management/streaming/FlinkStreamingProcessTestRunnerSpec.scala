@@ -6,12 +6,11 @@ import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.testmode.TestProcess.ResultContext
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
-
 import java.util.UUID
 import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
@@ -45,9 +44,9 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     whenReady(deploymentManager.test(processName, process, scenarioTestData)) { r =>
       r.nodeResults shouldBe Map(
-        "startProcess" -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "nightFilter"  -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
-        "endSend"      -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere")))
+        "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
+        "endSend"      -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere"))))
       )
     }
   }
@@ -70,5 +69,8 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
     }
     caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }
+
+  private def variable(value: String): Json =
+    Json.obj("pretty" -> Json.fromString(value))
 
 }

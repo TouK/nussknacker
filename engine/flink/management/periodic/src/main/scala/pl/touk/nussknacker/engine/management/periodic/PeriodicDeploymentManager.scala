@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -177,8 +178,8 @@ class PeriodicDeploymentManager private[periodic] (
   override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] =
+      scenarioTestData: ScenarioTestData,
+  ): Future[TestProcess.TestResults[Json]] =
     delegate.test(name, canonicalProcess, scenarioTestData)
 
   override def getProcessStates(

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -62,8 +63,8 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
   override def test(
       name: ProcessName,
       canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = stubbedActionResponse
+      scenarioTestData: ScenarioTestData,
+  ): Future[TestProcess.TestResults[Json]] = stubbedActionResponse
 
   override def customActions: List[CustomAction] = List.empty
 
