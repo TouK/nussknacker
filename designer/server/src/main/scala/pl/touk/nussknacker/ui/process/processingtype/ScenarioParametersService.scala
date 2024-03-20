@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.Implicits.{RichScalaMap, RichTupleList}
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.{NotFoundError, NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.{BadRequestError, NuDesignerError, UnauthorizedError}
 
 class ScenarioParametersService private (
     parametersForProcessingType: Map[ProcessingType, ScenarioParameters],
@@ -49,10 +49,7 @@ class ScenarioParametersService private (
         case singleProcessingType :: Nil => valid(singleProcessingType)
         case Nil => invalid(new ProcessingTypeNotFoundError(category, processingMode, engineSetupName))
         case moreThanOne =>
-          throw new IllegalStateException(
-            s"ScenarioParametersCombination to processing type mapping should be 1-to-1 but for parameters: " +
-              s"$category, $processingMode, $engineSetupName there is more than one processingType: ${moreThanOne.mkString(", ")}"
-          )
+          invalid(new MoreThanOneProcessingTypeFoundError(category, processingMode, engineSetupName, moreThanOne))
       }
     }
   }
@@ -172,6 +169,16 @@ class ProcessingTypeNotFoundError(
     category: Option[String],
     processingMode: Option[ProcessingMode],
     engineSetupName: Option[EngineSetupName]
-) extends NotFoundError(
-      s"Processing type for combinations of parameters: category: $category, processing mode: $processingMode, engine setup: $engineSetupName"
+) extends BadRequestError(
+      s"Processing type for combinations of parameters: category: $category, processing mode: $processingMode, engine setup: $engineSetupName not found"
+    )
+
+class MoreThanOneProcessingTypeFoundError(
+    category: Option[String],
+    processingMode: Option[ProcessingMode],
+    engineSetupName: Option[EngineSetupName],
+    processingTypes: Iterable[ProcessingType]
+) extends BadRequestError(
+      s"More than one processing type: ${processingTypes.mkString(", ")} for combinations of parameters: " +
+        s"category: $category, processing mode: $processingMode, engine setup: $engineSetupName found"
     )

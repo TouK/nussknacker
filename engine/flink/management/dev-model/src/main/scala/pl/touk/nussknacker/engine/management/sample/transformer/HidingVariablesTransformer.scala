@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object HidingVariablesTransformer
     extends CustomStreamTransformer
@@ -24,7 +25,7 @@ object HidingVariablesTransformer
   }
 
   private def prepareInitialParameters(context: ValidationContext) = List(
-    Parameter("expression", Typed[Boolean])
+    Parameter(ParameterName("expression"), Typed[Boolean])
       .copy(isLazyParameter = true, variablesToHide = context.localVariables.keySet)
   )
 

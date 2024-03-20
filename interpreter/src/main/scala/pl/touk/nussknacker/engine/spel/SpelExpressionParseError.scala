@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import org.springframework.expression.spel.SpelNode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 
 object SpelExpressionParseError {
@@ -252,7 +253,7 @@ object SpelExpressionParseError {
 
     def toProcessCompilationError(
         nodeId: String,
-        paramName: String
+        paramName: ParameterName
     ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
       ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, nodeId)
 

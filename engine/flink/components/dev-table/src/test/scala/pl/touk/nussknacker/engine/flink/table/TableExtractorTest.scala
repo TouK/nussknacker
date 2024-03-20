@@ -1,25 +1,22 @@
 package pl.touk.nussknacker.engine.flink.table
 
+import org.apache.flink.table.api.DataTypes
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.flink.table.SqlTestData.SimpleTypesTestCase.{tableDefinition, tableName}
 import pl.touk.nussknacker.engine.flink.table.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
 import pl.touk.nussknacker.engine.flink.table.extractor._
 
-class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
+class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
     val statements        = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement)
-    val dataSourceConfigs = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
+    val dataSourceConfigs = TableExtractor.extractTablesFromFlinkRuntime(statements)
 
-    val expectedResult = DataSourceSqlExtractorResult(
-      tableDefinitions = List(
-        DataSourceTableDefinition(
-          SimpleTypesTestCase.tableName,
-          SimpleTypesTestCase.schemaTypingResult
-        )
-      ),
+    val expectedResult = TableExtractorResult(
+      tableDefinitions = List(tableDefinition),
       sqlStatementExecutionErrors = List.empty
     )
 
@@ -28,14 +25,15 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
   }
 
   test("extracts configuration from tables outside of builtin catalog and database") {
-    val statementsStr = """
+    val tableName = "testTable2"
+    val statementsStr = s"""
        |CREATE CATALOG someCatalog WITH (
        |  'type' = 'generic_in_memory'
        |);
        |
        |CREATE DATABASE someCatalog.someDatabase;
        |
-       |CREATE TABLE someCatalog.someDatabase.testTable
+       |CREATE TABLE someCatalog.someDatabase.$tableName
        |(
        |    someString  STRING
        |) WITH (
@@ -43,18 +41,24 @@ class DataSourceSqlExtractorTest extends AnyFunSuite with Matchers with TableDri
        |);""".stripMargin
 
     val statements        = SqlStatementReader.readSql(statementsStr)
-    val extractionResults = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(statements)
+    val extractionResults = TableExtractor.extractTablesFromFlinkRuntime(statements)
 
     extractionResults.sqlStatementExecutionErrors shouldBe empty
     extractionResults.tableDefinitions shouldBe List(
-      DataSourceTableDefinition("testTable", Typed.record(Map("someString" -> Typed[String])))
+      TableDefinition(
+        tableName,
+        typingResult = Typed.record(Map("someString" -> Typed[String])),
+        columns = List(
+          ColumnDefinition("someString", Typed[String], DataTypes.STRING())
+        )
+      )
     )
   }
 
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
       val parsedStatement   = SqlStatementReader.readSql(invalidStatement)
-      val extractionResults = DataSourceSqlExtractor.extractTablesFromFlinkRuntime(parsedStatement)
+      val extractionResults = TableExtractor.extractTablesFromFlinkRuntime(parsedStatement)
 
       extractionResults.sqlStatementExecutionErrors.size shouldBe 1
       extractionResults.tableDefinitions shouldBe empty
@@ -117,6 +121,16 @@ object SqlTestData {
         "someString"  -> Typed[String],
         "someVarChar" -> Typed[String],
         "someInt"     -> Typed[Integer],
+      )
+    )
+
+    val tableDefinition: TableDefinition = TableDefinition(
+      tableName,
+      schemaTypingResult,
+      columns = List(
+        ColumnDefinition("someString", Typed[String], DataTypes.STRING()),
+        ColumnDefinition("someVarChar", Typed[String], DataTypes.VARCHAR(150)),
+        ColumnDefinition("someInt", Typed[Integer], DataTypes.INT()),
       )
     )
 

@@ -2,12 +2,13 @@ package pl.touk.nussknacker.openapi.enrichers
 
 import org.asynchttpclient.DefaultAsyncHttpClient
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Params}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, TimeMeasuringService}
 import pl.touk.nussknacker.http.backend.{
   FixedAsyncHttpClientBackendProvider,
@@ -57,7 +58,7 @@ class SwaggerEnricher(
   override def returnType: typing.TypingResult =
     swaggerService.responseSwaggerType.map(_.typingResult).getOrElse(Typed[Unit])
 
-  override def invoke(params: Params)(
+  override def invoke(eagerParameters: Map[ParameterName, Any])(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
       contextId: ContextId,
@@ -65,7 +66,9 @@ class SwaggerEnricher(
       componentUseCase: ComponentUseCase
   ): Future[AnyRef] =
     measuring {
-      swaggerHttpService.invoke(parameterExtractor.prepareParams(params.nameToValueMap))
+      swaggerHttpService.invoke(
+        parameterExtractor.prepareParams(eagerParameters.map { case (p, value) => (p.value, value) })
+      )
     }
 
   override def open(runtimeContext: EngineRuntimeContext): Unit = {

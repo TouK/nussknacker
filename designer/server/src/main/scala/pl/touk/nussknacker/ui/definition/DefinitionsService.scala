@@ -116,7 +116,7 @@ object DefinitionsService {
 
   def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(
-      name = parameter.name,
+      name = parameter.name.value,
       typ = parameter.typ,
       editor = parameter.finalEditor,
       defaultValue = parameter.finalDefaultValue,

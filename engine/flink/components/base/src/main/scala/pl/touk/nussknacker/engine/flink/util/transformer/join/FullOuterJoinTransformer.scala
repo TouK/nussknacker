@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.join
 
+import cats.Id
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ValidationContext
 }
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -64,8 +66,14 @@ class FullOuterJoinTransformer(
       val errors_names = ContextTransformation.checkIdenticalSanitizedNodeNames(ids.toList)
       val errors_key   = ContextTransformation.checkNotAllowedNodeNames(ids.toList, Set(KeyFieldName))
       NextParameters(
-        List(KeyParam, AggregatorParam, AggregateByParam, WindowLengthParam).map(_.parameter),
-        errors_names ++ errors_key
+        parameters = List(
+          KeyParamDeclaration,
+          AggregatorParamDeclaration,
+          AggregateByParamDeclaration,
+          WindowLengthParamDeclaration
+        )
+          .map(_.createParameter()),
+        errors = errors_names ++ errors_key
       )
 
     case TransformationStep(
@@ -89,7 +97,7 @@ class FullOuterJoinTransformer(
               agg
                 .computeOutputType(aggregateByByBranchId(id))
                 .leftMap(x => {
-                  val branchParamId = ParameterNaming.getNameForBranchParameter(AggregateByParam.parameter, id)
+                  val branchParamId = AggregateByParamDeclaration.parameterName.withBranchId(id)
                   NonEmptyList.one(CustomNodeError(x, Some(branchParamId)))
                 })
                 .map(id -> _)
@@ -117,10 +125,11 @@ class FullOuterJoinTransformer(
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): FlinkCustomJoinTransformation = {
-    val keyByBranchId: Map[String, LazyParameter[CharSequence]]   = KeyParam.extractValue(params)
-    val aggregatorByBranchId: Map[String, Aggregator]             = AggregatorParam.extractValue(params)
-    val aggregateByByBranchId: Map[String, LazyParameter[AnyRef]] = AggregateByParam.extractValue(params)
-    val window: Duration                                          = WindowLengthParam.extractValue(params)
+    val keyByBranchId: Map[String, LazyParameter[CharSequence]] = KeyParamDeclaration.extractValueUnsafe(params)
+    val aggregatorByBranchId: Map[String, Aggregator]           = AggregatorParamDeclaration.extractValueUnsafe(params)
+    val aggregateByByBranchId: Map[String, LazyParameter[AnyRef]] =
+      AggregateByParamDeclaration.extractValueUnsafe(params)
+    val window: Duration = WindowLengthParamDeclaration.extractValueUnsafe(params)
 
     val aggregator: Aggregator = new MapAggregator(
       aggregatorByBranchId.mapValuesNow(new OptionAggregator(_).asInstanceOf[Aggregator]).asJava
@@ -201,27 +210,32 @@ class FullOuterJoinTransformer(
 object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
   val KeyFieldName = "key"
 
-  val KeyParamName = "key"
-  val KeyParam: ParameterWithExtractor[Map[String, LazyParameter[CharSequence]]] =
-    ParameterWithExtractor.branchLazyMandatory[CharSequence](KeyParamName)
+  val KeyParamName: ParameterName = ParameterName("key")
 
-  val AggregatorParamName = "aggregator"
+  val KeyParamDeclaration
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[CharSequence]]] =
+    ParameterDeclaration.branchLazyMandatory[CharSequence](KeyParamName).withCreator()
 
-  val AggregatorParam: ParameterWithExtractor[Map[String, Aggregator]] = ParameterWithExtractor
-    .branchMandatory[Aggregator](
-      AggregatorParamName,
-      _.copy(
-        editor = Some(AggregateHelper.DUAL_EDITOR),
-        additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
+  val AggregatorParamName: ParameterName = ParameterName("aggregator")
+
+  val AggregatorParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, Aggregator]] =
+    ParameterDeclaration
+      .branchMandatory[Aggregator](AggregatorParamName)
+      .withCreator(
+        modify = _.copy(
+          editor = Some(AggregateHelper.DUAL_EDITOR),
+          additionalVariables = Map("AGG" -> AdditionalVariableWithFixedValue(new AggregateHelper))
+        )
       )
-    )
 
-  val AggregateByParamName = "aggregateBy"
-  val AggregateByParam: ParameterWithExtractor[Map[String, LazyParameter[AnyRef]]] =
-    ParameterWithExtractor.branchLazyMandatory[AnyRef](AggregateByParamName)
+  val AggregateByParamName: ParameterName = ParameterName("aggregateBy")
 
-  val WindowLengthParamName = "windowLength"
-  val WindowLengthParam: ParameterWithExtractor[Duration] =
-    ParameterWithExtractor.mandatory[Duration](WindowLengthParamName)
+  val AggregateByParamDeclaration
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[AnyRef]]] =
+    ParameterDeclaration.branchLazyMandatory[AnyRef](AggregateByParamName).withCreator()
+
+  val WindowLengthParamName: ParameterName = ParameterName("windowLength")
+  val WindowLengthParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[Duration] =
+    ParameterDeclaration.mandatory[Duration](WindowLengthParamName).withCreator()
 
 }

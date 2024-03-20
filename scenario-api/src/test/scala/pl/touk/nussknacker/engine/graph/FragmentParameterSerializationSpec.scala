@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
   ParameterValueCompileTimeValidation,
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
@@ -18,7 +19,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
     "should deserialize FragmentParameter without required, initialValue, hintText, valueEditor, valueCompileTimeValidation [backwards compatibility test]"
   ) {
     val referenceFragmentParameter = FragmentParameter(
-      "paramString",
+      ParameterName("paramString"),
       FragmentClazzRef("java.lang.String"),
       required = false,
       initialValue = None,
@@ -82,7 +83,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       }
     }""") shouldBe Right(
       FragmentParameter(
-        "paramString",
+        ParameterName("paramString"),
         FragmentClazzRef[String],
         required = true,
         initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
@@ -120,7 +121,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
       "valueCompileTimeValidation" : null
     }""") shouldBe Right(
       FragmentParameter(
-        "paramString",
+        ParameterName("paramString"),
         FragmentClazzRef[String],
         required = false,
         initialValue = None,

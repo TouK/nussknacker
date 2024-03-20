@@ -8,7 +8,7 @@ object SqlStatementReader extends LazyLogging {
 
   type SqlStatement = String
 
-  // TODO: if configurator forgets a ';' - how do we signal it?
+  // TODO: if administrator forgets a ';' - how do we signal it?
   def readSql(value: String): List[SqlStatement] = value.split(separatorPattern).toList.map(_.trim).filterNot(_.isEmpty)
 
 }

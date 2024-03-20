@@ -5,6 +5,7 @@ import cats.data.Validated.{invalid, valid}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.Validator
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.definition.component.parameter.validator.ValidationExpressionParameterValidator.variableName
 import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
@@ -17,7 +18,7 @@ case class ValidationExpressionParameterValidator(
     validationFailedMessage: Option[String]
 ) extends Validator {
 
-  override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     value match {
@@ -27,7 +28,7 @@ case class ValidationExpressionParameterValidator(
     }
   }
 
-  private def validateValue(paramName: String, value: Any)(
+  private def validateValue(paramName: ParameterName, value: Any)(
       implicit nodeId: NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     // TODO: paramName should be used here, but a lot of parameters have names that are not valid variables (e.g. "Topic name")
@@ -36,24 +37,27 @@ case class ValidationExpressionParameterValidator(
       e =>
         invalid(
           CustomParameterValidationError(
-            s"Evaluation of validation expression '${validationExpression.original}' of language ${validationExpression.language} failed: ${e.getMessage}",
-            s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
-            paramName,
-            nodeId.id
+            message =
+              s"Evaluation of validation expression '${validationExpression.original}' of language ${validationExpression.language} failed: ${e.getMessage}",
+            description =
+              s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
+            paramName = paramName,
+            nodeId = nodeId.id
           )
         ),
       result => if (result) valid(()) else invalid(error(paramName, nodeId.id))
     )
   }
 
-  private def error(paramName: String, nodeId: String): CustomParameterValidationError = CustomParameterValidationError(
-    validationFailedMessage.getOrElse(
-      s"This field has to satisfy the validation expression '${validationExpression.original}'"
-    ),
-    s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
-    paramName,
-    nodeId
-  )
+  private def error(paramName: ParameterName, nodeId: String): CustomParameterValidationError =
+    CustomParameterValidationError(
+      validationFailedMessage.getOrElse(
+        s"This field has to satisfy the validation expression '${validationExpression.original}'"
+      ),
+      s"Please provide value that satisfies the validation expression '${validationExpression.original}'",
+      paramName,
+      nodeId
+    )
 
 }
 

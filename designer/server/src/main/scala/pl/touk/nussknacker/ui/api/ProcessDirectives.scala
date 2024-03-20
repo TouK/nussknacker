@@ -20,9 +20,10 @@ trait ProcessDirectives extends NuPathMatchers {
       processName: ProcessName
   )(implicit loggedUser: LoggedUser): Directive1[ScenarioWithDetails] = {
     processId(processName).flatMap { processIdWithName =>
-      onSuccess(
-        processService.getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly)
-      ).flatMap(provide)
+      onSuccess({
+        processService
+          .getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly)
+      }).flatMap(provide)
     }
   }
 

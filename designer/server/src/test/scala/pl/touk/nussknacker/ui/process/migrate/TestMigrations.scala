@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
@@ -55,7 +56,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
-          ServiceRef(ProcessTestData.existingServiceId, NodeParameter("newParam", "'abc'") :: parameters)
+          ServiceRef(ProcessTestData.existingServiceId, NodeParameter(ParameterName("newParam"), "'abc'") :: parameters)
         )
     }
 
@@ -68,7 +69,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
-          ServiceRef(ProcessTestData.existingServiceId, NodeParameter("newParam", "'abc'") :: parameters)
+          ServiceRef(ProcessTestData.existingServiceId, NodeParameter(ParameterName("newParam"), "'abc'") :: parameters)
         )
     }
 
@@ -99,14 +100,20 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case sub @ FragmentInputDefinition(_, subParams, _)
-          if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
-        sub.copy(parameters = sub.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p))
+          if !subParams
+            .exists(_.name == ParameterName("param42")) && subParams.exists(_.name == ParameterName("param1")) =>
+        sub.copy(parameters =
+          sub.parameters.map(p => if (p.name == ParameterName("param1")) p.copy(name = ParameterName("param42")) else p)
+        )
 
       case sub @ FragmentInput(_, ref, _, _, _)
-          if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
+          if !ref.parameters
+            .exists(_.name == ParameterName("param42")) && ref.parameters.exists(_.name == ParameterName("param1")) =>
         sub.copy(ref =
           sub.ref.copy(parameters =
-            sub.ref.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p)
+            sub.ref.parameters.map(p =>
+              if (p.name == ParameterName("param1")) p.copy(name = ParameterName("param42")) else p
+            )
           )
         )
     }
@@ -130,7 +137,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
-        n.copy(ref = ref.copy(parameters = NodeParameter("newParam", "'abc'") :: parameters))
+        n.copy(ref = ref.copy(parameters = NodeParameter(ParameterName("newParam"), "'abc'") :: parameters))
     }
 
   }

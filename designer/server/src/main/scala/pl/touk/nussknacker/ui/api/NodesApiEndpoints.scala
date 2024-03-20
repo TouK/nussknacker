@@ -4,7 +4,7 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -26,12 +26,27 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoProcessingType,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.TypingDtoSchemas._
 import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
+import sttp.tapir._
+import TapirCodecs.ScenarioNameCodec._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoProcessingType,
+  NoScenario
+}
+import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.SchemaType.SString
 import sttp.tapir._
@@ -214,6 +229,8 @@ object NodesApiEndpoints {
 
   object Dtos {
 
+    implicit lazy val parameterNameSchema: Schema[ParameterName] = Schema.string
+
     case class TypingResultInJson(value: Json)
 
     object TypingResultInJson {
@@ -328,6 +345,9 @@ object NodesApiEndpoints {
     implicit val parametersValidationRequestDtoEncoder: Encoder[ParametersValidationRequestDto] =
       Encoder.encodeJson.contramap[ParametersValidationRequestDto](_ => throw new IllegalStateException)
 
+    // for a sake of generation Open API using Scala 2.12, we have to define it explicitly
+    private implicit def listSchema[T: Schema]: Typeclass[List[T]] = Schema.schemaForIterable[T, List]
+
     @derive(schema, encoder, decoder)
     final case class ParametersValidationResultDto(
         validationErrors: List[NodeValidationError],
@@ -399,6 +419,7 @@ object NodesApiEndpoints {
     }
 
     def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
+      implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
       implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(
         modelData.modelClassLoader.classLoader
       )
@@ -407,9 +428,11 @@ object NodesApiEndpoints {
       deriveConfiguredDecoder[TestFromParametersRequest]
     }
 
+    implicit val parameterNameCodec: KeyEncoder[ParameterName] = KeyEncoder.encodeKeyString.contramap(_.value)
+
     @JsonCodec(encodeOnly = true) final case class TestSourceParameters(
         sourceId: String,
-        parameterExpressions: Map[String, Expression]
+        parameterExpressions: Map[ParameterName, Expression]
     )
 
     @JsonCodec(encodeOnly = true) final case class TestFromParametersRequest(

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   CustomParameterValidatorDelegate,
   ParameterValidator
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.management.periodic.SchedulePropertyExtractor
 
@@ -22,7 +23,7 @@ object CronParameterValidator extends CronParameterValidator {
 // Valid expression is e.g.: 0 * * * * ? * which means run every minute at 0 second
 class CronParameterValidator extends CustomParameterValidator {
 
-  override def isValid(paramName: String, expression: Expression, value: Option[Any], label: Option[String])(
+  override def isValid(paramName: ParameterName, expression: Expression, value: Option[Any], label: Option[String])(
       implicit nodeId: api.NodeId
   ): Validated[PartSubGraphCompilationError, Unit] = {
     def createValidationError: CustomParameterValidationError = {

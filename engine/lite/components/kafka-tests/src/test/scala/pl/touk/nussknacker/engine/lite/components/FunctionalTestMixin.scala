@@ -40,7 +40,7 @@ trait FunctionalTestMixin {
     )
     Invalid(
       NonEmptyList.one(
-        CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.SinkValueParamName))
+        CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.sinkValueParamName))
       )
     )
   }

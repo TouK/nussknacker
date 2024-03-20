@@ -2,31 +2,31 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.Writer
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputDynamicComponent}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import FixedExpressionValue.nullFixedValue
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
 object KafkaUniversalComponentTransformer {
-  final val SchemaVersionParamName          = "Schema version"
-  final val TopicParamName                  = "Topic"
-  final val SinkKeyParamName                = "Key"
-  final val SinkValueParamName              = "Value"
-  final val SinkValidationModeParameterName = "Value validation mode"
-  final val SinkRawEditorParamName          = "Raw editor"
+  final val schemaVersionParamName      = ParameterName("Schema version")
+  final val topicParamName              = ParameterName("Topic")
+  final val sinkKeyParamName            = ParameterName("Key")
+  final val sinkValueParamName          = ParameterName("Value")
+  final val sinkValidationModeParamName = ParameterName("Value validation mode")
+  final val sinkRawEditorParamName      = ParameterName("Raw editor")
 
   def extractValidationMode(value: String): ValidationMode =
-    ValidationMode.fromString(value, SinkValidationModeParameterName)
+    ValidationMode.fromString(value, sinkValidationModeParamName)
 
 }
 
@@ -56,7 +56,9 @@ trait KafkaUniversalComponentTransformer[T]
     KafkaConfig.parseConfig(modelDependencies.config)
   }
 
-  protected def getTopicParam(implicit nodeId: NodeId): WithError[Parameter] = {
+  protected def getTopicParam(
+      implicit nodeId: NodeId
+  ): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
@@ -71,22 +73,28 @@ trait KafkaUniversalComponentTransformer[T]
     }
   }
 
-  private def getTopicParam(topics: List[String]): Parameter = {
-    Parameter[String](topicParamName).copy(editor =
-      Some(
-        FixedValuesParameterEditor(
-          // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
-          // TODO: add addNullOption feature flag to FixedValuesParameterEditor
-          nullFixedValue +: topics
-            .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic))
-            .sorted
-            .map(v => FixedExpressionValue(s"'$v'", v))
+  private def getTopicParam(topics: List[String]) = {
+    ParameterDeclaration
+      .mandatory[String](topicParamName)
+      .withCreator(
+        modify = _.copy(editor =
+          Some(
+            FixedValuesParameterEditor(
+              // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
+              // TODO: add addNullOption feature flag to FixedValuesParameterEditor
+              nullFixedValue +: topics
+                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic))
+                .sorted
+                .map(v => FixedExpressionValue(s"'$v'", v))
+            )
+          )
         )
       )
-    )
   }
 
-  protected def getVersionParam(preparedTopic: PreparedKafkaTopic)(implicit nodeId: NodeId): WithError[Parameter] = {
+  protected def getVersionParam(
+      preparedTopic: PreparedKafkaTopic
+  )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
     val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
@@ -98,13 +106,19 @@ trait KafkaUniversalComponentTransformer[T]
     }).map(getVersionParam)
   }
 
-  protected def getVersionParam(versions: List[Integer]): Parameter = {
+  protected def getVersionParam(
+      versions: List[Integer]
+  ): ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
     val versionValues =
       FixedExpressionValue(s"'${SchemaVersionOption.LatestOptionName}'", "Latest version") :: versions.sorted.map(v =>
         FixedExpressionValue(s"'$v'", v.toString)
       )
-    Parameter[String](KafkaUniversalComponentTransformer.SchemaVersionParamName)
-      .copy(editor = Some(FixedValuesParameterEditor(versionValues)))
+
+    ParameterDeclaration
+      .mandatory[String](KafkaUniversalComponentTransformer.schemaVersionParamName)
+      .withCreator(
+        modify = _.copy(editor = Some(FixedValuesParameterEditor(versionValues)))
+      )
   }
 
   protected def extractPreparedTopic(params: Params): PreparedKafkaTopic =
@@ -148,7 +162,7 @@ trait KafkaUniversalComponentTransformer[T]
   protected def topicParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       val topicParam = getTopicParam.map(List(_))
-      NextParameters(parameters = topicParam.value, errors = topicParam.written)
+      NextParameters(parameters = topicParam.value.map(_.createParameter()), errors = topicParam.written)
   }
 
   protected def schemaParamStep(
@@ -160,19 +174,21 @@ trait KafkaUniversalComponentTransformer[T]
       val topicValidationErrors =
         validateTopic(preparedTopic.prepared).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(topicParamName)))
       NextParameters(
-        versionParam.value :: nextParams,
+        versionParam.value.createParameter() :: nextParams,
         errors = versionParam.written ++ topicValidationErrors
       )
-    case TransformationStep((topicParamName, _) :: Nil, _) =>
-      NextParameters(parameters = fallbackVersionOptionParam :: nextParams)
+    case TransformationStep((`topicParamName`, _) :: Nil, _) =>
+      NextParameters(parameters = fallbackVersionOptionParam.createParameter() :: nextParams)
   }
 
   def paramsDeterminedAfterSchema: List[Parameter]
 
   // edge case - for some reason Topic is not defined
-  @transient protected lazy val fallbackVersionOptionParam: Parameter = getVersionParam(Nil)
+  @transient protected lazy val fallbackVersionOptionParam
+      : ParameterCreatorWithNoDependency with ParameterExtractor[String] =
+    getVersionParam(Nil)
 
   // override it if you use other parameter name for topic
-  @transient protected lazy val topicParamName: String = TopicParamName
+  @transient protected lazy val topicParamName: ParameterName = KafkaUniversalComponentTransformer.topicParamName
 
 }

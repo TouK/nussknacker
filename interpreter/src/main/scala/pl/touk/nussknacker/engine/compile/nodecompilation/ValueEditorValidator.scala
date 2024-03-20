@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object ValueEditorValidator {
 
@@ -28,7 +29,7 @@ object ValueEditorValidator {
   def validateAndGetEditor(
       valueEditor: ParameterValueInput,
       initialValue: Option[FixedExpressionValue],
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
     val validatedInnerEditor = valueEditor match {
@@ -52,7 +53,7 @@ object ValueEditorValidator {
       fixedValuesList: List[FixedExpressionValue],
       allowOtherValue: Boolean,
       initialValue: Option[FixedExpressionValue],
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
     if (!allowOtherValue) {

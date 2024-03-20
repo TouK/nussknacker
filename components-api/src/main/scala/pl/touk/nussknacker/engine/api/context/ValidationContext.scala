@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Overwritte
 import pl.touk.nussknacker.engine.api.context.ValidationContext.empty
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 
 object ValidationContext {
@@ -32,7 +33,7 @@ case class ValidationContext(
 
   def contains(name: String): Boolean = variables.contains(name)
 
-  def withVariable(name: String, value: TypingResult, paramName: Option[String])(
+  def withVariable(name: String, value: TypingResult, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
 
@@ -43,16 +44,16 @@ case class ValidationContext(
   def withVariable(outputVar: OutputVar, value: TypingResult)(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] =
-    withVariable(outputVar.outputName, value, Some(outputVar.fieldName))
+    withVariable(outputVar.outputName, value, Some(ParameterName(outputVar.fieldName)))
 
-  def withVariableOverriden(name: String, value: TypingResult, paramName: Option[String])(
+  def withVariableOverriden(name: String, value: TypingResult, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, ValidationContext] = {
     validateVariableName(name, paramName)
       .map(_ => copy(localVariables = localVariables + (name -> value)))
   }
 
-  private def validateVariableExists(name: String, paramName: Option[String])(
+  private def validateVariableExists(name: String, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, String] =
     if (variables.contains(name)) Invalid(OverwrittenVariable(name, paramName)).toValidatedNel else Valid(name)

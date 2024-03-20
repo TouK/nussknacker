@@ -116,14 +116,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     The `String` to `URL` converting logic is now inside `ModelClassLoader.apply`
 * [#5505](https://github.com/TouK/nussknacker/pull/5505) anonymous access functionality for Tapir-based API 
   * `AuthenticationResources` & `AnonymousAccess` traits were changed to be able to introduce anonymous access feature
-  * `AuthCredentials` class was changed too
-* [#5373](https://github.com/TouK/nussknacker/pull/5373) changes related to `Component`s and `LazyParameter`s:
+  * `AuthCredentials` class was changed too 
+* [#5373](https://github.com/TouK/nussknacker/pull/5373)[#5694](https://github.com/TouK/nussknacker/pull/5694) changes related to `Component`s and `LazyParameter`s:
   * `LazyParameter` can be evaluated on request thanks to its `evaluate` method 
-  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`
+  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`. `Params` data class, in its extraction methods, assumes that a parameter with the given name exists in the underlying Map.
   * `TypedExpression` was removed from `BaseDefinedParameter` hierarchy in favour of `TypingResult` 
   * `TypedExpression` doesn't depend on `ExpressionTypingInfo` anymore 
   * `ServiceInvoker` refactoring (parameters map was removed, a context is passed to its method)
   * `ProcessListener` interface changed slightly
+  * `ParameterWithExtractor` util was replaced with `ParameterDeclaration`.
   * classes renaming:
     * `LazyParameterInterpreter` to `LazyParameterInterpreter`
     * `GenericNodeTransformation` to `DynamicComponent`
@@ -139,7 +140,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
   * type `NodeTransformationDefinition` (inside `DynamicComponent`) renamed to `ContextTransformationDefinition`
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
-* [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String` 
+* [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
+* [#5707](https://github.com/TouK/nussknacker/pull/5707) `ParameterName` data class was introduced. It replaces `String` in whole places where it's used as a parameter name
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -193,6 +195,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   than wildcard.
   On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
   have components with other processing modes or other deployment configuration.
+
+### Helm chart changes
+* [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Helm chart now has two preconfigured scenario types (`streaming` and `request-response`) instead of one (`default`).
+  Because of that, scenario created using previous version of helm chart will have invalid configuration in the database.
+  To fix that, you have to manually connect to the database and execute sql statement:
+  ```sql
+    UPDATE processes SET processing_type = 'given-scenario-type' where processing_type = 'default';
+  ```
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump

@@ -3,25 +3,26 @@ package pl.touk.nussknacker.engine.flink.table.extractor
 import org.apache.flink.table.api.Table
 import org.apache.flink.table.types.DataType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.flink.table.ColumnDefinition
 
 object TypeExtractor {
 
   import scala.jdk.CollectionConverters._
 
-  private case class ColumnTypingResult(columnName: String, typingResult: TypingResult)
+  final case class TableTypingResult(typingResult: TypingResult, columns: List[ColumnDefinition])
 
-  def extractTypingResult(tableFromEnv: Table): TypingResult = {
+  def extractTypingResult(tableFromEnv: Table): TableTypingResult = {
     val columnsTypingData = tableFromEnv.getResolvedSchema.getColumns.asScala.map { column =>
-      ColumnTypingResult(column.getName, flinkTypeToTypingResult(column.getDataType))
+      ColumnDefinition(column.getName, flinkTypeToTypingResult(column.getDataType), column.getDataType)
     }.toList
-    typedColumnsToRecordTypingResult(columnsTypingData)
+    TableTypingResult(typedColumnsToRecordTypingResult(columnsTypingData), columnsTypingData)
   }
 
   // TODO: handle complex types like maps, lists, rows, raws
   private def flinkTypeToTypingResult(dataType: DataType) =
     Typed.typedClass(dataType.getLogicalType.getDefaultConversion)
 
-  private def typedColumnsToRecordTypingResult(columns: List[ColumnTypingResult]) =
+  private def typedColumnsToRecordTypingResult(columns: List[ColumnDefinition]) =
     Typed.record(columns.map(c => c.columnName -> c.typingResult).toMap)
 
 }

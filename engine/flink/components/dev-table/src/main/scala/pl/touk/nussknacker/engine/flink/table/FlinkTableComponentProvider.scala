@@ -5,10 +5,11 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.extractor.DataSourceSqlExtractor.extractTablesFromFlinkRuntime
+import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.{DataSourceTableDefinition, SqlStatementReader}
-import pl.touk.nussknacker.engine.flink.table.source.SqlSourceFactory
+import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
+import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
@@ -25,26 +26,30 @@ import scala.util.{Failure, Success, Try}
  *  kafka and schema registry addresses are provided as environment variables that are different for designer and
  *  jobmanager/taskmanager services. For reference see the nussknacker-quickstart repository.
  */
-class SqlComponentProvider extends ComponentProvider with LazyLogging {
+class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
 
-  override def providerName: String = "sqlFile"
+  override def providerName: String = "flinkTable"
+  private val tableComponentName    = "table"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val parsedConfig = config.rootAs[SqlFileDataSourcesConfig]
+    val parsedConfig = config.rootAs[TableComponentProviderConfig]
 
-    val configs = extractDataSourceConfigFromSqlFileOrThrow(parsedConfig.sqlFilePath)
+    val definition = extractTableDefinitionsFromSqlFileOrThrow(parsedConfig.tableDefinitionFilePath)
 
     ComponentDefinition(
-      "tableApi-source-sql",
-      new SqlSourceFactory(configs)
+      tableComponentName,
+      new TableSourceFactory(definition)
+    ) :: ComponentDefinition(
+      tableComponentName,
+      new TableSinkFactory(definition)
     ) :: Nil
   }
 
-  private def extractDataSourceConfigFromSqlFileOrThrow(filePath: String): SqlDataSourcesDefinition = {
+  private def extractTableDefinitionsFromSqlFileOrThrow(filePath: String) = {
     val sqlStatements = readSqlFromFile(Paths.get(filePath))
     val results       = extractTablesFromFlinkRuntime(sqlStatements)
 
@@ -56,13 +61,13 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
       )
     }
 
-    SqlDataSourcesDefinition(results.tableDefinitions, sqlStatements)
+    TableSqlDefinitions(results.tableDefinitions, sqlStatements)
   }
 
-  private def readSqlFromFile(pathToFile: Path): List[SqlStatement] = Try(ResourceLoader.load(pathToFile)) match {
+  private def readSqlFromFile(pathToFile: Path) = Try(ResourceLoader.load(pathToFile)) match {
     case Failure(exception) =>
       throw new IllegalStateException(
-        s"""Sql file with configuration of sql data source components was not found under specified path: $pathToFile. 
+        s"""Sql file with configuration of sql data source components was not found under specified path: $pathToFile.
              |Exception: $exception""".stripMargin
       )
     case Success(fileContent) =>
@@ -75,9 +80,9 @@ class SqlComponentProvider extends ComponentProvider with LazyLogging {
 
 }
 
-final case class SqlDataSourcesDefinition(
-    tableDefinitions: List[DataSourceTableDefinition],
+final case class TableSqlDefinitions(
+    tableDefinitions: List[TableDefinition],
     sqlStatements: List[SqlStatement]
 )
 
-final case class SqlFileDataSourcesConfig(sqlFilePath: String)
+final case class TableComponentProviderConfig(tableDefinitionFilePath: String)
