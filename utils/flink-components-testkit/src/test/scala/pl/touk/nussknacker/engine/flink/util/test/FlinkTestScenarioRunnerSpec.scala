@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -130,8 +131,15 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
           collector: ServiceInvocationCollector,
           componentUseCase: ComponentUseCase
       ): Future[String] = {
-        collector.collect(s"test-service-$value", Option(MockedValued)) {
-          Future.successful(value.evaluate(context))
+        componentUseCase match {
+          case EngineRuntime =>
+            Future.successful(value.evaluate(context))
+          case TestRuntime =>
+            Future.successful(MockedValued)
+          case cu @ (Validation | ServiceQuery | TestDataGeneration) =>
+            throw new IllegalArgumentException(
+              s"ComponentUseCase $cu is not supported in ${TestService.getClass.getName}"
+            )
         }
       }
 

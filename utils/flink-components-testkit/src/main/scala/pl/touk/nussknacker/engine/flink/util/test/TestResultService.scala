@@ -64,7 +64,7 @@ class TestResultSink(value: LazyParameter[AnyRef]) extends BasicFlinkSink with S
 
 }
 
-class TestResultSinkFactory extends SinkFactory { // with SingleInputDynamicComponent[Sink] {
+class TestResultSinkFactory extends SinkFactory {
 
   private val createdComponent = new AtomicReference[List[TestResultSink]](List.empty)
 

@@ -182,6 +182,7 @@ class FlinkTestScenarioRunner(
   ): RunListResult[R] = {
     val results = TestResultSinkFactory.extractFromTestComponentsHolder(testExtensionsHolder)
 //    val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder) // todo:
+//    val results2 = ResultsCollectingListenerHolder.resultsForId(testExtensionsHolder.runId)
     RunListResult(successes = results, errors = runResult.errors)
   }
 

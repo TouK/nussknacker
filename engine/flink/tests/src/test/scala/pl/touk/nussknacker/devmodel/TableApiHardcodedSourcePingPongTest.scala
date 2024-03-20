@@ -26,7 +26,7 @@ class TableApiHardcodedSourcePingPongTest extends AnyFunSuite with FlinkSpec wit
       .streaming("test")
       .source("start", "tableApi-source-hardcoded")
       .filter("filter", "#input.someInt != 1")
-      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#input")
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input")
 
     val expectedMap: java.util.Map[String, Any] = Map("someString" -> "BBB", "someInt" -> 2).asJava
 
