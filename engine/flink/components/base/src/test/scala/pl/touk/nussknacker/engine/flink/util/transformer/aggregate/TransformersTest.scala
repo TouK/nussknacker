@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, FragmentSpecificData, MetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, FragmentResolver, ProcessValidator}
@@ -47,7 +47,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   def modelData(
       list: List[TestRecord] = List(),
       aggregateWindowsConfig: AggregateWindowsConfig = AggregateWindowsConfig.Default,
-      collectingListener: => ResultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+      collectingListener: => ResultsCollectingListener = ResultsCollectingListenerHolder.registerListener
   ): LocalModelData = {
     val config = ConfigFactory
       .empty()
@@ -527,7 +527,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   test("base aggregates test") {
     val id = "1"
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
     val model = modelData(
       List(
         TestRecordHours(id, 1, 2, "a"),
@@ -581,7 +581,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       key: String,
       model: LocalModelData,
       testProcess: CanonicalProcess
-  ): List[TestProcess.ResultContext[AnyRef]] = {
+  ): List[TestProcess.ResultContext[Any]] = {
     runProcess(model, testProcess)
     val collectingListener = model.configCreator.asInstanceOf[ConfigCreatorWithCollectingListener].collectingListener
     variablesForKey(collectingListener, key)
@@ -599,9 +599,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def variablesForKey(
       collectingListener: ResultsCollectingListener,
       key: String
-  ): List[TestProcess.ResultContext[AnyRef]] = {
-    collectingListener
-      .results[AnyRef]
+  ): List[TestProcess.ResultContext[Any]] = {
+    collectingListener.results
       .nodeResults("end")
       .filter(_.variableTyped[String](VariableConstants.KeyVariableName).contains(key))
   }

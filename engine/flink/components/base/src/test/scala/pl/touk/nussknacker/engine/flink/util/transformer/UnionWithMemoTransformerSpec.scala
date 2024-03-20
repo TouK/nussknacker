@@ -74,11 +74,11 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     def outValues = {
       collectingListener
-        .results[AnyRef]
+        .results[Any]
         .nodeResults(EndNodeId)
         .map(_.variableTyped[jul.Map[String @unchecked, AnyRef @unchecked]](OutVariableName).get.asScala)
     }
@@ -136,7 +136,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     val model = LocalModelData(
       ConfigFactory.empty(),
@@ -188,7 +188,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     val model = LocalModelData(
       ConfigFactory.empty(),

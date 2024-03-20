@@ -161,7 +161,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       scenario,
       scenarioTestData,
       modelData,
-      ResultsCollectingListenerHolder.registerRun(identity)
+      ResultsCollectingListenerHolder.registerListener
     )
     testCompilerFactory
       .prepareCompilerData(scenario.metaData, ProcessVersion.empty, PreventInvocationCollector)(

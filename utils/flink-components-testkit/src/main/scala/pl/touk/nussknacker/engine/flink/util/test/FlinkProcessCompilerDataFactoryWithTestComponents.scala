@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
+import io.circe.Json
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.ModelData.ExtractDefinitionFun
 import pl.touk.nussknacker.engine.api._

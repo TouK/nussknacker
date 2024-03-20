@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListener,
   ResultsCollectingListenerHolder,
-  TestInterpreterRunner,
   TestServiceInvocationCollector
 }
 
@@ -48,8 +47,8 @@ class FlinkTestMain(
 ) extends FlinkStubbedRunner {
 
   def runTest: TestResults[Json] =
-    Using.resource(ResultsCollectingListenerHolder.registerTestRun) { collectingListener =>
-      val resultCollector = new TestServiceInvocationCollector(collectingListener.runId)
+    Using.resource(ResultsCollectingListenerHolder.registerForTestEngineRunner) { collectingListener =>
+      val resultCollector = new TestServiceInvocationCollector(collectingListener)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv
 

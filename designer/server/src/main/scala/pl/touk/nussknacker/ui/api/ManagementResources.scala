@@ -54,7 +54,7 @@ object ManagementResources {
     implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
 
     override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) =>
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
         Json.obj(
           "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
           "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,

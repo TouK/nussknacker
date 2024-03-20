@@ -36,7 +36,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     val testProcess =
       aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
-    val results = collectTestResults[String](model, testProcess, collectingListener)
+    val results = collectTestResults(model, testProcess, collectingListener)
     extractResultValues(results) shouldBe List("one_1", "other_1")
   }
 
@@ -47,7 +47,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     val testProcess =
       aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
-    val results = collectTestResults[String](model, testProcess, collectingListener)
+    val results = collectTestResults(model, testProcess, collectingListener)
     extractContextIds(results) shouldBe List("forEachProcess-start-0-0-0", "forEachProcess-start-0-0-1")
   }
 
@@ -70,11 +70,11 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
     val testProcess = aProcessWithForEachNode(elements = "{}")
 
-    val results = collectTestResults[String](model, testProcess, collectingListener)
+    val results = collectTestResults(model, testProcess, collectingListener)
     results.nodeResults shouldNot contain key sinkId
   }
 
-  private def initializeListener = ResultsCollectingListenerHolder.registerRun(identity)
+  private def initializeListener = ResultsCollectingListenerHolder.registerListener
 
   private def modelData(
       list: List[TestRecord] = List(),
@@ -116,11 +116,11 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     collectingListener.results
   }
 
-  private def extractResultValues(results: TestProcess.TestResults[String]): List[String] = results
+  private def extractResultValues(results: TestProcess.TestResults[_]): List[String] = results
     .nodeResults(sinkId)
-    .map(_.variableTyped[String](resultVariableName).get)
+    .map(_.variableTyped(resultVariableName).get.asInstanceOf[String])
 
-  private def extractContextIds(results: TestProcess.TestResults[String]): List[String] = results
+  private def extractContextIds(results: TestProcess.TestResults[_]): List[String] = results
     .nodeResults(forEachNodeResultId)
     .map(_.id)
 

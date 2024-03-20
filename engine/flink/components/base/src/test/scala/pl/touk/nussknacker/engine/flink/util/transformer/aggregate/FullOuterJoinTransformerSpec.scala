@@ -105,7 +105,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       }
     }
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
     val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
 
     input.foreach {
@@ -119,7 +119,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     stoppableEnv.waitForJobState(id.getJobID, process.name.value, ExecutionState.FINISHED)()
 
     val outValues = collectingListener
-      .results[AnyRef]
+      .results[Any]
       .nodeResults(EndNodeId)
       .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
       .map(_.mapValuesNow {
@@ -457,7 +457,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
@@ -503,7 +503,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val sourceFoo          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.flink.util.function.CoProcessFunctionInterceptor
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -88,7 +89,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       OneRecord(key, 1, 123)
     )
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
     val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
 
     input1.add(OneRecord(key, 0, -1))
@@ -118,7 +119,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
       input1: BlockingQueueSource[OneRecord],
       input2: List[OneRecord],
       collectingListener: ResultsCollectingListener
-  ) = {
+  ): (JobExecutionResult, MiniClusterExecutionEnvironment) = {
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     UnitTestsFlinkRunner.registerInEnvironmentWithModel(stoppableEnv, model)(testProcess)

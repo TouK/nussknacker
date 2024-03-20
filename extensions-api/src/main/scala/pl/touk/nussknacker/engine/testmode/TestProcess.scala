@@ -9,11 +9,10 @@ object TestProcess {
       nodeResults: Map[String, List[ResultContext[T]]],
       invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
       externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
-      exceptions: List[ExceptionResult[T]],
-      variableEncoder: Any => T // NU-1455: We encode variable on the engine, because of classLoader's problems
+      exceptions: List[ExceptionResult[T]]
   ) {
 
-    def updateNodeResult(nodeId: String, context: Context): TestResults[T] =
+    def updateNodeResult(nodeId: String, context: Context, variableEncoder: Any => T): TestResults[T] =
       copy(nodeResults =
         nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
           .fromContext(context, variableEncoder)))
@@ -23,7 +22,8 @@ object TestProcess {
         nodeId: String,
         context: Context,
         name: String,
-        result: Any
+        result: Any,
+        variableEncoder: Any => T
     ): TestResults[T] = {
       val invocationResult = ExpressionInvocationResult(context.id, name, variableEncoder(result))
       copy(invocationResults =
@@ -35,7 +35,8 @@ object TestProcess {
         nodeId: String,
         contextId: ContextId,
         name: String,
-        result: Any
+        result: Any,
+        variableEncoder: Any => T
     ): TestResults[T] = {
       val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
       copy(externalInvocationResults =
@@ -43,7 +44,10 @@ object TestProcess {
       )
     }
 
-    def updateExceptionResult(exceptionInfo: NuExceptionInfo[_ <: Throwable]): TestResults[T] =
+    def updateExceptionResult(
+        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        variableEncoder: Any => T
+    ): TestResults[T] =
       copy(exceptions = exceptions :+ ExceptionResult.fromNuExceptionInfo(exceptionInfo, variableEncoder))
 
     // when evaluating e.g. keyBy expression can be invoked more than once...

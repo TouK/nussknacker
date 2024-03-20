@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -69,10 +70,10 @@ object TestScenarioCollectorHandler {
 
   def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
 
-    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerListener
 
     val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
-      new TestServiceInvocationCollector(resultsCollectingListener.runId)
+      new TestServiceInvocationCollector(resultsCollectingListener)
     } else {
       ProductionServiceInvocationCollector
     }

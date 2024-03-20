@@ -89,7 +89,7 @@ class UnionTransformersTestModeSpec
         unionPart
           .emptySink(endSinkId, "dead-end")
       )
-    val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
     val modelData          = createModelData(data, collectingListener)
 
     val testResults = collectTestResults(modelData, scenario, collectingListener)
