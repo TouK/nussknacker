@@ -19,7 +19,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
     val sinkId = "sinkId"
     val input  = "some value"
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
     val model = LocalModelData(
       ConfigFactory.empty(),
       FlinkBaseComponentProvider.Components,
@@ -43,7 +43,7 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
     try {
       eventually {
         val results = collectingListener.results.nodeResults.get(sinkId)
-        results.flatMap(_.headOption).flatMap(_.get[String]("input")) shouldBe Some(input)
+        results.flatMap(_.headOption).flatMap(_.variableTyped("input")) shouldBe Some(input)
       }
     } finally {
       stoppableEnv.cancel(id.getJobID)

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.{Id, Monad, ~>}
+import io.circe.Json
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source}
@@ -26,8 +27,8 @@ trait TestRunner {
   def runTest(
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
-      process: CanonicalProcess
-  ): TestResults
+      process: CanonicalProcess,
+  ): TestResults[Json]
 
 }
 
@@ -38,15 +39,15 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
   def runTest(
       modelData: ModelData,
       scenarioTestData: ScenarioTestData,
-      process: CanonicalProcess
-  ): TestResults = {
+      process: CanonicalProcess,
+  ): TestResults[Json] = {
 
     // TODO: probably we don't need statics here, we don't serialize stuff like in Flink
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerTestEngineListener
     // in tests we don't send metrics anywhere
     val testContext                        = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
-    val testServiceInvocationCollector     = new TestServiceInvocationCollector(collectingListener.runId)
+    val testServiceInvocationCollector     = new TestServiceInvocationCollector(collectingListener)
 
     // FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](

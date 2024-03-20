@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test._
 
@@ -83,7 +84,12 @@ class LiteTestScenarioRunner(
       data: List[INPUT]
   ): RunnerListResult[OUTPUT] =
     runWithDataReturningDetails(scenario, data)
-      .map { result => RunListResult(result._1, result._2.map(_.result.asInstanceOf[OUTPUT])) }
+      .map { case (errors, endResults) =>
+        RunListResult(
+          errors.map(ExceptionResult.fromNuExceptionInfo(_, identity)),
+          endResults.map(_.result.asInstanceOf[OUTPUT])
+        )
+      }
 
   def runWithDataReturningDetails[INPUT: ClassTag](scenario: CanonicalProcess, data: List[INPUT]): SynchronousResult = {
     val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[INPUT]))
