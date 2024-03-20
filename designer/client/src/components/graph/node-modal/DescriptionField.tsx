@@ -2,13 +2,13 @@
 import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import React from "react";
-import { NodeType, NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError, UINodeType } from "../../../types";
 
 interface DescriptionFieldProps {
     autoFocus?: boolean;
     defaultValue?: string;
     isEditMode?: boolean;
-    node: NodeType;
+    node: UINodeType;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
