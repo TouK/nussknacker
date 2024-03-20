@@ -1,6 +1,5 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.description
 
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
@@ -12,35 +11,37 @@ import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.graph.ProcessProperties
-import pl.touk.nussknacker.engine.api.graph.{Edge, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
+import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.TypingDtoSchemas._
-import pl.touk.nussknacker.ui.suggester.CaretPosition2d
-import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
-import sttp.tapir._
-import TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodesError.{
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
   NoProcessingType,
   NoScenario
 }
-import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.suggester.CaretPosition2d
+import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.SchemaType.SString
+
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{decodeVariableTypes, prepareTypingResultDecoder}
+import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
+import sttp.tapir._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import sttp.tapir.derevo.schema
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -520,9 +521,9 @@ object NodesApiEndpoints {
 
 object TypingDtoSchemas {
 
+  import pl.touk.nussknacker.engine.api.typed.TypingType
   import pl.touk.nussknacker.engine.api.typed.TypingType.TypingType
   import pl.touk.nussknacker.engine.api.typed.typing._
-  import pl.touk.nussknacker.engine.api.typed.TypingType
   import sttp.tapir.Schema.SName
   import sttp.tapir.SchemaType.SProductField
   import sttp.tapir.{FieldName, Schema, SchemaType}

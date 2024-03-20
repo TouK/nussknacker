@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.ui.api.AppApiEndpoints
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.description.AppApiEndpoints
+import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}

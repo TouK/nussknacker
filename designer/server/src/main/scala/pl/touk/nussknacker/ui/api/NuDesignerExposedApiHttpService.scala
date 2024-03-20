@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.server.ServerEndpoint

@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api.NotificationApiEndpoints
+import pl.touk.nussknacker.ui.api.description.NotificationApiEndpoints
 import pl.touk.nussknacker.ui.notifications.NotificationService
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 

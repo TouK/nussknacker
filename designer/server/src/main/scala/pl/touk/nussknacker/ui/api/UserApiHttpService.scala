@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api.{DisplayableUser, UserApiEndpoints}
+import pl.touk.nussknacker.ui.api.description.{DisplayableUser, UserApiEndpoints}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
