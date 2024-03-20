@@ -227,16 +227,13 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         isFragment
       )
 
-    val f = for {
-      remoteNuVersion <- fetchRemoteNuVersion.flatMap {
-        case Left(e)          => Future.failed(e)
-        case Right(nuVersion) => Future.successful(nuVersion.value)
-      }
+    val f: EitherT[Future, NuDesignerError, Unit] = for {
+      remoteNuVersion <- EitherT(fetchRemoteNuVersion)
 
       localNuVersion = BuildInfo.version
 
-      versionComparisonResultE = migrationApiAdapterService.compareNuVersions(localNuVersion, remoteNuVersion)
-      versionComparisonResult <- Future.fromTry(versionComparisonResultE.toTry)
+      versionComparisonResultE = migrationApiAdapterService.compareNuVersions(localNuVersion, remoteNuVersion.value)
+      versionComparisonResult <- EitherT(Future.successful(versionComparisonResultE))
 
       migrateScenarioRequest = migrationApiAdapterService.decideMigrationRequestDto(
         migrateScenarioRequestV2,
@@ -248,23 +245,20 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         case _: MigrateScenarioRequestV2 => "V2"
       }
 
-      _ <- Future.successful(logger.debug("Migrating scenario {}", migrateScenarioRequest.toString))
-
-      res <- invokeForSuccess(
-        HttpMethods.POST,
-        List("migrate"),
-        Query.Empty,
-        HttpEntity(migrateScenarioRequest.asJson.noSpaces),
-        List(
-          RawHeader("X-MigrateDtoVersion", versionTag)
-        ) // Only for testing purposes, see: StandardRemoteEnvironmentSpec#remotgeEnvironmentMock
+      res <- EitherT(
+        invokeForSuccess(
+          HttpMethods.POST,
+          List("migrate"),
+          Query.Empty,
+          HttpEntity(migrateScenarioRequest.asJson.noSpaces),
+          List(
+            RawHeader("X-MigrateDtoVersion", versionTag)
+          ) // Only for testing purposes, see: StandardRemoteEnvironmentSpec#remotgeEnvironmentMock
+        )
       )
+    } yield ()
 
-    } yield res
-
-    f.recover[Either[NuDesignerError, Unit]] { case e: NuDesignerError =>
-      Left(e)
-    }
+    f.value
   }
 
   private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Either[NuDesignerError, NuVersion]] =
