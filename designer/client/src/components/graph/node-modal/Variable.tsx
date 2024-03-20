@@ -1,7 +1,6 @@
 import React, { useCallback } from "react";
 import EditableEditor from "./editors/EditableEditor";
 import LabeledInput from "./editors/field/LabeledInput";
-import LabeledTextarea from "./editors/field/LabeledTextarea";
 import { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
@@ -10,6 +9,7 @@ import { getExpressionType, getNodeTypingInfo } from "./NodeDetailsContent/selec
 import ProcessUtils from "../../../common/ProcessUtils";
 import { IdField } from "./IdField";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { DescriptionField } from "./DescriptionField";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
@@ -79,16 +79,14 @@ export default function Variable({
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}
             />
-            <LabeledTextarea
-                value={node?.additionalFields?.description || ""}
-                onChange={(event) => setProperty("additionalFields.description", event.target.value)}
-                isMarked={isMarked("additionalFields.description")}
-                readOnly={readOnly}
-                className={"node-input"}
-                fieldErrors={getValidationErrorsForField(errors, "additionalFields.description")}
-            >
-                {renderFieldLabel("Description")}
-            </LabeledTextarea>
+            <DescriptionField
+                isEditMode={!readOnly}
+                showValidation={showValidation}
+                node={node}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                errors={errors}
+            />
         </>
     );
 }

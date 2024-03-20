@@ -1,6 +1,6 @@
 import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator } from "./editors/Validators";
 import Field, { FieldType } from "./editors/field/Field";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useDiffMark } from "./PathsToMark";
 import { NodeType, NodeValidationError } from "../../../types";
 import { useSelector } from "react-redux";
@@ -11,7 +11,7 @@ import { isEmpty } from "lodash";
 interface IdFieldProps {
     isEditMode?: boolean;
     node: NodeType;
-    renderFieldLabel: (paramName: string) => JSX.Element;
+    renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
     errors: NodeValidationError[];
@@ -19,7 +19,8 @@ interface IdFieldProps {
 
 // wise decision to treat a name as an id forced me to do so.
 // now we have consistent id for validation, branch params etc
-const FAKE_NAME_PROP_NAME = "$name";
+const propName = `id`;
+const FAKE_NAME_PROP_NAME = "$id";
 
 export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NAME_PROP_NAME]?: string }): NodeType {
     const name = editedNode[FAKE_NAME_PROP_NAME];
@@ -29,19 +30,17 @@ export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NA
 
 export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showValidation, errors }: IdFieldProps): JSX.Element {
     const nodes = useSelector(getProcessNodesIds);
-    const otherNodes = useMemo(() => nodes.filter((n) => n !== node.id), [node.id, nodes]);
+    const [otherNodes] = useState(() => nodes.filter((n) => n !== node[propName]));
 
     const [isMarked] = useDiffMark();
-    const propName = `id`;
-    const errorFieldName = `$id`;
-    const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName]);
-    const marked = useMemo(() => isMarked(FAKE_NAME_PROP_NAME) || isMarked(propName), [isMarked, propName]);
+    const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node]);
+    const marked = useMemo(() => isMarked(FAKE_NAME_PROP_NAME) || isMarked(propName), [isMarked]);
 
     const isUniqueValueValidator = !NodeUtils.nodeIsProperties(node) && uniqueScenarioValueValidator(otherNodes);
 
     const fieldErrors = getValidationErrorsForField(
-        isUniqueValueValidator ? extendErrors(errors, value, errorFieldName, [isUniqueValueValidator]) : errors,
-        errorFieldName,
+        isUniqueValueValidator ? extendErrors(errors, value, FAKE_NAME_PROP_NAME, [isUniqueValueValidator]) : errors,
+        FAKE_NAME_PROP_NAME,
     );
 
     return (
