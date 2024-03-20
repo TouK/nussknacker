@@ -11,21 +11,21 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.{
-  WithMockableDeploymentManager,
-  WithRichConfigRestAssuredUsersExtensions,
-  WithRichDesignerConfig
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig,
+  WithMockableDeploymentManager
 }
 
 class AppApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
+    with WithAccessControlCheckingDesignerConfig
+    with WithAccessControlCheckingConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithRichConfigRestAssuredUsersExtensions
+    with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {

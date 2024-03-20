@@ -7,7 +7,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
-import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
@@ -22,8 +21,7 @@ import scala.util.Try
 // using SBT's task: `sbt generateDesignerOpenApi`
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
-  // FIXME: detects differences on the GH Actions but locally not
-  ignore("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
+  test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
     val currentNuDesignerOpenApiYamlContent =
       (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
     NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)

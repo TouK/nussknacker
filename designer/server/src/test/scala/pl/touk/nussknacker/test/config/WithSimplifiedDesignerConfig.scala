@@ -15,7 +15,7 @@ trait WithSimplifiedDesignerConfig extends WithDesignerConfig {
   validateConsistency()
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/simple/simple-streaming-use-case-designer.conf")
+    ConfigFactory.parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
@@ -77,23 +77,6 @@ object WithSimplifiedDesignerConfig {
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap
 
-  }
-
-}
-
-trait WithSimplifiedConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
-  this: WithSimplifiedDesignerConfig =>
-
-  implicit class UsersBasicAuth[T <: RequestSpecification](requestSpecification: T) {
-
-    def basicAuthAdmin(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("admin", "admin")
-
-    def basicAuthAllPermUser(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("allpermuser", "allpermuser")
-
-    def basicAuthUnknownUser(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
   }
 
 }

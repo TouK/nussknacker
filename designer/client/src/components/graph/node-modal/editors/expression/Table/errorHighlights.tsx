@@ -69,12 +69,13 @@ export function useErrorHighlights(fieldErrors: FieldError[], columns: DataColum
     );
 
     const toggleTooltip = useCallback(
-        (selection: GridMouseEventArgs | GridSelection) => {
-            const { cell, rect } = getSelectedCell(selection);
-            const error = getErrorForCell(cell);
+        (selection?: GridMouseEventArgs | GridSelection) => {
+            const selected = getSelectedCell(selection);
+            const error = getErrorForCell(selected?.cell);
+
             setTooltipOpen(() => {
-                if (rect && error) {
-                    positionRef.current = rect;
+                if (selected?.rect && error) {
+                    positionRef.current = selected.rect;
                     setTooltipMessage(error.errorMessage);
                     return true;
                 } else {
