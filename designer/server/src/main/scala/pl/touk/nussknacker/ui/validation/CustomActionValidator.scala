@@ -13,31 +13,20 @@ import pl.touk.nussknacker.engine.deployment.{
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.BadRequestError
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
-class CustomActionValidator(val allowedActions: List[CustomActionDefinition]) {
+class CustomActionValidator(allowedAction: CustomActionDefinition) {
 
   def validateCustomActionParams(
       request: CustomActionRequest
   ): Either[CustomActionValidationError, CustomActionValidationResult] = {
 
-    val checkedCustomAction =
-      allowedActions
-        .find(_.name == request.actionName)
-        .toRight(CustomActionNonExistingError("Couldn't find this action: " + request.actionName.value))
+    implicit val nodeId: NodeId = NodeId(allowedAction.name.value)
+    val customActionParams      = allowedAction.parameters
+    val requestParamsMap        = getRequestParamsMap(request, customActionParams)
 
-    checkedCustomAction match {
-      case Left(notFoundAction) => Left(notFoundAction)
-
-      case Right(foundAction) => {
-        implicit val nodeId: NodeId = NodeId(foundAction.name.value)
-        val customActionParams      = foundAction.parameters
-        val requestParamsMap        = getRequestParamsMap(request, customActionParams)
-
-        val validated = validateParams(requestParamsMap, customActionParams)
-        getValidationResult(validated)
-      }
-    }
+    val validated = validateParams(requestParamsMap, customActionParams)
+    getValidationResult(validated)
   }
 
   private def getRequestParamsMap(request: CustomActionRequest, customActionParams: List[CustomActionParameter]) = {
@@ -153,8 +142,11 @@ object CustomActionValidationError {
 
 }
 
+//GSK: Too much happens here. This error was treated as an indication group of errors and an error from this group.
+// Aaand BadRequestError is from old akka ManagementResources approach.
 sealed class CustomActionValidationError(message: String) extends BadRequestError(message)
 
-case class CustomActionNonExistingError(message: String) extends CustomActionValidationError(message)
+//GSK: this is exception in the scope of old akka ManagementResources
+case class CustomActionNonExistingError(message: String) extends NotFoundError(message)
 
 case class MismatchedParamsError(message: String) extends CustomActionValidationError(message)
