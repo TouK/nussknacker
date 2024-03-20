@@ -2,7 +2,7 @@ import { extendErrors, getValidationErrorsForField, uniqueScenarioValueValidator
 import Field, { FieldType } from "./editors/field/Field";
 import React, { useMemo } from "react";
 import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError, UINodeType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
 import NodeUtils from "../NodeUtils";
@@ -10,7 +10,7 @@ import { isEmpty } from "lodash";
 
 interface IdFieldProps {
     isEditMode?: boolean;
-    node: NodeType;
+    node: UINodeType;
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;

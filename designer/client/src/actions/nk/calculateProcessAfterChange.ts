@@ -30,9 +30,12 @@ export function calculateProcessAfterChange(
             if (after.id !== before.id) {
                 dispatch({ type: "PROCESS_RENAME", name: after.id });
             }
+
+            const { id, ...properties } = after;
+
             return {
                 processName: after.id,
-                scenarioGraph: { ...processWithNewFragmentSchema, properties: after },
+                scenarioGraph: { ...processWithNewFragmentSchema, properties },
             };
         }
 
