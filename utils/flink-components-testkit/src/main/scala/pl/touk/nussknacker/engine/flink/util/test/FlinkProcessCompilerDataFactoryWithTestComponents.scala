@@ -25,7 +25,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
 
   def apply(
       testExtensionsHolder: TestExtensionsHolder,
-      resultsCollectingListener: ResultsCollectingListener[_],
+      resultsCollectingListener: ResultsCollectingListener[Any],
       modelData: ModelData,
       componentUseCase: ComponentUseCase
   ): FlinkProcessCompilerDataFactory =
@@ -46,7 +46,7 @@ object FlinkProcessCompilerDataFactoryWithTestComponents {
       namingStrategy: NamingStrategy,
       componentUseCase: ComponentUseCase,
       testExtensionsHolder: TestExtensionsHolder,
-      resultsCollectingListener: ResultsCollectingListener[_],
+      resultsCollectingListener: ResultsCollectingListener[Any],
   ): FlinkProcessCompilerDataFactory = {
     new FlinkProcessCompilerDataFactory(
       creator,
