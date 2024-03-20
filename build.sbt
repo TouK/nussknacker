@@ -588,7 +588,6 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         flinkDevModelJava / Compile / assembly,
         experimentalFlinkTableApiComponents / Compile / assembly,
         flinkBaseComponents / Compile / assembly,
-        flinkBaseUnboundedComponents / Compile / assembly,
         flinkKafkaComponents / Compile / assembly,
       )
       .value,
@@ -723,7 +722,6 @@ lazy val flinkTests = (project in flink("tests"))
     flinkExecutor                       % Test,
     flinkKafkaComponents                % Test,
     flinkBaseComponents                 % Test,
-    flinkBaseUnboundedComponents        % Test,
     experimentalFlinkTableApiComponents % Test,
     flinkTestUtils                      % Test,
     kafkaTestUtils                      % Test,
