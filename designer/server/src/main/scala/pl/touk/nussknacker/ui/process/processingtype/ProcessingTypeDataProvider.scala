@@ -44,6 +44,20 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
       .map(_.getOrElse(throw new UnauthorizedError(user)))
   }
 
+  final def forTypeE(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): Either[UnauthorizedError, Option[Data]] = {
+    allAuthorized
+      .get(processingType) match {
+      case Some(dataO) =>
+        dataO match {
+          case Some(data) => Right(Some(data))
+          case None       => Left(new UnauthorizedError(user))
+        }
+      case None => Right(None)
+    }
+  }
+
   final def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>
     (k, v)
   }
