@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinition, ClassDefini
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
@@ -114,9 +115,11 @@ class SpelExpressionSuggester(
             Future.successful(
               tu.possibleTypes
                 .map(_.objType.klass)
+                .toList
                 .flatMap(klass =>
                   clssDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)
                 )
+                .distinct
             )
           case TypingResultWithContext(td: TypedDict, _) =>
             dictQueryService
@@ -257,10 +260,10 @@ class SpelExpressionSuggester(
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
         tc.objType.params.headOption.getOrElse(Unknown)
       case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-        TypedObjectTypingResult(
-          List(
-            ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-            ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown))
+        Typed.record(
+          Map(
+            "key"   -> tc.objType.params.headOption.getOrElse(Unknown),
+            "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown)
           )
         )
       case tc: SingleTypingResult if tc.objType.klass.isArray =>
@@ -276,14 +279,15 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
 
   def parse(
       input: String,
-      language: String,
+      language: Language,
       position: Int,
       validationContext: ValidationContext
   ): Try[Option[(NuSpelNode, Int)]] = {
     val rawExpression = language match {
-      case Expression.Language.Spel         => Try(parser.parseExpression(input, null))
-      case Expression.Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
-      case _ => Failure(new IllegalArgumentException(s"Language $language is not supported"))
+      case Language.Spel         => Try(parser.parseExpression(input, null))
+      case Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+      case Language.DictKeyWithLabel | Language.TabularDataDefinition =>
+        Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
     rawExpression
       .map { parsedExpressions =>

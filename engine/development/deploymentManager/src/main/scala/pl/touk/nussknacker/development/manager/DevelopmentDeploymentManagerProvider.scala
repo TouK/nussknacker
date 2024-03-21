@@ -1,25 +1,21 @@
 package pl.touk.nussknacker.development.manager
 
 import akka.actor.ActorSystem
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{
-  AfterRunningStatus,
-  PreparingResourcesStatus,
-  TestStatus
-}
+import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment._
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine._
 
 import java.net.URI
 import java.util.UUID
@@ -27,12 +23,11 @@ import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     extends DeploymentManager
-    with AlwaysFreshProcessState
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
@@ -45,11 +40,11 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name))
+  private val customActionAfterRunning = CustomActionDefinition(AfterRunningActionName, List(Running.name))
   private val customActionPreparingResources =
-    CustomAction(PreparingResourcesStatus.name, List(NotDeployed.name, Canceled.name))
+    deployment.CustomActionDefinition(PreparingResourcesActionName, List(NotDeployed.name, Canceled.name))
   private val customActionTest =
-    CustomAction(TestStatus.name, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
+    deployment.CustomActionDefinition(TestActionName, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
 
   private val customActionStatusMapping = Map(
     customActionAfterRunning       -> AfterRunningStatus,
@@ -74,28 +69,33 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   }
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
-    if (description(canonicalProcess).contains(descriptionForValidationFail)) {
-      Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
-    } else {
-      Future.successful(())
-    }
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
+    case ValidateScenarioCommand(_, _, canonicalProcess) =>
+      if (description(canonicalProcess).contains(descriptionForValidationFail)) {
+        Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
+      } else {
+        Future.successful(())
+      }
+    case command: RunDeploymentCommand                      => runDeployment(command)
+    case StopDeploymentCommand(name, _, savepointDir, user) =>
+      // TODO: stopping specific deployment
+      stopScenario(StopScenarioCommand(name, savepointDir, user))
+    case command: StopScenarioCommand           => stopScenario(command)
+    case CancelDeploymentCommand(name, _, user) =>
+      // TODO: cancelling specific deployment
+      cancelScenario(CancelScenarioCommand(name, user))
+    case command: CancelScenarioCommand  => cancelScenario(command)
+    case command: CustomActionCommand    => invokeCustomAction(command)
+    case _: MakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
+    case _: TestScenarioCommand          => notImplemented
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
     canonicalProcess.metaData.additionalFields.description
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val previous                = memory.get(processVersion.processName)
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
@@ -122,79 +122,47 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     result.future
   }
 
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] = {
-    // TODO: stopping specific deployment
-    stop(name, savepointDir, user)
-  }
-
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    logger.debug(s"Starting stopping scenario: $name..")
-    asyncChangeState(name, Finished)
-    logger.debug(s"Finished stopping scenario: $name.")
+  private def stopScenario(command: StopScenarioCommand): Future[SavepointResult] = {
+    import command._
+    logger.debug(s"Starting stopping scenario: $scenarioName..")
+    asyncChangeState(scenarioName, Finished)
+    logger.debug(s"Finished stopping scenario: $scenarioName.")
     Future.successful(SavepointResult(""))
   }
 
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
-    // TODO: cancelling specific deployment
-    cancel(name, user)
-  }
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    logger.debug(s"Starting canceling scenario: $name..")
-    changeState(name, DuringCancel)
-    asyncChangeState(name, Canceled)
-    logger.debug(s"Finished canceling scenario: $name.")
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
+    logger.debug(s"Starting canceling scenario: $scenarioName..")
+    changeState(scenarioName, DuringCancel)
+    asyncChangeState(scenarioName, Canceled)
+    logger.debug(s"Finished canceling scenario: $scenarioName.")
     Future.unit
   }
 
-  override def test(
-      name: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = ???
-
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(memory.get(name).toList)
-
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
+    Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
+  }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
-  override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
+  override def customActionsDefinitions: List[CustomActionDefinition] = customActionStatusMapping.keys.toList
 
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(
-      customActions
-        .find(_.name.equals(actionRequest.name))
-        .map(customAction => {
-          val processName = actionRequest.processVersion.processName
-          val statusDetails =
-            memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+  private def invokeCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+    val processName = command.processVersion.processName
+    val statusOpt = customActionStatusMapping
+      .collectFirst { case (customAction, status) if customAction.name == command.actionName => status }
 
-          if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
-            customActionStatusMapping
-              .get(customAction)
-              .map { status =>
-                asyncChangeState(processName, status)
-                Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-              }
-              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-          } else {
-            Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
-          }
-        })
-        .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
-    )
+    statusOpt match {
+      case Some(newStatus) =>
+        asyncChangeState(processName, newStatus)
+        Future.successful(CustomActionResult(s"Done ${command.actionName}"))
+      case _ =>
+        Future.failed(new NotImplementedError())
+    }
+  }
 
   override def close(): Unit = {}
 
@@ -239,13 +207,13 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager =
-    new DevelopmentDeploymentManager(actorSystem)
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] =
+    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

@@ -1,5 +1,5 @@
 import React from "react";
-import { styled } from "@mui/material";
+import { styled, Typography } from "@mui/material";
 import { PropsWithChildren } from "react";
 import { variables } from "../../../../stylesheets/variables";
 
@@ -14,7 +14,9 @@ const SubtypeStyled = styled("div")`
 export const Subtype = ({ children }: PropsWithChildren<unknown>) => {
     return (
         <SubtypeStyled>
-            <span>{children}</span>
+            <Typography mx={0.5} variant={"subtitle2"}>
+                {children}
+            </Typography>
         </SubtypeStyled>
     );
 };

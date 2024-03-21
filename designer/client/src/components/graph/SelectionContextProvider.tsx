@@ -22,6 +22,7 @@ import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import NodeUtils from "./NodeUtils";
 import { min } from "lodash";
+import { useInterval } from "../../containers/Interval";
 
 const hasTextSelection = () => !!window.getSelection().toString();
 
@@ -69,14 +70,10 @@ function useClipboardPermission(): boolean | string {
     }, []);
 
     // if possible monitor clipboard for new content
-    useEffect(() => {
-        if (state === "granted") {
-            const interval = setInterval(checkClipboard, 500);
-            return () => {
-                clearInterval(interval);
-            };
-        }
-    }, [checkClipboard, state]);
+    useInterval(checkClipboard, {
+        refreshTime: 500,
+        disabled: state !== "granted",
+    });
 
     useEffect(() => {
         // parse clipboard content on change only

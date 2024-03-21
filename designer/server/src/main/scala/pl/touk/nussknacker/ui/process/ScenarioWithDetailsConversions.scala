@@ -2,24 +2,29 @@ package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetails}
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 object ScenarioWithDetailsConversions {
 
-  def fromEntity(details: ScenarioWithDetailsEntity[ScenarioGraphWithValidationResult]): ScenarioWithDetails =
-    fromEntityIgnoringGraphAndValidationResult(details)
+  def fromEntity(
+      details: ScenarioWithDetailsEntity[ScenarioGraphWithValidationResult],
+      parameters: ScenarioParameters
+  ): ScenarioWithDetails =
+    fromEntityIgnoringGraphAndValidationResult(details, parameters)
       .withScenarioGraph(details.json.scenarioGraph)
       .withValidationResult(details.json.validationResult)
 
   def fromEntityWithScenarioGraph(
-      details: ScenarioWithDetailsEntity[ScenarioGraph]
+      details: ScenarioWithDetailsEntity[ScenarioGraph],
+      parameters: ScenarioParameters
   ): ScenarioWithDetails =
-    fromEntityIgnoringGraphAndValidationResult(details).withScenarioGraph(details.json)
+    fromEntityIgnoringGraphAndValidationResult(details, parameters).withScenarioGraph(details.json)
 
   def fromEntityIgnoringGraphAndValidationResult(
-      details: ScenarioWithDetailsEntity[_]
+      details: ScenarioWithDetailsEntity[_],
+      parameters: ScenarioParameters
   ): ScenarioWithDetails = {
     ScenarioWithDetails(
       name = details.name,
@@ -31,6 +36,8 @@ object ScenarioWithDetailsConversions {
       isFragment = details.isFragment,
       processingType = details.processingType,
       processCategory = details.processCategory,
+      processingMode = parameters.processingMode,
+      engineSetupName = parameters.engineSetupName,
       modificationDate = details.modificationDate,
       modifiedAt = details.modifiedAt,
       modifiedBy = details.modifiedBy,

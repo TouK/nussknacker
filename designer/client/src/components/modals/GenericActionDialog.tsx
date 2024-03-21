@@ -5,8 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName } from "../../reducers/selectors/graph";
 import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
-import { WindowContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager";
+import { WindowContent, WindowKind } from "../../windowManager";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
@@ -18,6 +17,9 @@ import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter
 import { isEmpty } from "lodash";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
 import { FormControl } from "@mui/material";
+import ErrorBoundary from "../common/ErrorBoundary";
+import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export type GenericActionLayout = {
     name: string;
@@ -85,20 +87,22 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                         return (
                             <FormControl key={param.name}>
                                 <FieldLabel parameterDefinitions={action.parameters} paramName={param.name} />
-                                <Editor
-                                    editorConfig={param?.editor}
-                                    className={"node-value"}
-                                    fieldErrors={getValidationErrorsForField(errors, fieldName)}
-                                    formatter={formatter}
-                                    expressionInfo={null}
-                                    onValueChange={setParam(fieldName)}
-                                    expressionObj={value[fieldName]}
-                                    readOnly={false}
-                                    key={fieldName}
-                                    showSwitch={true}
-                                    showValidation={true}
-                                    variableTypes={action.variableTypes}
-                                />
+                                <ErrorBoundary>
+                                    <Editor
+                                        editorConfig={param?.editor}
+                                        className={"node-value"}
+                                        fieldErrors={getValidationErrorsForField(errors, fieldName)}
+                                        formatter={formatter}
+                                        expressionInfo={null}
+                                        onValueChange={setParam(fieldName)}
+                                        expressionObj={value[fieldName]}
+                                        readOnly={false}
+                                        key={fieldName}
+                                        showSwitch={true}
+                                        showValidation={true}
+                                        variableTypes={action.variableTypes}
+                                    />
+                                </ErrorBoundary>
                             </FormControl>
                         );
                     })}
@@ -133,7 +137,11 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
     const confirmText = action.layout.confirmText ? action.layout.confirmText : "confirm";
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t(`dialog.generic.button.${cancelText}`, cancelText), action: () => props.close() },
+            {
+                title: t(`dialog.generic.button.${cancelText}`, cancelText),
+                action: () => props.close(),
+                classname: LoadingButtonTypes.secondaryButton,
+            },
             { title: t(`dialog.generic.button.${confirmText}`, confirmText), action: () => confirm(), disabled: !isValid },
         ],
         [cancelText, confirm, confirmText, isValid, props, t],

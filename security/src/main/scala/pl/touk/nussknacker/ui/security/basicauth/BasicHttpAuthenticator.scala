@@ -7,6 +7,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{
   EncryptedPassword,
   PlainPassword,
@@ -31,7 +32,7 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration)(
     }
   }
 
-  def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = Future {
+  def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = Future {
     doAuthenticate(Credentials(cred = Option(BasicHttpCredentials(authCredentials.value))).asInstanceOf[Provided])
   }
 

@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -39,7 +40,9 @@ object PeriodicSourceFactory
       )
     )
 
-class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]) extends SourceFactory {
+class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef])
+    extends SourceFactory
+    with UnboundedStreamComponent {
 
   @MethodToInvoke
   def create(

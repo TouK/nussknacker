@@ -6,16 +6,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.{
-  AdditionalPropertiesDisabled,
-  AdditionalPropertiesEnabled,
-  SwaggerDateTime,
-  SwaggerLong,
-  SwaggerObject,
-  SwaggerString
-}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
+import pl.touk.nussknacker.engine.json.swagger._
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
 
@@ -81,7 +74,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       "age"        -> Typed.apply[Long],
       "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(Typed[String])),
     )
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support refs") {
@@ -115,7 +108,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val results = Map(
-      "rectangle" -> TypedObjectTypingResult(
+      "rectangle" -> Typed.record(
         Map(
           "a" -> Typed.apply[java.math.BigDecimal],
           "b" -> Typed.apply[java.math.BigDecimal],
@@ -123,7 +116,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
         )
       ),
     )
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support refs using /schemas") {
@@ -184,7 +177,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       "boolField"     -> Typed.apply[Boolean],
       "intArrayField" -> Typed.genericTypeClass(classOf[java.util.List[Long]], List(Typed[Long])),
       "intField"      -> Typed.apply[Long],
-      "nestedObject" -> TypedObjectTypingResult(
+      "nestedObject" -> Typed.record(
         Map(
           "numFieldObj" -> Typed.apply[java.math.BigDecimal],
           "strFieldObj" -> Typed.apply[String]
@@ -193,7 +186,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       "strField" -> Typed.apply[String],
       "numField" -> Typed.apply[java.math.BigDecimal]
     )
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support enums of strings") {
@@ -212,11 +205,11 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val enumType = Typed(Set(Typed.fromInstance("one"), Typed.fromInstance("two"), Typed.fromInstance("three")))
+    val enumType = Typed(Typed.fromInstance("one"), Typed.fromInstance("two"), Typed.fromInstance("three"))
     val results = Map(
       "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(enumType)),
     )
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
 
     val onlyEnumSchema = JsonSchemaBuilder.parseSchema("""{ "enum": ["one", "two", "three"] }""".stripMargin)
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(onlyEnumSchema).typingResult shouldBe enumType
@@ -229,15 +222,12 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     import scala.jdk.CollectionConverters._
 
     val expected = Typed(
-      Set(
-        Typed.fromInstance("one"),
-        Typed.fromInstance(2),
-        Typed.fromInstance(3.3),
-        Typed.fromInstance(Map("four" -> Map("four" -> 4).asJava, "arr" -> List(4).asJava).asJava),
-        Typed.fromInstance(List("five", 5, Map("five" -> 5).asJava).asJava),
-        Typed.fromInstance(true),
-        TypedNull
-      )
+      Typed.fromInstance("one"),
+      Typed.fromInstance(2),
+      Typed.fromInstance(3.3),
+      Typed.fromInstance(Map("four" -> Map("four" -> 4).asJava, "arr" -> List(4).asJava).asJava),
+      Typed.fromInstance(List("five", 5, Map("five" -> 5).asJava).asJava),
+      Typed.fromInstance(true),
     )
 
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult shouldBe expected
@@ -287,16 +277,16 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       "nested" -> Typed.genericTypeClass(
         classOf[java.util.List[_]],
         List(
-          TypedObjectTypingResult(
+          Typed.record(
             Map(
               "id"      -> Typed.apply[String],
-              "nested2" -> TypedObjectTypingResult(Map("name" -> Typed.apply[String]))
+              "nested2" -> Typed.record(Map("name" -> Typed.apply[String]))
             )
           )
         )
       )
     )
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("typed schema should produce same typingResult as typed swagger for SwaggerDateTime") {
@@ -333,9 +323,9 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val results = Map("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+    val results = Map("id" -> Typed(Typed[String], Typed[Long]))
 
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support union - constructed with 'oneOf'") {
@@ -353,9 +343,9 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val results = Map("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+    val results = Map("id" -> Typed(Typed[String], Typed[Long]))
 
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support union - constructed with 'anyOf'") {
@@ -373,9 +363,9 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    val results = Map("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+    val results = Map("id" -> Typed(Typed[String], Typed[Long]))
 
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support anyOf/oneOf for object schemas") {
@@ -392,8 +382,8 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema(compositionType)).typingResult
 
       result shouldBe Typed(
-        TypedObjectTypingResult(Map("passport" -> Typed[String])),
-        TypedObjectTypingResult(Map("identityCard" -> Typed[String])),
+        Typed.record(Map("passport" -> Typed[String])),
+        Typed.record(Map("identityCard" -> Typed[String])),
       )
     }
   }
@@ -415,7 +405,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val results = Map("id" -> Typed.apply[Long])
 
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support support multiple schemas but of the same type - factored version") {
@@ -436,7 +426,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val results = Map("id" -> Typed.apply[Long])
 
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should support generic map") {
@@ -476,7 +466,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val results = Map("id" -> Typed.apply[String])
 
-    result shouldBe TypedObjectTypingResult(results)
+    result shouldBe Typed.record(results)
   }
 
   test("should type empty object when additionalProperties is false and no explicitly defined properties") {
@@ -486,7 +476,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    result shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
+    result shouldBe Typed.record(Map.empty[String, TypingResult])
   }
 
   test("should handle Recursive schema parsing") {
@@ -512,8 +502,8 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
-    result shouldBe TypedObjectTypingResult(
-      Map("items" -> TypedObjectTypingResult(Map("next" -> Unknown, "value" -> Typed[String])))
+    result shouldBe Typed.record(
+      Map("items" -> Typed.record(Map("next" -> Unknown, "value" -> Typed[String])))
     )
 
   }
@@ -569,7 +559,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
       val results = Map("id" -> Typed.typedClass(expectedType))
 
-      result shouldBe TypedObjectTypingResult(results)
+      result shouldBe Typed.record(results)
     }
   }
 

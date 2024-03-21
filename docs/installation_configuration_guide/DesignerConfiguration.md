@@ -104,7 +104,7 @@ with the settings presented below:
 
 Nussknacker Designer can be configured to replace certain values in comments to links that can point e.g. to external issue tracker like
 GitHub issues or Jira. For example, `MARKETING-555` will change to link `https://jira.organization.com/jira/browse/MARKETING-555`.
-See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L329) for example configuration.
 
 
 | Parameter name                              | Importance | Type     | Default value | Description                                                                                                                                                                          |
@@ -184,8 +184,7 @@ users: [
 rules: [
   {
     role: "Admin"
-    isAdmin: true,
-    categories: ["RequestResponseCategory1"]
+    isAdmin: true
   },
   {
     role: "UserWithAdminTab"
@@ -505,7 +504,7 @@ processToolbarConfig {
     ]
     topRight: [
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", disabled: { fragment: false, archived: true, type: "oneof" } }
           { type: "custom-link", title: "Metrics for $processName", url: "/metrics/$processId" }
@@ -578,8 +577,9 @@ processToolbarConfig {
       { type: "attachments-panel" }
     ]
     topRight: [
+      { type: "process-info-panel" }
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { fragment: true, archived: true, type: "oneof" } }
@@ -770,7 +770,7 @@ scenarioTypes {
 ```
 
 Scenario type configuration consists of parts:
-- `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
+- `deploymentConfig` - [scenario deployment configuration](./ScenarioDeploymentConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
 - `category` - category handled by given scenario type
 
@@ -779,7 +779,7 @@ In Nussknacker distribution there are preconfigured scenario types:
 - `streaming-lite-embedded` - using embedded Lite Deployment Manager in Streaming processing mode providing only stateless streaming components
 - `request-response-embedded` - use embedded Request-Response Deployment Manager, scenario logic is exposed as REST API, on additional HTTP port at Designer
 
-And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
+Each of these scenario types has `Default` category assigned.
 
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33)
 from development config for more complex examples.

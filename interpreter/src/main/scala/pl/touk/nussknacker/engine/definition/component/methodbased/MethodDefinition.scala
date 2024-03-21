@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.methodbased
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
@@ -21,7 +22,7 @@ class MethodDefinition(
 
   def invoke(
       obj: Any,
-      params: Map[String, Any],
+      params: Map[ParameterName, Any],
       outputVariableNameOpt: Option[String],
       additional: Seq[AnyRef]
   ): AnyRef = {
@@ -58,7 +59,7 @@ class OrderedDependencies(dependencies: List[NodeDependency]) extends Serializab
   }
 
   def prepareValues(
-      values: Map[String, Any],
+      values: Map[ParameterName, Any],
       outputVariableNameOpt: Option[String],
       additionalDependencies: Seq[AnyRef]
   ): List[Any] = {
@@ -68,9 +69,10 @@ class OrderedDependencies(dependencies: List[NodeDependency]) extends Serializab
       case OutputVariableNameDependency =>
         outputVariableNameOpt.getOrElse(throw MissingOutputVariableException)
       case TypedNodeDependency(clazz) =>
-        additionalDependencies
-          .find(clazz.isInstance)
-          .getOrElse(throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}"))
+        val found = additionalDependencies.find(clazz.isInstance)
+        found.getOrElse {
+          throw new IllegalArgumentException(s"Missing additional parameter of class: ${clazz.getName}")
+        }
     }
   }
 

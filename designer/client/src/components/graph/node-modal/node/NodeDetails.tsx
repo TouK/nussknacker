@@ -16,11 +16,10 @@ import urljoin from "url-join";
 import { BASE_PATH } from "../../../../config";
 import { RootState } from "../../../../reducers";
 import { applyIdFromFakeName } from "../IdField";
-import { useTheme } from "@mui/material";
-import { alpha, tint } from "../../../../containers/theme/helpers";
 import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
 import { Scenario } from "../../../Process/types";
 import { getScenario } from "../../../../reducers/selectors/graph";
+import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -46,40 +45,26 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        await dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+        await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
 
         //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like props.close doesn't unmount component.
         mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+
         props.close();
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
-    const theme = useTheme();
 
     const applyButtonData: WindowButtonProps | null = useMemo(
         () =>
             !readOnly
                 ? {
                       title: t("dialog.button.apply", "apply"),
-                      action: () => performNodeEdit(),
+                      action: performNodeEdit,
                       disabled: !editedNode.id?.length,
-                      classname: css({
-                          //increase (x4) specificity over ladda
-                          "&&&&": {
-                              backgroundColor: theme.custom.colors.accent,
-                              ":hover": {
-                                  backgroundColor: tint(theme.custom.colors.accent, 0.25),
-                              },
-                              "&[disabled], &[data-loading]": {
-                                  "&, &:hover": {
-                                      backgroundColor: alpha(theme.custom.colors.accent, 0.5),
-                                  },
-                              },
-                          },
-                      }),
                   }
                 : null,
-        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.custom.colors.accent],
+        [editedNode.id?.length, performNodeEdit, readOnly, t],
     );
 
     const openFragmentButtonData: WindowButtonProps | null = useMemo(
@@ -90,13 +75,14 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       action: () => {
                           window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
                       },
+                      classname: "tertiary-button",
                   }
                 : null,
         [editedNode, t],
     );
 
     const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "window-close" }),
+        () => ({ title: t("dialog.button.cancel", "cancel"), action: props.close, classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
 
@@ -128,7 +114,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             buttons={buttons}
             components={components}
             classnames={{
-                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 } }),
+                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
             <ErrorBoundary>

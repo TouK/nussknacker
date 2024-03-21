@@ -10,7 +10,7 @@ import scala.io.Source
 // add some java scripts to our main.html. Example usage:
 //
 // docker run -it --network host -e CLASSPATH="/opt/nussknacker/lib/*:/opt/nussknacker/managers/*:/opt/nussknacker/extra-resources"
-// -v ./extrajs:/opt/nussknacker/extra-resources/web/static/extra -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
+// -v ./extrajs:/opt/nussknacker/extra-resources/web/static/extra touk/nussknacker:latest
 //
 // After this, all *.js in the extrajs directory will be injected into main.html in the lexicographic order. Notice that if you want to locally
 // develop with ./buildServer.sh and ./runServer.sh and place js in src/main/resource/web/static/extra, you should add

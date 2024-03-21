@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.ui
 
+import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+
 object NuDesignerError {
 
   type XError[A] = Either[NuDesignerError, A]
@@ -19,7 +22,8 @@ abstract class BadRequestError(message: String, cause: Throwable) extends NuDesi
 }
 
 class UnauthorizedError(message: String, cause: Throwable) extends NuDesignerError(message, cause) {
-  def this() = this("The supplied user is not authorized to access this resource", null)
+  def this(user: LoggedUser) =
+    this(s"The supplied user [${user.username}] is not authorized to access this resource", null)
   def this(message: String) = this(message, null)
 }
 

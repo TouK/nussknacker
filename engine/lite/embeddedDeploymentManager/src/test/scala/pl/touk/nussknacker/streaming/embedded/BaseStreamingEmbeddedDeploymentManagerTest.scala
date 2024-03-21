@@ -10,9 +10,10 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
   DeployedScenarioData,
   DeploymentManager,
-  ProcessingTypeDeploymentServiceStub
+  ProcessingTypeDeploymentServiceStub,
+  RunDeploymentCommand
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
@@ -44,7 +45,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = scenario.name)
-      deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+      deploymentManager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
     }
 
   }

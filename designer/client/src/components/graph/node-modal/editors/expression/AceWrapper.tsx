@@ -6,7 +6,7 @@ import AceEditor from "./ace";
 import { ICommand } from "react-ace/lib/types";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
-import { EditorMode } from "./types";
+import { EditorMode, ExpressionLang } from "./types";
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
     inputProps: {
@@ -49,6 +49,10 @@ function getTabindexedElements(root: Element, currentElement?: HTMLElement) {
         if (node.tabIndex < Math.max(0, currentElement?.tabIndex)) {
             return NodeFilter.FILTER_SKIP;
         }
+        const rect = node.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+            return NodeFilter.FILTER_SKIP;
+        }
         return NodeFilter.FILTER_ACCEPT;
     });
 
@@ -56,6 +60,10 @@ function getTabindexedElements(root: Element, currentElement?: HTMLElement) {
     let node;
     while ((node = treeWalker.nextNode())) {
         elements.push(node as HTMLElement);
+    }
+
+    if (elements.length <= 1) {
+        return getTabindexedElements(root.parentElement, currentElement);
     }
 
     const htmlElements = elements.sort((a, b) => Math.max(0, a.tabIndex) - Math.max(0, b.tabIndex));
@@ -95,6 +103,16 @@ function handleTab(editor: Ace.Editor, shiftKey?: boolean): boolean {
     element?.focus();
 }
 
+function editorLangToMode(language: ExpressionLang | string, editorMode?: EditorMode): string {
+    if (editorMode) {
+        return editorMode.valueOf();
+    }
+    if (language === ExpressionLang.TabularDataDefinition) {
+        return ExpressionLang.JSON;
+    }
+    return language;
+}
+
 export default forwardRef(function AceWrapper(
     { inputProps, customAceEditorCompleter, showLineNumbers, wrapEnabled = true, commands = [], ...props }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
@@ -126,7 +144,7 @@ export default forwardRef(function AceWrapper(
         <AceEditor
             {...props}
             ref={ref}
-            mode={editorMode ? editorMode.valueOf() : language}
+            mode={editorLangToMode(language, editorMode)}
             width={"100%"}
             minLines={rows}
             maxLines={512}

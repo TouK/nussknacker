@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useCallback, useState } from "react";
+import React, { PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleToolbar } from "../../../actions/nk/toolbars";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
@@ -6,8 +6,9 @@ import ErrorBoundary from "../../common/ErrorBoundary";
 import { variables } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
-import { IconWrapper, StyledCloseIcon, StyledCollapseIcon, Title } from "./ToolbarStyled";
-import { useTheme } from "@mui/material";
+import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
+import { Typography, useTheme } from "@mui/material";
+import { RootState } from "../../../reducers";
 
 const { sidebarWidth } = variables;
 
@@ -28,22 +29,28 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
 
     const isCollapsible = !!id && !!title;
 
-    const isCollapsedStored = useSelector(getIsCollapsed);
+    const isCollapsedStored = useSelector((state: RootState) => getIsCollapsed(state)(id));
     const storeIsCollapsed = useCallback(
         (isCollapsed: boolean) => id && dispatch(toggleToolbar(id, toolbarsConfigId, isCollapsed)),
         [dispatch, id, toolbarsConfigId],
     );
 
-    const [isCollapsedLocal, setIsCollapsedLocal] = useState(isCollapsedStored(id));
+    const [isCollapsedLocal, setIsCollapsedLocal] = useState(isCollapsedStored);
 
     const toggleCollapsed = useCallback(() => {
         setIsCollapsedLocal((s) => isCollapsible && !s);
     }, [isCollapsible]);
 
+    useEffect(() => {
+        setIsCollapsedLocal(isCollapsedStored);
+    }, [isCollapsedStored]);
+
     return children ? (
-        <Panel expanded={!isCollapsedLocal} color={color} width={sidebarWidth}>
+        <Panel className={"background"} expanded={!isCollapsedLocal} color={color} width={sidebarWidth}>
             <PanelHeader {...handlerProps} onClick={() => toggleCollapsed()} onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}>
-                <Title>{title}</Title>
+                <Typography textTransform={"uppercase"} variant={"overline"}>
+                    {title}
+                </Typography>
                 {isCollapsible && (
                     <IconWrapper>
                         <StyledCollapseIcon collapsed={isCollapsedLocal} />

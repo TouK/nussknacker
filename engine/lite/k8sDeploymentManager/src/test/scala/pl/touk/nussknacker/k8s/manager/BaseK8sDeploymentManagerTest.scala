@@ -8,9 +8,16 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{
+  CancelScenarioCommand,
+  DataFreshnessPolicy,
+  ProcessingTypeDeploymentServiceStub,
+  RunDeploymentCommand
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
 import skuber.Pod.LogQueryParams
@@ -19,9 +26,13 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
+
 import scala.jdk.CollectionConverters._
+import sttp.client3.SttpBackend
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -32,11 +43,12 @@ class BaseK8sDeploymentManagerTest
     with BeforeAndAfterAll {
   self: LazyLogging =>
 
-  protected implicit val system: ActorSystem = ActorSystem()
-
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+  private implicit val system: ActorSystem                  = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
+  protected val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
 
-  protected lazy val k8s: KubernetesClient = k8sInit
+  protected lazy val k8s: KubernetesClient = k8sInit(system)
   protected lazy val k8sTestUtils          = new K8sTestUtils(k8s)
 
   protected def baseDeployConfig(mode: String): Config = ConfigFactory.empty
@@ -49,6 +61,16 @@ class BaseK8sDeploymentManagerTest
   protected val baseRuntimeContainerConfig: Config = ConfigFactory.empty
     .withValue("name", fromAnyRef("runtime"))
     .withValue("imagePullPolicy", fromAnyRef("Never"))
+
+  protected def prepareManager(modelData: ModelData, deployConfig: Config): K8sDeploymentManager = {
+    val dependencies = DeploymentManagerDependencies(
+      new ProcessingTypeDeploymentServiceStub(List.empty),
+      system.dispatcher,
+      system,
+      backend
+    )
+    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig, dependencies)
+  }
 
   override protected def beforeAll(): Unit = {
     // cleanup just in case...
@@ -101,7 +123,7 @@ class BaseK8sDeploymentManagerTest
       with LazyLogging {
 
     def withRunningScenario(action: => Unit): Unit = {
-      manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+      manager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
       try {
         waitForRunning(version)
         action
@@ -112,16 +134,16 @@ class BaseK8sDeploymentManagerTest
           }
           throw ex
       } finally {
-        manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+        manager.processCommand(CancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
         eventually {
-          manager.getFreshProcessStates(version.processName).futureValue shouldBe List.empty
+          manager.getProcessStates(version.processName).futureValue.value shouldBe List.empty
         }
       }
     }
 
-    def waitForRunning(version: ProcessVersion) = {
+    def waitForRunning(version: ProcessVersion): Assertion = {
       eventually {
-        val state = manager.getFreshProcessStates(version.processName).futureValue
+        val state = manager.getProcessStates(version.processName).map(_.value).futureValue
         state.flatMap(_.version) shouldBe List(version)
         state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }

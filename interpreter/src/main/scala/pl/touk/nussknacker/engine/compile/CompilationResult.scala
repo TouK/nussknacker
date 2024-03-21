@@ -87,13 +87,13 @@ object CompilationResult extends Applicative[CompilationResult] {
         error: ProcessUncanonizationNodeError,
         create: Set[String] => T
     ): NonEmptyList[ProcessUncanonizationError] = {
-      val (nonMatching, matching) = collectedSoFar.toList.partition {
+      val (matching, nonMatching) = collectedSoFar.toList.partition {
         case _: T => true
         case _    => false
       }
       matching match {
         case Nil =>
-          NonEmptyList.one(mapOne(error))
+          NonEmptyList(mapOne(error), nonMatching)
         case nonEmpty =>
           NonEmptyList(create(nonEmpty.flatMap(_.nodeIds).toSet + error.nodeId), nonMatching)
       }
@@ -164,7 +164,7 @@ object CompilationResult extends Applicative[CompilationResult] {
 case class NodeTypingInfo(
     inputValidationContext: ValidationContext,
     expressionsTypingInfo: Map[String, ExpressionTypingInfo],
-    // Currently only parameters for dynamic nodes (implemented by GenericNodeTransformation) are returned
+    // Currently only parameters for dynamic nodes (implemented by DynamicComponent) are returned
     // They are used on FE, to faster display correct node details modal (without need for additional validation request to BE)
     parameters: Option[List[Parameter]]
 )

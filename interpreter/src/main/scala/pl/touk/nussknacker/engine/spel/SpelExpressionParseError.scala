@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.SpelNode
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 
 object SpelExpressionParseError {
@@ -163,11 +165,6 @@ object SpelExpressionParseError {
         s"Not a boolean expression used in ternary operator (expr ? onTrue : onFalse). Computed expression type: ${computedType.display}"
     }
 
-    case class TernaryOperatorMismatchTypesError(left: TypingResult, right: TypingResult) extends TernaryOperatorError {
-      override def message: String =
-        s"Ternary operator (expr ? onTrue : onFalse) used with mismatch result types: ${left.display} and ${right.display}"
-    }
-
     case object InvalidTernaryOperator extends TernaryOperatorError {
       override def message: String = "Invalid ternary operator"
     }
@@ -251,5 +248,15 @@ object SpelExpressionParseError {
   }
 
   case class ExpressionCompilationError(message: String) extends ExpressionParseError
+
+  case class KeyWithLabelExpressionParsingError(keyWithLabel: String, message: String) extends ExpressionParseError {
+
+    def toProcessCompilationError(
+        nodeId: String,
+        paramName: ParameterName
+    ): ProcessCompilationError.KeyWithLabelExpressionParsingError =
+      ProcessCompilationError.KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, nodeId)
+
+  }
 
 }

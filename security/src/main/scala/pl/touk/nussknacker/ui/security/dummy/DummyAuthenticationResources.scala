@@ -4,32 +4,42 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsMissing
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1}
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthenticationResources, FrontendStrategySettings}
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
+import pl.touk.nussknacker.ui.security.api.{
+  AnonymousAccess,
+  AuthenticatedUser,
+  AuthenticationResources,
+  FrontendStrategySettings
+}
+import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 
-class DummyAuthenticationResources(override val name: String, configuration: DummyAuthenticationConfiguration)
-    extends AuthenticationResources
+class DummyAuthenticationResources(
+    override val name: String,
+    override val configuration: DummyAuthenticationConfiguration
+) extends AuthenticationResources
     with AnonymousAccess {
 
-  val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
+  override type CONFIG = DummyAuthenticationConfiguration
 
-  val anonymousUserRole: Option[String] = Some(configuration.anonymousUserRole)
+  override protected val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
 
-  def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
+  override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
     reject(AuthenticationFailedRejection(CredentialsMissing, HttpChallenge("Dummy", "Dummy"))): Directive1[
       AuthenticatedUser
     ]
   }
 
-  override def authenticationMethod(): EndpointInput[AuthCredentials] =
-    auth.basic(new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
-
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
+  override protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
     Future.successful(None)
+  }
+
+  override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
+    auth.basic[Option[String]](new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
+  }
+
 }

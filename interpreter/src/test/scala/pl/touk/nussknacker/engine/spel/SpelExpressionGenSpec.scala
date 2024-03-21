@@ -12,11 +12,11 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 
 import scala.util.{Failure, Success, Try}
@@ -44,12 +44,12 @@ class SpelExpressionGenSpec
 
   private val NonZeroNumberGen = NumberGen.filterNot(_.doubleValue() == 0)
 
-  private val NoRestrictionsOperarators = List("+", "-", "*")
+  private val NoRestrictionsOperators = List("+", "-", "*")
 
-  private val NotAcceptingZeroOnRrightOperarators = List("/", "%")
+  private val NotAcceptingZeroOnRightOperators = List("/", "%")
 
   test("all combinations of simple arithmetic operators and operands") {
-    val operatorGen = Gen.oneOf(NoRestrictionsOperarators)
+    val operatorGen = Gen.oneOf(NoRestrictionsOperators)
 
     forAll(NumberGen, NumberGen, operatorGen) { (a, b, op) =>
       checkIfEvaluatedClassMatchesExpected(op, a, b)
@@ -73,46 +73,50 @@ class SpelExpressionGenSpec
   }
 
   test("all combinations of operands for divide and modulus operator") {
-    val operatorGen = Gen.oneOf(NotAcceptingZeroOnRrightOperarators)
+    val operatorGen = Gen.oneOf(NotAcceptingZeroOnRightOperators)
 
     forAll(NumberGen, NonZeroNumberGen, operatorGen) { (a, b, op) =>
       checkIfEvaluatedClassMatchesExpected(op, a, b)
     }
   }
 
-  private def checkIfEvaluatedClassMatchesExpected(op: String, a: Any, b: Any) = {
+  private def checkIfEvaluatedClassMatchesExpected(op: String, a: Number, b: Number): Unit = {
     val expr         = s"#a $op #b"
-    val debugMessage = s"expression: $expr; operands: $a, $b; operand types: ${a.getClass}, ${b.getClass}"
+    val debugMessage = s"expression: $expr; operands: $a, $b; operand types: ${a.getClass} and ${b.getClass}."
     logger.debug(debugMessage)
 
     withClue(debugMessage) {
       Try(evaluate(expr, a, b)) match {
-        case Failure(
-              a: ArithmeticException
-            ) => // in case of overflow or similar exception, typed Type doesn't need to match
+        // in case of overflow or similar exception, typed Type doesn't need to match
+        case Failure(a: ArithmeticException) =>
           logger.debug(s"Ignored arithmetic exception: ${a.getMessage}")
         case Failure(other) =>
           fail(other) // shouldn't happen
-        case Success(evaluatedClass) =>
-          inside(validate(expr, a, b)) {
-            case Valid(TypedExpression(_, TypedObjectWithValue(TypedClass(typedClass, Nil), _), _)) =>
-              typedClass shouldEqual evaluatedClass
-            case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
-              typedClass shouldEqual evaluatedClass
-            case Valid(TypedExpression(_, TypedUnion(possibleTypes), _)) =>
-              val typedClasses = possibleTypes.map(_.asInstanceOf[TypedClass].klass)
-              typedClasses should contain(evaluatedClass)
+        case Success(evaluatedValue) =>
+          inside(validate(expr, a, b)) { case Valid(typedExpression) =>
+            typedExpression.typingInfo.typingResult match {
+              case TypedObjectWithValue(TypedClass(typedClass, Nil), typedValue) =>
+                typedValue shouldEqual evaluatedValue
+                typedClass shouldEqual evaluatedValue.getClass
+              case TypedClass(typedClass, Nil) =>
+                typedClass shouldEqual evaluatedValue.getClass
+              case union: TypedUnion =>
+                val typedClasses = union.possibleTypes.map(_.asInstanceOf[TypedClass].klass)
+                typedClasses.toList should contain(evaluatedValue.getClass)
+              case other =>
+                throw new IllegalArgumentException(s"Not expected typing result: $other")
+            }
           }
       }
     }
   }
 
-  private def evaluate(expr: String, a: Any, b: Any): Class[_] = {
+  private def evaluate(expr: String, a: Any, b: Any): AnyRef = {
     val spelParser        = new org.springframework.expression.spel.standard.SpelExpressionParser()
     val evaluationContext = new StandardEvaluationContext()
     evaluationContext.setVariable("a", a)
     evaluationContext.setVariable("b", b)
-    spelParser.parseRaw(expr).getValue(evaluationContext).getClass
+    spelParser.parseRaw(expr).getValue(evaluationContext)
   }
 
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {

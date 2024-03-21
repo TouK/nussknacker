@@ -10,15 +10,13 @@ import java.nio.ByteBuffer
 import java.time.{Instant, LocalDate, LocalTime}
 import java.util.UUID
 
-object AvroSchemaTypeDefinitionExtractor {
+object AvroSchemaTypeDefinitionExtractor extends AvroSchemaTypeDefinitionExtractor(Typed.typedClass[GenericRecord])
+
+class AvroSchemaTypeDefinitionExtractor(recordUnderlyingType: TypedClass) {
 
   import scala.jdk.CollectionConverters._
 
-  val DefaultPossibleTypes: Set[TypedClass] = Set(Typed.typedClass[GenericRecord])
-
   val dictIdProperty = "nkDictId"
-
-  def typeDefinition(schema: Schema): TypingResult = typeDefinition(schema, DefaultPossibleTypes)
 
   /**
     * See {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
@@ -26,26 +24,27 @@ object AvroSchemaTypeDefinitionExtractor {
     * !When applying changes keep in mind that this Schema.Type pattern matching is duplicated in {@link pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer},
     * and is used at {@link  pl.touk.nussknacker.engine.schemedkafka.encode.AvroSchemaOutputValidator}
     */
-  def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
+  def typeDefinition(schema: Schema): TypingResult = {
     schema.getType match {
       case Schema.Type.RECORD => {
         val fields = schema.getFields.asScala
-          .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
+          .map(field => field.name() -> typeDefinition(field.schema()))
           .toMap
 
-        Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
+        TypedObjectTypingResult(fields, recordUnderlyingType)
       }
       case Schema.Type.ENUM =>
         Typed.typedClass[EnumSymbol]
       case Schema.Type.ARRAY =>
-        Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType, possibleTypes)))
+        Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType)))
       case Schema.Type.MAP =>
         Typed.genericTypeClass[java.util.Map[_, _]](
-          List(AvroStringSettings.stringTypingResult, typeDefinition(schema.getValueType, possibleTypes))
+          List(AvroStringSettings.stringTypingResult, typeDefinition(schema.getValueType))
         )
       case Schema.Type.UNION =>
-        val childTypeDefinitions = schema.getTypes.asScala.map(sch => typeDefinition(sch, possibleTypes)).toSet
-        Typed(childTypeDefinitions)
+        val childTypeDefinitions = schema.getTypes.asScala.map(sch => typeDefinition(sch)).toSet
+        // TODO: Is it ok? Or we should skip this element?
+        Typed.fromIterableOrUnknownIfEmpty(childTypeDefinitions)
       // See org.apache.avro.UUIDConversion
       case Schema.Type.STRING if schema.getLogicalType == LogicalTypes.uuid() =>
         Typed[UUID]

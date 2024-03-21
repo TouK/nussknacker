@@ -2,9 +2,9 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -78,12 +78,15 @@ class LiteTestScenarioRunner(
     *  .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#result")
     *  }}}
     */
-  override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] =
+  override def runWithData[INPUT: ClassTag, OUTPUT](
+      scenario: CanonicalProcess,
+      data: List[INPUT]
+  ): RunnerListResult[OUTPUT] =
     runWithDataReturningDetails(scenario, data)
-      .map { result => RunListResult(result._1, result._2.map(_.result.asInstanceOf[R])) }
+      .map { result => RunListResult(result._1, result._2.map(_.result.asInstanceOf[OUTPUT])) }
 
-  def runWithDataReturningDetails[T: ClassTag](scenario: CanonicalProcess, data: List[T]): SynchronousResult = {
-    val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[T]))
+  def runWithDataReturningDetails[INPUT: ClassTag](scenario: CanonicalProcess, data: List[INPUT]): SynchronousResult = {
+    val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[INPUT]))
     val testSink   = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
     val inputId    = scenario.nodes.head.id
     val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
@@ -100,20 +103,21 @@ class LiteTestScenarioRunner(
 
 private[test] class SimpleSourceFactory(result: TypingResult)
     extends SourceFactory
-    with SingleInputGenericNodeTransformation[Source]
-    with WithExplicitTypesToExtract {
+    with SingleInputDynamicComponent[Source]
+    with WithExplicitTypesToExtract
+    with UnboundedStreamComponent {
 
   override type State = Nothing
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
     val finalInitializer = new BasicContextInitializer(result)
     FinalResults.forValidation(context, Nil, None)(finalInitializer.validationContext)
   }
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[Nothing]
   ): Source = {
@@ -131,18 +135,17 @@ private[test] class SimpleSourceFactory(result: TypingResult)
 
   override def nodeDependencies: List[NodeDependency] = TypedNodeDependency[NodeId] :: Nil
 
-  override def typesToExtract: List[typing.TypedClass] = result match {
-    case result: typing.SingleTypingResult => List(result.objType)
-    case typing.TypedUnion(possibleTypes)  => possibleTypes.map(_.objType).toList
-    case typing.TypedNull | typing.Unknown => Nil
-  }
+  override def typesToExtract: List[typing.TypingResult] = List(result)
 
 }
 
 private[test] object SimpleSinkFactory extends SinkFactory {
 
   @MethodToInvoke
-  def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = (_: LazyParameterInterpreter) =>
-    value
+  def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = {
+    new LazyParamSink[AnyRef] {
+      override def prepareResponse: LazyParameter[AnyRef] = value
+    }
+  }
 
 }

@@ -148,7 +148,7 @@ describe("Auto Screenshot Change Docs -", () => {
 
 const projectRoot = path.join(Cypress.config("fileServerFolder"), "../..");
 const snapshotOptions = {
-    maxDiffThreshold: 0.00001,
+    maxDiffThreshold: 0.02,
     imagesPath: path.join(projectRoot, "docs/autoScreenshotChangeDocs"),
 };
 

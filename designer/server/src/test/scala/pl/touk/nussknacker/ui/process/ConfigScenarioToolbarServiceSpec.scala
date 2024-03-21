@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.process
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.util.UriUtils
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil
 import pl.touk.nussknacker.ui.config.scenariotoolbar._
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 
 class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
@@ -28,8 +27,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |      ]
       |      topRight: [
       |        {
-      |          type: "process-info-panel"
-      |          title: "Process Info $processName"
+      |          type: "process-actions-panel"
+      |          title: "Process Actions $processName"
       |          buttons: [
       |            { type: "process-save", icon: "/assets/$processId/buttons/save.svg", title: "save", disabled: {archived: true} }
       |            { type: "custom-link", name: "metrics", title: "metrics for process", url: "/metrics/$processName" }
@@ -177,7 +176,6 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     val fragment         = createProcess("fragment", "Category1", isFragment = true, isArchived = false)
     val archivedFragment = createProcess("archived-fragment", "Category1", isFragment = true, isArchived = true)
     val processCategory2 = createProcess("process2", "Category2", isFragment = false, isArchived = false)
-    val processCategory3 = createProcess("process3", "Category3", isFragment = false, isArchived = false)
 
     val testingData = Table(
       "process",
@@ -185,8 +183,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
       archivedProcess,
       fragment,
       archivedFragment,
-      processCategory2,
-      processCategory3
+      processCategory2
     )
 
     forAll(testingData) { (process: ScenarioWithDetailsEntity[_]) =>
@@ -214,8 +211,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -269,8 +266,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -314,8 +311,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -380,8 +377,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -434,8 +431,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -488,8 +485,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
           Nil,
           List(
             ToolbarPanel(
-              ProcessInfoPanel,
-              Some(s"Process Info ${process.name}"),
+              ProcessActionsPanel,
+              Some(s"Process Actions ${process.name}"),
               None,
               Some(
                 List(
@@ -538,9 +535,9 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  private def createProcess(name: String, category: Category, isFragment: Boolean, isArchived: Boolean) =
+  private def createProcess(name: String, category: String, isFragment: Boolean, isArchived: Boolean) =
     TestProcessUtil.wrapWithScenarioDetailsEntity(
-      ProcessName(name),
+      name = ProcessName(name),
       category = category,
       isFragment = isFragment,
       isArchived = isArchived

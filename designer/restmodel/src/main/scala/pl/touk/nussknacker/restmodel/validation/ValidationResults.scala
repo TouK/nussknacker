@@ -4,11 +4,11 @@ import cats.implicits._
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
-import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.restmodel.definition.UIParameter
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.definition.UIParameter
 
 object ValidationResults {
 
@@ -62,7 +62,7 @@ object ValidationResults {
   }
 
   @JsonCodec final case class NodeTypingData(
-      // variableTypes are needed bcause we hold the draft of a scenario on the FE side and we don't want FE
+      // variableTypes are needed because we hold the draft of a scenario on the FE side and we don't want FE
       // to send to BE the whole scenario graph every time when someone change something in a single node.
       // Because of that we send variable types that are before each node, and FE send to BE only these types instead of the whole scenario
       variableTypes: Map[String, TypingResult],
@@ -97,7 +97,8 @@ object ValidationResults {
       message: String,
       description: String,
       fieldName: Option[String],
-      errorType: NodeValidationErrorType.Value
+      errorType: NodeValidationErrorType.Value,
+      details: Option[ErrorDetails]
   )
 
   object ValidationErrors {

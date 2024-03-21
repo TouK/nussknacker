@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
+import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreationStrategy, NodeCompiler}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -23,17 +23,17 @@ import shapeless.syntax.typeable._
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
 
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-    case spel: SpelExpressionParser => spel.typingDictLabels
-  }
+  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
   private lazy val nodeCompiler = new NodeCompiler(
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
+    Seq.empty,
     ProductionServiceInvocationCollector,
-    ComponentUseCase.TestDataGeneration
+    ComponentUseCase.TestDataGeneration,
+    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
   override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {

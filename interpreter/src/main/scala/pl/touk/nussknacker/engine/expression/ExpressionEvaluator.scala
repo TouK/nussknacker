@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.expression
 
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.compiledgraph.CompiledParameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.compiledgraph.{BaseCompiledParameter, CompiledParameter}
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -47,8 +48,8 @@ class ExpressionEvaluator(
   def evaluateParameters(
       params: List[CompiledParameter],
       ctx: Context
-  )(implicit nodeId: NodeId, metaData: MetaData): (Context, Map[String, AnyRef]) = {
-    val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(String, AnyRef)])) {
+  )(implicit nodeId: NodeId, metaData: MetaData): (Context, Map[ParameterName, AnyRef]) = {
+    val (newCtx, evaluatedParams) = params.foldLeft((ctx, List.empty[(ParameterName, AnyRef)])) {
       case ((accCtx, accParams), param) =>
         val valueWithModifiedContext = evaluateParameter(param, accCtx)
         val newAccParams             = (param.name -> valueWithModifiedContext.value) :: accParams
@@ -59,11 +60,11 @@ class ExpressionEvaluator(
   }
 
   def evaluateParameter(
-      param: CompiledParameter,
+      param: BaseCompiledParameter,
       ctx: Context
   )(implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
     try {
-      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx)
+      val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name.value, nodeId.id, ctx)
       valueWithModifiedContext.map { evaluatedValue =>
         if (param.shouldBeWrappedWithScalaOption)
           Option(evaluatedValue)

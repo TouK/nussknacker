@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{AllProcessingModesComponent, Component}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * Implementations of this class *must not* allocate resources (connections, file handles etc.) unless open() *or* appropriate @MethodToInvoke
   *  is called
   */
-abstract class Service extends Lifecycle with Component
+abstract class Service extends Lifecycle with Component with AllProcessingModesComponent
 
 /*
   This is marker interface, for services which have Lazy/dynamic parameters. Invocation is handled with ServiceInvoker
@@ -35,10 +34,9 @@ abstract class EagerService extends Service
 
 trait ServiceInvoker {
 
-  def invokeService(params: Map[String, Any])(
+  def invoke(context: Context)(
       implicit ec: ExecutionContext,
-      collector: InvocationCollectors.ServiceInvocationCollector,
-      contextId: ContextId,
+      collector: ServiceInvocationCollector,
       componentUseCase: ComponentUseCase
   ): Future[Any]
 

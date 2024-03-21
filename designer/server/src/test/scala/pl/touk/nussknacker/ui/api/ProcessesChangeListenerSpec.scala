@@ -8,13 +8,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withAllPermissions
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-
-import scala.language.higherKinds
 
 class ProcessesChangeListenerSpec
     extends AnyFunSuite
@@ -27,19 +27,16 @@ class ProcessesChangeListenerSpec
     with BeforeAndAfterAll
     with NuResourcesTest {
 
-  import TestCategories._
-
-  private val routeWithAllPermissions   = withAllPermissions(processesRoute)
-  private val routeWithAdminPermissions = withAdminPermissions(processesRoute)
-  implicit val loggedUser: LoggedUser   = LoggedUser("1", "lu", testCategory)
+  private val routeWithAllPermissions = withAllPermissions(processesRoute)
+  implicit val loggedUser: LoggedUser = createLoggedUser("1", "lu", Permission.ALL_PERMISSIONS.toSeq: _*)
 
   private val processName = ProcessTestData.sampleScenario.name
 
   test("listen to process create") {
-    Post(
-      s"/processes/$processName/$Category1?isFragment=false"
-    ) ~> processesRouteWithAllPermissions ~> checkEventually {
-      processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+    createProcessRequest(processName) { _ =>
+      eventually {
+        processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
+      }
     }
   }
 
@@ -92,7 +89,6 @@ class ProcessesChangeListenerSpec
 
     deployProcess(
       processName,
-      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
@@ -117,7 +113,6 @@ class ProcessesChangeListenerSpec
 
     cancelProcess(
       ProcessTestData.sampleScenario.name,
-      Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))),
       comment
     ) ~> checkEventually {
       val head = processChangeListener.events.toArray.last

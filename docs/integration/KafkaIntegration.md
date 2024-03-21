@@ -39,7 +39,7 @@ To properly present information about topics and version and to recognize which 
   It means that it looks for schemas available at `<topic-name>-(key or value)` *subject*. For example for topic `transactions`, it looks for schemas at `transactions-key` *subject* for key and `transactions-value` *subject* for value
 - In the Azure Schema Registry, *subject* concept doesn't exist - schemas are grouped by the same *schema name*. Because of that, Nussknacker introduces
   own convention for association between schema and topic: *schema name* should be in format: `CamelCasedTopicNameKey` for keys and `CamelCasedTopicNameValue` for values.
-  For example for `input-events` topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
+  For example for `input-events` (or `input.events`) topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
   not only in Azure portal but also inside schema content - those names should be the same to make serialization works correctly
 
 ## Connection and Authentication Configuration
@@ -110,6 +110,8 @@ Regarding authentication, a couple of options can be used - you can provide cred
 `azure.tenant.id`, `azure.client.id` and `azure.client.secret` properties, or you can use one of other methods handled
 by Azure's [DefaultAzureCredential](https://learn.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable#defaultazurecredential).
 For example via Azure CLI or Azure PowerShell.
+
+Integration with Azure Schema Registry requires Kafka connection, make sure you have provided proper [configuration](#kafka---authentication).
 
 ## Messaging
 
@@ -186,6 +188,7 @@ Important thing to remember is that Kafka server addresses/Schema Registry addre
 | kafkaProperties                                                             | Medium     | map      |                  | Additional configuration of [producers](https://kafka.apache.org/documentation/#producerconfigs) or [consumers](https://kafka.apache.org/documentation/#consumerconfigs)                                                                                                   |
 | useStringForKey                                                             | Medium     | boolean  | true             | Kafka message keys will be in the string format (not in Avro)                                                                                                                                                                                                              |
 | kafkaEspProperties.forceLatestRead                                          | Medium     | boolean  | false            | If scenario is restarted, should offsets of source consumers be reset to latest (can be useful in test enrivonments)                                                                                                                                                       |
+| useNamingStrategyForConsumerGroupId                                         | Medium     | boolean  | true             | Use namespaced consumer group id if namespace is configured                                                                                                                                                                                                                |
 | topicsExistenceValidationConfig.enabled                                     | Low        | boolean  | false            | Determine if existence of topics should be validated if no [auto.create.topics.enable](https://kafka.apache.org/documentation/#brokerconfigs_auto.create.topics.enable) is false on Kafka cluster - note, that it may require permissions to access Kafka cluster settings |
 | topicsExistenceValidationConfig.validatorConfig.autoCreateFlagFetchCacheTtl | Low        | duration | 5 minutes        | TTL for checking Kafka cluster settings                                                                                                                                                                                                                                    |
 | topicsExistenceValidationConfig.validatorConfig.topicsFetchCacheTtl         | Low        | duration | 30 seconds       | TTL for caching list of existing topics                                                                                                                                                                                                                                    |

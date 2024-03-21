@@ -45,10 +45,15 @@ export default function Tool(props: OwnProps): JSX.Element {
                     searchWords={highlights}
                     highlightTag={`span`}
                     highlightStyle={{
+                        ...theme.typography.body2,
                         color: theme.custom.colors.warning,
                         background: theme.custom.colors.secondaryBackground,
                         fontWeight: "bold",
                     }}
+                    unhighlightStyle={{
+                        ...theme.typography.body2,
+                    }}
+                    activeStyle={{ ...theme.typography.body2 }}
                 />
             </div>
         </div>

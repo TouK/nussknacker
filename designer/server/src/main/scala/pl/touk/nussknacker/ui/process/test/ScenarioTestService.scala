@@ -9,7 +9,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.ui.api.{TestDataSettings, TestSourceParameters}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
@@ -69,7 +70,7 @@ class ScenarioTestService(
     } yield rawTestData
   }
 
-  def performTest[T](
+  def performTest(
       idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,

@@ -19,6 +19,8 @@ import ValidationLabels from "./ValidationLabels";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { isEmpty } from "lodash";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
+import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -42,7 +44,7 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.test", "Test"), disabled: !isValid, action: () => confirmAction() },
         ],
         [t, confirmAction, props, isValid],
@@ -51,7 +53,7 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3>{t("generate-and-test.title", "Generate scenario test data and run tests")}</h3>
+                <Typography variant={"h3"}>{t("generate-and-test.title", "Generate scenario test data and run tests")}</Typography>
                 <NodeInput
                     value={testSampleSize}
                     onChange={(event) => setState({ testSampleSize: event.target.value })}

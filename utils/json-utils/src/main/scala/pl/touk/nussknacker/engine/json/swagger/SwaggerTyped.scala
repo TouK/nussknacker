@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.json.swagger
 
+import cats.data.NonEmptyList
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
@@ -178,7 +179,7 @@ object SwaggerTyped {
     case SwaggerArray(ofType) =>
       Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType)))
     case SwaggerEnum(values) =>
-      Typed(values.map(Typed.fromInstance).toSet)
+      Typed.fromIterableOrUnknownIfEmpty(values.map(Typed.fromInstance))
     case SwaggerBool =>
       Typed.typedClass[java.lang.Boolean]
     case SwaggerString =>
@@ -199,7 +200,7 @@ object SwaggerTyped {
       Typed.typedClass[LocalDate]
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
-    case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
+    case SwaggerUnion(types) => Typed.fromIterableOrUnknownIfEmpty(types.map(typingResult))
     case SwaggerAny =>
       Unknown
     case SwaggerNull =>
@@ -218,16 +219,17 @@ object SwaggerTyped {
     if (elementType.isEmpty) {
       val patternPropertiesTypesSet = patternProperties.map { case PatternWithSwaggerTyped(_, propertySwaggerTyped) =>
         typingResult(propertySwaggerTyped)
-      }.toSet
+      }
       additionalProperties match {
         case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty =>
-          TypedObjectTypingResult(Map.empty[String, TypingResult])
-        case AdditionalPropertiesDisabled => typedStringKeyMap(Typed(patternPropertiesTypesSet))
+          Typed.record(Map.empty[String, TypingResult])
+        case AdditionalPropertiesDisabled =>
+          typedStringKeyMap(Typed.fromIterableOrUnknownIfEmpty(patternPropertiesTypesSet))
         case AdditionalPropertiesEnabled(value) =>
-          typedStringKeyMap(Typed(patternPropertiesTypesSet + typingResult(value)))
+          typedStringKeyMap(Typed(NonEmptyList(typingResult(value), patternPropertiesTypesSet)))
       }
     } else {
-      TypedObjectTypingResult(elementType.mapValuesNow(typingResult))
+      Typed.record(elementType.mapValuesNow(typingResult))
     }
   }
 

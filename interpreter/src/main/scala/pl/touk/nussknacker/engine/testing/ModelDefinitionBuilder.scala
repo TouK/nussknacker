@@ -1,10 +1,15 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
+  ComponentId,
+  DesignerWideComponentId,
+  ProcessingMode
+}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.component._
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
@@ -39,11 +44,15 @@ final case class ModelDefinitionBuilder(
   ): ModelDefinitionBuilder =
     wrapService(name, ComponentStaticDefinition(params.toList, returnType))
 
-  def withSource(name: String, params: Parameter*): ModelDefinitionBuilder =
-    withSource(name, Some(Unknown), params: _*)
+  def withUnboundedStreamSource(name: String, params: Parameter*): ModelDefinitionBuilder =
+    withUnboundedStreamSource(name, Some(Unknown), params: _*)
 
-  def withSource(name: String, returnType: Option[TypingResult], params: Parameter*): ModelDefinitionBuilder =
-    withSource(name, ComponentStaticDefinition(params.toList, returnType))
+  def withUnboundedStreamSource(
+      name: String,
+      returnType: Option[TypingResult],
+      params: Parameter*
+  ): ModelDefinitionBuilder =
+    withSource(name, ComponentStaticDefinition(params.toList, returnType), Some(Set(ProcessingMode.UnboundedStream)))
 
   def withSink(name: String, params: Parameter*): ModelDefinitionBuilder =
     withSink(name, ComponentStaticDefinition(params.toList, None))
@@ -85,15 +94,30 @@ final case class ModelDefinitionBuilder(
 
   private def withSource(
       name: String,
-      staticDefinition: ComponentStaticDefinition
+      staticDefinition: ComponentStaticDefinition,
+      allowedProcessingModes: Option[Set[ProcessingMode]]
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, SourceSpecificData, componentGroupName = None, designerWideComponentId = None)
+    withComponent(
+      name,
+      staticDefinition,
+      SourceSpecificData,
+      componentGroupName = None,
+      designerWideComponentId = None,
+      allowedProcessingModes
+    )
 
   private def withSink(
       name: String,
       staticDefinition: ComponentStaticDefinition,
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, SinkSpecificData, componentGroupName = None, designerWideComponentId = None)
+    withComponent(
+      name,
+      staticDefinition,
+      SinkSpecificData,
+      componentGroupName = None,
+      designerWideComponentId = None,
+      allowedProcessingModes = None
+    )
 
   private def wrapService(
       name: String,
@@ -104,7 +128,8 @@ final case class ModelDefinitionBuilder(
       staticDefinition,
       ServiceSpecificData,
       componentGroupName = None,
-      designerWideComponentId = None
+      designerWideComponentId = None,
+      allowedProcessingModes = None
     )
 
   private def wrapCustom(
@@ -114,14 +139,22 @@ final case class ModelDefinitionBuilder(
       componentGroupName: Option[ComponentGroupName],
       designerWideComponentId: Option[DesignerWideComponentId]
   ): ModelDefinitionBuilder =
-    withComponent(name, staticDefinition, componentSpecificData, componentGroupName, designerWideComponentId)
+    withComponent(
+      name,
+      staticDefinition,
+      componentSpecificData,
+      componentGroupName,
+      designerWideComponentId,
+      allowedProcessingModes = None
+    )
 
   private def withComponent(
       name: String,
       staticDefinition: ComponentStaticDefinition,
       componentTypeSpecificData: ComponentTypeSpecificData,
       componentGroupName: Option[ComponentGroupName],
-      designerWideComponentId: Option[DesignerWideComponentId]
+      designerWideComponentId: Option[DesignerWideComponentId],
+      allowedProcessingModes: Option[Set[ProcessingMode]]
   ): ModelDefinitionBuilder = {
     val defaultConfig =
       DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
@@ -145,7 +178,8 @@ final case class ModelDefinitionBuilder(
           name,
           componentTypeSpecificData,
           staticDefinition,
-          uiDefinition
+          uiDefinition,
+          allowedProcessingModes
         )
       }
       .map { component =>
@@ -184,9 +218,7 @@ object ModelDefinitionBuilder {
       Map.empty[String, GlobalVariableDefinitionWithImplementation],
       List.empty,
       defaultAdditionalClasses,
-      languages = LanguageConfiguration.default,
       optimizeCompilation = true,
-      strictTypeChecking = defaultStrictTypeChecking,
       dictionaries = Map.empty,
       hideMetaVariable = false,
       strictMethodsChecking = defaultStrictMethodsChecking,

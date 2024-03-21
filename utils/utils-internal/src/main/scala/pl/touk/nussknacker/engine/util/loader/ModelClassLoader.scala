@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.util.loader
 import com.typesafe.scalalogging.LazyLogging
 
 import java.io.File
-import java.net.{URL, URLClassLoader}
+import java.net.{URI, URL, URLClassLoader}
+import java.nio.file.Path
 
 case class ModelClassLoader private (classLoader: ClassLoader, urls: List[URL]) {
 
@@ -44,9 +45,32 @@ object ModelClassLoader extends LazyLogging {
     }
   }
 
-  def apply(urls: List[URL], jarExtension: String = defaultJarExtension): ModelClassLoader = {
-    val expandedUrls = expandFiles(urls, jarExtension)
-    ModelClassLoader(new URLClassLoader(expandedUrls.toArray, this.getClass.getClassLoader), expandedUrls.toList)
+  private def convertToURL(urlString: String, workingDirectoryOpt: Option[Path]): URL = {
+    val uri = new URI(urlString)
+    if (uri.isAbsolute) {
+      uri.toURL
+    } else {
+      val pathPart = uri.getSchemeSpecificPart
+      val path = workingDirectoryOpt.map { workingDirectory =>
+        workingDirectory.resolve(pathPart)
+      } getOrElse {
+        Path.of(pathPart)
+      }
+      path.toUri.toURL
+    }
+  }
+
+  // workingDirectoryOpt is for the purpose of easier testing. We can't easily change the working directory otherwise - see https://stackoverflow.com/a/840229
+  def apply(
+      urls: List[String],
+      workingDirectoryOpt: Option[Path],
+      jarExtension: String = defaultJarExtension
+  ): ModelClassLoader = {
+    val postProcessedURLs = expandFiles(urls.map(convertToURL(_, workingDirectoryOpt)), jarExtension)
+    ModelClassLoader(
+      new URLClassLoader(postProcessedURLs.toArray, this.getClass.getClassLoader),
+      postProcessedURLs.toList
+    )
   }
 
 }

@@ -9,14 +9,13 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVer
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-  import MockSchemaRegistry._
+  import SampleSchemas._
   import spel.Implicits._
 
   private val givenMatchingJsonObj =
@@ -48,19 +47,19 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.input}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'${topicConfig.output}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
-        KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
+        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true",
+        KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${validationMode.name}'"
       )
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
@@ -76,13 +75,6 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
       result.timestamp shouldBe timeAgo
       result.message() shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
-  }
-
-  private def parseJson(str: String) = io.circe.parser.parse(str).toOption.get
-
-  private def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
-    val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
 
 }

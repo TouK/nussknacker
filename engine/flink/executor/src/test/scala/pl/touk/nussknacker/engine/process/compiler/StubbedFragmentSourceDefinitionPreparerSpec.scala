@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.definition.{
   DualParameterEditor,
   Parameter,
@@ -9,6 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TestWithParametersSupport
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
@@ -23,8 +25,8 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
     val fragmentInputDefinition = FragmentInputDefinition(
       "",
       List(
-        FragmentParameter("name", FragmentClazzRef[String]),
-        FragmentParameter("age", FragmentClazzRef[Long]),
+        FragmentParameter(ParameterName("name"), FragmentClazzRef[String]),
+        FragmentParameter(ParameterName("age"), FragmentClazzRef[Long]),
       )
     )
     val stubbedSourcePreparer = new StubbedFragmentSourceDefinitionPreparer(
@@ -33,7 +35,7 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
     val parameters: Seq[Parameter] = stubbedSourcePreparer
       .createSourceDefinition("foo", fragmentInputDefinition)
       .implementationInvoker
-      .invokeMethod(Map.empty, None, Seq.empty)
+      .invokeMethod(Params.empty, None, Seq.empty)
       .asInstanceOf[TestWithParametersSupport[Map[String, Any]]]
       .testParametersDefinition
     val expectedParameters = List(
@@ -44,7 +46,9 @@ class StubbedFragmentSourceDefinitionPreparerSpec extends AnyFunSuite with Match
       ),
       SimplifiedParam("age", Typed.apply[Long], None),
     )
-    parameters.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
+    parameters.map(p =>
+      SimplifiedParam(p.name.value, p.typ, p.editor)
+    ) should contain theSameElementsAs expectedParameters
   }
 
 }

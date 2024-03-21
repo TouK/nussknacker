@@ -2,13 +2,6 @@ import { styled } from "@mui/material";
 import CollapseIcon from "../../../assets/img/arrows/panel-hide-arrow.svg";
 import CloseIcon from "../../../assets/img/close.svg";
 
-export const Title = styled("div")({
-    padding: "0 .25em",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    flex: 1,
-});
-
 export const IconWrapper = styled("div")({
     padding: 0,
     flexShrink: 0,
@@ -16,6 +9,7 @@ export const IconWrapper = styled("div")({
     background: "none",
     display: "flex",
     alignItems: "center",
+    fontSize: ".625em",
 });
 
 export const StyledCollapseIcon = styled(CollapseIcon, {

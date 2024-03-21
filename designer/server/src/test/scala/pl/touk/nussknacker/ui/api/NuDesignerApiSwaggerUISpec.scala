@@ -3,24 +3,16 @@ package pl.touk.nussknacker.ui.api
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.containsString
-import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.{
-  NuRestAssureExtensions,
-  NuRestAssureMatchers,
-  PatientScalaFutures,
-  RestAssuredVerboseLogging
-}
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuTestScenarioManager, WithMockableDeploymentManager}
+import org.scalatest.freespec.AnyFreeSpec
+import pl.touk.nussknacker.test.RestAssuredVerboseLogging
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 
 class NuDesignerApiSwaggerUISpec
-    extends AnyFreeSpecLike
+    extends AnyFreeSpec
     with NuItTest
-    with WithMockableDeploymentManager
-    with NuTestScenarioManager
-    with NuRestAssureExtensions
-    with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
-    with PatientScalaFutures {
+    with WithSimplifiedDesignerConfig
+    with RestAssuredVerboseLogging {
 
   "Swagger UI should be visible and achievable" in {
     given()

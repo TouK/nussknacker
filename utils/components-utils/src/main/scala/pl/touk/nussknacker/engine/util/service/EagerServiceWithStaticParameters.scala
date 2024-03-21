@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedSingleParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation,
+  SingleInputDynamicComponent,
   WithStaticParameters
 }
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.runtime.BoxedUnit
@@ -28,11 +29,11 @@ import scala.runtime.BoxedUnit
   This is helper trait for creating Service which has parameter definitions fixed in designer (i.e. no parameters depending on each other)
   but parameter definitions which are not fixed/known at compile time. Good example are services which take parameter
   list from external source (e.g. configuration, OpenAPI definition, database).
-  For dynamic parameters use SingleInputGenericNodeTransformation, for parameters known at compile time - use @MethodToInvoke
+  For dynamic parameters use SingleInputDynamicComponent, for parameters known at compile time - use @MethodToInvoke
  */
 trait EagerServiceWithStaticParameters
     extends EagerService
-    with SingleInputGenericNodeTransformation[ServiceInvoker]
+    with SingleInputDynamicComponent[ServiceInvoker]
     with WithStaticParameters {
 
   override type State = TypingResult
@@ -45,20 +46,21 @@ trait EagerServiceWithStaticParameters
 
   def hasOutput: Boolean
 
-  def serviceImplementation(
-      eagerParameters: Map[String, Any],
+  def createServiceInvoker(
+      eagerParameters: Map[ParameterName, Any],
+      lazyParameters: Map[ParameterName, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
   ): ServiceInvoker
 
   def returnType(
       validationContext: ValidationContext,
-      parameters: Map[String, DefinedSingleParameter]
+      parameters: Map[ParameterName, DefinedSingleParameter]
   ): ValidatedNel[ProcessCompilationError, TypingResult]
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) if parameters.nonEmpty => NextParameters(parameters)
     case TransformationStep(list, _) if hasOutput =>
       val output = returnType(context, list.toMap)
@@ -71,17 +73,17 @@ trait EagerServiceWithStaticParameters
   override def nodeDependencies: List[NodeDependency] =
     if (hasOutput) List(OutputVariableNameDependency, metaData) else List(metaData)
 
-  override def implementation(
-      params: Map[String, Any],
+  override final def implementation(
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TypingResult]
-  ): ServiceInvoker = {
-    serviceImplementation(
-      params.filterNot(_._2.isInstanceOf[LazyParameter[_]]),
+  ): ServiceInvoker =
+    createServiceInvoker(
+      params.nameToValueMap.filterNot { case (_, param) => param.isInstanceOf[LazyParameter[_]] },
+      params.nameToValueMap.collect { case (name, param: LazyParameter[AnyRef]) => (name, param) },
       finalState.getOrElse(Unknown),
       metaData.extract(dependencies)
     )
-  }
 
 }
 
@@ -95,7 +97,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   // TODO: This method should be removed - instead, developers should deliver it's own ServiceInvoker to avoid
   //       mixing implementation logic with definition logic. Before that we should fix EagerService Lifecycle handling.
   //       See notice next to EagerService
-  def invoke(params: Map[String, Any])(
+  def invoke(eagerParameters: Map[ParameterName, Any])(
       implicit ec: ExecutionContext,
       collector: InvocationCollectors.ServiceInvocationCollector,
       contextId: ContextId,
@@ -103,30 +105,37 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
       componentUseCase: ComponentUseCase
   ): Future[Any]
 
-  override def serviceImplementation(
-      eagerParameters: Map[String, Any],
+  override final def createServiceInvoker(
+      eagerParameters: Map[ParameterName, Any],
+      lazyParameters: Map[ParameterName, LazyParameter[AnyRef]],
       typingResult: TypingResult,
       metaData: MetaData
-  ): ServiceInvoker = {
-    implicit val metaImplicit: MetaData = metaData
-    new ServiceInvoker {
-
-      override def invokeService(params: Map[String, Any])(
-          implicit ec: ExecutionContext,
-          collector: InvocationCollectors.ServiceInvocationCollector,
-          contextId: ContextId,
-          componentUseCase: ComponentUseCase
-      ): Future[Any] =
-        invoke(params ++ eagerParameters)
-
-    }
-  }
+  ): ServiceInvoker = new ServiceInvokerImplementation(eagerParameters, lazyParameters, metaData)
 
   override def hasOutput: Boolean = !List(Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
   override def returnType(
       validationContext: ValidationContext,
-      parameters: Map[String, DefinedSingleParameter]
+      parameters: Map[ParameterName, DefinedSingleParameter]
   ): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
+
+  private class ServiceInvokerImplementation(
+      eagerParameters: Map[ParameterName, Any],
+      lazyParameters: Map[ParameterName, LazyParameter[AnyRef]],
+      metaData: MetaData
+  ) extends ServiceInvoker {
+
+    override def invoke(context: Context)(
+        implicit ec: ExecutionContext,
+        collector: InvocationCollectors.ServiceInvocationCollector,
+        componentUseCase: ComponentUseCase
+    ): Future[Any] = {
+      implicit val contextId: ContextId   = ContextId(context.id)
+      implicit val metaImplicit: MetaData = metaData
+      val evaluatedLazyParameters         = lazyParameters.map { case (name, value) => (name, value.evaluate(context)) }
+      EagerServiceWithStaticParametersAndReturnType.this.invoke(eagerParameters ++ evaluatedLazyParameters)
+    }
+
+  }
 
 }

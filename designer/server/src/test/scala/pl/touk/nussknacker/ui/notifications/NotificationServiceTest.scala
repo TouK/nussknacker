@@ -7,22 +7,20 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
   DBIOActionRunner,
@@ -30,7 +28,6 @@ import pl.touk.nussknacker.ui.process.repository.{
   ScenarioWithDetailsEntity
 }
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 
 import java.time.temporal.ChronoUnit
@@ -79,7 +76,7 @@ class NotificationServiceTest
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
       when(
-        deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
+        deploymentManager.processCommand(any[RunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, global).flatten.futureValue
@@ -119,9 +116,9 @@ class NotificationServiceTest
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
       when(
-        deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])
+        deploymentManager.processCommand(any[RunDeploymentCommand])
       ).thenAnswer { invocation =>
-        passedDeploymentId = Some(invocation.getArgument[DeploymentData](1).deploymentId)
+        passedDeploymentId = Some(invocation.getArgument[RunDeploymentCommand](0).deploymentData.deploymentId)
         Future.fromTry(givenDeployResult)
       }
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
@@ -134,7 +131,9 @@ class NotificationServiceTest
     notificationsAfterDeploy should have length 1
     val deployNotificationId = notificationsAfterDeploy.head.id
 
-    deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
+    deploymentService
+      .markActionExecutionFinished("Streaming", passedDeploymentId.value.toActionIdOpt.value)
+      .futureValue
     val notificationAfterExecutionFinished = notificationService.notifications(user, global).futureValue
     // old notification about deployment is replaced by notification about deployment execution finished which has other id
     notificationAfterExecutionFinished should have length 1
@@ -148,7 +147,7 @@ class NotificationServiceTest
     when(
       deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy])
     )
-      .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
+      .thenReturn(Future.successful(WithDataFreshnessStatus.fresh(notDeployed)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])(any[LoggedUser])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
@@ -162,6 +161,7 @@ class NotificationServiceTest
       mock[ProcessingTypeDataProvider[UIProcessValidator, _]],
       mock[ProcessingTypeDataProvider[ScenarioResolver, _]],
       mock[ProcessChangeListener],
+      None,
       None,
       clock
     ) {
@@ -184,14 +184,14 @@ class NotificationServiceTest
   private def saveSampleProcess(processName: ProcessName) = {
     val sampleScenario = ScenarioBuilder
       .streaming(processName.value)
-      .source("source", existingSourceFactory)
-      .emptySink("sink", existingSinkFactory)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action =
       CreateProcessAction(
-        processName,
-        Category1,
-        sampleScenario,
-        Streaming,
+        processName = processName,
+        category = "Default",
+        canonicalProcess = sampleScenario,
+        processingType = "Streaming",
         isFragment = false,
         forwardedUserName = None
       )

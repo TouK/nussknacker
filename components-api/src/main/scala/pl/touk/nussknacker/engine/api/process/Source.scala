@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, VariableConstants}
 import shapeless.=:!=
 
 import scala.reflect.ClassTag
@@ -46,7 +46,7 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
 trait TestWithParametersSupport[+T] { self: Source =>
   // TODO add support for dynamic parameters
   def testParametersDefinition: List[Parameter]
-  def parametersToTestData(params: Map[String, AnyRef]): T
+  def parametersToTestData(params: Map[ParameterName, AnyRef]): T
 }
 
 /**
@@ -60,20 +60,25 @@ trait SourceFactory extends Serializable with Component
 object SourceFactory {
 
   // source is called by for making SourceFactory serialization easier
-  def noParam(source: => Source, inputType: TypingResult): SourceFactory =
-    NoParamSourceFactory(_ => source, inputType)
+  def noParamUnboundedStreamFactory(source: => Source, inputType: TypingResult): SourceFactory =
+    NoParamSourceFactory(_ => source, inputType, Some(Set(ProcessingMode.UnboundedStream)))
 
-  def noParam[T: TypeTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(_ => source, Typed.fromDetailedType[T])
+  def noParamUnboundedStreamFactory[T: TypeTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
+    NoParamSourceFactory(_ => source, Typed.fromDetailedType[T], Some(Set(ProcessingMode.UnboundedStream)))
 
-  def noParam[T: TypeTag](createSource: NodeId => Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(createSource, Typed.fromDetailedType[T])
+  def noParamUnboundedStreamFactory[T: TypeTag](createSource: NodeId => Source)(
+      implicit ev: T =:!= Nothing
+  ): SourceFactory =
+    NoParamSourceFactory(createSource, Typed.fromDetailedType[T], Some(Set(ProcessingMode.UnboundedStream)))
 
-  def noParamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(_ => source, Typed.apply[T])
+  def noParamUnboundedStreamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
+    NoParamSourceFactory(_ => source, Typed.apply[T], Some(Set(ProcessingMode.UnboundedStream)))
 
-  case class NoParamSourceFactory(createSource: NodeId => Source, inputType: TypingResult)
-      extends SourceFactory
+  case class NoParamSourceFactory(
+      createSource: NodeId => Source,
+      inputType: TypingResult,
+      override val allowedProcessingModes: Option[Set[ProcessingMode]]
+  ) extends SourceFactory
       with WithExplicitTypesToExtract {
 
     @MethodToInvoke
@@ -81,9 +86,7 @@ object SourceFactory {
       .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
       .implementedBy(createSource(nodeId))
 
-    override def typesToExtract: List[typing.TypedClass] = List(inputType).collect { case single: SingleTypingResult =>
-      single.objType
-    }
+    override def typesToExtract: List[typing.TypingResult] = List(inputType)
 
   }
 

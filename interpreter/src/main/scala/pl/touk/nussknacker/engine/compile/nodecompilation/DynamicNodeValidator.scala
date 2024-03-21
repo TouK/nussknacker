@@ -5,16 +5,16 @@ import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
 import pl.touk.nussknacker.engine.definition.component.parameter.StandardParameterEnrichment
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -28,12 +28,14 @@ class DynamicNodeValidator(
     parameterEvaluator: ParameterEvaluator
 ) {
 
+  private implicit val lazyParamStrategy: LazyParameterCreationStrategy = LazyParameterCreationStrategy.default
+
   def validateNode(
-      component: GenericNodeTransformation[_],
+      component: DynamicComponent[_],
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   )(
       inputContext: component.InputContext
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
@@ -47,10 +49,10 @@ class DynamicNodeValidator(
   }
 
   private class TransformationStepsProcessor(
-      component: GenericNodeTransformation[_],
+      component: DynamicComponent[_],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      parametersConfig: Map[String, ParameterConfig],
+      parametersConfig: Map[ParameterName, ParameterConfig],
   )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData)
       extends LazyLogging {
 
@@ -72,7 +74,7 @@ class DynamicNodeValidator(
     ): ValidatedNel[ProcessCompilationError, TransformationResult] = {
       val transformationStep = component.TransformationStep(
         evaluatedSoFar
-          // unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
+          // unfortunately, this cast is needed as we have no easy way to statically check if Parameter definitions
           // are branch or not...
           .map(a => (a._1.name, a._2.asInstanceOf[component.DefinedParameter])),
         stateForFar
@@ -210,7 +212,10 @@ object DynamicNodeValidator {
     new DynamicNodeValidator(
       ExpressionCompiler.withoutOptimization(modelData),
       globalVariablesPreparer,
-      new ParameterEvaluator(ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer))
+      new ParameterEvaluator(
+        globalVariablesPreparer,
+        Seq.empty,
+      )
     )
   }
 

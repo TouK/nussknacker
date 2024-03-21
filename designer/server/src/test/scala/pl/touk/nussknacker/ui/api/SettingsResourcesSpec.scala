@@ -7,11 +7,12 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.NuResourcesTest
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withoutPermissions
 import pl.touk.nussknacker.ui.config.AnalyticsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
+
+import scala.concurrent.Future
 
 class SettingsResourcesSpec
     extends AnyFunSpec
@@ -31,7 +32,7 @@ class SettingsResourcesSpec
     featureTogglesConfig,
     authenticationConfig.name,
     analyticsConfig,
-    UsageStatisticsReportsSettings(enabled = false, "http://just.test")
+    determineStatisticsUrl = () => Future.successful(None)
   )
 
   // Values are exists at test/resources/application.conf

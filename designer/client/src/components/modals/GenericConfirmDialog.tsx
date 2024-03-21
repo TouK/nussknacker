@@ -3,6 +3,8 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PromptContent, WindowKind } from "../../windowManager";
+import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export interface ConfirmDialogData {
     text: string;
@@ -28,6 +30,7 @@ export function GenericConfirmDialog({
                     meta.onConfirmCallback(false);
                     props.close();
                 },
+                classname: LoadingButtonTypes.secondaryButton,
             },
             {
                 title: meta.confirmText || t("dialog.button.yes", "yes"),
@@ -35,6 +38,7 @@ export function GenericConfirmDialog({
                     meta.onConfirmCallback(true);
                     props.close();
                 },
+                classname: LoadingButtonTypes.secondaryButton,
             },
         ],
         [meta, props, t],
@@ -43,7 +47,9 @@ export function GenericConfirmDialog({
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3 className={css({ textAlign: "center" })}>{props.data.title}</h3>
+                <Typography textAlign={"center"} variant={"h3"}>
+                    {props.data.title}
+                </Typography>
                 {children}
             </div>
         </PromptContent>

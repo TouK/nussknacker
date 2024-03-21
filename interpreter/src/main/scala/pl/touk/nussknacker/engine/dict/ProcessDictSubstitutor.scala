@@ -11,6 +11,11 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypedDict
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, ProcessNodesRewriter}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor.KeyToLabelReplacingStrategy
 import pl.touk.nussknacker.engine.expression.{ExpressionSubstitutionsCollector, ExpressionSubstitutor}
+import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
+import pl.touk.nussknacker.engine.language.dictWithLabel.{
+  DictKeyWithLabelExpressionParser,
+  DictKeyWithLabelExpressionTypingInfo
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.{
@@ -23,40 +28,92 @@ import pl.touk.nussknacker.engine.spel.ast.{
 class ProcessDictSubstitutor(
     dictRegistry: DictRegistry,
     replacingStrategy: ReplacingStrategy,
-    prepareSubstitutionsCollector: (ExpressionTypingInfo, ReplacingStrategy) => Option[ExpressionSubstitutionsCollector]
+    prepareSubstitutionsCollector: (
+        ExpressionTypingInfo,
+        ReplacingStrategy
+    ) => Option[ExpressionSubstitutionsCollector],
+    isReverse: Boolean
 ) extends LazyLogging {
 
   def substitute(
       process: CanonicalProcess,
       processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]]
   ): CanonicalProcess = {
+
     val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => expr =>
       val nodeExpressionId             = exprIdWithMetadata.expressionId
       val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
-      val substitutedExpression = optionalExpressionTypingInfo
-        .flatMap(prepareSubstitutionsCollector(_, replacingStrategy))
-        .map { substitutionsCollector =>
-          val substitutions     = substitutionsCollector.collectSubstitutions(expr)
-          val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
-          if (substitutions.nonEmpty)
-            logger.debug(
-              s"Found ${substitutions.size} substitutions in expression: ${process.name} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
-                s"Expression: '${expr.expression}' replaced with '$afterSubstitution'"
-            )
-          afterSubstitution
-        }
-        .getOrElse(expr.expression)
-      expr.copy(expression = substitutedExpression)
+
+      if (expr.language == Expression.Language.DictKeyWithLabel) {
+        if (isReverse)
+          addLabelToDictKeyExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
+        else
+          removeLabelFromDictKeyExpression(process, expr, nodeExpressionId) // no need to keep label in BE
+      } else
+        substituteExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
     }
 
     rewriter.rewriteProcess(process)
   }
 
+  private def removeLabelFromDictKeyExpression(
+      process: CanonicalProcess,
+      expr: Expression,
+      nodeExpressionId: NodeExpressionId
+  ) =
+    DictKeyWithLabelExpressionParser
+      .parseDictKeyWithLabelExpression(expr.expression)
+      .map(expr => Expression.dictKeyWithLabel(expr.key, None))
+      .valueOr(parsingError =>
+        throw new IllegalStateException(
+          s"Errors parsing DictKeyWithLabel expression: ${process.name} -> $nodeExpressionId: $expr. Errors: $parsingError"
+        )
+      )
+
+  private def addLabelToDictKeyExpression(
+      process: CanonicalProcess,
+      expr: Expression,
+      optionalExpressionTypingInfo: Option[ExpressionTypingInfo],
+      nodeExpressionId: NodeExpressionId
+  ) =
+    optionalExpressionTypingInfo match {
+      case Some(DictKeyWithLabelExpressionTypingInfo(key, label)) =>
+        Expression.dictKeyWithLabel(key, label)
+      case _ => // can happen if the expression isn't compiled successfully (and so it's TypingInfo isn't available)
+        logger.debug(
+          s"Failed to resolve label for DictKeyWithLabel expression ${process.name} -> $nodeExpressionId: $expr"
+        )
+        expr // returns with label: null
+    }
+
+  private def substituteExpression(
+      process: CanonicalProcess,
+      expr: Expression,
+      optionalExpressionTypingInfo: Option[ExpressionTypingInfo],
+      nodeExpressionId: NodeExpressionId
+  ) = {
+    val substitutedExpression = optionalExpressionTypingInfo
+      .flatMap(prepareSubstitutionsCollector(_, replacingStrategy))
+      .map { substitutionsCollector =>
+        val substitutions     = substitutionsCollector.collectSubstitutions(expr)
+        val afterSubstitution = ExpressionSubstitutor.substitute(expr.expression, substitutions)
+        if (substitutions.nonEmpty)
+          logger.debug(
+            s"Found ${substitutions.size} substitutions in expression: ${process.name} > ${nodeExpressionId.nodeId.id} > ${nodeExpressionId.expressionId}. " +
+              s"Expression: '${expr.expression}' replaced with '$afterSubstitution'"
+          )
+        afterSubstitution
+      }
+      .getOrElse(expr.expression)
+    expr.copy(expression = substitutedExpression)
+  }
+
   def reversed: ProcessDictSubstitutor = new ProcessDictSubstitutor(
     dictRegistry,
     new KeyToLabelReplacingStrategy(dictRegistry),
-    prepareSubstitutionsCollector
+    prepareSubstitutionsCollector,
+    isReverse = true
   )
 
 }
@@ -67,7 +124,8 @@ object ProcessDictSubstitutor extends LazyLogging {
     new ProcessDictSubstitutor(
       dictRegistry,
       new LabelToKeyReplacingStrategy(dictRegistry),
-      prepareSubstitutionsCollector
+      prepareSubstitutionsCollector,
+      isReverse = false
     )
   }
 

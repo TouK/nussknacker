@@ -13,8 +13,9 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CannotCreateObjectError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, FragmentSpecificData, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -51,7 +52,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val config = ConfigFactory
       .empty()
       .withValue("useTypingResultTypeInformation", fromAnyRef(true))
-    val sourceComponent = SourceFactory.noParam[TestRecord](
+    val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[TestRecord](
       EmitWatermarkAfterEachElementCollectionSource
         .create[TestRecord](list, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))
     )
@@ -82,7 +83,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateOk(
       "#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
       "{f1: #input.eId, f2: #input.str}",
-      TypedObjectTypingResult(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]]))
+      Typed.record(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]]))
     )
 
     validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")
@@ -200,7 +201,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     inside(result.result) {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _),
+              ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _, _),
               _
             )
           ) =>
@@ -324,7 +325,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     lazy val run = runProcess(model, resolvedScenario)
 
-    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some(ParameterName($expression)),#input,None)"
   }
 
   test("sum tumbling aggregate emit on event, emit context of variables") {
@@ -738,7 +739,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         canonicalnode.FlatNode(
           FragmentInputDefinition(
             "start",
-            List(FragmentParameter("aggBy", FragmentClazzRef[Int]), FragmentParameter("key", FragmentClazzRef[String]))
+            List(
+              FragmentParameter(ParameterName("aggBy"), FragmentClazzRef[Int]),
+              FragmentParameter(ParameterName("key"), FragmentClazzRef[String])
+            )
           )
         ),
         canonicalnode.FlatNode(
@@ -747,12 +751,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             Some("aggresult"),
             "aggregate-tumbling",
             List(
-              NodeParameter("groupBy", asSpelExpression("#key")),
-              NodeParameter("aggregator", asSpelExpression("#AGG.sum")),
-              NodeParameter("aggregateBy", asSpelExpression("#aggBy")),
-              NodeParameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
+              NodeParameter(ParameterName("groupBy"), asSpelExpression("#key")),
+              NodeParameter(ParameterName("aggregator"), asSpelExpression("#AGG.sum")),
+              NodeParameter(ParameterName("aggregateBy"), asSpelExpression("#aggBy")),
+              NodeParameter(ParameterName("windowLength"), asSpelExpression("T(java.time.Duration).parse('PT2H')")),
               NodeParameter(
-                "emitWhen",
+                ParameterName("emitWhen"),
                 asSpelExpression(
                   "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"
                 )

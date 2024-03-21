@@ -7,12 +7,12 @@ import com.github.ghik.silencer.silent
 import pl.touk.nussknacker.engine.Interpreter._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.expression.{Expression => CompiledExpression}
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ServiceExecutionContext}
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
@@ -68,7 +68,7 @@ private class InterpreterInternal[F[_]: Monad](
         interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
       case FragmentUsageStart(_, params, next) =>
         val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
-        interpretNext(next, newCtx.pushNewContext(vars))
+        interpretNext(next, newCtx.pushNewContext(vars.map { case (paramName, value) => (paramName.value, value) }))
       case FragmentUsageEnd(_, outputVar, next) =>
         // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
         // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,
@@ -232,10 +232,10 @@ private class InterpreterInternal[F[_]: Monad](
 
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node) = {
     implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
-    val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator, serviceExecutionContext)
+    val resultFuture                                        = ref.invoke(ctx, serviceExecutionContext)
     import SynchronousExecutionContextAndIORuntime.syncEc
     resultFuture.onComplete { result =>
-      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
+      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, result))
     }
     resultFuture.map(ValueWithContext(_, ctx))
   }

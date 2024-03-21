@@ -7,8 +7,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers._
@@ -174,8 +175,9 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
               ExpressionParserCompilationError(
                 "Unresolved reference 'nonExisitngVar'",
                 "custom1",
-                Some("stringVal"),
-                "#nonExisitngVar"
+                Some(ParameterName("stringVal")),
+                "#nonExisitngVar",
+                None
               ),
               _
             )
@@ -191,7 +193,10 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(42).display}"
     validate(invalidProcess).result should matchPattern {
       case Invalid(
-            NonEmptyList(ExpressionParserCompilationError(`expectedMsg`, "custom1", Some("stringVal"), "42"), _)
+            NonEmptyList(
+              ExpressionParserCompilationError(`expectedMsg`, "custom1", Some(ParameterName("stringVal")), "42", None),
+              _
+            )
           ) =>
     }
   }
@@ -220,7 +225,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val missingOutErrors = missingOutValidationResult.swap.toOption.value.toList
     missingOutErrors should have size 1
     missingOutErrors.head should matchPattern {
-      case MissingParameters(params, _) if params == Set("OutputVariable") =>
+      case MissingParameters(params, _) if params == Set(ParameterName("OutputVariable")) =>
     }
   }
 
@@ -235,7 +240,8 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val redundantOutErrors = redundantOutValidationResult.swap.toOption.value.toList
     redundantOutErrors should have size 1
     redundantOutErrors.head should matchPattern {
-      case ExpressionParserCompilationError(message, _, _, _) if message.startsWith("Unresolved reference 'input'") =>
+      case ExpressionParserCompilationError(message, _, _, _, _)
+          if message.startsWith("Unresolved reference 'input'") =>
     }
   }
 
@@ -259,7 +265,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
-      case ExpressionParserCompilationError(message, _, _, _)
+      case ExpressionParserCompilationError(message, _, _, _, _)
           if message.startsWith("There is no property 'field22' in type: Record{field1: String, field2: String}") =>
     }
   }
@@ -270,7 +276,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val validationResult = validate(validProcess)
     validationResult.result should matchPattern { case Valid(_) =>
     }
-    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe Typed.record(
       Map("branch2" -> Typed[Int], "branch1" -> Typed[String])
     )
   }
@@ -285,8 +291,9 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       case ExpressionParserCompilationError(
             "Bad expression type, expected: String, found: Integer",
             "stringService",
-            Some("stringParam"),
-            _
+            Some(ParameterName("stringParam")),
+            _,
+            None
           ) =>
     }
   }
@@ -320,7 +327,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       )
     val validationResult = validate(process)
 
-    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(
+    validationResult.variablesInNodes("stringService")("outPutVar") shouldBe Typed.record(
       Map("branch1" -> Typed[String])
     )
     val errors = validationResult.result.swap.toList.flatMap(_.toList).map(_.nodeIds)
@@ -440,7 +447,13 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     validationResult.result should matchPattern {
       case Invalid(
             NonEmptyList(
-              ExpressionParserCompilationError(`expectedMsg`, "join1", Some("key for branch branch2"), "123"),
+              ExpressionParserCompilationError(
+                `expectedMsg`,
+                "join1",
+                Some(ParameterName("key for branch branch2")),
+                "123",
+                None
+              ),
               Nil
             )
           ) =>
@@ -477,7 +490,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
         BlankParameter(
           "This field value is required and can not be blank",
           "Please fill field value for this parameter",
-          "key for branch branch1",
+          ParameterName("key for branch branch1"),
           "join1"
         ),
         Nil

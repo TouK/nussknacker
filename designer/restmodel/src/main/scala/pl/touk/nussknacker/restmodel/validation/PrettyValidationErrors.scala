@@ -3,17 +3,11 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.{
-  InitialValueFieldName,
-  InputModeFieldName,
-  ParameterNameFieldName,
-  TypFieldName,
-  ValidationExpressionFieldName,
-  qualifiedParamFieldName
-}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
 object PrettyValidationErrors {
@@ -25,29 +19,32 @@ object PrettyValidationErrors {
         message: String,
         description: String,
         errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
-        fieldName: Option[String] = None
-    ): NodeValidationError = NodeValidationError(typ, message, description, fieldName, errorType)
+        paramName: Option[ParameterName] = None,
+        details: Option[ErrorDetails] = None
+    ): NodeValidationError = NodeValidationError(typ, message, description, paramName.map(_.value), errorType, details)
 
     def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
-      node(error.message, error.description, fieldName = Some(error.paramName))
+      node(error.message, error.description, paramName = Some(error.paramName))
 
     error match {
-      case ExpressionParserCompilationError(message, _, fieldName, _) =>
+      case ExpressionParserCompilationError(message, _, paramName, _, details) =>
         node(
-          s"Failed to parse expression: $message",
-          s"There is problem with expression in field $fieldName - it could not be parsed.",
-          fieldName = fieldName
+          message = s"Failed to parse expression: $message",
+          description =
+            s"There is problem with expression in field ${paramName.map(_.value)} - it could not be parsed.",
+          paramName = paramName,
+          details = details
         )
-      case FragmentParamClassLoadError(fieldName, refClazzName, _) =>
+      case FragmentParamClassLoadError(paramName, refClazzName, _) =>
         node(
-          "Invalid parameter type.",
-          s"Failed to load $refClazzName",
-          fieldName = Some(qualifiedParamFieldName(paramName = fieldName, subFieldName = Some(TypFieldName)))
+          message = "Invalid parameter type.",
+          description = s"Failed to load $refClazzName",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case DuplicatedNodeIds(ids) =>
         node(
-          "Two nodes cannot have same id",
-          s"Duplicate node ids: ${ids.mkString(", ")}",
+          message = "Two nodes cannot have same id",
+          description = s"Duplicate node ids: ${ids.mkString(", ")}",
           errorType = NodeValidationErrorType.RenderNotAllowed
         )
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")
@@ -61,21 +58,21 @@ object PrettyValidationErrors {
         mapIdErrorToNodeError(error)
       case ScenarioNameValidationError(message, description) =>
         node(
-          message,
-          description,
-          fieldName = Some(CanonicalProcess.NameFieldName),
+          message = message,
+          description = description,
+          paramName = Some(ParameterName(CanonicalProcess.NameFieldName)),
         )
-      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
+      case SpecificDataValidationError(field, message) => node(message, message, paramName = Some(field))
       case NonUniqueEdgeType(etype, nodeId) =>
         node(
-          "Edges are not unique",
-          s"Node $nodeId has duplicate outgoing edges of type: $etype, it cannot be saved properly",
+          message = "Edges are not unique",
+          description = s"Node $nodeId has duplicate outgoing edges of type: $etype, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
       case NonUniqueEdge(nodeId, target) =>
         node(
-          "Edges are not unique",
-          s"Node $nodeId has duplicate outgoing edges to: $target, it cannot be saved properly",
+          message = "Edges are not unique",
+          description = s"Node $nodeId has duplicate outgoing edges to: $target, it cannot be saved properly",
           errorType = NodeValidationErrorType.SaveNotAllowed
         )
       case LooseNode(nodeIds) =>
@@ -98,15 +95,15 @@ object PrettyValidationErrors {
         )
       case DisabledNode(nodeId) =>
         node(
-          s"Node $nodeId is disabled",
-          "Deploying scenario with disabled node can have unexpected consequences",
-          NodeValidationErrorType.SaveAllowed
+          message = s"Node $nodeId is disabled",
+          description = "Deploying scenario with disabled node can have unexpected consequences",
+          errorType = NodeValidationErrorType.SaveAllowed
         )
 
       case MissingParameters(params, _) =>
         node(
-          s"Node parameters not filled: ${params.mkString(", ")}",
-          s"Please fill missing node parameters: : ${params.mkString(", ")}"
+          message = s"Node parameters not filled: ${params.mkString(", ")}",
+          description = s"Please fill missing node parameters: : ${params.mkString(", ")}"
         )
 
       case pve: ParameterValidationError => handleParameterValidationError(pve)
@@ -124,20 +121,22 @@ object PrettyValidationErrors {
         node(s"Redundant parameters", s"Please omit redundant parameters: ${params.mkString(", ")}")
       case WrongParameters(requiredParameters, passedParameters, _) =>
         node(
-          s"Wrong parameters",
-          s"Please provide ${requiredParameters.mkString(", ")} instead of ${passedParameters.mkString(", ")}"
+          message = s"Wrong parameters",
+          description =
+            s"Please provide ${requiredParameters.map(_.value).mkString(", ")} instead of ${passedParameters.map(_.value).mkString(", ")}"
         )
       case OverwrittenVariable(varName, _, paramName) =>
         node(
-          s"Variable name '$varName' is already defined.",
-          "You cannot overwrite variables",
-          fieldName = paramName
+          message = s"Variable name '$varName' is already defined.",
+          description = "You cannot overwrite variables",
+          paramName = paramName
         )
       case InvalidVariableName(varName, _, paramName) =>
         node(
-          s"Variable name '$varName' is not a valid identifier (only letters, numbers or '_', cannot be empty)",
-          "Please use only letters, numbers or '_', also identifier cannot be empty.",
-          fieldName = paramName
+          message =
+            s"Variable name '$varName' is not a valid identifier (only letters, numbers or '_', cannot be empty)",
+          description = "Please use only letters, numbers or '_', also identifier cannot be empty.",
+          paramName = paramName
         )
       case NotSupportedExpressionLanguage(languageId, _) =>
         node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
@@ -157,74 +156,107 @@ object PrettyValidationErrors {
         node(s"Cannot disable fragment with multiple outputs", "Please check fragment definition")
       case DisablingNoOutputsFragment(_) =>
         node(s"Cannot disable fragment with no outputs", "Please check fragment definition")
-      case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
-      case UnknownProperty(propertyName, _)             => unknownProperty(typ, propertyName)
-      case InvalidPropertyFixedValue(fieldName, label, value, values, _) =>
-        invalidPropertyFixedValue(typ, fieldName, label, value, values)
+      case MissingRequiredProperty(paramName, label, _) => missingRequiredProperty(typ, paramName.value, label)
+      case UnknownProperty(paramName, _)                => unknownProperty(typ, paramName.value)
+      case InvalidPropertyFixedValue(paramName, label, value, values, _) =>
+        invalidPropertyFixedValue(typ, paramName.value, label, value, values)
       case CustomNodeError(_, message, paramName) =>
-        NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
+        NodeValidationError(typ, message, message, paramName.map(_.value), NodeValidationErrorType.SaveAllowed, None)
       case e: DuplicateFragmentOutputNames =>
         node(
-          s"Fragment output name '${e.duplicatedVarName}' has to be unique",
-          "Please check fragment definition"
+          message = s"Fragment output name '${e.duplicatedVarName}' has to be unique",
+          description = "Please check fragment definition"
         )
       case DuplicateFragmentInputParameter(paramName, _) =>
         node(
-          s"Parameter name '$paramName' has to be unique",
-          "Parameter name not unique",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ParameterNameFieldName)))
+          message = s"Parameter name '${paramName.value}' has to be unique",
+          description = "Parameter name not unique",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ParameterNameFieldName)))
         )
       case InitialValueNotPresentInPossibleValues(paramName, _) =>
         node(
-          s"The initial value provided for parameter '$paramName' is not present in the parameter's possible values list",
-          "Please check component definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
+          message =
+            s"The initial value provided for parameter '${paramName.value}' is not present in the parameter's possible values list",
+          description = "Please check component definition",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InitialValueFieldName)))
         )
       case UnsupportedFixedValuesType(paramName, typ, _) =>
         node(
-          s"Fixed values list can only be be provided for type String or Boolean, found: $typ",
-          "Please check component definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
+          message = s"Fixed values list can only be be provided for type String or Boolean, found: $typ",
+          description = "Please check component definition",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
-          s"Required parameter '$paramName' cannot be a member of an empty fixed list",
-          "Please check component definition",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
+          s"Required parameter '${paramName.value}' cannot be a member of an empty fixed list",
+          description = "Please check component definition",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(InputModeFieldName)))
         )
       case ExpressionParserCompilationErrorInFragmentDefinition(message, _, paramName, subFieldName, originalExpr) =>
         node(
-          s"Failed to parse expression: $message",
-          s"There is a problem with expression: $originalExpr",
-          fieldName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
+          message = s"Failed to parse expression: $message",
+          description = s"There is a problem with expression: $originalExpr",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = subFieldName))
         )
       case InvalidValidationExpression(message, _, paramName, originalExpr) =>
         node(
           s"Invalid validation expression: $message",
-          s"There is a problem with validation expression: $originalExpr",
-          fieldName =
+          description = s"There is a problem with validation expression: $originalExpr",
+          paramName =
             Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ValidationExpressionFieldName)))
+        )
+      case DictNotDeclared(dictId, _, paramName) =>
+        node(
+          message = s"Dictionary not declared: $dictId",
+          description = s"Dictionary not declared: $dictId",
+          paramName = Some(paramName)
+        )
+      case DictEntryWithKeyNotExists(dictId, key, possibleKeys, _, paramName) =>
+        node(
+          s"Dictionary $dictId doesn't contain entry with key: $key",
+          description = s"Dictionary $dictId possible keys: $possibleKeys",
+          paramName = Some(paramName)
+        )
+      case DictEntryWithLabelNotExists(dictId, label, possibleLabels, _, paramName) =>
+        node(
+          message = s"Dictionary $dictId doesn't contain entry with label: $label",
+          description = s"Dictionary $dictId possible labels: $possibleLabels",
+          paramName = Some(paramName)
+        )
+      case DictLabelByKeyResolutionFailed(dictId, key, _, paramName) =>
+        node(
+          s"Failed to resolve label for key: $key in dict: $dictId",
+          description = s"Dict registry doesn't support fetching of label for dictId: $dictId",
+          paramName = Some(paramName)
+        )
+      case KeyWithLabelExpressionParsingError(keyWithLabel, message, paramName, _) =>
+        node(
+          message = s"Error while parsing KeyWithLabel expression: $keyWithLabel",
+          description = message,
+          paramName = Some(paramName)
         )
     }
   }
 
   private def unknownProperty(typ: String, propertyName: String): NodeValidationError =
     NodeValidationError(
-      typ,
-      s"Unknown property $propertyName",
-      s"Property $propertyName is not known",
-      Some(propertyName),
-      NodeValidationErrorType.SaveAllowed
+      typ = typ,
+      message = s"Unknown property $propertyName",
+      description = s"Property $propertyName is not known",
+      fieldName = Some(propertyName),
+      errorType = NodeValidationErrorType.SaveAllowed,
+      details = None
     )
 
   private def missingRequiredProperty(typ: String, fieldName: String, label: Option[String]) = {
     val labelText = getLabel(label)
     NodeValidationError(
-      typ,
-      s"Configured property $fieldName$labelText is missing",
-      s"Please fill missing property $fieldName$labelText",
-      Some(fieldName),
-      NodeValidationErrorType.SaveAllowed
+      typ = typ,
+      message = s"Configured property $fieldName$labelText is missing",
+      description = s"Please fill missing property $fieldName$labelText",
+      fieldName = Some(fieldName),
+      errorType = NodeValidationErrorType.SaveAllowed,
+      details = None
     )
   }
 
@@ -237,11 +269,12 @@ object PrettyValidationErrors {
   ) = {
     val labelText = getLabel(label)
     NodeValidationError(
-      typ,
-      s"Property $propertyName$labelText has invalid value",
-      s"Expected one of ${values.mkString(", ")}, got: $value.",
-      Some(propertyName),
-      NodeValidationErrorType.SaveAllowed
+      typ = typ,
+      message = s"Property $propertyName$labelText has invalid value",
+      description = s"Expected one of ${values.mkString(", ")}, got: $value.",
+      fieldName = Some(propertyName),
+      errorType = NodeValidationErrorType.SaveAllowed,
+      details = None
     )
   }
 
@@ -291,7 +324,8 @@ object PrettyValidationErrors {
       message = message,
       description = description,
       fieldName = Some(fieldName),
-      errorType = errorSeverity
+      errorType = errorSeverity,
+      details = None
     )
   }
 

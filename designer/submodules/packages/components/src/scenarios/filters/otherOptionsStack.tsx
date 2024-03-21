@@ -1,12 +1,14 @@
-import { useFilterContext } from "../../common";
+import { NuIcon, useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
 import { FilterListItem, FilterListItemSwitch } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
-import { Divider } from "@mui/material";
+import { Divider, Stack } from "@mui/material";
 import { xor } from "lodash";
 import { FilterListItemLabel } from "./filterListItemLabel";
+import ScanarioIcon from "../../assets/icons/scenario.svg";
+import FragmentIcon from "../../assets/icons/fragment.svg";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
@@ -28,13 +30,23 @@ export function OtherOptionsStack(): JSX.Element {
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
-                label={t("table.filter.SCENARIOS", "Scenarios")}
+                label={
+                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                        <span>{t("table.filter.SCENARIOS", "Scenarios")}</span>
+                        <ScanarioIcon width={"1em"} height={"1em"} />
+                    </Stack>
+                }
             />
             <FilterListItem
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
-                label={t("table.filter.FRAGMENTS", "Fragments")}
+                label={
+                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                        <span>{t("table.filter.FRAGMENTS", "Fragments")}</span>
+                        <FragmentIcon width={"1em"} height={"1em"} />
+                    </Stack>
+                }
             />
         </OptionsStack>
     );

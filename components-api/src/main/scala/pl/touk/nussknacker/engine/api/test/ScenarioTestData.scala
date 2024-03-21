@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.test
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 sealed trait ScenarioTestRecord {
@@ -9,7 +10,7 @@ sealed trait ScenarioTestRecord {
 }
 
 case class ScenarioTestJsonRecord(sourceId: NodeId, record: TestRecord) extends ScenarioTestRecord
-case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[String, Expression])
+case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[ParameterName, Expression])
     extends ScenarioTestRecord
 
 object ScenarioTestJsonRecord {
@@ -27,7 +28,7 @@ case class ScenarioTestData(testRecords: List[ScenarioTestRecord])
 
 object ScenarioTestData {
 
-  def apply(sourceId: String, parameterExpressions: Map[String, Expression]): ScenarioTestData = {
+  def apply(sourceId: String, parameterExpressions: Map[ParameterName, Expression]): ScenarioTestData = {
     ScenarioTestData(List(ScenarioTestParametersRecord(NodeId(sourceId), parameterExpressions)))
   }
 

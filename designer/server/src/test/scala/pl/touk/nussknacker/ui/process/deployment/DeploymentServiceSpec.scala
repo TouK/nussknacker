@@ -10,28 +10,30 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider.noCombinedDataFun
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
+import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ProcessingTypeDataState,
-  ValueWithPermission
+  ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
 
 import java.util.UUID
@@ -50,9 +52,6 @@ class DeploymentServiceSpec
     with WithHsqlDbTesting
     with EitherValuesDetailedMessage {
 
-  import TestCategories._
-  import TestFactory._
-  import TestProcessingTypes._
   import VersionId._
 
   private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -75,8 +74,8 @@ class DeploymentServiceSpec
       override val state: ProcessingTypeDataState[DeploymentManager, Nothing] =
         new ProcessingTypeDataState[DeploymentManager, Nothing] {
 
-          override def all: Map[ProcessingType, ValueWithPermission[DeploymentManager]] = Map(
-            TestProcessingTypes.Streaming -> ValueWithPermission.anyUser(deploymentManager)
+          override def all: Map[ProcessingType, ValueWithRestriction[DeploymentManager]] = Map(
+            "streaming" -> ValueWithRestriction.anyUser(deploymentManager)
           )
 
           override def getCombined: () => Nothing = noCombinedDataFun
@@ -90,17 +89,23 @@ class DeploymentServiceSpec
 
   private val listener = new TestProcessChangeListener
 
+  private val deploymentCommentSettings = None
+
   private val deploymentService = createDeploymentService(None)
 
-  deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(
+  deploymentManager = new MockDeploymentManager(
+    SimpleStateStatus.Running,
     new DefaultProcessingTypeDeploymentService(
-      TestProcessingTypes.Streaming,
+      "streaming",
       deploymentService,
-      AllDeployedScenarioService(testDbRef, TestProcessingTypes.Streaming)
+      AllDeployedScenarioService(testDbRef, "streaming")
     )
   )
 
-  private def createDeploymentService(scenarioStateTimeout: Option[FiniteDuration]): DeploymentService = {
+  private def createDeploymentService(
+      scenarioStateTimeout: Option[FiniteDuration] = None,
+      deploymentCommentSettings: Option[DeploymentCommentSettings] = deploymentCommentSettings,
+  ): DeploymentService = {
     new DeploymentServiceImpl(
       dmDispatcher,
       fetchingProcessRepository,
@@ -109,8 +114,115 @@ class DeploymentServiceSpec
       processValidatorByProcessingType,
       TestFactory.scenarioResolverByProcessingType,
       listener,
-      scenarioStateTimeout = scenarioStateTimeout
+      scenarioStateTimeout,
+      deploymentCommentSettings
     )
+  }
+
+  // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
+  private def createDeploymentServiceWithCommentSettings = {
+    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val deploymentServiceWithCommentSettings =
+      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
+    deploymentServiceWithCommentSettings
+  }
+
+  test("should return error when trying to deploy without comment when comment is required") {
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+
+    val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
+
+    result shouldBe a[ValidationError]
+    result.getMessage.trim shouldBe "Comment is required."
+
+    eventually {
+      val inProgressActions = actionRepository.getInProgressActionTypes(id.id).dbioActionValues
+      inProgressActions should have size 0
+    }
+  }
+
+  test("should not deploy without comment when comment is required") {
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None)
+
+    eventually {
+      val status = deploymentServiceWithCommentSettings
+        .getProcessState(id)
+        .futureValue
+        .status
+
+      status should not be SimpleStateStatus.Running
+
+      status shouldBe SimpleStateStatus.NotDeployed
+    }
+
+    eventually {
+      val inProgressActions = actionRepository.getInProgressActionTypes(id.id).dbioActionValues
+      inProgressActions should have size 0
+    }
+  }
+
+  test("should pass when having an ok comment") {
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+
+    deploymentServiceWithCommentSettings.deployProcessAsync(id, None, Some("samplePattern"))
+
+    eventually {
+      deploymentServiceWithCommentSettings
+        .getProcessState(id)
+        .futureValue
+        .status shouldBe SimpleStateStatus.Running
+    }
+  }
+
+  test("should return error when trying to cancel without comment when comment is required") {
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+
+    val processName: ProcessName = generateProcessName
+    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
+
+    deploymentManager.withWaitForCancelFinish {
+      val result = deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
+      result shouldBe a[ValidationError]
+      result.getMessage.trim shouldBe "Comment is required."
+    }
+  }
+
+  test("should not cancel a deployed process without cancel comment when comment is required") {
+    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+
+    val processName: ProcessName = generateProcessName
+    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
+
+    deploymentManager.withWaitForCancelFinish {
+      deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
+
+      eventually {
+        val status = deploymentServiceWithCommentSettings
+          .getProcessState(processId)
+          .futureValue
+          .status
+
+        status should not be SimpleStateStatus.Canceled
+
+        status shouldBe SimpleStateStatus.Running
+      }
+
+      eventually {
+        val inProgressActions = actionRepository.getInProgressActionTypes(processId.id).dbioActionValues
+        inProgressActions should have size 0
+      }
+    }
   }
 
   test("should return state correctly when state is deployed") {
@@ -153,7 +265,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished(Streaming, actionId).futureValue
+    deploymentService.markActionExecutionFinished("streaming", actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
@@ -620,7 +732,10 @@ class DeploymentServiceSpec
     val processesDetailsWithState = deploymentService
       .enrichDetailsWithProcessState(
         processesDetails
-          .map(ScenarioWithDetailsConversions.fromEntityIgnoringGraphAndValidationResult)
+          .map(
+            ScenarioWithDetailsConversions
+              .fromEntityIgnoringGraphAndValidationResult(_, ProcessTestData.sampleScenarioParameters)
+          )
       )
       .futureValue
 
@@ -822,13 +937,13 @@ class DeploymentServiceSpec
     val canonicalProcess = parallelism
       .map(baseBuilder.parallelism)
       .getOrElse(baseBuilder)
-      .source("source", existingSourceFactory)
-      .emptySink("sink", existingSinkFactory)
+      .source("source", ProcessTestData.existingSourceFactory)
+      .emptySink("sink", ProcessTestData.existingSinkFactory)
     val action = CreateProcessAction(
-      processName,
-      Category1,
-      canonicalProcess,
-      Streaming,
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = false,
       forwardedUserName = None
     )
@@ -841,10 +956,10 @@ class DeploymentServiceSpec
       .emptySink("end", "end")
 
     val action = CreateProcessAction(
-      processName,
-      Category1,
-      canonicalProcess,
-      Streaming,
+      processName = processName,
+      category = "Category1",
+      canonicalProcess = canonicalProcess,
+      processingType = "streaming",
       isFragment = true,
       forwardedUserName = None
     )

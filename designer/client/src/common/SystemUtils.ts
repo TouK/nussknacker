@@ -1,5 +1,4 @@
 /* eslint-disable i18next/no-literal-string */
-import { AxiosRequestConfig } from "axios";
 import { v4 as uuid4 } from "uuid";
 import api from "../api";
 import { isEmpty, set } from "lodash";
@@ -46,7 +45,7 @@ class SystemUtils {
     public clearAuthorizationToken = (): void => {
         this.#tokenPromise = null;
 
-        api.interceptors.request.use((config: AxiosRequestConfig) => {
+        api.interceptors.request.use((config) => {
             delete config.headers[SystemUtils.AUTHORIZATION_HEADER_NAMESPACE];
             return config;
         });
@@ -59,7 +58,7 @@ class SystemUtils {
             this.tokenPromise.resolve(token);
         }
 
-        api.interceptors.request.use((config: AxiosRequestConfig) => {
+        api.interceptors.request.use((config) => {
             set(config.headers, SystemUtils.AUTHORIZATION_HEADER_NAMESPACE, this.authorizationToken());
             return config;
         });

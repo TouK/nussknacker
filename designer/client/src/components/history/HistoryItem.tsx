@@ -4,7 +4,7 @@ import Date from "../common/Date";
 import { ActionType, ProcessVersionType } from "../Process/types";
 import { HistoryItemStyled, StyledBadge } from "./StyledHistory";
 import WarningAmber from "@mui/icons-material/WarningAmber";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 type HistoryItemProps = {
     isLatest?: boolean;
@@ -45,7 +45,7 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
 
     return (
         <HistoryItemStyled className={mapVersionToClassName(type)} type={type} onClick={() => onClick(version)}>
-            <div>
+            <Typography component={"div"} variant={"caption"}>
                 {`v${processVersionId}`} | {user}
                 {isLatest && !isDeployed && (
                     <Box
@@ -59,7 +59,7 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
                 <HDate date={createDate} />
                 <br />
                 {isDeployed && <HDate date={actions.find((a) => a.actionType === ActionType.Deploy)?.performedAt} />}
-            </div>
+            </Typography>
             {isDeployed && <StyledBadge />}
         </HistoryItemStyled>
     );

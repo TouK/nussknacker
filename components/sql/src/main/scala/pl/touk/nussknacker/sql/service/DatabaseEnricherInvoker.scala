@@ -3,7 +3,7 @@ package pl.touk.nussknacker.sql.service
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.{ContextId, ServiceInvoker}
+import pl.touk.nussknacker.engine.api.{Context, Params, ServiceInvoker}
 import pl.touk.nussknacker.engine.util.service.AsyncExecutionTimeMeasurement
 import pl.touk.nussknacker.sql.db.WithDBConnectionPool
 import pl.touk.nussknacker.sql.db.query._
@@ -18,10 +18,11 @@ class DatabaseEnricherInvoker(
     argsCount: Int,
     tableDef: TableDefinition,
     strategy: QueryResultStrategy,
-    queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments,
+    queryArgumentsExtractor: (Int, Params, Context) => QueryArguments,
     val returnType: typing.TypingResult,
     val getConnection: () => Connection,
-    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement
+    val getTimeMeasurement: () => AsyncExecutionTimeMeasurement,
+    params: Params,
 ) extends ServiceInvoker
     with WithDBConnectionPool {
 
@@ -31,15 +32,15 @@ class DatabaseEnricherInvoker(
     case UpdateResultStrategy => new UpdateQueryExecutor()
   }
 
-  override def invokeService(params: Map[String, Any])(
+  override def invoke(context: Context)(
       implicit ec: ExecutionContext,
       collector: ServiceInvocationCollector,
-      contextId: ContextId,
       componentUseCase: ComponentUseCase
-  ): Future[queryExecutor.QueryResult] =
+  ): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
-      queryDatabase(queryArgumentsExtractor(argsCount, params))
+      queryDatabase(queryArgumentsExtractor(argsCount, params, context))
     }
+  }
 
   protected def queryDatabase(
       queryArguments: QueryArguments
@@ -53,7 +54,7 @@ class DatabaseEnricherInvoker(
 
   protected def setQueryArguments(statement: PreparedStatement, queryArguments: QueryArguments): Unit =
     queryArguments.value.foreach { arg =>
-      statement.setObject(arg.index, arg.value)
+      statement.setObject(arg.index, arg.value.orNull)
     }
 
 }

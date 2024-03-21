@@ -12,21 +12,20 @@ import pl.touk.nussknacker.engine.api.definition.{
   ParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import FixedExpressionValue.nullFixedValue
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValues
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValues}
 
 object ValueEditorValidator {
 
   def validateAndGetEditor( // this method doesn't validate the compilation validity of FixedExpressionValues (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
       valueEditor: ValueInputWithFixedValues,
       initialValue: Option[FixedExpressionValue],
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
     validateFixedValuesList(valueEditor, initialValue, paramName, nodeIds)
       .andThen { _ =>
         val fixedValuesEditor = FixedValuesParameterEditor(
-          nullFixedValue +: valueEditor.fixedValuesList
+          FixedExpressionValue.nullFixedValue +: valueEditor.fixedValuesList
         )
 
         if (valueEditor.allowOtherValue) {
@@ -40,7 +39,7 @@ object ValueEditorValidator {
   private def validateFixedValuesList(
       valueEditor: ValueInputWithFixedValues,
       initialValue: Option[FixedExpressionValue],
-      paramName: String,
+      paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
     if (!valueEditor.allowOtherValue) {

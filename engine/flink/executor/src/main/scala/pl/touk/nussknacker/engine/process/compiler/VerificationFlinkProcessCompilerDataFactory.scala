@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -17,7 +17,7 @@ object VerificationFlinkProcessCompilerDataFactory {
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.objectNaming,
+      modelData.namingStrategy,
       componentUseCase = ComponentUseCase.Validation
     ) {
 

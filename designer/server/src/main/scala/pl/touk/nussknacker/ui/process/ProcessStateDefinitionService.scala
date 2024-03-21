@@ -2,21 +2,19 @@ package pl.touk.nussknacker.ui.process
 
 import cats.data.{NonEmptyList, Validated}
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichTupleList
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StateDefinitionDeduplicationResult
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 
 class ProcessStateDefinitionService(
     processingTypeDataProvider: ProcessingTypeDataProvider[
-      Category,
+      String,
       Map[StatusName, StateDefinitionDeduplicationResult]
     ],
 ) {
@@ -85,7 +83,7 @@ object ProcessStateDefinitionService {
       processingTypes: Map[ProcessingType, ProcessingTypeData]
   ): List[(ProcessingType, StatusName, StateDefinitionDetails)] = {
     processingTypes.toList.flatMap { case (processingType, processingTypeData) =>
-      processingTypeData.deploymentManager.processStateDefinitionManager.stateDefinitions
+      processingTypeData.deploymentData.validDeploymentManagerOrStub.processStateDefinitionManager.stateDefinitions
         .map { case (name, sd) => (processingType, name, sd) }
     }
   }

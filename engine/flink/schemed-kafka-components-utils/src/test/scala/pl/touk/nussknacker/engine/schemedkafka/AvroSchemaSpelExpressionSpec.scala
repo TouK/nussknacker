@@ -10,11 +10,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.expression.parse.TypedExpression
 import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -156,11 +156,8 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
   }
 
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(
-      PaymentV1.schema,
-      AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes
-    )
-    val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema)
+    val ctx        = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
     parse[Int]("#input.vat", ctx) should be(Symbol("valid"))
   }

@@ -2,21 +2,10 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.LazyParameter.CustomLazyParameter
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
-import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefinitionWithClasses}
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class LazyParameterSpec extends AnyFunSuite with Matchers {
 
@@ -47,9 +36,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       Typed.genericTypeClass[(AnyRef, AnyRef)](List(Typed.fromDetailedType[Integer], Typed.fromDetailedType[String]))
     tupled.returnType shouldEqual expectedType
 
-    val lazyParameterInterpreter = prepareInterpreter
-    val fun                      = lazyParameterInterpreter.syncInterpretationFunction(tupled)
-    val result                   = fun(Context(""))
+    val result = tupled.evaluate(Context(""))
 
     result shouldEqual (123, "foo")
   }
@@ -59,68 +46,20 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
   ) = {
 
     var invoked = 0
-    val evalParameter = new EvaluableLazyParameter[Integer] {
-      override def prepareEvaluator(
-          deps: LazyParameterInterpreter
-      )(implicit ec: ExecutionContext): Context => Future[Integer] = {
-        invoked += 1
-        _ => {
-          Future.successful(123)
-        }
-      }
-
+    val evalParameter = new CustomLazyParameter[Integer] {
       override def returnType: typing.TypingResult = Typed[Integer]
+      override def evaluate: Context => Integer = {
+        invoked += 1
+        _ => 123
+      }
     }
 
-    val mappedParam              = transform(evalParameter)
-    val lazyParameterInterpreter = prepareInterpreter
-    val fun                      = lazyParameterInterpreter.syncInterpretationFunction(mappedParam)
+    val mappedParam = transform(evalParameter)
+    val fun         = mappedParam.evaluate
     fun(Context(""))
     fun(Context(""))
 
     invoked shouldEqual 1
-  }
-
-  private def prepareInterpreter = {
-    val exprDef = ExpressionConfigDefinition(
-      Map.empty,
-      List.empty,
-      List.empty,
-      LanguageConfiguration.default,
-      optimizeCompilation = false,
-      strictTypeChecking = true,
-      Map.empty,
-      hideMetaVariable = false,
-      strictMethodsChecking = true,
-      staticMethodInvocationsChecking = false,
-      methodExecutionForUnknownAllowed = false,
-      dynamicPropertyAccessAllowed = false,
-      spelExpressionExcludeList = SpelExpressionExcludeList.default,
-      customConversionsProviders = List.empty
-    )
-    val processDef: ModelDefinition =
-      ModelDefinition(List.empty, exprDef, ClassExtractionSettings.Default)
-    val definitionWithTypes = ModelDefinitionWithClasses(processDef)
-    val lazyInterpreterDeps = prepareLazyInterpreterDeps(definitionWithTypes)
-
-    new CompilerLazyParameterInterpreter {
-      override def deps: LazyInterpreterDependencies = lazyInterpreterDeps
-      override def metaData: MetaData                = MetaData("proc1", StreamMetaData())
-      override def close(): Unit                     = {}
-    }
-  }
-
-  def prepareLazyInterpreterDeps(definitionWithTypes: ModelDefinitionWithClasses): LazyInterpreterDependencies = {
-    import definitionWithTypes.modelDefinition
-    val expressionEvaluator =
-      ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(modelDefinition.expressionConfig))
-    val expressionCompiler = ExpressionCompiler.withOptimization(
-      getClass.getClassLoader,
-      new SimpleDictRegistry(Map.empty),
-      modelDefinition.expressionConfig,
-      definitionWithTypes.classDefinitions
-    )
-    LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, 10.seconds)
   }
 
 }

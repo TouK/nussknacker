@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.NonEmptyList
 import io.circe.Json._
 import io.circe._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
@@ -10,6 +11,8 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import scala.util.{Failure, Success, Try}
 
 //TODO: refactor way of encoding to easier handle decoding.
+
+// If changes are made to Encoders/Decoders should also change Schemas in NodesApiEndpoints.TypingDtoSchemas for OpenApi
 object TypeEncoders {
 
   private[typed] val typeField = "type"
@@ -31,8 +34,10 @@ object TypeEncoders {
       case single: SingleTypingResult => encodeSingleTypingResult(single)
       case typing.Unknown             => encodeUnknown
       case typing.TypedNull           => encodeNull
-      case TypedUnion(classes) =>
-        JsonObject("union" -> fromValues(classes.map(typ => fromJsonObject(encodeTypingResult(typ))).toList))
+      case union: TypedUnion =>
+        JsonObject(
+          "union" -> fromValues(union.possibleTypes.map(typ => fromJsonObject(encodeTypingResult(typ))).toList)
+        )
     })
       .+:(typeField -> fromString(TypingType.forType(result).toString))
       .+:("display" -> fromString(result.display))
@@ -144,8 +149,19 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     } yield TypedDict(id, valueType)
   }
 
+  // This implementation is lax. We are not warranting that the result will be a TypedUnion. We use Typed.apply
+  // under the hood which can e.g. produce a single element for a NEL.one. In general, it can produce the other
+  // number of elements than it is passed. We could be strict but we decided that being lax gives more benefits
+  // than risks
   private def typedUnion(obj: HCursor): Decoder.Result[TypingResult] = {
-    obj.downField("union").as[Set[SingleTypingResult]].map(TypedUnion)
+    obj.downField("union").as[List[SingleTypingResult]].flatMap { list =>
+      NonEmptyList
+        .fromList(list)
+        .map(nel => Right(Typed(nel)))
+        .getOrElse(
+          Left(DecodingFailure(s"Union should has at least 2 elements but it has ${list.size} elements", obj.history))
+        )
+    }
   }
 
   private def typedClass(obj: HCursor): Decoder.Result[TypedClass] = {
@@ -157,9 +173,14 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {
-    Try(loadClass(name)) match {
-      case Success(value) => Right(value)
-      case Failure(thr)   => Left(DecodingFailure(s"Failed to load class $name with ${thr.getMessage}", obj.history))
+    if (name == Typed.KlassForArrays.getName) {
+      // loading of array class causes Failed to load class [Ljava.lang.Object; with [Ljava.lang.Object;
+      Right(Typed.KlassForArrays)
+    } else {
+      Try(loadClass(name)) match {
+        case Success(value) => Right(value)
+        case Failure(thr)   => Left(DecodingFailure(s"Failed to load class $name with ${thr.getMessage}", obj.history))
+      }
     }
   }
 

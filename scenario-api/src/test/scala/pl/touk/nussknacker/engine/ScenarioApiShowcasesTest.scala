@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.ProcessNodesRewriter
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -102,9 +103,9 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
   test("should be able to rewrite scenario") {
     val canonicalScenario = ProcessMarshaller.fromJson(scenarioJson).toEither.rightValue
     val rewritten = ProcessNodesRewriter
-      .rewritingAllExpressions(_ => expr => expr.copy(language = "fooLang"))
+      .rewritingAllExpressions(_ => expr => expr.copy(language = Language.SpelTemplate))
       .rewriteProcess(canonicalScenario)
-    rewritten.nodes.head.data.asInstanceOf[Source].parameters.head.expression.language shouldEqual "fooLang"
+    rewritten.nodes.head.data.asInstanceOf[Source].parameters.head.expression.language shouldEqual Language.SpelTemplate
   }
 
 }

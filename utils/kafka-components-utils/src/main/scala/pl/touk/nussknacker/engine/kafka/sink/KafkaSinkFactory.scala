@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.kafka.sink
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
-import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{
   FixedKafkaSerializationSchemaFactory,
   KafkaSerializationSchema,
@@ -33,8 +32,8 @@ class KafkaSinkFactory(
         simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
         defaultMode = DualEditorMode.RAW
       )
-      @ParamName(`TopicParamName`) @NotBlank topic: String,
-      @ParamName(`SinkValueParamName`) value: LazyParameter[AnyRef]
+      @ParamName("Topic") @NotBlank topic: String,
+      @ParamName("Value") value: LazyParameter[AnyRef]
   ): Sink =
     createSink(topic, value, processMetaData)
 

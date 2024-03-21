@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.definition.component.parameter.editor
 
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, RawEditor, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
-import FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.parameter.{ValueInputWithFixedValues, ValueInputWithFixedValuesProvided}
 
 object EditorExtractor {
@@ -12,7 +12,7 @@ object EditorExtractor {
   def extract(valueInput: ValueInputWithFixedValues): ParameterEditor = valueInput match {
     case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
       val fixedValuesEditor = FixedValuesParameterEditor(
-        nullFixedValue +: fixedValuesList
+        FixedExpressionValue.nullFixedValue +: fixedValuesList
       )
 
       if (allowOtherValue) {
@@ -67,6 +67,8 @@ object EditorExtractor {
       case SimpleEditorType.JSON_EDITOR          => JsonParameterEditor
       case SimpleEditorType.SQL_EDITOR           => SqlParameterEditor
       case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
+      case SimpleEditorType.DICT_EDITOR          => DictParameterEditor(simpleEditor.dictId())
+      case SimpleEditorType.TYPED_TABULAR_DATA_EDITOR => TabularTypedDataEditor
     }
   }
 

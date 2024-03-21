@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -16,6 +15,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver, IdValidator, Output}
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
+import pl.touk.nussknacker.engine.expression.parse.TypedValue
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -42,17 +42,17 @@ object NodeDataValidator {
 
 class NodeDataValidator(modelData: ModelData) {
 
-  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-    case spel: SpelExpressionParser => spel.typingDictLabels
-  }
+  private val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withLabelsDictTyper
 
   private val compiler = new NodeCompiler(
     modelData.modelDefinition,
     new FragmentParametersDefinitionExtractor(modelData.modelClassLoader.classLoader),
     expressionCompiler,
     modelData.modelClassLoader.classLoader,
+    Seq.empty,
     PreventInvocationCollector,
-    ComponentUseCase.Validation
+    ComponentUseCase.Validation,
+    nonServicesLazyParamStrategy = LazyParameterCreationStrategy.default
   )
 
   def validate(

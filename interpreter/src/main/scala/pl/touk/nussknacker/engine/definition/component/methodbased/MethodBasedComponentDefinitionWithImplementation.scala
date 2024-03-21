@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.Component
+import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component._
@@ -15,9 +15,9 @@ final case class MethodBasedComponentDefinitionWithImplementation(
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(
-      implementationInvoker: ComponentImplementationInvoker
+      invoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation =
-    copy(implementationInvoker = implementationInvoker)
+    copy(implementationInvoker = invoker)
 
   def parameters: List[Parameter] = staticDefinition.parameters
 
@@ -39,16 +39,19 @@ object MethodBasedComponentDefinitionWithImplementation {
       name: String,
       componentTypeSpecificData: ComponentTypeSpecificData,
       staticDefinition: ComponentStaticDefinition,
-      uiDefinition: ComponentUiDefinition
+      uiDefinition: ComponentUiDefinition,
+      allowedProcessingModes: Option[Set[ProcessingMode]],
   ): MethodBasedComponentDefinitionWithImplementation = {
     MethodBasedComponentDefinitionWithImplementation(
       name,
-      ComponentImplementationInvoker.nullImplementationInvoker,
-      null,
+      ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
+      new NullComponent(allowedProcessingModes),
       componentTypeSpecificData,
       staticDefinition,
       uiDefinition
     )
   }
+
+  private class NullComponent(override val allowedProcessingModes: Option[Set[ProcessingMode]]) extends Component
 
 }

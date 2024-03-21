@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
+import cats.data.{Validated, ValidatedNel}
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -13,7 +13,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, EmptyMandatoryParameter}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
@@ -26,8 +25,8 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
-import scala.jdk.CollectionConverters._
 import java.nio.ByteBuffer
+import scala.jdk.CollectionConverters._
 
 class LiteKafkaUniversalAvroSchemaFunctionalTest
     extends AnyFunSuite
@@ -329,7 +328,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
             Input
           ),
           invalidTypes(
-            "path 'field' actual: 'Map[String,Long] | Long' expected: 'Map[String,Null | Integer] | Integer'"
+            "path 'field' actual: 'Long | Map[String,Long]' expected: 'Map[String,Null | Integer] | Integer'"
           )
         ),
         (
@@ -343,7 +342,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordMapOfIntsSchema, Input),
-          invalidTypes("path 'field' actual: 'Map[String,Integer] | Integer' expected: 'Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'Integer | Map[String,Integer]' expected: 'Map[String,Null | Integer]'")
         ),
         (
           rConfig(
@@ -369,7 +368,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleBoolean, recordUnionStringAndBooleanSchema, recordUnionStringAndIntegerSchema, Input),
-          invalidTypes("path 'field' actual: 'String | Boolean' expected: 'String | Integer'")
+          invalidTypes("path 'field' actual: 'Boolean | String' expected: 'String | Integer'")
         ),
         (
           rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionStringAndIntegerSchema, Input),
@@ -1179,18 +1178,18 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic}'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        TopicParamName                  -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkValueParamName              -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic}'",
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value            -> "",
+        sinkValueParamName.value          -> s"${config.sinkDefinition}",
+        sinkRawEditorParamName.value      -> "true",
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'"
       )
 
   case class ScenarioConfig(

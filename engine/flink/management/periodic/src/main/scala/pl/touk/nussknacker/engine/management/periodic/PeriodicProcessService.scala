@@ -25,7 +25,6 @@ import pl.touk.nussknacker.engine.management.periodic.service._
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime}
-import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -38,8 +37,9 @@ class PeriodicProcessService(
     deploymentRetryConfig: DeploymentRetryConfig,
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
-    clock: Clock
-)(implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
+    clock: Clock,
+    deploymentService: ProcessingTypeDeploymentService
+)(implicit ec: ExecutionContext)
     extends LazyLogging {
 
   import cats.syntax.all._
@@ -106,7 +106,7 @@ class PeriodicProcessService(
       deploymentWithJarData <- jarManager.prepareDeploymentWithJar(processVersion, canonicalProcess)
       enrichedProcessConfig <- processConfigEnricher.onInitialSchedule(
         ProcessConfigEnricher.InitialScheduleData(
-          deploymentWithJarData.canonicalProcess,
+          deploymentWithJarData.process,
           deploymentWithJarData.inputConfigDuringExecutionJson
         )
       )
@@ -120,7 +120,7 @@ class PeriodicProcessService(
   private def initialSchedule(
       scheduleMap: ScheduleProperty,
       scheduleDates: List[(ScheduleName, Option[LocalDateTime])],
-      deploymentWithJarData: DeploymentWithJarData,
+      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
       processActionId: ProcessActionId
   ): Future[Unit] = {
     scheduledProcessesRepository
@@ -142,7 +142,7 @@ class PeriodicProcessService(
       .map(_ => ())
   }
 
-  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment]] = {
+  def findToBeDeployed: Future[Seq[PeriodicProcessDeployment[CanonicalProcess]]] = {
     for {
       toBeDeployed <- scheduledProcessesRepository.findToBeDeployed.run.flatMap { toDeployList =>
         Future.sequence(toDeployList.map(checkIfNotRunning)).map(_.flatten)
@@ -155,7 +155,9 @@ class PeriodicProcessService(
 
   // Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   // TODO: we show allow to deploy scenarios with different scheduleName to be deployed simultaneous
-  private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
+  private def checkIfNotRunning(
+      toDeploy: PeriodicProcessDeployment[CanonicalProcess]
+  ): Future[Option[PeriodicProcessDeployment[CanonicalProcess]]] = {
     delegateDeploymentManager
       .getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(
@@ -295,7 +297,7 @@ class PeriodicProcessService(
   }
 
   private def handleFailedDeployment(
-      deployment: PeriodicProcessDeployment,
+      deployment: PeriodicProcessDeployment[_],
       state: Option[StatusDetails]
   ): RepositoryAction[Unit] = {
     def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
@@ -339,7 +341,7 @@ class PeriodicProcessService(
       _ <- activeSchedules.groupedByPeriodicProcess.map(p => deactivateAction(p.process)).sequence.runWithCallbacks
     } yield runningDeploymentsForSchedules.map(deployment => DeploymentId(deployment.toString))
 
-  private def deactivateAction(process: PeriodicProcess): RepositoryAction[Callback] = {
+  private def deactivateAction(process: PeriodicProcess[_]): RepositoryAction[Callback] = {
     logger.info(s"Deactivate periodic process id: ${process.id.value}")
     for {
       _ <- scheduledProcessesRepository.markInactive(process.id)
@@ -358,11 +360,11 @@ class PeriodicProcessService(
         .map(_ => ())
     }
 
-  def deploy(deployment: PeriodicProcessDeployment): Future[Unit] = {
+  def deploy(deployment: PeriodicProcessDeployment[CanonicalProcess]): Future[Unit] = {
     // TODO: set status before deployment?
     val id = deployment.id
     val deploymentData = DeploymentData(
-      DeploymentId(id.value.toString),
+      DeploymentId(id.toString),
       DeploymentData.systemUser,
       additionalDeploymentDataProvider.prepareAdditionalData(deployment)
     )
@@ -373,7 +375,7 @@ class PeriodicProcessService(
       )
       enrichedProcessConfig <- processConfigEnricher.onDeploy(
         ProcessConfigEnricher.DeployData(
-          deploymentWithJarData.canonicalProcess,
+          deploymentWithJarData.process,
           deploymentWithJarData.inputConfigDuringExecutionJson,
           deployment
         )

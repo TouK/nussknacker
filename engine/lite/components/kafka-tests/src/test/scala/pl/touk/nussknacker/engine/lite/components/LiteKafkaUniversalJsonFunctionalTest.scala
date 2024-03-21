@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{Invalid, Valid, invalidNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
-import io.circe.Json.{Null, fromFields, fromInt, fromJsonObject, fromLong, fromString, obj}
+import io.circe.Json.{Null, fromFields, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{ObjectSchema, Schema => EveritSchema, StringSchema}
 import org.scalatest.funsuite.AnyFunSuite
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -170,21 +171,21 @@ class LiteKafkaUniversalJsonFunctionalTest
       (sampleMapAny,      schemaMapAny,                  schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String'")),
       (sampleMapStr,      schemaMapAny,                  schemaMapStr,                         lax,                valid(sampleMapStr)),
       (sampleMapStr,      schemaMapStr,                  schemaMapStr,                         strictAndLax,       valid(sampleMapStr)),
-      (sampleMapStr,      schemaMapStringOrLong,         schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'String | Long' expected: 'String'")),
+      (sampleMapStr,      schemaMapStringOrLong,         schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'Long | String' expected: 'String'")),
       (sampleMapStr,      schemaMapStringOrLong,         schemaMapStr,                         lax,                valid(sampleMapStr)),
       (sampleMapPerson,   schemaMapObjPerson,            schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: 'Record{age: Long, first: String, last: String}' expected: 'String'")),
       (sampleMapPerson,   schemaMapObjPersonWithLimits,  schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: 'Record{age: Integer, first: String, last: String}' expected: 'String'")),
       (sampleArrayInt,    schemaArrayLong,               schemaMapStr,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String]'")),
       (samplePerson,      schemaPerson,                  schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
       (samplePerson,      schemaPersonWithLimits,        schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
-      (sampleMapAny,      schemaMapAny,                  schemaMapStringOrLong,                strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String | Long'")),
+      (sampleMapAny,      schemaMapAny,                  schemaMapStringOrLong,                strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'Long | String'")),
       (sampleMapInt,      schemaMapAny,                  schemaMapStringOrLong,                lax,                valid(sampleMapInt)),
       (sampleMapStr,      schemaMapStr,                  schemaMapStringOrLong,                strictAndLax,       valid(sampleMapStr)),
       (sampleMapStr,      schemaMapStringOrLong,         schemaMapStringOrLong,                strictAndLax,       valid(sampleMapStr)),
       (sampleMapInt,      schemaMapStringOrLong,         schemaMapStringOrLong,                strictAndLax,       valid(sampleMapInt)),
-      (samplePerson,      schemaMapObjPerson,            schemaMapStringOrLong,                strictAndLax,       invalidTypes("path 'value' actual: 'Record{age: Long, first: String, last: String}' expected: 'String | Long'")),
-      (samplePerson,      schemaMapObjPersonWithLimits,  schemaMapStringOrLong,                strictAndLax,       invalidTypes("path 'value' actual: 'Record{age: Integer, first: String, last: String}' expected: 'String | Long'")),
-      (sampleArrayInt,    schemaArrayLong,               schemaMapStringOrLong,                strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
+      (samplePerson,      schemaMapObjPerson,            schemaMapStringOrLong,                strictAndLax,       invalidTypes("path 'value' actual: 'Record{age: Long, first: String, last: String}' expected: 'Long | String'")),
+      (samplePerson,      schemaMapObjPersonWithLimits,  schemaMapStringOrLong,                strictAndLax,       invalidTypes("path 'value' actual: 'Record{age: Integer, first: String, last: String}' expected: 'Long | String'")),
+      (sampleArrayInt,    schemaArrayLong,               schemaMapStringOrLong,                strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, Long | String]'")),
       (samplePerson,      schemaPerson,                  schemaMapStringOrLong,                strictAndLax,       valid(samplePerson)),
       (samplePerson,      schemaPerson,                  nameAndLastNameSchema,                strictAndLax,       valid(samplePerson)),
       (samplePerson,      schemaPerson,                  nameAndLastNameSchema(schemaLong),    strictAndLax,       valid(samplePerson)),
@@ -252,9 +253,9 @@ class LiteKafkaUniversalJsonFunctionalTest
       (A,         schemaString,             schemaEnumABC,         strictAndLax,       valid(A)),
       (A,         schemaEnumABC,            schemaString,          strictAndLax,       valid(A)),
       (A,         schemaEnumABC,            schemaEnumAB1,         lax,                valid(A)),
-      (A,         schemaEnumABC,            schemaEnumAB1,         strict,             invalidTypes("actual: 'String(A) | String(B) | String(C)' expected: 'String(A) | Integer(1) | String(B)'")),
+      (A,         schemaEnumABC,            schemaEnumAB1,         strict,             invalidTypes("actual: 'String(A) | String(B) | String(C)' expected: 'Integer(1) | String(A) | String(B)'")),
       (A,         schemaEnumAB1,            schemaEnumAB,          lax,                valid(A)),
-      (A,         schemaEnumAB1,            schemaEnumAB,          strict,             invalidTypes("actual: 'String(A) | Integer(1) | String(B)' expected: 'String(A) | String(B)'")),
+      (A,         schemaEnumAB1,            schemaEnumAB,          strict,             invalidTypes("actual: 'Integer(1) | String(A) | String(B)' expected: 'String(A) | String(B)'")),
       (A,         schemaEnumAB1,            schemaEnumAB1,         strictAndLax,       valid(A)),
       (one,       schemaEnumAB1,            schemaEnumAB1,         strictAndLax,       valid(one)),
       (obj,       schemaEnumStrOrObj,       schemaEnumStrOrObj,    lax,                valid(obj)),
@@ -319,7 +320,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
-      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some("Value"), "#input['foo_int']"), Nil))),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", None))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
@@ -344,7 +345,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   test("pattern properties validations should work in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
     }
 
     val objWithNestedPatternPropertiesMapSchema =
@@ -410,10 +411,12 @@ class LiteKafkaUniversalJsonFunctionalTest
         result: ValidatedNel[ProcessCompilationError, Map[String, Json]]
     ): Assertion =
       result shouldBe Valid(expectedObject)
+
     def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, Json]]): Assertion =
       result.invalidValue should matchPattern {
-        case NonEmptyList(EmptyMandatoryParameter(_, _, `ObjectFieldName`, `sinkName`), Nil) =>
+        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), `sinkName`), Nil) =>
       }
+
     forAll(
       Table[EveritSchema, String, ValidatedNel[ProcessCompilationError, Map[String, Json]] => Assertion](
         ("outputSchema", "fieldExpression", "expectationCheckingFun"),
@@ -539,10 +542,10 @@ class LiteKafkaUniversalJsonFunctionalTest
       fieldsExpressions: Map[String, String]
   ): CanonicalProcess = {
     val sinkParams = (Map(
-      TopicParamName         -> s"'${config.sinkTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName       -> "",
-      SinkRawEditorParamName -> "false",
+      topicParamName.value         -> s"'${config.sinkTopic}'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "false",
     ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
 
     ScenarioBuilder
@@ -550,8 +553,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic}'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
   }
@@ -651,18 +654,18 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic}'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        TopicParamName                  -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkValueParamName              -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic}'",
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
+        sinkKeyParamName.value            -> "",
+        sinkValueParamName.value          -> s"${config.sinkDefinition}",
+        sinkRawEditorParamName.value      -> "true",
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'"
       )
 
   case class ScenarioConfig(

@@ -1,0 +1,13 @@
+{
+    "source": ["package.json", "../submodules/package.json", "../submodules/packages/*/package.json"],
+    "dependencyTypes": ["prod", "dev", "local"],
+    "semverGroups": [
+        {
+            "label": "use exact version numbers in production and dev",
+            "dependencyTypes": ["prod", "dev"],
+            "range": ""
+        }
+    ],
+    "indent": "    ",
+    "sortAz": ["bin", "contributors", "dependencies", "devDependencies", "keywords", "peerDependencies", "resolutions"]
+}

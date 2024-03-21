@@ -70,7 +70,7 @@ class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends Ba
   }
 
   private def extractTags(nkGlobalParameters: Option[NkGlobalParameters]): Map[String, String] = {
-    nkGlobalParameters.map(_.namingParameters) match {
+    nkGlobalParameters.map(_.namespaceParameters) match {
       case Some(Some(params)) => params.tags
       case _                  => Map()
     }

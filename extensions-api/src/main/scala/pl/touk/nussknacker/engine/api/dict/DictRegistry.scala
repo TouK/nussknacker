@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.dict
 
 import cats.data.Validated
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 /**
  * Provide operations on key/label for dictionaries. For some dictionaries, resolving key/label can be not supported (None will be returned).
@@ -37,14 +39,40 @@ trait EngineDictRegistry extends DictRegistry {
 
 object DictRegistry {
 
-  sealed trait DictLookupError
+  sealed trait DictLookupError {
+    def toPartSubGraphCompilationError(nodeId: String, paramName: ParameterName): PartSubGraphCompilationError
+  }
 
-  case class DictNotDeclared(dictId: String) extends DictLookupError
+  case class DictNotDeclared(dictId: String) extends DictLookupError {
+
+    override def toPartSubGraphCompilationError(
+        nodeId: String,
+        paramName: ParameterName
+    ): PartSubGraphCompilationError =
+      ProcessCompilationError.DictNotDeclared(dictId, nodeId, paramName)
+
+  }
 
   case class DictEntryWithLabelNotExists(dictId: String, label: String, possibleLabels: Option[List[String]])
-      extends DictLookupError
+      extends DictLookupError {
+
+    override def toPartSubGraphCompilationError(
+        nodeId: String,
+        paramName: ParameterName
+    ): PartSubGraphCompilationError =
+      ProcessCompilationError.DictEntryWithLabelNotExists(dictId, label, possibleLabels, nodeId, paramName)
+
+  }
 
   case class DictEntryWithKeyNotExists(dictId: String, key: String, possibleKeys: Option[List[String]])
-      extends DictLookupError
+      extends DictLookupError {
+
+    override def toPartSubGraphCompilationError(
+        nodeId: String,
+        paramName: ParameterName
+    ): PartSubGraphCompilationError =
+      ProcessCompilationError.DictEntryWithKeyNotExists(dictId, key, possibleKeys, nodeId, paramName)
+
+  }
 
 }

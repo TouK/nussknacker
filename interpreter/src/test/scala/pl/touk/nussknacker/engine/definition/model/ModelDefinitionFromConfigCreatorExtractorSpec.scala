@@ -17,8 +17,9 @@ import pl.touk.nussknacker.engine.api.definition.{
   RegExpParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.InvocationCollectors
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.component.dynamic.DynamicComponentDefinitionWithImplementation
@@ -57,12 +58,12 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
   test("extract type info from classes from additional variables") {
     val classDefinition = modelDefinitionWithTypes(None).classDefinitions.get(classOf[OnlyUsedInAdditionalVariable])
-    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+    classDefinition.map(_.methods.keySet) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract type info from additional classes") {
     val classDefinition = modelDefinitionWithTypes(None).classDefinitions.get(classOf[AdditionalClass])
-    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+    classDefinition.map(_.methods.keySet) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract definition from WithExplicitMethodToInvoke") {
@@ -177,7 +178,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         .getComponent(ComponentType.CustomComponent, "transformer1")
         .value
         .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-    val parameter = definition.parameters.find(_.name == "param1")
+    val parameter = definition.parameters.find(_.name == ParameterName("param1"))
     parameter.map(_.validators) shouldBe Some(
       List(
         MandatoryParameterValidator,
@@ -199,7 +200,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   }
 
   private def modelDefinitionWithTypes(category: Option[String]) = {
-    val modelConfig = new DefaultModelConfigLoader()
+    val modelConfig = new DefaultModelConfigLoader(_ => true)
       .resolveConfig(InputConfigDuringExecution(ConfigFactory.empty()), getClass.getClassLoader)
     val modelDefinition = ModelDefinitionFromConfigCreatorExtractor.extractModelDefinition(
       TestCreator,
@@ -242,7 +243,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       Map(
         "configurable1" -> WithCategories.anyCategory(
           EmptyExplicitMethodToInvoke(
-            List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")),
+            List(Parameter[Int](ParameterName("param1")), Parameter[Duration](ParameterName("durationParam"))),
             Typed[String]
           )
         )
@@ -371,9 +372,9 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult)
       extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def invoke(params: Map[String, Any])(
+    override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
-        collector: InvocationCollectors.ServiceInvocationCollector,
+        collector: ServiceInvocationCollector,
         contextId: ContextId,
         metaData: MetaData,
         componentUseCase: ComponentUseCase

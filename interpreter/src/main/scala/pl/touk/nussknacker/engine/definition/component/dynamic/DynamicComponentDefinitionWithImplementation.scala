@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component.dynamic
 
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.context.transformation.GenericNodeTransformation
+import pl.touk.nussknacker.engine.api.context.transformation.DynamicComponent
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
@@ -13,16 +14,16 @@ import pl.touk.nussknacker.engine.definition.component.{
 final case class DynamicComponentDefinitionWithImplementation(
     override val name: String,
     override val implementationInvoker: ComponentImplementationInvoker,
-    override val implementation: GenericNodeTransformation[_],
+    override val implementation: DynamicComponent[_],
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     override protected val uiDefinition: ComponentUiDefinition,
-    parametersConfig: Map[String, ParameterConfig]
+    parametersConfig: Map[ParameterName, ParameterConfig]
 ) extends ComponentDefinitionWithImplementation {
 
   override def withImplementationInvoker(
-      implementationInvoker: ComponentImplementationInvoker
+      invoker: ComponentImplementationInvoker
   ): ComponentDefinitionWithImplementation =
-    copy(implementationInvoker = implementationInvoker)
+    copy(implementationInvoker = invoker)
 
   override protected def typesFromStaticDefinition: List[TypingResult] = List.empty
 

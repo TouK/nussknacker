@@ -8,16 +8,7 @@ import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessAction,
-  ProcessActionId,
-  ProcessActionState,
-  ProcessActionType,
-  ProcessingTypeDeploymentService,
-  ProcessingTypeDeploymentServiceStub,
-  StatusDetails
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -32,7 +23,7 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
 }
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 class PeriodicDeploymentManagerTest
@@ -68,7 +59,7 @@ class PeriodicDeploymentManagerTest
     val jarManagerStub                = new JarManagerStub
     val preparedDeploymentData        = DeploymentData.withDeploymentId(UUID.randomUUID().toString)
 
-    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
+    val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
       List.empty
     )
 
@@ -81,7 +72,8 @@ class PeriodicDeploymentManagerTest
       deploymentRetryConfig = DeploymentRetryConfig(),
       executionConfig = executionConfig,
       processConfigEnricher = ProcessConfigEnricher.identity,
-      clock = Clock.systemDefaultZone()
+      clock = Clock.systemDefaultZone(),
+      deploymentService
     )
 
     val periodicDeploymentManager = new PeriodicDeploymentManager(
@@ -131,23 +123,8 @@ class PeriodicDeploymentManagerTest
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
     f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
-
-    val deployAction = ProcessAction(
-      id = ProcessActionId(UUID.randomUUID()),
-      processId = processId,
-      processVersionId = VersionId(1),
-      user = "fooUser",
-      createdAt = Instant.ofEpochMilli(0),
-      performedAt = Instant.ofEpochMilli(0),
-      actionType = ProcessActionType.Deploy,
-      state = ProcessActionState.Finished,
-      failureMessage = None,
-      commentId = None,
-      comment = None,
-      buildInfo = Map.empty
-    )
     f.periodicDeploymentManager
-      .getProcessState(idWithName, Some(deployAction))
+      .getProcessState(idWithName, None)
       .futureValue
       .value
       .status shouldBe a[ScheduledStatus]
@@ -174,25 +151,9 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
     f.periodicProcessService.deactivate(processName).futureValue
 
-    // Warning: don't remove type declaration because it causes compilation error in scala 2.12
-    val deployAction: ProcessAction = ProcessAction(
-      id = ProcessActionId(UUID.randomUUID()),
-      processId = processId,
-      processVersionId = VersionId(1),
-      user = "fooUser",
-      createdAt = Instant.ofEpochMilli(0),
-      performedAt = Instant.ofEpochMilli(0),
-      actionType = ProcessActionType.Deploy,
-      state = ProcessActionState.Finished,
-      failureMessage = None,
-      commentId = None,
-      comment = None,
-      buildInfo = Map.empty
-    )
-    val state = f.periodicDeploymentManager.getProcessState(idWithName, Some(deployAction)).futureValue.value
+    val state = f.periodicDeploymentManager.getProcessState(idWithName, None).futureValue.value
 
-    val status = state.status
-    status shouldBe SimpleStateStatus.Finished
+    state.status shouldBe SimpleStateStatus.Finished
     state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
   }
 
@@ -231,13 +192,13 @@ class PeriodicDeploymentManagerTest
     val emptyScenario = CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty)
 
     val validateResult = f.periodicDeploymentManager
-      .validate(processVersion, DeploymentData.empty, emptyScenario)
+      .processCommand(ValidateScenarioCommand(processVersion, DeploymentData.empty, emptyScenario))
       .failed
       .futureValue
     validateResult shouldBe a[PeriodicProcessException]
 
     val deploymentResult = f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, emptyScenario, None)
+      .processCommand(RunDeploymentCommand(processVersion, DeploymentData.empty, emptyScenario, None))
       .failed
       .futureValue
     deploymentResult shouldBe a[PeriodicProcessException]
@@ -247,7 +208,9 @@ class PeriodicDeploymentManagerTest
     val f = new Fixture
 
     f.periodicDeploymentManager
-      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .processCommand(
+        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      )
       .futureValue
 
     f.repository.processEntities.loneElement.active shouldBe true
@@ -259,7 +222,14 @@ class PeriodicDeploymentManagerTest
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
     f.periodicDeploymentManager
-      .deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess("0 0 0 ? * * 2000"), None)
+      .processCommand(
+        RunDeploymentCommand(
+          processVersion,
+          DeploymentData.empty,
+          PeriodicProcessGen.buildCanonicalProcess("0 0 0 ? * * 2000"),
+          None
+        )
+      )
       .failed
       .futureValue
 
@@ -272,7 +242,9 @@ class PeriodicDeploymentManagerTest
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
     f.periodicDeploymentManager
-      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .processCommand(
+        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      )
       .futureValue
 
     f.repository.processEntities should have size 2
@@ -300,7 +272,9 @@ class PeriodicDeploymentManagerTest
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
-      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .processCommand(
+        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      )
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -320,7 +294,9 @@ class PeriodicDeploymentManagerTest
 //    f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
 
     f.periodicDeploymentManager
-      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .processCommand(
+        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      )
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -340,7 +316,9 @@ class PeriodicDeploymentManagerTest
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
-      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .processCommand(
+        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      )
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -360,7 +338,9 @@ class PeriodicDeploymentManagerTest
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
-      .deploy(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      .processCommand(
+        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+      )
       .futureValue
 
     f.repository.processEntities.map(_.active) shouldBe List(false, true)
@@ -382,7 +362,7 @@ class PeriodicDeploymentManagerTest
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
-    f.periodicDeploymentManager.cancel(processName, User("test", "Tester")).futureValue
+    f.periodicDeploymentManager.processCommand(CancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
@@ -411,7 +391,7 @@ class PeriodicDeploymentManagerTest
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
 
-    f.periodicDeploymentManager.cancel(processName, User("test", "Tester")).futureValue
+    f.periodicDeploymentManager.processCommand(CancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
@@ -433,7 +413,7 @@ class PeriodicDeploymentManagerTest
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
-    f.periodicDeploymentManager.cancel(processName, User("test", "Tester")).futureValue
+    f.periodicDeploymentManager.processCommand(CancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed

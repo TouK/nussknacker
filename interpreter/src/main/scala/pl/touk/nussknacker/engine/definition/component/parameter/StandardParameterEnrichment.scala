@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
   DefaultValueDeterminerParameters
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
 }
 
 /*
-  For parameters defined explicitly in code (e.g. by GenericNodeTransformation or using WithExplicitMethod) we want to define sensible fallback/defaults:
+  For parameters defined explicitly in code (e.g. by DynamicComponent or using WithExplicitMethod) we want to define sensible fallback/defaults:
   - if no editor is defined in code, we take the one based by config or parameter type
   - if editor is defined, we add validator based on type
  */
@@ -21,7 +22,7 @@ object StandardParameterEnrichment {
 
   def enrichParameterDefinitions(
       original: List[Parameter],
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   ): List[Parameter] = {
     original.map(p => enrichParameter(p, parametersConfig.getOrElse(p.name, ParameterConfig.empty)))
   }

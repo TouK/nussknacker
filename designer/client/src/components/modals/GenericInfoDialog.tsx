@@ -3,6 +3,7 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PromptContent, WindowKind } from "../../windowManager";
+import { Typography } from "@mui/material";
 
 export interface InfoDialogData {
     text: string;
@@ -26,7 +27,9 @@ export function GenericInfoDialog({ children, ...props }: PropsWithChildren<Wind
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3 className={css({ textAlign: "center" })}>{dialogData.text}</h3>
+                <Typography variant={"h3"} textAlign={"center"}>
+                    {dialogData.text}
+                </Typography>
                 {children}
             </div>
         </PromptContent>

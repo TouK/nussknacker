@@ -13,11 +13,6 @@ declare module "*.css" {
     export default classes;
 }
 
-declare module "*.styl" {
-    const classes: { [key: string]: string };
-    export default classes;
-}
-
 declare module "*.svg" {
     const ReactComponent: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     export default ReactComponent;

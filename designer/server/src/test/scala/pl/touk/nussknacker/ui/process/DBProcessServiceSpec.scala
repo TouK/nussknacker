@@ -10,17 +10,22 @@ import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.restmodel.validation.ScenarioGraphWithValidationResult
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.{createFragmentEntity, createScenarioEntity}
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.mock.MockFetchingProcessRepository
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -28,23 +33,29 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
-  import pl.touk.nussknacker.ui.api.helpers.TestCategories._
-  import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
   // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()
-  private val allCategoriesUser =
-    TestFactory.userWithCategoriesReadPermission(username = "allCategoriesUser", categories = AllCategories)
-  private val category1User =
-    TestFactory.userWithCategoriesReadPermission(username = "testUser", categories = List(Category1))
+
+  private val allCategoriesUser = LoggedUser(
+    id = "allCategoriesUser",
+    username = "allCategoriesUser",
+    categoryPermissions = TestCategory.values.map(c => c.stringify -> Set(Permission.Read)).toMap
+  )
+
+  private val category1User = LoggedUser(
+    id = "testUser",
+    username = "testUser",
+    categoryPermissions = Map(Category1.stringify -> Set(Permission.Read))
+  )
 
   private val category1Process =
-    createScenarioEntity("category1Process", category = Category1, lastAction = Some(Deploy))
-  private val category1Fragment = createFragmentEntity("category1Fragment", category = Category1)
+    createScenarioEntity("category1Process", category = Category1.stringify, lastAction = Some(Deploy))
+  private val category1Fragment = createFragmentEntity("category1Fragment", category = Category1.stringify)
   private val category1ArchivedFragment =
-    createScenarioEntity("category1ArchivedFragment", isArchived = true, category = Category1)
+    createScenarioEntity("category1ArchivedFragment", isArchived = true, category = Category1.stringify)
   private val category2ArchivedProcess =
-    createScenarioEntity("category2ArchivedProcess", isArchived = true, category = Category2)
+    createScenarioEntity("category2ArchivedProcess", isArchived = true, category = Category2.stringify)
 
   private val processes: List[ScenarioWithDetailsEntity[ScenarioGraph]] = List(
     category1Process,
@@ -53,15 +64,13 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     category2ArchivedProcess,
   )
 
-  private val fragmentCategory1 = createFragmentEntity("fragmentCategory1", category = Category1)
-  private val fragmentCategory2 = createFragmentEntity("fragmentCategory2", category = Category2)
+  private val fragmentCategory1 = createFragmentEntity("fragmentCategory1", category = Category1.stringify)
+  private val fragmentCategory2 = createFragmentEntity("fragmentCategory2", category = Category2.stringify)
 
   private val fragments = List(
     fragmentCategory1,
     fragmentCategory2,
   )
-
-  private val processCategoryService = TestFactory.createCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   it should "return user processes" in {
     val dBProcessService = createDbProcessService(processes)
@@ -197,7 +206,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
-      processCategoryServiceProvider = ProcessingTypeDataProvider(Map.empty, processCategoryService),
+      scenarioParametersServiceProvider = TestFactory.scenarioParametersServiceProvider,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),

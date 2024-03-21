@@ -1,70 +1,32 @@
 package pl.touk.nussknacker.engine.testing
 
-import akka.actor.ActorSystem
+import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{
-  FixedExpressionValue,
-  FixedValuesParameterEditor,
-  FixedValuesValidator,
-  LiteralIntegerValidator,
-  MinimalNumberValidator,
-  StringParameterEditor
-}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.{
+  BaseModelData,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  MetaDataInitializer
+}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
-class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessState {
-
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = Future.successful(())
-
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] =
-    Future.successful(None)
-
-  override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
-  override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
-
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = Future.successful(())
-
-  override def test(
-      name: ProcessName,
-      canonicalProcess: CanonicalProcess,
-      scenarioTestData: ScenarioTestData
-  ): Future[TestProcess.TestResults] = ???
+class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands {
 
   // We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
-  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
-      implicit freshnessPolicy: DataFreshnessPolicy
-  ): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def resolve(
+      idWithName: ProcessIdWithName,
+      statusDetails: List[StatusDetails],
+      lastStateAction: Option[ProcessAction]
+  ): Future[ProcessState] = {
     val lastStateActionStatus = lastStateAction match {
       case Some(action) if action.actionType.equals(ProcessActionType.Deploy) =>
         SimpleStateStatus.Running
@@ -73,32 +35,37 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
       case _ =>
         SimpleStateStatus.NotDeployed
     }
+    Future.successful(processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)))
+  }
 
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(
-      WithDataFreshnessStatus(
-        processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)),
-        cached = false
-      )
+      WithDataFreshnessStatus.fresh(List.empty)
     )
   }
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
-    Future.successful(List.empty)
-
-  override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
-    Future.successful(SavepointResult(""))
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
-  override def customActions: List[CustomAction] = Nil
-
-  override def invokeCustomAction(
-      actionRequest: CustomActionRequest,
-      canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+  override def customActionsDefinitions: List[CustomActionDefinition] = Nil
 
   override def close(): Unit = {}
+
+}
+
+trait StubbingCommands { self: DeploymentManager =>
+
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
+    case _: ValidateScenarioCommand                      => Future.successful(())
+    case _: RunDeploymentCommand                         => Future.successful(None)
+    case _: StopDeploymentCommand                        => Future.successful(SavepointResult(""))
+    case _: StopScenarioCommand                          => Future.successful(SavepointResult(""))
+    case _: CancelDeploymentCommand                      => Future.successful(())
+    case _: CancelScenarioCommand                        => Future.successful(())
+    case _: MakeScenarioSavepointCommand                 => Future.successful(SavepointResult(""))
+    case _: CustomActionCommand | _: TestScenarioCommand => notImplemented
+  }
 
 }
 
@@ -106,12 +73,12 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 //Provider is registered via ServiceLoader, so it can be used e.g. to run simple docker configuration
 class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager = new DeploymentManagerStub
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      deploymentManagerDependencies: DeploymentManagerDependencies,
+      config: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] = Validated.valid(new DeploymentManagerStub)
 
   override def name: String = "stub"
 

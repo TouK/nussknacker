@@ -2,11 +2,8 @@ package pl.touk.nussknacker.engine.javaapi.process;
 
 import pl.touk.nussknacker.engine.api.dict.DictDefinition;
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig$;
-import pl.touk.nussknacker.engine.api.process.LanguageConfiguration;
 import pl.touk.nussknacker.engine.api.process.WithCategories;
-//TODO: it's deprecated in 2.13
 import scala.collection.JavaConverters;
-import scala.collection.immutable.List$;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -22,11 +19,7 @@ public class ExpressionConfig implements Serializable {
 
     private final List<Class<?>> additionalClasses;
 
-    private final LanguageConfiguration languages;
-
     private final boolean optimizeCompilation;
-
-    private final boolean strictTypeChecking;
 
     private final Map<String, DictDefinition> dictionaries;
 
@@ -37,19 +30,16 @@ public class ExpressionConfig implements Serializable {
     private final boolean dynamicPropertyAccessAllowed;
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports) {
-        this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), new LanguageConfiguration(List$.MODULE$.empty()), true, true, Collections.emptyMap(), false, false, false);
+        this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), true, Collections.emptyMap(), false, false, false);
     }
 
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports,
-                            List<Class<?>> additionalClasses, LanguageConfiguration languages, boolean optimizeCompilation, boolean strictTypeChecking,
-                            Map<String, DictDefinition> dictionaries, boolean hideMetaVariable, boolean methodExecutionForUnknownAllowed,
-                            boolean dynamicPropertyAccessAllowed) {
+                            List<Class<?>> additionalClasses, boolean optimizeCompilation, Map<String, DictDefinition> dictionaries,
+                            boolean hideMetaVariable, boolean methodExecutionForUnknownAllowed, boolean dynamicPropertyAccessAllowed) {
         this.globalProcessVariables = globalProcessVariables;
         this.globalImports = globalImports;
         this.additionalClasses = additionalClasses;
-        this.languages = languages;
         this.optimizeCompilation = optimizeCompilation;
-        this.strictTypeChecking = strictTypeChecking;
         this.dictionaries = dictionaries;
         this.hideMetaVariable = hideMetaVariable;
         this.methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed;
@@ -68,16 +58,8 @@ public class ExpressionConfig implements Serializable {
         return additionalClasses;
     }
 
-    public LanguageConfiguration getLanguages() {
-        return languages;
-    }
-
     public boolean isOptimizeCompilation() {
         return optimizeCompilation;
-    }
-
-    public boolean isStrictTypeChecking() {
-        return strictTypeChecking;
     }
 
     public Map<String, DictDefinition> getDictionaries() {
@@ -102,11 +84,9 @@ public class ExpressionConfig implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         ExpressionConfig that = (ExpressionConfig) o;
         return optimizeCompilation == that.optimizeCompilation &&
-                strictTypeChecking == that.strictTypeChecking &&
                 Objects.equals(globalProcessVariables, that.globalProcessVariables) &&
                 Objects.equals(globalImports, that.globalImports) &&
                 Objects.equals(additionalClasses, that.additionalClasses) &&
-                Objects.equals(languages, that.languages) &&
                 Objects.equals(dictionaries, that.dictionaries) &&
                 Objects.equals(hideMetaVariable, that.hideMetaVariable) &&
                 Objects.equals(methodExecutionForUnknownAllowed, that.methodExecutionForUnknownAllowed) &&
@@ -115,8 +95,8 @@ public class ExpressionConfig implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalProcessVariables, globalImports, additionalClasses, languages, optimizeCompilation,
-                strictTypeChecking, dictionaries, hideMetaVariable, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed);
+        return Objects.hash(globalProcessVariables, globalImports, additionalClasses, optimizeCompilation,
+                dictionaries, hideMetaVariable, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed);
     }
 
 }

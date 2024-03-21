@@ -19,9 +19,9 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
   def results: TestResults = ResultsCollectingListenerHolder.resultsForId(runId)
 
-  def clean() = ResultsCollectingListenerHolder.cleanResult(runId)
+  def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
 
-  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData) = {
+  override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
     ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, context))
   }
 
@@ -36,7 +36,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
       lastNodeId: String,
       context: Context,
       processMetaData: MetaData
-  ) = {}
+  ): Unit = {}
 
   override def expressionEvaluated(
       nodeId: String,
@@ -45,7 +45,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
       context: Context,
       processMetaData: MetaData,
       result: Any
-  ) = {
+  ): Unit = {
     ResultsCollectingListenerHolder.updateResults(
       runId,
       _.updateExpressionResult(nodeId, context, expressionId, result)
@@ -57,9 +57,8 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
       id: String,
       context: Context,
       processMetaData: MetaData,
-      params: Map[String, Any],
       result: Try[Any]
-  ) = {}
+  ): Unit = {}
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
     ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo))

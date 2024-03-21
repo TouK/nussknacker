@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SourceFactory, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -19,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
@@ -63,13 +65,16 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     .withValue("exceptionHandler.withRateMeter", fromAnyRef(true))
 
   private val components = List(
-    ComponentDefinition("test-source", SourceFactory.noParam[Int](SampleTestSupportSource)),
-    ComponentDefinition("test-source2", SourceFactory.noParam[Int](SampleTestSupportSource)),
+    ComponentDefinition("test-source", SourceFactory.noParamUnboundedStreamFactory[Int](SampleTestSupportSource)),
+    ComponentDefinition("test-source2", SourceFactory.noParamUnboundedStreamFactory[Int](SampleTestSupportSource)),
     ComponentDefinition(
       "test-source-with-parameters-test",
-      SourceFactory.noParam[Int](SampleTestSupportParametersSource)
+      SourceFactory.noParamUnboundedStreamFactory[Int](SampleTestSupportParametersSource)
     ),
-    ComponentDefinition("source-no-test-support", SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int]))),
+    ComponentDefinition(
+      "source-no-test-support",
+      SourceFactory.noParamUnboundedStreamFactory[Int](EmptySource(Typed.fromDetailedType[Int]))
+    ),
     ComponentDefinition("mockService", new MockService(mockServiceResultsHolder))
   )
 
@@ -136,7 +141,10 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   test("stubbing for test purpose should work for one source using parameter record") {
     val scenarioTestData = ScenarioTestData(
       List(1, 2, 3).map(v =>
-        ScenarioTestParametersRecord(NodeId("left-source"), Map("input" -> Expression("spel", v.toString)))
+        ScenarioTestParametersRecord(
+          NodeId("left-source"),
+          Map(ParameterName("input") -> Expression(Language.Spel, v.toString))
+        )
       )
     )
     val compiledProcess = testCompile(scenarioWithSingleTestParametersSource, scenarioTestData)
@@ -171,9 +179,10 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
       CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
 
-    override def testParametersDefinition: List[Parameter] = List(Parameter("input", Typed[Int]))
+    override def testParametersDefinition: List[Parameter] = List(Parameter(ParameterName("input"), Typed[Int]))
 
-    override def parametersToTestData(params: Map[String, AnyRef]): Int = params("input").asInstanceOf[Int]
+    override def parametersToTestData(params: Map[ParameterName, AnyRef]): Int =
+      params(ParameterName("input")).asInstanceOf[Int]
   }
 
   object SampleTestSupportSource

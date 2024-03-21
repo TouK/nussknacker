@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
@@ -47,11 +46,13 @@ import scala.util.Using
 class K8sDeploymentManager(
     override protected val modelData: BaseModelData,
     config: K8sDeploymentManagerConfig,
-    rawConfig: Config
-)(implicit ec: ExecutionContext, actorSystem: ActorSystem)
-    extends LiteDeploymentManager
+    rawConfig: Config,
+    dependencies: DeploymentManagerDependencies
+) extends LiteDeploymentManager
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
+
+  import dependencies._
 
   // lazy initialization to allow starting application even if k8s is not available - e.g. in case if multiple DeploymentManagers configured
   private lazy val k8sClient =
@@ -106,11 +107,19 @@ class K8sDeploymentManager(
     .map(path => Using.resource(Source.fromFile(path))(_.mkString))
     .getOrElse(defaultLogbackConfig)
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
+  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+    command match {
+      case command: ValidateScenarioCommand => validate(command)
+      case command: RunDeploymentCommand    => runDeployment(command)
+      case command: CancelScenarioCommand   => cancelScenario(command)
+      case command: TestScenarioCommand     => processTestActionCommand(command)
+      case _: CancelDeploymentCommand | _: StopDeploymentCommand | _: StopScenarioCommand |
+          _: MakeScenarioSavepointCommand | _: CustomActionCommand =>
+        notImplemented
+    }
+
+  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+    import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     val deploymentStrategy = deploymentPreparer
       .prepare(
@@ -141,12 +150,8 @@ class K8sDeploymentManager(
     } yield ()
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     logger.debug(s"Deploying $processVersion")
     for {
@@ -275,9 +280,10 @@ class K8sDeploymentManager(
     }
   }
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
     // TODO: move to requirementForId when cancel changes the API...
-    val selector: LabelSelector = requirementForName(name)
+    val selector: LabelSelector = requirementForName(scenarioName)
     // We wait for deployment removal before removing configmaps,
     // in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
@@ -292,13 +298,15 @@ class K8sDeploymentManager(
       secrets     <- k8sClient.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
       logger.debug(
-        s"Canceled $name, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
+        s"Canceled $scenarioName, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
       )
       ()
     }
   }
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient
@@ -306,7 +314,7 @@ class K8sDeploymentManager(
         .map(_.items)
       pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield {
-      deployments.map(mapper.status(_, pods))
+      WithDataFreshnessStatus.fresh(deployments.map(mapper.status(_, pods)))
     }
   }
 
@@ -359,18 +367,7 @@ class K8sDeploymentManager(
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
-  override protected def executionContext: ExecutionContext = ec
-
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
-    Future.failed(new UnsupportedOperationException(s"Cancelling of deployment is not supported"))
-
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
+  override protected def executionContext: ExecutionContext = dependencies.executionContext
 
 }
 

@@ -1,34 +1,23 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import io.circe.Json
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.TestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client3.SttpBackend
 
 import java.util.UUID
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.jdk.CollectionConverters._
 
 class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with VeryPatientScalaFutures {
-
-  private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
-  import actorSystem.dispatcher
-  implicit val backend: SttpBackend[Future, Any] =
-    AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-  implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   private val classPath: List[String] = ClassPaths.scalaClasspath
 
@@ -49,13 +38,13 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
   )
 
   it should "run scenario in test mode" in {
-    val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+    val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(config)
 
     val processName = ProcessName(UUID.randomUUID().toString)
 
     val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.test(processName, process, scenarioTestData)) { r =>
+    whenReady(deploymentManager.processCommand(TestScenarioCommand(processName, process, scenarioTestData))) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
         "nightFilter"  -> List(Context(s"$processName-startProcess-0-0", Map("input" -> "terefere"))),
@@ -72,11 +61,11 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSmsNotExist")
 
-    val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+    val deploymentManager = FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(config)
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.test(ProcessName(processId), process, scenarioTestData),
+        deploymentManager.processCommand(TestScenarioCommand(ProcessName(processId), process, scenarioTestData)),
         patienceConfig.timeout
       )
     }

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
@@ -18,15 +19,12 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{
-  MockDeploymentManager,
-  ProcessTestData,
-  StubFragmentRepository,
-  TestProcessingTypes
-}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -206,7 +204,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       additionalConfigsFromProvider = Map(
         DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
-            "paramStringEditor" -> ParameterAdditionalUIConfig(
+            ParameterName("paramStringEditor") -> ParameterAdditionalUIConfig(
               required = false,
               initialValue = Some(
                 FixedExpressionValue(
@@ -266,14 +264,14 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
   }
 
   private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {
-    val processingType = TestProcessingTypes.Streaming
+    val processingType = Streaming
 
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(ComponentsUiConfigParser.parse(model.modelConfig)),
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        DesignerWideComponentId.default(processingType, _)
+        DesignerWideComponentId.default(processingType.stringify, _)
       ),
       model.modelDefinition
     )
@@ -285,9 +283,9 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       deploymentManager = new MockDeploymentManager,
       alignedComponentsDefinitionProvider = alignedComponentsDefinitionProvider,
       scenarioPropertiesConfigFinalizer =
-        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType),
-      fragmentRepository = new StubFragmentRepository(Map(processingType -> fragmentScenarios))
-    ).prepareUIDefinitions(processingType, forFragment = false)(AdminUser("admin", "admin")).futureValue
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingType.stringify),
+      fragmentRepository = new StubFragmentRepository(Map(processingType.stringify -> fragmentScenarios))
+    ).prepareUIDefinitions(processingType.stringify, forFragment = false)(AdminUser("admin", "admin")).futureValue
   }
 
 }
