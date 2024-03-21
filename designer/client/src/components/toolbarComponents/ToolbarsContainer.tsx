@@ -42,7 +42,6 @@ export const StyledDraggableItem = styled("div")(
 
         .is-dragging {
             backdrop-filter: blur(8px);
-            background: ${alpha(theme.custom.colors.borderColor, 0.25)};
             transition: all 0.3s;
             opacity: 0.75;
             ::after {

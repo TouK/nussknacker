@@ -16,12 +16,6 @@ export const ThemedInput = forwardRef(function ThemedInput(
 ): JSX.Element {
     const theme = useTheme();
     const styles = css({
-        height: theme.custom.spacing.controlHeight,
-        borderRadius: theme.custom.borderRadius,
-        color: theme.palette.text.secondary,
-        borderColor: theme.custom.colors.borderColor,
-        backgroundColor: theme.palette.background.paper,
-        fontFamily: "inherit",
         "::placeholder": {
             color: alpha(theme.palette.text.secondary, 0.25),
             opacity: 1 /* Firefox */,

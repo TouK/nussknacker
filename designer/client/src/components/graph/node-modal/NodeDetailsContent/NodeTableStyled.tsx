@@ -80,18 +80,10 @@ export const NodeTableStyled = styled("div")(
         }
 
         .row-ace-editor {
-            padding-top: 8px;
-            padding-bottom: 8px;
-            padding-left: 5px;
-            padding-right: 5px;
-            background-color: ${theme.palette.background.paper};
+            padding: ${theme.spacing(1, 0.625)};
             min-height: 35px;
-            .ace_editor {
-                background-color: ${theme.palette.background.paper};
-            }
-            &.focused {
-                outline: 1px solid ${theme.palette.primary.main};
-                outline-offset: -1px;
+            .ace-nussknacker {
+                outline: none;
             }
         }
         .node-group {

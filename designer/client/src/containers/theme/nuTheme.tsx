@@ -41,7 +41,6 @@ const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
 ];
 
 const colors = {
-    borderColor: d,
     primaryColor: l,
     secondaryColor: l2,
     mutedColor: base,
@@ -70,21 +69,6 @@ const colors = {
     emperor: "#555555",
 };
 
-const selectColors = {
-    ...tintPrimary(colors.focusColor),
-    neutral0: "242F3E",
-    neutral5: colors.secondaryColor,
-    neutral10: colors.accent,
-    neutral20: colors.mutedColor,
-    neutral30: colors.borderColor,
-    neutral40: colors.secondaryColor,
-    neutral50: colors.mutedColor,
-    neutral60: colors.mutedColor,
-    neutral70: colors.secondaryColor,
-    neutral80: colors.primaryColor,
-    neutral90: colors.secondaryColor,
-};
-
 const custom = {
     borderRadius: 0,
     ConnectionErrorModal: {
@@ -103,7 +87,6 @@ const custom = {
         ok: "#8fad60",
         success: "#64d864",
         info: "#b3b3b3",
-        ...selectColors,
         ...colors,
     },
 };
@@ -293,7 +276,7 @@ const globalStyles = (theme: Theme) => ({
         boxShadow: "none",
         border: "none",
         outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
-        "&:focus": {
+        "&:focus, &:focus-within": {
             outline: `1px solid ${theme.palette.primary.main}`,
         },
     },

@@ -2,6 +2,7 @@ import React, { PropsWithChildren } from "react";
 import { useTheme } from "@mui/material";
 import { WindowManagerProvider } from "@touk/window-manager";
 import { ContentGetter } from "./ContentGetter";
+import { blendDarken } from "../containers/theme/nuTheme";
 
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {
@@ -19,7 +20,7 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
                     baseUnit: spacing.baseUnit,
                 },
                 colors: {
-                    borderColor: colors.borderColor,
+                    borderColor: blendDarken(palette.background.paper, 0.24),
                     focusColor: colors.focusColor,
                     mutedColor: colors.mutedColor,
                     primaryBackground: palette.background.paper,
