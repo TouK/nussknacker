@@ -38,7 +38,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
       )
       .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#agg")
 
-    val result = runner.runWithData(
+    val result = runner.runWithDataInBoundedMode(
       scenario,
       List(
         TestRecord("A", 1),
