@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.component.{ProcessingMode, _}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
@@ -18,7 +18,12 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, NodeUsageData}
+import pl.touk.nussknacker.restmodel.component.{
+  AllowedProcessingModes,
+  ComponentLink,
+  ComponentListElement,
+  NodeUsageData
+}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockFetchingProcessRepository, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
@@ -331,7 +336,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       availableCategories,
       links,
-      usageCount
+      usageCount,
+      AllowedProcessingModes.AllProcessingModes
     )
   }
 
@@ -341,7 +347,19 @@ class DefaultComponentServiceSpec
     val designerWideComponentId = cid(ProcessingTypeStreaming, componentId)
     val icon                    = DefaultsComponentIcon.fromComponentId(componentId, None)
     val links                   = createLinks(designerWideComponentId, componentId)
-    List(ComponentListElement(designerWideComponentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
+    List(
+      ComponentListElement(
+        designerWideComponentId,
+        cat,
+        icon,
+        Fragment,
+        FragmentsGroupName,
+        List(cat),
+        links,
+        0,
+        AllowedProcessingModes.AllProcessingModes
+      )
+    )
   }
 
   private val fragmentFraudComponents: List[ComponentListElement] = {
@@ -358,7 +376,8 @@ class DefaultComponentServiceSpec
         FragmentsGroupName,
         List(cat),
         links,
-        0
+        0,
+        AllowedProcessingModes.AllProcessingModes
       )
     )
   }
@@ -415,7 +434,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       categories,
       links,
-      usageCount
+      usageCount,
+      AllowedProcessingModes.AllProcessingModes
     )
   }
 
@@ -436,7 +456,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       categories,
       links,
-      0
+      0,
+      AllowedProcessingModes.AllProcessingModes
     )
   }
 
