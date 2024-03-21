@@ -74,6 +74,9 @@ object SourceFactory {
   def noParamUnboundedStreamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
     NoParamSourceFactory(_ => source, Typed.apply[T], Some(Set(ProcessingMode.UnboundedStream)))
 
+  def noParamBoundedStreamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
+    NoParamSourceFactory(_ => source, Typed.apply[T], Some(Set(ProcessingMode.BoundedStream)))
+
   case class NoParamSourceFactory(
       createSource: NodeId => Source,
       inputType: TypingResult,

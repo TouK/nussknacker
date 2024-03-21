@@ -2,20 +2,28 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ProcessVersion}
+import pl.touk.nussknacker.engine.api.component.{BoundedStreamComponent, ComponentDefinition, ProcessingMode}
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ComponentUseCase, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkContextInitializingFunction,
+  FlinkCustomNodeContext,
+  FlinkSource
+}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
   noopSourceComponent,
+  testBoundedDataSourceComponent,
   testDataSourceComponent,
   testResultServiceComponent
 }
@@ -39,6 +47,35 @@ private object testComponents {
       TestScenarioRunner.testDataSource,
       SourceFactory.noParamUnboundedStreamFromClassTag[T](
         new CollectionSource[T](data, timestampAssigner, Typed.apply[T])
+      )
+    )
+  }
+
+  import scala.jdk.CollectionConverters._
+
+  def testBoundedDataSourceComponent[T: ClassTag: TypeInformation](
+      data: List[T]
+  ): ComponentDefinition = {
+    ComponentDefinition(
+      TestScenarioRunner.testDataSource,
+      SourceFactory.noParamBoundedStreamFromClassTag[T](
+        new FlinkSource {
+          override def sourceStream(
+              env: StreamExecutionEnvironment,
+              flinkNodeContext: FlinkCustomNodeContext
+          ): DataStream[Context] = {
+            val stream = env.fromCollection(data.asJava)
+            val contextStream = stream.map(
+              new FlinkContextInitializingFunction(
+                new BasicContextInitializer(Typed[T]),
+                flinkNodeContext.nodeId,
+                flinkNodeContext.convertToEngineRuntimeContext
+              ),
+              flinkNodeContext.contextTypeInfo
+            )
+            contextStream
+          }
+        }
       )
     )
   }
@@ -71,6 +108,12 @@ class FlinkTestScenarioRunner(
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     runWithTestSourceComponent(scenario, testDataSourceComponent(data, None))
+  }
+
+  def runWithDataInBoundedMode[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
+    implicit val typeInf: TypeInformation[I] =
+      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    runWithTestSourceComponent(scenario, testBoundedDataSourceComponent(data))
   }
 
   /**
