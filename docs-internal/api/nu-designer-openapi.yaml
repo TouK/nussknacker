@@ -565,6 +565,95 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/migrate:
+    post:
+      tags:
+      - Migrations
+      summary: Migration between environments service
+      operationId: postApiMigrate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+            examples:
+              Example:
+                summary: example of migration request between environments
+                value:
+                  sourceEnvironmentId: testEnv
+                  processingMode: Unbounded-Stream
+                  engineSetupName: Flink
+                  processCategory: Category1
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                        metaDataType: LiteStreamMetaData
+                    nodes:
+                    - id: source
+                      ref:
+                        typ: csv-source-lite
+                        parameters: []
+                      type: Source
+                    - id: sink
+                      ref:
+                        typ: dead-end-lite
+                        parameters: []
+                      type: Sink
+                    edges:
+                    - from: source
+                      to: sink
+                  processName: test
+                  isFragment: false
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
