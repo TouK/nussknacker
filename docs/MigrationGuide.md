@@ -2,7 +2,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.14.x (Not released yet)
+## In version 1.14.0
 
 ### Code API changes
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter

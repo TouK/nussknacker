@@ -1,6 +1,6 @@
 # Changelog
 
-1.14.0 (Not released yet)
+1.14.0 (21 Mar 2024)
 -------------------------
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
   * Flink: 1.16.2 -> 1.17.2
