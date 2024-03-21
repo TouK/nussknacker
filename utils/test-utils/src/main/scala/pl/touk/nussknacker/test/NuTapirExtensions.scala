@@ -35,4 +35,8 @@ trait NuTapirExtensions {
     new JSONObject(sampleStr)
   }
 
+  protected def createJsonFromString(json: String): JSONObject = {
+    new JSONObject(json)
+  }
+
 }

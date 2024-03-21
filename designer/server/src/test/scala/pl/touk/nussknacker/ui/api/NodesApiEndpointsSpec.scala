@@ -25,4 +25,18 @@ class NodesApiEndpointsSpec
     }
   }
 
+  "Node data check up" in {
+    val schema = prepareJsonSchemaFromTapirSchema(NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema)
+
+    val enricher =
+      s"""{\"additionalFields\":{\"layoutData\":{\"x\":-91,\"y\":81}},\"service\":{\"id\":\"enricher\",\"parameters\":[{\"name\":\"param\",\"expression\":{\"language\":\"spel\",\"expression\":\"'default value'\"}},{\"name\":\"tariffType\",\"expression\":{\"language\":\"spel\",\"expression\":\"T(pl.touk.nussknacker.engine.management.sample.TariffType).NORMAL\"}}]},\"output\":\"output\",\"type\":\"Enricher\",\"branchParametersTemplate\":[],\"id\":\"abc\"}"""
+    val filter =
+      s"""{\"additionalFields\":{\"layoutData":{\"x\":-179,\"y\":-170}},\"expression\":{\"language\":\"spel\",\"expression\":\"true\"},\"isDisabled\":null,\"type\":\"Filter\",\"branchParametersTemplate\":[],\"id\":\"filter 1\"}"""
+    val fragment =
+      s"""{\"additionalFields\":{\"layoutData\":{\"x\":0,\"y\":180},\"description\":null},\"ref\":{\"id\":\"fragment\",\"parameters\":[],\"outputVariableNames\":{\"output\":\"output\"}},\"isDisabled\":null,\"fragmentParams\":null,\"type\":\"FragmentInput\",\"id\":\"fragment\"}"""
+
+    val jsonList = List(enricher, filter, fragment)
+    jsonList.foreach(nodeData => schema should validateJson(createJsonFromString(nodeData)))
+  }
+
 }
