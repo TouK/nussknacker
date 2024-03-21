@@ -700,7 +700,7 @@ class HttpService {
 
     fetchProcessDefinitionDataDict(processingType: ProcessingType, dictId: string, label: string) {
         return api
-            .get<ProcessDefinitionDataDictOption[]>(`/dicts/${processingType}/${dictId}/entry?label=${label}`)
+            .get<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${label}`)
             .catch((error) =>
                 Promise.reject(
                     this.#addError(

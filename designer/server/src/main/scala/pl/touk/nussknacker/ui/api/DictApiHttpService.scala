@@ -6,22 +6,27 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.DictNotDeclared
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictQueryService}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
-import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.DictError
-import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.DictError.{MalformedTypingResult, NoDict, NoProcessingType}
-import pl.touk.nussknacker.ui.api.DictResourcesEndpoints.Dtos.DictListElementDto
+import pl.touk.nussknacker.ui.api.description.DictApiEndpoints
+import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError
+import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError.{
+  MalformedTypingResult,
+  NoDict,
+  NoProcessingType
+}
+import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.Dtos.DictDto
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DictResourcesHttpService(
+class DictApiHttpService(
     authenticator: AuthenticationResources,
     processingTypeData: ProcessingTypeDataProvider[(DictQueryService, Map[String, DictDefinition], ClassLoader), _]
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authenticator)
     with LazyLogging {
 
-  private val dictResourcesEndpoints = new DictResourcesEndpoints(authenticator.authenticationMethod())
+  private val dictResourcesEndpoints = new DictApiEndpoints(authenticator.authenticationMethod())
 
   expose {
     dictResourcesEndpoints.dictionaryEntryQueryEndpoint
@@ -58,7 +63,7 @@ class DictResourcesHttpService(
                   success(
                     dictionaries
                       .filter { case (id, definition) => definition.valueType(id).canBeSubclassOf(expectedType) }
-                      .map { case (id, _) => DictListElementDto(id) }
+                      .map { case (id, _) => DictDto(id) }
                       .toList
                   )
                 }

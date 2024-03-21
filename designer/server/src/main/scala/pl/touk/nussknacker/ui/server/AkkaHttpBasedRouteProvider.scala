@@ -9,7 +9,12 @@ import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, AdditionalUIConfigProviderFactory, DesignerWideComponentId, EmptyAdditionalUIConfigProviderFactory}
+import pl.touk.nussknacker.engine.api.component.{
+  AdditionalUIConfigProvider,
+  AdditionalUIConfigProviderFactory,
+  DesignerWideComponentId,
+  EmptyAdditionalUIConfigProviderFactory
+}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
@@ -21,10 +26,20 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.{
+  AnalyticsConfig,
+  AttachmentsConfig,
+  ComponentLinksConfigExtractor,
+  FeatureTogglesConfig,
+  UsageStatisticsReportsConfig
+}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
-import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, DefinitionsService, ScenarioPropertiesConfigFinalizer}
+import pl.touk.nussknacker.ui.definition.{
+  AlignedComponentsDefinitionProvider,
+  DefinitionsService,
+  ScenarioPropertiesConfigFinalizer
+}
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -269,7 +284,7 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
-      val dictResourcesHttpService = new DictResourcesHttpService(
+      val dictResourcesHttpService = new DictApiHttpService(
         authenticator = authenticationResources,
         processingTypeData = typeToConfig.mapValues { processingTypeData =>
           (
