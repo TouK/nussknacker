@@ -7,6 +7,7 @@
   * openapi-circe-yaml: 0.6.0 -> 0.7.4 
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+* [#5780](https://github.com/TouK/nussknacker/pull/5780) Modified `CaseClassTypeInfoFactory` so Scala case classes are serialized properly
 
 1.14.0 (21 Mar 2024)
 -------------------------
