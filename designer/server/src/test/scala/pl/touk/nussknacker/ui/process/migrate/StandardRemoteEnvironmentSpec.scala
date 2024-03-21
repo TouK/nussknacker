@@ -18,7 +18,7 @@ import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.wrapGraphWithScenar
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequest,
   MigrateScenarioRequestV1,
   MigrateScenarioRequestV2

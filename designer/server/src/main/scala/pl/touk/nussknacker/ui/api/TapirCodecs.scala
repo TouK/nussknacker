@@ -4,7 +4,7 @@ import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequest,
   MigrateScenarioRequestV1,
   MigrateScenarioRequestV2
@@ -18,7 +18,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import cats.syntax.functor._
 
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos
 
 object TapirCodecs {
 

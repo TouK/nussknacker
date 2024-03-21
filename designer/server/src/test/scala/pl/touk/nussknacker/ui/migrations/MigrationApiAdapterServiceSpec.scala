@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequestV1, MigrateScenarioRequestV2}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
+  MigrateScenarioRequestV1,
+  MigrateScenarioRequestV2
+}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.migrate.NuVersionDeserializationError
 

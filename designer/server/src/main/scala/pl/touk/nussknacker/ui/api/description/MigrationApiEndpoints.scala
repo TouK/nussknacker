@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe._
 import derevo.derive

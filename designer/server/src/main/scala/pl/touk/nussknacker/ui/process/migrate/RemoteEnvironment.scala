@@ -21,7 +21,10 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{MigrateScenarioRequestV1, MigrateScenarioRequestV2}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
+  MigrateScenarioRequestV1,
+  MigrateScenarioRequestV2
+}
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
 import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService

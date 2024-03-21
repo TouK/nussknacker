@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.migrations
 
 import pl.touk.nussknacker.ui.NuDesignerError
-import pl.touk.nussknacker.ui.api.MigrationApiEndpoints.Dtos.{
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequest,
   MigrateScenarioRequestV1,
   MigrateScenarioRequestV2
