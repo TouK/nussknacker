@@ -9,10 +9,10 @@ export const selectStyled = (theme: Theme) => {
         padding: 0 ${padding};
         border: none;
         background-color: ${theme.palette.background.paper};
-        color: ${theme.custom.colors.secondaryColor};
+        color: ${theme.palette.text.secondary};
         font-weight: 400;
         font-size: 14px;
-        outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
+        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.05)};
     `;
 
     const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`

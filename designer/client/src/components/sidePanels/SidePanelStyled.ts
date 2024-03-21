@@ -1,5 +1,4 @@
-import { styled, Theme } from "@mui/material";
-import { alpha } from "../../containers/theme/helpers";
+import { alpha, styled, Theme } from "@mui/material";
 import { PanelSide } from "./SidePanel";
 import { css } from "@emotion/css";
 
@@ -94,8 +93,8 @@ export const styledScrollTogglePanelWrapper = (theme: Theme) => css`
             right: 0;
             bottom: 0;
             backdrop-filter: blur(0.5px);
-            background: ${alpha(theme.custom.colors.primaryColor, 0.2)};
-            outline: 3px dashed white;
+            background: ${alpha(theme.palette.common.white, 0.2)};
+            outline: 3px dashed ${theme.palette.common.white};
             outline-offset: -4px;
         }
     }

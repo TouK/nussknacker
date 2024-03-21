@@ -18,7 +18,7 @@ export const CronEditorStyled = styled("div")(
         .cron_builder {
             width: 100%;
             background-color: ${theme.palette.background.paper};
-            outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
+            outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border: none;
             * {
                 color: ${theme.custom.colors.secondaryColor};

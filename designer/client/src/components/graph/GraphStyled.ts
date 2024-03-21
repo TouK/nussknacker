@@ -5,9 +5,9 @@ export const GraphStyled = styled(FocusableStyled)(
     ({ theme }) => css`
         min-height: 300px;
         min-width: 300px;
-        color: ${theme.custom.colors.primaryColor};
+        color: ${theme.palette.common.white};
         .arrow-marker path {
-            fill: ${theme.custom.colors.primaryColor};
+            fill: ${theme.palette.common.white};
         }
 
         @media (hover: none) {
@@ -61,7 +61,7 @@ export const GraphStyled = styled(FocusableStyled)(
             }
 
             .connection {
-                stroke: ${theme.custom.colors.primaryColor};
+                stroke: ${theme.palette.common.white};
                 stroke-width: 2;
             }
 

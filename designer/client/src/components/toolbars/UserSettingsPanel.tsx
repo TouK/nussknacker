@@ -1,16 +1,14 @@
-import { defaultsDeep } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { Typography, useTheme } from "@mui/material";
+import { blendLighten } from "../../containers/theme/nuTheme";
 
 export function UserSettingsPanel(): JSX.Element {
     const { t } = useTranslation();
-    const {
-        custom: { borderRadius, colors, spacing },
-    } = useTheme();
+    const theme = useTheme();
     const [settings, , reset] = useUserSettings();
     const value = Object.entries(settings).map(([label, value]) => ({ label, value }));
     return (
@@ -21,11 +19,15 @@ export function UserSettingsPanel(): JSX.Element {
                 getOptionValue={(option) => `${option.label}_${option.value}`}
                 onChange={(values) => reset(values?.reduce((current, { label, value }) => ({ ...current, [label]: !!value }), {}))}
                 isValidNewOption={(inputValue) => /^[^_]/.test(inputValue)}
-                theme={(provided) => defaultsDeep({ borderRadius, colors, spacing }, provided)}
                 styles={{
-                    multiValue: (base) => ({ ...base, width: "100%" }),
-                    multiValueLabel: (base) => ({ ...base, width: "100%", fontWeight: "bold" }),
-                    control: (base) => ({ ...base, padding: 0 }),
+                    multiValue: (base) => ({
+                        ...base,
+                        width: "100%",
+                        backgroundColor: theme.palette.success.main,
+                        cursor: "pointer",
+                    }),
+                    multiValueLabel: (base) => ({ ...base, width: "100%", fontWeight: "bold", color: theme.palette.text.secondary }),
+                    control: (base) => ({ ...base, padding: 0, border: "none", backgroundColor: theme.palette.background.paper }),
                     valueContainer: (base) => ({ ...base, padding: 4, flexWrap: "wrap-reverse" }),
                 }}
                 components={{

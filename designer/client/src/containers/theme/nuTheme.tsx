@@ -1,4 +1,3 @@
-import { tintPrimary } from "./helpers";
 import { createTheme, rgbToHex, Theme } from "@mui/material";
 import { blend } from "@mui/system";
 
@@ -41,7 +40,6 @@ const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
 ];
 
 const colors = {
-    primaryColor: l,
     secondaryColor: l2,
     mutedColor: base,
     focusColor: d1,

@@ -103,7 +103,7 @@ export const FocusableStyled = styled("div")(
             }
 
             .modalContentDark {
-                ${modalContent(theme.custom.colors.error, theme.custom.colors.boulder)}
+                ${modalContent(theme.custom.colors.error, blendLighten(theme.palette.background.paper, 0.25))}
             }
 
             .error {
