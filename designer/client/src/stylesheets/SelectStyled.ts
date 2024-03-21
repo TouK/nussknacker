@@ -22,7 +22,6 @@ export const selectStyled = (theme: Theme) => {
         min-height: 35px;
         border: none;
         border-radius: 0;
-        color: ${theme.custom.colors.secondaryColor};
         box-shadow: 0;
         outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
         ${isFocused &&
@@ -108,8 +107,7 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         ${hasValue &&
         css`
-            background-color: ${theme.palette.background.paper}
-            color: ${theme.custom.colors.secondaryColor}
+            background-color: ${theme.palette.background.paper};
         `}
     `;
 

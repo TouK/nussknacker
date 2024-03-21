@@ -1,5 +1,4 @@
 import { css, styled } from "@mui/material";
-import { blendLighten } from "../../../../../../containers/theme/nuTheme";
 
 export const TimeRangeStyled = styled("div")(
     ({ theme }) => css`
@@ -20,13 +19,9 @@ export const TimeRangeStyled = styled("div")(
             width: 45px !important;
             border: none !important;
             background-color: ${theme.palette.background.paper};
-            color: ${theme.custom.colors.secondaryColor};
             text-align: center;
             padding-left: 12px;
             height: 35px;
-            &:focus {
-                outline: 1px solid ${theme.palette.primary.main};
-            }
         }
 
         .time-range-components {

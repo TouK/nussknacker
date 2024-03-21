@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingLabelStyled, StyledFormControlLabel } from "./StyledSettingsComponnets";
-import { FormControl, FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
+import { FormControl, FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import { FixedValuesType, onChangeType } from "../../../item";
 
 interface FixedValuesGroup {
@@ -13,7 +13,6 @@ interface FixedValuesGroup {
 
 export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: FixedValuesGroup) {
     const { t } = useTranslation();
-    const theme = useTheme();
 
     return (
         <FormControl>
@@ -26,13 +25,11 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: 
                 }}
             >
                 <FormControlLabel
-                    sx={{ color: theme.custom.colors.secondaryColor }}
                     value={FixedValuesType.ValueInputWithFixedValuesPreset}
                     control={<Radio />}
                     label={<StyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</StyledFormControlLabel>}
                 />
                 <FormControlLabel
-                    sx={{ color: theme.custom.colors.secondaryColor }}
                     value={FixedValuesType.ValueInputWithFixedValuesProvided}
                     control={<Radio />}
                     label={<StyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</StyledFormControlLabel>}

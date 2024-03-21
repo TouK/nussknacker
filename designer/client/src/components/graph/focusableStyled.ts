@@ -6,7 +6,6 @@ import { blendLighten } from "../../containers/theme/nuTheme";
 export const buttonBase = (theme: Theme) => css`
     border-radius: 0;
     background-color: ${theme.palette.background.paper};
-    color: ${theme.custom.colors.secondaryColor};
     transition: background-color 0.2s;
     user-select: none;
     &:focus {
@@ -182,7 +181,7 @@ export const FocusableStyled = styled("div")(
                 padding: 0 10px;
                 border: none;
                 background-color: ${theme.palette.background.paper};
-                color: ${theme.custom.colors.secondaryColor};
+                color: ${theme.palette.text.secondary};
                 font-weight: 400;
                 font-size: 16px;
             }

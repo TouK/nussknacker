@@ -25,8 +25,8 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
             top: 0;
             width: 20px;
             height: 999px;
-            border: 2px solid ${theme.custom.colors.secondaryColor};
-            border-width: 0px 0 0 2px;
+            border: 1px solid ${theme.palette.primary.main};
+            border-width: 0px 0 0 1px;
             padding-left: 10px;
         }
 
@@ -51,11 +51,8 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>(
             padding-left: 10px;
         }
 
-        color: ${theme.custom.colors.secondaryColor};
-
         ${type === VersionType.current &&
         css`
-            color: ${theme.custom.colors.secondaryColor};
             &:hover::after {
                 background-color: ${blendLighten(theme.palette.primary.main, 0.05)} !important;
             }

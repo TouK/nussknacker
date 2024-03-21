@@ -14,7 +14,7 @@ import { useFocus } from "../containers/theme/helpers";
 
 export type InputWithFocusProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
-export const NodeInput = styled("input")(({ theme }) => `${NodeInputCss(theme).styles}`);
+export const NodeInput = styled("input")``;
 
 export type TextAreaWithFocusProps = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 

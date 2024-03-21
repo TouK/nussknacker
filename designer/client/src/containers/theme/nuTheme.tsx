@@ -40,7 +40,6 @@ const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
 ];
 
 const colors = {
-    secondaryColor: l2,
     mutedColor: base,
     focusColor: d1,
     baseColor: l4,
@@ -102,7 +101,7 @@ const fontFamily = [
     '"Segoe UI Symbol"',
 ].join(",");
 
-const aceEditor = (theme: Theme) => ({
+const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_gutter": {
         background: blendLighten(theme.palette.background.paper, 0.1),
         color: theme.palette.text.secondary,
@@ -259,7 +258,7 @@ const globalStyles = (theme: Theme) => ({
         margin: 0,
         padding: 0,
         height: "100dvh",
-        color: custom.colors.secondaryColor,
+        color: theme.palette.text.primary,
         fontSize: "16px",
         overflow: "hidden",
         letterSpacing: "unset",
@@ -273,6 +272,7 @@ const globalStyles = (theme: Theme) => ({
         lineHeight: "inherit",
         boxShadow: "none",
         border: "none",
+        backgroundColor: theme.palette.background.paper,
         outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
         "&:focus, &:focus-within": {
             outline: `1px solid ${theme.palette.primary.main}`,
@@ -293,16 +293,6 @@ const globalStyles = (theme: Theme) => ({
         color: "inherit",
         font: "inherit",
         margin: 0,
-    },
-
-    button: {
-        color: custom.colors.secondaryColor,
-        lineHeight: 1.428571429,
-        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
-        ":hover": {
-            cursor: "pointer",
-            backgroundColor: theme.palette.action.hover,
-        },
     },
 
     a: {
@@ -341,7 +331,7 @@ const globalStyles = (theme: Theme) => ({
     "#nk-graph-main text": {
         ...theme.typography.body1,
     },
-    ...aceEditor(theme),
+    ...aceEditorStyles(theme),
 });
 
 const headerCommonStyle = {
@@ -370,6 +360,10 @@ export const nuTheme = createTheme({
         background: {
             paper: "#242F3E",
             default: "#131A25",
+        },
+        text: {
+            primary: "#ededed",
+            secondary: "#cccccc",
         },
         action: {
             hover: blendLighten("#242F3E", 0.15),

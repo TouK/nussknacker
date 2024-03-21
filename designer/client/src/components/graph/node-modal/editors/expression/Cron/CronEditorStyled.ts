@@ -1,5 +1,4 @@
 import { css, styled } from "@mui/material";
-import { alpha } from "../../../../../../containers/theme/helpers";
 import { blendLighten } from "../../../../../../containers/theme/nuTheme";
 
 export const CronEditorStyled = styled("div")(
@@ -20,9 +19,6 @@ export const CronEditorStyled = styled("div")(
             background-color: ${theme.palette.background.paper};
             outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border: none;
-            * {
-                color: ${theme.custom.colors.secondaryColor};
-            }
         }
         .well {
             display: flex;
@@ -132,7 +128,6 @@ export const CronEditorStyled = styled("div")(
             border-bottom: 0;
         }
         .cron_builder .nav-tabs > li.active > a {
-            color: ${theme.custom.colors.secondaryColor};
             border-bottom: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
         }
         .cron-builder-bg {

@@ -3,7 +3,6 @@ import React, { PropsWithChildren, useCallback, useRef } from "react";
 import { InputProps, ThemedInput } from "./ThemedInput";
 import { ClearIcon } from "../table/SearchFilter";
 import { useTheme } from "@mui/material";
-import { NodeInput } from "../withFocus";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;

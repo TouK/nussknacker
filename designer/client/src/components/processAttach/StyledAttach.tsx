@@ -1,4 +1,4 @@
-import { darken, lighten, styled } from "@mui/material";
+import { lighten, styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
 
 export const AddAttachmentsWrapper = styled("div")`

@@ -16,6 +16,7 @@ export const ThemedInput = forwardRef(function ThemedInput(
 ): JSX.Element {
     const theme = useTheme();
     const styles = css({
+        ...theme.typography.body1,
         "::placeholder": {
             color: alpha(theme.palette.text.secondary, 0.25),
             opacity: 1 /* Firefox */,

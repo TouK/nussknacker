@@ -73,8 +73,7 @@ export const NodeTableStyled = styled("div")(
             height: 35px;
             width: 100%;
             padding: 0 10px;
-            background-color: ${theme.palette.background.paper};
-            color: ${theme.custom.colors.secondaryColor};
+            color: ${theme.palette.text.primary};
             font-weight: 400;
             font-size: 14px;
         }

@@ -33,7 +33,7 @@ const StyledToolbox = styled("div")(({ theme }) => ({
 
         "&:hover": {
             backgroundColor: theme.palette.action.hover,
-            color: theme.custom.colors.secondaryColor,
+            color: theme.palette.text.primary,
         },
     },
 
@@ -42,7 +42,7 @@ const StyledToolbox = styled("div")(({ theme }) => ({
         margin: theme.spacing(0.5, 0, 0.5, 0),
         "&:hover": {
             backgroundColor: theme.palette.background.paper,
-            color: theme.custom.colors.secondaryColor,
+            color: theme.palette.text.primary,
         },
         "&-collapsed": {
             margin: 0,

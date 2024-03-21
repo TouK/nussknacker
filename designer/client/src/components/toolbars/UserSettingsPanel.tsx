@@ -4,7 +4,6 @@ import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { Typography, useTheme } from "@mui/material";
-import { blendLighten } from "../../containers/theme/nuTheme";
 
 export function UserSettingsPanel(): JSX.Element {
     const { t } = useTranslation();

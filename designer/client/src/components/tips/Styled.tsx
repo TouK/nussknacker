@@ -35,7 +35,7 @@ export const TipPanelStyled = styled("div")<{
     padding: theme.spacing(1, 1.25),
     fontWeight: "lighter",
     fontSize: "14px",
-    color: isHighlighted && theme.custom.colors.secondaryColor,
+    color: isHighlighted && theme.palette.text.primary,
     ...(isHighlighted && {
         outline: `2px solid ${theme.custom.colors.error}`,
         outlineOffset: "-2px",
