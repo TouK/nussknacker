@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.table.api.Expressions.$
+import org.apache.flink.api.common.functions.{AggregateFunction, FlatMapFunction}
+import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
+import org.apache.flink.table.api.Expressions.{$, call}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.api.internal.BaseExpressions
 import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions}
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -19,10 +21,11 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkCustomStreamTransformation
 }
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation._
+import pl.touk.nussknacker.engine.flink.table.utils.NestedRowConversions.ColumnFlinkSchema
+import pl.touk.nussknacker.engine.flink.table.utils.{NestedRowConversions, RowConversions}
 
-object TableAggregationFactory {
+object TableAggregation {
 
   val groupByParamName: ParameterName            = ParameterName("groupBy")
   val aggregateByParamName: ParameterName        = ParameterName("aggregateBy")
@@ -37,7 +40,7 @@ object TableAggregationFactory {
 
   private val aggregatorFunctionParam = {
     val aggregators = List(
-      FixedExpressionValue(s"'sum'", "sum")
+      FixedExpressionValue(s"'Sum'", "Sum")
     )
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
@@ -46,9 +49,12 @@ object TableAggregationFactory {
       )
   }
 
+  private val aggregateByInternalColumnName = "aggregateByInternalColumn"
+  private val groupByInternalColumnName     = "groupByInternalColumn"
+
 }
 
-class TableAggregationFactory
+class TableAggregation
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
@@ -95,39 +101,30 @@ class TableAggregationFactory
 
     FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       val env = start.getExecutionEnvironment
+      // Setting batch mode to enable global window operations. If source is unbounded it will throw a runtime exception
       env.setRuntimeMode(RuntimeExecutionMode.BATCH)
 
       val tableEnv = StreamTableEnvironment.create(env)
 
-      val streamOfRows = start.flatMap(new GroupByFunction(groupByLazyParam, aggregateByLazyParam, ctx))
-      streamOfRows.print()
+      val streamOfRows = start.flatMap(new LazyInterpreterFunction(groupByLazyParam, aggregateByLazyParam, ctx))
 
-      val table = tableEnv.fromDataStream(
-        streamOfRows,
-        Schema
-          .newBuilder()
-          .column(
-            "f0",
-            DataTypes.ROW(
-              DataTypes.FIELD(groupByParamName.value, groupByFlinkType),
-              DataTypes.FIELD(aggregateByParamName.value, aggregateByFlinkType)
-            )
-          )
-          .build()
+      val inputTable = NestedRowConversions.buildTableFromRowStream(
+        tableEnv = tableEnv,
+        streamOfRows = streamOfRows,
+        columnSchema = List(
+          ColumnFlinkSchema(groupByInternalColumnName, groupByFlinkType),
+          ColumnFlinkSchema(aggregateByInternalColumnName, aggregateByFlinkType)
+        )
       )
 
-      val flattened = table.select(
-        $("f0").get(groupByParamName.value).as(groupByParamName.value),
-        $("f0").get(aggregateByParamName.value).as(aggregateByParamName.value),
-      )
-
-      val groupedTable = flattened
-        .groupBy($(groupByParamName.value))
+      val groupedTable = inputTable
+        .groupBy($(groupByInternalColumnName))
         .select(
-          $(groupByParamName.value),
-          $(aggregateByParamName.value).sum().as("aggregatedSum")
+          $(groupByInternalColumnName),
+          $(aggregateByInternalColumnName).sum().as("aggregatedSum")
         )
 
+      // TODO local: pass aggregated value and key as separate vars
       val groupedStream = tableEnv.toDataStream(groupedTable)
 
       val groupedStreamOfMaps = groupedStream
@@ -144,34 +141,34 @@ class TableAggregationFactory
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
-}
+  private class LazyInterpreterFunction(
+      groupByParam: LazyParameter[AnyRef],
+      aggregateByParam: LazyParameter[AnyRef],
+      customNodeContext: FlinkCustomNodeContext
+  ) extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper)
+      with FlatMapFunction[Context, Row] {
 
-class GroupByFunction(
-    groupByParam: LazyParameter[AnyRef],
-    aggregateByParam: LazyParameter[AnyRef],
-    customNodeContext: FlinkCustomNodeContext
-) extends AbstractLazyParameterInterpreterFunction(customNodeContext.lazyParameterHelper)
-    with FlatMapFunction[Context, Row] {
+    private lazy val evaluateGroupBy          = toEvaluateFunctionConverter.toEvaluateFunction(groupByParam)
+    private lazy val evaluateAggregateByParam = toEvaluateFunctionConverter.toEvaluateFunction(aggregateByParam)
 
-  private lazy val evaluateGroupBy          = toEvaluateFunctionConverter.toEvaluateFunction(groupByParam)
-  private lazy val evaluateAggregateByParam = toEvaluateFunctionConverter.toEvaluateFunction(aggregateByParam)
+    /*
+     Has to out Rows?
+     Otherwise org.apache.flink.util.FlinkRuntimeException: Error during input conversion from external DataStream API to
+     internal Table API data structures. Make sure that the provided data types that configure the converters are
+     correctly declared in the schema.
+     */
+    override def flatMap(context: Context, out: Collector[Row]): Unit = {
+      collectHandlingErrors(context, out) {
+        val evaluatedGroupBy     = evaluateGroupBy(context)
+        val evaluatedAggregateBy = evaluateAggregateByParam(context)
 
-  /*
-   Has to out Rows?
-   Otherwise org.apache.flink.util.FlinkRuntimeException: Error during input conversion from external DataStream API to
-   internal Table API data structures. Make sure that the provided data types that configure the converters are
-   correctly declared in the schema.
-   */
-  override def flatMap(context: Context, out: Collector[Row]): Unit = {
-    collectHandlingErrors(context, out) {
-      val evaluatedGroupBy     = evaluateGroupBy(context)
-      val evaluatedAggregateBy = evaluateAggregateByParam(context)
-
-      val row = Row.withNames()
-      row.setField(groupByParamName.value, evaluatedGroupBy)
-      row.setField(aggregateByParamName.value, evaluatedAggregateBy)
-      row
+        val row = Row.withNames()
+        row.setField(groupByInternalColumnName, evaluatedGroupBy)
+        row.setField(aggregateByInternalColumnName, evaluatedAggregateBy)
+        row
+      }
     }
+
   }
 
 }
