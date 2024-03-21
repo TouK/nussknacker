@@ -30,18 +30,6 @@ export const NodeTableStyled = styled("div")(
                 overflow: hidden;
                 height: auto;
             }
-            textarea:-moz-read-only {
-                background-color: ${theme.custom.colors.tundora};
-            }
-            textarea:read-only {
-                background-color: ${theme.custom.colors.tundora};
-            }
-            input:-moz-read-only {
-                background-color: ${theme.custom.colors.tundora};
-            }
-            input:read-only {
-                background-color: ${theme.custom.colors.tundora} !important;
-            }
             ${customCheckbox("20px", theme)};
             input[type="checkbox"] {
                 margin-top: 7px;
@@ -104,22 +92,6 @@ export const NodeTableStyled = styled("div")(
             &.focused {
                 outline: 1px solid ${theme.palette.primary.main};
                 outline-offset: -1px;
-            }
-        }
-        .node-input:-moz-disabled {
-            background-color: ${theme.custom.colors.tundora};
-        }
-        .node-input:disabled {
-            background-color: ${theme.custom.colors.tundora};
-        }
-        .read-only {
-            background-color: ${theme.custom.colors.tundora};
-            span {
-                margin-top: 10px;
-                font-size: 15px;
-                &:hover {
-                    cursor: pointer;
-                }
             }
         }
         .node-group {

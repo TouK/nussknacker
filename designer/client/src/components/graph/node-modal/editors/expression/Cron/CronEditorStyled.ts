@@ -4,7 +4,7 @@ import { blendLighten } from "../../../../../../containers/theme/nuTheme";
 
 export const CronEditorStyled = styled("div")(
     ({ theme }) => css`
-        width: 70%;
+        width: 100%;
         .cron_builder_bordering {
             border-radius: none;
             border: none;
@@ -57,17 +57,16 @@ export const CronEditorStyled = styled("div")(
                     &:hover,
                     &:focus {
                         text-decoration: none;
-                        background-color: ${theme.custom.colors.gallery};
                     }
                 }
 
                 // Disabled state sets text to gray and nukes hover/tab effects
                 &.disabled > a {
-                    color: ${theme.custom.colors.boulder};
+                    color: ${theme.palette.action.disabled};
 
                     &:hover,
                     &:focus {
-                        color: ${theme.custom.colors.boulder};
+                        color: ${theme.palette.action.disabled};
                         text-decoration: none;
                         cursor: not-allowed;
                         background-color: transparent;
@@ -109,7 +108,6 @@ export const CronEditorStyled = styled("div")(
             vertical-align: bottom;
             margin: 8px 0 0 0;
             transform: scale(1.2);
-            background-color: ${theme.custom.colors.revolver};
             -moz-appearance: none;
         }
         .nav-tabs > li > a {
@@ -132,7 +130,6 @@ export const CronEditorStyled = styled("div")(
             border-left: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-top: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)};
             border-bottom: 0;
-            color: ${theme.custom.colors.dustyGray};
         }
         .cron_builder .nav-tabs > li.active > a {
             color: ${theme.custom.colors.secondaryColor};

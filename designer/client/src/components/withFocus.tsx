@@ -46,9 +46,7 @@ export function SelectWithFocus({
     className,
     ...props
 }: DetailedHTMLProps<SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>): JSX.Element {
-    const withFocus = useFocus();
-
-    return <select {...props} className={cx(withFocus, className)} />;
+    return <select {...props} className={cx(className)} />;
 }
 
 export const SelectNodeWithFocus = styled(SelectWithFocus)(
