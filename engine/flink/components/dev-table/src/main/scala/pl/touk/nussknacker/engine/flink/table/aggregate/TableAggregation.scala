@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.table.api.Expressions.{$, rowInterval}
+import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{DataTypes, Schema, Tumble}
+import org.apache.flink.table.api.{DataTypes, Schema}
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -94,6 +95,7 @@ class TableAggregationFactory
 
     FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       val env = start.getExecutionEnvironment
+      env.setRuntimeMode(RuntimeExecutionMode.BATCH)
 
       val tableEnv = StreamTableEnvironment.create(env)
 
@@ -111,24 +113,16 @@ class TableAggregationFactory
               DataTypes.FIELD(aggregateByParamName.value, aggregateByFlinkType)
             )
           )
-          .columnByExpression("proctime", "PROCTIME()")
           .build()
       )
-      table.printSchema()
 
       val flattened = table.select(
         $("f0").get(groupByParamName.value).as(groupByParamName.value),
         $("f0").get(aggregateByParamName.value).as(aggregateByParamName.value),
-        $("proctime")
       )
-      flattened.printSchema()
-
-      // Hardcoded window every 2 rows - this is only for it to work for Unbounded streams for PoC
-      val tumble = Tumble.over(rowInterval(2)).on($("proctime")).as("w")
 
       val groupedTable = flattened
-        .window(tumble)
-        .groupBy($(groupByParamName.value), $("w"))
+        .groupBy($(groupByParamName.value))
         .select(
           $(groupByParamName.value),
           $(aggregateByParamName.value).sum().as("aggregatedSum")
