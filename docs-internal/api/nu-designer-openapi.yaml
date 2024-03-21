@@ -150,137 +150,6 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/processDefinitionData/{processingType}/dicts/{dictId}/entry:
-    get:
-      tags:
-      - Dictionary
-      summary: Get list of dictionary entries matching the label pattern
-      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
-      parameters:
-      - name: processingType
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: dictId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: label
-        in: query
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DictEntry'
-        '400':
-          description: 'Invalid value for: query parameter label'
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-      security:
-      - {}
-      - httpAuth: []
-  /api/processDefinitionData/{processingType}/dicts:
-    post:
-      tags:
-      - Dictionary
-      summary: Get list of available dictionaries with value type compatible with
-        expected type
-      operationId: postApiProcessdefinitiondataProcessingtypeDicts
-      parameters:
-      - name: processingType
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DictListRequestDto'
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DictListElementDto'
-        '400':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-      security:
-      - {}
-      - httpAuth: []
   /api/app/healthCheck:
     get:
       tags:
@@ -562,6 +431,137 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts/{dictId}/entry:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: query parameter label'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts:
+    post:
+      tags:
+      - Dictionary
+      summary: Get list of available dictionaries with value type compatible with
+        expected type
+      operationId: postApiProcessdefinitiondataProcessingtypeDicts
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DictListRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - {}
       - httpAuth: []
@@ -1685,6 +1685,13 @@ components:
           type: string
         valueType:
           $ref: '#/components/schemas/TypedTaggedValue'
+    DictDto:
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          type: string
     DictEntry:
       required:
       - key
@@ -1694,13 +1701,6 @@ components:
         key:
           type: string
         label:
-          type: string
-    DictListElementDto:
-      required:
-      - dictId
-      type: object
-      properties:
-        dictId:
           type: string
     DictListRequestDto:
       required:
