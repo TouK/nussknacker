@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation
 
 object FlinkTableAggregationComponentProvider extends ComponentProvider with LazyLogging {
 
@@ -22,7 +22,7 @@ object FlinkTableAggregationComponentProvider extends ComponentProvider with Laz
 
   val components: List[ComponentDefinition] = ComponentDefinition(
     "aggregate",
-    new TableAggregationFactory()
+    new TableAggregation()
   ) :: Nil
 
 }

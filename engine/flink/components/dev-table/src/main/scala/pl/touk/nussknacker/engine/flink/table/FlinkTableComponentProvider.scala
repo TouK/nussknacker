@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation
 import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
@@ -49,7 +49,7 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
       new TableSinkFactory(definition)
     ) :: ComponentDefinition(
       "aggregate",
-      new TableAggregationFactory()
+      new TableAggregation()
     ) :: Nil
   }
 
