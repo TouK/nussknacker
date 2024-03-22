@@ -6,8 +6,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.devmodel.TableAggregationTest.TestRecord
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.FlinkTableAggregationComponentProvider
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
@@ -22,7 +22,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   test("should emit groupBy key and aggregated values as separate variables") {
     val runner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .withExtraComponents(FlinkTableAggregationComponentProvider.components)
+      .withExtraComponents(FlinkTableComponentProvider.configIndependentComponents)
       .build()
 
     val scenario = ScenarioBuilder
@@ -32,9 +32,9 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         "aggregate",
         "agg",
         "aggregate",
-        TableAggregation.groupByParamName.value            -> "#input.someKey",
-        TableAggregation.aggregateByParamName.value        -> "#input.someAmount",
-        TableAggregation.aggregatorFunctionParamName.value -> "'Sum'",
+        TableAggregationFactory.groupByParamName.value            -> "#input.someKey",
+        TableAggregationFactory.aggregateByParamName.value        -> "#input.someAmount",
+        TableAggregationFactory.aggregatorFunctionParamName.value -> "'Sum'",
       )
       .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "{#key, #agg}")
 
