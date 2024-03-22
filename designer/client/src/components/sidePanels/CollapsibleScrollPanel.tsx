@@ -5,7 +5,7 @@ import ErrorBoundary from "../common/ErrorBoundary";
 import { ScrollPanelContent } from "./SidePanelStyled";
 import { PanelSide } from "./SidePanel";
 import { styled } from "@mui/material";
-import { DRAGGABLE_CLASSNAME, DRAGGABLE_LIST_CLASSNAME, DRAGGING_CLASSNAME } from "../toolbarComponents/ToolbarsContainer";
+import { DRAGGABLE_CLASSNAME, DRAGGABLE_LIST_CLASSNAME } from "../toolbarComponents/ToolbarsContainer";
 import { TOOLBAR_WRAPPER_CLASSNAME } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 
 export type CollapsibleScrollPanelProps = PropsWithChildren<{
@@ -30,50 +30,30 @@ const CollapsibleScrollPanel = forwardRef<HTMLDivElement, CollapsibleScrollPanel
 
 export const StyledCollapsibleScrollPanel = styled(CollapsibleScrollPanel)(({ theme, side }) => {
     const TOOLBARS_GAP = theme.spacing(0.375);
-    return [
-        {
-            [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
-                alignItems: side === PanelSide.Left ? "flex-start" : "flex-end",
+    return {
+        [`.${DRAGGABLE_LIST_CLASSNAME}`]: {
+            alignItems: side === PanelSide.Left ? "flex-start" : "flex-end",
+        },
+        [`.${DRAGGABLE_CLASSNAME}`]: {
+            padding: `calc(${TOOLBARS_GAP} / 2) 0`,
+
+            "&:first-of-type": {
+                paddingTop: 0,
             },
-            [`.${DRAGGABLE_CLASSNAME}`]: {
-                [`&.${DRAGGING_CLASSNAME}:focus`]: {
-                    outline: "none",
-                },
 
-                "&:focus": {
-                    outline: "4px solid ${theme.custom.colors.deepskyblue}",
-                    outlineOffset: -4,
-                },
-
-                [`.${TOOLBAR_WRAPPER_CLASSNAME}`]: {
-                    position: "relative",
-                    boxSizing: "border-box",
-                    overflow: "hidden",
-                },
+            "&:last-of-type": {
+                paddingBottom: 0,
             },
-            [`.${DRAGGABLE_CLASSNAME}`]: {
-                padding: `calc(${TOOLBARS_GAP} / 2) 0`,
 
-                "&:first-of-type": {
-                    paddingTop: 0,
-                },
-
-                "&:last-child": {
-                    paddingBottom: 0,
-                },
-            },
-            [`.${DRAGGABLE_CLASSNAME}`]: {
-                [`.${TOOLBAR_WRAPPER_CLASSNAME}`]:
-                    side === PanelSide.Left
-                        ? {
-                              borderBottomRightRadius: TOOLBARS_GAP,
-                              borderTopRightRadius: TOOLBARS_GAP,
-                          }
-                        : {
-                              borderBottomLeftRadius: TOOLBARS_GAP,
-                              borderTopLeftRadius: TOOLBARS_GAP,
-                          },
+            [`.${TOOLBAR_WRAPPER_CLASSNAME}`]: {
+                position: "relative",
+                boxSizing: "border-box",
+                overflow: "hidden",
+                borderBottomRightRadius: side === PanelSide.Left ? 0 : TOOLBARS_GAP,
+                borderTopRightRadius: side === PanelSide.Left ? 0 : TOOLBARS_GAP,
+                borderBottomLeftRadius: side === PanelSide.Left ? TOOLBARS_GAP : 0,
+                borderTopLeftRadius: side === PanelSide.Left ? TOOLBARS_GAP : 0,
             },
         },
-    ];
+    };
 });
