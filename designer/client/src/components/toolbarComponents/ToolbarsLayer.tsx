@@ -40,28 +40,30 @@ function ToolbarsLayer(props: { toolbars: Toolbar[]; configId: string }): JSX.El
     return (
         <DragAndDropContainer onMove={onMove}>
             <SidePanel side={PanelSide.Left}>
-                <TopToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} />
-                <BottomToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} />
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} />
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} />
             </SidePanel>
 
             <SidePanel side={PanelSide.Right}>
-                <TopToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} />
-                <BottomToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} />
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} />
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} />
             </SidePanel>
         </DragAndDropContainer>
     );
 }
 
-const PaddedToolbarsContainer = styled(ToolbarsContainer)(({ theme }) => ({
-    padding: `calc(${theme.spacing(0.375)} / 2) 0`,
-}));
-
-const BottomToolbarsContainer = styled(PaddedToolbarsContainer)({
-    paddingBottom: 0,
-});
-
-const TopToolbarsContainer = styled(PaddedToolbarsContainer)({
-    paddingTop: 0,
+const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
+    const padding = `calc(${theme.spacing(0.375)} / 2)`;
+    switch (side) {
+        case ToolbarsSide.TopLeft:
+        case ToolbarsSide.TopRight:
+            return { paddingBottom: padding };
+        case ToolbarsSide.BottomLeft:
+        case ToolbarsSide.BottomRight:
+            return { paddingTop: padding };
+        default:
+            return { paddingTop: padding, paddingBottom: padding };
+    }
 });
 
 export default ToolbarsLayer;

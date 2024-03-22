@@ -22,50 +22,46 @@ import { alpha } from "../../containers/theme/helpers";
 import { TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
 
 export const StyledDraggableItem = styled("div")(({ theme }) => ({
-    [`&.${DRAGGING_OVER_CLASSNAME}`]: {
-        opacity: 1,
-        "::after": {
-            transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
-            content: "''",
-            lineHeight: 0,
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backdropFilter: "none",
-            background: alpha(theme.palette.primary.main, 0.25),
-            outline: `2px solid ${theme.palette.primary.main}`,
-            outlineOffset: -2.5,
-            mixBlendMode: "color",
-        },
-    },
-
     [`&.${DRAGGING_CLASSNAME}`]: {
         backdropFilter: "blur(2px)",
-        transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
+
         "& > *": {
             transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
             opacity: 0.5,
         },
+
         "::after": {
             mixBlendMode: "color",
             transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
             content: "''",
             lineHeight: 0,
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             backdropFilter: "blur(0.5px)",
-            outline: `2px dashed ${theme.palette.error.main}`,
             background: alpha(theme.palette.error.main, 0.25),
+            outline: `2px dashed ${theme.palette.error.main}`,
             outlineOffset: -3,
+        },
+
+        ":focus, *:focus": {
+            outline: "none",
         },
     },
 
-    "&.is-animating": {
+    [`&.${DRAGGING_OVER_CLASSNAME}`]: {
+        "& > *": {
+            opacity: 1,
+        },
+
+        "::after": {
+            backdropFilter: "none",
+            background: alpha(theme.palette.primary.main, 0.25),
+            outline: `4px solid ${theme.palette.primary.main}`,
+            outlineOffset: -2,
+        },
+    },
+
+    [`&.${ANIMATING_CLASSNAME}`]: {
         ".content": {
             opacity: 1,
         },
@@ -123,7 +119,8 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                 <DragHandlerContext.Provider value={p.dragHandleProps}>
                     <StyledDraggableItem
                         className={cx(
-                            s.draggingOver ? DRAGGING_OVER_CLASSNAME : s.isDragging && DRAGGING_CLASSNAME,
+                            s.isDragging && DRAGGING_CLASSNAME,
+                            s.draggingOver && DRAGGING_OVER_CLASSNAME,
                             s.isDropAnimating && ANIMATING_CLASSNAME,
                         )}
                     >
@@ -157,7 +154,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                             </Draggable>
                         );
                     })}
-                    {s.isDraggingOver && p.placeholder}
+                    {p.placeholder && <Placeholder>{p.placeholder}</Placeholder>}
                 </DraggableList>
             </DroppableContainer>
         ),
@@ -182,3 +179,4 @@ const DraggableList = styled("div")({
         flexDirection: "column",
     },
 });
+const Placeholder = styled("div")({});
