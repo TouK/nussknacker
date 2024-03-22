@@ -1524,13 +1524,6 @@ components:
           format: date-time
     BoolParameterEditor:
       type: object
-    BranchEndData:
-      required:
-      - definition
-      type: object
-      properties:
-        definition:
-          $ref: '#/components/schemas/BranchEndDefinition'
     BranchEndDefinition:
       required:
       - id
@@ -1709,26 +1702,6 @@ components:
           $ref: '#/components/schemas/ProcessAction'
     CronParameterEditor:
       type: object
-    CustomNode:
-      required:
-      - id
-      - nodeType
-      type: object
-      properties:
-        id:
-          type: string
-        outputVar:
-          type:
-          - string
-          - 'null'
-        nodeType:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     DataToRefresh:
       type: string
       enum:
@@ -1824,21 +1797,6 @@ components:
       - $ref: '#/components/schemas/FragmentOutput'
       - $ref: '#/components/schemas/NextSwitch'
       - $ref: '#/components/schemas/SwitchDefault'
-    Enricher:
-      required:
-      - id
-      - service
-      - output
-      type: object
-      properties:
-        id:
-          type: string
-        service:
-          $ref: '#/components/schemas/ServiceRef'
-        output:
-          type: string
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     Expression:
       required:
       - language
@@ -1901,22 +1859,6 @@ components:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
-    Filter:
-      required:
-      - id
-      - expression
-      type: object
-      properties:
-        id:
-          type: string
-        expression:
-          $ref: '#/components/schemas/Expression'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     FilterFalse:
       type: object
     FilterTrue:
@@ -1945,41 +1887,6 @@ components:
       properties:
         refClazzName:
           type: string
-    FragmentInput:
-      required:
-      - id
-      - ref
-      type: object
-      properties:
-        id:
-          type: string
-        ref:
-          $ref: '#/components/schemas/FragmentRef'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        fragmentParams:
-          type:
-          - array
-          - 'null'
-          items:
-            $ref: '#/components/schemas/FragmentParameter'
-    FragmentInputDefinition:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/FragmentParameter'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     FragmentOutput:
       required:
       - name
@@ -1987,22 +1894,6 @@ components:
       properties:
         name:
           type: string
-    FragmentOutputDefinition:
-      required:
-      - id
-      - outputName
-      type: object
-      properties:
-        id:
-          type: string
-        outputName:
-          type: string
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     FragmentOutputVarDefinition:
       required:
       - name
@@ -2062,6 +1953,7 @@ components:
         nodeId:
           type: string
     FragmentUsageOutput:
+      title: FragmentUsageOutput
       required:
       - id
       - outputName
@@ -2109,30 +2001,6 @@ components:
           - 'null'
           items:
             type: string
-    Join:
-      required:
-      - id
-      - nodeType
-      type: object
-      properties:
-        id:
-          type: string
-        outputVar:
-          type:
-          - string
-          - 'null'
-        nodeType:
-          type: string
-        parameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/Parameter'
-        branchParameters:
-          type: array
-          items:
-            $ref: '#/components/schemas/BranchParameters'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     JsonParameterEditor:
       type: object
     LayoutData:
@@ -2147,6 +2015,18 @@ components:
         y:
           type: integer
           format: int64
+    List_Field:
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/Field'
+    List_FragmentParameter:
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/FragmentParameter'
     Map_EngineSetupName_List_String:
       type: object
       additionalProperties:
@@ -2201,24 +2081,340 @@ components:
       properties:
         condition:
           $ref: '#/components/schemas/Expression'
+    Nil:
+      type: object
     NodeData:
       oneOf:
-      - $ref: '#/components/schemas/BranchEndData'
-      - $ref: '#/components/schemas/CustomNode'
-      - $ref: '#/components/schemas/Enricher'
-      - $ref: '#/components/schemas/Filter'
-      - $ref: '#/components/schemas/FragmentInput'
-      - $ref: '#/components/schemas/FragmentInputDefinition'
-      - $ref: '#/components/schemas/FragmentOutputDefinition'
       - $ref: '#/components/schemas/FragmentUsageOutput'
-      - $ref: '#/components/schemas/Join'
-      - $ref: '#/components/schemas/Processor'
-      - $ref: '#/components/schemas/Sink'
-      - $ref: '#/components/schemas/Source'
-      - $ref: '#/components/schemas/Split'
-      - $ref: '#/components/schemas/Switch'
       - $ref: '#/components/schemas/Variable'
       - $ref: '#/components/schemas/VariableBuilder'
+      - title: BranchEndData
+        required:
+        - definition
+        type: object
+        properties:
+          definition:
+            $ref: '#/components/schemas/BranchEndDefinition'
+      - title: CustomNode
+        required:
+        - id
+        - nodeType
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          nodeType:
+            type: string
+          outputVar:
+            type:
+            - string
+            - 'null'
+          parameters:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          type:
+            $ref: '#/components/schemas/NodeTypes'
+      - title: Enricher
+        required:
+        - id
+        - output
+        - service
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          output:
+            type: string
+          service:
+            $ref: '#/components/schemas/ServiceRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes1'
+      - title: Filter
+        required:
+        - expression
+        - id
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          expression:
+            $ref: '#/components/schemas/Expression'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          type:
+            $ref: '#/components/schemas/NodeTypes2'
+      - title: FragmentInput
+        required:
+        - id
+        - ref
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          fragmentParams:
+            type:
+            - array
+            - 'null'
+            items:
+              $ref: '#/components/schemas/FragmentParameter'
+          ref:
+            $ref: '#/components/schemas/FragmentRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes3'
+      - title: FragmentInputDefinition
+        required:
+        - id
+        - parameters
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          id:
+            type: string
+          parameters:
+            $ref: '#/components/schemas/List_FragmentParameter'
+          type:
+            $ref: '#/components/schemas/NodeTypes4'
+      - title: FragmentOutputDefinition
+        required:
+        - id
+        - fields
+        - outputName
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          id:
+            type: string
+          fields:
+            $ref: '#/components/schemas/List_Field'
+          outputName:
+            type: string
+          type:
+            $ref: '#/components/schemas/NodeTypes5'
+      - title: Join
+        required:
+        - id
+        - nodeType
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParameters:
+            type: array
+            items:
+              $ref: '#/components/schemas/BranchParameters'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          nodeType:
+            type: string
+          outputVar:
+            type:
+            - string
+            - 'null'
+          parameters:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          type:
+            $ref: '#/components/schemas/NodeTypes6'
+      - title: Processor
+        required:
+        - id
+        - service
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          service:
+            $ref: '#/components/schemas/ServiceRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes7'
+      - title: Sink
+        required:
+        - id
+        - ref
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          ref:
+            $ref: '#/components/schemas/SinkRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes8'
+      - title: Source
+        required:
+        - id
+        - type
+        - ref
+        type: object
+        properties:
+          id:
+            type: string
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          type:
+            $ref: '#/components/schemas/NodeTypes9'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          ref:
+            $ref: '#/components/schemas/SourceRef'
+      - title: Split
+        required:
+        - id
+        - type
+        type: object
+        properties:
+          id:
+            type: string
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          type:
+            $ref: '#/components/schemas/NodeTypes10'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+      - title: Switch
+        required:
+        - id
+        - type
+        type: object
+        properties:
+          additionalFields:
+            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          expression:
+            $ref: '#/components/schemas/Expression'
+          exprVal:
+            type:
+            - string
+            - 'null'
+          id:
+            type: string
+          type:
+            $ref: '#/components/schemas/NodeTypes11'
+    NodeTypes:
+      type: string
+      enum:
+      - CustomNode
+    NodeTypes1:
+      type: string
+      enum:
+      - Enricher
+    NodeTypes10:
+      type: string
+      enum:
+      - Split
+    NodeTypes11:
+      type: string
+      enum:
+      - Switch
+    NodeTypes12:
+      type: string
+      enum:
+      - Variable
+    NodeTypes13:
+      type: string
+      enum:
+      - VariableBuilder
+    NodeTypes2:
+      type: string
+      enum:
+      - Filter
+    NodeTypes3:
+      type: string
+      enum:
+      - FragmentInput
+    NodeTypes4:
+      type: string
+      enum:
+      - FragmentInputDefinition
+    NodeTypes5:
+      type: string
+      enum:
+      - FragmentOutputDefinition
+    NodeTypes6:
+      type: string
+      enum:
+      - Join
+    NodeTypes7:
+      type: string
+      enum:
+      - Processor
+    NodeTypes8:
+      type: string
+      enum:
+      - Sink
+    NodeTypes9:
+      type: string
+      enum:
+      - Source
     NodeUsageData:
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
@@ -2522,22 +2718,6 @@ components:
       properties:
         additionalFields:
           $ref: '#/components/schemas/ProcessAdditionalFields'
-    Processor:
-      required:
-      - id
-      - service
-      type: object
-      properties:
-        id:
-          type: string
-        service:
-          $ref: '#/components/schemas/ServiceRef'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     PropertiesValidationRequestDto:
       required:
       - additionalFields
@@ -2627,24 +2807,6 @@ components:
       - $ref: '#/components/schemas/TypedObjectTypingResult'
       - $ref: '#/components/schemas/TypedObjectWithValue'
       - $ref: '#/components/schemas/TypedTaggedValue'
-    Sink:
-      required:
-      - id
-      - ref
-      type: object
-      properties:
-        id:
-          type: string
-        ref:
-          $ref: '#/components/schemas/SinkRef'
-        legacyEndResultExpression:
-          $ref: '#/components/schemas/Expression'
-        isDisabled:
-          type:
-          - boolean
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SinkRef:
       required:
       - typ
@@ -2656,18 +2818,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
-    Source:
-      required:
-      - id
-      - ref
-      type: object
-      properties:
-        id:
-          type: string
-        ref:
-          $ref: '#/components/schemas/SourceRef'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SourceRef:
       required:
       - typ
@@ -2681,15 +2831,6 @@ components:
             $ref: '#/components/schemas/Parameter'
     SpelTemplateParameterEditor:
       type: object
-    Split:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SqlParameterEditor:
       type: object
     Status:
@@ -2702,21 +2843,6 @@ components:
       - ERROR
     StringParameterEditor:
       type: object
-    Switch:
-      required:
-      - id
-      type: object
-      properties:
-        id:
-          type: string
-        expression:
-          $ref: '#/components/schemas/Expression'
-        exprVal:
-          type:
-          - string
-          - 'null'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     SwitchDefault:
       type: object
     TabularTypedDataEditor:
@@ -2989,36 +3115,48 @@ components:
         allowOtherValue:
           type: boolean
     Variable:
+      title: Variable
       required:
       - id
+      - type
       - varName
       - value
       type: object
       properties:
         id:
           type: string
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+        type:
+          $ref: '#/components/schemas/NodeTypes12'
         varName:
           type: string
         value:
           $ref: '#/components/schemas/Expression'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     VariableBuilder:
+      title: VariableBuilder
       required:
       - id
+      - type
       - varName
       type: object
       properties:
+        additionalFields:
+          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+        branchParametersTemplate:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
         id:
-          type: string
-        varName:
           type: string
         fields:
           type: array
           items:
             $ref: '#/components/schemas/Field'
-        additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+        type:
+          $ref: '#/components/schemas/NodeTypes13'
+        varName:
+          type: string
     VersionId:
       required:
       - value
