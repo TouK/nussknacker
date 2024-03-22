@@ -22,7 +22,7 @@ export function UserSettingsPanel(): JSX.Element {
                     multiValue: (base) => ({
                         ...base,
                         width: "100%",
-                        backgroundColor: theme.palette.success.main,
+                        backgroundColor: theme.palette.success.dark,
                         cursor: "pointer",
                     }),
                     multiValueLabel: (base) => ({ ...base, width: "100%", fontWeight: "bold", color: theme.palette.text.secondary }),

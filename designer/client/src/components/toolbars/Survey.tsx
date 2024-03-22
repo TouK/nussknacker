@@ -5,6 +5,7 @@ import { SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { Button, Stack, Typography, useTheme } from "@mui/material";
 import { useWindows, WindowKind } from "../../windowManager";
 import { useSurvey } from "./useSurvey";
+import { blendDarken, blendLighten } from "../../containers/theme/nuTheme";
 
 function Survey(): JSX.Element {
     const { t } = useTranslation();
@@ -36,10 +37,10 @@ function Survey(): JSX.Element {
                 <Stack p={1} spacing={0.5}>
                     <Typography variant="body2">{survey.text}</Typography>
                     <Stack direction="row" spacing={1}>
-                        <Button size="small" variant="text" onClick={onOpen}>
+                        <Button size="small" sx={(theme) => ({ color: theme.palette.success.main })} variant="text" onClick={onOpen}>
                             {t("panels.survey.ok", "let's go!")}
                         </Button>
-                        <Button size="small" variant="text" onClick={hideSurvey}>
+                        <Button size="small" sx={(theme) => ({ color: theme.palette.success.main })} variant="text" onClick={hideSurvey}>
                             {t("panels.survey.no", "close")}
                         </Button>
                     </Stack>

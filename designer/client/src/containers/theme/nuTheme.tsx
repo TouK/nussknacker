@@ -85,6 +85,7 @@ export const nuTheme = createTheme({
         },
         success: {
             main: `#80D880`,
+            dark: `#206920`,
             contrastText: `#FFFFFF`,
         },
         background: {
