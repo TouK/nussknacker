@@ -11,6 +11,7 @@ import { SearchIcon } from "../../table/SearchFilter";
 import { Focusable, InputWithIcon } from "../../themed/InputWithIcon";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchResults } from "./SearchResults";
+import { useTheme } from "@mui/material";
 
 export function SearchPanel(): ReactElement {
     const { t } = useTranslation();
@@ -36,6 +37,7 @@ export function SearchPanel(): ReactElement {
 
     const searchRef = useRef<Focusable>();
     const sidePanel = useSidePanel();
+    const theme = useTheme();
 
     useDocumentListeners({
         keydown: (e) => {
@@ -58,7 +60,9 @@ export function SearchPanel(): ReactElement {
                         sidePanel.onToggle();
                     }
                     dispatch(toggleToolbar(id, toolbarsConfigId, false));
-                    searchRef.current?.focus();
+                    setTimeout(() => {
+                        searchRef.current.focus();
+                    }, theme.transitions.duration.standard);
                     break;
                 }
             }
