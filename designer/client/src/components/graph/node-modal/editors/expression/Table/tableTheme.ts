@@ -1,5 +1,6 @@
 import { DataEditorProps } from "@glideapps/glide-data-grid";
 import { alpha, darken, getLuminance, lighten, useTheme } from "@mui/material";
+import { blendDarken } from "../../../../../../containers/theme/nuTheme";
 
 export const useTableTheme = (): DataEditorProps["theme"] => {
     const theme = useTheme();
@@ -7,7 +8,7 @@ export const useTableTheme = (): DataEditorProps["theme"] => {
     const text = theme.palette.getContrastText(bgCell);
     const bgIconHeader = text;
     const textHeader = getLuminance(text) > 0.5 ? darken(text, 0.2) : lighten(text, 0.2);
-    const bgHeader = theme.custom.colors.emperor;
+    const bgHeader = blendDarken(bgCell, 0.15);
     const bgCellMedium = getLuminance(bgCell) > 0.5 ? darken(bgCell, 0.1) : lighten(bgCell, 0.1);
     const accentColor = theme.palette.primary.main;
     return {

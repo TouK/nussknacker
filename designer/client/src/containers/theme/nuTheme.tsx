@@ -45,7 +45,6 @@ const colors = {
     yellowOrange: "#fbb03b",
     scooter: "#46bfdb",
     nobel: "#b5b5b5",
-    emperor: "#555555",
 };
 
 const custom = {
