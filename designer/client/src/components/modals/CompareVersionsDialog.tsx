@@ -12,7 +12,7 @@ import { getProcessName, getProcessVersionId, getVersions } from "../../reducers
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
-import { SelectNodeWithFocus } from "../withFocus";
+import { SelectNode } from "../FormElements";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
@@ -163,7 +163,7 @@ const VersionsForm = () => {
         <>
             <FormControl>
                 <FormLabel>Version to compare</FormLabel>
-                <SelectNodeWithFocus
+                <SelectNode
                     autoFocus={true}
                     id="otherVersion"
                     className="selectNode"
@@ -175,13 +175,13 @@ const VersionsForm = () => {
                         .filter((currentVersion) => version !== currentVersion.processVersionId)
                         .map((version) => createVersionElement(version))}
                     {state.remoteVersions.map((version) => createVersionElement(version, remotePrefix))}
-                </SelectNodeWithFocus>
+                </SelectNode>
             </FormControl>
             {state.otherVersion ? (
                 <div>
                     <FormControl>
                         <FormLabel>Difference to pick</FormLabel>
-                        <SelectNodeWithFocus
+                        <SelectNode
                             id="differentVersion"
                             className="selectNode"
                             value={state.currentDiffId || ""}
@@ -196,7 +196,7 @@ const VersionsForm = () => {
                                     </option>
                                 );
                             })}
-                        </SelectNodeWithFocus>
+                        </SelectNode>
                     </FormControl>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
                 </div>

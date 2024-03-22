@@ -34,7 +34,7 @@ export function ClearIcon(): JSX.Element {
                 flex,
                 css({
                     path: {
-                        fill: theme.custom.colors.mutedColor,
+                        fill: theme.palette.text.secondary,
                     },
                 }),
             )}

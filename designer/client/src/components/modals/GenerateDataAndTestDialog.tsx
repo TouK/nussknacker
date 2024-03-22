@@ -14,7 +14,7 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { NodeInput } from "../withFocus";
+import { NodeInput } from "../FormElements";
 import ValidationLabels from "./ValidationLabels";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 import { isEmpty } from "lodash";

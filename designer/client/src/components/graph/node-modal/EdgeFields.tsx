@@ -12,7 +12,7 @@ import { uniq } from "lodash";
 import { ExpressionLang } from "./editors/expression/types";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
-import { SelectNodeWithFocus } from "../../withFocus";
+import { SelectNode } from "../../FormElements";
 import { FieldError } from "./editors/Validators";
 
 interface Props {
@@ -131,7 +131,7 @@ export function EdgeFields(props: Props): JSX.Element {
                 </NodeValue>
             ) : null}
             <NodeValue className={css({ gridArea: !showType && "field" })}>
-                <SelectNodeWithFocus
+                <SelectNode
                     title={
                         freeInputs.length
                             ? t("node.fields.edge.target", "Edge target node")
@@ -153,7 +153,7 @@ export function EdgeFields(props: Props): JSX.Element {
                             ))}
                         </>
                     )}
-                </SelectNodeWithFocus>
+                </SelectNode>
             </NodeValue>
             {getValueEditor()}
         </FieldsRow>

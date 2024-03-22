@@ -48,20 +48,21 @@ export const AttachmentDetails = styled("div")`
     word-break: break-word;
 `;
 
-export const DownloadAttachment = styled("div")`
-    margin-right: 5px;
-    cursor: pointer;
-    display: inline-block;
-    font-size: 25px;
-`;
+export const DownloadAttachment = styled("div")({
+    display: "flex",
+    alignItems: "center",
+    marginRight: "5px",
+    cursor: "pointer",
+    fontSize: "25px",
+});
 
-export const DownloadButton = styled(NkButton)(
-    ({ theme }) => `
-    width: 27px !important;
-    height: 27px !important;
-    border: 1px solid ${theme.custom.colors.tundora};
-`,
-);
+export const DownloadButton = styled(NkButton)(() => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "27px !important",
+    height: "27px !important",
+}));
 
 export const AttachHeader = styled("div")(
     () => `

@@ -21,8 +21,8 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
                 },
                 colors: {
                     borderColor: blendDarken(palette.background.paper, 0.24),
-                    focusColor: colors.focusColor,
-                    mutedColor: colors.mutedColor,
+                    focusColor: palette.primary.main,
+                    mutedColor: palette.text.secondary,
                     primaryBackground: palette.background.paper,
                     secondaryBackground: palette.background.paper,
                 },

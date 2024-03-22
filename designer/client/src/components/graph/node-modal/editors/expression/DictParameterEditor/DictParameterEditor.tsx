@@ -8,7 +8,7 @@ import { SimpleEditor } from "../Editor";
 import { ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { ParamType } from "../../types";
-import { NodeInput } from "../../../../../withFocus";
+import { NodeInput } from "../../../../../FormElements";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import i18next from "i18next";
 import ValidationLabels from "../../../../../modals/ValidationLabels";

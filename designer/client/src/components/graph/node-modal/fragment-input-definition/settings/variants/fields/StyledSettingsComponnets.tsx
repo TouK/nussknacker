@@ -11,14 +11,12 @@ export const SettingsWrapper = styled("div")(({ theme }) => ({
     marginBottom: "20px",
 }));
 
-export const SettingLabelStyled = styled(FormLabel)(
-    ({ theme }) => css`
-        color: ${theme.custom.colors.baseColor};
-        font-size: 12px;
-        font-weight: 400;
-        flex-basis: 30%;
-    `,
-);
+export const SettingLabelStyled = styled(FormLabel)(({ theme }) => ({
+    color: theme.palette.text.secondary,
+    fontSize: "12px",
+    fontWeight: "400",
+    flexBasis: "30%",
+}));
 
 export const ListItemContainer = styled("div")`
     width: 100%;

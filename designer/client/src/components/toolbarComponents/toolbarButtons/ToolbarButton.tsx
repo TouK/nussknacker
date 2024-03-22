@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { NodeInput } from "../../withFocus";
+import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";

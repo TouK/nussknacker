@@ -1,7 +1,7 @@
 import { isEmpty } from "lodash";
 import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { TextArea, TextAreaWithFocusProps } from "../../../../withFocus";
+import { TextArea, TextAreaWithFocusProps } from "../../../../FormElements";
 import { LabeledInputProps } from "./LabeledInput";
 import { FormControl } from "@mui/material";
 

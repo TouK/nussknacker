@@ -1,7 +1,7 @@
 import { cx } from "@emotion/css";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import React, { ChangeEvent } from "react";
-import { TextArea } from "../../../../withFocus";
+import { TextArea } from "../../../../FormElements";
 import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";
 

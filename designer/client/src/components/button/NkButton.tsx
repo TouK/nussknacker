@@ -1,9 +1,9 @@
 import React from "react";
-import { ButtonProps, ButtonWithFocus } from "../withFocus";
+import { ButtonProps, Button } from "../FormElements";
 import { styled } from "@mui/material";
 import { buttonBaseStyle } from "./ButtonBaseStyle";
 
-const NkButtonStyled = styled(ButtonWithFocus)(({ theme }) => ({
+const NkButtonStyled = styled(Button)(({ theme }) => ({
     ...buttonBaseStyle(theme),
     width: "180px",
     height: "44px",

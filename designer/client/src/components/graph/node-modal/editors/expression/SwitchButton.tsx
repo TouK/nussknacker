@@ -1,5 +1,5 @@
 import React from "react";
-import { ButtonWithFocus } from "../../../../withFocus";
+import { Button } from "../../../../FormElements";
 import { styled, useTheme } from "@mui/material";
 import { EditorType } from "./Editor";
 import { css } from "@emotion/css";
@@ -10,7 +10,7 @@ import ScheduleIcon from "./icons/schedule.svg";
 import DateIcon from "./icons/date_range.svg";
 import { blendLighten } from "../../../../../containers/theme/nuTheme";
 
-export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
+export const SwitchButton = styled(Button)(({ disabled, theme }) => ({
     width: 35,
     height: 35,
     padding: 5,

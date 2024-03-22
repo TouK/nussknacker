@@ -1,6 +1,6 @@
 import React from "react";
 import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
-import { SelectNodeWithFocus } from "../../../withFocus";
+import { SelectNode } from "../../../FormElements";
 import { css, cx } from "@emotion/css";
 import { FormControl, FormLabel, useTheme } from "@mui/material";
 
@@ -33,7 +33,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                 Test case:
             </FormLabel>
             <div className="node-value">
-                <SelectNodeWithFocus
+                <SelectNode
                     className="node-input selectResults"
                     onChange={(e) => onChange(TestResultUtils.stateForSelectTestResults(results, e.target.value))}
                     value={value}
@@ -43,7 +43,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                             {id} ({display})
                         </option>
                     ))}
-                </SelectNodeWithFocus>
+                </SelectNode>
             </div>
         </FormControl>
     );

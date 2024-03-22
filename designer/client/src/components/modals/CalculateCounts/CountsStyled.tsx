@@ -1,9 +1,9 @@
 import { DropdownButton } from "../../common/DropdownButton";
 import { styled } from "@mui/material";
 import { buttonBaseStyle } from "../../button/ButtonBaseStyle";
-import { ButtonWithFocus } from "../../withFocus";
+import { Button } from "../../FormElements";
 
-export const PredefinedRangeButton = styled(ButtonWithFocus)(({ theme }) => ({
+export const PredefinedRangeButton = styled(Button)(({ theme }) => ({
     ...buttonBaseStyle(theme),
     minWidth: "80px",
     fontSize: "12px",

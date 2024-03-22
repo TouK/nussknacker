@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
 import { styled, css, Theme } from "@mui/material";
-import { ButtonWithFocus } from "../withFocus";
+import { Button } from "../FormElements";
 import { blendLighten } from "../../containers/theme/nuTheme";
 
 export const buttonBase = (theme: Theme) => css`
@@ -23,7 +23,7 @@ export const buttonBase = (theme: Theme) => css`
     }
 `;
 
-export const StyledButtonWithFocus = styled(ButtonWithFocus)(
+export const StyledButton = styled(Button)(
     ({ theme }) => css`
         ${buttonBase(theme)};
         width: 35px;

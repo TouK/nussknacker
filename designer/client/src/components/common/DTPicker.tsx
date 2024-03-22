@@ -5,12 +5,10 @@ import { styled } from "@mui/material";
 import { NodeInputCss } from "../NodeInput";
 import "./DTPicker.css";
 
-const DTPickerStyled = styled(DateTimePicker)(
-    ({ theme }) => `
-    ${NodeInputCss(theme).styles}
-    padding: 0 !important;
-`,
-);
+const DTPickerStyled = styled(DateTimePicker)(() => ({
+    ...NodeInputCss(),
+    padding: "0 !important",
+}));
 const style = {
     background: "none",
     border: "none",

@@ -40,10 +40,6 @@ const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
 ];
 
 const colors = {
-    mutedColor: base,
-    focusColor: d1,
-    baseColor: l4,
-    tundora: d3,
     accent: "#668547",
     eucalyptus: "#33A369",
     seaGarden: "#2D8E54",
@@ -278,7 +274,15 @@ const globalStyles = (theme: Theme) => ({
             outline: `1px solid ${theme.palette.primary.main}`,
         },
     },
-
+    button: {
+        ...theme.typography.button,
+        textTransform: "none",
+        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        ":hover": {
+            cursor: "pointer",
+            backgroundColor: theme.palette.action.hover,
+        },
+    },
     "input[readonly], select[readonly], textarea[readonly], input[type='checkbox'][readonly]:after, input[type='radio'][readonly]:after, .row-ace-editor[readonly]":
         {
             backgroundColor: `${theme.palette.action.disabledBackground} !important`,
