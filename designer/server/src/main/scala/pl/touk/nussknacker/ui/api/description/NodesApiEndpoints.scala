@@ -1078,6 +1078,7 @@ object NodesApiEndpoints {
                 Schema.schemaForIterable[Parameter, List],
                 _ => None
               ),
+//              This works if expression is not present or is correct but not if null is given (which is current default way of passing it in request)
               SProductField(
                 FieldName("expression"),
                 Schema.schemaForOption[Expression],
