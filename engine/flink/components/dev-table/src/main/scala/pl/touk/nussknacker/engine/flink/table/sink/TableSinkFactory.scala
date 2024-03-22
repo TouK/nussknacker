@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
+import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration, TypedNodeDependency}
@@ -46,6 +48,7 @@ class TableSinkFactory(config: DataSourceConfig) extends SingleInputDynamicCompo
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[NodeId])
 
-  override val allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
+  override val allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
 
 }

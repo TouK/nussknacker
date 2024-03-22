@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -24,15 +25,16 @@ object ScenarioParametersDeterminer {
       case Nil => throw new IllegalStateException(s"Empty list of components for processing type: $processingType")
       case nonEmptyList =>
         val intersection = nonEmptyList.foldLeft(ProcessingMode.all) {
-          case (acc, Some(componentProcessingModes)) => acc.intersect(componentProcessingModes)
-          case (acc, None)                           => acc
+          case (acc, AllowedProcessingModes.SetOf(componentProcessingModes)) =>
+            acc.intersect(componentProcessingModes.toSortedSet)
+          case (acc, AllowedProcessingModes.AllProcessingModes) => acc
         }
         intersection.toList match {
           case oneMode :: Nil => oneMode
           // FIXME: some proper errors and tests for that
           case Nil =>
             val componentsWithDefinedAllowedProcessingModes = componentsToProcessingMode.collect {
-              case (id, Some(modes)) => id -> modes
+              case (id, AllowedProcessingModes.SetOf(modes)) => id -> modes
             }
             throw new IllegalStateException(
               s"Detected collision of allowed processing modes for processing type: $processingType among components: $componentsWithDefinedAllowedProcessingModes"

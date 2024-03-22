@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.testing
 
+import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
@@ -52,7 +54,11 @@ final case class ModelDefinitionBuilder(
       returnType: Option[TypingResult],
       params: Parameter*
   ): ModelDefinitionBuilder =
-    withSource(name, ComponentStaticDefinition(params.toList, returnType), Some(Set(ProcessingMode.UnboundedStream)))
+    withSource(
+      name,
+      ComponentStaticDefinition(params.toList, returnType),
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+    )
 
   def withSink(name: String, params: Parameter*): ModelDefinitionBuilder =
     withSink(name, ComponentStaticDefinition(params.toList, None))
@@ -95,7 +101,7 @@ final case class ModelDefinitionBuilder(
   private def withSource(
       name: String,
       staticDefinition: ComponentStaticDefinition,
-      allowedProcessingModes: Option[Set[ProcessingMode]]
+      allowedProcessingModes: AllowedProcessingModes
   ): ModelDefinitionBuilder =
     withComponent(
       name,
@@ -116,7 +122,7 @@ final case class ModelDefinitionBuilder(
       SinkSpecificData,
       componentGroupName = None,
       designerWideComponentId = None,
-      allowedProcessingModes = None
+      allowedProcessingModes = AllowedProcessingModes.AllProcessingModes
     )
 
   private def wrapService(
@@ -129,7 +135,7 @@ final case class ModelDefinitionBuilder(
       ServiceSpecificData,
       componentGroupName = None,
       designerWideComponentId = None,
-      allowedProcessingModes = None
+      allowedProcessingModes = AllowedProcessingModes.AllProcessingModes
     )
 
   private def wrapCustom(
@@ -145,7 +151,7 @@ final case class ModelDefinitionBuilder(
       componentSpecificData,
       componentGroupName,
       designerWideComponentId,
-      allowedProcessingModes = None
+      allowedProcessingModes = AllowedProcessingModes.AllProcessingModes
     )
 
   private def withComponent(
@@ -154,7 +160,7 @@ final case class ModelDefinitionBuilder(
       componentTypeSpecificData: ComponentTypeSpecificData,
       componentGroupName: Option[ComponentGroupName],
       designerWideComponentId: Option[DesignerWideComponentId],
-      allowedProcessingModes: Option[Set[ProcessingMode]]
+      allowedProcessingModes: AllowedProcessingModes
   ): ModelDefinitionBuilder = {
     val defaultConfig =
       DefaultComponentConfigDeterminer.forNotBuiltInComponentType(

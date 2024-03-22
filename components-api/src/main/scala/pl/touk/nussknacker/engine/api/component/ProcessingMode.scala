@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.component
 
+import cats.Order
+import cats.data.NonEmptySet
 import io.circe.{Decoder, Encoder}
 
 sealed trait ProcessingMode {
@@ -32,4 +34,13 @@ object ProcessingMode {
     case other                               => throw new IllegalArgumentException(s"Not known processing mode: $other")
   }
 
+  sealed trait AllowedProcessingModes
+
+  object AllowedProcessingModes {
+    case object AllProcessingModes                                              extends AllowedProcessingModes
+    final case class SetOf(allowedProcessingModes: NonEmptySet[ProcessingMode]) extends AllowedProcessingModes
+  }
+
+  implicit val processingModeOrdering: Ordering[ProcessingMode] = Ordering.by(_.value)
+  implicit val processingModeOrder: Order[ProcessingMode]       = Order.fromOrdering
 }

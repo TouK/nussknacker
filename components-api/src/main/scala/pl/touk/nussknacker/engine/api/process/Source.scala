@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
+import cats.data.NonEmptySet
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
@@ -61,23 +63,39 @@ object SourceFactory {
 
   // source is called by for making SourceFactory serialization easier
   def noParamUnboundedStreamFactory(source: => Source, inputType: TypingResult): SourceFactory =
-    NoParamSourceFactory(_ => source, inputType, Some(Set(ProcessingMode.UnboundedStream)))
+    NoParamSourceFactory(
+      _ => source,
+      inputType,
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+    )
 
   def noParamUnboundedStreamFactory[T: TypeTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(_ => source, Typed.fromDetailedType[T], Some(Set(ProcessingMode.UnboundedStream)))
+    NoParamSourceFactory(
+      _ => source,
+      Typed.fromDetailedType[T],
+      AllowedProcessingModes.SetOf(NonEmptySet.one((ProcessingMode.UnboundedStream)))
+    )
 
   def noParamUnboundedStreamFactory[T: TypeTag](createSource: NodeId => Source)(
       implicit ev: T =:!= Nothing
   ): SourceFactory =
-    NoParamSourceFactory(createSource, Typed.fromDetailedType[T], Some(Set(ProcessingMode.UnboundedStream)))
+    NoParamSourceFactory(
+      createSource,
+      Typed.fromDetailedType[T],
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+    )
 
   def noParamUnboundedStreamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(_ => source, Typed.apply[T], Some(Set(ProcessingMode.UnboundedStream)))
+    NoParamSourceFactory(
+      _ => source,
+      Typed.apply[T],
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+    )
 
   case class NoParamSourceFactory(
       createSource: NodeId => Source,
       inputType: TypingResult,
-      override val allowedProcessingModes: Option[Set[ProcessingMode]]
+      override val allowedProcessingModes: AllowedProcessingModes
   ) extends SourceFactory
       with WithExplicitTypesToExtract {
 

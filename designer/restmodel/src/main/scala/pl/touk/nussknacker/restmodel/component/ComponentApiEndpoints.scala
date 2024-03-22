@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.restmodel.component
 
-import cats.data.NonEmptyList
+import cats.data.NonEmptySet
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentType,
@@ -61,7 +62,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                     ),
                     usageCount = 2,
                     allowedProcessingModes =
-                      AllowedProcessingModes.FromList(NonEmptyList.of(ProcessingMode.RequestResponse))
+                      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.RequestResponse))
                   )
                 )
               )

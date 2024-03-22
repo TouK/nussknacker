@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import cats.data.NonEmptyList
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.api.component.{ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.restmodel.component.{
-  AllowedProcessingModes,
   ComponentLink,
   ComponentListElement,
   ComponentUsagesInScenario,
@@ -137,18 +135,7 @@ class DefaultComponentService(
           categories = List(category),
           links = links,
           usageCount = -1, // It will be enriched in the next step, after merge of components definitions
-          allowedProcessingModes = definition.implementation.allowedProcessingModes match {
-            case None => AllowedProcessingModes.AllProcessingModes
-            case Some(allowedProcessingModesSet) =>
-              NonEmptyList.fromList(allowedProcessingModesSet.toList) match {
-                // Unfortunately, because of very crappy design of allowedProcessingModes I had to catch possible illegal state here.
-                case None =>
-                  throw new IllegalStateException(
-                    "Component configuration states that NOT all processing modes are allowed. However, list of allowed processing modes is empty"
-                  )
-                case Some(processingModes) => AllowedProcessingModes.FromList(processingModes)
-              }
-          }
+          allowedProcessingModes = definition.implementation.allowedProcessingModes
         )
       }
   }

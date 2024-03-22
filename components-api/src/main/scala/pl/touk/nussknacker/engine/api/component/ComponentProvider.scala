@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.api.component
 
+import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -18,23 +20,26 @@ trait Component extends Serializable {
   // like in Service case, but in other cases, Component class is only a factory that returns some other class
   // and we don't know if this class allow given processing mode or not so the developer have to specify this
   // by his/her own
-  def allowedProcessingModes: Option[Set[ProcessingMode]]
+  def allowedProcessingModes: AllowedProcessingModes
 }
 
 trait UnboundedStreamComponent { self: Component =>
-  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.UnboundedStream))
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
 }
 
 trait BoundedStreamComponent { self: Component =>
-  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.BoundedStream))
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.BoundedStream))
 }
 
 trait RequestResponseComponent { self: Component =>
-  override def allowedProcessingModes: Option[Set[ProcessingMode]] = Some(Set(ProcessingMode.RequestResponse))
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.RequestResponse))
 }
 
 trait AllProcessingModesComponent { self: Component =>
-  override def allowedProcessingModes: Option[Set[ProcessingMode]] = None
+  override def allowedProcessingModes: AllowedProcessingModes = AllowedProcessingModes.AllProcessingModes
 }
 
 object ComponentProviderConfig {
