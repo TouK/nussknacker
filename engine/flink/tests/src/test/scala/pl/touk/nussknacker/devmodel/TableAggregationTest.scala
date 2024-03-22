@@ -19,7 +19,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
   import scala.jdk.CollectionConverters._
 
-  test("should do sum aggregations") {
+  test("should emit groupBy key and aggregated values as separate variables") {
     val runner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
       .withExtraComponents(FlinkTableAggregationComponentProvider.components)
@@ -36,7 +36,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         TableAggregation.aggregateByParamName.value        -> "#input.someAmount",
         TableAggregation.aggregatorFunctionParamName.value -> "'Sum'",
       )
-      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#agg")
+      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "{#key, #agg}")
 
     val result = runner.runWithDataInBoundedMode(
       scenario,
@@ -47,11 +47,10 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         TestRecord("B", 2),
       )
     )
-    print(result)
 
     result.validValue.successes.toSet shouldBe Set(
-      Map("groupBy" -> "B", "aggregatedSum" -> 4).asJava,
-      Map("groupBy" -> "A", "aggregatedSum" -> 2).asJava,
+      List("B", 4).asJava,
+      List("A", 2).asJava,
     )
   }
 
