@@ -46,13 +46,11 @@ Nussknacker can be used with its own, lightweight, Kubernetes-based [engine](/ab
 
 ## Where to learn more
 
-[Key features](https://nussknacker.io/documentation/about/KeyFeatures/)
-[Processing modes](https://nussknacker.io/documentation/about/ProcessingModes/)
-[Engines](https://nussknacker.io/documentation/about/engines/)
-[Typical implementation](https://nussknacker.io/documentation/about/TypicalImplementationStreaming/)
-[Authoring decision scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/)
-[Quickstart](https://nussknacker.io/documentation/quickstart/lite-streaming/)
-
+[Key features](https://nussknacker.io/documentation/about/KeyFeatures/) &nbsp
+[Processing modes](https://nussknacker.io/documentation/about/ProcessingModes/) &nbsp
+[Engines](https://nussknacker.io/documentation/about/engines/) &nbsp
+[Typical implementation](https://nussknacker.io/documentation/about/TypicalImplementationStreaming/) &nbsp
+[Authoring decision scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) &nbsp
 
 ## Quickstart
 
