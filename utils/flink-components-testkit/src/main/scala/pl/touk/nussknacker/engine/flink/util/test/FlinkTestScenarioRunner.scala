@@ -5,11 +5,11 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
-import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ProcessVersion}
-import pl.touk.nussknacker.engine.api.component.{BoundedStreamComponent, ComponentDefinition, ProcessingMode}
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ComponentUseCase, Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ComponentUseCase, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
@@ -36,6 +36,7 @@ import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
 import scala.util.Using
+import scala.jdk.CollectionConverters._
 
 private object testComponents {
 
@@ -51,8 +52,7 @@ private object testComponents {
     )
   }
 
-  import scala.jdk.CollectionConverters._
-
+  // TODO local question: new method vs add flag to `testDataSourceComponent`?
   def testBoundedDataSourceComponent[T: ClassTag: TypeInformation](
       data: List[T]
   ): ComponentDefinition = {

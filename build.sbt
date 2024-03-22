@@ -1777,7 +1777,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
   )
   .dependsOn(
     flinkComponentsApi   % Provided,
-    componentsApi        % Provided,
+    componentsApi        % "provided, test",
     commonUtils          % Provided,
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
