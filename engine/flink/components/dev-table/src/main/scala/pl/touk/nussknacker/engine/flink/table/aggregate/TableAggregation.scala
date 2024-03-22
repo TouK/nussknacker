@@ -1,21 +1,25 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.common.functions.{AggregateFunction, FlatMapFunction}
-import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
+import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.api.Expressions.{$, call}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.internal.BaseExpressions
-import org.apache.flink.table.api.{DataTypes, Schema}
-import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions}
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
+import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
+}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomNodeContext,
@@ -30,7 +34,8 @@ object TableAggregation {
   val groupByParamName: ParameterName            = ParameterName("groupBy")
   val aggregateByParamName: ParameterName        = ParameterName("aggregateBy")
   val aggregatorFunctionParamName: ParameterName = ParameterName("aggregator")
-  val outputVarParamName: ParameterName          = ParameterName(OutputVar.CustomNodeFieldName)
+  // TODO local: check this
+  val outputVarParamName: ParameterName = ParameterName(OutputVar.CustomNodeFieldName)
 
   private val groupByParam: ParameterExtractor[LazyParameter[AnyRef]] with ParameterCreatorWithNoDependency =
     ParameterDeclaration.lazyMandatory[AnyRef](groupByParamName).withCreator()
@@ -39,9 +44,7 @@ object TableAggregation {
     ParameterDeclaration.lazyMandatory[AnyRef](aggregateByParamName).withCreator()
 
   private val aggregatorFunctionParam = {
-    val aggregators = List(
-      FixedExpressionValue(s"'Sum'", "Sum")
-    )
+    val aggregators = Aggregator.allAggregators.map(a => FixedExpressionValue(s"'${a.name}'", a.name))
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
       .withCreator(
@@ -71,14 +74,43 @@ class TableAggregation
         state = None
       )
     case TransformationStep(
-          (`groupByParamName`, _) ::
-          (`aggregateByParamName`, _) ::
-          (`aggregatorFunctionParamName`, _) :: Nil,
+          (`groupByParamName`, groupByParam) ::
+          (`aggregateByParamName`, aggregateByParam) ::
+          (`aggregatorFunctionParamName`, DefinedEagerParameter(aggregatorName: String, _)) :: Nil,
           _
         ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
-      FinalResults.forValidation(context, errors = Nil)(
-        _.withVariable(outName, value = typing.Unknown, paramName = Some(outputVarParamName))
+
+      val selectedAggregator = Aggregator.allAggregators
+        .find(_.name == aggregatorName)
+        .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
+
+      val aggregatorOutputType = selectedAggregator.outputType(aggregateByParam.returnType)
+
+      val aggregateByTypeErrors = selectedAggregator.inputTypeConstraint match {
+        case Some(typeConstraint) =>
+          if (!aggregateByParam.returnType.canBeSubclassOf(typeConstraint)) {
+            List(
+              // TODO: this is a different message from other aggregators - choose one and make it consistent for all
+              CustomNodeError(
+                s"""Invalid type: "${aggregateByParam.returnType.withoutValue.display}" for selected aggregator.
+                   |"${selectedAggregator.name}" aggregator requires type: "${typeConstraint.display}".
+                   |""".stripMargin,
+                Some(aggregateByParamName)
+              )
+            )
+          } else List.empty
+        case None => List.empty
+      }
+
+      FinalResults.forValidation(context, errors = aggregateByTypeErrors)(
+        _.withVariable(outName, value = aggregatorOutputType, paramName = Some(outputVarParamName)).andThen(
+          _.withVariable(
+            KeyVariableName,
+            value = groupByParam.returnType,
+            paramName = Some(ParameterName(KeyVariableName))
+          )
+        )
       )
   }
 
@@ -90,12 +122,15 @@ class TableAggregation
 
     val groupByLazyParam     = groupByParam.extractValueUnsafe(params)
     val aggregateByLazyParam = aggregateByParam.extractValueUnsafe(params)
+    val aggregatorVal        = aggregatorFunctionParam.extractValueUnsafe(params)
 
-    // TODO: make aggregator function configurable
-    val aggregatorVal = aggregatorFunctionParam.extractValueUnsafe(params)
+    val aggregator = Aggregator.allAggregators
+      .find(_.name == aggregatorVal)
+      .getOrElse(
+        throw new IllegalStateException("Specified aggregator not found. Should be invalid at parameter level.")
+      )
 
-    val outName = OutputVariableNameDependency.extract(dependencies)
-
+    // TODO local: calculate based on groupByLazyParam.returnType
     val groupByFlinkType     = DataTypes.STRING()
     val aggregateByFlinkType = DataTypes.INT()
 
@@ -108,7 +143,7 @@ class TableAggregation
 
       val streamOfRows = start.flatMap(new LazyInterpreterFunction(groupByLazyParam, aggregateByLazyParam, ctx))
 
-      val inputTable = NestedRowConversions.buildTableFromRowStream(
+      val inputParametersTable = NestedRowConversions.buildTableFromRowStream(
         tableEnv = tableEnv,
         streamOfRows = streamOfRows,
         columnSchema = List(
@@ -117,25 +152,26 @@ class TableAggregation
         )
       )
 
-      val groupedTable = inputTable
+      val groupedTable = inputParametersTable
         .groupBy($(groupByInternalColumnName))
         .select(
           $(groupByInternalColumnName),
-          $(aggregateByInternalColumnName).sum().as("aggregatedSum")
+          call(aggregator.flinkFunctionName, $(aggregateByInternalColumnName)).as(aggregateByInternalColumnName)
         )
 
       // TODO local: pass aggregated value and key as separate vars
       val groupedStream = tableEnv.toDataStream(groupedTable)
 
-      val groupedStreamOfMaps = groupedStream
-        .map(r => RowConversions.rowToMap(r): java.util.Map[String, Any])
-        .returns(classOf[java.util.Map[String, Any]])
-
-      val mergedStream: DataStream[ValueWithContext[AnyRef]] = groupedStreamOfMaps
-        .map(row => ValueWithContext(row.asInstanceOf[AnyRef], Context.withInitialId))
+      // TODO local: use process function to build a new context with EngineRuntimeContext.contextIdGenerator
+      groupedStream
+        .map(r => {
+          val map = RowConversions.rowToMap(r)
+          ValueWithContext(
+            map.get(aggregateByInternalColumnName).asInstanceOf[AnyRef],
+            Context.withInitialId.withVariable(KeyVariableName, map.get(groupByInternalColumnName))
+          )
+        })
         .returns(classOf[ValueWithContext[AnyRef]])
-
-      mergedStream
     })
   }
 
@@ -171,4 +207,30 @@ class TableAggregation
 
   }
 
+}
+
+object Aggregator {
+  val allAggregators: List[Aggregator] = List(Sum, First)
+}
+
+sealed trait Aggregator {
+  val name: String
+  val inputTypeConstraint: Option[TypingResult]
+  def outputType(inputTypeInRuntime: TypingResult): TypingResult
+  val flinkFunctionName: String
+}
+
+case object Sum extends Aggregator {
+  override val name: String = "Sum"
+  // TODO local: is Typed[Number] ok?
+  override val inputTypeConstraint: Option[TypingResult]                  = Some(Typed[Number])
+  override def outputType(inputTypeInRuntime: TypingResult): TypingResult = Typed[Number]
+  override val flinkFunctionName: String                                  = "sum"
+}
+
+case object First extends Aggregator {
+  override val name: String                                               = "First"
+  override val inputTypeConstraint: Option[TypingResult]                  = None
+  override def outputType(inputTypeInRuntime: TypingResult): TypingResult = inputTypeInRuntime
+  override val flinkFunctionName: String                                  = "first_value"
 }
