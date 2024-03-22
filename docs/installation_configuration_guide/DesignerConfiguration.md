@@ -104,7 +104,7 @@ with the settings presented below:
 
 Nussknacker Designer can be configured to replace certain values in comments to links that can point e.g. to external issue tracker like
 GitHub issues or Jira. For example, `MARKETING-555` will change to link `https://jira.organization.com/jira/browse/MARKETING-555`.
-See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L329) for example configuration.
 
 
 | Parameter name                              | Importance | Type     | Default value | Description                                                                                                                                                                          |
@@ -770,7 +770,7 @@ scenarioTypes {
 ```
 
 Scenario type configuration consists of parts:
-- `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
+- `deploymentConfig` - [scenario deployment configuration](./ScenarioDeploymentConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
 - `category` - category handled by given scenario type
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.basicauth
 import akka.http.scaladsl.server.directives.Credentials
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
 
 import java.net.URI
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,7 +12,6 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
 
   class DummyConfiguration(
       usersList: List[ConfigUser],
-      rulesList: List[ConfigRule] = List.empty,
       usersFile: URI = URI.create("classpath:basicauth-user.conf"),
       cachingHashes: Option[CachingHashesConfig] = None
   ) extends BasicAuthenticationConfiguration(usersFile: URI, cachingHashes) {

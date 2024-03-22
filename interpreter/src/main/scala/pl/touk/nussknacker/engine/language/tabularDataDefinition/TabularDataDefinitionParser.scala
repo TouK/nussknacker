@@ -89,14 +89,14 @@ object TabularDataDefinitionParser extends ExpressionParser {
         case Error.ValidationError(InvalidCellValues(invalidCells)) =>
           Some(
             TabularDataDefinitionParserErrorDetails(
-              invalidCells.toList.map { coordinates =>
+              invalidCells.map { coordinates =>
                 TabularDataDefinitionParserErrorDetails.CellError(
                   columnName = coordinates.columnName.name,
                   rowIndex = coordinates.rowIndex,
                   errorMessage =
                     s"Column has '${coordinates.columnName.aType.getSimpleName}' type but its value cannot be converted to the type."
                 )
-              }
+              }.toList
             )
           )
       }

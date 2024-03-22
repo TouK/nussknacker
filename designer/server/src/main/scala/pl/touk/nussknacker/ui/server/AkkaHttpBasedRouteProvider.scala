@@ -45,6 +45,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.migrations.MigrationService
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -55,13 +56,12 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{
-  AnonymousAccess,
   AuthenticationConfiguration,
   AuthenticationResources,
   LoggedUser,
   NussknackerInternalUser
 }
-import pl.touk.nussknacker.ui.services._
+import pl.touk.nussknacker.ui.services.{MigrationApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -250,23 +250,35 @@ class AkkaHttpBasedRouteProvider(
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
-      val componentsApiHttpService = new ComponentApiHttpService(
+
+      val migrationService = new MigrationService(
         config = resolvedConfig,
+        processService = processService,
+        processResolver = processResolver,
+        processAuthorizer = processAuthorizer,
+        processChangeListener = processChangeListener,
+        scenarioParametersService = typeToConfig.mapCombined(_.parametersService),
+        useLegacyCreateScenarioApi = true
+      )
+
+      val migrationApiHttpService = new MigrationApiHttpService(
+        authenticator = authenticationResources,
+        migrationService = migrationService
+      )
+      val componentsApiHttpService = new ComponentApiHttpService(
         authenticator = authenticationResources,
         componentService = componentService
       )
       val userApiHttpService = new UserApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         categories = typeToConfig.mapValues(_.category)
       )
       val notificationApiHttpService = new NotificationApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+
       val nodesApiHttpService = new NodesApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData),
         typeToProcessValidator = processValidator,
@@ -280,8 +292,8 @@ class AkkaHttpBasedRouteProvider(
         ),
         scenarioService = processService
       )
+
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioActivityRepository = processActivityRepository,
         scenarioService = processService,
@@ -293,7 +305,6 @@ class AkkaHttpBasedRouteProvider(
         new AkkaHttpBasedTapirStreamEndpointProvider()
       )
       val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
-        config = resolvedConfig,
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
@@ -395,6 +406,7 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
+          migrationApiHttpService,
           nodesApiHttpService
         )
 
@@ -453,7 +465,7 @@ class AkkaHttpBasedRouteProvider(
             authorize(authenticatedUser.roles.nonEmpty) {
               val loggedUser = LoggedUser(
                 authenticatedUser = authenticatedUser,
-                rules = AuthenticationConfiguration.getRules(resolvedConfig)
+                rules = authenticationResources.configuration.rules
               )
               apiResourcesWithAuthentication.map(_.securedRouteWithErrorHandling(loggedUser)).reduce(_ ~ _)
             }

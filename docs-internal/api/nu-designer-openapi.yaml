@@ -434,6 +434,95 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/migrate:
+    post:
+      tags:
+      - Migrations
+      summary: Migration between environments service
+      operationId: postApiMigrate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+            examples:
+              Example:
+                summary: example of migration request between environments
+                value:
+                  sourceEnvironmentId: testEnv
+                  processingMode: Unbounded-Stream
+                  engineSetupName: Flink
+                  processCategory: Category1
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                        metaDataType: LiteStreamMetaData
+                    nodes:
+                    - id: source
+                      ref:
+                        typ: csv-source-lite
+                        parameters: []
+                      type: Source
+                    - id: sink
+                      ref:
+                        typ: dead-end-lite
+                        parameters: []
+                      type: Sink
+                    edges:
+                    - from: source
+                      to: sink
+                  processName: test
+                  isFragment: false
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
@@ -1268,7 +1357,9 @@ components:
         processingType:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
-          $ref: '#/components/schemas/Map_String'
+          oneOf:
+          - $ref: '#/components/schemas/Map_String'
+          - type: 'null'
     CaretPosition2d:
       required:
       - row
@@ -1416,7 +1507,9 @@ components:
         createdBy:
           type: string
         lastAction:
-          $ref: '#/components/schemas/ProcessAction'
+          oneOf:
+          - $ref: '#/components/schemas/ProcessAction'
+          - type: 'null'
     CronParameterEditor:
       type: object
     CustomNode:
@@ -1438,7 +1531,9 @@ components:
           items:
             $ref: '#/components/schemas/Parameter'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     DataToRefresh:
       type: string
       enum:
@@ -1518,7 +1613,9 @@ components:
         to:
           type: string
         edgeType:
-          $ref: '#/components/schemas/EdgeType'
+          oneOf:
+          - $ref: '#/components/schemas/EdgeType'
+          - type: 'null'
     EdgeType:
       oneOf:
       - $ref: '#/components/schemas/FilterFalse'
@@ -1540,7 +1637,9 @@ components:
         output:
           type: string
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     ErrorDetails:
       oneOf:
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
@@ -1613,7 +1712,9 @@ components:
           - boolean
           - 'null'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     FilterFalse:
       type: object
     FilterTrue:
@@ -1653,7 +1754,9 @@ components:
         ref:
           $ref: '#/components/schemas/FragmentRef'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
         isDisabled:
           type:
           - boolean
@@ -1676,7 +1779,9 @@ components:
           items:
             $ref: '#/components/schemas/FragmentParameter'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     FragmentOutput:
       required:
       - name
@@ -1699,7 +1804,9 @@ components:
           items:
             $ref: '#/components/schemas/Field'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     FragmentOutputVarDefinition:
       required:
       - name
@@ -1725,15 +1832,21 @@ components:
         required:
           type: boolean
         initialValue:
-          $ref: '#/components/schemas/FixedExpressionValue'
+          oneOf:
+          - $ref: '#/components/schemas/FixedExpressionValue'
+          - type: 'null'
         hintText:
           type:
           - string
           - 'null'
         valueEditor:
-          $ref: '#/components/schemas/ValueInputWithFixedValues'
+          oneOf:
+          - $ref: '#/components/schemas/ValueInputWithFixedValues'
+          - type: 'null'
         valueCompileTimeValidation:
-          $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+          oneOf:
+          - $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+          - type: 'null'
     FragmentRef:
       required:
       - id
@@ -1769,9 +1882,13 @@ components:
         outputName:
           type: string
         outputVar:
-          $ref: '#/components/schemas/FragmentOutputVarDefinition'
+          oneOf:
+          - $ref: '#/components/schemas/FragmentOutputVarDefinition'
+          - type: 'null'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -1829,7 +1946,9 @@ components:
           items:
             $ref: '#/components/schemas/BranchParameters'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     JsonParameterEditor:
       type: object
     LayoutData:
@@ -1933,7 +2052,9 @@ components:
         errorType:
           $ref: '#/components/schemas/NodeValidationErrorType'
         details:
-          $ref: '#/components/schemas/ErrorDetails'
+          oneOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
     NodeValidationErrorType:
       type: string
       enum:
@@ -1952,7 +2073,9 @@ components:
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
         branchVariableTypes:
-          $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
+          oneOf:
+          - $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
+          - type: 'null'
         outgoingEdges:
           type:
           - array
@@ -1971,7 +2094,9 @@ components:
           items:
             $ref: '#/components/schemas/UIParameterDto'
         expressionType:
-          $ref: '#/components/schemas/TypingResult'
+          oneOf:
+          - $ref: '#/components/schemas/TypingResult'
+          - type: 'null'
         validationErrors:
           type: array
           items:
@@ -1993,7 +2118,9 @@ components:
         message:
           type: string
         type:
-          $ref: '#/components/schemas/NotificationType'
+          oneOf:
+          - $ref: '#/components/schemas/NotificationType'
+          - type: 'null'
         toRefresh:
           type: array
           items:
@@ -2204,7 +2331,9 @@ components:
           - boolean
           - 'null'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     PropertiesValidationRequestDto:
       required:
       - additionalFields
@@ -2298,13 +2427,17 @@ components:
         ref:
           $ref: '#/components/schemas/SinkRef'
         legacyEndResultExpression:
-          $ref: '#/components/schemas/Expression'
+          oneOf:
+          - $ref: '#/components/schemas/Expression'
+          - type: 'null'
         isDisabled:
           type:
           - boolean
           - 'null'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     SinkRef:
       required:
       - typ
@@ -2327,7 +2460,9 @@ components:
         ref:
           $ref: '#/components/schemas/SourceRef'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     SourceRef:
       required:
       - typ
@@ -2349,7 +2484,9 @@ components:
         id:
           type: string
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     SqlParameterEditor:
       type: object
     Status:
@@ -2370,13 +2507,17 @@ components:
         id:
           type: string
         expression:
-          $ref: '#/components/schemas/Expression'
+          oneOf:
+          - $ref: '#/components/schemas/Expression'
+          - type: 'null'
         exprVal:
           type:
           - string
           - 'null'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     SwitchDefault:
       type: object
     TabularDataDefinitionParserErrorDetails:
@@ -2576,7 +2717,9 @@ components:
           - string
           - 'null'
         layoutData:
-          $ref: '#/components/schemas/LayoutData'
+          oneOf:
+          - $ref: '#/components/schemas/LayoutData'
+          - type: 'null'
     ValueInputWithFixedValues:
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
@@ -2605,7 +2748,9 @@ components:
         value:
           $ref: '#/components/schemas/Expression'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     VariableBuilder:
       required:
       - id
@@ -2621,7 +2766,9 @@ components:
           items:
             $ref: '#/components/schemas/Field'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     VersionId:
       required:
       - value
