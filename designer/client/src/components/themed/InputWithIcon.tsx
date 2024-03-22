@@ -1,8 +1,8 @@
 import { css, cx } from "@emotion/css";
-import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
-import { InputProps, ThemedInput } from "./ThemedInput";
-import { ClearIcon } from "../table/SearchFilter";
 import { useTheme } from "@mui/material";
+import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
+import { ClearIcon } from "../table/SearchFilter";
+import { InputProps, ThemedInput } from "./ThemedInput";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;
@@ -10,7 +10,7 @@ type Props = PropsWithChildren<InputProps> & {
 };
 
 export type Focusable = {
-    focus: () => void;
+    focus: (options?: FocusOptions) => void;
 };
 
 export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon(
@@ -47,11 +47,14 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
     });
 
     const ref = useRef<HTMLInputElement>();
-    const focus = useCallback(() => {
-        const input = ref.current;
-        input.focus();
-        input.setSelectionRange(0, props.value.length);
-    }, [props.value.length]);
+    const focus = useCallback(
+        (options?: FocusOptions) => {
+            const input = ref.current;
+            input.focus(options);
+            input.setSelectionRange(0, props.value.length);
+        },
+        [props.value.length],
+    );
 
     useImperativeHandle(forwardedRef, () => ({ focus }), [focus]);
 
@@ -65,7 +68,7 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
                     </div>
                 )}
                 {children && (
-                    <div className={addonStyles} onClick={onAddonClick ?? focus}>
+                    <div className={addonStyles} onClick={onAddonClick ?? (() => focus())}>
                         {children}
                     </div>
                 )}
