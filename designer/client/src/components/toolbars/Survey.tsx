@@ -5,7 +5,6 @@ import { SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { Button, Stack, Typography, useTheme } from "@mui/material";
 import { useWindows, WindowKind } from "../../windowManager";
 import { useSurvey } from "./useSurvey";
-import { blendDarken, blendLighten } from "../../containers/theme/nuTheme";
 
 function Survey(): JSX.Element {
     const { t } = useTranslation();

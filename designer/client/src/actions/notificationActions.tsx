@@ -19,22 +19,22 @@ export function success(message: string): Action {
     });
 }
 
-// export function error(message: string): Action {
-//     return Notifications.error({
-//         autoDismiss: 10,
-//         children: (
-//             <Notification
-//                 type={"error"}
-//                 icon={<InfoOutlinedIcon sx={(theme) => ({ color: alpha(theme.palette.common.black, 0.54) })} />}
-//                 message={message}
-//             />
-//         ),
-//     });
-// }
-
 export function error(message: string): Action {
+    return Notifications.error({
+        autoDismiss: 10,
+        children: (
+            <Notification
+                type={"error"}
+                icon={<InfoOutlinedIcon sx={(theme) => ({ color: alpha(theme.palette.common.black, 0.54) })} />}
+                message={message}
+            />
+        ),
+    });
+}
+
+export function info(message: string): Action {
     return Notifications.info({
-        autoDismiss: 10000,
+        autoDismiss: 10,
         children: (
             <Notification
                 type={"info"}
