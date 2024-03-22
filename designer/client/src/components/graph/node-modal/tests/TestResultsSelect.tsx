@@ -25,7 +25,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                 className={cx(
                     css({
                         "&&&&": {
-                            color: theme.custom.colors.ok,
+                            color: theme.palette.success.main,
                         },
                     }),
                 )}

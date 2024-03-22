@@ -51,7 +51,7 @@ function getTypeIcon(type: EditorType) {
 export function SimpleEditorIcon({ type }: { type: EditorType }) {
     const theme = useTheme();
     const Icon = getTypeIcon(type);
-    return <Icon className={css({ color: theme.custom.colors.ok })} />;
+    return <Icon className={css({ color: theme.palette.success.main })} />;
 }
 
 export const RawEditorIcon = CodeIcon;

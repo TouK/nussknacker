@@ -7,6 +7,6 @@ import DangerousIcon from "@mui/icons-material/Dangerous";
 export const HeaderIcon = ({ errors }: { errors: ValidationErrors }) => {
     const StyledDangerousIcon = styledIcon(DangerousIcon);
     return isEmpty(errors.globalErrors) && isEmpty(errors.invalidNodes) && isEmpty(errors.processPropertiesErrors) ? null : (
-        <StyledDangerousIcon sx={(theme) => ({ color: theme.custom.colors.error, alignSelf: "flex-start" })} />
+        <StyledDangerousIcon sx={(theme) => ({ color: theme.palette.error.main, alignSelf: "flex-start" })} />
     );
 };

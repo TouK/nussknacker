@@ -14,11 +14,11 @@ export const NodeTableStyled = styled("div")(
         }
         .node-block {
             &.removed {
-                border: 1px solid ${theme.custom.colors.error};
+                border: 1px solid ${theme.palette.error.main};
                 padding: 5px;
             }
             &.added {
-                border: 1px solid ${theme.custom.colors.ok};
+                border: 1px solid ${theme.palette.success.main};
                 padding: 5px;
             }
         }
@@ -100,12 +100,12 @@ export const NodeTableStyled = styled("div")(
             height: 20px;
         }
         .node-input-with-error {
-            outline: 1px solid ${theme.custom.colors.error} !important;
+            outline: 1px solid ${theme.palette.error.main} !important;
             outline-offset: initial !important;
             border-radius: 2px;
         }
         .marked {
-            border: 2px solid ${theme.custom.colors.ok} !important;
+            border: 2px solid ${theme.palette.success.main} !important;
         }
     `,
 );

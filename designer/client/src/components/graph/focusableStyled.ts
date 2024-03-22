@@ -79,7 +79,7 @@ export const FocusableStyled = styled("div")(
             height: 100% !important;
           
             .node-validation-error {
-                ${nodeHighlight(theme.custom.colors.error, theme.custom.colors.cinderella)}
+                ${nodeHighlight(theme.palette.error.main, theme.custom.colors.cinderella)}
             }
 
             .node-focused-with-validation-error {
@@ -102,7 +102,7 @@ export const FocusableStyled = styled("div")(
             }
 
             .modalContentDark {
-                ${modalContent(theme.custom.colors.error, blendLighten(theme.palette.background.paper, 0.25))}
+                ${modalContent(theme.palette.error.main, blendLighten(theme.palette.background.paper, 0.25))}
             }
 
             .error {

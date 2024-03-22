@@ -1,0 +1,256 @@
+import { Theme } from "@mui/material";
+import { blendDarken, blendLighten } from "./nuTheme";
+
+const aceEditorStyles = (theme: Theme) => ({
+    ".ace-nussknacker .ace_gutter": {
+        background: blendLighten(theme.palette.background.paper, 0.1),
+        color: theme.palette.text.secondary,
+    },
+    ".ace-nussknacker.ace_editor": {
+        fontFamily: "'Roboto Mono', 'Monaco', monospace",
+    },
+    ".ace-nussknacker .ace_print-margin": {
+        width: "1px",
+        background: "red",
+    },
+
+    ".ace-nussknacker .ace_search": {
+        background: "#818181",
+    },
+
+    ".ace-nussknacker .ace_search_field": {
+        color: "#ccc",
+    },
+
+    ".ace-nussknacker": {
+        backgroundColor: theme.palette.background.paper,
+        color: theme.palette.text.secondary,
+        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        "&:focus-within": {
+            outline: `1px solid ${theme.palette.primary.main}`,
+        },
+    },
+    ".ace-nussknacker .ace_cursor": {
+        color: "#F8F8F0",
+    },
+    ".ace-nussknacker .ace_marker-layer .ace_selection": {
+        background: "#49483E",
+    },
+    ".ace-nussknacker.ace_multiselect .ace_selection.ace_start": {
+        boxShadow: "0 0 3px 0px #333",
+    },
+    ".ace-nussknacker .ace_marker-layer .ace_step": {
+        background: "rgb(102, 82, 0)",
+    },
+    ".ace-nussknacker .ace_marker-layer .ace_bracket": {
+        margin: 0,
+        border: "1px solid #FFC66D",
+    },
+    ".ace-nussknacker .ace_marker-layer .ace_active-line": {
+        background: blendDarken(theme.palette.background.paper, 0.2),
+    },
+    ".ace-nussknacker .ace_gutter-active-line": {
+        backgroundColor: blendDarken(theme.palette.background.paper, 0.2),
+    },
+    ".ace-nussknacker .ace_marker-layer .ace_selected-word": {
+        border: "1px solid #49483E",
+    },
+    ".ace-nussknacker .ace_invisible": {
+        color: "#52524d",
+    },
+    ".ace-nussknacker .ace_entity.ace_name.ace_tag, .ace-nussknacker .ace_keyword, .ace-nussknacker .ace_meta.ace_tag, .ace-nussknacker .ace_storage":
+        {
+            color: "#db7e3a",
+        },
+    ".ace-nussknacker .ace_punctuation, .ace-nussknacker .ace_punctuation.ace_tag": {
+        color: "#fff",
+    },
+    ".ace-nussknacker .ace_constant.ace_character, .ace-nussknacker .ace_constant.ace_language, .ace-nussknacker .ace_constant.ace_numeric, .ace-nussknacker .ace_constant.ace_other":
+        {
+            color: "#AE81FF",
+        },
+    ".ace-nussknacker .ace_invalid": {
+        color: "#F8F8F0",
+        backgroundColor: "#F92672",
+    },
+    ".ace-nussknacker .ace_invalid.ace_deprecated": {
+        color: "#F8F8F0",
+        backgroundColor: "#AE81FF",
+    },
+    ".ace-nussknacker .ace_support.ace_constant, .ace-nussknacker .ace_support.ace_function": {
+        color: "#f3b560",
+    },
+    ".ace-nussknacker .ace_fold": {
+        backgroundColor: "#A6E22E",
+        borderColor: "#F8F8F2",
+    },
+    ".ace-nussknacker .ace_storage.ace_type, .ace-nussknacker .ace_support.ace_class, .ace-nussknacker .ace_support.ace_type": {
+        fontStyle: "italic",
+        color: "#f3b560",
+    },
+    ".ace-nussknacker .ace_entity.ace_name.ace_function, .ace-nussknacker .ace_entity.ace_other, .ace-nussknacker .ace_entity.ace_other.ace_attribute-name, .ace-nussknacker .ace_variable":
+        {
+            color: "#9876AA",
+        },
+    ".ace-nussknacker .ace_variable.ace_parameter": {
+        fontStyle: "italic",
+        color: "#FD971F",
+    },
+    ".ace-nussknacker .ace_string": {
+        color: "#6A8759",
+    },
+    ".ace-nussknacker .ace_comment": {
+        color: "#75715E",
+    },
+    ".ace-nussknacker .ace_spel": {
+        color: "#337AB7",
+    },
+    ".ace-nussknacker .ace_paren": {
+        fontWeight: "bold",
+    },
+    ".ace-nussknacker .ace_alias": {
+        color: "#37CB86",
+    },
+    ".ace-nussknacker .ace_indent-guide": {
+        background:
+            "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPQ0FD0ZXBzd/wPAAjVAoxeSgNeAAAAAElFTkSuQmCC) right repeat-y",
+    },
+    ".ace_hidden-cursors .ace_cursor": {
+        opacity: 0,
+    },
+    ".ace_editor.ace_autocomplete": {
+        width: "400px",
+    },
+    /* Without those settings below, type (meta) shade method/variable name (value)*/
+    ".ace_autocomplete .ace_line > *": {
+        flex: "0 0 auto",
+    },
+    ".ace_autocomplete .ace_line .ace_": {
+        flex: "0 0 auto",
+        overflow: "auto",
+        whiteSpace: "pre",
+    },
+    ".ace_defaultMethod, .ace_defaultMethod + .ace_completion-meta": {
+        color: "#ffe1b9",
+    },
+    ".ace_classMethod, .ace_classMethod + .ace_completion-meta": {
+        color: "#708687",
+    },
+    ".ace_tooltip.ace_doc-tooltip": {
+        fontSize: "0.7em",
+        ".function-docs": {
+            whiteSpace: "pre-wrap",
+            "> hr": {
+                marginTop: 0,
+                marginBottom: 0,
+            },
+
+            "& p": {
+                marginTop: "5px",
+                marginBottom: "5px",
+            },
+        },
+    },
+});
+
+export const fontFamily = [
+    "Inter",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    '"Segoe UI"',
+    '"Helvetica Neue"',
+    "Arial",
+    "sans-serif",
+    '"Apple Color Emoji"',
+    '"Segoe UI Emoji"',
+    '"Segoe UI Symbol"',
+].join(",");
+
+export const globalStyles = (theme: Theme) => ({
+    "html, body": {
+        margin: 0,
+        padding: 0,
+        height: "100dvh",
+        color: theme.palette.text.primary,
+        fontSize: "16px",
+        overflow: "hidden",
+        letterSpacing: "unset",
+        WebkitFontSmoothing: "initial",
+        lineHeight: 1.428571429,
+        fontFamily,
+    },
+    "input, button, select, textarea, .row-ace-editor": {
+        fontFamily: "inherit",
+        fontSize: "inherit",
+        lineHeight: "inherit",
+        boxShadow: "none",
+        border: "none",
+        backgroundColor: theme.palette.background.paper,
+        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        "&:focus, &:focus-within": {
+            outline: `1px solid ${theme.palette.primary.main}`,
+        },
+    },
+    button: {
+        ...theme.typography.button,
+        textTransform: "none",
+        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        ":hover": {
+            cursor: "pointer",
+            backgroundColor: theme.palette.action.hover,
+        },
+    },
+    "input[readonly], select[readonly], textarea[readonly], input[type='checkbox'][readonly]:after, input[type='radio'][readonly]:after, .row-ace-editor[readonly]":
+        {
+            backgroundColor: `${theme.palette.action.disabledBackground} !important`,
+            color: `${theme.palette.action.disabled} !important`,
+        },
+    "input[disabled], select[disabled], textarea[disabled], input[type='checkbox'][disabled]:after, input[type='radio'][disabled]:after, .row-ace-editor[disabled]":
+        {
+            backgroundColor: `${theme.palette.action.disabledBackground} !important`,
+            color: `${theme.palette.action.disabled} !important`,
+        },
+    " button,input,optgroup,select,textarea": {
+        color: "inherit",
+        font: "inherit",
+        margin: 0,
+    },
+
+    a: {
+        textDecoration: "none",
+        ":hover": {
+            textDecoration: "underline",
+        },
+    },
+    ".hide": {
+        display: "none",
+    },
+    ".details": {
+        display: "inline-block",
+    },
+    ".modalContentDark": {
+        "& h3": {
+            fontSize: "1.3em",
+        },
+    },
+    ".services": {
+        height: "100%",
+        overflowY: "auto",
+    },
+
+    ".notifications-wrapper": {
+        position: "absolute",
+        bottom: "25px",
+        right: "25px",
+        zIndex: 10000,
+    },
+    ".notification-dismiss": {
+        display: "none",
+    },
+
+    // Styles joint-js elements
+    "#nk-graph-main text": {
+        ...theme.typography.body1,
+    },
+    ...aceEditorStyles(theme),
+});

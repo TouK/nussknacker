@@ -28,7 +28,7 @@ export default function NodeErrors(props: { errors: NodeValidationError[]; messa
             <NodeTip
                 title={errorMessage}
                 className={nodeTip}
-                icon={<DangerousIcon sx={(theme) => ({ color: theme.custom.colors.error, alignSelf: "center", width: 24, height: 24 })} />}
+                icon={<DangerousIcon sx={(theme) => ({ color: theme.palette.error.main, alignSelf: "center", width: 24, height: 24 })} />}
             />
             <div>
                 {errors.map(({ description, fieldName, message }, index) => (

@@ -18,13 +18,10 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
     }
 
     return (
-        <Box sx={(theme) => ({ border: `1px solid ${theme.custom.colors.ok}`, padding: "5px" })}>
+        <Box sx={(theme) => ({ border: `1px solid ${theme.palette.success.main}`, padding: "5px" })}>
             <FormControl>
                 <FormLabel>
-                    <NodeTip
-                        title={"Variables in test case"}
-                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
-                    />
+                    <NodeTip title={"Variables in test case"} icon={<InfoIcon />} />
                 </FormLabel>
             </FormControl>
             {Object.keys(results.testResultsToShow.context.variables)
