@@ -78,7 +78,7 @@ export const nuTheme = createTheme({
             main: `#762976`,
         },
         error: {
-            main: `#F25C6E`,
+            main: `#D4354D`,
         },
         warning: {
             main: "#FF9A4D",
@@ -142,18 +142,18 @@ export const nuTheme = createTheme({
                 }),
                 standardSuccess: ({ theme }) => ({
                     backgroundColor: theme.palette.success.main,
-                    color: theme.palette.text.secondary,
+                    color: blendDarken(theme.palette.text.primary, 0.9),
                 }),
                 standardError: ({ theme }) => ({
-                    backgroundColor: theme.palette.error.main,
-                    color: theme.palette.text.secondary,
+                    backgroundColor: blendLighten(theme.palette.error.main, 0.15),
+                    color: blendDarken(theme.palette.text.primary, 0.9),
                 }),
                 standardWarning: ({ theme }) => ({
                     backgroundColor: theme.palette.warning.main,
                 }),
                 standardInfo: ({ theme }) => ({
-                    backgroundColor: theme.palette.info.light,
-                    color: theme.palette.text.secondary,
+                    backgroundColor: theme.palette.primary.main,
+                    color: blendDarken(theme.palette.text.primary, 0.9),
                 }),
             },
         },
