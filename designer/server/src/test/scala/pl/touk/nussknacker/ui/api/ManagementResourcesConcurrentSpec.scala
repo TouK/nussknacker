@@ -55,7 +55,7 @@ class ManagementResourcesConcurrentSpec
     }
   }
 
-  test("allow concurrent deployment and cancel of same process") {
+  test("do not allow concurrent deployment and cancel of same process") {
     val processName = ProcessName("concurrentDeployAndCancel")
 
     val scenario = ProcessTestData.sampleScenario.withProcessName(processName)
@@ -67,7 +67,7 @@ class ManagementResourcesConcurrentSpec
         deploymentManager.deploys.asScala.count(_ == processName) shouldBe 1
       }
       cancelProcess(processName) ~> check {
-        status shouldBe StatusCodes.OK
+        status shouldBe StatusCodes.Conflict
       }
       firstDeployResult ~> check {
         status shouldBe StatusCodes.OK
