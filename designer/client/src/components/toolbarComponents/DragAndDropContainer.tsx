@@ -17,13 +17,13 @@ export function DragAndDropContainer({ children, onMove }: Props) {
 
     const onDragEnd = useCallback(
         (result: DropResult) => {
+            setIsDragging(false);
             const { destination, type, reason, source } = result;
             if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
                 const from: ToolbarPosition = [source.droppableId, source.index];
                 const to: ToolbarPosition = [destination.droppableId, destination.index];
                 onMove(from, to);
             }
-            setIsDragging(false);
         },
         [onMove],
     );

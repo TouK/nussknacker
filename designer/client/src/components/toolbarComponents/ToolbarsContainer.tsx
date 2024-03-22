@@ -154,7 +154,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                             </Draggable>
                         );
                     })}
-                    {p.placeholder && <Placeholder>{p.placeholder}</Placeholder>}
+                    {p.placeholder}
                 </DraggableList>
             </DroppableContainer>
         ),
@@ -171,12 +171,6 @@ export function ToolbarsContainer(props: Props): JSX.Element {
 const DraggableList = styled("div")({
     display: "flex",
     flexDirection: "column",
-
-    "& > div": {
-        position: "relative",
-        transition: "all 0.3s",
-        display: "flex",
-        flexDirection: "column",
-    },
+    position: "relative",
+    transition: "all 0.3s",
 });
-const Placeholder = styled("div")({});

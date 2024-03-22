@@ -21,7 +21,7 @@ export type ToolbarWrapperProps = PropsWithChildren<{
     color?: string;
 }>;
 
-export const TOOLBAR_WRAPPER_CLASSNAME = "background";
+export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
@@ -50,7 +50,19 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
     }, [isCollapsedStored]);
 
     return children ? (
-        <Panel className={TOOLBAR_WRAPPER_CLASSNAME} expanded={!isCollapsedLocal} color={color} width={sidebarWidth} data-testid={id}>
+        <Panel
+            className={TOOLBAR_WRAPPER_CLASSNAME}
+            sx={{
+                position: "relative",
+                boxSizing: "border-box",
+                overflow: "hidden",
+                borderRadius: theme.spacing(0.5),
+            }}
+            expanded={!isCollapsedLocal}
+            color={color}
+            width={sidebarWidth}
+            data-testid={id}
+        >
             <PanelHeader {...handlerProps} onClick={() => toggleCollapsed()} onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}>
                 <Typography textTransform={"uppercase"} variant={"overline"}>
                     {title}
