@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 class TableAggregationParametersTest extends AnyFunSuite with Matchers {
 
   implicit val nodeId: NodeId = NodeId("id")
-  val aggregationComponent    = new TableAggregation()
+  val aggregationComponent    = new TableAggregationFactory()
 
   // TODO: after adding more aggregators do a table based test for these cases here
   test("should return errors for mismatch between aggregate function and aggregated-by value") {
@@ -26,14 +26,14 @@ class TableAggregationParametersTest extends AnyFunSuite with Matchers {
     val result = definition(
       aggregationComponent.TransformationStep(
         parameters = List(
-          TableAggregation.groupByParamName            -> DefinedLazyParameter(Typed[String]),
-          TableAggregation.aggregateByParamName        -> DefinedLazyParameter(Typed[String]),
-          TableAggregation.aggregatorFunctionParamName -> DefinedEagerParameter("Sum", Typed[String]),
+          TableAggregationFactory.groupByParamName            -> DefinedLazyParameter(Typed[String]),
+          TableAggregationFactory.aggregateByParamName        -> DefinedLazyParameter(Typed[String]),
+          TableAggregationFactory.aggregatorFunctionParamName -> DefinedEagerParameter("Sum", Typed[String]),
         ),
         state = None
       )
     )
-    inside(result.errors) { case CustomNodeError(_, _, Some(TableAggregation.aggregateByParamName)) :: Nil =>
+    inside(result.errors) { case CustomNodeError(_, _, Some(TableAggregationFactory.aggregateByParamName)) :: Nil =>
     }
   }
 
@@ -46,9 +46,9 @@ class TableAggregationParametersTest extends AnyFunSuite with Matchers {
     val result = definition(
       aggregationComponent.TransformationStep(
         parameters = List(
-          TableAggregation.groupByParamName            -> DefinedLazyParameter(Typed[String]),
-          TableAggregation.aggregateByParamName        -> DefinedLazyParameter(Typed[Int]),
-          TableAggregation.aggregatorFunctionParamName -> DefinedEagerParameter("Sum", Typed[String]),
+          TableAggregationFactory.groupByParamName            -> DefinedLazyParameter(Typed[String]),
+          TableAggregationFactory.aggregateByParamName        -> DefinedLazyParameter(Typed[Int]),
+          TableAggregationFactory.aggregatorFunctionParamName -> DefinedEagerParameter("Sum", Typed[String]),
         ),
         state = None
       )
