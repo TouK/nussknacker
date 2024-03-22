@@ -50,10 +50,14 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
     const focus = useCallback(
         (options?: FocusOptions) => {
             const input = ref.current;
-            input.focus(options);
+            input.focus({ preventScroll: true });
             input.setSelectionRange(0, props.value.length);
+            setTimeout(() => {
+                if (options?.preventScroll) return;
+                input.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, theme.transitions.duration.standard);
         },
-        [props.value.length],
+        [props.value.length, theme.transitions.duration.standard],
     );
 
     useImperativeHandle(forwardedRef, () => ({ focus }), [focus]);
