@@ -33,7 +33,7 @@ import { nodeFocused, nodeValidationError } from "./focusableStyled";
 import { dragHovered } from "./GraphStyled";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 
-// TODO: this is needed here due to our webpack config - needs fixing.
+// TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
 
 type Props = GraphProps & {
