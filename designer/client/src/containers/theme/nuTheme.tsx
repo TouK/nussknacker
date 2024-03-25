@@ -26,7 +26,6 @@ export const blendDarken = (color: string, opacity: number) => rgbToHex(blend(co
 export const blendLighten = (color: string, opacity: number) => rgbToHex(blend(color, "#ffffff", opacity));
 
 const colors = {
-    accent: "#668547",
     eucalyptus: "#33A369",
     seaGarden: "#2D8E54",
     lawnGreen: "#7EDB0D",
@@ -45,6 +44,18 @@ const colors = {
     yellowOrange: "#fbb03b",
     scooter: "#46bfdb",
     nobel: "#b5b5b5",
+    sources: {
+        eucalyptus: "#33A369",
+        seaGarden: "#2D8E54",
+    },
+    split: {},
+    filter: {},
+    custom: {},
+    enrichers: {},
+    choice: {},
+    sinks: {},
+    variable: {},
+    fragments: {},
 };
 
 const custom = {

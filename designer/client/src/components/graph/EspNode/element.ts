@@ -12,6 +12,8 @@ import NodeUtils from "../NodeUtils";
 import { EspNodeShape } from "./esp";
 import millify from "millify";
 import { UserSettings } from "../../../reducers/userSettings";
+import { Theme } from "@mui/material";
+import { blendLighten } from "../../../containers/theme/nuTheme";
 
 const maxLineLength = 24;
 const maxLineCount = 2;
@@ -110,7 +112,7 @@ export const updateNodeCounts =
         node.attr({ testResultsSummary, testResults });
     };
 
-export function makeElement(processDefinitionData: ProcessDefinitionData): (node: NodeType) => shapes.devs.Model {
+export function makeElement(processDefinitionData: ProcessDefinitionData, theme: Theme): (node: NodeType) => shapes.devs.Model {
     return (node: NodeType) => {
         const description = get(node.additionalFields, "description", null);
         const { text: bodyContent } = getBodyContent(node.id);
@@ -123,6 +125,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
                 background: {
+                    fill: blendLighten(theme.palette.background.paper, 0.04),
                     opacity: node.isDisabled ? 0.4 : 1,
                 },
                 title: {
@@ -136,9 +139,15 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
                     xlinkHref: iconHref,
                 },
                 content: {
+                    fontSize: theme.typography.caption.fontSize,
                     text: bodyContent,
                     opacity: node.isDisabled ? 0.65 : 1,
                     disabled: node.isDisabled,
+                    fill: theme.palette.text.primary,
+                },
+                border: {
+                    stroke: blendLighten(theme.palette.background.paper, 0.25),
+                    strokeWidth: 0.5,
                 },
             },
             rankDir: "R",
@@ -152,7 +161,8 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             },
         };
 
-        const element = new EspNodeShape(attributes);
+        const ThemedEspNodeShape = EspNodeShape(theme);
+        const element = new ThemedEspNodeShape(attributes);
 
         element.once(Events.ADD, (e: dia.Element) => {
             // add event listeners after element setup

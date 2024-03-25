@@ -6,11 +6,17 @@ import { makeElement, makeLink } from "../EspNode";
 import NodeUtils from "../NodeUtils";
 import { isEdgeConnected } from "./EdgeUtils";
 import { updateChangedCells } from "./updateChangedCells";
+import { Theme } from "@mui/material";
 
-export function applyCellChanges(paper: dia.Paper, scenarioGraph: ScenarioGraph, processDefinitionData: ProcessDefinitionData): void {
+export function applyCellChanges(
+    paper: dia.Paper,
+    scenarioGraph: ScenarioGraph,
+    processDefinitionData: ProcessDefinitionData,
+    theme: Theme,
+): void {
     const graph = paper.model;
 
-    const nodeElements = NodeUtils.nodesFromScenarioGraph(scenarioGraph).map(makeElement(processDefinitionData));
+    const nodeElements = NodeUtils.nodesFromScenarioGraph(scenarioGraph).map(makeElement(processDefinitionData, theme));
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
     const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));

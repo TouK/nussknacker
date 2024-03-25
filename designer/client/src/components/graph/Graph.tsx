@@ -29,6 +29,7 @@ import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { Scenario } from "../Process/types";
+import { Theme } from "@mui/material";
 
 type Props = GraphProps & {
     processCategory: string;
@@ -38,6 +39,7 @@ type Props = GraphProps & {
     userSettings: UserSettings;
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
     isPristine?: boolean;
+    theme: Theme;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -175,9 +177,11 @@ export class Graph extends React.Component<Props> {
     }
 
     drawGraph = (scenarioGraph: ScenarioGraph, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
+        const { theme } = this.props;
+
         this.redrawing = true;
 
-        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData);
+        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
 
         if (isEmpty(layout)) {
             this.directedLayout();

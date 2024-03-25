@@ -247,10 +247,5 @@ export const globalStyles = (theme: Theme) => ({
     ".notification-dismiss": {
         display: "none",
     },
-
-    // Styles joint-js elements
-    "#nk-graph-main text": {
-        ...theme.typography.body1,
-    },
     ...aceEditorStyles(theme),
 });
