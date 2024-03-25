@@ -38,7 +38,7 @@ export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
             loading={loading}
             sx={(theme) => ({
                 margin: theme.spacing(1.5),
-                ":not(:first-child)": {
+                ":not(:first-of-type)": {
                     marginLeft: theme.spacing(0.75),
                 },
                 ":not(:last-child)": {

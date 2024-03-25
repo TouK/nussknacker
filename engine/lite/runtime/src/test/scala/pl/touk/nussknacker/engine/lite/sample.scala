@@ -4,6 +4,7 @@ import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{State, StateT, ValidatedNel}
 import com.typesafe.config.ConfigFactory
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{
@@ -107,7 +108,7 @@ object sample {
     resultWithInitialState
   }
 
-  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
+  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[_] = {
     implicit val effectUnwrapper: EffectUnwrapper[StateType] = new EffectUnwrapper[StateType] {
       override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
     }

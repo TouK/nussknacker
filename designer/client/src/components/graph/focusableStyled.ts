@@ -117,6 +117,7 @@ export const FocusableStyled = styled("div")(
 
             .element {
                 cursor: pointer;
+
                 &:active {
                     cursor: -moz-grabbing;
                     cursor: -webkit-grabbing;
@@ -137,10 +138,12 @@ export const FocusableStyled = styled("div")(
                     .connection {
                         stroke: ${theme.custom.colors.scooter};
                     }
+
                     .marker-target,
                     .marker-source {
                         fill: ${theme.custom.colors.scooter}
                     }
+
                     .marker-vertices circle {
                         fill: ${theme.custom.colors.nobel}
                         r: 6px;
@@ -172,6 +175,7 @@ export const FocusableStyled = styled("div")(
             .branch-parameter-expr {
                 display: inline-flex;
                 width: 100%;
+
                 .node-value {
                     width: 100% !important;
                 }
@@ -196,30 +200,28 @@ export const FocusableStyled = styled("div")(
                 height: 100px;
             }
 
-          .joint-paper-background {
-            overflow-y: auto;
-            overflow-x: auto;
-            background-color: ${theme.palette.background.default};
-          }
-          #svg-pan-zoom-controls {
-            transform: translate(0, 0px) scale(0.75);
-          }
-          & svg {
-            width: 100%;
-            height: 100%;
-          }
-          
-          ${
-              id === "nk-graph-main" &&
-              `height: 100% !important;
+            .joint-paper-background {
+                overflow-y: auto;
+                overflow-x: auto;
+                background-color: ${theme.palette.background.default};
+            }
+
+            & svg {
+                width: 100%;
+                height: 100%;
+            }
+
+            ${
+                id === "nk-graph-main" &&
+                `height: 100% !important;
                 `
-          }
-          ${
-              id === "nk-graph-fragment" &&
-              `width: 100% !important;
+            }
+            ${
+                id === "nk-graph-fragment" &&
+                `width: 100% !important;
                 #svg-pan-zoom-controls {
                     transform: translate(0, 0px) scale(0.5);
                 }`
-          }
+            }
         `,
 );

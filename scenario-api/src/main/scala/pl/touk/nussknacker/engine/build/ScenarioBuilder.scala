@@ -104,6 +104,13 @@ object ScenarioBuilder {
   def streamingLite(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
 
+  /*
+      FIXME: We should relax validation of scenario parameters inside UIProcessValidator.
+      Thanks to that we could test scenarios created using this DSL without mocking.
+   */
+  def withCustomMetaData(id: String, properties: Map[String, String]) =
+    new ProcessMetaDataBuilder(MetaData(id, CustomMetaData(properties)))
+
   def requestResponse(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(id))))
 

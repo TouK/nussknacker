@@ -1,15 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { PropsWithChildren, useState, useEffect } from "react";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
 import { lighten, styled } from "@mui/material";
-import { Side, PanelSide } from "./SidePanel";
+import { PanelSide } from "./SidePanel";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
 const CLEAN_STYLE = null;
 const SCROLL_THUMB_SIZE = 8;
 const TOOLBARS_GAP = 3;
 
-const trackStyleProps = (side: Side) => ({
+const trackStyleProps = (side: PanelSide) => ({
     background: CLEAN_STYLE,
     borderRadius: SCROLL_THUMB_SIZE,
     backgroundColor: "transparent",
@@ -40,7 +40,7 @@ const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossibl
 
 interface ScrollbarsExtended {
     onScrollToggle?: (isEnabled: boolean) => void;
-    side: Side;
+    side: PanelSide;
 }
 
 export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWithChildren<ScrollbarsExtended>) {
@@ -48,7 +48,7 @@ export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWith
 
     useEffect(() => {
         onScrollToggle?.(isScrollPossible);
-    }, [isScrollPossible]);
+    }, [isScrollPossible, onScrollToggle]);
 
     return (
         <Scrollbars

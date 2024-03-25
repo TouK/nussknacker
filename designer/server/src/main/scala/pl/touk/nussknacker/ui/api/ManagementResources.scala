@@ -7,18 +7,17 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, DisplayJson}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{TestFromParametersRequest, prepareTestFromParametersDecoder}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  TestFromParametersRequest,
+  prepareTestFromParametersDecoder
+}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -34,63 +33,21 @@ object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
+  import io.circe.syntax._
+
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts] = deriveConfiguredEncoder
 
-  implicit val testResultsEncoder: Encoder[TestResults] = new Encoder[TestResults]() {
+  private implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
 
-    implicit val anyEncoder: Encoder[Any] = {
-      case scenarioGraph: DisplayJson =>
-        def safeString(a: String) = Option(a).map(Json.fromString).getOrElse(Json.Null)
-
-        val scenarioGraphJson = scenarioGraph.asJson
-        scenarioGraph.originalDisplay match {
-          case None           => Json.obj("pretty" -> scenarioGraphJson)
-          case Some(original) => Json.obj("original" -> safeString(original), "pretty" -> scenarioGraphJson)
-        }
-      case null => Json.Null
-      case a =>
-        Json.obj(
-          "pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a)
-        )
-    }
+    implicit val nodeResult: Encoder[ResultContext[Json]]                              = deriveConfiguredEncoder
+    implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]]     = deriveConfiguredEncoder
 
     // TODO: do we want more information here?
-    implicit val contextEncoder: Encoder[Context] = (a: Context) =>
-      Json.obj(
-        "id"        -> Json.fromString(a.id),
-        "variables" -> a.variables.asJson
-      )
+    implicit val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
+    implicit val exceptionResultEncoder: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
 
-    val throwableEncoder: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
-
-    // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
-    implicit val externalInvocationResultEncoder: Encoder[ExternalInvocationResult] =
-      (value: ExternalInvocationResult) =>
-        Json.obj(
-          "name"      -> Json.fromString(value.name),
-          "contextId" -> Json.fromString(value.contextId),
-          "value"     -> value.value.asJson,
-        )
-
-    // It has to be done manually, deriveConfiguredEncoder doesn't work properly with value: Any
-    implicit val expressionInvocationResultEncoder: Encoder[ExpressionInvocationResult] =
-      (value: ExpressionInvocationResult) =>
-        Json.obj(
-          "name"      -> Json.fromString(value.name),
-          "contextId" -> Json.fromString(value.contextId),
-          "value"     -> value.value.asJson,
-        )
-
-    implicit val exceptionsEncoder: Encoder[NuExceptionInfo[_ <: Throwable]] =
-      (value: NuExceptionInfo[_ <: Throwable]) =>
-        Json.obj(
-          // We don't need componentId on the FE here
-          "nodeId"    -> value.nodeComponentInfo.map(_.nodeId).asJson,
-          "throwable" -> throwableEncoder(value.throwable),
-          "context"   -> value.context.asJson
-        )
-
-    override def apply(a: TestResults): Json = a match {
+    override def apply(a: TestResults[Json]): Json = a match {
       case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions) =>
         Json.obj(
           "nodeResults"       -> nodeResults.map { case (node, list) => node -> list.sortBy(_.id) }.asJson,
@@ -214,9 +171,7 @@ class ManagementResources(
                             details.isFragment,
                             RawScenarioTestData(testDataContent)
                           )
-                          .flatMap {
-                            mapResultsToHttpResponse
-                          }
+                          .flatMap(mapResultsToHttpResponse)
                       case Left(error) =>
                         Future.failed(ProcessUnmarshallingError(error.toString))
                     }
@@ -250,9 +205,7 @@ class ManagementResources(
                                 details.isFragment,
                                 rawScenarioTestData
                               )
-                              .flatMap {
-                                mapResultsToHttpResponse
-                              }
+                              .flatMap(mapResultsToHttpResponse)
                         }
                       }
                     }
@@ -280,9 +233,7 @@ class ManagementResources(
                           process.isFragment,
                           testParametersRequest.sourceParameters
                         )
-                        .flatMap {
-                          mapResultsToHttpResponse
-                        }
+                        .flatMap(mapResultsToHttpResponse)
                     }
                   }
                 }

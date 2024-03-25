@@ -16,12 +16,16 @@ export type ToolbarWrapperProps = PropsWithChildren<{
     id?: string;
     title?: string;
     onClose?: () => void;
+    onExpand?: () => void;
+    onCollapse?: () => void;
     color?: string;
 }>;
 
+export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
+
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, color = theme.palette.background.paper } = props;
+    const { title, children, id, onClose, onExpand, onCollapse, color = theme.custom.colors.primaryBackground } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();
@@ -46,13 +50,20 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
     }, [isCollapsedStored]);
 
     return children ? (
-        <Panel expanded={!isCollapsedLocal} color={color} width={sidebarWidth}>
-            <PanelHeader
-                color={color}
-                {...handlerProps}
-                onClick={() => toggleCollapsed()}
-                onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}
-            >
+        <Panel
+            className={TOOLBAR_WRAPPER_CLASSNAME}
+            sx={{
+                position: "relative",
+                boxSizing: "border-box",
+                overflow: "hidden",
+                borderRadius: theme.spacing(0.5),
+            }}
+            expanded={!isCollapsedLocal}
+            color={color}
+            width={sidebarWidth}
+            data-testid={id}
+        >
+            <PanelHeader {...handlerProps} onClick={() => toggleCollapsed()} onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}>
                 <Typography textTransform={"uppercase"} variant={"overline"}>
                     {title}
                 </Typography>
@@ -71,8 +82,14 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                 in={!isCollapsedLocal}
                 unmountOnExit
                 mountOnEnter
-                onEntered={() => storeIsCollapsed(false)}
-                onExited={() => storeIsCollapsed(true)}
+                onEntered={() => {
+                    storeIsCollapsed(false);
+                    onExpand?.();
+                }}
+                onExited={() => {
+                    storeIsCollapsed(true);
+                    onCollapse?.();
+                }}
             >
                 <ErrorBoundary>{children}</ErrorBoundary>
             </CollapsiblePanelContent>

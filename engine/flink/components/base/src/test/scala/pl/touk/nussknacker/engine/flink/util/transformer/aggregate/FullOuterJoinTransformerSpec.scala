@@ -105,7 +105,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       }
     }
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
     val (id, stoppableEnv) = runProcess(process, input1, input2, collectingListener)
 
     input.foreach {
@@ -120,7 +120,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val outValues = collectingListener.results
       .nodeResults(EndNodeId)
-      .map(_.get[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
+      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
       .map(_.mapValuesNow {
         case x: java.util.Map[String @unchecked, AnyRef @unchecked] => x.asScala.asInstanceOf[AnyRef]
         case x                                                      => x
@@ -456,7 +456,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
@@ -502,7 +502,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val sourceFoo          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar          = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
-    val collectingListener = ResultsCollectingListenerHolder.registerRun
+    val collectingListener = ResultsCollectingListenerHolder.registerListener
 
     val model            = modelData(sourceFoo, sourceBar, collectingListener)
     val processValidator = ProcessValidator.default(model)
@@ -514,7 +514,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
       testProcess: CanonicalProcess,
       input1: BlockingQueueSource[OneRecord],
       input2: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ) = {
     val model        = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
@@ -526,7 +526,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   private def modelData(
       input1: BlockingQueueSource[OneRecord],
       input2: BlockingQueueSource[OneRecord],
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[Any]
   ) = {
     val creator = new ConfigCreatorWithCollectingListener(collectingListener)
     LocalModelData(ConfigFactory.empty(), prepareComponents(input1, input2), configCreator = creator)

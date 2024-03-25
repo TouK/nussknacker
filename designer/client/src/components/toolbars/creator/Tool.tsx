@@ -3,10 +3,9 @@ import { cloneDeep } from "lodash";
 import React, { useEffect } from "react";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
-import Highlighter from "react-highlight-words";
 import { NodeType } from "../../../types";
 import { ComponentIcon } from "./ComponentIcon";
-import { useTheme } from "@mui/material";
+import { SearchHighlighter } from "./SearchHighlighter";
 
 export const DndTypes = {
     ELEMENT: "element",
@@ -27,7 +26,6 @@ export default function Tool(props: OwnProps): JSX.Element {
         options: { dropEffect: "copy" },
         canDrag: !disabled,
     }));
-    const theme = useTheme();
 
     useEffect(() => {
         preview(getEmptyImage());
@@ -40,21 +38,7 @@ export default function Tool(props: OwnProps): JSX.Element {
         <div className={cx("tool", { disabled })} ref={drag} data-testid={`component:${label}`}>
             <div className="toolWrapper">
                 <ComponentIcon node={nodeModel} className="toolIcon" />
-                <Highlighter
-                    textToHighlight={label}
-                    searchWords={highlights}
-                    highlightTag={`span`}
-                    highlightStyle={{
-                        ...theme.typography.body2,
-                        color: theme.palette.warning.main,
-                        background: theme.palette.background.paper,
-                        fontWeight: "bold",
-                    }}
-                    unhighlightStyle={{
-                        ...theme.typography.body2,
-                    }}
-                    activeStyle={{ ...theme.typography.body2 }}
-                />
+                <SearchHighlighter highlights={highlights}>{label}</SearchHighlighter>
             </div>
         </div>
     );

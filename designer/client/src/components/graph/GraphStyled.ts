@@ -1,6 +1,7 @@
-import { styled, css } from "@mui/material";
+import { css, styled } from "@mui/material";
 import { FocusableStyled } from "./focusableStyled";
 
+export const dragHovered = "dragHovered";
 export const GraphStyled = styled(FocusableStyled)(
     ({ theme }) => css`
         min-height: 300px;
@@ -47,7 +48,7 @@ export const GraphStyled = styled(FocusableStyled)(
                 stroke-opacity: 0.5;
             }
 
-            &.dragHovered {
+            &.${dragHovered} {
                 .connection {
                     opacity: 0.5;
                 }

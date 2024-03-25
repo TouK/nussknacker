@@ -9,6 +9,8 @@ import { partition } from "lodash";
 import NodeErrors from "./NodeErrors";
 import { TestResultsWrapper } from "./TestResultsWrapper";
 import { NodeTypeDetailsContent } from "./NodeTypeDetailsContent";
+import { DebugNodeInspector } from "./NodeDetailsContent/DebugNodeInspector";
+import { useUserSettings } from "../../../common/userSettings";
 
 export const NodeDetailsContent = ({
     node,
@@ -30,6 +32,8 @@ export const NodeDetailsContent = ({
     const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(node.id, nodeErrors));
     const [errors, diagramStructureErrors] = useMemo(() => partition(currentErrors, (error) => !!error.fieldName), [currentErrors]);
 
+    const [userSettings] = useUserSettings();
+
     return (
         <NodeTable editable={!!onChange}>
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
@@ -44,6 +48,7 @@ export const NodeDetailsContent = ({
                 />
             </TestResultsWrapper>
             <NodeAdditionalInfoBox node={node} />
+            {userSettings["debug.nodesAsJson"] && <DebugNodeInspector node={node} />}
         </NodeTable>
     );
 };

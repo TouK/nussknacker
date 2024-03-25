@@ -7,66 +7,66 @@ import {
     DraggableRubric,
     DraggableStateSnapshot,
     Droppable,
+    DroppableProps,
     DroppableProvided,
     DroppableStateSnapshot,
 } from "react-beautiful-dnd";
 import React, { CSSProperties, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { TOOLBAR_DRAGGABLE_TYPE } from "./ToolbarsLayer";
 import { DragHandlerContext } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
 import { cx } from "@emotion/css";
-import { css, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import { alpha } from "../../containers/theme/helpers";
+import { TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
 
-export const StyledDraggableItem = styled("div")(
-    ({ theme }) => css`
-        .is-dragging-over {
-            opacity: 1;
-            ::after {
-                transition: all 0.3s;
-                content: "";
-                line-height: 0;
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                backdrop-filter: none;
-                background: ${alpha(theme.custom.colors.lime, 0.05)};
-                outline: 2px solid ${theme.custom.colors.lime};
-                outline-offset: -2.5px;
-            }
-        }
+export const StyledDraggableItem = styled("div")(({ theme }) => ({
+    [`&.${DRAGGING_CLASSNAME}`]: {
+        backdropFilter: "blur(2px)",
 
-        .is-dragging {
-            backdrop-filter: blur(8px);
-            transition: all 0.3s;
-            opacity: 0.75;
-            ::after {
-                transition: all 0.3s;
-                content: "";
-                line-height: 0;
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                backdrop-filter: blur(0.5px);
-                outline: 2px dashed ${theme.custom.colors.orangered};
-                background: ${alpha(theme.custom.colors.orangered, 0.2)};
-                outline-offset: -3px;
-            }
-        }
+        "& > *": {
+            transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
+            opacity: 0.5,
+        },
 
-        .is-animating {
-            .content {
-                opacity: 1;
-            }
-        }
-    `,
-);
+        "::after": {
+            mixBlendMode: "color",
+            transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
+            content: "''",
+            lineHeight: 0,
+            position: "absolute",
+            inset: 0,
+            backdropFilter: "blur(0.5px)",
+            background: alpha(theme.palette.error.main, 0.25),
+            outline: `2px dashed ${theme.palette.error.main}`,
+            outlineOffset: -3,
+        },
+
+        ":focus, *:focus": {
+            outline: "none",
+        },
+    },
+
+    [`&.${DRAGGING_OVER_CLASSNAME}`]: {
+        "& > *": {
+            opacity: 1,
+        },
+
+        "::after": {
+            backdropFilter: "none",
+            background: alpha(theme.palette.primary.main, 0.25),
+            outline: `4px solid ${theme.palette.primary.main}`,
+            outlineOffset: -2,
+        },
+    },
+
+    [`&.${ANIMATING_CLASSNAME}`]: {
+        ".content": {
+            opacity: 1,
+        },
+    },
+}));
 
 interface Rubric extends DraggableRubric {
     source: DraggableLocation;
@@ -85,6 +85,27 @@ type Props = {
     className?: string;
 };
 
+export const DRAGGABLE_LIST_CLASSNAME = "draggable-list";
+export const DROPPABLE_CLASSNAME = "droppable";
+export const DRAGGABLE_CLASSNAME = "draggable";
+export const DRAGGING_OVER_CLASSNAME = "is-dragging-over";
+export const DRAGGING_FROM_CLASSNAME = "is-dragging-from";
+export const DRAGGING_CLASSNAME = "is-dragging";
+export const ANIMATING_CLASSNAME = "is-animating";
+
+const DroppableContainer = styled("div")({
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1,
+    justifyContent: "space-around",
+    "&:first-of-type": {
+        justifyContent: "flex-start",
+    },
+    "&:last-child": {
+        justifyContent: "flex-end",
+    },
+});
+
 export function ToolbarsContainer(props: Props): JSX.Element {
     const { side, availableToolbars, className } = props;
     const selector = useMemo(() => getOrderForPosition(side), [side]);
@@ -94,19 +115,16 @@ export function ToolbarsContainer(props: Props): JSX.Element {
 
     const renderDraggable: DraggableChildrenFn = useCallback(
         (p: DraggableProvided, s: DraggableStateSnapshot, r: Rubric) => (
-            <div ref={p.innerRef} {...p.draggableProps} style={getStyle(p.draggableProps.style, s)} className={"draggable"}>
+            <div ref={p.innerRef} {...p.draggableProps} style={getStyle(p.draggableProps.style, s)} className={DRAGGABLE_CLASSNAME}>
                 <DragHandlerContext.Provider value={p.dragHandleProps}>
-                    <StyledDraggableItem>
-                        <div
-                            className={cx(
-                                s.draggingOver ? "is-dragging-over" : s.isDragging && "is-dragging",
-                                s.isDropAnimating && "is-animating",
-                                r.source.index === 0 && "first",
-                                r.source.index === ordered.length - 1 && "last",
-                            )}
-                        >
-                            {ordered[r.source.index].component}
-                        </div>
+                    <StyledDraggableItem
+                        className={cx(
+                            s.isDragging && DRAGGING_CLASSNAME,
+                            s.draggingOver && DRAGGING_OVER_CLASSNAME,
+                            s.isDropAnimating && ANIMATING_CLASSNAME,
+                        )}
+                    >
+                        {ordered[r.source.index].component}
                     </StyledDraggableItem>
                 </DragHandlerContext.Provider>
             </div>
@@ -114,28 +132,31 @@ export function ToolbarsContainer(props: Props): JSX.Element {
         [ordered],
     );
 
-    const renderDroppable = useCallback(
+    const renderDroppable: DroppableProps["children"] = useCallback(
         (p: DroppableProvided, s: DroppableStateSnapshot) => (
-            <div
+            <DroppableContainer
                 ref={p.innerRef}
-                className={cx("droppable", s.isDraggingOver && "is-dragging-over", s.draggingFromThisWith && "is-dragging-from", className)}
+                className={cx(
+                    DROPPABLE_CLASSNAME,
+                    s.isDraggingOver && DRAGGING_OVER_CLASSNAME,
+                    s.draggingFromThisWith && DRAGGING_FROM_CLASSNAME,
+                    className,
+                )}
             >
-                <div {...p.droppableProps} className={"draggable-list"}>
-                    <div className={"background"}>
-                        {ordered.map(({ id, isHidden }, index) => {
-                            if (isHidden) {
-                                return null;
-                            }
-                            return (
-                                <Draggable key={id} draggableId={id} index={index}>
-                                    {renderDraggable}
-                                </Draggable>
-                            );
-                        })}
-                        {p.placeholder}
-                    </div>
-                </div>
-            </div>
+                <DraggableList {...p.droppableProps} className={DRAGGABLE_LIST_CLASSNAME}>
+                    {ordered.map(({ id, isHidden }, index) => {
+                        if (isHidden) {
+                            return null;
+                        }
+                        return (
+                            <Draggable key={id} draggableId={id} index={index}>
+                                {renderDraggable}
+                            </Draggable>
+                        );
+                    })}
+                    {p.placeholder}
+                </DraggableList>
+            </DroppableContainer>
         ),
         [className, ordered, renderDraggable],
     );
@@ -146,3 +167,10 @@ export function ToolbarsContainer(props: Props): JSX.Element {
         </Droppable>
     );
 }
+
+const DraggableList = styled("div")({
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+    transition: "all 0.3s",
+});

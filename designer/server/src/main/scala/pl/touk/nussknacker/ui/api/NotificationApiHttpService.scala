@@ -1,19 +1,17 @@
-package pl.touk.nussknacker.ui.services
+package pl.touk.nussknacker.ui.api
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.api.NotificationApiEndpoints
+import pl.touk.nussknacker.ui.api.description.NotificationApiEndpoints
 import pl.touk.nussknacker.ui.notifications.NotificationService
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
 import scala.concurrent.ExecutionContext
 
 class NotificationApiHttpService(
-    config: Config,
     authenticator: AuthenticationResources,
     notificationService: NotificationService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, authenticator)
+    extends BaseHttpService(authenticator)
     with LazyLogging {
 
   private val notificationApiEndpoints = new NotificationApiEndpoints(authenticator.authenticationMethod())

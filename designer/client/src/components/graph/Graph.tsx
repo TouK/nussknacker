@@ -18,7 +18,7 @@ import { handleGraphEvent } from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { rafThrottle } from "./rafThrottle";
 import { isEdgeEditable } from "../../common/EdgeUtils";
-import { NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
+import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
 import User from "../../common/models/User";
@@ -29,7 +29,13 @@ import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { Scenario } from "../Process/types";
+import { nodeFocused, nodeValidationError } from "./focusableStyled";
+import { dragHovered } from "./GraphStyled";
+import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
+
+// TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
+styles;
 
 type Props = GraphProps & {
     processCategory: string;
@@ -205,12 +211,12 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.freeze();
 
         const links = this.graph.getLinks();
-        links.forEach((l) => this.unhighlightCell(l, styles.dragHovered));
+        links.forEach((l) => this.#unhighlightCell(l, dragHovered));
 
         if (!forceDisable) {
             const [active] = filterDragHovered(links);
             if (active) {
-                this.highlightCell(active, styles.dragHovered);
+                this.#highlightCell(active, dragHovered);
                 active.toBack();
             }
         }
@@ -330,7 +336,7 @@ export class Graph extends React.Component<Props> {
         }
 
         this.bindEventHandlers();
-        this.highlightNodes();
+        this.#highlightNodes();
         this.updateNodesCounts();
 
         this.graph.on(Events.CHANGE_DRAG_OVER, () => {
@@ -374,7 +380,7 @@ export class Graph extends React.Component<Props> {
         //when e.g. layout changed we have to remember to highlight nodes
         const selectedNodesChanged = !isEqual(this.props.selectionState, nextProps.selectionState);
         if (processChanged || selectedNodesChanged) {
-            this.highlightNodes(nextProps.selectionState, nextProps.scenario);
+            this.#highlightNodes(nextProps.selectionState, nextProps.scenario);
         }
     }
 
@@ -457,13 +463,32 @@ export class Graph extends React.Component<Props> {
     };
 
     disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
-        if (this.props.isFragment !== true && this.graphContainsEdge(from, to)) {
+        if (this.props.isFragment !== true && this.#graphContainsEdge(from, to)) {
             this.props.nodesDisconnected(from, to);
         }
     };
 
-    graphContainsEdge(from: NodeId, to: NodeId): boolean {
+    #graphContainsEdge(from: NodeId, to: NodeId): boolean {
         return this.props.scenario.scenarioGraph.edges.some((edge) => edge.from === from && edge.to === to);
+    }
+
+    #findLinkForEdge(edge: Edge): dia.Link {
+        if (!isEdgeConnected(edge) || !this.#graphContainsEdge(edge.from, edge.to)) {
+            return null;
+        }
+        const links = this.graph.getLinks();
+        return links.find(({ attributes: { edgeData } }) => edgeData.from === edge.from && edgeData.to === edge.to);
+    }
+
+    highlightEdge(edge: Edge, className: string): void {
+        const link = this.#findLinkForEdge(edge);
+        link?.toFront();
+        this.#highlightCell(link, className);
+    }
+
+    unhighlightEdge(edge: Edge, className: string): void {
+        const link = this.#findLinkForEdge(edge);
+        this.#unhighlightCell(link, className);
     }
 
     handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
@@ -497,13 +522,12 @@ export class Graph extends React.Component<Props> {
         };
     };
 
-    highlightNodes = (selectedNodeIds: string[] = [], process = this.props.scenario): void => {
+    #highlightNodes = (selectedNodeIds: string[] = [], process = this.props.scenario): void => {
         this.processGraphPaper.freeze();
         const elements = this.graph.getElements();
         elements.forEach((cell) => {
-            this.unhighlightCell(cell, "node-validation-error");
-            this.unhighlightCell(cell, "node-focused");
-            this.unhighlightCell(cell, "node-focused-with-validation-error");
+            this.#unhighlightCell(cell, nodeValidationError);
+            this.#unhighlightCell(cell, nodeFocused);
         });
 
         const validationErrors = ProcessUtils.getValidationErrors(process);
@@ -517,22 +541,14 @@ export class Graph extends React.Component<Props> {
             }
         });
 
-        invalidNodeIds.forEach((id) =>
-            selectedNodeIds.includes(id)
-                ? this.highlightNode(id, "node-focused-with-validation-error")
-                : this.highlightNode(id, "node-validation-error"),
-        );
+        invalidNodeIds.forEach((id) => this.highlightNode(id, nodeValidationError));
+        selectedNodeIds.forEach((id) => this.highlightNode(id, nodeFocused));
 
-        selectedNodeIds.forEach((id) => {
-            if (!invalidNodeIds.includes(id)) {
-                this.highlightNode(id, "node-focused");
-            }
-        });
         this.processGraphPaper.unfreeze();
     };
 
-    highlightCell(cell: dia.Cell, className: string): void {
-        this.processGraphPaper.findViewByModel(cell).highlight(null, {
+    #highlightCell(cell: dia.Cell, className: string): void {
+        this.processGraphPaper.findViewByModel(cell)?.highlight(null, {
             highlighter: {
                 name: "addClass",
                 options: { className },
@@ -540,8 +556,8 @@ export class Graph extends React.Component<Props> {
         });
     }
 
-    unhighlightCell(cell: dia.Cell, className: string): void {
-        this.processGraphPaper.findViewByModel(cell).unhighlight(null, {
+    #unhighlightCell(cell: dia.Cell, className: string): void {
+        this.processGraphPaper.findViewByModel(cell)?.unhighlight(null, {
             highlighter: {
                 name: "addClass",
                 options: { className },
@@ -549,12 +565,14 @@ export class Graph extends React.Component<Props> {
         });
     }
 
-    highlightNode = (nodeId: NodeId, highlightClass: string): void => {
+    highlightNode = (nodeId: NodeId, className: string): void => {
         const cell = this.graph.getCell(nodeId);
-        if (cell) {
-            //prevent `properties` node highlighting
-            this.highlightCell(cell, highlightClass);
-        }
+        this.#highlightCell(cell, className);
+    };
+
+    unhighlightNode = (nodeId: NodeId, className: string): void => {
+        const cell = this.graph.getCell(nodeId);
+        this.#unhighlightCell(cell, className);
     };
 
     changeLayoutIfNeeded = (): void => {
@@ -647,6 +665,12 @@ export class Graph extends React.Component<Props> {
             this.panAndZoom.panToCells(movingCells, this.adjustViewport());
         });
     }
+
+    panToNodes = (nodeIds: string[]) => {
+        // const cells = nodeIds.map((nodeId) => this.graph.getCell(nodeId));
+        // TODO: pan and zoom to filtered cells only (NU-1560)
+        this.panAndZoom.fitSmallAndLargeGraphs();
+    };
 
     private viewportAdjustment: { left: number; right: number } = { left: 0, right: 0 };
     adjustViewport = (adjustment: { left?: number; right?: number } = {}) => {
