@@ -21,37 +21,18 @@ interface RowSelectProps {
     fieldErrors: FieldError[];
 }
 
-function useCaptureEsc() {
-    const [captureEsc, setCaptureEsc] = useState(false);
-
-    //prevent modal close by esc
-    const preventEsc = useCallback(
-        (event: React.KeyboardEvent) => {
-            if (captureEsc && event.key === "Escape") {
-                event.stopPropagation();
-            }
-        },
-        [captureEsc],
-    );
-
-    return { setCaptureEsc, preventEsc };
-}
-
 export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder, fieldErrors }: RowSelectProps): JSX.Element {
-    const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
 
     return (
-        <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
+        <NodeValue className="field" marked={isMarked}>
             <Select
                 aria-label={"type-select"}
                 className="node-value node-value-select node-value-type-select"
                 isDisabled={readOnly}
                 maxMenuHeight={190}
-                onMenuOpen={() => setCaptureEsc(true)}
-                onMenuClose={() => setCaptureEsc(false)}
                 options={options}
                 value={value || ""}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
