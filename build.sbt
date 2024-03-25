@@ -1702,12 +1702,9 @@ lazy val flinkBaseComponents = (project in flink("components/base"))
   .settings(
     name := "nussknacker-flink-base-components",
     libraryDependencies ++= Seq(
-      "org.apache.flink"          % "flink-streaming-java" % flinkV     % Provided,
-      "org.scalatest"            %% "scalatest"            % scalaTestV % Test,
-      "com.clearspring.analytics" % "stream"               % "2.9.8"
-      // It is used only in QDigest which we don't use, while it's >20MB in size...
-        exclude ("it.unimi.dsi", "fastutil"),
-    ),
+      "org.apache.flink" % "flink-streaming-java" % flinkV     % Provided,
+      "org.scalatest"   %% "scalatest"            % scalaTestV % Test,
+    )
   )
   .dependsOn(
     commonComponents,
@@ -1726,7 +1723,7 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
       "org.scalatest"            %% "scalatest"            % scalaTestV % Test,
       "com.clearspring.analytics" % "stream"               % "2.9.8"
       // It is used only in QDigest which we don't use, while it's >20MB in size...
-        exclude ("it.unimi.dsi", "fastutil"),
+        exclude ("it.unimi.dsi", "fastutil")
     )
   )
   .dependsOn(
