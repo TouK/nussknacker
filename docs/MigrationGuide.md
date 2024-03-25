@@ -23,6 +23,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
 
+### Configuration changes
+
+* [#5744](https://github.com/TouK/nussknacker/pull/5744) Extracted unbounded stream specific components into separate
+  module:
+    * Components `periodic`, `union-memo`, `previousValue`, aggregates, joins and `delay` from `base` were moved into
+      `base-unbounded` module. They are now built as `flinkBaseUnbounded.jar` under
+      `work/components/flink/flinkBaseUnbounded.jar`.
+    * Configuration of tumbling windows aggregate offset is changed at the ComponentProvider level:
+      `components.base.aggregateWindowsConfig.tumblingWindowsOffset` should now be set
+      as `components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset`
+    * If you previously specified base component jar explicitly in `modelConfig.classPath`
+      as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
+      `components/flink/flinkBaseUnbounded.jar` explicitly.
+
 ### Other changes
 
 * [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
