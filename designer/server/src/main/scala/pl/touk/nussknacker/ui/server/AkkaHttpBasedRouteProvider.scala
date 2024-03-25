@@ -45,6 +45,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.migrations.MigrationService
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -60,6 +61,7 @@ import pl.touk.nussknacker.ui.security.api.{
   LoggedUser,
   NussknackerInternalUser
 }
+import pl.touk.nussknacker.ui.services.{MigrationApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -248,6 +250,21 @@ class AkkaHttpBasedRouteProvider(
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
+
+      val migrationService = new MigrationService(
+        config = resolvedConfig,
+        processService = processService,
+        processResolver = processResolver,
+        processAuthorizer = processAuthorizer,
+        processChangeListener = processChangeListener,
+        scenarioParametersService = typeToConfig.mapCombined(_.parametersService),
+        useLegacyCreateScenarioApi = true
+      )
+
+      val migrationApiHttpService = new MigrationApiHttpService(
+        authenticator = authenticationResources,
+        migrationService = migrationService
+      )
       val componentsApiHttpService = new ComponentApiHttpService(
         authenticator = authenticationResources,
         componentService = componentService
@@ -260,6 +277,7 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         notificationService = notificationService
       )
+
       val nodesApiHttpService = new NodesApiHttpService(
         authenticator = authenticationResources,
         typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData),
@@ -274,6 +292,7 @@ class AkkaHttpBasedRouteProvider(
         ),
         scenarioService = processService
       )
+
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
         authenticator = authenticationResources,
         scenarioActivityRepository = processActivityRepository,
@@ -387,6 +406,7 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
+          migrationApiHttpService,
           nodesApiHttpService
         )
 

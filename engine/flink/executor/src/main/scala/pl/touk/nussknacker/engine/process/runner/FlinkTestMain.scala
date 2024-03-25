@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
@@ -26,8 +27,8 @@ object FlinkTestMain extends FlinkRunner {
       modelData: ModelData,
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
-      configuration: Configuration
-  ): TestResults = {
+      configuration: Configuration,
+  ): TestResults[Json] = {
     val processVersion = ProcessVersion.empty.copy(processName =
       ProcessName("snapshot version")
     ) // testing process may be unreleased, so it has no version
@@ -45,9 +46,9 @@ class FlinkTestMain(
     val configuration: Configuration
 ) extends FlinkStubbedRunner {
 
-  def runTest: TestResults =
-    Using.resource(ResultsCollectingListenerHolder.registerRun) { collectingListener =>
-      val resultCollector = new TestServiceInvocationCollector(collectingListener.runId)
+  def runTest: TestResults[Json] =
+    Using.resource(ResultsCollectingListenerHolder.registerTestEngineListener) { collectingListener =>
+      val resultCollector = new TestServiceInvocationCollector(collectingListener)
       val registrar       = prepareRegistrar(collectingListener, scenarioTestData)
       val env             = createEnv
 
@@ -56,8 +57,8 @@ class FlinkTestMain(
       collectingListener.results
     }
 
-  protected def prepareRegistrar[T](
-      collectingListener: ResultsCollectingListener,
+  protected def prepareRegistrar(
+      collectingListener: ResultsCollectingListener[Json],
       scenarioTestData: ScenarioTestData
   ): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(

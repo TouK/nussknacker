@@ -37,6 +37,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{Cu
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   CreatorPanel,
   ProcessActionsPanel,
+  SearchPanel,
   TipsPanel
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
@@ -950,6 +951,7 @@ class ProcessesResourcesSpec
       toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
+          ToolbarPanel(SearchPanel, None, None, None),
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)
         ),

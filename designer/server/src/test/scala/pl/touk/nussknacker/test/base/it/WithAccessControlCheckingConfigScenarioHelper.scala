@@ -26,6 +26,10 @@ trait WithAccessControlCheckingConfigScenarioHelper {
     rawScenarioHelper.createSavedScenario(scenario, category.stringify, isFragment = false)
   }
 
+  def createSavedFragment(scenario: CanonicalProcess, category: TestCategory): ProcessId = {
+    rawScenarioHelper.createSavedScenario(scenario, category.stringify, isFragment = true)
+  }
+
   def createDeployedScenario(scenario: CanonicalProcess, category: TestCategory): ProcessId = {
     rawScenarioHelper.createDeployedScenario(scenario, category.stringify, isFragment = false)
   }
