@@ -664,7 +664,7 @@ export class Graph extends React.Component<Props> {
 
     panToNodes = (nodeIds: string[]) => {
         // const cells = nodeIds.map((nodeId) => this.graph.getCell(nodeId));
-        // TODO: pan and zoom to filtered cells only
+        // TODO: pan and zoom to filtered cells only (NU-1560)
         this.panAndZoom.fitSmallAndLargeGraphs();
     };
 
