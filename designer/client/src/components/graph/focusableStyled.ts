@@ -2,6 +2,7 @@ import { CSSProperties } from "react";
 import { styled, css, Theme } from "@mui/material";
 import { Button } from "../FormElements";
 import { blendLighten } from "../../containers/theme/nuTheme";
+import { blend } from "@mui/system";
 
 export const buttonBase = (theme: Theme) => css`
     border-radius: 0;
@@ -60,13 +61,13 @@ const modalContent = (errorColor: CSSProperties["color"], hrColor: CSSProperties
 const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) => css`
     .body {
         stroke: ${strokeColor};
-        stroke-width: 2px;
+        stroke-width: 1px;
     }
     .background {
         fill: ${backgroundFill};
     }
     .joint-port-body {
-        stroke-width: 3px;
+        stroke-width: 1px;
         fill: ${backgroundFill};
         stroke: ${strokeColor};
     }
@@ -79,11 +80,21 @@ export const FocusableStyled = styled("div")(
             height: 100% !important;
           
             .node-validation-error {
-                ${nodeHighlight(theme.palette.error.main, theme.custom.colors.cinderella)}
+                ${nodeHighlight(
+                    theme.palette.error.main,
+                    blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.15),
+                )}
             }
 
             .node-focused-with-validation-error {
-                ${nodeHighlight(theme.palette.primary.main, theme.custom.colors.bizarre)}
+              ${nodeHighlight(
+                  theme.palette.error.main,
+                  blend(
+                      blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.15),
+                      theme.palette.error.main,
+                      0.15,
+                  ),
+              )}
             }
 
             .node-grouping {
@@ -91,7 +102,10 @@ export const FocusableStyled = styled("div")(
             }
 
             .node-focused {
-                ${nodeHighlight(theme.palette.primary.main, theme.custom.colors.zumthor)}
+              ${nodeHighlight(
+                  theme.palette.success.main,
+                  blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.15),
+              )}
             }
 
             .joint-type-basic-rect.node-focused {

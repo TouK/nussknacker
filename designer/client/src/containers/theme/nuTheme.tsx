@@ -34,7 +34,6 @@ const colors = {
     deepskyblue: "#00bfff",
     lime: "#00ff00",
     orangered: "#FF4500",
-    cinderella: "#fbd2d6",
     bizarre: "#f2dede",
     apple: "#5BA935",
     blueRomance: "#caf2d6",

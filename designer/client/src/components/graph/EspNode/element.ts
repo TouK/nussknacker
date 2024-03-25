@@ -126,27 +126,28 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
             attrs: {
                 background: {
                     fill: blendLighten(theme.palette.background.paper, 0.04),
-                    opacity: node.isDisabled ? 0.4 : 1,
+                    opacity: node.isDisabled ? 0.5 : 1,
                 },
                 title: {
                     text: description,
                 },
                 iconBackground: {
                     fill: customAttrs[node.type].styles.fill,
-                    opacity: node.isDisabled ? 0.4 : 1,
+                    opacity: node.isDisabled ? 0.5 : 1,
                 },
                 icon: {
                     xlinkHref: iconHref,
+                    opacity: node.isDisabled ? 0.5 : 1,
                 },
                 content: {
                     fontSize: theme.typography.caption.fontSize,
                     text: bodyContent,
-                    opacity: node.isDisabled ? 0.65 : 1,
+                    opacity: node.isDisabled ? 0.3 : 1,
                     disabled: node.isDisabled,
                     fill: theme.palette.text.primary,
                 },
                 border: {
-                    stroke: blendLighten(theme.palette.background.paper, 0.25),
+                    stroke: node.isDisabled ? "none" : blendLighten(theme.palette.background.paper, 0.25),
                     strokeWidth: 0.5,
                 },
             },
@@ -161,7 +162,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
             },
         };
 
-        const ThemedEspNodeShape = EspNodeShape(theme);
+        const ThemedEspNodeShape = EspNodeShape(theme, node);
         const element = new ThemedEspNodeShape(attributes);
 
         element.once(Events.ADD, (e: dia.Element) => {

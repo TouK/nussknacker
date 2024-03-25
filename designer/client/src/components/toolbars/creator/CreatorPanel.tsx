@@ -8,6 +8,7 @@ import ToolBox from "./ToolBox";
 import { styled } from "@mui/material";
 
 const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
+    ...theme.typography.body2,
     borderRadius: 0,
     height: "36px !important",
     color: theme.palette.text.secondary,

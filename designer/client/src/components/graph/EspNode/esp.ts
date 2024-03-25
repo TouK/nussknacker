@@ -4,6 +4,7 @@ import { dia, shapes, util } from "jointjs";
 import { getStringWidth } from "./element";
 import { getRoundedRectPath } from "./getRoundedRectPath";
 import { blendLighten } from "../../../containers/theme/nuTheme";
+import { NodeType } from "../../../types";
 
 export const RECT_WIDTH = 232;
 export const RECT_HEIGHT = 48;
@@ -75,13 +76,13 @@ const content = (theme: Theme): dia.MarkupNodeJSON => ({
 });
 
 const portSize = iconSize / 3;
-const portMarkup = (theme: Theme): dia.MarkupNodeJSON => ({
+const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
     selector: "port",
     tagName: "circle",
     attributes: {
         magnet: true,
         r: portSize,
-        stroke: blendLighten(theme.palette.background.paper, 0.25),
+        stroke: node.isDisabled ? "none" : blendLighten(theme.palette.background.paper, 0.25),
         fill: blendLighten(theme.palette.background.paper, 0.04),
         strokeWidth: 0.5,
     },
@@ -166,14 +167,14 @@ const defaults = (theme: Theme) =>
         },
         shapes.devs.Model.prototype.defaults,
     );
-const protoProps = (theme: Theme) => {
+const protoProps = (theme: Theme, node: NodeType) => {
     return {
-        portMarkup: [portMarkup(theme)],
+        portMarkup: [portMarkup(theme, node)],
         portLabelMarkup: null,
 
         markup: [background, iconBackground, border, icon, content(theme), testResults],
     };
 };
 
-export const EspNodeShape = (theme: Theme) =>
-    shapes.devs.Model.define(`esp.Model`, defaults(theme), protoProps(theme)) as typeof shapes.devs.Model;
+export const EspNodeShape = (theme: Theme, node: NodeType) =>
+    shapes.devs.Model.define(`esp.Model`, defaults(theme), protoProps(theme, node)) as typeof shapes.devs.Model;
