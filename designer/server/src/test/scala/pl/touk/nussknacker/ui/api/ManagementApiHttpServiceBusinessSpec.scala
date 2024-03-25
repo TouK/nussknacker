@@ -38,7 +38,7 @@ class ManagementApiHttpServiceBusinessSpec
                 nodeResults = Map.empty,
                 invocationResults = Map.empty,
                 externalInvocationResults = Map.empty,
-                exceptions = List.empty
+                exceptions = List.empty,
               )
             )
           )

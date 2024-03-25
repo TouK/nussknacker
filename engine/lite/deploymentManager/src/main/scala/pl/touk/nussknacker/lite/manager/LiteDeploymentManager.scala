@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.lite.manager
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api.deployment.{BaseDeploymentManager, TestScenarioCommand}
@@ -14,7 +15,7 @@ trait LiteDeploymentManager extends BaseDeploymentManager {
 
   protected implicit def executionContext: ExecutionContext
 
-  protected def processTestActionCommand(command: TestScenarioCommand): Future[TestProcess.TestResults] = {
+  protected def processTestActionCommand(command: TestScenarioCommand): Future[TestProcess.TestResults[Json]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
         // TODO: handle scenario testing in RR as well

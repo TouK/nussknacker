@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
+import io.circe.Json
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
@@ -21,7 +22,7 @@ object TestFlinkProcessCompilerDataFactory {
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       modelData: ModelData,
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[_]
   ): FlinkProcessCompilerDataFactory = {
     new StubbedFlinkProcessCompilerDataFactory(
       process,

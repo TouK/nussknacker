@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -73,7 +74,7 @@ case class TestScenarioCommand(
     scenarioName: ProcessName,
     canonicalProcess: CanonicalProcess,
     scenarioTestData: ScenarioTestData
-) extends ScenarioCommand[TestResults]
+) extends ScenarioCommand[TestResults[Json]]
 
 case class MakeScenarioSavepointCommand(scenarioName: ProcessName, savepointDir: Option[String])
     extends ScenarioCommand[SavepointResult]
