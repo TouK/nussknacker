@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingPar
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, Validations}
 import pl.touk.nussknacker.engine.compiledgraph.TypedParameter
@@ -34,7 +35,7 @@ class DynamicNodeValidator(
       parametersFromNode: List[NodeParameter],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   )(
       inputContext: component.InputContext
   )(implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
@@ -51,7 +52,7 @@ class DynamicNodeValidator(
       component: DynamicComponent[_],
       branchParametersFromNode: List[BranchParameters],
       outputVariable: Option[String],
-      parametersConfig: Map[String, ParameterConfig],
+      parametersConfig: Map[ParameterName, ParameterConfig],
   )(inputContextRaw: Any)(implicit nodeId: NodeId, metaData: MetaData)
       extends LazyLogging {
 

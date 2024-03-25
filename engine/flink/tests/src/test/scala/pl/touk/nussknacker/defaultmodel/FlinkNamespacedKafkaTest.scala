@@ -53,17 +53,17 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
       .source(
         sourceId,
         "kafka",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'$inputTopic'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$inputTopic'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         "output",
         "kafka",
-        KafkaUniversalComponentTransformer.SinkKeyParamName       -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName     -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName         -> s"'$outputTopic'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
+        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$outputTopic'",
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true",
       )
 
     run(process) {

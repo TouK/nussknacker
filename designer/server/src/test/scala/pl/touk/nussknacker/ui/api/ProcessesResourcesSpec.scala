@@ -13,6 +13,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -23,10 +24,13 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it._
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.{
+  Streaming1,
+  Streaming2
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
+import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
@@ -53,8 +57,8 @@ import scala.concurrent.Future
 class ProcessesResourcesSpec
     extends AnyFunSuite
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
+    with WithAccessControlCheckingDesignerConfig
+    with WithAccessControlCheckingConfigScenarioHelper
     with WithMockableDeploymentManager
     with ScalatestRouteTest
     with Matchers
@@ -830,6 +834,45 @@ class ProcessesResourcesSpec
       createProcessRequest(processName, category = Category1, isFragment = false) { status =>
         status shouldEqual StatusCodes.BadRequest
       }
+    }
+  }
+
+  test(
+    "adding scenario with not configured scenario parameters combination should result with bad request response status code"
+  ) {
+    val processName = ProcessName("p1")
+    val command = CreateScenarioCommand(
+      processName,
+      Some("not existing category"),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
+      true
+    ) ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  test(
+    "adding scenario with ambiguous scenario parameters combination should result with bad request response status code"
+  ) {
+    val processName                                    = ProcessName("p1")
+    val processingModeUsedInMoreThanOneProcessingTypes = ProcessingMode.UnboundedStream
+    val command = CreateScenarioCommand(
+      processName,
+      None,
+      processingMode = Some(processingModeUsedInMoreThanOneProcessingTypes),
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUserOrAdmin(isAdmin =
+      true
+    ) ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.BadRequest
     }
   }
 

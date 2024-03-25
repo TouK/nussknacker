@@ -1,100 +1,62 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
-import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
-import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.types.Row
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
-import pl.touk.nussknacker.engine.api.process.{
-  BasicContextInitializer,
-  ContextInitializer,
-  ContextInitializingFunction,
-  Source,
-  SourceFactory
+import pl.touk.nussknacker.engine.api.component.AllProcessingModesComponent
+import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{
+  DefinedEagerParameter,
+  NodeDependencyValue,
+  SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke}
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSource}
-import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
-import pl.touk.nussknacker.engine.flink.table.HardcodedSchema._
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
-import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory._
+import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
+import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
+import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 
-// TODO: Should be BoundedStreamComponent - change it after configuring batch Deployment Manager
-class TableSourceFactory(config: DataSourceConfig) extends SourceFactory with UnboundedStreamComponent {
+class TableSourceFactory(definition: TableSqlDefinitions)
+    extends SingleInputDynamicComponent[Source]
+    with SourceFactory
+    // TODO: Should be BoundedStreamComponent - change it and move to a batch category
+    with AllProcessingModesComponent {
 
-  @MethodToInvoke
-  def invoke(): Source = {
-    new TableSource()
-  }
+  override type State = TableDefinition
 
-  private class TableSource extends FlinkSource with ReturningType {
+  private val tableNameParamDeclaration = TableComponentFactory.buildTableNameParam(definition.tableDefinitions)
 
-    override def sourceStream(
-        env: StreamExecutionEnvironment,
-        flinkNodeContext: FlinkCustomNodeContext
-    ): DataStream[Context] = {
-      val tableEnv = StreamTableEnvironment.create(env);
-
-      val tableName = "some_table_name"
-
-      val tableDescriptorFilled = buildTableDescriptor(config, schema)
-      tableEnv.createTable(tableName, tableDescriptorFilled)
-      val table = tableEnv.from(tableName)
-
-      val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
-
-      // TODO: infer returnType dynamically from table schema based on table.getResolvedSchema.getColumns
-      val streamOfMaps = streamOfRows
-        .map(r => { HardcodedSchema.MapRowConversion.toMap(r): RECORD })
-        .returns(classOf[RECORD])
-
-      val contextStream = streamOfMaps.map(
-        new FlinkContextInitializingFunction(
-          contextInitializer,
-          flinkNodeContext.nodeId,
-          flinkNodeContext.convertToEngineRuntimeContext
-        ),
-        flinkNodeContext.contextTypeInfo
+  override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+      implicit nodeId: NodeId
+  ): this.ContextTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      NextParameters(
+        parameters = tableNameParamDeclaration.createParameter() :: Nil,
+        errors = List.empty,
+        state = None
       )
-
-      contextStream
-    }
-
-    override val returnType: typing.TypingResult = HardcodedSchema.typingResult
-
+    case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
+      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
+      val typingResult  = selectedTable.typingResult
+      val initializer   = new BasicContextInitializer(typingResult)
+      FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
   }
+
+  override def implementation(
+      params: Params,
+      dependencies: List[NodeDependencyValue],
+      finalStateOpt: Option[State]
+  ): Source = {
+    val selectedTable = finalStateOpt.getOrElse(
+      throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
+    )
+    new TableSource(selectedTable, definition.sqlStatements)
+  }
+
+  override def nodeDependencies: List[NodeDependency] = List.empty
 
 }
 
 object TableSourceFactory {
-
-  type RECORD = java.util.Map[String, Any]
-
-  // this context initialization was copied from kafka source
-  val contextInitializer: ContextInitializer[RECORD] = new BasicContextInitializer[RECORD](Typed[RECORD])
-
-  class FlinkContextInitializingFunction[T](
-      contextInitializer: ContextInitializer[T],
-      nodeId: String,
-      convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-  ) extends RichMapFunction[T, Context] {
-
-    private var initializingStrategy: ContextInitializingFunction[T] = _
-
-    override def open(parameters: Configuration): Unit = {
-      val contextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId)
-      initializingStrategy = contextInitializer.initContext(contextIdGenerator)
-    }
-
-    override def map(input: T): Context = {
-      initializingStrategy(input)
-    }
-
-  }
-
+  val tableNameParamName: ParameterName = ParameterName("Table")
 }

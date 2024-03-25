@@ -4,6 +4,7 @@ import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+
 import java.time.Instant
 import java.util.UUID
 import scala.util.Random
@@ -155,7 +157,7 @@ object TestProcessUtil {
 
   lazy val sampleFragmentGraph: ScenarioGraph =
     createFragmentGraph(
-      List(FragmentInputDefinition("input", List(FragmentParameter("in", FragmentClazzRef[String]))))
+      List(FragmentInputDefinition("input", List(FragmentParameter(ParameterName("in"), FragmentClazzRef[String]))))
     )
 
   def createFragmentGraph(

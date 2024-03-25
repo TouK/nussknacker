@@ -1,34 +1,34 @@
-import { EditorProps, ExtendedEditor } from "../Editor";
-import "@glideapps/glide-data-grid/dist/index.css";
+import { css } from "@emotion/css";
 import DataEditor, {
     CompactSelection,
     DataEditorProps,
+    DataEditorRef,
     GridCell,
     GridCellKind,
+    GridColumn,
     GridSelection,
     GroupHeaderClickedEventArgs,
     HeaderClickedEventArgs,
     Item,
     Rectangle,
 } from "@glideapps/glide-data-grid";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GridColumn } from "@glideapps/glide-data-grid/dist/ts/data-grid/data-grid-types";
-import ErrorBoundary from "../../../../../common/ErrorBoundary";
-import { Sizer } from "./Sizer";
-import { css } from "@emotion/css";
-import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
-import { PopoverPosition } from "@mui/material/Popover/Popover";
-import { DataEditorRef } from "@glideapps/glide-data-grid/dist/ts/data-editor/data-editor";
-import ValidationLabels from "../../../../../modals/ValidationLabels";
-import { useTableState } from "./state/tableState";
-import { TypesMenu } from "./TypesMenu";
-import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
-import { useTableTheme } from "./tableTheme";
-import i18next from "i18next";
 import { Box } from "@mui/material";
-
+import { PopoverPosition } from "@mui/material/Popover/Popover";
+import i18next from "i18next";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ErrorBoundary from "../../../../../common/ErrorBoundary";
+import ValidationLabels from "../../../../../modals/ValidationLabels";
+import { useTypeOptions } from "../../../fragment-input-definition/FragmentInputDefinition";
+import { EditorProps, ExtendedEditor } from "../Editor";
+import "@glideapps/glide-data-grid/dist/index.css";
+import { CellMenu, DeleteColumnMenuItem, DeleteRowMenuItem, ResetColumnWidthMenuItem } from "./CellMenu";
+import { useErrorHighlights } from "./errorHighlights";
+import { Sizer } from "./Sizer";
 import { ActionTypes } from "./state/action";
 import { longestRow } from "./state/helpers";
+import { useTableState } from "./state/tableState";
+import { useTableTheme } from "./tableTheme";
+import { TypesMenu } from "./TypesMenu";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -78,7 +78,12 @@ const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
     );
 };
 
-export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorProps, "fieldErrors" | "showValidation">) => {
+const emptySelection = {
+    columns: CompactSelection.empty(),
+    rows: CompactSelection.empty(),
+};
+
+export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: EditorProps) => {
     const tableDateContext = useTableState(expressionObj);
     const [{ rows, columns }, dispatch, rawExpression] = tableDateContext;
 
@@ -155,10 +160,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
         [dispatch],
     );
 
-    const [selection, setSelection] = useState<GridSelection>({
-        columns: CompactSelection.empty(),
-        rows: CompactSelection.empty(),
-    });
+    const [selection, setSelection] = useState<GridSelection>(emptySelection);
 
     const pasteWithExpand: DataEditorProps["onPaste"] = useCallback<(target: Item, values: readonly (readonly string[])[]) => boolean>(
         ([column, row], input) => {
@@ -293,6 +295,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
     }, []);
 
     const ref = useRef<DataEditorRef>();
+    const { toggleTooltip, highlightRegions, drawCell, tooltipElement } = useErrorHighlights(fieldErrors, columns, ref);
 
     const onDataEditorColumnResize = useCallback(
         (column, newSize, colIndex, newSizeWithGrow) => {
@@ -351,6 +354,7 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
 
     const rightElement = useMemo<DataEditorProps["rightElement"]>(() => <RightElement onColumnAppend={onColumnAppend} />, [onColumnAppend]);
 
+    const [hasFocus, setHasFocus] = useState(false);
     return (
         <>
             <Sizer
@@ -361,6 +365,13 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                 sx={{
                     border: "1px solid",
                     borderColor: tableTheme.borderColor,
+                }}
+                onFocus={() => setHasFocus(true)}
+                onBlur={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget)) {
+                        return;
+                    }
+                    setHasFocus(false);
                 }}
             >
                 <DataEditor
@@ -386,80 +397,87 @@ export const Table = ({ expressionObj, onValueChange, className }: Omit<EditorPr
                     theme={tableTheme}
                     width="100%"
                     trailingRowOptions={trailingRowOptions}
-                    gridSelection={selection}
-                    onGridSelectionChange={setSelection}
+                    gridSelection={hasFocus ? selection : emptySelection}
+                    onGridSelectionChange={(selection) => {
+                        setSelection(selection);
+                        toggleTooltip(selection);
+                    }}
                     onHeaderClicked={onDataEditorHeaderClicked}
                     onHeaderMenuClick={openTypeMenu}
                     onHeaderContextMenu={onHeaderContextMenu}
                     onGroupHeaderContextMenu={onHeaderContextMenu}
                     onCellContextMenu={onDataEditorCellContextMenu}
                     onColumnResize={onDataEditorColumnResize}
+                    highlightRegions={highlightRegions()}
+                    onItemHovered={toggleTooltip}
+                    drawCell={drawCell}
                 />
+                <TypesMenu
+                    anchorPosition={typesMenuData?.position}
+                    currentValue={columns[typesMenuData?.column]?.[1]}
+                    onChange={onTypesMenuChange}
+                    options={supportedTypes}
+                />
+                <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
+                    {cellMenuData?.column >= 0 && cellMenuData?.row < 0 ? (
+                        <ResetColumnWidthMenuItem
+                            disabled={!columns[cellMenuData.column]?.size}
+                            indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
+                            onClick={(indexes) => {
+                                dispatch({
+                                    type: ActionTypes.resetColumnsSize,
+                                    columns: indexes,
+                                });
+                                closeCellMenu();
+                            }}
+                        />
+                    ) : null}
+                    {cellMenuData?.column >= 0 ? (
+                        <DeleteColumnMenuItem
+                            indexes={
+                                selection.columns.toArray().length > 0
+                                    ? selection.columns.toArray()
+                                    : selection.current?.range
+                                    ? Array.from({ length: selection.current.range.width }, (_, i) => selection.current.range.x + i)
+                                    : [cellMenuData?.column]
+                            }
+                            onClick={(indexes) => {
+                                dispatch({
+                                    type: ActionTypes.deleteColumns,
+                                    columns: indexes,
+                                });
+                                clearSelection();
+                                closeCellMenu();
+                            }}
+                        />
+                    ) : null}
+                    {cellMenuData?.row >= 0 ? (
+                        <DeleteRowMenuItem
+                            indexes={
+                                selection.rows.toArray().length > 0
+                                    ? selection.rows.toArray()
+                                    : selection.current?.range
+                                    ? Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i)
+                                    : [cellMenuData?.row]
+                            }
+                            onClick={(indexes) => {
+                                dispatch({
+                                    type: ActionTypes.deleteRows,
+                                    rows: indexes,
+                                });
+                                clearSelection();
+                                closeCellMenu();
+                            }}
+                        />
+                    ) : null}
+                </CellMenu>
             </Sizer>
-            <TypesMenu
-                anchorPosition={typesMenuData?.position}
-                currentValue={columns[typesMenuData?.column]?.[1]}
-                onChange={onTypesMenuChange}
-                options={supportedTypes}
-            />
-            <CellMenu anchorPosition={cellMenuData?.position} onClose={closeCellMenu}>
-                {cellMenuData?.column >= 0 && cellMenuData?.row < 0 ? (
-                    <ResetColumnWidthMenuItem
-                        disabled={!columns[cellMenuData.column]?.size}
-                        indexes={selection.columns.toArray().length > 0 ? selection.columns.toArray() : [cellMenuData?.column]}
-                        onClick={(indexes) => {
-                            dispatch({
-                                type: ActionTypes.resetColumnsSize,
-                                columns: indexes,
-                            });
-                            closeCellMenu();
-                        }}
-                    />
-                ) : null}
-                {cellMenuData?.column >= 0 ? (
-                    <DeleteColumnMenuItem
-                        indexes={
-                            selection.columns.toArray().length > 0
-                                ? selection.columns.toArray()
-                                : selection.current?.range
-                                ? Array.from({ length: selection.current.range.width }, (_, i) => selection.current.range.x + i)
-                                : [cellMenuData?.column]
-                        }
-                        onClick={(indexes) => {
-                            dispatch({
-                                type: ActionTypes.deleteColumns,
-                                columns: indexes,
-                            });
-                            clearSelection();
-                            closeCellMenu();
-                        }}
-                    />
-                ) : null}
-                {cellMenuData?.row >= 0 ? (
-                    <DeleteRowMenuItem
-                        indexes={
-                            selection.rows.toArray().length > 0
-                                ? selection.rows.toArray()
-                                : selection.current?.range
-                                ? Array.from({ length: selection.current.range.height }, (_, i) => selection.current.range.y + i)
-                                : [cellMenuData?.row]
-                        }
-                        onClick={(indexes) => {
-                            dispatch({
-                                type: ActionTypes.deleteRows,
-                                rows: indexes,
-                            });
-                            clearSelection();
-                            closeCellMenu();
-                        }}
-                    />
-                ) : null}
-            </CellMenu>
+            {tooltipElement}
         </>
     );
 };
 
-export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, className, ...props }: EditorProps) => {
+export const TableEditor: ExtendedEditor = ({ className, ...props }: EditorProps) => {
     return (
         <Box className={className}>
             <Box display="flex">
@@ -467,7 +485,7 @@ export const TableEditor: ExtendedEditor = ({ showValidation, fieldErrors, class
                     <Table {...props} />
                 </ErrorBoundary>
             </Box>
-            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
+            {props.showValidation && <ValidationLabels fieldErrors={props.fieldErrors} />}
         </Box>
     );
 };

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,6 +12,7 @@ class TestResultService extends Service {
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: Any)(implicit ec: ExecutionContext): Future[Unit] = {
+
     Future.successful {
       invocationResult = value :: invocationResult
     }

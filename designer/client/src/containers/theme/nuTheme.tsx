@@ -85,6 +85,7 @@ export const nuTheme = createTheme({
             main: `#D2A8FF`,
         },
         secondary: {
+            light: "#D2A8FF",
             main: `#762976`,
         },
         error: {

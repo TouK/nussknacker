@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll}
-import pl.touk.nussknacker.engine.api.{ContextId, Params}
+import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -64,7 +64,7 @@ class SecurityTest
       withClue(config.serviceName) {
         implicit val contextId: ContextId = ContextId("1")
         withCorrectConfig(ServiceName(config.serviceName))
-          .invoke(Params.empty)
+          .invoke(Map.empty)
           .futureValue shouldBe TypedMap(Map.empty)
       }
     }
@@ -75,7 +75,7 @@ class SecurityTest
       withClue(config.serviceName) {
         intercept[Exception] {
           implicit val contextId: ContextId = ContextId("1")
-          withBadConfig(ServiceName(config.serviceName)).invoke(Params.empty).futureValue
+          withBadConfig(ServiceName(config.serviceName)).invoke(Map.empty).futureValue
         }
       }
     }

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.{
   ProcessCompilationError
 }
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.sample.JavaSampleEnum
 
 import java.time.Duration
@@ -35,7 +36,10 @@ object JoinTransformerWithEditors extends CustomStreamTransformer with Serializa
         if (mainBranches.size != 1 || joinedBranches.size != 1) {
           Invalid(
             ProcessCompilationError
-              .CustomNodeError("You must specify exact one main branch and one joined branch", Some("branchType"))
+              .CustomNodeError(
+                "You must specify exact one main branch and one joined branch",
+                Some(ParameterName("branchType"))
+              )
           ).toValidatedNel
         } else {
           val mainBranchContext = mainBranches.head._2

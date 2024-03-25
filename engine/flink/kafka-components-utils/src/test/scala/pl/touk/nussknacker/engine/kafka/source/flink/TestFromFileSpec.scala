@@ -51,7 +51,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka-jsonValueWithMeta",
-        TopicParamName -> s"'$topic'",
+        TopicParamName.value -> s"'$topic'",
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
@@ -74,7 +74,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   test("should test source emitting event extending DisplayWithEncoder") {
     val process = ScenarioBuilder
       .streaming("test")
-      .source("start", "kafka-jsonValueWithMeta", TopicParamName -> "'test.topic'")
+      .source("start", "kafka-jsonValueWithMeta", TopicParamName.value -> "'test.topic'")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
     val inputMeta = InputMeta(
       null,

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import java.lang.reflect.Method
 
@@ -10,7 +11,7 @@ private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinition
   override def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   ): Either[String, MethodDefinition] = {
     val extractorsWithDefinitions = for {
       extractor  <- seq

@@ -1,5 +1,11 @@
 # Changelog
 
+1.15.0 (Not released yet)
+-------------------------
+* [#5760](https://github.com/TouK/nussknacker/pull/5760) Libraries bump:
+  * Tapir: 1.7.4 -> 1.9.11
+  * openapi-circe-yaml: 0.6.0 -> 0.7.4 
+
 1.14.0 (Not released yet)
 -------------------------
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
@@ -40,22 +46,27 @@
   * Added authorization check for listing activities and downloading attachments in scenario activity API
   * Fixed the ability to download an unrelated attachment from a given scenario
 * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
-* [#5505](https://github.com/TouK/nussknacker/pull/5505) Fix: anonymous user handling regression
+* [#5505](https://github.com/TouK/nussknacker/pull/5505) [#5710](https://github.com/TouK/nussknacker/pull/5710) Fix: anonymous user handling regression
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5371](https://github.com/TouK/nussknacker/pull/5371) Added new parameter editor type: DictParameterEditor.
 * [#5373](https://github.com/TouK/nussknacker/pull/5373) API changes related to components development
 * [#5566](https://github.com/TouK/nussknacker/pull/5566) [#5550](https://github.com/TouK/nussknacker/pull/5537) 
-  [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Processing mode and engine available in the GUI
+  [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Processing mode and engine available in the GUI.
+  ⚠️ for the helm chart deployment, you need to manually migrate scenarios in db to one of possible processing types: either `streaming` or `request-response`. See [MigrationGuide](MigrationGuide.md) for details 
 * [#5566](https://github.com/TouK/nussknacker/pull/5566) `DEFAULT_SCENARIO_TYPE` environment variable is not supported anymore 
 * [#5272](https://github.com/TouK/nussknacker/pull/5272) [#5145](https://github.com/TouK/nussknacker/pull/5145) Added: Decision Table component
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) Fix: fetching/parsing batch periodic json only when needed (stop parsing during status check)
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) Added: Decision Table component - detailed validation
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
 
-1.13.1 (Not released yet)
+1.13.2 (7 Mar 2024)
 ------------------------
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+ 
+1.13.1 (7 Mar 2024)
+-------------------------
+[this version was skipped, please use 1.13.2 instead]
 
 1.13.0 (12 Jan 2024)
 -------------------------

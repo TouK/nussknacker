@@ -7,7 +7,7 @@ import { v4 as uuid4 } from "uuid";
 
 export interface MapVariableProps<F extends Field> {
     node: NodeType<F>;
-    setProperty: (propToMutate: string, newValue: string) => void;
+    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;

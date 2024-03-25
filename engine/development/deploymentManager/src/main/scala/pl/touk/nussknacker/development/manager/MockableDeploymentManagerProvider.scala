@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.StubbingCommands
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
@@ -46,13 +47,19 @@ object MockableDeploymentManagerProvider {
   object MockableDeploymentManager extends DeploymentManager with StubbingCommands {
 
     private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults]](Map.empty)
 
     def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
-      this.scenarioStatuses.set(scenarioStates)
+      scenarioStatuses.set(scenarioStates)
+    }
+
+    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults]): Unit = {
+      testResults.set(scenarioTestResults)
     }
 
     def clean(): Unit = {
-      this.scenarioStatuses.set(Map.empty)
+      scenarioStatuses.set(Map.empty)
+      testResults.set(Map.empty)
     }
 
     override def resolve(
@@ -73,6 +80,22 @@ object MockableDeploymentManagerProvider {
     ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
       val status = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
       Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
+    }
+
+    override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
+      command match {
+        case TestScenarioCommand(scenarioName, _, _) =>
+          Future.successful {
+            testResults
+              .get()
+              .getOrElse(
+                scenarioName.value,
+                throw new IllegalArgumentException(s"Tests results not mocked for scenario [${scenarioName.value}]")
+              )
+          }
+        case other =>
+          super.processCommand(other)
+      }
     }
 
     override def close(): Unit = {}

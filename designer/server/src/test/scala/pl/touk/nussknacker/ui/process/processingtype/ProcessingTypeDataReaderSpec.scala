@@ -28,18 +28,19 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       |}""".stripMargin
 
   test("allow to access to processing type data only users that has read access to associated category") {
-    val config = ConfigFactory.parseString(s"""
-        |scenarioTypes {
-        |  foo {
-        |    $processingTypeBasicConfig
-        |    category: "foo"
-        |  }
-        |  bar {
-        |    $processingTypeBasicConfig
-        |    category: "bar"
-        |  }
-        |}
-        |""".stripMargin)
+    val config = ConfigFactory.parseString(
+      s"""scenarioTypes {
+         |  foo {
+         |    $processingTypeBasicConfig
+         |    category: "foo"
+         |  }
+         |  bar {
+         |    $processingTypeBasicConfig
+         |    category: "bar"
+         |  }
+         |}
+         |""".stripMargin
+    )
 
     val provider = ProcessingTypeDataProvider(
       StubbedProcessingTypeDataReader
@@ -64,6 +65,36 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       mappedProvider.forType("bar")(fooCategoryUser)
     }
     mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
+  }
+
+  test("should allow to override engine setup name") {
+    val config = ConfigFactory.parseString(
+      s"""
+         |scenarioTypes {
+         |  foo {
+         |    deploymentConfig {
+         |      type: FooDeploymentManager
+         |      engineSetupName: "Overriden Engine Setup"
+         |    }
+         |    modelConfig {
+         |      classPath: []
+         |    }
+         |    category: "foo"
+         |  }
+         |}
+         |""".stripMargin
+    )
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(
+          ConfigWithUnresolvedVersion(config),
+          _ => TestFactory.modelDependencies,
+          _ => TestFactory.deploymentManagerDependencies
+        )
+    )
+    val fooCategoryUser    = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
+    val processingTypeData = provider.forTypeUnsafe("foo")(fooCategoryUser)
+    processingTypeData.deploymentData.engineSetupName shouldEqual EngineSetupName("Overriden Engine Setup")
   }
 
   object StubbedProcessingTypeDataReader extends ProcessingTypeDataReader {

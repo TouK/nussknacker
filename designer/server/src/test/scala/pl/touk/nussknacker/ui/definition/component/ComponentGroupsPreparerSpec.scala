@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
@@ -108,7 +109,7 @@ class ComponentGroupsPreparerSpec
 
   test("return default value defined in parameter") {
     val defaultValueExpression = Expression(Language.Spel, "'fooDefault'")
-    val parameter              = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
+    val parameter = Parameter[String](ParameterName("fooParameter")).copy(defaultValue = Some(defaultValueExpression))
     val definition = withStaticDefinition(
       ModelDefinitionBuilder.empty
         .withCustom(

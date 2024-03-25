@@ -2,12 +2,14 @@ package pl.touk.nussknacker.engine.common.components
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.scalatest.Inside
+import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -18,60 +20,70 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{RunListResult, TestScenarioRunner}
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
 import java.time.LocalDate
 import java.util.{List => JList, Map => JMap}
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
-trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDetailedMessage with Inside {
+trait DecisionTableSpec
+    extends AnyFreeSpec
+    with Matchers
+    with ValidatedValuesDetailedMessage
+    with Inside
+    with Eventually
+    with VeryPatientScalaFutures {
 
   import spel.Implicits._
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
-      val result = execute[TestMessage, SCENARIO_RESULT](
-        scenario = decisionTableExampleScenario(
-          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
-        ),
-        withData = List(
-          TestMessage(id = "1", minAge = 30),
-          TestMessage(id = "2", minAge = 18)
-        )
-      )
-
-      inside(result) { case Validated.Valid(r) =>
-        r.errors should be(List.empty)
-        r.successes should be(
-          List(
-            rows(
-              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-            ),
-            rows(
-              rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
-              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-            )
+      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
           )
         )
+
+        inside(result) { case Validated.Valid(r) =>
+          r.errors should be(List.empty)
+          r.successes should be(
+            List(
+              rows(
+                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+              ),
+              rows(
+                rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
+                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+              )
+            )
+          )
+        }
       }
     }
 
     "return proper typingResult as java list which allows to run method on" in {
-      val result = execute[TestMessage, SCENARIO_RESULT](
-        scenario = decisionTableExampleScenario(
-          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
-          sinkValueExpression = "#dtResult.size"
-        ),
-        withData = List(
-          TestMessage(id = "1", minAge = 30),
-          TestMessage(id = "2", minAge = 18)
+      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
+        val result = execute[TestMessage, SCENARIO_RESULT](
+          scenario = decisionTableExampleScenario(
+            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
+            sinkValueExpression = "#dtResult.size"
+          ),
+          withData = List(
+            TestMessage(id = "1", minAge = 30),
+            TestMessage(id = "2", minAge = 18)
+          )
         )
-      )
 
-      inside(result) { case Validated.Valid(r) =>
-        r.errors should be(List.empty)
-        r.successes should be(List(1, 2))
+        inside(result) { case Validated.Valid(r) =>
+          r.errors should be(List.empty)
+          r.successes should be(List(1, 2))
+        }
       }
     }
 
@@ -92,7 +104,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                fieldName = Some("Expression"),
+                paramName = Some(ParameterName("Expression")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -116,7 +128,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                fieldName = Some("Expression"),
+                paramName = Some(ParameterName("Expression")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -143,7 +155,7 @@ trait DecisionTableSpec extends AnyFreeSpec with Matchers with ValidatedValuesDe
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
-                fieldName = Some("Basic Decision Table"),
+                paramName = Some(ParameterName("Basic Decision Table")),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
                 details = Some(
                   TabularDataDefinitionParserErrorDetails(

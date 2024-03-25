@@ -28,8 +28,11 @@ trait KafkaSourceFactoryProcessMixin
 
   protected def resultHolders: () => ResultsHolders
 
-  protected lazy val modelData =
-    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator(resultHolders))
+  protected lazy val modelData: LocalModelData = LocalModelData(
+    inputConfig = config,
+    components = List.empty,
+    configCreator = new KafkaSourceFactoryProcessConfigCreator(resultHolders)
+  )
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
@@ -97,7 +100,7 @@ trait KafkaSourceFactoryProcessMixin
 
     val process = ScenarioBuilder
       .streaming(s"proc-$topic")
-      .source("procSource", sourceType.toString, TopicParamName -> topicParamValue(topic))
+      .source("procSource", sourceType.toString, TopicParamName.value -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[CanonicalProcess]])((variable, builder) =>
@@ -109,8 +112,8 @@ trait KafkaSourceFactoryProcessMixin
     processWithVariables
       .split(
         "split",
-        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", SinkValueParamName -> "#input"),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName    -> "#inputMeta")
+        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", SinkValueParamName.value -> "#input"),
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName.value    -> "#inputMeta")
       )
 
   }

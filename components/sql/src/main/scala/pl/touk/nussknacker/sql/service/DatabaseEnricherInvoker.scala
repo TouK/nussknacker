@@ -54,7 +54,7 @@ class DatabaseEnricherInvoker(
 
   protected def setQueryArguments(statement: PreparedStatement, queryArguments: QueryArguments): Unit =
     queryArguments.value.foreach { arg =>
-      statement.setObject(arg.index, arg.value)
+      statement.setObject(arg.index, arg.value.orNull)
     }
 
 }

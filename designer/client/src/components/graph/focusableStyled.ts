@@ -82,29 +82,21 @@ export const FocusableStyled = styled("div")(
             .node-validation-error {
                 ${nodeHighlight(
                     theme.palette.error.main,
-                    blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.15),
+                    blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
                 )}
             }
 
             .node-focused-with-validation-error {
               ${nodeHighlight(
-                  theme.palette.error.main,
-                  blend(
-                      blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.15),
-                      theme.palette.error.main,
-                      0.15,
-                  ),
+                  theme.palette.secondary.light,
+                  blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
               )}
-            }
-
-            .node-grouping {
-                ${nodeHighlight(theme.custom.colors.apple, theme.custom.colors.blueRomance)}
             }
 
             .node-focused {
               ${nodeHighlight(
-                  theme.palette.success.main,
-                  blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.15),
+                  theme.palette.secondary.light,
+                  blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.secondary.light, 0.15),
               )}
             }
 
