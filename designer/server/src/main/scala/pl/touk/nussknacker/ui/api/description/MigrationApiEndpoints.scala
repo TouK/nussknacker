@@ -20,7 +20,6 @@ import sttp.tapir.json.circe.jsonBody
 
 class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import MigrationApiEndpoints.Dtos.MigrateScenarioRequest._
   import MigrationApiEndpoints.Dtos._
   import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 
@@ -34,7 +33,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         jsonBody[MigrateScenarioRequest].example(
           Example.of(
             summary = Some("example of migration request between environments"),
-            value = MigrateScenarioRequest(
+            value = MigrateScenarioRequestV2(
               sourceEnvironmentId = "testEnv",
               processingMode = ProcessingMode.UnboundedStream,
               engineSetupName = EngineSetupName("Flink"),
@@ -142,8 +141,10 @@ object MigrationApiEndpoints {
         Mapping.from[String, FatalError](deserializationException)(_.getMessage)
       )
 
+    sealed trait MigrateScenarioRequest
+
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequest(
+    final case class MigrateScenarioRequestV1(
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
@@ -151,7 +152,18 @@ object MigrationApiEndpoints {
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,
-    )
+    ) extends MigrateScenarioRequest
+
+    @derive(encoder, decoder)
+    final case class MigrateScenarioRequestV2(
+        sourceEnvironmentId: String,
+        processingMode: ProcessingMode,
+        engineSetupName: EngineSetupName,
+        processCategory: String,
+        scenarioGraph: ScenarioGraph,
+        processName: ProcessName,
+        isFragment: Boolean,
+    ) extends MigrateScenarioRequest
 
   }
 

@@ -5,14 +5,16 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.BaseHttpService
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
-import pl.touk.nussknacker.ui.migrations.MigrationService
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
 import scala.concurrent.ExecutionContext
 
 class MigrationApiHttpService(
     authenticator: AuthenticationResources,
-    migrationService: MigrationService
+    migrationService: MigrationService,
+    migrationApiAdapterService: MigrationApiAdapterService
 )(implicit val ec: ExecutionContext)
     extends BaseHttpService(authenticator)
     with LazyLogging {
@@ -22,8 +24,14 @@ class MigrationApiHttpService(
   expose {
     remoteEnvironmentApiEndpoints.migrateEndpoint
       .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
-      .serverLogicEitherT { implicit loggedUser => migrateScenarioRequest =>
-        EitherT(migrationService.migrate(migrateScenarioRequest))
+      .serverLogicEitherT { implicit loggedUser =>
+        {
+          case migrateScenarioRequestV2 @ MigrateScenarioRequestV2(_, _, _, _, _, _, _) =>
+            EitherT(migrationService.migrate(migrateScenarioRequestV2))
+          case migrateScenarioRequestV1 @ MigrateScenarioRequestV1(_, _, _, _, _, _, _) =>
+            val migrateScenarioRequestV2 = migrationApiAdapterService.adaptToHigherVersion(migrateScenarioRequestV1)
+            EitherT(migrationService.migrate(migrateScenarioRequestV2))
+        }
       }
   }
 
