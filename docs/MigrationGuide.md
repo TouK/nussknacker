@@ -162,6 +162,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   It will be replaced by POST `/processes` with fields: `name`, `isFragment`, `forwardedUserName`, `category`, `processingMode`, `engineSetupName`.
   Three last fields are optional. Please switch to the new API because in version 1.5, old API will be removed.
 * POST `/api/nodes/$scenarioName/validation` response for object in `validationErrors` array can have `details` of the error
+
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
   * `$processingType-$componentType-$componentName` format was replaced by `$componentType-$componentName` format
