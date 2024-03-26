@@ -2,9 +2,11 @@ import { css, cx } from "@emotion/css";
 import React from "react";
 import customAttrs from "../assets/json/nodeAttributes.json";
 import { NodeType } from "../types";
-import { BORDER_RADIUS, CONTENT_COLOR, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
+import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
+import { styled } from "@mui/material";
+import { blendLighten } from "../containers/theme/nuTheme";
 
 export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
     const nodeStyles = css({
@@ -51,8 +53,8 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
         color: "white",
     });
 
-    const contentStyles = css({
-        color: CONTENT_COLOR,
+    const ContentStyled = styled("div")(({ theme }) => ({
+        color: blendLighten(theme.palette.background.paper, 0.25),
         flex: 1,
         whiteSpace: "nowrap",
         display: "flex",
@@ -64,7 +66,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
             textOverflow: "ellipsis",
             overflow: "hidden",
         },
-    });
+    }));
 
     const colors = isOver ? nodeColorsHover : nodeColors;
     return (
@@ -72,11 +74,11 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
             <div className={cx(imageStyles, imageColors)}>
                 <ComponentIcon node={node} />
             </div>
-            <div className={contentStyles}>
+            <ContentStyled>
                 <span>{node?.id}</span>
                 {NodeUtils.hasInputs(node) && <Port className={cx(css({ top: 0, transform: "translateY(-50%)" }), colors)} />}
                 {NodeUtils.hasOutputs(node) && <Port className={cx(css({ bottom: 0, transform: "translateY(50%)" }), colors)} />}
-            </div>
+            </ContentStyled>
         </div>
     );
 }

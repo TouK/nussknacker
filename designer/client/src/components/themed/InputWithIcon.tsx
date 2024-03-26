@@ -1,5 +1,5 @@
 import { css, cx } from "@emotion/css";
-import { useTheme } from "@mui/material";
+import { styled, useTheme } from "@mui/material";
 import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
 import { ClearIcon } from "../table/SearchFilter";
 import { InputProps, ThemedInput } from "./ThemedInput";

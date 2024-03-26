@@ -73,39 +73,77 @@ const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSP
     }
 `;
 
+export const nodeValidationError = "node-validation-error";
+export const nodeFound = "node-found";
+export const nodeFoundHover = "node-found-hover";
+export const nodeFocused = "node-focused";
+
+const nodeStyles = (theme: Theme) => {
+    return css`
+        .joint-type-esp-model {
+            &,
+            .body,
+            .background,
+            .joint-port-body {
+                transition: filter 0.5s, fill 0.25s, stroke 0.25s;
+            }
+        }
+
+        .${nodeValidationError} {
+            ${nodeHighlight(
+                theme.palette.error.main,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
+            )}
+        }
+
+        .${nodeFocused} {
+            ${nodeHighlight(
+                theme.palette.secondary.light,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.secondary.light, 0.15),
+            )}
+        }
+
+        .${nodeFocused}.${nodeValidationError} {
+            ${nodeHighlight(
+                theme.palette.secondary.light,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
+            )}
+        }
+        .${nodeFound} {
+            ${nodeHighlight(
+                theme.palette.success.main,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.3),
+            )}
+        }
+        .${nodeFocused}.${nodeFound} {
+            ${nodeHighlight(
+                theme.palette.secondary.light,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.3),
+            )}
+        }
+        .${nodeFoundHover}.${nodeFound} {
+            ${nodeHighlight(
+                theme.palette.success.dark,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.7),
+            )}
+        }
+        .${nodeFocused}.${nodeFoundHover}.${nodeFound} {
+            ${nodeHighlight(
+                theme.palette.secondary.light,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.7),
+            )}
+        }
+    `;
+};
+
 export const FocusableStyled = styled("div")(
     ({ theme, id }) =>
         css`
             width: 100% !important;
             height: 100% !important;
           
-            .node-validation-error {
-                ${nodeHighlight(
-                    theme.palette.error.main,
-                    blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
-                )}
-            }
-
-            .node-focused-with-validation-error {
-              ${nodeHighlight(
-                  theme.palette.secondary.light,
-                  blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
-              )}
-            }
-
-            .node-focused {
-              ${nodeHighlight(
-                  theme.palette.secondary.light,
-                  blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.secondary.light, 0.15),
-              )}
-            }
-
-            .joint-type-basic-rect.node-focused {
-                & rect {
-                    stroke-width: 2;
-                    opacity: 0.2;
-                }
-            }
+           
+            ${nodeStyles(theme)}
 
             .modalContentDark {
                 ${modalContent(theme.palette.error.main, blendLighten(theme.palette.background.paper, 0.25))}

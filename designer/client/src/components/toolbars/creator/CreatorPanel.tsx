@@ -2,24 +2,9 @@ import { isEmpty } from "lodash";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchIcon } from "../../table/SearchFilter";
-import { InputWithIcon } from "../../themed/InputWithIcon";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
-import { styled } from "@mui/material";
-
-const SearchInputWithIcon = styled(InputWithIcon)(({ theme }) => ({
-    ...theme.typography.body2,
-    borderRadius: 0,
-    height: "36px !important",
-    color: theme.palette.text.secondary,
-    padding: "6px 12px !important",
-    backgroundColor: `${theme.palette.background.paper} !important`,
-    border: "none",
-    outline: "none !important",
-    "&:focus": {
-        boxShadow: "none",
-    },
-}));
+import { SearchInputWithIcon } from "../../themed/SearchInput";
 
 export function CreatorPanel(): JSX.Element {
     const { t } = useTranslation();

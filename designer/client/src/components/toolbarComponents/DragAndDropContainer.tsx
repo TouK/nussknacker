@@ -42,7 +42,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                         minHeight: isDragging ? "1em" : null,
                         minWidth: SIDEBAR_WIDTH,
                         position: "relative",
-
+                        backgroundColor: theme.palette.background.paper,
                         "&::after": {
                             content: isDragging ? "''" : null,
                             transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),

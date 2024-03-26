@@ -13,7 +13,7 @@ export function TextArea({ className, ...props }: TextAreaWithFocusProps): JSX.E
     return <textarea {...props} className={cx(className)} />;
 }
 
-export const TextAreaNode = styled(TextArea)(({ theme }) => `${NodeInputCss(theme).styles}`);
+export const TextAreaNode = styled(TextArea)(() => `${NodeInputCss()}`);
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 

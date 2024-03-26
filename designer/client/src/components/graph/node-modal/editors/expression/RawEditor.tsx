@@ -4,7 +4,6 @@ import { ExpressionSuggest } from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
 import { NodeInputCss } from "../../../../NodeInput";
-import { useTheme } from "@mui/material";
 import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
 
@@ -39,7 +38,6 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         editorMode,
     } = props;
 
-    const theme = useTheme();
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
 
@@ -56,7 +54,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             ref: forwardedRef,
             editorMode: editorMode,
         }),
-        [rows, cols, theme, value, language, onValueChange, readOnly, forwardedRef, editorMode],
+        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode],
     );
 
     return (
