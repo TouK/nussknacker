@@ -22,7 +22,7 @@ While Designer GUI in most cases is self-explanatory and forgiving, there are a 
 
 ### Common errors and misunderstandings
 
-- Unlike JSON, SpEL uses curly brackets to denote the start and end of a list, e.g.:  ```{1, 2, 3, 4}```. To make things more confusing, in the code hints and in the debugger Nussknacker shows lists using JSON notation for lists. So, stay alert.
+- Unlike JSON, SpEL uses curly brackets to denote the start and end of a list, e.g.:  `{1, 2, 3, 4}`. To make things more confusing, in the code hints and in the debugger Nussknacker shows lists using JSON notation for lists. So, stay alert.
 - `{:}` stands for the empty record (map). `{}` denotes an empty list.  
 
 ### Handling data types problems
