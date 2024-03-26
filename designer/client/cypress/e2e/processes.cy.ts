@@ -48,12 +48,19 @@ describe("Processes list", () => {
         cy.contains(/^every of the|^1 of the/i).should("be.visible");
         cy.wait(200); // wait for highlight
         cy.contains(this.processName).should("be.visible"); //.matchImage() FIXME
-        cy.contains(this.processName).click({ x: 10, y: 10 });
+        cy.contains(this.processName).click(10, 10);
         cy.url().should("contain", `visualization/${this.processName}`);
     });
 
     it("should filter by processing mode", function () {
         cy.get("[placeholder='Search...']").type(`${PROCESSING_MODE}`);
+
+        cy.contains("button", /sort/i).click();
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/name/i).click();
+        });
+        cy.get("body").click();
+
         cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
 
         cy.get("body").matchImage({ maxDiffThreshold: 0.02 });
@@ -126,7 +133,7 @@ describe.skip("Processes list (new table)", () => {
         cy.wait(200); // wait for highlight
         cy.contains(this.processName).should("be.visible");
         cy.get("#app-container").matchImage();
-        cy.contains(this.processName).click({ x: 10, y: 10 });
+        cy.contains(this.processName).click(10, 10);
         cy.url().should("contain", `visualization/${this.processName}`);
     });
 });
