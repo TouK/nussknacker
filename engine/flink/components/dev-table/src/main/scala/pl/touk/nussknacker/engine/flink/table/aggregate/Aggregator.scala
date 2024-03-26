@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
+// TODO: add remaining aggregators
 object Aggregator {
   val allAggregators: List[Aggregator] = List(Sum, First)
 }
@@ -14,8 +15,7 @@ sealed trait Aggregator {
 }
 
 case object Sum extends Aggregator {
-  override val name: String = "Sum"
-  // TODO local: is Typed[Number] ok?
+  override val name: String                                               = "Sum"
   override val inputTypeConstraint: Option[TypingResult]                  = Some(Typed[Number])
   override def outputType(inputTypeInRuntime: TypingResult): TypingResult = Typed[Number]
   override val flinkFunctionName: String                                  = "sum"
