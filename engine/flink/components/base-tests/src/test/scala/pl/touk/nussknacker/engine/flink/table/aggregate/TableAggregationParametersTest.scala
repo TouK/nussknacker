@@ -38,7 +38,7 @@ class TableAggregationParametersTest extends AnyFunSuite with Matchers {
   }
 
   // TODO: after adding more aggregators do a table based test for these cases here
-  test("should returns correct types for valid parameters") {
+  test("should return correct types for valid parameters") {
     val outVariableName = "out"
     val definition =
       aggregationComponent.contextTransformation(ValidationContext(), List(OutputVariableNameValue(outVariableName)))
