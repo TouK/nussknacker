@@ -5,6 +5,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.{EnabledTypedFeatures, TypingResultGen}
 import pl.touk.nussknacker.test.{NuScalaTestAssertions, NuTapirExtensions}
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
+import pl.touk.nussknacker.ui.api.description.{NodesApiEndpoints, TypingDtoSchemas}
 
 class NodesApiEndpointsSpec
     extends AnyFreeSpecLike
