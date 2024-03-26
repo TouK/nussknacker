@@ -19,8 +19,7 @@ object TableAggregationFactory {
   val groupByParamName: ParameterName            = ParameterName("groupBy")
   val aggregateByParamName: ParameterName        = ParameterName("aggregateBy")
   val aggregatorFunctionParamName: ParameterName = ParameterName("aggregator")
-  // TODO local: check this
-  val outputVarParamName: ParameterName = ParameterName(OutputVar.CustomNodeFieldName)
+  private val outputVarParamName: ParameterName  = ParameterName(OutputVar.CustomNodeFieldName)
 
   private val groupByParam: ParameterExtractor[LazyParameter[AnyRef]] with ParameterCreatorWithNoDependency =
     ParameterDeclaration.lazyMandatory[AnyRef](groupByParamName).withCreator()
