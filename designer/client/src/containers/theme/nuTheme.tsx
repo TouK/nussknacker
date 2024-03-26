@@ -1,4 +1,4 @@
-import { createTheme, rgbToHex } from "@mui/material";
+import { alpha, createTheme, rgbToHex } from "@mui/material";
 import { blend } from "@mui/system";
 import { fontFamily, globalStyles } from "./styles";
 
@@ -108,7 +108,7 @@ export const nuTheme = createTheme({
             secondary: "#cccccc",
         },
         action: {
-            hover: blendLighten("#242F3E", 0.15),
+            hover: alpha("#D2A8FF", 0.24),
         },
     },
     typography: (palette) => ({

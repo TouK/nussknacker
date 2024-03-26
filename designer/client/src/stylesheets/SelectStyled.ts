@@ -52,7 +52,7 @@ export const selectStyled = (theme: Theme) => {
             background-color: ${blendDarken(theme.palette.primary.main, 0.75)};
         `}
     &:hover {
-            background-color: ${theme.palette.action.hover};
+            background-color: ${blendDarken(theme.palette.action.hover, 0.15)};
         }
     `;
 
