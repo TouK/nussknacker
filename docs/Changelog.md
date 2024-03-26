@@ -54,6 +54,7 @@
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) Added: Decision Table component - detailed validation
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
 * [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) Added: an info about `Processing mode` to the scenario and divided `Status` toolbar to `Scenario actions` and `Scenario details`
 
 1.13.2 (7 Mar 2024)
 ------------------------
