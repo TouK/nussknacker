@@ -434,6 +434,95 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/migrate:
+    post:
+      tags:
+      - Migrations
+      summary: Migration between environments service
+      operationId: postApiMigrate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+            examples:
+              Example:
+                summary: example of migration request between environments
+                value:
+                  sourceEnvironmentId: testEnv
+                  processingMode: Unbounded-Stream
+                  engineSetupName: Flink
+                  processCategory: Category1
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                        metaDataType: LiteStreamMetaData
+                    nodes:
+                    - id: source
+                      ref:
+                        typ: csv-source-lite
+                        parameters: []
+                      type: Source
+                    - id: sink
+                      ref:
+                        typ: dead-end-lite
+                        parameters: []
+                      type: Sink
+                    edges:
+                    - from: source
+                      to: sink
+                  processName: test
+                  isFragment: false
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
   /api/nodes/{scenarioName}/additionalInfo:
     post:
       tags:
@@ -1565,7 +1654,9 @@ components:
         processingType:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
-          $ref: '#/components/schemas/Map_String'
+          oneOf:
+          - $ref: '#/components/schemas/Map_String'
+          - type: 'null'
     CaretPosition2d:
       required:
       - row
@@ -1578,6 +1669,20 @@ components:
         column:
           type: integer
           format: int32
+    CellError:
+      required:
+      - columnName
+      - rowIndex
+      - errorMessage
+      type: object
+      properties:
+        columnName:
+          type: string
+        rowIndex:
+          type: integer
+          format: int32
+        errorMessage:
+          type: string
     Comment:
       required:
       - id
@@ -1699,7 +1804,9 @@ components:
         createdBy:
           type: string
         lastAction:
-          $ref: '#/components/schemas/ProcessAction'
+          oneOf:
+          - $ref: '#/components/schemas/ProcessAction'
+          - type: 'null'
     CronParameterEditor:
       type: object
     DataToRefresh:
@@ -1789,7 +1896,9 @@ components:
         to:
           type: string
         edgeType:
-          $ref: '#/components/schemas/EdgeType'
+          oneOf:
+          - $ref: '#/components/schemas/EdgeType'
+          - type: 'null'
     EdgeType:
       oneOf:
       - $ref: '#/components/schemas/FilterFalse'
@@ -1797,6 +1906,9 @@ components:
       - $ref: '#/components/schemas/FragmentOutput'
       - $ref: '#/components/schemas/NextSwitch'
       - $ref: '#/components/schemas/SwitchDefault'
+    ErrorDetails:
+      oneOf:
+      - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
     Expression:
       required:
       - language
@@ -1919,15 +2031,21 @@ components:
         required:
           type: boolean
         initialValue:
-          $ref: '#/components/schemas/FixedExpressionValue'
+          oneOf:
+          - $ref: '#/components/schemas/FixedExpressionValue'
+          - type: 'null'
         hintText:
           type:
           - string
           - 'null'
         valueEditor:
-          $ref: '#/components/schemas/ValueInputWithFixedValues'
+          oneOf:
+          - $ref: '#/components/schemas/ValueInputWithFixedValues'
+          - type: 'null'
         valueCompileTimeValidation:
-          $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+          oneOf:
+          - $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+          - type: 'null'
     FragmentRef:
       required:
       - id
@@ -1964,9 +2082,13 @@ components:
         outputName:
           type: string
         outputVar:
-          $ref: '#/components/schemas/FragmentOutputVarDefinition'
+          oneOf:
+          - $ref: '#/components/schemas/FragmentOutputVarDefinition'
+          - type: 'null'
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -2103,7 +2225,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParametersTemplate:
             type: array
             items:
@@ -2131,7 +2255,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParametersTemplate:
             type: array
             items:
@@ -2152,7 +2278,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParametersTemplate:
             type: array
             items:
@@ -2175,7 +2303,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           id:
             type: string
           isDisabled:
@@ -2200,7 +2330,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           id:
             type: string
           parameters:
@@ -2216,7 +2348,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           id:
             type: string
           fields:
@@ -2233,7 +2367,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParameters:
             type: array
             items:
@@ -2264,7 +2400,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParametersTemplate:
             type: array
             items:
@@ -2287,7 +2425,9 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParametersTemplate:
             type: array
             items:
@@ -2312,7 +2452,9 @@ components:
           id:
             type: string
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           type:
             $ref: '#/components/schemas/NodeTypes9'
           branchParametersTemplate:
@@ -2330,7 +2472,9 @@ components:
           id:
             type: string
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           type:
             $ref: '#/components/schemas/NodeTypes10'
           branchParametersTemplate:
@@ -2344,13 +2488,17 @@ components:
         type: object
         properties:
           additionalFields:
-            $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            oneOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
           branchParametersTemplate:
             type: array
             items:
               $ref: '#/components/schemas/Parameter'
           expression:
-            $ref: '#/components/schemas/Expression'
+            oneOf:
+            - $ref: '#/components/schemas/Expression'
+            - type: 'null'
           exprVal:
             type:
             - string
@@ -2439,6 +2587,10 @@ components:
           - 'null'
         errorType:
           $ref: '#/components/schemas/NodeValidationErrorType'
+        details:
+          oneOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
     NodeValidationErrorType:
       type: string
       enum:
@@ -2457,7 +2609,9 @@ components:
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
         branchVariableTypes:
-          $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
+          oneOf:
+          - $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
+          - type: 'null'
         outgoingEdges:
           type:
           - array
@@ -2506,7 +2660,9 @@ components:
         message:
           type: string
         type:
-          $ref: '#/components/schemas/NotificationType'
+          oneOf:
+          - $ref: '#/components/schemas/NotificationType'
+          - type: 'null'
         toRefresh:
           type: array
           items:
@@ -2845,6 +3001,13 @@ components:
       type: object
     SwitchDefault:
       type: object
+    TabularDataDefinitionParserErrorDetails:
+      type: object
+      properties:
+        cellErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CellError'
     TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:
@@ -3099,7 +3262,9 @@ components:
           - string
           - 'null'
         layoutData:
-          $ref: '#/components/schemas/LayoutData'
+          oneOf:
+          - $ref: '#/components/schemas/LayoutData'
+          - type: 'null'
     ValueInputWithFixedValues:
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
@@ -3126,7 +3291,9 @@ components:
         id:
           type: string
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
         type:
           $ref: '#/components/schemas/NodeTypes12'
         varName:
@@ -3142,7 +3309,9 @@ components:
       type: object
       properties:
         additionalFields:
-          $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          oneOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
         branchParametersTemplate:
           type: array
           items:
