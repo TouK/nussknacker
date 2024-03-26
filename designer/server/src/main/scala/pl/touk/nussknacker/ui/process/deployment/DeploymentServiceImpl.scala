@@ -75,6 +75,10 @@ class DeploymentServiceImpl(
     for {
       // 1. common for all commands/actions
       // TODO: extract param definitions to do generic "parameter validation"
+      // During cancel we refer to the version that is deployed (see lastDeployedAction). In some cases, when action fails
+      // and deployment continues on flink, lastDeployedAction is empty. Then we allow cancel action to proceed, to cancel
+      // a running job. In that case there is no deploy action and action cancel is removed.
+      // TODO: This inconsistent action-state handling needs a fix.
       _ <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[Unit](
         processId,
