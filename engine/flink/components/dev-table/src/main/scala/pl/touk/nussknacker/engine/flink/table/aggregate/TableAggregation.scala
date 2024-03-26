@@ -10,6 +10,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
+import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -72,12 +73,14 @@ class TableAggregation(
     val groupedStream: DataStream[Row] = tableEnv.toDataStream(groupedTable)
 
     groupedStream
-      .process(new NewContextRowMappingProcessFunction(context.convertToEngineRuntimeContext))
+      .map(RowConversions.rowToMap)
+      .returns(classOf[java.util.Map[String, Any]])
+      .process(new AggregateResultContextFunction(context.convertToEngineRuntimeContext))
   }
 
-  private class NewContextRowMappingProcessFunction(
+  private class AggregateResultContextFunction(
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-  ) extends ProcessFunction[Row, ValueWithContext[AnyRef]] {
+  ) extends ProcessFunction[java.util.Map[String, Any], ValueWithContext[AnyRef]] {
     @transient
     private var contextIdGenerator: ContextIdGenerator = _
 
@@ -86,17 +89,14 @@ class TableAggregation(
     }
 
     override def processElement(
-        value: Row,
-        ctx: ProcessFunction[Row, ValueWithContext[AnyRef]]#Context,
+        value: java.util.Map[String, Any],
+        ctx: ProcessFunction[java.util.Map[String, Any], ValueWithContext[AnyRef]]#Context,
         out: Collector[ValueWithContext[AnyRef]]
     ): Unit = {
-      val map            = RowConversions.rowToMap(value)
-      val aggregateValue = map.get(aggregateByInternalColumnName).asInstanceOf[AnyRef]
-      val groupValue     = map.get(groupByInternalColumnName)
-      val ctx = pl.touk.nussknacker.engine.api
-        .Context(contextIdGenerator.nextContextId())
-        .withVariable(KeyVariableName, groupValue)
-      val valueWithContext = ValueWithContext(aggregateValue, ctx)
+      val aggregateResultValue = value.get(aggregateByInternalColumnName).asInstanceOf[AnyRef]
+      val groupedByValue       = value.get(groupByInternalColumnName)
+      val ctx = api.Context(contextIdGenerator.nextContextId()).withVariable(KeyVariableName, groupedByValue)
+      val valueWithContext = ValueWithContext(aggregateResultValue, ctx)
       out.collect(valueWithContext)
     }
 
@@ -112,12 +112,6 @@ class TableAggregation(
     private lazy val evaluateGroupBy          = toEvaluateFunctionConverter.toEvaluateFunction(groupByParam)
     private lazy val evaluateAggregateByParam = toEvaluateFunctionConverter.toEvaluateFunction(aggregateByParam)
 
-    /*
-         Has to out Rows?
-         Otherwise org.apache.flink.util.FlinkRuntimeException: Error during input conversion from external DataStream API to
-         internal Table API data structures. Make sure that the provided data types that configure the converters are
-         correctly declared in the schema.
-     */
     override def flatMap(context: Context, out: Collector[Row]): Unit = {
       collectHandlingErrors(context, out) {
         val evaluatedGroupBy     = evaluateGroupBy(context)
