@@ -31,10 +31,3 @@ case class CustomActionDefinition(
 case class CustomActionParameter(name: String, editor: ParameterEditor, validators: Option[List[ParameterValidator]])
 
 case class CustomActionResult(msg: String)
-
-sealed trait CustomActionValidationResult
-
-object CustomActionValidationResult {
-  case object Valid                                                             extends CustomActionValidationResult
-  case class Invalid(errorMap: Map[String, List[PartSubGraphCompilationError]]) extends CustomActionValidationResult
-}
