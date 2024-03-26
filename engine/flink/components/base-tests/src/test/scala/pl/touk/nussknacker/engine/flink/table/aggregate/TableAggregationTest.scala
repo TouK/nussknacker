@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.flink.table
+package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.flink.table.TableAggregationTest.TestRecord
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
