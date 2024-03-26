@@ -13,7 +13,7 @@ Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer
 &nbsp;
 ## Nussknacker scenario diagram
 
-Nussknacker scenario represents a decision algorithm in the form of a graph. The decisions are based on data, which can be anything from clicks on a website, to bank transactions, to readings from sensors. This data is processed by Nussknacker, according to the defined scenario(algorithm). Applying the scenario template to the input the data yields output from Nussknacker. The output is either processed data or information about the actions (decisions) made, depending on the scenario.
+In the Nussknacker scenario diagram, we illustrate how Nussknacker functions as a decision-making algorithm represented in a graph. This scenario guides the processing of various types of data, ranging from website clicks and bank transactions to sensor readings. By applying the scenario template to input data, Nussknacker produces output, either in the form of processed data or information detailing the decisions made, depending on the scenario's specifications.
 
 Every scenario has to start with a datasource - we have to specify what kind of data we want to work with. In Nussknacker we just name it "source". The rest of the scenario is a sequence (Directed Acyclic Graph or DAG to be more precise) of different nodes:
 - flow control functions: filter, switch, split etc.
@@ -33,7 +33,7 @@ In the **Request-Response** processing mode it is a request data record which en
 
 Configuring Nussknacker nodes is about using SpEL to a large degree; knowledge of how to write valid SpEl expressions is an important part of using Nussknacker.
 
-SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/expressions.html) is a powerful expression language that supports querying and manipulating data objects. What exactly does the term _expression_ mean and why is SpEL an _expression language_? In programming language terminology, an _expression_ is a union of values and functions that are joined to create a new value. SpEL only allows you to write expressions; therefore it is considered an expression language. A couple examples:
+SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/expressions.html) is a powerful expression language that supports querying and manipulating data objects. What exactly does the term _expression_ mean and why is SpEL an _expression language_? In programming language terminology, an _expression_ is a union of values and functions that are joined to create a new value. SpEL only allows you to write expressions; therefore it is considered an expression language. A couple of examples:
 
 | Expression           | Result                         | Type                 |
 | ------------         | --------                       | --------             |
