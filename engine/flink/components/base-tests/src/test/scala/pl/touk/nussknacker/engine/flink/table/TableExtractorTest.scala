@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.flink.table.SqlTestData.SimpleTypesTestCase.{tableDefinition, tableName}
 import pl.touk.nussknacker.engine.flink.table.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
 import pl.touk.nussknacker.engine.flink.table.extractor._
 
@@ -16,7 +15,7 @@ class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPrope
     val dataSourceConfigs = TableExtractor.extractTablesFromFlinkRuntime(statements)
 
     val expectedResult = TableExtractorResult(
-      tableDefinitions = List(tableDefinition),
+      tableDefinitions = List(SimpleTypesTestCase.tableDefinition),
       sqlStatementExecutionErrors = List.empty
     )
 
