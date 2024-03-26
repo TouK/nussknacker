@@ -37,7 +37,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
-import pl.touk.nussknacker.ui.{BadRequestError, IllegalOperationError, NotFoundError}
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
 import java.time.Clock
@@ -66,9 +66,6 @@ class DeploymentServiceImpl(
     extends DeploymentService
     with LazyLogging {
 
-  /**
-    * Scenario cancellation is executed on the scenario version that was previously deployed (see lastDeployedAction).
-    */
   override def cancelProcess(
       processId: ProcessIdWithName,
       comment: Option[String]
@@ -82,7 +79,7 @@ class DeploymentServiceImpl(
       ctx <- prepareCommandContextWithAction[Unit](
         processId,
         actionType,
-        getLastDeployedVersion,
+        p => p.lastDeployedAction.map(_.processVersionId),
         _ => None
       )
       // 2. command specific section
@@ -101,13 +98,10 @@ class DeploymentServiceImpl(
     } yield ()
   }
 
-  /**
-    * Deploy is executed on the latest (current) scenario version.
-    * Inner Future in result allows to wait for deployment finish, while outer handles validation
-    * We split deploy process that way because we want to be able to split FE logic into two phases:
-    * - validations - it is quick part, the result will be displayed on deploy modal
-    * - deployment on engine side - it is longer part, the result will be shown as a notification
-    */
+  // Inner Future in result allows to wait for deployment finish, while outer handles validation
+  // We split deploy process that way because we want to be able to split FE logic into two phases:
+  // - validations - it is quick part, the result will be displayed on deploy modal
+  // - deployment on engine side - it is longer part, the result will be shown as a notification
   override def deployProcessAsync(
       processId: ProcessIdWithName,
       savepointPath: Option[String],
@@ -121,7 +115,7 @@ class DeploymentServiceImpl(
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
         processId,
         actionType,
-        getCurrentVersion,
+        p => Some(p.processVersionId),
         p => Some(p.processingType)
       )
       // 2. command specific section
@@ -157,11 +151,9 @@ class DeploymentServiceImpl(
     * @return gathered data for further command execution
     */
   private def prepareCommandContextWithAction[PS: ScenarioShapeFetchStrategy](
-      processIdWithName: ProcessIdWithName,
+      processId: ProcessIdWithName,
       actionType: ProcessActionType,
-      getScenarioWithVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => DB[
-        Option[ScenarioWithDetailsEntity[PS]]
-      ],
+      getVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => Option[VersionId],
       getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -171,56 +163,34 @@ class DeploymentServiceImpl(
         // 1.1 TODO common parameter validations
         // 1.2 lock for critical section
         _ <- actionRepository.lockActionsTable
-        // 1.3. fetch scenario details
-        processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processIdWithName.id)
-        processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
-        // 1.4. check if action is performed on proper scenario (not fragment and not archived)
+        // 1.3. fetch scenario data
+        processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
+        processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
+        // 1.4. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
+        versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
+        buildInfoProcessingType    = getBuildInfoProcessingType(processDetails)
+        // 1.5. check if action is performed on proper scenario (not fragment, not archived)
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
-        // 1.5. check if action is allowed for current state
+        // 1.6. check if action is allowed for current state
         inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
         processState          <- getProcessState(processDetails, inProgressActionTypes)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
-
-        // 1.6. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
-        actOnProcessDetailsOpt <- getScenarioWithVersionOnWhichActionIsDone(processDetails)
-        actOnProcessDetails <- existsOrFail(
-          actOnProcessDetailsOpt,
-          ActionOnInvalidScenarioVersion(processIdWithName.name, actionName)
-        )
-        // TODO: can we evaluate build version for every action? do we need to hide buildInfo for cancel?
-        buildInfoProcessingType = getBuildInfoProcessingType(processDetails)
-
         // 1.7. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
-          actOnProcessDetails.processId,
+          processDetails.processId,
           actionType,
-          Some(actOnProcessDetails.processVersionId),
+          versionOnWhichActionIsDone,
           buildInfoProcessingType
         )
-      } yield CommandContext(actOnProcessDetails, actionId, buildInfoProcessingType)
+      } yield CommandContext(processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessingType)
     )
-  }
-
-  private def getCurrentVersion[PS: ScenarioShapeFetchStrategy](
-      processDetails: ScenarioWithDetailsEntity[PS]
-  ): DB[Option[ScenarioWithDetailsEntity[PS]]] = {
-    DBIOAction.successful(Some(processDetails))
-  }
-
-  private def getLastDeployedVersion[PS: ScenarioShapeFetchStrategy](
-      processDetails: ScenarioWithDetailsEntity[PS]
-  )(implicit user: LoggedUser, ec: ExecutionContext): DB[Option[ScenarioWithDetailsEntity[PS]]] = {
-    val versionIdOpt = processDetails.lastDeployedAction.map(_.processVersionId)
-    versionIdOpt match {
-      case Some(v) => processRepository.fetchProcessDetailsForId(processDetails.processId, v)
-      case None    => DBIOAction.successful(None)
-    }
   }
 
   // TODO: Use buildInfo explicitly instead of ProcessingType-that-is-used-to-calculate-buildInfo
   private case class CommandContext[PS: ScenarioShapeFetchStrategy](
       processDetails: ScenarioWithDetailsEntity[PS],
       actionId: ProcessActionId,
+      versionOnWhichActionIsDone: Option[VersionId],
       buildInfoProcessingType: Option[ProcessingType]
   )
 
@@ -344,7 +314,7 @@ class DeploymentServiceImpl(
               ctx.actionId,
               ctx.processDetails.processId,
               actionType,
-              Some(ctx.processDetails.processVersionId),
+              ctx.versionOnWhichActionIsDone,
               performedAt,
               exception.getMessage,
               ctx.buildInfoProcessingType
@@ -352,31 +322,42 @@ class DeploymentServiceImpl(
           )
           .transform(_ => Failure(exception))
       case Success(result) =>
-        logger.info(s"Finishing $actionString")
-        val performedAt = clock.instant()
-        val comment     = deploymentComment.map(_.toComment(actionType))
-        // TODO: rename to OnActionSuccess
-        processChangeListener.handle(
-          OnDeployActionSuccess(
-            ctx.processDetails.processId,
-            ctx.processDetails.processVersionId,
-            comment,
-            performedAt,
-            actionType
-          )
-        )
-        dbioRunner
-          .runInTransaction(
-            actionRepository.markActionAsFinished(
-              ctx.actionId,
-              ctx.processDetails.processId,
-              actionType,
-              ctx.processDetails.processVersionId,
-              performedAt,
-              comment,
-              ctx.buildInfoProcessingType
+        ctx.versionOnWhichActionIsDone
+          .map { versionOnWhichActionIsDone =>
+            logger.info(s"Finishing $actionString")
+            val performedAt = clock.instant()
+            val comment     = deploymentComment.map(_.toComment(actionType))
+            // TODO: rename to OnActionSuccess
+            processChangeListener.handle(
+              OnDeployActionSuccess(
+                ctx.processDetails.processId,
+                versionOnWhichActionIsDone,
+                comment,
+                performedAt,
+                actionType
+              )
             )
-          )
+            dbioRunner.runInTransaction(
+              actionRepository.markActionAsFinished(
+                ctx.actionId,
+                ctx.processDetails.processId,
+                actionType,
+                versionOnWhichActionIsDone,
+                performedAt,
+                comment,
+                ctx.buildInfoProcessingType
+              )
+            )
+          }
+          .getOrElse {
+            // Currently we don't send notifications and don't add finished action into db if version id is missing.
+            // It happens during cancel when there is no finished deploy action before it, but some scenario is running on engine.
+            // TODO: We should send notifications and add action db entry in that cases as well as for normal finish.
+            //       Before we can do that we should check if we somewhere rely on fact that version is always defined -
+            //       see ProcessAction.processVersionId
+            logger.info(s"Action $actionString finished for action without version id - skipping listener notification")
+            removeInvalidAction(ctx.actionId)
+          }
           .map(_ => result)
     }
   }
@@ -674,11 +655,4 @@ private class FragmentStateException extends BadRequestError("Fragment doesn't h
 
 private case class CustomActionNonExisting(actionName: ScenarioActionName)
     extends NotFoundError(s"$actionName is not existing")
-
-private case class ValidationError(message: String) extends BadRequestError(message)
-
-private case class ActionOnInvalidScenarioVersion(processName: ProcessName, actionName: ScenarioActionName)
-    extends IllegalOperationError(
-      s"Cannot find scenario version for scenario $processName action $actionName",
-      details = ""
-    )
+case class ValidationError(message: String) extends BadRequestError(message)
