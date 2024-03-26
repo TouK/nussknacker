@@ -6,7 +6,7 @@
   * Tapir: 1.7.4 -> 1.9.11
   * openapi-circe-yaml: 0.6.0 -> 0.7.4 
 
-1.14.0 (Not released yet)
+1.14.0 (21 Mar 2024)
 -------------------------
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
   * Flink: 1.16.2 -> 1.17.2
@@ -60,6 +60,7 @@
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) Added: Decision Table component - detailed validation
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
 * [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) Added: an info about `Processing mode` to the scenario and divided `Status` toolbar to `Scenario actions` and `Scenario details`
 
 1.13.2 (7 Mar 2024)
 ------------------------
