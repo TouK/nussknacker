@@ -1786,13 +1786,12 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
         "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-json"                  % flinkV,
-        "org.scalatest"   %% "scalatest"                   % scalaTestV % Test
       )
     }
   )
   .dependsOn(
     flinkComponentsApi   % Provided,
-    componentsApi        % "provided, test",
+    componentsApi        % Provided,
     commonUtils          % Provided,
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
