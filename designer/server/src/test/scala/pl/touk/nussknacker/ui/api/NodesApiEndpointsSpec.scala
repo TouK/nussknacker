@@ -34,8 +34,22 @@ class NodesApiEndpointsSpec
       s"""{\"additionalFields\":{\"layoutData":{\"x\":-179,\"y\":-170}},\"expression\":{\"language\":\"spel\",\"expression\":\"true\"},\"isDisabled\":null,\"type\":\"Filter\",\"branchParametersTemplate\":[],\"id\":\"filter 1\"}"""
     val fragment =
       s"""{\"additionalFields\":{\"layoutData\":{\"x\":0,\"y\":180},\"description\":null},\"ref\":{\"id\":\"fragment\",\"parameters\":[],\"outputVariableNames\":{\"output\":\"output\"}},\"isDisabled\":null,\"fragmentParams\":null,\"type\":\"FragmentInput\",\"id\":\"fragment\"}"""
+    val choice =
+      s"""{
+         |  "additionalFields": {
+         |    "layoutData": {
+         |      "x": -198,
+         |      "y": 152
+         |    }
+         |  },
+         |  "expression": null,
+         |  "exprVal": null,
+         |  "type": "Switch",
+         |  "branchParametersTemplate": [],
+         |  "id": "choice"
+         |}""".stripMargin
 
-    val jsonList = List(enricher, filter, fragment)
+    val jsonList = List(enricher, filter, fragment, choice)
     jsonList.foreach(nodeData => schema should validateJson(createJsonFromString(nodeData)))
   }
 

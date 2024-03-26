@@ -1098,7 +1098,7 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.github.erosb"               % "everit-json-schema"      % "1.14.4",
         "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
-        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % "0.6.0",
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % "0.7.4",
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
