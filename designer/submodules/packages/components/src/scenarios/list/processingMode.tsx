@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from "react";
 import { Button, Typography } from "@mui/material";
 import { FiltersContextType } from "../../common/filters/filtersContext";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
-import { NuIcon } from "../../common";
 import i18next from "i18next";
 import Streaming from "../../assets/icons/streaming.svg";
 import Batch from "../../assets/icons/batch.svg";
@@ -25,12 +24,11 @@ export const processingModeItems = [
         displayableName: i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response"),
         Icon: RequestResponse,
     },
-    //TODO: Uncomment when batch supported
-    // {
-    //     name: ProcessingMode.batch,
-    //     displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
-    //     Icon: Batch,
-    // },
+    {
+        name: ProcessingMode.batch,
+        displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
+        Icon: Batch,
+    },
 ];
 
 interface Props {
