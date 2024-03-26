@@ -12,8 +12,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SimpleParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
@@ -43,7 +45,11 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidatio
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoProcessingType, NoScenario}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoProcessingType,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
@@ -569,13 +575,17 @@ object NodesApiEndpoints {
     implicit lazy val parameterSchema: Schema[Parameter]                       = Schema.derived
     implicit lazy val edgeTypeSchema: Schema[EdgeType]                         = Schema.derived
     implicit lazy val edgeSchema: Schema[Edge]                                 = Schema.derived
+    implicit lazy val cellErrorSchema: Schema[CellError]                       = Schema.derived
+    implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
+
     implicit lazy val expressionSchema: Schema[Expression] = {
       implicit val languageSchema: Schema[Language] = Schema.string[Language]
       Schema.derived
     }
-    implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d]           = Schema.derived
+
+    implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
     object NodeDataSchemas {
 
@@ -718,7 +728,7 @@ object NodesApiEndpoints {
                 Schema.schemaForIterable[Parameter, List],
                 _ => None
               ),
-              SProductField(FieldName("expression"), Schema.derived[Expression], filter => Some(filter.expression)),
+              SProductField(FieldName("expression"), expressionSchema, filter => Some(filter.expression)),
               SProductField(FieldName("id"), Schema.string, filter => Some(filter.id)),
               SProductField(
                 FieldName("isDisabled"),
@@ -1247,10 +1257,11 @@ object NodesApiEndpoints {
       Decoder.instance[NodeValidationResultDto](_ => throw new IllegalStateException)
 
     object NodeValidationResultDto {
-      implicit lazy val parameterEditorSchema: Schema[ParameterEditor] = Schema.derived
-      implicit lazy val dualEditorSchema: Schema[DualEditorMode]       = Schema.string
-      implicit lazy val durationSchema: Schema[Duration]               = Schema.schemaForJavaDuration
-      implicit lazy val uiParameterSchema: Schema[UIParameter]         = Schema.derived
+      implicit lazy val simpleParameterEditorSchema: Schema[SimpleParameterEditor] = Schema.derived
+      implicit lazy val parameterEditorSchema: Schema[ParameterEditor]             = Schema.derived
+      implicit lazy val dualEditorSchema: Schema[DualEditorMode]                   = Schema.string
+      implicit lazy val durationSchema: Schema[Duration]                           = Schema.schemaForJavaDuration
+      implicit lazy val uiParameterSchema: Schema[UIParameter]                     = Schema.derived
 
       implicit lazy val timeSchema: Schema[java.time.temporal.ChronoUnit] = Schema(
         SProduct(
@@ -1260,6 +1271,7 @@ object NodesApiEndpoints {
           )
         )
       )
+
       def apply(node: NodeValidationResult): NodeValidationResultDto = {
         new NodeValidationResultDto(
           parameters = node.parameters,
