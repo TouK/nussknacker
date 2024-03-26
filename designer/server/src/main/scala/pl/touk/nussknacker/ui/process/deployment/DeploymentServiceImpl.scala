@@ -96,7 +96,7 @@ class DeploymentServiceImpl(
         ctx
       ) {
         dispatcher
-          .deploymentManagerUnsafe(ctx.processDetails.processingType)
+          .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
           .processCommand(command)
       }.map(_ => ())
     } yield ()
@@ -123,7 +123,7 @@ class DeploymentServiceImpl(
         p => Some(p.processingType)
       )
       // 2. command specific section
-      deployedScenarioData <- prepareDeployedScenarioData(ctx.processDetails, ctx.actionId)
+      deployedScenarioData <- prepareDeployedScenarioData(ctx.latestScenarioDetails, ctx.actionId)
       command = RunDeploymentCommand(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
@@ -131,7 +131,7 @@ class DeploymentServiceImpl(
         savepointPath
       )
       // TODO: move validateBeforeDeploy before creating an action
-      result <- validateBeforeDeploy(ctx.processDetails, deployedScenarioData).transformWith {
+      result <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
         case Failure(ex) =>
           removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
         case Success(_) =>
@@ -142,7 +142,7 @@ class DeploymentServiceImpl(
             ctx
           ) {
             dispatcher
-              .deploymentManagerUnsafe(ctx.processDetails.processingType)
+              .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
               .processCommand(command)
           }
           Future.successful(deploymentFuture)
@@ -192,7 +192,7 @@ class DeploymentServiceImpl(
 
   // TODO: Use buildInfo explicitly instead of ProcessingType-that-is-used-to-calculate-buildInfo
   private case class CommandContext[PS: ScenarioShapeFetchStrategy](
-      processDetails: ScenarioWithDetailsEntity[PS],
+      latestScenarioDetails: ScenarioWithDetailsEntity[PS],
       actionId: ProcessActionId,
       versionOnWhichActionIsDone: Option[VersionId],
       buildInfoProcessingType: Option[ProcessingType]
@@ -305,18 +305,19 @@ class DeploymentServiceImpl(
   )(runAction: => Future[T])(implicit user: LoggedUser, ec: ExecutionContext): Future[T] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionFuture                        = runAction
-    val actionString = s"${actionType.toString.toLowerCase} (id: ${ctx.actionId.value}) of ${ctx.processDetails.name}"
+    val actionString =
+      s"${actionType.toString.toLowerCase} (id: ${ctx.actionId.value}) of ${ctx.latestScenarioDetails.name}"
     actionFuture.transformWith {
       case Failure(exception) =>
         logger.error(s"Action: $actionString finished with failure", exception)
         val performedAt = clock.instant()
         // TODO: rename to OnActionFailed
-        processChangeListener.handle(OnDeployActionFailed(ctx.processDetails.processId, exception))
+        processChangeListener.handle(OnDeployActionFailed(ctx.latestScenarioDetails.processId, exception))
         dbioRunner
           .runInTransaction(
             actionRepository.markActionAsFailed(
               ctx.actionId,
-              ctx.processDetails.processId,
+              ctx.latestScenarioDetails.processId,
               actionType,
               ctx.versionOnWhichActionIsDone,
               performedAt,
@@ -334,7 +335,7 @@ class DeploymentServiceImpl(
             // TODO: rename to OnActionSuccess
             processChangeListener.handle(
               OnDeployActionSuccess(
-                ctx.processDetails.processId,
+                ctx.latestScenarioDetails.processId,
                 versionOnWhichActionIsDone,
                 comment,
                 performedAt,
@@ -344,7 +345,7 @@ class DeploymentServiceImpl(
             dbioRunner.runInTransaction(
               actionRepository.markActionAsFinished(
                 ctx.actionId,
-                ctx.processDetails.processId,
+                ctx.latestScenarioDetails.processId,
                 actionType,
                 versionOnWhichActionIsDone,
                 performedAt,
