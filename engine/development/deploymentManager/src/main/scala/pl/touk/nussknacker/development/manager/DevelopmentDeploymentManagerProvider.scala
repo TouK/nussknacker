@@ -153,7 +153,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private def invokeCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
     val processName = command.processVersion.processName
     val statusOpt = customActionStatusMapping
-      .collectFirst { case (customAction, status) if customAction.name == command.actionName => status }
+      .collectFirst { case (customAction, status) if customAction.actionName == command.actionName => status }
 
     statusOpt match {
       case Some(newStatus) =>

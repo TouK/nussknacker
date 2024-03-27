@@ -46,7 +46,7 @@ paths:
                       user: admin
                       createdAt: '2023-11-29T08:54:22.520866Z'
                       performedAt: '2023-11-29T08:54:22.520866Z'
-                      actionType: DEPLOY
+                      actionName: DEPLOY
                       state: FINISHED
                       buildInfo: {}
                 Example1:
@@ -2380,7 +2380,7 @@ components:
       - user
       - createdAt
       - performedAt
-      - actionType
+      - actionName
       - state
       - buildInfo
       type: object
@@ -2399,8 +2399,8 @@ components:
         performedAt:
           type: string
           format: date-time
-        actionType:
-          $ref: '#/components/schemas/ProcessActionType'
+        actionName:
+          type: string
         state:
           $ref: '#/components/schemas/ProcessActionState'
         failureMessage:
@@ -2433,15 +2433,6 @@ components:
       - FINISHED
       - FAILED
       - EXECUTION_FINISHED
-    ProcessActionType:
-      type: string
-      enum:
-      - DEPLOY
-      - CANCEL
-      - ARCHIVE
-      - UNARCHIVE
-      - PAUSE
-      - RENAME
     ProcessAdditionalFields:
       required:
       - properties

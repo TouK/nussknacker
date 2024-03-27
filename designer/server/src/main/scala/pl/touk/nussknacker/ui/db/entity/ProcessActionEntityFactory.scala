@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 
@@ -34,7 +33,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
-    def actionType: Rep[ProcessActionType] = column[ProcessActionType]("action_type")
+    def actionName: Rep[ScenarioActionName] = column[ScenarioActionName]("action_type")
 
     def state: Rep[ProcessActionState] = column[ProcessActionState]("state")
 
@@ -63,7 +62,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       user,
       createdAt,
       performedAt,
-      actionType,
+      actionName,
       state,
       failureMessage,
       commentId,
@@ -83,7 +82,7 @@ final case class ProcessActionEntityData(
     user: String,
     createdAt: Timestamp,
     performedAt: Option[Timestamp],
-    actionType: ProcessActionType,
+    actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
     commentId: Option[Long],
@@ -92,5 +91,5 @@ final case class ProcessActionEntityData(
 
   lazy val createdAtTime: Instant           = createdAt.toInstant
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
-  lazy val isDeployed: Boolean              = actionType.equals(ProcessActionType.Deploy)
+  lazy val isDeployed: Boolean              = actionName.equals(ScenarioActionName.Deploy)
 }

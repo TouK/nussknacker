@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -34,11 +33,12 @@ object PeriodicStateStatus {
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
-  val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case SimpleStateStatus.Running => List(ProcessActionType.Cancel) // periodic processes cannot be redeployed from GUI
-    case _: ScheduledStatus        => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
-    case WaitingForScheduleStatus  => List(ProcessActionType.Cancel) // or maybe should it be empty??
-    case _: ProblemStateStatus     => List(ProcessActionType.Cancel) // redeploy is not allowed
+  val statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = {
+    case SimpleStateStatus.Running =>
+      List(ScenarioActionName.Cancel) // periodic processes cannot be redeployed from GUI
+    case _: ScheduledStatus       => List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
+    case WaitingForScheduleStatus => List(ScenarioActionName.Cancel) // or maybe should it be empty??
+    case _: ProblemStateStatus    => List(ScenarioActionName.Cancel) // redeploy is not allowed
   }
 
   val statusTooltipsPF: PartialFunction[StateStatus, String] = { case ScheduledStatus(nextRunAt) =>

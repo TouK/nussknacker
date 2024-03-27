@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 import java.net.URI
@@ -21,14 +21,14 @@ import java.net.URI
   */
 class OverridingProcessStateDefinitionManager(
     delegate: ProcessStateDefinitionManager,
-    statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
+    statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = PartialFunction.empty,
     statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
     statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
     customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
 ) extends ProcessStateDefinitionManager {
 
-  override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
+  override def statusActions(stateStatus: StateStatus): List[ScenarioActionName] =
     statusActionsPF.applyOrElse(stateStatus, delegate.statusActions)
 
   override def statusIcon(stateStatus: StateStatus): URI =

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.test.mock
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType._
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.security.Permission

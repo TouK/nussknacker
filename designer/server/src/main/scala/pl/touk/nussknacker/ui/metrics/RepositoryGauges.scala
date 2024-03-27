@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.metrics
 
 import io.dropwizard.metrics5.{CachedGauge, Gauge, MetricName, MetricRegistry}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.repository.DBFetchingProcessRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
@@ -35,7 +35,7 @@ class RepositoryGauges(
       val result =
         processRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery(isArchived = Some(false))).map { scenarios =>
           val all       = scenarios.size
-          val deployed  = scenarios.count(_.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)))
+          val deployed  = scenarios.count(_.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Deploy)))
           val fragments = scenarios.count(_.isFragment)
           Values(all, deployed, fragments)
         }

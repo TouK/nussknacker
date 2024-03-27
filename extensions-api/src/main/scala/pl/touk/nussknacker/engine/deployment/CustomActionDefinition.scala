@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.deployment
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 
@@ -19,7 +18,7 @@ Things to consider in future changes:
  */
 
 case class CustomActionDefinition(
-    name: ScenarioActionName,
+    actionName: ScenarioActionName,
     // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
     allowedStateStatusNames: List[StateStatus.StatusName],
     parameters: List[CustomActionParameter] = Nil,

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 import java.net.URI
@@ -40,7 +40,7 @@ trait ProcessStateDefinitionManager {
   /**
     * Allowed transitions between states.
     */
-  def statusActions(stateStatus: StateStatus): List[ProcessActionType]
+  def statusActions(stateStatus: StateStatus): List[ScenarioActionName]
 
   /**
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
