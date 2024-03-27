@@ -149,7 +149,7 @@ export const nuTheme = createTheme({
                     marginTop: 10,
                     cursor: "pointer",
                     maxHeight: 400,
-                    ".MuiAlert-icon": { color: theme.palette.background.paper, alignSelf: "center" },
+                    ".MuiAlert-icon": { color: alpha(theme.palette.common.black, 0.54), alignSelf: "center" },
                 }),
                 standardSuccess: ({ theme }) => ({
                     backgroundColor: theme.palette.success.main,

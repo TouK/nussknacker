@@ -7,8 +7,8 @@ import { bindActionCreators } from "redux";
 import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
 import { useInterval } from "./Interval";
 import Notification from "../components/notifications/Notification";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import DangerousIcon from "@mui/icons-material/Dangerous";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import DangerousOutlinedIcon from "@mui/icons-material/DangerousOutlined";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
 import { getProcessName } from "../reducers/selectors/graph";
@@ -32,13 +32,7 @@ const prepareNotification =
                     children: (
                         <Notification
                             type={type}
-                            icon={
-                                type == "error" ? (
-                                    <DangerousIcon sx={(theme) => ({ color: theme.palette.error.main, alignSelf: "center" })} />
-                                ) : (
-                                    <CheckCircleIcon sx={(theme) => ({ color: theme.palette.success.main, alignSelf: "center" })} />
-                                )
-                            }
+                            icon={type == "error" ? <DangerousOutlinedIcon /> : <CheckCircleOutlinedIcon />}
                             message={message}
                         />
                     ),
