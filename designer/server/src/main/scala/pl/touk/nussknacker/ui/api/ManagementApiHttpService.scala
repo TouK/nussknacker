@@ -68,7 +68,7 @@ class ManagementApiHttpService(
       validator: CustomActionValidator,
       request: CustomActionRequest
   ): EitherT[Future, ManagementApiError, CustomActionValidationDto] = {
-    val validationResult = validator.validateCustomActionParams(request)
+    val validationResult = validator.validateCustomActionParams(request.params)
 
     val validationDto = validationResult match {
       case Validated.Valid(_) => CustomActionValidationDto(Nil, validationPerformed = true)
