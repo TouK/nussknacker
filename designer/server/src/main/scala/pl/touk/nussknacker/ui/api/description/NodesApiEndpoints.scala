@@ -406,15 +406,15 @@ object NodesApiEndpoints {
         refClazz: TypingResult
     )
 
-    def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
-      new TypingResultDecoder(name =>
-        ClassUtils.forName(name, modelData.modelClassLoader.classLoader)
-      ).decodeTypingResults
+    def prepareTypingResultDecoder(classLoader: ClassLoader): Decoder[TypingResult] = {
+      new TypingResultDecoder(name => ClassUtils.forName(name, classLoader)).decodeTypingResults
     }
 
     def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
       implicit val parameterNameDecoder: KeyDecoder[ParameterName] = KeyDecoder.decodeKeyString.map(ParameterName.apply)
-      implicit val typeDecoder: Decoder[TypingResult]              = prepareTypingResultDecoder(modelData)
+      implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(
+        modelData.modelClassLoader.classLoader
+      )
       implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] =
         deriveConfiguredDecoder[TestSourceParameters]
       deriveConfiguredDecoder[TestFromParametersRequest]

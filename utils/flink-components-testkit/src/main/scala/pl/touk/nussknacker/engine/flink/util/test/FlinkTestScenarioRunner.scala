@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -129,7 +130,7 @@ class FlinkTestScenarioRunner(
       inputConfig = config,
       // We can't just pass extra components here because we don't want Flink to serialize them.
       // We also don't want user to make them serializable
-      components = FlinkBaseComponentProvider.Components,
+      components = FlinkBaseComponentProvider.Components ::: FlinkBaseUnboundedComponentProvider.Components,
       configCreator = new DefaultConfigCreator
     )
 

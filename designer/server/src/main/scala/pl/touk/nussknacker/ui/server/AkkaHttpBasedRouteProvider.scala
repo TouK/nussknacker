@@ -55,12 +55,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{
-  AuthenticationConfiguration,
-  AuthenticationResources,
-  LoggedUser,
-  NussknackerInternalUser
-}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{MigrationApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -308,6 +303,16 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
+      val dictApiHttpService = new DictApiHttpService(
+        authenticator = authenticationResources,
+        processingTypeData = typeToConfig.mapValues { processingTypeData =>
+          (
+            processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
+            processingTypeData.designerModelData.modelData.modelDefinition.expressionConfig.dictionaries,
+            processingTypeData.designerModelData.modelData.modelClassLoader.classLoader
+          )
+        }
+      )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -344,8 +349,7 @@ class AkkaHttpBasedRouteProvider(
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
                   new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
                   fragmentRepository
-                ),
-                processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
+                )
               )
             }
           ),
@@ -407,7 +411,8 @@ class AkkaHttpBasedRouteProvider(
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
           migrationApiHttpService,
-          nodesApiHttpService
+          nodesApiHttpService,
+          dictApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

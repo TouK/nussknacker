@@ -23,11 +23,25 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
 
+### Configuration changes
+
+* [#5744](https://github.com/TouK/nussknacker/pull/5744) Extracted unbounded stream specific components into separate
+  module:
+    * Components `periodic`, `union-memo`, `previousValue`, aggregates, joins and `delay` from `base` were moved into
+      `base-unbounded` module. They are now built as `flinkBaseUnbounded.jar` under
+      `work/components/flink/flinkBaseUnbounded.jar`.
+    * Configuration of tumbling windows aggregate offset is changed at the ComponentProvider level:
+      `components.base.aggregateWindowsConfig.tumblingWindowsOffset` should now be set
+      as `components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset`
+    * If you previously specified base component jar explicitly in `modelConfig.classPath`
+      as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
+      `components/flink/flinkBaseUnbounded.jar` explicitly.
+
 ### Other changes
 
 * [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
 
-## In version 1.14.x (Not released yet)
+## In version 1.14.0
 
 ### Code API changes
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
@@ -200,6 +214,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   than wildcard.
   On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
   have components with other processing modes or other deployment configuration.
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) The `processToolbarConfig` toolbar with `type: "process-info-panel"` no longer accepts the `buttons` property. It only display scenario information now. However, a new toolbar with `type: "process-actions-panel"` has been introduced, which does accept the `buttons` property and renders actions similar to the old `type: "process-info-panel"`.
 
 ### Helm chart changes
 * [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Helm chart now has two preconfigured scenario types (`streaming` and `request-response`) instead of one (`default`).
