@@ -16,11 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.parameter.{
-  ParameterName,
-  ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValuesProvided
-}
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation, ValueInputWithDictEditor, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -46,19 +42,8 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
-  RenderNotAllowed,
-  SaveAllowed,
-  SaveNotAllowed
-}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  UIGlobalError,
-  ValidationErrors,
-  ValidationResult,
-  ValidationWarnings
-}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{RenderNotAllowed, SaveAllowed, SaveNotAllowed}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, UIGlobalError, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
@@ -489,7 +474,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     }
   }
 
-  test("validates fragment input definition while validating fragment") {
+  test("validates fragment input definition while validating fragment - ValueInputWithFixedValuesProvided") {
     val fragmentWithInvalidParam =
       CanonicalProcess(
         MetaData("fragment1", FragmentSpecificData()),
@@ -555,6 +540,81 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            )
+          ) =>
+    }
+  }
+
+  test("validates fragment input definition while validating fragment - ValueInputWithDictEditor") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("fragment1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter(
+                  ParameterName("subParam1"),
+                  FragmentClazzRef[java.lang.Boolean],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "thisDictDoesntExist",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam2"),
+                  FragmentClazzRef[java.lang.Boolean],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val fragmentGraph =
+      CanonicalProcessConverter.toScenarioGraph(fragmentWithInvalidParam)
+
+    val validationResult = processValidatorWithDicts(
+      Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
+    ).validate(fragmentGraph, sampleProcessName, isFragment = true)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
+            NodeValidationError(
+              "DictNotDeclared",
+              "Dictionary not declared: thisDictDoesntExist",
+              _,
+              Some("$param.subParam1.$dictId"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            ),
+            NodeValidationError(
+              "DictIsOfInvalidType",
+              _,
+              "Values in dictionary 'someDictId' are of type 'String @ dictValue:someDictId' and cannot be treated as expected type: 'Boolean'",
+              Some("$param.subParam2.$dictId"),
               NodeValidationErrorType.SaveAllowed,
               None
             )

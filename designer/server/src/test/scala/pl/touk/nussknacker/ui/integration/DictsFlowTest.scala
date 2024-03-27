@@ -13,9 +13,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.base.it.NuItTest
-import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.config.{ConfigWithScalaVersion, WithDesignerConfig}
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.ScenarioToJson
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
@@ -52,7 +52,7 @@ class DictsFlowTest
     val response1 = httpClient.send(
       quickRequest
         .get(
-          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dict/$DictId/entry?label=${"Black"
+          uri"$nuDesignerHttpAddress/api/processDefinitionData/${Streaming.stringify}/dicts/$DictId/entry?label=${"Black"
               .take(3)}"
         )
         .auth
@@ -76,16 +76,18 @@ class DictsFlowTest
         "serviceWithDictParameterEditor",
         "RGBDict"     -> Expression.dictKeyWithLabel("H000000", Some("Black")),
         "BooleanDict" -> Expression.dictKeyWithLabel("true", Some("OLD LABEL")),
-        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number"))
+        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number")),
+        "RGBDictRAW"  -> Expression.spel("'someOtherColour'"),
       )
       .emptySink(EndNodeId, "dead-end-lite")
 
     saveProcessAndTestIt(
       process,
       expressionUsingDictWithLabel = None,
-      expectedResult = """RGBDict: Some(H000000)
-         |LongDict: Some(-1500100900)
-         |BooleanDict: Some(true)""".stripMargin,
+      expectedResult = """RGBDict value to lowercase: h000000
+         |LongDict value + 1: Some(-1500100899)
+         |BooleanDict value negation: Some(false)
+         |RGBDictRAW value to lowercase: Some(someothercolour)""".stripMargin,
       variableToCheck = "data"
     )
 

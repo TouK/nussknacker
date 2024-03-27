@@ -186,6 +186,12 @@ object PrettyValidationErrors {
           description = "Please check component definition",
           paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
         )
+      case UnsupportedDictParameterEditorType(paramName, typ, _) =>
+        node(
+          s"Dictionary parameter editor can only be used for parameters of type String, Long or Boolean, found: $typ",
+          "Please check component definition",
+          paramName = Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(TypFieldName)))
+        )
       case RequireValueFromEmptyFixedList(paramName, _) =>
         node(
           s"Required parameter '${paramName.value}' cannot be a member of an empty fixed list",
@@ -209,6 +215,12 @@ object PrettyValidationErrors {
         node(
           message = s"Dictionary not declared: $dictId",
           description = s"Dictionary not declared: $dictId",
+          paramName = Some(paramName)
+        )
+      case DictIsOfInvalidType(dictId, actualType, expectedType, _, paramName) =>
+        node(
+          s"Dictionary '$dictId' contains values of invalid type",
+          s"Values in dictionary '$dictId' are of type '${actualType.display}' and cannot be treated as expected type: '${expectedType.display}'",
           paramName = Some(paramName)
         )
       case DictEntryWithKeyNotExists(dictId, key, possibleKeys, _, paramName) =>

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
   ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValues
+  ParameterValueInput
 }
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
@@ -324,7 +324,7 @@ object node {
         required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        valueEditor: Option[ValueInputWithFixedValues],
+        valueEditor: Option[ParameterValueInput],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
 
@@ -367,6 +367,7 @@ object node {
   val InputModeFieldName            = "$inputMode"
   val TypFieldName                  = "$typ"
   val FixedValuesListFieldName      = "$fixedValuesList"
+  val DictIdFieldName               = "$dictId"
   val ValidationExpressionFieldName = "$validationExpression"
 
   def qualifiedParamFieldName(
