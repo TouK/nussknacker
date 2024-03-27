@@ -9,11 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{
 }
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionParameter,
-  CustomActionValidationResult
-}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 
 class CustomActionValidatorTest extends AnyFunSuite with Matchers {
@@ -21,11 +17,11 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private val testCustomActionName = "testCustomAction"
 
   private val testCustomActionParams =
-    CustomActionParameter("testParam1", StringParameterEditor, Some(NotNullParameterValidator :: Nil)) ::
+    CustomActionParameter("testParam1", StringParameterEditor, NotNullParameterValidator :: Nil) ::
       CustomActionParameter(
         "testParam2",
         StringParameterEditor,
-        Some(NotBlankParameterValidator :: NotNullParameterValidator :: Nil)
+        NotBlankParameterValidator :: NotNullParameterValidator :: Nil
       ) :: Nil
 
   private val testCustomAction =
@@ -45,7 +41,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private def customActionRequest(params: TestParams) = {
     CustomActionRequest(
       ScenarioActionName(testCustomActionName),
-      Some(params)
+      params
     )
   }
 

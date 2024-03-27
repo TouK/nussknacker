@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.services
 
-import cats.data.EitherT
+import cats.data.{EitherT, Validated, ValidatedNel}
 import cats.syntax.all._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionValidationResult}
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
@@ -39,23 +39,15 @@ class ManagementApiHttpService(
 
   expose {
     managementApiEndpoints.customActionValidationEndpoint
-      // GSK: Here we have some auth validation in the scope of ManagementApiEndpoint/Error
       .serverSecurityLogic(authorizeKnownUser[ManagementApiError])
       .serverLogicEitherT { implicit loggedUser =>
         { case (processName, req) =>
           for {
-            // GSK: What can go wrong here:
-            // 1. fail to fetch scenario id
             scenarioId <- getScenarioIdByName(processName)
             scenarioIdWithName = ProcessIdWithName(scenarioId, processName)
-            // 2. fail to fetch action definition
             actionDefinition <- getActionDefinition(scenarioIdWithName, req.actionName)
             validator = new CustomActionValidator(actionDefinition)
-            // 3. fail to validate???
-            // no validation errors = no fail
-            // some validation errors = no fail, technically correct and returning "200 OK"
-            // technical exception = fail, should go straight to ERROR 500
-            resultsDto <- getValidationsResultDto(validator, req)
+            resultsDto <- validateRequest(validator, req)
           } yield resultsDto
         }
       }
@@ -63,7 +55,7 @@ class ManagementApiHttpService(
 
   private def getScenarioIdByName(
       scenarioName: ProcessName
-  ): EitherT[Future, NoScenario, ProcessId] = { // GSK: here I am in the scope of ManagementApiError
+  ): EitherT[Future, NoScenario, ProcessId] = {
     processService
       .getProcessId(scenarioName)
       .toRightEitherT(NoScenario(scenarioName))
@@ -72,42 +64,27 @@ class ManagementApiHttpService(
   private def getActionDefinition(
       processIdWithName: ProcessIdWithName,
       actionName: ScenarioActionName
-  )(implicit loggedUser: LoggedUser): EitherT[Future, NoActionDefinition, CustomActionDefinition] = { // GSK: same here, the scope of ManagementApiError
+  )(implicit loggedUser: LoggedUser): EitherT[Future, NoActionDefinition, CustomActionDefinition] = {
     dispatcher
       .deploymentManagerUnsafe(processIdWithName)
-      .map(_.customActionsDefinitions.collectFirst { case a @ CustomActionDefinition(actionName, _, _, _) => a })
+      .map(_.customActionsDefinitions.collectFirst { case a @ CustomActionDefinition(`actionName`, _, _, _) => a })
       .toRightEitherT(NoActionDefinition(processIdWithName.name, actionName))
   }
 
-  private def getValidationsResultDto(
+  private def validateRequest(
       validator: CustomActionValidator,
       request: CustomActionRequest
-  ): EitherT[Future, ManagementApiError, CustomActionValidationDto] = { // GSK: same here, the scope of ManagementApiError
+  ): EitherT[Future, ManagementApiError, CustomActionValidationDto] = {
     val validationResult = validator.validateCustomActionParams(request)
-    fromValidationResult(validationResult).toEitherT[Future]
-  }
 
-  private def fromValidationResult(
-      errorOrResult: Either[CustomActionValidationError, CustomActionValidationResult]
-  ): Either[ManagementApiError, CustomActionValidationDto] = { // GSK: same here, the scope of ManagementApiError
-    def errorList(errorMap: Map[String, List[PartSubGraphCompilationError]]): List[NodeValidationError] = {
-      errorMap.values.toList
-        .reduce { (a: List[PartSubGraphCompilationError], b: List[PartSubGraphCompilationError]) => a ::: b }
-        .map { err: PartSubGraphCompilationError => PrettyValidationErrors.formatErrorMessage(err) }
-    }
-
-    // GSK: Too much happens here, can be simplified.
-    // This transformation should be inside validator.validateCustomActionParams.
-    // Validator should return CustomActionValidationResult only with the list of failing parameters,
-    // then we'll avoid this Right(ok) vs Right(not ok) vs Left(not ok) logic.
-    errorOrResult
-      .map {
-        case _ @CustomActionValidationResult.Valid => CustomActionValidationDto(Nil, validationPerformed = true)
-        case inv: CustomActionValidationResult.Invalid =>
-          CustomActionValidationDto(errorList(inv.errorMap), validationPerformed = true)
+    val validationDto = validationResult match {
+      case Validated.Valid(_) => CustomActionValidationDto(Nil, validationPerformed = true)
+      case Validated.Invalid(errors) => {
+        val errorList = errors.toList.map(PrettyValidationErrors.formatErrorMessage(_))
+        CustomActionValidationDto(errorList, validationPerformed = true)
       }
-      .left
-      .map(_ => SomethingWentWrong)
+    }
+    EitherT.rightT[Future, ManagementApiError](validationDto)
   }
 
 }

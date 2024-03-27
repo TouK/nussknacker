@@ -28,6 +28,10 @@ case class CustomActionDefinition(
     icon: Option[URI] = None
 )
 
-case class CustomActionParameter(name: String, editor: ParameterEditor, validators: Option[List[ParameterValidator]])
+case class CustomActionParameter(
+    name: String,
+    editor: ParameterEditor,
+    validators: List[ParameterValidator] = List.empty
+)
 
 case class CustomActionResult(msg: String)

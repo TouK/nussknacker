@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 class CustomActionValidator(allowedAction: CustomActionDefinition) {
 
@@ -24,14 +25,14 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
   }
 
   private def validateParams(
-      requestParamsMap: Option[Map[String, String]],
+      requestParamsMap: Map[String, String],
       customActionParams: List[CustomActionParameter]
-  )(implicit nodeId: NodeId) = {
+  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
 
     requestParamsMap match {
-      case Some(paramsMap) =>
+      case paramsMap if paramsMap.nonEmpty =>
         handleNonEmptyParamsRequest(paramsMap, customActionParams)
-      case None =>
+      case emptyMap if emptyMap.isEmpty =>
         handleEmptyParamsRequest(customActionParams)
 
     }
@@ -41,30 +42,29 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
       paramsMap: Map[String, String],
       customActionParams: List[CustomActionParameter]
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    paramsMap.toList.map { case (k, v) =>
-      customActionParams.find(_.name == k) match {
-        case Some(param) => toValidatedNel(param, v, k)
+    paramsMap.toList.map { case (name, expression) =>
+      customActionParams.find(_.name == name) match {
+        case Some(param) => toValidatedNel(param, expression, name)
         case None =>
           MismatchParameter(
-            s"Couldn't find a matching parameter in action definition for this param: $k",
+            s"Couldn't find a matching parameter in action definition for this param: $name",
             "",
-            ParameterName(k),
+            ParameterName(name),
             nodeId.id
           ).invalidNel[Unit]
       }
     }.sequence_
   }
 
-  private def toValidatedNel(param: CustomActionParameter, v: String, k: String)(
+  private def toValidatedNel(param: CustomActionParameter, expressionValue: String, parameterName: String)(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     param.validators
-      .getOrElse(Nil)
       .map { validator =>
         validator.isValid(
-          paramName = ParameterName(k),
-          expression = Expression.spel(v),
-          value = Some(v),
+          paramName = ParameterName(parameterName),
+          expression = Expression.spel(expressionValue),
+          value = Some(expressionValue),
           label = None
         )
       }
@@ -76,7 +76,7 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
       customActionParams: List[CustomActionParameter]
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     customActionParams
-      .collect { case param if param.validators.nonEmpty => (param.name, param.validators.get) }
+      .collect { case param if param.validators.nonEmpty => (param.name, param.validators) }
       .flatMap { case (name, validators) =>
         validators.collect { case validator => validator }.map {
           _.isValid(
@@ -100,15 +100,16 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
   }
 
   private def fromCommand(customActionCommand: CustomActionCommand): CustomActionRequest = {
-    val checkedParams = customActionCommand.params match {
-      case empty if empty.isEmpty => None
-      case full if full.nonEmpty  => Some(full)
-    }
-
     CustomActionRequest(
       customActionCommand.actionName,
-      checkedParams
+      customActionCommand.params
     )
   }
 
 }
+
+//GSK: Too much happens here. This error was treated as an indication group of errors and an error from this group.
+// Aaand BadRequestError is from old akka ManagementResources approach.
+case class CustomActionValidationError(message: String) extends BadRequestError(message)
+//GSK: this is exception in the scope of old akka ManagementResources
+case class CustomActionNonExistingError(message: String) extends NotFoundError(message)

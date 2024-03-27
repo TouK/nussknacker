@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
 import cats.Traverse
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
@@ -15,9 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
   CustomActionResult,
-  CustomActionValidationResult,
   DeploymentData,
   DeploymentId,
   ExternalDeploymentId,
@@ -613,11 +612,12 @@ class DeploymentServiceImpl(
     )
   }
 
+  // todo: use validator
   private def validateActionCommand(actionCommand: CustomActionCommand, validator: CustomActionValidator) = {
     val validationResult = validator.validateCustomActionParams(actionCommand)
     val validationFlag   = validationResult
     validationFlag match {
-      case Right(CustomActionValidationResult.Valid) => DBIOAction.successful(())
+      case Validated.Valid(_) => DBIOAction.successful(())
       case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionCommand.actionName}"))
     }
   }
