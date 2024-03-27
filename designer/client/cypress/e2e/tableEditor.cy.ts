@@ -2,7 +2,7 @@ function snapshot() {
     cy.get("@editor").matchImage();
 }
 
-describe.skip("Table editor", () => {
+describe("Table editor", () => {
     const seed = "table";
 
     before(() => {
