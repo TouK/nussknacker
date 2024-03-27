@@ -13,7 +13,7 @@ While Designer GUI in most cases is self-explanatory and forgiving, there are a 
 * **Copy & paste** - you can copy and paste selected nodes; just ensure that your browser has access to the clipboard for the Nussknacker site you use.
 * **Tab navigation** - you can navigate inside node details with TAB button.
 * **Panels in the Designer** - there are several panels on the left and right side of the scenario authoring canvass. You can move these panels and collapse them. You can always restore default layout using "reset" button in the View panel.
-* **Scenario versioning** - whenever a scenario is saved, a new version is created. You can revert to the older version of the scenario (see Versions panel). Adding comments when saving a scenario may help to find the right version.
+* **Scenario versioning** - whenever a scenario is s-aved, a new version is created. You can revert to the older version of the scenario (see Versions panel). Adding comments when saving a scenario may help to find the right version.
 * **Deleting a scenario** - scenarios can be archived and unarchived, they are never completely deleted. 
 * **Inserting a node into the flow** - you can drop a node on the edge connecting nodes and Designer will fit it into the flow.
 
@@ -22,16 +22,16 @@ While Designer GUI in most cases is self-explanatory and forgiving, there are a 
 
 ### Common errors and misunderstandings
 
-- Unlike JSON, SpEL uses curly brackets to denote the start and end of a list, e.g.:  `{1, 2, 3, 4}`. To make things more confusing, in the code hints and in the debugger Nussknacker shows lists using JSON notation for lists. So, stay alert.
+- Unlike JSON, SpEL uses curly brackets to denote the start and end of a list, e.g.:  `{1, 2, 3, 4}`. To make things more confusing, in the code hints and the debugger Nussknacker shows lists using JSON notation for lists. So, stay alert.
 - `{:}` stands for the empty record (map). `{}` denotes an empty list.  
 
 ### Handling data types problems
 
-Sometimes the Nussknacker’s data typing subsystem on which hints and validations are built is too restrictive and complains about a data type mismatch. In such a case you can use `#CONV.toAny()` helper function to trick Nussknacker’s data typing system into thinking that the data type of the entered expression is valid. You can see an example of how to use `#CONV.toAny` in the next section. 
-Note, that the `#CONV.toAny()` is pretty brutal in its working - it effectively disables all the type checking during the scenario authoring. Unless you [monitor logs and scenario metrics](./../operations_guide/Common.md#handling-typical-scenario-errors), you may not notice runtime validation errors concealed during scenario authoring by using `#CONV.toAny()`. 
+Sometimes the Nussknacker’s data typing subsystem, on which hints and validations are built, is too restrictive and complains about a data type mismatch. In such a case, you can use the `#CONV.toAny()` helper function to trick Nussknacker’s data typing system into thinking that the data type of the entered expression is valid. You can see an example of how to use `#CONV.toAny` in the next section. 
+Note, that the `#CONV.toAny()` is quite brutal in its working - it effectively disables all the type checking during the scenario authoring. Unless you [monitor logs and scenario metrics](./../operations_guide/Common.md#handling-typical-scenario-errors), you may not notice runtime validation errors concealed during scenario authoring by using `#CONV.toAny()`. 
 
 ### Handling enums
-Both AVRO and JSON schema specs allow you to define an enumeration value, defined as a constant list of values (strings) this enum can hold. For example, let’s consider this AVRO DeliveryStatus type:
+Both AVRO and JSON schema specification allow you to define an enumeration value, defined as a constant list of values (strings) this enum can hold. For example, let’s consider this AVRO DeliveryStatus type:
 
 ```
 {
@@ -40,16 +40,16 @@ Both AVRO and JSON schema specs allow you to define an enumeration value, define
   "symbols" : ["ORDERED", "READY", "DELIVERED"]
 }
 ```
-Suppose we want to define some kind of logic dependent on delivery status. If we just use this field in filter/choice we can discover that it is of type EnumSymbol and cannot be just compared with plain string with one of the allowed values:
+Suppose we want to define some kind of logic dependent on delivery status. If we just use this field in filter/choice, we can discover that it is of type EnumSymbol and cannot be just compared with plain String - even if it contains one of the  allowed values.
 
 ![img](img/enumComparisonToStringProblem.png)
 
 
-What the heck is EnumSymbol? It is a generic Java type representing the enum. Currently, the workaround is to convert it to string before the comparison is done, as on the screenshot below. 
+What is the EnumSymbol? It is a generic Java type representing the enum. Currently, the workaround is to convert it to String before the comparison is done, as on the screenshot below. 
 
 ![img](img/enumComparisonToStringSolution.png)
 
-Now, imagine that we got one of the above enum values in a variable of type string. If you attempt to make the comparison, the Nussknacker typing system will complain:
+Now, imagine that we got one of the above enum values in a variable of type string. If you try to make the comparison, the Nussknacker typing system will complain:
 
 ![img](img/enumComparisonWithVariable.png)
 
@@ -57,13 +57,13 @@ The workaround here is to use the #CONV.toAny() helper to trick the typing subsy
 
 ![img](img/enumToAnyConversion.png)
 
-### Non-trivial operations on JSON records
+### Non-trivial operations on JSON records and lists
 
-Map operator `.!` is truly powerful; one can achieve a lot of magic with it. A couple of examples.
+The `!` operator is truly powerful; one can achieve a lot of magic with it. A few examples.
 
 **Convert record to a list**
 
-In this example, not only record is converted to a list, but also additional transformations are performed.
+In this example, not only record is converted to a list, but also additional transformations are performed. Note use of the 
 
 Expression:
 
@@ -84,9 +84,9 @@ Result (in JSON notation):
 ]
 ```
 
-**Chained map operator**
+**Not trivial list transformations**
 
-In this example, a `{1,2,3,4,5}` list is mapped to a list of records in two steps joined by the chaining operator (`“.”`)
+In this example, a `{1,2,3,4,5}` list is transformed to a list of records in two steps.
 
 Expression:
 
@@ -104,7 +104,7 @@ Result (in JSON notation) of the first step:
 ]
 ```
 
-Result (in JSON notation) of the second step:
+Final result (JSON notation):
 
 ```
 [
@@ -118,14 +118,14 @@ Result (in JSON notation) of the second step:
 
 ## Scenario Authoring
 
-### Passing context after union node
-A sequence of split and union deletes all the variables other than those explicitly declared in the Union node. 
+### Passing the context after the Union node
+A sequence of Split and Union nodes deletes all the variables other than those explicitly declared in the Union node. 
 
 ![img](img/passingContextBeyondUnion.png)
 
-Additional steps must be taken to pass any context (values) that might be lost otherwise downstream the Split node. What makes things a bit (only a bit) more complicated is that the Union node expects that all the branches bring identical data structures to it. The way out is to declare a record variable before a Split node which will contain all the context needed to be available downstream of the Union node. This variable should be a part of each branch output ‘joined’ by the Union branch. Even if it looks a bit redundant, this will do the job. 
+Additional steps must be taken to pass any context (values) that might otherwise be lost downstream the Split node. What makes things a bit (only a bit) more complicated is that the Union node expects that all the branches bring identical data structures to it. The way out is to declare a record variable before a Split node which will contain all the context needed to be available downstream of the Union node. This record variable should be part of every branch output that is 'joined' by the Union branch. Even if it looks a bit redundant, this will do the job. 
 
-In the example above, Assuming that the variable which holds all the context needed to be passed downstream the Union node is called context, then the branch1 and branch2 outputs would be:
+In the example above, assuming that the variable which holds all the context needed to be passed downstream the Union node is called `context`, then the branch1 and branch2 outputs would be defined as:
 
 ```
 {“branchName: “branch1”, “value”: #branch1Content, “context”: #context}
