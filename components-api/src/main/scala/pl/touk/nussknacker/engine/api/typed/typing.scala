@@ -133,7 +133,8 @@ object typing {
   //   Thanks to that we avoid nasty types like String | null (String type is nullable as well)
   //   We can avoid this case by changing this folding logic - see the comment there
   case object TypedNull extends TypingResult {
-    override def withoutValue: TypedNull.type = TypedNull
+
+    override val withoutValue: TypingResult = this
 
     // this value is intentionally `Some(null)` (and not `None`), as TypedNull represents null value
     override val valueOpt: Some[Null] = Some(null)
