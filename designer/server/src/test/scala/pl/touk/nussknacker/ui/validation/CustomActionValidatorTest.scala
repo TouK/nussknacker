@@ -1,8 +1,13 @@
 package pl.touk.nussknacker.ui.validation
 
+import cats.data.{Validated, ValidatedNel}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, MismatchParameter}
 import pl.touk.nussknacker.engine.api.definition.{
+  MandatoryParameterValidator,
   NotBlankParameterValidator,
   NotNullParameterValidator,
   StringParameterEditor
@@ -10,14 +15,20 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 
 class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
-  private val testCustomActionName = "testCustomAction"
+  private val testCustomActionName = ScenarioActionName("testCustomAction")
 
   private val testCustomActionParams =
-    CustomActionParameter("testParam1", StringParameterEditor, NotNullParameterValidator :: Nil) ::
+    CustomActionParameter(
+      "testParam1",
+      StringParameterEditor,
+      NotNullParameterValidator ::
+        Nil
+    ) ::
       CustomActionParameter(
         "testParam2",
         StringParameterEditor,
@@ -26,7 +37,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
   private val testCustomAction =
     CustomActionDefinition(
-      ScenarioActionName(testCustomActionName),
+      testCustomActionName,
       "testStatus1" :: "testStatus2" :: Nil,
       testCustomActionParams
     )
@@ -34,13 +45,13 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private val noParamsCustomAction =
     CustomActionDefinition(ScenarioActionName("noparams"), "testStatus" :: Nil, Nil)
 
-  private val validator = new CustomActionValidator(noParamsCustomAction :: testCustomAction :: Nil)
+  private val validator = new CustomActionValidator(testCustomAction)
 
   type TestParams = Map[String, String]
 
   private def customActionRequest(params: TestParams) = {
     CustomActionRequest(
-      ScenarioActionName(testCustomActionName),
+      testCustomActionName,
       params
     )
   }
@@ -54,97 +65,136 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
   test("should pass when validating correct data") {
     val result = validator.validateCustomActionParams(validRequest)
-    result should be(Right(CustomActionValidationResult.Valid))
+    result should be(Validated.Valid(()))
   }
 
-  test("should fail(return left) when requestParams list doesn't match customActionParams list") {
-    val invalidTestParamsTooFewParams = Map(
-      "testParam1" -> "validVal1"
+  test("should return Invalid when requestParams list is bigger than customActionParams list") {
+    val invalidTestParamsTooManyParams = Map(
+      "testParam1" -> "validVal1",
+      "testParam2" -> "validVal2",
+      "testParam3" -> "validVal3"
     )
+    val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooManyParams)
+
+    val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
+      validator.validateCustomActionParams(invalidRequestTooFewParams)
+    result match {
+      case Validated.Invalid(_) =>
+      // pass
+      case Validated.Valid(_) =>
+        fail("Expected Invalid but got different result type")
+    }
+
+    val errorMessage = result.fold(
+      nel => nel.toList.collectFirst { case a: MismatchParameter => a.message },
+      _ => fail("Expected errors but no errors are on the list")
+    )
+    errorMessage.getOrElse(
+      new IllegalStateException("should have message")
+    ) shouldBe "Couldn't find a matching parameter in action definition for this param: " + "testParam3"
+  }
+
+  test("should return Invalid when missing parameters that are mandatory") {
+
+    val mandatoryParamsActionParams =
+      CustomActionParameter(
+        "mandatory",
+        StringParameterEditor,
+        MandatoryParameterValidator ::
+          Nil
+      ) ::
+        CustomActionParameter(
+          "testParam2",
+          StringParameterEditor,
+          NotBlankParameterValidator :: NotNullParameterValidator :: Nil
+        ) :: Nil
+
+    val mandatoryParamsAction =
+      CustomActionDefinition(
+        testCustomActionName,
+        "testStatus1" :: "testStatus2" :: Nil,
+        mandatoryParamsActionParams
+      )
+    val invalidTestParamsTooFewParams = Map(
+      "testParam2" -> "ValidVal2"
+    )
+
+    val validator = new CustomActionValidator(mandatoryParamsAction)
 
     val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooFewParams)
 
-    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
+    val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
       validator.validateCustomActionParams(invalidRequestTooFewParams)
     result match {
-      case Left(_: MismatchedParamsError) =>
+      case Validated.Invalid(_) =>
       // pass
-      case Left(_) | Right(_) =>
-        fail("Expected Left[MismatchedParamsError] but got different result type")
+      case Validated.Valid(_) =>
+        fail("Expected Invalid but got different result type")
     }
-
-    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
-      "Validation requires different count of custom action parameters than provided in request for: " + invalidRequestTooFewParams.actionName
   }
 
-  test("should return Right(Invalid) when validating invalid data but proper request") {
+  test("should return Invalid when validating invalid data but proper request") {
     val invalidTestParamsInvalidValues = Map(
       "testParam1" -> null,
       "testParam2" -> "ValidVal2"
     )
-
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidValues)
 
-    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
+    val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
       validator.validateCustomActionParams(invalidRequestInvalidValues)
     result match {
-      case Right(_: CustomActionValidationResult.Invalid) =>
+      case Validated.Invalid(_) =>
       // pass
-      case Left(_) | Right(_) =>
-        fail("Expected Right[Invalid] but got different result type")
+      case Validated.Valid(_) =>
+        fail("Expected Invalid but got different result type")
     }
 
-    result.getOrElse(fail("should be right and have message")).toString shouldBe
-      s"Invalid(Map(testParam1 -> List(EmptyMandatoryParameter(This field is required and can not be null,Please fill field for this parameter,${ParameterName("testParam1")},testCustomAction)), testParam2 -> List()))"
+    val error = result.fold(
+      nel => nel.head,
+      _ => fail("Expected errors but no errors are on the list")
+    )
+    val expectedError = EmptyMandatoryParameter(
+      "This field is required and can not be null",
+      "Please fill field for this parameter",
+      ParameterName("testParam1"),
+      "testCustomAction"
+    )
+    error shouldBe expectedError
   }
 
-  test("should fail(return left) when provided with incorrect param names") {
+  test("should return invalid when provided with incorrect param names") {
     val invalidTestParamsInvalidParamNames = Map(
       "testParam3" -> "validVal",
       "testParam2" -> "ValidVal2"
     )
 
     val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidParamNames)
-    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
+    val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
       validator.validateCustomActionParams(invalidRequestInvalidValues)
     result match {
-      case Left(_: MismatchedParamsError) =>
+      case Validated.Invalid(_) =>
       // pass
-      case Left(_) | Right(_) =>
-        fail("Expected Left[MismatchedParamsError] but got different result type")
+      case Validated.Valid(_) =>
+        fail("Expected Invalid but got different result type")
     }
 
-    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
-      "Missing params: testParam1 for action: " + invalidRequestInvalidValues.actionName
+    val errorMessage = result.fold(
+      nel => nel.toList.collectFirst { case a: MismatchParameter => a.message },
+      _ => fail("Expected errors but no errors are on the list")
+    )
+    errorMessage.getOrElse(
+      new IllegalStateException("should have message")
+    ) shouldBe "Couldn't find a matching parameter in action definition for this param: testParam3"
   }
 
   test("should not fail when provided with empty params for no params action") {
-    val validTestParams = None
+    val validator       = new CustomActionValidator(noParamsCustomAction)
+    val validTestParams = Map.empty[String, String]
 
     val validRequest = CustomActionRequest(ScenarioActionName("noparams"), validTestParams)
 
     val result = validator.validateCustomActionParams(validRequest)
-    result should be(Right(CustomActionValidationResult.Valid))
-  }
-
-  test("should fail(return left) when trying to validate a non existing action") {
-    val nonExistingActionRequest = CustomActionRequest(
-      ScenarioActionName("notInAnyDBHere"),
-      None
-    )
-
-    val result: Either[CustomActionValidationError, CustomActionValidationResult] =
-      validator.validateCustomActionParams(nonExistingActionRequest)
-    result match {
-      case Left(_: CustomActionNonExistingError) =>
-      // pass
-      case Left(_) | Right(_) =>
-        fail("Expected Left[CustomActionNonExistingError] but got different result type")
-    }
-
-    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
-      s"Couldn't find this action: ${nonExistingActionRequest.actionName.toString}"
-
+    result should be(Validated.Valid(()))
   }
 
 }

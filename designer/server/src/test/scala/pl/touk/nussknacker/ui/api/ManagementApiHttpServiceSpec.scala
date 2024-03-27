@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.data.ValidatedNel
 import io.restassured.RestAssured.`given`
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
@@ -13,6 +14,10 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.ui.validation.CustomActionNonExistingError
 
 import java.util.UUID
 
@@ -154,5 +159,25 @@ class ManagementApiHttpServiceSpec
       }
     }
   }
+
+//  test("should fail(return left) when trying to validate a non existing action") {
+//    val nonExistingActionRequest = CustomActionRequest(
+//      ScenarioActionName("notInAnyDBHere"),
+//      Map.empty[String,String]
+//    )
+//
+//    val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
+//      validator.validateCustomActionParams(nonExistingActionRequest)
+//    result match {
+//      case Left(_: CustomActionNonExistingError) =>
+//      // pass
+//      case Left(_) | Right(_) =>
+//        fail("Expected Left[CustomActionNonExistingError] but got different result type")
+//    }
+//
+//    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
+//      s"Couldn't find this action: ${nonExistingActionRequest.actionName.toString}"
+//
+//  }
 
 }
