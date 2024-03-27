@@ -85,6 +85,7 @@ const nodeStyles = (theme: Theme) => {
             .body,
             .background,
             .joint-port-body {
+                stroke-width: 0.5;
                 transition: filter 0.5s, fill 0.25s, stroke 0.25s;
             }
         }

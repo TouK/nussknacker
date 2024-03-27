@@ -1,5 +1,6 @@
-import { css, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import { FocusableStyled } from "./focusableStyled";
+import { blendLighten } from "../../containers/theme/nuTheme";
 
 export const dragHovered = "dragHovered";
 export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
@@ -86,6 +87,16 @@ export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
     ".joint-type-esp-model": {
         ".body .joint-port-body .background": {
             transition: "all 0.25s ease-in-out",
+        },
+    },
+    ".label": {
+        rect: {
+            stroke: blendLighten(theme.palette.background.paper, 0.25),
+            fill: blendLighten(theme.palette.background.paper, 0.04),
+            strokeWidth: 0.5,
+        },
+        text: {
+            fill: theme.palette.text.secondary,
         },
     },
 }));
