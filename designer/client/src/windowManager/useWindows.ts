@@ -29,6 +29,7 @@ export function useWindows(parent?: WindowId) {
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, scenario },
+                shouldCloseOnEsc: false,
             }),
         [open],
     );

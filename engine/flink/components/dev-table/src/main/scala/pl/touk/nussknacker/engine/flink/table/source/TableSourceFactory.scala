@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
-import pl.touk.nussknacker.engine.api.component.AllProcessingModesComponent
+import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
@@ -19,8 +19,7 @@ import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefiniti
 class TableSourceFactory(definition: TableSqlDefinitions)
     extends SingleInputDynamicComponent[Source]
     with SourceFactory
-    // TODO: Should be BoundedStreamComponent - change it and move to a batch category
-    with AllProcessingModesComponent {
+    with BoundedStreamComponent {
 
   override type State = TableDefinition
 

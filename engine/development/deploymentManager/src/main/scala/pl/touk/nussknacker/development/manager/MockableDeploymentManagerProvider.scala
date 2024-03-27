@@ -3,6 +3,7 @@ package pl.touk.nussknacker.development.manager
 import cats.data.Validated.valid
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
+import io.circe.Json
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -47,13 +48,13 @@ object MockableDeploymentManagerProvider {
   object MockableDeploymentManager extends DeploymentManager with StubbingCommands {
 
     private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults]](Map.empty)
+    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
 
     def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
       scenarioStatuses.set(scenarioStates)
     }
 
-    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults]): Unit = {
+    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[Json]]): Unit = {
       testResults.set(scenarioTestResults)
     }
 

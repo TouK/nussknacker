@@ -1,15 +1,22 @@
 import { css, cx } from "@emotion/css";
-import React, { PropsWithChildren, useCallback, useRef } from "react";
-import { InputProps, ThemedInput } from "./ThemedInput";
-import { ClearIcon } from "../table/SearchFilter";
 import { useTheme } from "@mui/material";
+import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
+import { ClearIcon } from "../table/SearchFilter";
+import { InputProps, ThemedInput } from "./ThemedInput";
 
 type Props = PropsWithChildren<InputProps> & {
     onClear?: () => void;
     onAddonClick?: () => void;
 };
 
-export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Props): JSX.Element {
+export type Focusable = {
+    focus: (options?: FocusOptions) => void;
+};
+
+export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon(
+    { children, onAddonClick, onClear, ...props },
+    forwardedRef,
+): ReactElement {
     const theme = useTheme();
 
     const size = theme.custom.spacing.controlHeight;
@@ -40,7 +47,20 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
     });
 
     const ref = useRef<HTMLInputElement>();
-    const focus = useCallback(() => ref.current.focus(), [ref]);
+    const focus = useCallback(
+        (options?: FocusOptions) => {
+            const input = ref.current;
+            input.focus({ preventScroll: true });
+            input.setSelectionRange(0, props.value.length);
+            setTimeout(() => {
+                if (options?.preventScroll) return;
+                input.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, theme.transitions.duration.standard);
+        },
+        [props.value.length, theme.transitions.duration.standard],
+    );
+
+    useImperativeHandle(forwardedRef, () => ({ focus }), [focus]);
 
     return (
         <div className={cx(children && wrapperWithAddonStyles)}>
@@ -52,11 +72,11 @@ export function InputWithIcon({ children, onAddonClick, onClear, ...props }: Pro
                     </div>
                 )}
                 {children && (
-                    <div className={addonStyles} onClick={onAddonClick ?? focus}>
+                    <div className={addonStyles} onClick={onAddonClick ?? (() => focus())}>
                         {children}
                     </div>
                 )}
             </div>
         </div>
     );
-}
+});

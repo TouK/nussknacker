@@ -66,6 +66,7 @@ object SampleNodes {
     TypeInformation.of(classOf[TypedMap])
 
   // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
+
   case class SimpleRecord(
       id: String,
       value1: Long,
