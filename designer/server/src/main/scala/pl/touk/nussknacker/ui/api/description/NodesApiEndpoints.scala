@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.{Enricher, Filter}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.NodeData.nodeDataEncoder
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, BranchEndDefinition, FragmentInput}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, FragmentInput}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -588,7 +588,6 @@ object NodesApiEndpoints {
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
     object NodeDataSchemas {
-
       implicit lazy val fragmentRefSchema: Schema[FragmentRef]                             = Schema.derived
       implicit lazy val fragmentClazzRefSchema: Schema[FragmentClazzRef]                   = Schema.derived
       implicit lazy val valueInputWithFixedValuesSchema: Schema[ValueInputWithFixedValues] = Schema.derived
@@ -603,8 +602,18 @@ object NodesApiEndpoints {
       implicit lazy val fieldSchema: Schema[Field]                                                     = Schema.derived
       implicit lazy val fragmentOutputVarDefinitionSchema: Schema[FragmentOutputVarDefinition]         = Schema.derived
 
-//      TODO: find real live example to describe it properly
-      implicit lazy val fragmentUsageOutputSchema: Schema[FragmentUsageOutput] = Schema.derived
+      //  Tapir currently supports only json schema v4 which has no way to declare discriminator
+      //  We declare that each type of NodeData belongs to an enum with only one value as a workaround for this problem
+      private object BranchEndDataSchemaHelper {
+        sealed trait NodeTypes
+
+        object NodeTypes {
+          case object BranchEndData extends NodeTypes
+        }
+
+        implicit lazy val branchEndDataTypeSchema: Schema[NodeTypes] =
+          Schema.derivedEnumeration[NodeTypes].defaultStringBased
+      }
 
       implicit lazy val branchEndDataSchema: Schema[BranchEndData] =
         Schema(
@@ -614,13 +623,16 @@ object NodesApiEndpoints {
                 FieldName("definition"),
                 branchEndDefinitionSchema,
                 branchEndData => Some(branchEndData.definition)
+              ),
+              SProductField(
+                FieldName("type"),
+                BranchEndDataSchemaHelper.branchEndDataTypeSchema,
+                _ => Some(BranchEndDataSchemaHelper.NodeTypes.BranchEndData)
               )
             )
           )
         )
 
-      //  Tapir currently supports only json schema v4 which has no way to declare discriminator
-      //  We declare that each type of NodeData belongs to an enum with only one value as a workaround for this problem
       private object CustomNodeSchemaHelper {
         sealed trait NodeTypes
 
@@ -1184,8 +1196,6 @@ object NodesApiEndpoints {
         Schema(
           SchemaType.SCoproduct(
             List(
-              // Can't find example for the one below so this schema is created manually based on what derived schema shows
-              // this means it's probably not 100% accurate
               branchEndDataSchema.title("BranchEndData"),
               customNodeSchema.title("CustomNode"),
               enricherSchema.title("Enricher"),
@@ -1193,15 +1203,11 @@ object NodesApiEndpoints {
               fragmentInputSchema.title("FragmentInput"),
               fragmentInputDefinitionSchema.title("FragmentInputDefinition"),
               fragmentOutputDefinitionSchema.title("FragmentOutputDefinition"),
-              // Can't find example for the one below so this is derived schema which is probably not 100% accurate
-              fragmentUsageOutputSchema.title("FragmentUsageOutput"),
               joinSchema.title("Join"),
               processorSchema.title("Processor"),
               sinkSchema.title("Sink"),
               sourceSchema.title("Source"),
               splitSchema.title("Split"),
-              // There is strange problem with null in expression
-              // this is written the same way as other schemas but doesn't work
               switchSchema.title("Switch"),
               variableSchema.title("Variable"),
               variableBuilderSchema.title("VariableBuilder")
@@ -1217,8 +1223,6 @@ object NodesApiEndpoints {
               Some(SchemaWithValue(fragmentInputDefinitionSchema, fragmentInputDefinition))
             case fragmentOutputDefinition: FragmentOutputDefinition =>
               Some(SchemaWithValue(fragmentOutputDefinitionSchema, fragmentOutputDefinition))
-            case fragmentUsageOutput: FragmentUsageOutput =>
-              Some(SchemaWithValue(fragmentUsageOutputSchema, fragmentUsageOutput))
             case join: Join                       => Some(SchemaWithValue(joinSchema, join))
             case processor: Processor             => Some(SchemaWithValue(processorSchema, processor))
             case sink: Sink                       => Some(SchemaWithValue(sinkSchema, sink))
@@ -1227,6 +1231,10 @@ object NodesApiEndpoints {
             case switch: Switch                   => Some(SchemaWithValue(switchSchema, switch))
             case variable: Variable               => Some(SchemaWithValue(variableSchema, variable))
             case variableBuilder: VariableBuilder => Some(SchemaWithValue(variableBuilderSchema, variableBuilder))
+            case _                                => None
+//          This one is more of internal so we don't provide schemas for it for outside world
+//          case fragmentUsageOutput: FragmentUsageOutput =>
+//            Some(SchemaWithValue(fragmentUsageOutputSchema, fragmentUsageOutput))
           },
           Some(SName("NodeData"))
         )
