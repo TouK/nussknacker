@@ -303,7 +303,7 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
       )
-      val dictResourcesHttpService = new DictApiHttpService(
+      val dictApiHttpService = new DictApiHttpService(
         authenticator = authenticationResources,
         processingTypeData = typeToConfig.mapValues { processingTypeData =>
           (
@@ -412,7 +412,7 @@ class AkkaHttpBasedRouteProvider(
           scenarioParametersHttpService,
           migrationApiHttpService,
           nodesApiHttpService,
-          dictResourcesHttpService
+          dictApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

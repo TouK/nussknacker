@@ -91,7 +91,8 @@ object DictApiEndpoints {
 
     @JsonCodec
     case class DictDto(
-        id: String // TODO: we could introduce labels for dictionaries, currently we display them by id
+        id: String,
+        label: String // TODO: introduce separate labels for dictionaries, currently this is just equal to id
     )
 
     implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as

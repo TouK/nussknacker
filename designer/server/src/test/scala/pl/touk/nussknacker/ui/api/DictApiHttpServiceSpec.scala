@@ -23,7 +23,6 @@ class DictApiHttpServiceSpec
         .jsonBody("""{
                     |  "expectedType" : {
                     |    "value" : {
-                    |      "display" : "String",
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.String",
                     |      "params" : []
@@ -36,13 +35,16 @@ class DictApiHttpServiceSpec
         .equalsJsonBody(
           s"""[
              |  {
-             |    "id" : "rgb"
+             |    "id" : "rgb",
+             |    "label" : "rgb"
              |  },
              |  {
-             |    "id" : "bc"
+             |    "id" : "bc",
+             |    "label" : "bc"
              |  },
              |  {
-             |    "id" : "dict"
+             |    "id" : "dict",
+             |    "label" : "dict"
              |  }
              |]""".stripMargin
         )
@@ -55,7 +57,6 @@ class DictApiHttpServiceSpec
         .jsonBody("""{
                     |  "expectedType" : {
                     |    "value" : {
-                    |      "display" : "Long",
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
                     |      "params" : []
@@ -68,7 +69,8 @@ class DictApiHttpServiceSpec
         .equalsJsonBody(
           s"""[
              |  {
-             |    "id" : "long_dict"
+             |    "id" : "long_dict",
+             |    "label" : "long_dict"
              |  }
              |]""".stripMargin
         )
@@ -94,7 +96,6 @@ class DictApiHttpServiceSpec
         .jsonBody("""{
                     |  "expectedType" : {
                     |    "value" : {
-                    |      "display" : "Long",
                     |      "type" : "TypedClass",
                     |      "refClazzName" : "java.lang.Long",
                     |      "params" : []

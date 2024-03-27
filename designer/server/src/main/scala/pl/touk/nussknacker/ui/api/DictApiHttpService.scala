@@ -26,10 +26,10 @@ class DictApiHttpService(
     extends BaseHttpService(authenticator)
     with LazyLogging {
 
-  private val dictResourcesEndpoints = new DictApiEndpoints(authenticator.authenticationMethod())
+  private val dictApiEndpoints = new DictApiEndpoints(authenticator.authenticationMethod())
 
   expose {
-    dictResourcesEndpoints.dictionaryEntryQueryEndpoint
+    dictApiEndpoints.dictionaryEntryQueryEndpoint
       .serverSecurityLogic(authorizeKnownUser[DictError])
       .serverLogic { implicit loggedUser: LoggedUser => queryParams =>
         val (processingType, dictId, labelPattern) = queryParams
@@ -47,7 +47,7 @@ class DictApiHttpService(
   }
 
   expose {
-    dictResourcesEndpoints.dictionaryListEndpoint
+    dictApiEndpoints.dictionaryListEndpoint
       .serverSecurityLogic(authorizeKnownUser[DictError])
       .serverLogic { implicit loggedUser: LoggedUser => queryParams =>
         val (processingType, dictListRequestDto) = queryParams
@@ -63,7 +63,7 @@ class DictApiHttpService(
                   success(
                     dictionaries
                       .filter { case (id, definition) => definition.valueType(id).canBeSubclassOf(expectedType) }
-                      .map { case (id, _) => DictDto(id) }
+                      .map { case (id, _) => DictDto(id, id) }
                       .toList
                   )
                 }
