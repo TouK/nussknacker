@@ -14,6 +14,7 @@ import millify from "millify";
 import { UserSettings } from "../../../reducers/userSettings";
 import { Theme } from "@mui/material";
 import { blendLighten } from "../../../containers/theme/nuTheme";
+import { blend } from "@mui/system";
 
 const maxLineLength = 24;
 const maxLineCount = 2;
@@ -88,7 +89,7 @@ function getTestCounts(hasCounts: boolean, shortCounts: boolean, count: NodeCoun
 }
 
 export const updateNodeCounts =
-    (processCounts: ProcessCounts, userSettings: UserSettings) =>
+    (processCounts: ProcessCounts, userSettings: UserSettings, theme: Theme) =>
     (node: shapes.devs.Model): void => {
         const shortCounts = userSettings["node.shortCounts"];
         const count = processCounts[node.id];
@@ -99,14 +100,16 @@ export const updateNodeCounts =
 
         const testResultsSummary: attributes.SVGTextAttributes = {
             text: testCounts,
-            fill: "#cccccc",
+            fill: theme.palette.text.secondary,
             x: testResultsWidth / 2,
         };
         const testResults: attributes.SVGRectAttributes = {
             display: hasCounts ? "block" : "none",
-            fill: hasErrors ? "#662222" : "#4d4d4d",
-            stroke: hasErrors ? "red" : "#4d4d4d",
-            strokeWidth: hasErrors ? 3 : 0,
+            fill: hasErrors
+                ? blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3)
+                : blendLighten(theme.palette.background.paper, 0.04),
+            stroke: hasErrors ? theme.palette.error.main : blendLighten(theme.palette.background.paper, 0.25),
+            strokeWidth: hasErrors ? 1 : 0.5,
             width: testResultsWidth,
         };
         node.attr({ testResultsSummary, testResults });

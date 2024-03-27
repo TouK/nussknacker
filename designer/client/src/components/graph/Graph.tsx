@@ -401,9 +401,9 @@ export class Graph extends React.Component<Props> {
     }
 
     updateNodesCounts(): void {
-        const { processCounts, userSettings } = this.props;
+        const { processCounts, userSettings, theme } = this.props;
         const nodes = this.graph.getElements().filter(isModelElement);
-        nodes.forEach(updateNodeCounts(processCounts, userSettings));
+        nodes.forEach(updateNodeCounts(processCounts, userSettings, theme));
     }
 
     zoomIn(): void {
