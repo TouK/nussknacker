@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}

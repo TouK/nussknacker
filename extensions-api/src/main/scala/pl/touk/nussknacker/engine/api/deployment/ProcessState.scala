@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.deployment
 import io.circe._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 

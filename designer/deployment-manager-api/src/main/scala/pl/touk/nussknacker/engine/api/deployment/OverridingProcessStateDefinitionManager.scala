@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 import java.net.URI

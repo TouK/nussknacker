@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
