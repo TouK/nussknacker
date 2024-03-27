@@ -127,6 +127,7 @@ export class Graph extends React.Component<Props> {
                 uniqueArrowMarker,
                 this.props.scenario.scenarioGraph,
                 this.props.processDefinitionData,
+                this.props.theme,
             );
             return linkCreator(cellView, magnet);
         };

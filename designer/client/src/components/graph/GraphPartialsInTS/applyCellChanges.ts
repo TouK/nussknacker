@@ -20,7 +20,7 @@ export function applyCellChanges(
 
     const edges = NodeUtils.edgesFromScenarioGraph(scenarioGraph);
     const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
-    const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper));
+    const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper, theme));
 
     const cells = [...nodeElements, ...edgeElements];
 

@@ -42,6 +42,7 @@ export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
         },
         ".connection-wrap": {
             "&:hover": {
+                cursor: "default",
                 opacity: 0,
                 strokeOpacity: 0,
             },
@@ -87,16 +88,6 @@ export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
     ".joint-type-esp-model": {
         ".body .joint-port-body .background": {
             transition: "all 0.25s ease-in-out",
-        },
-    },
-    ".label": {
-        rect: {
-            stroke: blendLighten(theme.palette.background.paper, 0.25),
-            fill: blendLighten(theme.palette.background.paper, 0.04),
-            strokeWidth: 0.5,
-        },
-        text: {
-            fill: theme.palette.text.secondary,
         },
     },
 }));

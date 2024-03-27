@@ -1,4 +1,6 @@
-export const NodeInputCss = () => ({
+import { css } from "@mui/material";
+
+export const nodeInputCss = css({
     height: "35px",
     width: "100%",
     padding: "0 10px",

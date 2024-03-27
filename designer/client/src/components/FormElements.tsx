@@ -1,7 +1,7 @@
 import { cx } from "@emotion/css";
 import React, { ButtonHTMLAttributes, DetailedHTMLProps, InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { styled } from "@mui/material";
-import { NodeInputCss } from "./NodeInput";
+import { nodeInputCss } from "./NodeInput";
 
 export type InputWithFocusProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
@@ -13,7 +13,7 @@ export function TextArea({ className, ...props }: TextAreaWithFocusProps): JSX.E
     return <textarea {...props} className={cx(className)} />;
 }
 
-export const TextAreaNode = styled(TextArea)(() => `${NodeInputCss()}`);
+export const TextAreaNode = styled(TextArea)(nodeInputCss);
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 
@@ -31,8 +31,4 @@ export function Button({ className, onClick, ...props }: ButtonProps): JSX.Eleme
     );
 }
 
-export const SelectNode = styled("select")(
-    () => `
-    ${NodeInputCss()}
-`,
-);
+export const SelectNode = styled("select")(nodeInputCss);

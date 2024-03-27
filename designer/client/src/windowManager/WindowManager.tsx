@@ -8,7 +8,7 @@ export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {
         zIndex,
         palette,
-        custom: { spacing, colors },
+        custom: { spacing },
     } = useTheme();
 
     return (

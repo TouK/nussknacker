@@ -3,7 +3,7 @@ import ReactAce from "react-ace/lib/ace";
 import { ExpressionSuggest } from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
-import { NodeInputCss } from "../../../../NodeInput";
+import { nodeInputCss } from "../../../../NodeInput";
 import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
 
@@ -46,7 +46,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             rows: rows,
             cols: cols,
             className: cx("node-input"),
-            style: NodeInputCss(),
+            style: nodeInputCss,
             value: value,
             language: language,
             onValueChange: onValueChange,
