@@ -98,7 +98,7 @@ object MockableDeploymentManagerProvider {
             CustomActionParameter(
               "param1",
               StringParameterEditor,
-              Some(NotBlankParameterValidator :: Nil)
+              NotBlankParameterValidator :: Nil
             )
           )
         ),

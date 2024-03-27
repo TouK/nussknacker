@@ -136,7 +136,7 @@ export interface PropertiesValidationRequest {
 
 export interface CustomActionValidationRequest {
     actionName: string;
-    params?: Record<string, string>;
+    params: Record<string, string>;
 }
 
 export interface ExpressionSuggestionRequest {

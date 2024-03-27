@@ -8,5 +8,5 @@ import pl.touk.nussknacker.engine.graph.node.NodeData
 
 @JsonCodec final case class CustomActionRequest(
     actionName: ScenarioActionName,
-    params: Option[Map[String, String]] = None
+    params: Map[String, String] = Map.empty
 )
