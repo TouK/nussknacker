@@ -1,4 +1,4 @@
-import { ActionType, ProcessStateType, Scenario } from "./types";
+import { PredefinedActionType, ProcessStateType, Scenario } from "./types";
 import {
     descriptionProcessArchived,
     descriptionFragment,
@@ -12,11 +12,11 @@ const fragmentIcon = "/assets/process/fragment.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
 class ProcessStateUtils {
-    public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Deploy);
+    public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionType.Deploy);
 
-    public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Cancel);
+    public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionType.Cancel);
 
-    public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Archive);
+    public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(PredefinedActionType.Archive);
 
     getStateDescription({ isArchived, isFragment }: Scenario, processState: ProcessStateType): string {
         if (isArchived) {

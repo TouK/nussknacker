@@ -7,6 +7,8 @@ import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from 
 import api from "../api";
 import { UserData } from "../common/models/User";
 import {
+    ActionName,
+    PredefinedActionType,
     ProcessActionType,
     ProcessName,
     ProcessStateType,
@@ -285,10 +287,12 @@ class HttpService {
             .get<
                 {
                     performedAt: string;
-                    actionType: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY";
+                    actionName: ActionName;
                 }[]
             >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
+            .then((res) =>
+                res.data.filter(({ actionName }) => actionName === PredefinedActionType.Deploy).map(({ performedAt }) => performedAt),
+            );
     }
 
     deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {

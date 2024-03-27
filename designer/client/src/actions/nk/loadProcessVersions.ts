@@ -1,12 +1,12 @@
 import HttpService from "../../http/HttpService";
-import { ScenarioActionName, ProcessName, ProcessVersionType } from "../../components/Process/types";
+import { ProcessActionType, ProcessName, ProcessVersionType } from "../../components/Process/types";
 import { ThunkAction } from "../reduxTypes";
 
 export type LoadProcessVersionsAction = {
     type: "PROCESS_VERSIONS_LOADED";
     history: ProcessVersionType[];
-    lastAction: ScenarioActionName;
-    lastDeployedAction: ScenarioActionName;
+    lastAction: ProcessActionType;
+    lastDeployedAction: ProcessActionType;
 };
 
 export function loadProcessVersions(processName: ProcessName): ThunkAction<Promise<LoadProcessVersionsAction>> {

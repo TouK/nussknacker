@@ -33,7 +33,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
-    def actionName: Rep[ScenarioActionName] = column[ScenarioActionName]("action_type")
+    def actionName: Rep[ScenarioActionName] = column[ScenarioActionName]("action_name")
 
     def state: Rep[ProcessActionState] = column[ProcessActionState]("state")
 
