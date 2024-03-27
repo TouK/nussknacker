@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.ValidatedNel
+import cats.data.Validated.{Invalid, invalidNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MismatchParameter
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, MismatchParameter}
+import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
 import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
@@ -21,7 +23,27 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
     implicit val nodeId: NodeId = NodeId(allowedAction.name.value)
     val customActionParams      = allowedAction.parameters
 
-    validateParams(request.params, customActionParams)
+    val missingParams = findMissingParams(request.params, customActionParams)
+    val checkedParams = validateParams(request.params, customActionParams)
+
+    missingParams.combine(checkedParams)
+  }
+
+  private def findMissingParams(
+      requestParamsMap: Map[String, String],
+      customActionParams: List[CustomActionParameter]
+  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    val paramsFromRequest = requestParamsMap.keys.toSet
+    val mandatoryParams = customActionParams.collect {
+      case param if param.validators.contains(MandatoryParameterValidator) && !paramsFromRequest.contains(param.name) =>
+        MandatoryParameterValidator.isValid(ParameterName(param.name), Expression.spel(""), None, None)
+    }
+
+    mandatoryParams match {
+      case Nil      => Validated.Valid(())
+      case nonEmpty => nonEmpty.traverse(_.toValidatedNel).map(_ => ())
+    }
+
   }
 
   private def validateParams(
@@ -34,7 +56,6 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
         handleNonEmptyParamsRequest(paramsMap, customActionParams)
       case emptyMap if emptyMap.isEmpty =>
         handleEmptyParamsRequest(customActionParams)
-
     }
   }
 
