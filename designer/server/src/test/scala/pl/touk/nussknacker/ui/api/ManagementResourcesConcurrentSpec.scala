@@ -7,7 +7,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
@@ -53,6 +55,31 @@ class ManagementResourcesConcurrentSpec
         deploymentManager.deploys.asScala.count(_ == processName) shouldBe 1
       }
     }
+  }
+
+  test("not allow concurrent custom action of same process") {
+    val processName = ProcessName(s"sameConcurrentCustomAction")
+    val scenario    = ProcessTestData.sampleScenario.withProcessName(processName)
+    saveCanonicalProcessAndAssertSuccess(scenario)
+
+    val action = CustomActionRequest(ScenarioActionName("hello"), None)
+
+    val firstActionResult  = customAction(processName, action)
+    val secondActionResult = customAction(processName, action)
+    eventually {
+      firstActionResult.handled shouldBe true
+      secondActionResult.handled shouldBe true
+    }
+    var firstStatus: StatusCode  = null
+    var secondStatus: StatusCode = null
+    firstActionResult ~> check {
+      firstStatus = status
+    }
+    secondActionResult ~> check {
+      secondStatus = status
+    }
+    val statuses = List(firstStatus, secondStatus)
+    statuses should contain only (StatusCodes.OK, StatusCodes.Conflict)
   }
 
   test("allow concurrent deployment and cancel of same process") {

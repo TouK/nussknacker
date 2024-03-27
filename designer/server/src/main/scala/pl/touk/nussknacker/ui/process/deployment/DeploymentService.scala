@@ -19,12 +19,12 @@ trait DeploymentService extends ProcessStateService {
   // - validations - it is quick part, the result will be displayed on deploy modal
   // - deployment on engine side - it is longer part, the result will be shown as a notification
   def deployProcessAsync(
-      id: ProcessIdWithName,
+      processIdWithName: ProcessIdWithName,
       savepointPath: Option[String],
       comment: Option[String]
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]]
 
-  def cancelProcess(id: ProcessIdWithName, comment: Option[String])(
+  def cancelProcess(processIdWithName: ProcessIdWithName, comment: Option[String])(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit]
