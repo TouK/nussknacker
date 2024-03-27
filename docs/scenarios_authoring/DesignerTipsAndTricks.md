@@ -27,7 +27,7 @@ While Designer GUI in most cases is self-explanatory and forgiving, there are a 
 
 ### Handling data types problems
 
-Sometimes the Nussknacker’s data typing subsystem, on which hints and validations are built, is too restrictive and complains about a data type mismatch. In such a case, you can use the `#CONV.toAny()` helper function to trick Nussknacker’s data typing system into thinking that the data type of the entered expression is valid. You can see an example of how to use `#CONV.toAny` in the next section. 
+Sometimes the Nussknacker’s data typing subsystem, on which hints and validations are built, is too restrictive and complains about a data type mismatch. In such a case, you can use the `#CONV.toAny()` helper function to trick Nussknacker’s data typing system into thinking that the data type of the entered expression is valid. You can see an example of how to use `#CONV.toAny` in the 'Handling enums' [section](#handling-enums). 
 Note, that the `#CONV.toAny()` is quite brutal in its working - it effectively disables all the type checking during the scenario authoring. Unless you [monitor logs and scenario metrics](./../operations_guide/Common.md#handling-typical-scenario-errors), you may not notice runtime validation errors concealed during scenario authoring by using `#CONV.toAny()`. 
 
 ### Handling enums
