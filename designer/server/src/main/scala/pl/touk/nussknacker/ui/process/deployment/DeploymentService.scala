@@ -89,6 +89,7 @@ class DeploymentService(
       ctx <- prepareCommandContextWithAction[Unit](
         processId,
         actionName,
+        Map.empty,
         p => p.lastDeployedAction.map(_.processVersionId),
         _ => None
       )
@@ -96,7 +97,7 @@ class DeploymentService(
       deploymentComment = comment.map(DeploymentComment.unsafe)
       dmCommand         = DMCancelScenarioCommand(processId.name, user.toManagerUser)
       // 3. common for all commands/actions
-      _ = runActionAndHandleResults(
+      actionResult <- runActionAndHandleResults(
         actionName,
         deploymentComment,
         ctx
@@ -104,8 +105,8 @@ class DeploymentService(
         dispatcher
           .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
           .processCommand(dmCommand)
-      }.map(_ => ())
-    } yield ()
+      }
+    } yield actionResult
   }
 
   private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
@@ -118,6 +119,7 @@ class DeploymentService(
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
         processId,
         actionName,
+        Map.empty,
         p => Some(p.processVersionId),
         p => Some(p.processingType)
       )
@@ -136,7 +138,7 @@ class DeploymentService(
         savepointPath
       )
       // TODO: move validateBeforeDeploy before creating an action
-      result <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
+      actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
         case Failure(ex) =>
           removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
         case Success(_) =>
@@ -152,7 +154,7 @@ class DeploymentService(
           }
           Future.successful(deploymentFuture)
       }
-    } yield result
+    } yield actionResult
   }
 
   /**
@@ -162,28 +164,38 @@ class DeploymentService(
   private def prepareCommandContextWithAction[PS: ScenarioShapeFetchStrategy](
       processId: ProcessIdWithName,
       actionName: ScenarioActionName,
+      actionParameters: Map[String, String],
       getVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => Option[VersionId],
       getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
   )(implicit user: LoggedUser): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     dbioRunner.runInTransaction(
       for {
-        // 1.1 TODO common parameter validations
-        // 1.2 lock for critical section
+        // 1.1 lock for critical section
         _ <- actionRepository.lockActionsTable
-        // 1.3. fetch scenario data
+        // 1.2. fetch scenario data
         processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
         processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
-        // 1.4. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
+        // 1.3 fetch action definition
+        actionDefinitionOpt = getActionDefinitions(processDetails.processingType).find(_.actionName == actionName)
+        actionDefinition <- existsOrFail(
+          actionDefinitionOpt,
+          CustomActionNonExistingError(
+            s"Couldn't find definition of action ${actionName.value} for scenario ${processId.name}"
+          )
+        )
+        // 1.4. action command validation
+        _ <- validateActionParameters(actionParameters, actionDefinition)
+        // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
         versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
         buildInfoProcessingType    = getBuildInfoProcessingType(processDetails)
-        // 1.5. check if action is performed on proper scenario (not fragment, not archived)
+        // 1.6. check if action is performed on proper scenario (not fragment, not archived)
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
-        // 1.6. check if action is allowed for current state
+        // 1.7. check if action is allowed for current state
         inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
         processState          <- getProcessState(processDetails, inProgressActionNames)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
-        // 1.7. create new action, action is started with "in progress" state, the whole command execution can take some time
+        // 1.8. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
           processDetails.processId,
           actionName,
@@ -272,6 +284,20 @@ class DeploymentService(
       }
       .toSet
     actionsDefinedInState ++ actionsDefinedInCustomActions
+  }
+
+  // TODO: provide action definitions to ui to draw proper action form.
+  private def getActionDefinitions(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): List[CustomActionDefinition] = {
+    val fixedActionDefinitions = List(
+      CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
+      CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None)
+    )
+    val actionsDefinedInCustomActions = dispatcher
+      .deploymentManagerUnsafe(processingType)
+      .customActionsDefinitions
+    fixedActionDefinitions ++ actionsDefinedInCustomActions
   }
 
   protected def prepareDeployedScenarioData(
@@ -612,45 +638,39 @@ class DeploymentService(
   //       - send notifications about finished/failed custom actions
   private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
     import command._
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    dbioRunner.run(
-      for {
-        // Fetch and validate process details
-        processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](
-          processIdWithName.id
-        )
-        processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
-        _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
-        processState <- DBIOAction.from(getProcessState(processDetails))
-        manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
-        // Fetch and validate custom action details
-        actionCommand = DMCustomActionCommand(
-          actionName,
-          processDetails.toEngineProcessVersion,
-          processDetails.json,
-          user.toManagerUser,
-          params
-        )
-        customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
-        customAction <- existsOrFail(
-          customActionOpt,
-          CustomActionNonExistingError(
-            s"Couldn't find definition of action ${actionName.value} for scenario ${processIdWithName.name} when trying to validate"
-          )
-        )
-        _ <- validateActionCommand(actionCommand, customAction)
-        _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
-        invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
-      } yield invokeActionResult
-    )
+    for {
+      ctx <- prepareCommandContextWithAction[CanonicalProcess](
+        processIdWithName,
+        actionName,
+        params,
+        p => Some(p.processVersionId),
+        _ => None
+      )
+      dmCommand = DMCustomActionCommand(
+        actionName,
+        ctx.latestScenarioDetails.toEngineProcessVersion,
+        ctx.latestScenarioDetails.json,
+        user.toManagerUser,
+        params
+      )
+      actionResult <- runActionAndHandleResults(
+        actionName,
+        None,
+        ctx
+      ) {
+        dispatcher
+          .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+          .processCommand(dmCommand)
+      }
+    } yield actionResult
   }
 
-  private def validateActionCommand(actionCommand: DMCustomActionCommand, customAction: CustomActionDefinition) = {
+  private def validateActionParameters(actionParameters: Map[String, String], customAction: CustomActionDefinition) = {
     val validator        = new CustomActionValidator(customAction)
-    val validationResult = validator.validateCustomActionParams(actionCommand)
+    val validationResult = validator.validateCustomActionParams(actionParameters)
     validationResult match {
       case Validated.Valid(_) => DBIOAction.successful(())
-      case _ => DBIOAction.failed(CustomActionValidationError(s"Validation failed for: ${actionCommand.actionName}"))
+      case _ => DBIOAction.failed(CustomActionValidationError(s"Validation failed for: ${customAction.actionName}"))
     }
   }
 
