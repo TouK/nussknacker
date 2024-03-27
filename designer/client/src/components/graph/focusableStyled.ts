@@ -141,51 +141,18 @@ export const FocusableStyled = styled("div")(
         css`
             width: 100% !important;
             height: 100% !important;
-          
-           
+
             ${nodeStyles(theme)}
 
             .modalContentDark {
                 ${modalContent(theme.palette.error.main, blendLighten(theme.palette.background.paper, 0.25))}
             }
-
-            .error {
-                background-color: ${theme.custom.colors.yellowOrange};
-            }
-
             .element {
                 cursor: pointer;
-
                 &:active {
                     cursor: -moz-grabbing;
                     cursor: -webkit-grabbing;
                     cursor: grabbing;
-                }
-            }
-
-            .link {
-                .connection-wrap {
-                    &:hover {
-                        stroke: transparent;
-                        stroke-width: 10px;
-                        stroke-linecap: initial;
-                    }
-                }
-
-                &:hover {
-                    .connection {
-                        stroke: ${theme.custom.colors.scooter};
-                    }
-
-                    .marker-target,
-                    .marker-source {
-                        fill: ${theme.custom.colors.scooter}
-                    }
-
-                    .marker-vertices circle {
-                        fill: ${theme.custom.colors.nobel}
-                        r: 6px;
-                    }
                 }
             }
 
@@ -249,17 +216,13 @@ export const FocusableStyled = styled("div")(
                 height: 100%;
             }
 
-            ${
-                id === "nk-graph-main" &&
-                `height: 100% !important;
-                `
-            }
-            ${
-                id === "nk-graph-fragment" &&
-                `width: 100% !important;
+            ${id === "nk-graph-main" &&
+            `height: 100% !important;
+                `}
+            ${id === "nk-graph-fragment" &&
+            `width: 100% !important;
                 #svg-pan-zoom-controls {
                     transform: translate(0, 0px) scale(0.5);
-                }`
-            }
+                }`}
         `,
 );

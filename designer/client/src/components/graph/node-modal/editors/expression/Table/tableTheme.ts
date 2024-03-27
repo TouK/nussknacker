@@ -1,6 +1,6 @@
 import { DataEditorProps } from "@glideapps/glide-data-grid";
 import { alpha, darken, getLuminance, lighten, useTheme } from "@mui/material";
-import { blendDarken } from "../../../../../../containers/theme/nuTheme";
+import { blendDarken, blendLighten } from "../../../../../../containers/theme/nuTheme";
 
 export const useTableTheme = (): DataEditorProps["theme"] => {
     const theme = useTheme();
@@ -32,7 +32,7 @@ export const useTableTheme = (): DataEditorProps["theme"] => {
         bgHeaderHasFocus: bgHeader,
         bgHeaderHovered: bgHeader,
 
-        borderColor: theme.custom.colors.nero,
+        borderColor: blendLighten(theme.palette.background.paper, 0.25),
 
         headerFontStyle: "700 13px",
         baseFontStyle: "300 13px",

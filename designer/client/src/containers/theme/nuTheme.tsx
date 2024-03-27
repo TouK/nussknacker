@@ -25,38 +25,6 @@ declare module "@mui/material/styles" {
 export const blendDarken = (color: string, opacity: number) => rgbToHex(blend(color, "#000000", opacity));
 export const blendLighten = (color: string, opacity: number) => rgbToHex(blend(color, "#ffffff", opacity));
 
-const colors = {
-    eucalyptus: "#33A369",
-    seaGarden: "#2D8E54",
-    lawnGreen: "#7EDB0D",
-    red: "#FF0000",
-    yellow: "#ffff00",
-    deepskyblue: "#00bfff",
-    lime: "#00ff00",
-    orangered: "#FF4500",
-    bizarre: "#f2dede",
-    apple: "#5BA935",
-    blueRomance: "#caf2d6",
-    zumthor: "#E6ECFF",
-    nero: "#222222",
-    blackMarlin: "#3a3a3a",
-    yellowOrange: "#fbb03b",
-    scooter: "#46bfdb",
-    nobel: "#b5b5b5",
-    sources: {
-        eucalyptus: "#33A369",
-        seaGarden: "#2D8E54",
-    },
-    split: {},
-    filter: {},
-    custom: {},
-    enrichers: {},
-    choice: {},
-    sinks: {},
-    variable: {},
-    fragments: {},
-};
-
 const custom = {
     ConnectionErrorModal: {
         zIndex: 1600,
@@ -66,9 +34,6 @@ const custom = {
         baseUnit: 4,
     },
     fontSize: 14,
-    colors: {
-        ...colors,
-    },
 };
 
 const headerCommonStyles = {

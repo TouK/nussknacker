@@ -93,8 +93,6 @@ const Port = ({ className }: { className?: string }) => {
         boxSizing: "border-box",
         borderWidth: 3,
         borderStyle: "solid",
-        borderColor: "blue",
-        backgroundColor: "red",
         position: "absolute",
         bottom: -position,
         right: iconBackgroundSize - position,
