@@ -17,7 +17,11 @@ export default forwardRef<HTMLTextAreaElement, Props>(function TestValue(props: 
         <div className={cx("node-value", shouldHideTestResults && "partly-hidden")}>
             {value?.original ? <ReadonlyTextarea ref={ref} value={value.original} /> : null}
             <ReadonlyTextarea ref={ref} value={prettyPrint(value?.pretty)} />
-            {shouldHideTestResults ? <div className="fadeout" /> : null}
+            {shouldHideTestResults ? (
+                <div style={{ position: "relative" }}>
+                    <div className="fadeout" />
+                </div>
+            ) : null}
         </div>
     );
 });
