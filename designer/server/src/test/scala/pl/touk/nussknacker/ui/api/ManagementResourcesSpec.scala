@@ -420,8 +420,10 @@ class ManagementResourcesSpec
       ProcessTestData.sampleProcessName,
       CustomActionRequest(ScenarioActionName("non-existing"))
     ) ~> check {
-      status shouldBe StatusCodes.BadRequest
-      responseAs[String] shouldBe "non-existing doesn't exist"
+      status shouldBe StatusCodes.NotFound
+      responseAs[
+        String
+      ] shouldBe s"Couldn't find definition of action non-existing for scenario ${ProcessTestData.sampleProcessName} when trying to validate"
     }
   }
 
