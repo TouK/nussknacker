@@ -171,7 +171,7 @@ jobs:
       matrix:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
-      SCALA_VERSION: ${{ matrix.scalaVersion }}
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
       TESTS_WITH_COVERAGE: ${{ github.ref == 'refs/heads/staging' && matrix.scalaVersion == '2.13' }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
@@ -260,7 +260,7 @@ jobs:
       matrix:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
-      SCALA_VERSION: ${{ matrix.scalaVersion }}
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
@@ -308,7 +308,7 @@ jobs:
       matrix:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
-      SCALA_VERSION: ${{ matrix.scalaVersion }}
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs

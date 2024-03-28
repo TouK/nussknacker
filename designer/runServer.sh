@@ -7,11 +7,11 @@ export NUSSKNACKER_DIR=$WORKING_DIR
 mkdir -p "$WORKING_DIR"
 cd $WORKING_DIR
 
-SCALA_VERSION=${SCALA_VERSION:-2.13}
+NUSSKNACKER_SCALA_VERSION=${NUSSKNACKER_SCALA_VERSION:-2.13}
 PROJECT_BASE_DIR="../../.."
 
 DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
-export LIB_DIR="${PROJECT_BASE_DIR}/designer/server/target/scala-$SCALA_VERSION"
+export LIB_DIR="${PROJECT_BASE_DIR}/designer/server/target/scala-$NUSSKNACKER_SCALA_VERSION"
 export CONF_DIR="${DIST_BASE_DIR}/conf"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 export NUSSKNACKER_LOG_LEVEL=DEBUG

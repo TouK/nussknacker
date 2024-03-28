@@ -46,7 +46,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
 * [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
   * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
-  * Removed `NUSSKNACKER_SCALA_VERSION` from running Designer locally, please use `SCALA_VERSION` instead
+  * Removed `SCALA_VERSION` from running Designer locally, please use `NUSSKNACKER_SCALA_VERSION` instead
 
 ## In version 1.14.0
 
