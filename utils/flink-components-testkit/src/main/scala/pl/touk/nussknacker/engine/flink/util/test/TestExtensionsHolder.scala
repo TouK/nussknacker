@@ -10,7 +10,10 @@ case class TestExtensionsHolder(runId: TestRunId) extends Serializable with Auto
 
   def globalVariables: Map[String, AnyRef] = TestExtensionsHolder.globalVariablesForId(runId)
 
-  def close(): Unit = TestExtensionsHolder.clean(runId)
+  def close(): Unit = {
+    TestExtensionsHolder.clean(runId)
+    TestResultSinkFactory.extractSinkOutputFor(runId)
+  }
 
 }
 
@@ -27,11 +30,13 @@ object TestExtensionsHolder {
   }
 
   def registerTestExtensions(
-      componentDefinitions: List[ComponentDefinition],
+      components: List[ComponentDefinition],
+      testRunIdAwareComponentCreators: List[TestRunId => ComponentDefinition],
       globalVariables: Map[String, AnyRef]
   ): TestExtensionsHolder = synchronized {
-    val runId = TestRunId.generate
-    extensions += (runId -> Extensions(componentDefinitions, globalVariables))
+    val runId                    = TestRunId.generate
+    val testRunIdAwareComponents = testRunIdAwareComponentCreators.map(_.apply(runId))
+    extensions += (runId -> Extensions(components ::: testRunIdAwareComponents, globalVariables))
     TestExtensionsHolder(runId)
   }
 

@@ -31,7 +31,7 @@ val scenario =
     .parallelism(1)
     .source("start", "source")
     .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))
-    .processorEnd("end", "invocationCollector", "value" -> "#customer")
+    .emptySink("end", "sink", "value" -> "#customer")
 ```
 
 ### Creating test scenario runner

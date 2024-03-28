@@ -59,7 +59,7 @@ class UnionTransformerSpec
             ),
             "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
           )
-          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.$BranchFooId")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.$BranchFooId")
       )
 
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -86,7 +86,7 @@ class UnionTransformerSpec
               BranchBarId -> List("Output expression" -> "{a: '123'}")
             )
           )
-          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a")
       )
 
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -113,7 +113,7 @@ class UnionTransformerSpec
               BranchBarId -> List("Output expression" -> "{a: '123'}")
             )
           )
-          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a")
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
@@ -141,7 +141,7 @@ class UnionTransformerSpec
               BranchBarId -> List("Output expression" -> "{b: 123}")
             )
           )
-          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName.a")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a")
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).invalidValue
@@ -170,7 +170,7 @@ class UnionTransformerSpec
               BranchBarId -> List("Output expression" -> "#input / (#input % 4)")
             )
           )
-          .processorEnd("end", TestScenarioRunner.testResultService, "value" -> s"#$OutVariableName")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName")
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
