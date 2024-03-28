@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.FromElementsFunction
 import pl.touk.nussknacker.engine.api.typed.ReturningType
@@ -15,6 +16,8 @@ case class CollectionSource[T: TypeInformation](
     returnType: TypingResult
 ) extends BasicFlinkSource[T]
     with ReturningType {
+
+  @silent("deprecated")
   override def flinkSourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava)
 
   override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]

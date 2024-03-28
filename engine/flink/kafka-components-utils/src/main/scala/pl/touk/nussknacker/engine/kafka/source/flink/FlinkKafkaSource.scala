@@ -76,6 +76,7 @@ class FlinkKafkaSource[T](
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
   }
 
+  @silent("deprecated")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -84,6 +85,7 @@ class FlinkKafkaSource[T](
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
+  @silent("deprecated")
   protected def createFlinkSource(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext

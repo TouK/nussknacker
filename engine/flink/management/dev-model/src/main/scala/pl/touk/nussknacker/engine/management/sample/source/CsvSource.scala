@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import com.github.ghik.silencer.silent
 import io.circe.Json
 
 import java.nio.charset.StandardCharsets
@@ -17,6 +18,7 @@ class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[
 
   override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 
+  @silent("deprecated")
   override def flinkSourceFunction: SourceFunction[CsvRecord] = new SourceFunction[CsvRecord] {
     override def cancel(): Unit                           = {}
     override def run(ctx: SourceContext[CsvRecord]): Unit = {}

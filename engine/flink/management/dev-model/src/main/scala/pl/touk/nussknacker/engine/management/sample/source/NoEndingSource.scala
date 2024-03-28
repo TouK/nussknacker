@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import com.github.ghik.silencer.silent
+
 import java.time.Duration
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -27,6 +29,7 @@ class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSuppor
   override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
     CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
+  @silent("deprecated")
   override def flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
     var running       = true
     var counter       = new AtomicLong()
