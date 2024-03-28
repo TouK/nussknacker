@@ -31,8 +31,8 @@ trait Validator {
   * should appear in configuration for certain parameter
   *
   * TODO: It shouldn't be a sealed trait. We should allow everyone to create own ParameterValidator
- * TODO: This being sealed also makes the tests of cases that use these validators dependant on the code here -
- * not good/unseal!!
+  * TODO: This being sealed also makes the tests of cases that use these validators dependant on the code here -
+  * not good/unseal!!
   */
 @ConfiguredJsonCodec sealed trait ParameterValidator extends Validator
 
