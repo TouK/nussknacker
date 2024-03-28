@@ -27,6 +27,10 @@ object TestResultSinkFactory {
     Option(sinksOutputs.remove(runId)).getOrElse(Output.None)
   }
 
+  def clean(runId: TestRunId): Unit = {
+    extractSinkOutputFor(runId)
+  }
+
   class TestResultSink(value: LazyParameter[AnyRef], runId: TestRunId) extends BasicFlinkSink with Serializable {
 
     override type Value = AnyRef

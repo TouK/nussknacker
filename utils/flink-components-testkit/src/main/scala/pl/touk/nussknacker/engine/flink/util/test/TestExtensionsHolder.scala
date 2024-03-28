@@ -10,7 +10,10 @@ case class TestExtensionsHolder(runId: TestRunId) extends Serializable with Auto
 
   def globalVariables: Map[String, AnyRef] = TestExtensionsHolder.globalVariablesForId(runId)
 
-  def close(): Unit = TestExtensionsHolder.clean(runId)
+  def close(): Unit = {
+    TestExtensionsHolder.clean(runId)
+    TestResultSinkFactory.extractSinkOutputFor(runId)
+  }
 
 }
 
