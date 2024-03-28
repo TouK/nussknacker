@@ -916,10 +916,10 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     name := "nussknacker-flink-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"   % flinkV     % Provided,
+        "org.apache.flink" % "flink-streaming-java"   % flinkV               % Provided,
         "org.apache.flink" % "flink-avro"             % flinkV,
         "org.apache.flink" % s"flink-connector-kafka" % flinkConnectorKafkaV % Test,
-        "org.scalatest"   %% "scalatest"              % scalaTestV % Test
+        "org.scalatest"   %% "scalatest"              % scalaTestV           % Test
       )
     }
   )
@@ -941,8 +941,8 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
-        "org.apache.flink" % "flink-streaming-java"  % flinkV     % "provided",
-        "org.scalatest"   %% "scalatest"             % scalaTestV % "test"
+        "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
+        "org.scalatest"   %% "scalatest"             % scalaTestV % Test
       )
     }
   )
@@ -1770,7 +1770,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
-        "org.apache.flink" % "flink-connector-kafka"       % flinkV,
+        "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-json"                  % flinkV,
         "org.scalatest"   %% "scalatest"                   % scalaTestV % Test
       )
