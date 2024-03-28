@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Date from "../common/Date";
-import { PredefinedActionType, ProcessVersionType } from "../Process/types";
+import { PredefinedActionName, ProcessVersionType } from "../Process/types";
 import { HistoryItemStyled, StyledBadge } from "./StyledHistory";
 import WarningAmber from "@mui/icons-material/WarningAmber";
 import { Box, Typography } from "@mui/material";
@@ -58,7 +58,7 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
                 <br />
                 <HDate date={createDate} />
                 <br />
-                {isDeployed && <HDate date={actions.find((a) => a.actionName === PredefinedActionType.Deploy)?.performedAt} />}
+                {isDeployed && <HDate date={actions.find((a) => a.actionName === PredefinedActionName.Deploy)?.performedAt} />}
             </Typography>
             {isDeployed && <StyledBadge />}
         </HistoryItemStyled>

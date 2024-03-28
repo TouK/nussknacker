@@ -77,8 +77,8 @@ class InconsistentStateDetector extends LazyLogging {
       lastStateAction: Option[ProcessAction]
   ): StatusDetails =
     lastStateAction match {
-      case Some(action) if action.actionName.equals(ScenarioActionName.Deploy) => statusDetails
-      case _ => handleState(statusDetails, lastStateAction)
+      case Some(action) if action.actionName == ScenarioActionName.Deploy => statusDetails
+      case _                                                              => handleState(statusDetails, lastStateAction)
     }
 
   // This method handles some corner cases for following deploy state mismatch last action version
@@ -87,7 +87,7 @@ class InconsistentStateDetector extends LazyLogging {
       lastStateAction: Option[ProcessAction]
   ): StatusDetails =
     lastStateAction match {
-      case Some(action) if !action.actionName.equals(ScenarioActionName.Deploy) =>
+      case Some(action) if action.actionName != ScenarioActionName.Deploy =>
         statusDetails.copy(status = ProblemStateStatus.shouldNotBeRunning(true))
       case Some(_) =>
         statusDetails

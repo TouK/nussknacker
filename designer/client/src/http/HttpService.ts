@@ -8,7 +8,7 @@ import api from "../api";
 import { UserData } from "../common/models/User";
 import {
     ActionName,
-    PredefinedActionType,
+    PredefinedActionName,
     ProcessActionType,
     ProcessName,
     ProcessStateType,
@@ -291,7 +291,7 @@ class HttpService {
                 }[]
             >(`/processes/${encodeURIComponent(processName)}/deployments`)
             .then((res) =>
-                res.data.filter(({ actionName }) => actionName === PredefinedActionType.Deploy).map(({ performedAt }) => performedAt),
+                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
             );
     }
 

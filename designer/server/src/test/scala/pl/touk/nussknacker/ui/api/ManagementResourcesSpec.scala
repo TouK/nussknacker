@@ -134,7 +134,7 @@ class ManagementResourcesSpec
     ) ~> checkThatEventually {
       getProcess(processName) ~> check {
         val processDetails = responseAs[ScenarioWithDetails]
-        processDetails.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Deploy)) shouldBe true
+        processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
       }
       cancelProcess(
         ProcessTestData.sampleScenario.name,
@@ -188,7 +188,7 @@ class ManagementResourcesSpec
       getProcess(processName) ~> check {
         val processDetails = responseAs[ScenarioWithDetails]
         processDetails.lastStateAction shouldBe deployedWithVersions(1)
-        processDetails.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Deploy)) shouldBe true
+        processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy) shouldBe true
       }
     }
   }
@@ -201,7 +201,7 @@ class ManagementResourcesSpec
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
         cancelProcess(ProcessTestData.sampleScenario.name) ~> check {
           getProcess(processName) ~> check {
-            decodeDetails.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Cancel)) shouldBe true
+            decodeDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
           }
         }
       }

@@ -3,7 +3,7 @@ import { UnknownRecord, Instant } from "../../types/common";
 import { ScenarioGraph, ValidationResult } from "../../types";
 import { ProcessingMode } from "../../http/HttpService";
 
-export enum PredefinedActionType {
+export enum PredefinedActionName {
     Deploy = "DEPLOY",
     Cancel = "CANCEL",
     Archive = "ARCHIVE",

@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
       _.filter(p =>
         check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(
           q.isDeployed,
-          p.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Deploy))
+          p.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy)
         ) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
       )
     )

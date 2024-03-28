@@ -28,9 +28,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       lastStateAction: Option[ProcessAction]
   ): Future[ProcessState] = {
     val lastStateActionStatus = lastStateAction match {
-      case Some(action) if action.actionName.equals(ScenarioActionName.Deploy) =>
+      case Some(action) if action.actionName == ScenarioActionName.Deploy =>
         SimpleStateStatus.Running
-      case Some(action) if action.actionName.equals(ScenarioActionName.Cancel) =>
+      case Some(action) if action.actionName == ScenarioActionName.Cancel =>
         SimpleStateStatus.Canceled
       case _ =>
         SimpleStateStatus.NotDeployed

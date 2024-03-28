@@ -409,7 +409,7 @@ class DeploymentServiceSpec
 
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Cancel)) shouldBe true
+    processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
     processDetails.history.value.head.actions.map(_.actionName) should be(
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     )
@@ -434,7 +434,7 @@ class DeploymentServiceSpec
 
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Cancel)) shouldBe true
+    processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
     processDetails.history.value.head.actions.map(_.actionName) should be(
       List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     )

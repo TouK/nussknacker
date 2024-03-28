@@ -35,7 +35,7 @@ class RepositoryGauges(
       val result =
         processRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery(isArchived = Some(false))).map { scenarios =>
           val all       = scenarios.size
-          val deployed  = scenarios.count(_.lastStateAction.exists(_.actionName.equals(ScenarioActionName.Deploy)))
+          val deployed  = scenarios.count(_.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy))
           val fragments = scenarios.count(_.isFragment)
           Values(all, deployed, fragments)
         }

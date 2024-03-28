@@ -91,5 +91,5 @@ final case class ProcessActionEntityData(
 
   lazy val createdAtTime: Instant           = createdAt.toInstant
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
-  lazy val isDeployed: Boolean              = actionName.equals(ScenarioActionName.Deploy)
+  lazy val isDeployed: Boolean              = actionName == ScenarioActionName.Deploy
 }
