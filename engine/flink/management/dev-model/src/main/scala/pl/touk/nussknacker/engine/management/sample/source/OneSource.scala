@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
@@ -10,6 +11,7 @@ class OneSource extends BasicFlinkSource[String] {
 
   override def timestampAssigner: Option[Nothing] = None
 
+  @silent("deprecated")
   override def flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
 
     var run = true
