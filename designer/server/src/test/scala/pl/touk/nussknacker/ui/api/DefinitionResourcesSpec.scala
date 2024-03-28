@@ -50,8 +50,7 @@ class DefinitionResourcesSpec
           modelDefinitionEnricher,
           new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
           fragmentRepository
-        ),
-        processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
+        )
       )
     }
   )

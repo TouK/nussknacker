@@ -196,7 +196,7 @@ class NodesApiHttpService(
 
   private def dtoToNodeRequest(nodeValidationRequestDto: NodeValidationRequestDto, modelData: ModelData) = {
     Future[Either[NodesError, NodeValidationRequest]](
-      fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData))
+      fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData.modelClassLoader.classLoader))
     ).eitherT()
   }
 
@@ -259,7 +259,10 @@ class NodesApiHttpService(
       modelData: ModelData
   ) = {
     Future[Either[NodesError, Future[List[ExpressionSuggestion]]]](
-      decodeVariableTypes(request.variableTypes, prepareTypingResultDecoder(modelData)) match {
+      decodeVariableTypes(
+        request.variableTypes,
+        prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
+      ) match {
         case Left(value) => Left(value)
         case Right(localVariables) =>
           Right(
@@ -304,7 +307,7 @@ class NodesApiHttpService(
       request: ParametersValidationRequestDto,
       modelData: ModelData
   ): Either[NodesError, ParametersValidationRequest] = {
-    val typingResultDecoder = prepareTypingResultDecoder(modelData)
+    val typingResultDecoder = prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
     val parameters = request.parameters.map { parameter =>
       UIValueParameter(
         name = parameter.name,

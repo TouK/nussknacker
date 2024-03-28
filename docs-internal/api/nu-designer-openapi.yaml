@@ -46,7 +46,7 @@ paths:
                       user: admin
                       createdAt: '2023-11-29T08:54:22.520866Z'
                       performedAt: '2023-11-29T08:54:22.520866Z'
-                      actionType: DEPLOY
+                      actionName: DEPLOY
                       state: FINISHED
                       buildInfo: {}
                 Example1:
@@ -431,6 +431,137 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts/{dictId}/entry:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: query parameter label'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts:
+    post:
+      tags:
+      - Dictionary
+      summary: Get list of available dictionaries with value type compatible with
+        expected type
+      operationId: postApiProcessdefinitiondataProcessingtypeDicts
+      parameters:
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DictListRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - {}
       - httpAuth: []
@@ -1554,6 +1685,33 @@ components:
           type: string
         valueType:
           $ref: '#/components/schemas/TypedTaggedValue'
+    DictDto:
+      required:
+      - id
+      - label
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+    DictEntry:
+      required:
+      - key
+      - label
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+    DictListRequestDto:
+      required:
+      - expectedType
+      type: object
+      properties:
+        expectedType:
+          $ref: '#/components/schemas/TypingResult'
     DictParameterEditor:
       required:
       - dictId
@@ -1841,7 +1999,7 @@ components:
           - 'null'
         valueEditor:
           oneOf:
-          - $ref: '#/components/schemas/ValueInputWithFixedValues'
+          - $ref: '#/components/schemas/ParameterValueInput'
           - type: 'null'
         valueCompileTimeValidation:
           oneOf:
@@ -2181,6 +2339,10 @@ components:
           type:
           - string
           - 'null'
+    ParameterValueInput:
+      oneOf:
+      - $ref: '#/components/schemas/ValueInputWithDictEditor'
+      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
     ParametersValidationRequestDto:
       required:
       - variableTypes
@@ -2218,7 +2380,7 @@ components:
       - user
       - createdAt
       - performedAt
-      - actionType
+      - actionName
       - state
       - buildInfo
       type: object
@@ -2237,8 +2399,8 @@ components:
         performedAt:
           type: string
           format: date-time
-        actionType:
-          $ref: '#/components/schemas/ProcessActionType'
+        actionName:
+          type: string
         state:
           $ref: '#/components/schemas/ProcessActionState'
         failureMessage:
@@ -2271,15 +2433,6 @@ components:
       - FINISHED
       - FAILED
       - EXECUTION_FINISHED
-    ProcessActionType:
-      type: string
-      enum:
-      - DEPLOY
-      - CANCEL
-      - ARCHIVE
-      - UNARCHIVE
-      - PAUSE
-      - RENAME
     ProcessAdditionalFields:
       required:
       - properties
@@ -2720,9 +2873,16 @@ components:
           oneOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
-    ValueInputWithFixedValues:
-      oneOf:
-      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
+    ValueInputWithDictEditor:
+      required:
+      - dictId
+      - allowOtherValue
+      type: object
+      properties:
+        dictId:
+          type: string
+        allowOtherValue:
+          type: boolean
     ValueInputWithFixedValuesProvided:
       required:
       - allowOtherValue

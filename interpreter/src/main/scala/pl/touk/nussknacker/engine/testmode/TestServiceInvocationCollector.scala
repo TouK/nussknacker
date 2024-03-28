@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.testmode
 
 import cats.Monad
 import cats.implicits._
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ToCollect, TransmissionNames}
 import pl.touk.nussknacker.engine.api.{Context, ContextId, NodeId}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.language.higherKinds
 
-class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollector {
+class TestServiceInvocationCollector(resultsCollectingListener: ResultsCollectingListener[_]) extends ResultCollector {
 
   override def collectWithResponse[A, F[_]: Monad](
       contextId: ContextId,
@@ -22,16 +23,28 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
     mockValue match {
       case Some(mockVal) =>
         ResultsCollectingListenerHolder.updateResults(
-          testRunId,
-          _.updateExternalInvocationResult(nodeId.id, contextId, serviceRef, request)
+          resultsCollectingListener.runId,
+          _.updateExternalInvocationResult(
+            nodeId.id,
+            contextId,
+            serviceRef,
+            request,
+            resultsCollectingListener.variableEncoder
+          )
         )
         mockVal.pure[F]
       case None =>
         action.map { case CollectableAction(resultToCollect, result) =>
           val invocationResult = Map("request" -> request, "response" -> resultToCollect())
           ResultsCollectingListenerHolder.updateResults(
-            testRunId,
-            _.updateExternalInvocationResult(nodeId.id, contextId, serviceRef, invocationResult)
+            resultsCollectingListener.runId,
+            _.updateExternalInvocationResult(
+              nodeId.id,
+              contextId,
+              serviceRef,
+              invocationResult,
+              resultsCollectingListener.variableEncoder
+            )
           )
           result
         }
@@ -39,17 +52,27 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
   }
 
   def createSinkInvocationCollector(nodeId: String, ref: String): SinkInvocationCollector =
-    new SinkInvocationCollector(testRunId, nodeId, ref)
+    new SinkInvocationCollector(resultsCollectingListener, nodeId, ref)
 
 }
 
 //TODO: this should be somehow expressed via ResultCollector/TestServiceInvocationCollector
-final class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) extends Serializable {
+final class SinkInvocationCollector(
+    resultsCollectingListener: ResultsCollectingListener[_],
+    nodeId: String,
+    ref: String
+) extends Serializable {
 
   def collect(context: Context, result: Any): Unit = {
     ResultsCollectingListenerHolder.updateResults(
-      runId,
-      _.updateExternalInvocationResult(nodeId, ContextId(context.id), ref, result)
+      resultsCollectingListener.runId,
+      _.updateExternalInvocationResult(
+        nodeId,
+        ContextId(context.id),
+        ref,
+        result,
+        resultsCollectingListener.variableEncoder
+      )
     )
   }
 

@@ -8,7 +8,12 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   ProcessingMode
 }
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{
+  ProcessAction,
+  ProcessActionId,
+  ProcessActionState,
+  ScenarioActionName
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -103,7 +108,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                         user = "admin",
                         createdAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
                         performedAt = Instant.parse("2023-11-29T08:54:22.520866Z"),
-                        actionType = ProcessActionType.Deploy,
+                        actionName = ScenarioActionName.Deploy,
                         state = ProcessActionState.Finished,
                         failureMessage = None,
                         commentId = None,

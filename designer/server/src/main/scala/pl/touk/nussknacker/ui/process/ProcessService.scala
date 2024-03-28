@@ -8,13 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessAction,
-  ProcessActionType,
-  ScenarioActionName
-}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -310,13 +304,13 @@ class DBProcessService(
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
-    withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
+    actionOnNotArchivedProcess(processIdWithName, ScenarioActionName.Archive) { process =>
       if (process.isFragment) {
         doArchive(process)
       } else {
         // FIXME: This doesn't work correctly because concurrent request can change a state and double archive actions will be done.
         //        See ManagementResourcesConcurrentSpec and how DeploymentService handles it correctly for deploy and cancel
-        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive(process))
+        doOnProcessStateVerification(process, ScenarioActionName.Archive)(doArchive(process))
       }
     }
 
@@ -327,7 +321,7 @@ class DBProcessService(
       if (process.isFragment) {
         doRename(processIdWithName, name)
       } else {
-        doOnProcessStateVerification(process, ProcessActionType.Rename)(doRename(processIdWithName, name))
+        doOnProcessStateVerification(process, ScenarioActionName.Rename)(doRename(processIdWithName, name))
       }
     }
 
@@ -452,7 +446,7 @@ class DBProcessService(
     validationResult.errors.processPropertiesErrors
   }
 
-  private def doOnProcessStateVerification[T](process: ScenarioWithDetails, actionToCheck: ProcessActionType)(
+  private def doOnProcessStateVerification[T](process: ScenarioWithDetails, actionToCheck: ScenarioActionName)(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -462,7 +456,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(ScenarioActionName(actionToCheck), process.name, state)
+          throw ProcessIllegalAction(actionToCheck, process.name, state)
         }
       })
   }
@@ -515,12 +509,12 @@ class DBProcessService(
     }
   }
 
-  private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(
+  private def actionOnNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ScenarioActionName)(
       callback: ScenarioWithDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] =
     getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
-        throw ProcessIllegalAction.archived(ScenarioActionName(action), process.name)
+        throw ProcessIllegalAction.archived(action, process.name)
       } else {
         callback(process)
       }

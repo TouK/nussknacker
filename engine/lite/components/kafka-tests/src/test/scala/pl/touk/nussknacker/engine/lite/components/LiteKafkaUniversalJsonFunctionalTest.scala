@@ -286,7 +286,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     results.isValid shouldBe true // it should be invalid, but it's so edge case that we decided to live with it
     val runtimeError = results.validValue.errors.head
-    runtimeError.nodeComponentInfo.get.nodeId shouldBe "my-sink"
+    runtimeError.nodeId shouldBe Some("my-sink")
     runtimeError.throwable.asInstanceOf[RuntimeException].getMessage shouldBe "#: [1,2] is not a valid enum value"
   }
 
