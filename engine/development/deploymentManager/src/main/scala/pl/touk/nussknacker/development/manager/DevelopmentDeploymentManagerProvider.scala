@@ -10,12 +10,17 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
-import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.definition.{
+  DateParameterEditor,
+  LiteralIntegerValidator,
+  MandatoryParameterValidator,
+  StringParameterEditor,
+  TextareaParameterEditor
+}
 
 import java.net.URI
 import java.util.UUID
@@ -41,8 +46,19 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val MaxSleepTimeSeconds = 12
 
   private val customActionAfterRunning = CustomActionDefinition(AfterRunningActionName, List(Running.name))
+
   private val customActionPreparingResources =
-    deployment.CustomActionDefinition(PreparingResourcesActionName, List(NotDeployed.name, Canceled.name))
+    deployment.CustomActionDefinition(
+      PreparingResourcesActionName,
+      List(NotDeployed.name, Canceled.name),
+      List(
+        CustomActionParameter("mandatoryString", StringParameterEditor, List(MandatoryParameterValidator)),
+        CustomActionParameter("paramInt", StringParameterEditor, List(LiteralIntegerValidator)),
+        CustomActionParameter("paramDate", DateParameterEditor, Nil),
+        CustomActionParameter("comment", TextareaParameterEditor, Nil),
+      )
+    )
+
   private val customActionTest =
     deployment.CustomActionDefinition(TestActionName, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
 
