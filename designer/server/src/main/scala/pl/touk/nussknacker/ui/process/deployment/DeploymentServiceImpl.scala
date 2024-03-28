@@ -160,7 +160,7 @@ class DeploymentServiceImpl(
       deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- Future.fromTry(
-        scenarioResolver.forTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
+        scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
       )
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId))
       _ <- deploymentManager.processCommand(
@@ -173,7 +173,7 @@ class DeploymentServiceImpl(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess]
   )(implicit user: LoggedUser): Unit = {
     val validationResult = processValidator
-      .forTypeUnsafe(processDetails.processingType)
+      .forProcessingTypeUnsafe(processDetails.processingType)
       .validateCanonicalProcess(processDetails.json, processDetails.isFragment)
     if (validationResult.hasErrors) {
       throw DeployingInvalidScenarioError(validationResult.errors)

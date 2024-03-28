@@ -39,7 +39,7 @@ trait RequestResponseComponent { self: Component =>
 }
 
 trait AllProcessingModesComponent { self: Component =>
-  override def allowedProcessingModes: AllowedProcessingModes = AllowedProcessingModes.AllProcessingModes
+  override def allowedProcessingModes: AllowedProcessingModes = AllowedProcessingModes.All
 }
 
 object ComponentProviderConfig {

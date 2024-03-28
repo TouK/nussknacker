@@ -56,7 +56,7 @@ package object component {
   }
 
   implicit val allowedProcessingModesEncoder: Encoder[AllowedProcessingModes] = Encoder.instance {
-    case AllowedProcessingModes.AllProcessingModes            => ProcessingMode.all.asJson
+    case AllowedProcessingModes.All                           => ProcessingMode.all.asJson
     case AllowedProcessingModes.SetOf(allowedProcessingModes) => allowedProcessingModes.asJson
   }
 
@@ -68,7 +68,7 @@ package object component {
         case None => Left(DecodingFailure("Set of allowed ProcessingModes cannot be empty", Nil))
         case Some(nonEmptySet) =>
           if (nonEmptySet.toSortedSet == ProcessingMode.all) {
-            Right(AllowedProcessingModes.AllProcessingModes)
+            Right(AllowedProcessingModes.All)
           } else {
             Right(AllowedProcessingModes.SetOf(nonEmptySet))
           }

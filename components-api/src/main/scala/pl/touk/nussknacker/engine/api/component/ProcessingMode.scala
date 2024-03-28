@@ -37,7 +37,7 @@ object ProcessingMode {
   sealed trait AllowedProcessingModes
 
   object AllowedProcessingModes {
-    case object AllProcessingModes                                              extends AllowedProcessingModes
+    case object All                                                             extends AllowedProcessingModes
     final case class SetOf(allowedProcessingModes: NonEmptySet[ProcessingMode]) extends AllowedProcessingModes
   }
 

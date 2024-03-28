@@ -34,7 +34,7 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
             ComponentStaticDefinition(List.empty, None),
             uiDefinition,
             allowedProcessingModes =
-              AllowedProcessingModes.AllProcessingModes // built-in components are available in every processing mode
+              AllowedProcessingModes.All // built-in components are available in every processing mode
           )
         }
     }

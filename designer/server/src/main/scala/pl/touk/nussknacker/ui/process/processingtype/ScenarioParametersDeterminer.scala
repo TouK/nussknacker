@@ -16,7 +16,7 @@ object ScenarioParametersDeterminer {
       processingType: ProcessingType,
   ): ProcessingMode = {
     val componentsToProcessingMode = components.map { component =>
-      val allowedProcessingModes = component.implementation.allowedProcessingModes
+      val allowedProcessingModes = component.component.allowedProcessingModes
       component.id -> allowedProcessingModes
     }.toMap
 
@@ -27,7 +27,7 @@ object ScenarioParametersDeterminer {
         val intersection = nonEmptyList.foldLeft(ProcessingMode.all) {
           case (acc, AllowedProcessingModes.SetOf(componentProcessingModes)) =>
             acc.intersect(componentProcessingModes.toSortedSet)
-          case (acc, AllowedProcessingModes.AllProcessingModes) => acc
+          case (acc, AllowedProcessingModes.All) => acc
         }
         intersection.toList match {
           case oneMode :: Nil => oneMode

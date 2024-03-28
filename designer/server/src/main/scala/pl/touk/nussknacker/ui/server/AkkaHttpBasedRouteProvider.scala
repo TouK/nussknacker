@@ -96,7 +96,7 @@ class AkkaHttpBasedRouteProvider(
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
       deploymentServiceSupplier  = new DelayedInitDeploymentServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
-      typeToConfig <- prepareProcessingTypeData(
+      processingTypeToConfig <- prepareProcessingTypeData(
         config,
         processingTypeDataStateFactory,
         additionalUIConfigProvider,
@@ -107,8 +107,8 @@ class AkkaHttpBasedRouteProvider(
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
-      val migrations     = typeToConfig.mapValues(_.designerModelData.modelData.migrations)
-      val modelBuildInfo = typeToConfig.mapValues(_.designerModelData.modelData.buildInfo)
+      val migrations     = processingTypeToConfig.mapValues(_.designerModelData.modelData.migrations)
+      val modelBuildInfo = processingTypeToConfig.mapValues(_.designerModelData.modelData.buildInfo)
 
       val dbioRunner        = DBIOActionRunner(dbRef)
       val actionRepository  = new DbProcessActionRepository(dbRef, modelBuildInfo)
@@ -120,9 +120,9 @@ class AkkaHttpBasedRouteProvider(
       val fragmentRepository = new DefaultFragmentRepository(futureProcessRepository)
       val fragmentResolver   = new FragmentResolver(fragmentRepository)
 
-      val scenarioTestServiceDeps = typeToConfig.mapValues { processingTypeData =>
+      val scenarioTestServiceDeps = processingTypeToConfig.mapValues { processingTypeData =>
         val validator = new UIProcessValidator(
-          processingTypeData.processingType,
+          processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
           processingTypeData.deploymentData.additionalValidators,
@@ -131,7 +131,7 @@ class AkkaHttpBasedRouteProvider(
         val substitutor =
           ProcessDictSubstitutor(processingTypeData.designerModelData.modelData.designerDictServices.dictRegistry)
         val resolver         = new UIProcessResolver(validator, substitutor)
-        val scenarioResolver = new ScenarioResolver(fragmentResolver, processingTypeData.processingType)
+        val scenarioResolver = new ScenarioResolver(fragmentResolver, processingTypeData.name)
         (
           validator,
           resolver,
@@ -168,7 +168,7 @@ class AkkaHttpBasedRouteProvider(
 
       val dmDispatcher =
         new DeploymentManagerDispatcher(
-          typeToConfig.mapValues(_.deploymentData.validDeploymentManagerOrStub),
+          processingTypeToConfig.mapValues(_.deploymentData.validDeploymentManagerOrStub),
           futureProcessRepository
         )
 
@@ -189,14 +189,14 @@ class AkkaHttpBasedRouteProvider(
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
-      typeToConfig.reloadAll()
+      processingTypeToConfig.reloadAll()
       val processActivityRepository = new DbProcessActivityRepository(dbRef)
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
 
       Initialization.init(migrations, dbRef, processRepository, environment)
 
-      val newProcessPreparer = typeToConfig.mapValues { processingTypeData =>
+      val newProcessPreparer = processingTypeToConfig.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
           processingTypeData.deploymentData.scenarioPropertiesConfig
@@ -204,7 +204,7 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val stateDefinitionService = new ProcessStateDefinitionService(
-        typeToConfig
+        processingTypeToConfig
           .mapValues(_.category)
           .mapCombined(_.statusNameToStateDefinitionsMapping)
       )
@@ -212,7 +212,7 @@ class AkkaHttpBasedRouteProvider(
       val processService = new DBProcessService(
         deploymentService,
         newProcessPreparer,
-        typeToConfig.mapCombined(_.parametersService),
+        processingTypeToConfig.mapCombined(_.parametersService),
         processResolver,
         dbioRunner,
         futureProcessRepository,
@@ -227,11 +227,11 @@ class AkkaHttpBasedRouteProvider(
       def prepareAlignedComponentsDefinitionProvider(
           processingTypeData: ProcessingTypeData
       ): AlignedComponentsDefinitionProvider =
-        AlignedComponentsDefinitionProvider(processingTypeData.designerModelData.modelData)
+        AlignedComponentsDefinitionProvider(processingTypeData.designerModelData)
 
       val componentService = new DefaultComponentService(
         ComponentLinksConfigExtractor.extract(resolvedConfig),
-        typeToConfig
+        processingTypeToConfig
           .mapValues { processingTypeData =>
             val alignedModelDefinitionProvider = prepareAlignedComponentsDefinitionProvider(processingTypeData)
             ComponentServiceProcessingTypeData(alignedModelDefinitionProvider, processingTypeData.category)
@@ -244,9 +244,9 @@ class AkkaHttpBasedRouteProvider(
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
-        processingTypeDataReloader = typeToConfig,
+        processingTypeDataReloader = processingTypeToConfig,
         modelBuildInfos = modelBuildInfo,
-        categories = typeToConfig.mapValues(_.category),
+        categories = processingTypeToConfig.mapValues(_.category),
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
@@ -257,7 +257,7 @@ class AkkaHttpBasedRouteProvider(
         processResolver = processResolver,
         processAuthorizer = processAuthorizer,
         processChangeListener = processChangeListener,
-        scenarioParametersService = typeToConfig.mapCombined(_.parametersService),
+        scenarioParametersService = processingTypeToConfig.mapCombined(_.parametersService),
         useLegacyCreateScenarioApi = true
       )
 
@@ -271,7 +271,7 @@ class AkkaHttpBasedRouteProvider(
       )
       val userApiHttpService = new UserApiHttpService(
         authenticator = authenticationResources,
-        categories = typeToConfig.mapValues(_.category)
+        categories = processingTypeToConfig.mapValues(_.category)
       )
       val notificationApiHttpService = new NotificationApiHttpService(
         authenticator = authenticationResources,
@@ -280,14 +280,14 @@ class AkkaHttpBasedRouteProvider(
 
       val nodesApiHttpService = new NodesApiHttpService(
         authenticator = authenticationResources,
-        typeToConfig = typeToConfig.mapValues(_.designerModelData.modelData),
+        typeToConfig = processingTypeToConfig.mapValues(_.designerModelData.modelData),
         typeToProcessValidator = processValidator,
         typeToNodeValidator =
-          typeToConfig.mapValues(v => new NodeValidator(v.designerModelData.modelData, fragmentRepository)),
-        typeToExpressionSuggester = typeToConfig.mapValues(v =>
+          processingTypeToConfig.mapValues(v => new NodeValidator(v.designerModelData.modelData, fragmentRepository)),
+        typeToExpressionSuggester = processingTypeToConfig.mapValues(v =>
           ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
-        typeToParametersValidator = typeToConfig.mapValues(v =>
+        typeToParametersValidator = processingTypeToConfig.mapValues(v =>
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
         scenarioService = processService
@@ -306,7 +306,7 @@ class AkkaHttpBasedRouteProvider(
       )
       val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
         authenticator = authenticationResources,
-        scenarioParametersService = typeToConfig.mapCombined(_.parametersService)
+        scenarioParametersService = processingTypeToConfig.mapCombined(_.parametersService)
       )
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
@@ -333,16 +333,16 @@ class AkkaHttpBasedRouteProvider(
             dmDispatcher,
             metricsRegistry,
             scenarioTestService,
-            typeToConfig.mapValues(_.designerModelData.modelData)
+            processingTypeToConfig.mapValues(_.designerModelData.modelData)
           ),
           new ValidationResources(processService, processResolver),
           new DefinitionResources(
-            typeToConfig.mapValues { processingTypeData =>
+            processingTypeToConfig.mapValues { processingTypeData =>
               (
                 DefinitionsService(
                   processingTypeData,
                   prepareAlignedComponentsDefinitionProvider(processingTypeData),
-                  new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.processingType),
+                  new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
                   fragmentRepository
                 ),
                 processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
@@ -383,7 +383,7 @@ class AkkaHttpBasedRouteProvider(
       val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
         usageStatisticsReportsConfig,
         processService,
-        typeToConfig.mapValues(_.deploymentData.deploymentManagerType)
+        processingTypeToConfig.mapValues(_.deploymentData.deploymentManagerType)
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings

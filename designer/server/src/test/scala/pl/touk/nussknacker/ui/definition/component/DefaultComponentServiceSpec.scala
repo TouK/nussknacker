@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -333,7 +334,7 @@ class DefaultComponentServiceSpec
       availableCategories,
       links,
       usageCount,
-      AllowedProcessingModes.AllProcessingModes
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
     )
   }
 
@@ -353,7 +354,7 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.AllProcessingModes
+        AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
       )
     )
   }
@@ -373,7 +374,7 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.AllProcessingModes
+        AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
       )
     )
   }
@@ -431,7 +432,7 @@ class DefaultComponentServiceSpec
       categories,
       links,
       usageCount,
-      AllowedProcessingModes.AllProcessingModes
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
     )
   }
 
@@ -453,7 +454,7 @@ class DefaultComponentServiceSpec
       categories,
       links,
       0,
-      AllowedProcessingModes.AllProcessingModes
+      AllowedProcessingModes.All
     )
   }
 
@@ -793,7 +794,7 @@ class DefaultComponentServiceSpec
       ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
-        processingTypeData.designerModelData.modelData
+        processingTypeData.designerModelData
       )
       ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
     }

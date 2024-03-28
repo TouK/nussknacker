@@ -122,7 +122,7 @@ final case class ModelDefinitionBuilder(
       SinkSpecificData,
       componentGroupName = None,
       designerWideComponentId = None,
-      allowedProcessingModes = AllowedProcessingModes.AllProcessingModes
+      allowedProcessingModes = AllowedProcessingModes.All
     )
 
   private def wrapService(
@@ -135,7 +135,7 @@ final case class ModelDefinitionBuilder(
       ServiceSpecificData,
       componentGroupName = None,
       designerWideComponentId = None,
-      allowedProcessingModes = AllowedProcessingModes.AllProcessingModes
+      allowedProcessingModes = AllowedProcessingModes.All
     )
 
   private def wrapCustom(
@@ -151,7 +151,7 @@ final case class ModelDefinitionBuilder(
       componentSpecificData,
       componentGroupName,
       designerWideComponentId,
-      allowedProcessingModes = AllowedProcessingModes.AllProcessingModes
+      allowedProcessingModes = AllowedProcessingModes.All
     )
 
   private def withComponent(

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.definition.component._
 final case class MethodBasedComponentDefinitionWithImplementation(
     override val name: String,
     override val implementationInvoker: ComponentImplementationInvoker,
-    override val implementation: Component,
+    override val component: Component,
     override val componentTypeSpecificData: ComponentTypeSpecificData,
     staticDefinition: ComponentStaticDefinition,
     override protected val uiDefinition: ComponentUiDefinition,
@@ -54,6 +54,7 @@ object MethodBasedComponentDefinitionWithImplementation {
     )
   }
 
-  private class NullComponent(override val allowedProcessingModes: AllowedProcessingModes) extends Component
+  // FIXME: private
+  class NullComponent(override val allowedProcessingModes: AllowedProcessingModes) extends Component
 
 }

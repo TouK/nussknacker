@@ -172,7 +172,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
       new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Some(_), determineDesignerWideId),
-      modelDefinition
+      modelDefinition,
+      ProcessingMode.UnboundedStream
     )
 
     alignedComponentsDefinitionProvider

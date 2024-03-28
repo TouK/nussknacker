@@ -335,7 +335,7 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
-      case Some(componentDefinition) if componentDefinition.implementation.isInstanceOf[EagerService] =>
+      case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
         compileEagerService(n, componentDefinition, validationContext, outputVar)
       case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
@@ -600,7 +600,7 @@ class NodeCompiler(
       outputVar: Option[String],
       dynamicDefinition: DynamicComponentDefinitionWithImplementation
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (dynamicDefinition.implementation, eitherSingleOrJoin) match {
+    (dynamicDefinition.component, eitherSingleOrJoin) match {
       case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,

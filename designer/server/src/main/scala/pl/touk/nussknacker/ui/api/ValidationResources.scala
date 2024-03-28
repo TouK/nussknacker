@@ -31,7 +31,7 @@ class ValidationResources(
             NuDesignerErrorToHttp.toResponseEither(
               FatalValidationError.renderNotAllowedAsError(
                 processResolver
-                  .forTypeUnsafe(details.processingType)
+                  .forProcessingTypeUnsafe(details.processingType)
                   .validateBeforeUiResolving(request.scenarioGraph, request.processName, details.isFragment)
               )
             )

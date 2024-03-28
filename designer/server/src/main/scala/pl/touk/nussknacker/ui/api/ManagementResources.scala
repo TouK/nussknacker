@@ -210,7 +210,7 @@ class ManagementResources(
                     parser.parse(scenarioGraphJson).flatMap(Decoder[ScenarioGraph].decodeJson) match {
                       case Right(scenarioGraph) =>
                         scenarioTestServices
-                          .forTypeUnsafe(details.processingType)
+                          .forProcessingTypeUnsafe(details.processingType)
                           .performTest(
                             details.idWithNameUnsafe,
                             scenarioGraph,
@@ -237,7 +237,7 @@ class ManagementResources(
                   canDeploy(details.idWithNameUnsafe) {
                     complete {
                       measureTime("generateAndTest", metricRegistry) {
-                        val scenarioTestService = scenarioTestServices.forTypeUnsafe(details.processingType)
+                        val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(details.processingType)
                         scenarioTestService.generateData(
                           scenarioGraph,
                           processName,
@@ -268,7 +268,7 @@ class ManagementResources(
         path("testWithParameters" / ProcessNameSegment) { processName =>
           {
             (post & processDetailsForName(processName)) { process =>
-              val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+              val modelData = typeToConfig.forProcessingTypeUnsafe(process.processingType)
               implicit val requestDecoder: Decoder[TestFromParametersRequest] =
                 prepareTestFromParametersDecoder(modelData)
               (post & entity(as[TestFromParametersRequest])) { testParametersRequest =>
@@ -276,7 +276,7 @@ class ManagementResources(
                   canDeploy(process.idWithNameUnsafe) {
                     complete {
                       scenarioTestServices
-                        .forTypeUnsafe(process.processingType)
+                        .forProcessingTypeUnsafe(process.processingType)
                         .performTest(
                           process.idWithNameUnsafe,
                           testParametersRequest.scenarioGraph,

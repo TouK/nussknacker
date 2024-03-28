@@ -24,7 +24,7 @@ class DefinitionResources(
   def securedRoute(implicit user: LoggedUser): Route = encodeResponse {
     pathPrefix("processDefinitionData" / Segment) { processingType =>
       definitionsServices
-        .forType(processingType)
+        .forProcessingType(processingType)
         .map { case (definitionsService, dictQueryService) =>
           pathEndOrSingleSlash {
             get {
