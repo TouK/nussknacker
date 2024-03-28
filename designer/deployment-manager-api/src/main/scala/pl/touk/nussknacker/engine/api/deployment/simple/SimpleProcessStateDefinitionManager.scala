@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{DefaultActions, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.DefaultActions
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ProblemStateStatus, statusActionsPF}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessState,
   ProcessStateDefinitionManager,
+  ScenarioActionName,
   StateDefinitionDetails,
   StateStatus,
   StatusDetails
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   */
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
 
-  override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
+  override def statusActions(stateStatus: StateStatus): List[ScenarioActionName] =
     statusActionsPF.applyOrElse(stateStatus, (_: StateStatus) => DefaultActions)
 
   override def statusDescription(stateStatus: StateStatus): String = stateStatus match {

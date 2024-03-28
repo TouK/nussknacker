@@ -13,7 +13,7 @@ object ProcessIllegalAction {
       processName: ProcessName,
       state: ProcessState
   ): ProcessIllegalAction =
-    apply(actionName, processName, state.status.name, state.allowedActions.map(ScenarioActionName(_)).toSet)
+    apply(actionName, processName, state.status.name, state.allowedActions.toSet)
 
   def apply(
       actionName: ScenarioActionName,
