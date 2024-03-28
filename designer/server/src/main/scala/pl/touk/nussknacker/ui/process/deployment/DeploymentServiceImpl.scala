@@ -182,8 +182,7 @@ class DeploymentServiceImpl(
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
         // 1.7. check if action is allowed for current state
         inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
-        _ = checkIfCanPerformActionWhenOtherInProgress(processIdWithName, actionName, inProgressActionNames)
-        processState <- getProcessState(processDetails, inProgressActionNames)
+        processState          <- getProcessState(processDetails, inProgressActionNames)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         // 1.8. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
@@ -252,22 +251,6 @@ class DeploymentServiceImpl(
       throw ProcessIllegalAction.archived(actionName, processDetails.name)
     } else if (processDetails.isFragment) {
       throw ProcessIllegalAction.fragment(actionName, processDetails.name)
-    }
-  }
-
-  /**
-    * Do not allow next action execution when previous is not finished.
-    */
-  private def checkIfCanPerformActionWhenOtherInProgress(
-      processIdWithName: ProcessIdWithName,
-      actionName: ScenarioActionName,
-      inProgressActions: Set[ScenarioActionName]
-  ): Unit = {
-    if (inProgressActions.contains(actionName)) {
-      logger.debug(s"Action $actionName on process ${processIdWithName.name} not allowed, action already in progress")
-      throw ProcessIllegalAction(
-        s"Action $actionName on process ${processIdWithName.name} not allowed, action already in progress"
-      )
     }
   }
 

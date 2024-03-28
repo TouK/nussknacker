@@ -57,31 +57,6 @@ class ManagementResourcesConcurrentSpec
     }
   }
 
-  test("not allow concurrent custom action of same process") {
-    val processName = ProcessName(s"sameConcurrentCustomAction")
-    val scenario    = ProcessTestData.sampleScenario.withProcessName(processName)
-    saveCanonicalProcessAndAssertSuccess(scenario)
-
-    val action = CustomActionRequest(ScenarioActionName("hello"), None)
-
-    val firstActionResult  = customAction(processName, action)
-    val secondActionResult = customAction(processName, action)
-    eventually {
-      firstActionResult.handled shouldBe true
-      secondActionResult.handled shouldBe true
-    }
-    var firstStatus: StatusCode  = null
-    var secondStatus: StatusCode = null
-    firstActionResult ~> check {
-      firstStatus = status
-    }
-    secondActionResult ~> check {
-      secondStatus = status
-    }
-    val statuses = List(firstStatus, secondStatus)
-    statuses should contain only (StatusCodes.OK, StatusCodes.Conflict)
-  }
-
   test("allow concurrent deployment and cancel of same process") {
     val processName = ProcessName("concurrentDeployAndCancel")
 
