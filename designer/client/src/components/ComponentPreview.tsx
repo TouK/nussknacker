@@ -5,10 +5,13 @@ import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
-import { styled } from "@mui/material";
+import { styled, useTheme } from "@mui/material";
 import { blendLighten } from "../containers/theme/nuTheme";
+import { blend } from "@mui/system";
 
 export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
+    const theme = useTheme();
+
     const nodeStyles = css({
         position: "relative",
         width: RECT_WIDTH,
@@ -30,12 +33,12 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
 
     const nodeColors = css({
         opacity: 0.5,
-        borderColor: "hsl(110,0%,20%)",
-        backgroundColor: "hsl(110,0%,100%)",
+        borderColor: blendLighten(theme.palette.background.paper, 0.25),
+        backgroundColor: blendLighten(theme.palette.background.paper, 0.04),
     });
     const nodeColorsHover = css({
-        borderColor: "hsl(110,100%,33%)",
-        backgroundColor: "hsl(110,100%,95%)",
+        borderColor: blend(blendLighten(theme.palette.background.paper, 0.25), theme.palette.secondary.main, 0.2),
+        backgroundColor: blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.secondary.main, 0.2),
     });
 
     const imageStyles = css({
@@ -54,7 +57,8 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     });
 
     const ContentStyled = styled("div")(({ theme }) => ({
-        color: blendLighten(theme.palette.background.paper, 0.25),
+        color: theme.palette.text.primary,
+        fontSize: theme.typography.caption.fontSize,
         flex: 1,
         whiteSpace: "nowrap",
         display: "flex",

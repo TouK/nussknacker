@@ -1,6 +1,5 @@
 import { styled } from "@mui/material";
 import { FocusableStyled } from "./focusableStyled";
-import { blendLighten } from "../../containers/theme/nuTheme";
 
 export const dragHovered = "dragHovered";
 export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
