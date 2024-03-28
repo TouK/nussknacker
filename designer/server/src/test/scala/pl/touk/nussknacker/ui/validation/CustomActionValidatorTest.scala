@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.{Validated, ValidatedNel}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, MismatchParameter}
 import pl.touk.nussknacker.engine.api.definition.{
@@ -15,7 +14,6 @@ import pl.touk.nussknacker.engine.api.definition.{
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 
 class CustomActionValidatorTest extends AnyFunSuite with Matchers {

@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.deployment
 
-import cats.data.Validated
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 
@@ -31,7 +28,7 @@ case class CustomActionDefinition(
 case class CustomActionParameter(
     name: String,
     editor: ParameterEditor,
-    validators: List[ParameterValidator] = List.empty[ParameterValidator]
+    validators: List[ParameterValidator] = Nil
 )
 
 case class CustomActionResult(msg: String)

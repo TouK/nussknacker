@@ -26,7 +26,6 @@ import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, D
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.validation.CustomActionValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
