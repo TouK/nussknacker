@@ -190,7 +190,7 @@ lazy val commonSettings =
         "-deprecation",
         "-encoding",
         "utf8",
-//        "-Xfatal-warnings",
+        "-Xfatal-warnings",
         "-feature",
         "-language:postfixOps",
         "-language:existentials",

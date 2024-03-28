@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -137,6 +138,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       namingStrategy
     ) {
 
+      @silent("deprecated")
       override protected def createFlinkSource(
           consumerGroupId: String,
           flinkNodeContext: FlinkCustomNodeContext
