@@ -51,11 +51,6 @@ object ProcessConfigCreatorMapping {
       override def buildInfo(): Map[String, String] = {
         jcreator.buildInfo().asScala.toMap
       }
-      override def asyncExecutionContextPreparer(
-          modelDependencies: ProcessObjectDependencies
-      ): Option[AsyncExecutionContextPreparer] = {
-        Option(jcreator.asyncExecutionContextPreparer(modelDependencies).orElse(null))
-      }
       override def classExtractionSettings(
           modelDependencies: ProcessObjectDependencies
       ): ClassExtractionSettings = {

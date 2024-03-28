@@ -25,10 +25,6 @@ trait ProcessConfigCreator extends Serializable {
   // TODO: Rename to modelInfo or similar, as it can contain any information related to model, not only build info
   def buildInfo(): Map[String, String]
 
-  def asyncExecutionContextPreparer(
-      modelDependencies: ProcessObjectDependencies
-  ): Option[AsyncExecutionContextPreparer] = None
-
   def classExtractionSettings(modelDependencies: ProcessObjectDependencies): ClassExtractionSettings =
     ClassExtractionSettings.Default
 
