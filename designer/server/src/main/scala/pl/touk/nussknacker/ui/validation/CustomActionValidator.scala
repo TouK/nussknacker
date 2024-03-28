@@ -129,8 +129,5 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
 
 }
 
-//GSK: Too much happens here. This error was treated as an indication group of errors and an error from this group.
-// Aaand BadRequestError is from old akka ManagementResources approach.
-case class CustomActionValidationError(message: String) extends BadRequestError(message)
-//GSK: this is exception in the scope of old akka ManagementResources
+case class CustomActionValidationError(message: String)  extends BadRequestError(message)
 case class CustomActionNonExistingError(message: String) extends NotFoundError(message)

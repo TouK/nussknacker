@@ -1,23 +1,16 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.data.ValidatedNel
 import io.restassured.RestAssured.`given`
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.NuRestAssureExtensions.AppConfiguration
-import pl.touk.nussknacker.test.base.it.{NuItTest, NuResourcesTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
-import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
-import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.validation.CustomActionNonExistingError
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 
 import java.util.UUID
 
@@ -40,8 +33,8 @@ class ManagementApiHttpServiceSpec
     .emptySink("sinkId", "barSink")
 
   "The endpoint for nodes validation should " - {
-    "validate proper request without errors" - {
-      "and return Valid for valid data " in {
+    "validate proper request without errors and " - {
+      "return valid for valid request with empty params " in {
         given()
           .applicationState {
             createDeployedScenario(exampleScenario)
@@ -51,7 +44,7 @@ class ManagementApiHttpServiceSpec
           .jsonBody(
             s"""{
              | "actionName": "hello",
-             | "params": null
+             | "params": {}
              |}""".stripMargin
           )
           .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
@@ -65,9 +58,36 @@ class ManagementApiHttpServiceSpec
                |    "validationPerformed": true
                |}""".stripMargin
           )
-
       }
-      "and return invalid for invalid data" in {
+
+      "return valid for valid request with non empty params " in {
+        given()
+          .applicationState {
+            createDeployedScenario(exampleScenario)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+               | "actionName": "some-params-action",
+               | "params": {
+               |    "param1": "myValidParam"
+               |  }
+               |}""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |    "errors": [
+               |
+               |    ],
+               |    "validationPerformed": true
+               |}""".stripMargin
+          )
+      }
+      "return invalid for invalid data" in {
         given()
           .applicationState {
             createDeployedScenario(exampleScenario)
@@ -102,10 +122,7 @@ class ManagementApiHttpServiceSpec
                |}""".stripMargin
           )
       }
-    }
-
-    "return error for" - {
-      "wrong request params" in {
+      "return invalid for wrong request params" in {
         given()
           .applicationState {
             createDeployedScenario(exampleScenario)
@@ -124,13 +141,59 @@ class ManagementApiHttpServiceSpec
           )
           .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
           .Then()
-          .statusCode(400)
+          .statusCode(200)
           .equalsJsonBody(
             s"""{
-               |    "message": "Params found for no params action: hello"
+               |    "errors": [
+               |        {
+               |            "typ": "MismatchParameter",
+               |            "message": "Couldn't find a matching parameter in action definition for this param: property1",
+               |            "description": "",
+               |            "fieldName": "property1",
+               |            "errorType": "SaveAllowed",
+               |            "details": null
+               |        },
+               |        {
+               |            "typ": "MismatchParameter",
+               |            "message": "Couldn't find a matching parameter in action definition for this param: property2",
+               |            "description": "",
+               |            "fieldName": "property2",
+               |            "errorType": "SaveAllowed",
+               |            "details": null
+               |        }
+               |    ],
+               |    "validationPerformed": true
                |}""".stripMargin
           )
       }
+    }
+
+    "not validate improper request and return error for" - {
+      "non existing scenario" in {
+        val wrongScenarioName = s"KochamCracovie"
+
+        given()
+          .applicationState {
+            createDeployedScenario(exampleScenario)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .jsonBody(
+            s"""{
+             |  "actionName": "non-existing",
+             |  "params": {
+             |    "property1": "abc",
+             |    "property2": "xyz"
+             |  }
+             |}
+             |""".stripMargin
+          )
+          .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$wrongScenarioName/validation")
+          .Then()
+          .statusCode(404)
+          .equalsPlainBody(s"Couldn't find $wrongScenarioName when trying to validate action".stripMargin)
+      }
+
       "non existing action" in {
         given()
           .applicationState {
@@ -150,34 +213,12 @@ class ManagementApiHttpServiceSpec
           )
           .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/validation")
           .Then()
-          .statusCode(400)
-          .equalsJsonBody(
-            s"""{
-               |    "message": "Couldn't find this action: non-existing"
-               |}""".stripMargin
+          .statusCode(404)
+          .equalsPlainBody(
+            s"Couldn't find definition of action non-existing for scenario $exampleScenarioName when trying to validate".stripMargin
           )
       }
     }
   }
-
-//  test("should fail(return left) when trying to validate a non existing action") {
-//    val nonExistingActionRequest = CustomActionRequest(
-//      ScenarioActionName("notInAnyDBHere"),
-//      Map.empty[String,String]
-//    )
-//
-//    val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
-//      validator.validateCustomActionParams(nonExistingActionRequest)
-//    result match {
-//      case Left(_: CustomActionNonExistingError) =>
-//      // pass
-//      case Left(_) | Right(_) =>
-//        fail("Expected Left[CustomActionNonExistingError] but got different result type")
-//    }
-//
-//    result.left.getOrElse(fail("should be left and have message")).getMessage shouldBe
-//      s"Couldn't find this action: ${nonExistingActionRequest.actionName.toString}"
-//
-//  }
 
 }

@@ -12,11 +12,7 @@ import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
-import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{
-  NoActionDefinition,
-  NoScenario,
-  SomethingWentWrong
-}
+import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
 import pl.touk.nussknacker.ui.api.{CustomActionValidationDto, ManagementApiEndpoints}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
