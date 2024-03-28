@@ -27,11 +27,13 @@ object TestExtensionsHolder {
   }
 
   def registerTestExtensions(
-      componentsCreators: List[TestRunId => ComponentDefinition],
+      components: List[ComponentDefinition],
+      testRunIdAwareComponentCreators: List[TestRunId => ComponentDefinition],
       globalVariables: Map[String, AnyRef]
   ): TestExtensionsHolder = synchronized {
-    val runId = TestRunId.generate
-    extensions += (runId -> Extensions(componentsCreators.map(_.apply(runId)), globalVariables))
+    val runId                    = TestRunId.generate
+    val testRunIdAwareComponents = testRunIdAwareComponentCreators.map(_.apply(runId))
+    extensions += (runId -> Extensions(components ::: testRunIdAwareComponents, globalVariables))
     TestExtensionsHolder(runId)
   }
 
