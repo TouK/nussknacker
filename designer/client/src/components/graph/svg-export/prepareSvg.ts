@@ -2,10 +2,12 @@
 import { dia, V, Vectorizer } from "jointjs";
 import { toXml } from "../../../common/SVGUtils";
 import { exportStyled } from "./ExportStyled";
+import { Theme } from "@mui/material";
 
-function createStyle() {
+function createStyle(theme: Theme) {
     const style = V("style").node;
-    style.appendChild(document.createTextNode(exportStyled.styles));
+    style.appendChild(document.createTextNode(exportStyled(theme).styles));
+    console.log(style);
     return style;
 }
 
@@ -80,18 +82,18 @@ function createPaper(placeholder: HTMLDivElement, maxSize: number, { options, de
     return { svg, width, height };
 }
 
-function addStyles(svg: SVGElement, height: number, width: number) {
-    svg.prepend(createStyle());
+function addStyles(svg: SVGElement, height: number, width: number, theme: Theme) {
+    svg.prepend(createStyle(theme));
     svg.setAttribute("height", height.toString());
     svg.setAttribute("width", width.toString());
     svg.setAttribute("class", "graph-export");
 }
 
-export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, maxSize = 15000) {
+export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, theme: Theme, maxSize = 15000) {
     const placeholder = createPlaceholder();
     const { svg, width, height } = createPaper(placeholder, maxSize, options);
 
-    addStyles(svg, height, width);
+    addStyles(svg, height, width, theme);
     removeHiddenNodes(svg);
     removeIncompatibles(svg);
     embedImages(svg);

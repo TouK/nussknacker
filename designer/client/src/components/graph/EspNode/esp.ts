@@ -85,6 +85,7 @@ const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
         stroke: node.isDisabled ? "none" : blendLighten(theme.palette.background.paper, 0.25),
         fill: blendLighten(theme.palette.background.paper, 0.04),
         strokeWidth: 0.5,
+        disabled: node.isDisabled,
     },
 });
 

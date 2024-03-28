@@ -325,7 +325,7 @@ export class Graph extends React.Component<Props> {
 
         if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
             const { toggleSelection, resetSelection } = this.props;
-            new RangeSelectPlugin(this.processGraphPaper, this.panAndZoom.getPinchEventActive);
+            new RangeSelectPlugin(this.processGraphPaper, this.panAndZoom.getPinchEventActive, this.props.theme);
             this.processGraphPaper.on("rangeSelect:selected", ({ elements, mode }: RangeSelectedEventData) => {
                 const nodes = elements.filter((el) => isModelElement(el)).map(({ id }) => id.toString());
                 if (mode === SelectionMode.toggle) {
@@ -415,7 +415,7 @@ export class Graph extends React.Component<Props> {
     }
 
     async exportGraph(): Promise<string> {
-        return await prepareSvg(this._exportGraphOptions);
+        return await prepareSvg(this._exportGraphOptions, this.props.theme);
     }
 
     twoWayValidateConnection = (
