@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.test.mock
 
 import cats.instances.future._
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -50,7 +50,7 @@ class MockFetchingProcessRepository private (
       _.filter(p =>
         check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(
           q.isDeployed,
-          p.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy))
+          p.lastStateAction.exists(_.actionName == ScenarioActionName.Deploy)
         ) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
       )
     )

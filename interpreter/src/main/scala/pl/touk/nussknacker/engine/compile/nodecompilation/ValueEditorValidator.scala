@@ -6,56 +6,70 @@ import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition.{
+  DictParameterEditor,
   DualParameterEditor,
   FixedExpressionValue,
   FixedValuesParameterEditor,
   ParameterEditor
 }
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterValueInput,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 object ValueEditorValidator {
 
-  def validateAndGetEditor( // this method doesn't validate the compilation validity of FixedExpressionValues (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
-      valueEditor: ValueInputWithFixedValues,
+  // This method doesn't validate the compilation validity of FixedExpressionValues
+  //  (it requires validationContext and expressionCompiler, see FragmentParameterValidator.validateFixedExpressionValues)
+  // It also doesn't validate in ValueInputWithDictEditor that `dictId` is a declared dictionary and of a correct type
+  //  (it requires declared dictionaries, see FragmentParameterValidator.validateValueInputWithDictEditor)
+  def validateAndGetEditor(
+      valueEditor: ParameterValueInput,
       initialValue: Option[FixedExpressionValue],
       paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, ParameterEditor] = {
-    validateFixedValuesList(valueEditor, initialValue, paramName, nodeIds)
-      .andThen { _ =>
-        val fixedValuesEditor = FixedValuesParameterEditor(
-          FixedExpressionValue.nullFixedValue +: valueEditor.fixedValuesList
-        )
+    val validatedInnerEditor = valueEditor match {
+      case ValueInputWithFixedValuesProvided(fixedValuesList, allowOtherValue) =>
+        validateFixedValuesList(fixedValuesList, allowOtherValue, initialValue, paramName, nodeIds)
+          .andThen { _ =>
+            Valid(FixedValuesParameterEditor(FixedExpressionValue.nullFixedValue +: fixedValuesList))
+          }
+      case ValueInputWithDictEditor(dictId, _) => Valid(DictParameterEditor(dictId))
+    }
 
-        if (valueEditor.allowOtherValue) {
-          Valid(DualParameterEditor(fixedValuesEditor, DualEditorMode.SIMPLE))
-        } else {
-          Valid(fixedValuesEditor)
-        }
-      }
+    validatedInnerEditor.map { innerEditor =>
+      if (valueEditor.allowOtherValue)
+        DualParameterEditor(innerEditor, DualEditorMode.SIMPLE)
+      else
+        innerEditor
+    }
   }
 
   private def validateFixedValuesList(
-      valueEditor: ValueInputWithFixedValues,
+      fixedValuesList: List[FixedExpressionValue],
+      allowOtherValue: Boolean,
       initialValue: Option[FixedExpressionValue],
       paramName: ParameterName,
       nodeIds: Set[String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] =
-    if (!valueEditor.allowOtherValue) {
+    if (!allowOtherValue) {
       List(
-        if (valueEditor.fixedValuesList.isEmpty)
+        if (fixedValuesList.isEmpty)
           invalidNel(RequireValueFromEmptyFixedList(paramName, nodeIds))
         else Valid(()),
-        if (initialValueNotPresentInPossibleValues(valueEditor, initialValue))
+        if (initialValueNotPresentInPossibleValues(fixedValuesList, initialValue))
           invalidNel(InitialValueNotPresentInPossibleValues(paramName, nodeIds))
         else Valid(())
       ).sequence.map(_ => ())
     } else { Valid(()) }
 
   private def initialValueNotPresentInPossibleValues(
-      valueEditor: ValueInputWithFixedValues,
+      fixedValuesList: List[FixedExpressionValue],
       initialValue: Option[FixedExpressionValue]
-  ) = initialValue.exists(!valueEditor.fixedValuesList.contains(_))
+  ) = initialValue.exists(!fixedValuesList.contains(_))
 
 }

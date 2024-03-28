@@ -1,19 +1,8 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionResult,
-  DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId,
-  User
-}
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future

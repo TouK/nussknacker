@@ -570,6 +570,7 @@ Example usage:
 processToolbarConfig {
   defaultConfig {
     topLeft: [
+      { type: "search-panel" }
       { type: "tips-panel" }
       { type: "creator-panel", hidden: { archived: true } }
       { type: "versions-panel" }

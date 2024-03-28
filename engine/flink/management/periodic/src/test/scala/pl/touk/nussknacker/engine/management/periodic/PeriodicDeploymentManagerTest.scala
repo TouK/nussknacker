@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Inside, OptionValues}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment._
@@ -84,7 +84,7 @@ class PeriodicDeploymentManagerTest
       toClose = () => ()
     )
 
-    def getAllowedActions(statusDetails: StatusDetails): List[ProcessActionType] = {
+    def getAllowedActions(statusDetails: StatusDetails): List[ScenarioActionName] = {
       periodicDeploymentManager.processStateDefinitionManager.processState(statusDetails).allowedActions
     }
 
@@ -122,7 +122,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     f.periodicDeploymentManager
       .getProcessState(idWithName, None)
       .futureValue
@@ -137,7 +137,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
   }
 
   test("getProcessState - should be finished when scenario finished and job finished on Flink") {
@@ -154,7 +154,7 @@ class PeriodicDeploymentManagerTest
     val state = f.periodicDeploymentManager.getProcessState(idWithName, None).futureValue.value
 
     state.status shouldBe SimpleStateStatus.Finished
-    state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
+    state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
   }
 
   test("getProcessState - should be running when scenario deployed and job running on Flink") {
@@ -164,7 +164,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe SimpleStateStatus.Running
-    f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel)
+    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
   }
 
   test("getProcessState - should be waiting for reschedule if job finished on Flink but scenario is still deployed") {
@@ -174,7 +174,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe WaitingForScheduleStatus
-    f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel)
+    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
   }
 
   test("getProcessState - should be failed after unsuccessful deployment") {
@@ -183,7 +183,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel)
+    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
   }
 
   test("deploy - should fail for invalid periodic property") {
@@ -258,7 +258,7 @@ class PeriodicDeploymentManagerTest
 
     val statusDetails = f.getMergedStatusDetails
     statusDetails.status shouldBe ProblemStateStatus.Failed
-    f.getAllowedActions(statusDetails) shouldBe List(ProcessActionType.Cancel)
+    f.getAllowedActions(statusDetails) shouldBe List(ScenarioActionName.Cancel)
   }
 
   test("should redeploy failed scenario") {
@@ -268,7 +268,7 @@ class PeriodicDeploymentManagerTest
     val statusDetailsBeforeRedeploy = f.getMergedStatusDetails
     statusDetailsBeforeRedeploy.status shouldBe ProblemStateStatus.Failed
     f.getAllowedActions(statusDetailsBeforeRedeploy) shouldBe List(
-      ProcessActionType.Cancel
+      ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
@@ -285,13 +285,12 @@ class PeriodicDeploymentManagerTest
     val statusDetailsAfterRedeploy = f.getMergedStatusDetails
     // Previous job is still visible as Failed.
     statusDetailsAfterRedeploy.status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(statusDetailsAfterRedeploy) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    f.getAllowedActions(statusDetailsAfterRedeploy) shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
   }
 
   test("should redeploy scheduled scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-//    f.getAllowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
 
     f.periodicDeploymentManager
       .processCommand(
@@ -312,7 +311,7 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deploymentId))
     val statusDetails = f.getMergedStatusDetails
     f.getAllowedActions(statusDetails) shouldBe List(
-      ProcessActionType.Cancel
+      ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager
@@ -334,7 +333,7 @@ class PeriodicDeploymentManagerTest
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
     val statusDetails = f.getMergedStatusDetails
     f.getAllowedActions(statusDetails) shouldBe List(
-      ProcessActionType.Cancel
+      ScenarioActionName.Cancel
     ) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager

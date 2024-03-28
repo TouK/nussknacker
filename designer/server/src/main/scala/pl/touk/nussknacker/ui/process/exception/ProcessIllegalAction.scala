@@ -13,13 +13,13 @@ object ProcessIllegalAction {
       processName: ProcessName,
       state: ProcessState
   ): ProcessIllegalAction =
-    apply(actionName, processName, state.status.name, state.allowedActions.map(ScenarioActionName(_)))
+    apply(actionName, processName, state.status.name, state.allowedActions.toSet)
 
   def apply(
       actionName: ScenarioActionName,
       processName: ProcessName,
       statusName: StateStatus.StatusName,
-      allowedActions: List[ScenarioActionName]
+      allowedActions: Set[ScenarioActionName]
   ): ProcessIllegalAction =
     ProcessIllegalAction(
       s"Action: $actionName is not allowed in scenario ($processName) state: ${statusName}, allowed actions: ${allowedActions

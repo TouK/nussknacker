@@ -5,7 +5,7 @@ sidebar_position: 1
 # Model configuration
 
 Model definition is part of a scenario type definition. There can be multiple scenario types in one Nussknacker installation, consequently there will also be multiple model definitions in such a case. 
-Check [configuration areas](docs/installation_configuration_guide/Common.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](docs/installation_configuration_guide/ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
+Check [configuration areas](docs/installation_configuration_guide/Common.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](../ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
 
 Model defines how to configure [components](/about/GLOSSARY#component) and certain runtime behavior (e.g. error handling) for a given scenario type. Model configuration is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
 
@@ -16,9 +16,9 @@ Model defines how to configure [components](/about/GLOSSARY#component) and certa
 
 Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
 
-By default, the following configuration is used:
+By default, in case of Flink streaming scenario type, the following configuration is used:
 ```
-classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common"]
+classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common", "flink-dropwizard-metrics-deps/"]
 ```
 Make sure you have all necessary entries properly configured:
 - Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
@@ -30,7 +30,7 @@ Note that as classPath elements you can use:
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](../../installation/Installation.md#basic-environment-variables).
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../installation/Installation.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming

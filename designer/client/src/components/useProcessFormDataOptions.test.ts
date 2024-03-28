@@ -107,6 +107,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Flink"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
+            isProcessingModeBatchAvailable: false,
             processingModes: ["Unbounded-Stream"],
         });
 
@@ -159,6 +160,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Flink"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
+            isProcessingModeBatchAvailable: false,
             processingModes: ["Unbounded-Stream"],
         });
 
@@ -210,6 +212,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Flink"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
+            isProcessingModeBatchAvailable: false,
             processingModes: ["Unbounded-Stream"],
         });
 
@@ -259,6 +262,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Lite Embedded", "Lite K8s", "Flink", "Development Tests", "Dev Periodic"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
+            isProcessingModeBatchAvailable: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
         });
 
@@ -310,6 +314,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Lite Embedded", "Lite K8s"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
+            isProcessingModeBatchAvailable: false,
             processingModes: ["Request-Response", "Unbounded-Stream"],
         });
     });
@@ -349,6 +354,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Engine1", "Engine2"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: true,
+            isProcessingModeBatchAvailable: true,
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],
         });
     });
@@ -387,6 +393,7 @@ describe("useProcessFormDataOptions", () => {
             engines: ["Engine1", "Engine2"],
             isCategoryFieldVisible: true,
             isEngineFieldVisible: false,
+            isProcessingModeBatchAvailable: true,
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],
         });
     });
@@ -420,7 +427,9 @@ describe("useProcessFormDataOptions", () => {
             ],
             engines: ["Engine1", "Engine2"],
             isCategoryFieldVisible: false,
+            isProcessingModeBatchAvailable: true,
             isEngineFieldVisible: false,
+
             processingModes: ["Unbounded-Stream", "Bounded-Stream"],
         });
     });

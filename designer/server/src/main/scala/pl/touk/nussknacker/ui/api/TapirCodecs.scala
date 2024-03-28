@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
@@ -18,6 +21,9 @@ object TapirCodecs {
     }
 
     implicit val scenarioNameCodec: PlainCodec[ProcessName] = Codec.string.mapDecode(decode)(encode)
+
+    implicit val schema: Schema[ProcessName] = Schema.string
+
   }
 
   object VersionIdCodec {
@@ -28,6 +34,8 @@ object TapirCodecs {
     }
 
     implicit val versionIdCodec: PlainCodec[VersionId] = Codec.long.mapDecode(decode)(encode)
+
+    implicit val schema: Schema[VersionId] = versionIdCodec.schema
   }
 
   object ContentDispositionCodec {
@@ -86,6 +94,23 @@ object TapirCodecs {
         override def format: TextPlain = CodecFormat.TextPlain()
       }
 
+  }
+
+  object ProcessingModeCodec {
+    implicit val processingModeSchema: Schema[ProcessingMode] = Schema.string
+  }
+
+  object EngineSetupNameCodec {
+    implicit val engineSetupNameSchema: Schema[EngineSetupName] = Schema.string
+  }
+
+  object ProcessNameCodec {
+    implicit val processNameSchema: Schema[ProcessName] = Schema.string
+  }
+
+  object MigrateScenarioRequestCodec {
+    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
+    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
   }
 
 }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListener,
   ResultsCollectingListenerHolder,
@@ -68,10 +70,10 @@ object TestScenarioCollectorHandler {
 
   def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
 
-    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerListener
 
     val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
-      new TestServiceInvocationCollector(resultsCollectingListener.runId)
+      new TestServiceInvocationCollector(resultsCollectingListener)
     } else {
       ProductionServiceInvocationCollector
     }
@@ -81,7 +83,7 @@ object TestScenarioCollectorHandler {
 
   final class TestScenarioCollectorHandler(
       val resultCollector: ResultCollector,
-      val resultsCollectingListener: ResultsCollectingListener
+      val resultsCollectingListener: ResultsCollectingListener[Any]
   ) extends AutoCloseable {
     def close(): Unit = resultsCollectingListener.close()
   }
@@ -104,14 +106,14 @@ object RunResult {
 }
 
 sealed trait RunResult {
-  def errors: List[NuExceptionInfo[_]]
+  def errors: List[ExceptionResult[_]]
 }
 
-case class RunListResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) extends RunResult {
+case class RunListResult[T](errors: List[ExceptionResult[_]], successes: List[T]) extends RunResult {
 
   def mapSuccesses[U](f: T => U): RunListResult[U] =
     copy(successes = successes.map(f))
 
 }
 
-case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult
+case class RunUnitResult(errors: List[ExceptionResult[_]]) extends RunResult

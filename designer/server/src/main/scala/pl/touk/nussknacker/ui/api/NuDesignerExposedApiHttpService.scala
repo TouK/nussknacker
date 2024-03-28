@@ -1,5 +1,6 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
+import pl.touk.nussknacker.ui.api.BaseHttpService
 import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions

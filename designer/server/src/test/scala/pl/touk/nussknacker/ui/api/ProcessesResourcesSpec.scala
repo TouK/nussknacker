@@ -37,6 +37,7 @@ import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{Cu
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   CreatorPanel,
   ProcessActionsPanel,
+  SearchPanel,
   TipsPanel
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
@@ -737,7 +738,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
 
       forScenarioReturned(processName) { process =>
-        process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
+        process.lastActionType shouldBe Some(ScenarioActionName.Archive.toString)
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe true
       }
@@ -751,7 +752,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
 
       forScenarioReturned(processName) { process =>
-        process.lastActionType shouldBe Some(ProcessActionType.UnArchive.toString)
+        process.lastActionType shouldBe Some(ScenarioActionName.UnArchive.toString)
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe false
       }
@@ -950,6 +951,7 @@ class ProcessesResourcesSpec
       toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
+          ToolbarPanel(SearchPanel, None, None, None),
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)
         ),
