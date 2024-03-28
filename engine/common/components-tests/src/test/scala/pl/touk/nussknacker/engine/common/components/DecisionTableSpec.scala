@@ -39,51 +39,47 @@ trait DecisionTableSpec
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
-      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
-        val result = execute[TestMessage, SCENARIO_RESULT](
-          scenario = decisionTableExampleScenario(
-            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
-          ),
-          withData = List(
-            TestMessage(id = "1", minAge = 30),
-            TestMessage(id = "2", minAge = 18)
-          )
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
         )
+      )
 
-        inside(result) { case Validated.Valid(r) =>
-          r.errors should be(List.empty)
-          r.successes should be(
-            List(
-              rows(
-                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-              ),
-              rows(
-                rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
-                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-              )
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(
+          List(
+            rows(
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+            ),
+            rows(
+              rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
             )
           )
-        }
+        )
       }
     }
 
     "return proper typingResult as java list which allows to run method on" in {
-      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
-        val result = execute[TestMessage, SCENARIO_RESULT](
-          scenario = decisionTableExampleScenario(
-            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
-            sinkValueExpression = "#dtResult.size"
-          ),
-          withData = List(
-            TestMessage(id = "1", minAge = 30),
-            TestMessage(id = "2", minAge = 18)
-          )
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
+          sinkValueExpression = "#dtResult.size"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
         )
+      )
 
-        inside(result) { case Validated.Valid(r) =>
-          r.errors should be(List.empty)
-          r.successes should be(List(1, 2))
-        }
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(List(1, 2))
       }
     }
 
