@@ -2,20 +2,19 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment._
 
 class DeploymentComment private (value: String) {
 
-  def toComment(actionType: ProcessActionType): Comment = {
+  def toComment(actionName: ScenarioActionName): Comment = {
     // TODO: remove this prefixes after adding custom icons
-    val prefix = actionType match {
-      case ProcessActionType.Deploy => PrefixDeployedDeploymentComment
-      case ProcessActionType.Cancel => PrefixCanceledDeploymentComment
-      case _                        => throw new AssertionError(s"Not supported deployment action type: $actionType")
+    val prefix = actionName match {
+      case ScenarioActionName.Deploy => PrefixDeployedDeploymentComment
+      case ScenarioActionName.Cancel => PrefixCanceledDeploymentComment
+      case _                         => throw new AssertionError(s"Not supported deployment action: $actionName")
     }
     new Comment {
       override def value: String = prefix + DeploymentComment.this.value

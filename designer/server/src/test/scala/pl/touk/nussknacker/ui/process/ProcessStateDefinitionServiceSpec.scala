@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
@@ -159,8 +159,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   }
 
   private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]        = Map.empty
-    override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
+    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]         = Map.empty
+    override def statusActions(stateStatus: StateStatus): List[ScenarioActionName] = Nil
   }
 
   private def createProcessingTypeDataMap(

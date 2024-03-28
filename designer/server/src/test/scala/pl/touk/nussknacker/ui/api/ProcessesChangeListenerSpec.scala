@@ -6,7 +6,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -92,7 +92,7 @@ class ProcessesChangeListenerSpec
       comment
     ) ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
-        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Deploy) =>
+        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ScenarioActionName.Deploy) =>
       }
     }
   }
@@ -117,7 +117,7 @@ class ProcessesChangeListenerSpec
     ) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
       head should matchPattern {
-        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) =>
+        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ScenarioActionName.Cancel) =>
       }
     }
   }

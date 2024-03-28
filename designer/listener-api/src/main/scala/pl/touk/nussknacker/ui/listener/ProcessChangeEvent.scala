@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.listener
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 
 import java.time.Instant
@@ -27,7 +27,7 @@ object ProcessChangeEvent {
       version: VersionId,
       deploymentComment: Option[Comment],
       deployedAt: Instant,
-      action: ProcessActionType
+      actionName: ScenarioActionName
   ) extends ProcessChangeEvent
 
   final case class OnDeployActionFailed(processId: ProcessId, reason: Throwable) extends ProcessChangeEvent

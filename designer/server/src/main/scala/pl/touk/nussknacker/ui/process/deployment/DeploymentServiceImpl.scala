@@ -7,7 +7,7 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -70,7 +70,7 @@ class DeploymentServiceImpl(
       processId: ProcessIdWithName,
       comment: Option[String]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
-    val actionType = ProcessActionType.Cancel
+    val actionName = ScenarioActionName.Cancel
 
     for {
       // 1. common for all commands/actions
@@ -82,7 +82,7 @@ class DeploymentServiceImpl(
       _ <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[Unit](
         processId,
-        actionType,
+        actionName,
         p => p.lastDeployedAction.map(_.processVersionId),
         _ => None
       )
@@ -91,7 +91,7 @@ class DeploymentServiceImpl(
       command           = CancelScenarioCommand(processId.name, user.toManagerUser)
       // 3. common for all commands/actions
       _ = runActionAndHandleResults(
-        actionType,
+        actionName,
         deploymentComment,
         ctx
       ) {
@@ -111,14 +111,14 @@ class DeploymentServiceImpl(
       savepointPath: Option[String],
       comment: Option[String]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] = {
-    val actionType = ProcessActionType.Deploy
+    val actionName = ScenarioActionName.Deploy
 
     for {
       // 1. common for all commands/actions
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
         processId,
-        actionType,
+        actionName,
         p => Some(p.processVersionId),
         p => Some(p.processingType)
       )
@@ -137,7 +137,7 @@ class DeploymentServiceImpl(
         case Success(_) =>
           // we notify of deployment finish/fail only if initial validation succeeded
           val deploymentFuture = runActionAndHandleResults(
-            actionType,
+            actionName,
             validatedComment,
             ctx
           ) {
@@ -156,12 +156,11 @@ class DeploymentServiceImpl(
     */
   private def prepareCommandContextWithAction[PS: ScenarioShapeFetchStrategy](
       processId: ProcessIdWithName,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       getVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => Option[VersionId],
       getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    val actionName                                    = ScenarioActionName(actionType)
     dbioRunner.runInTransaction(
       for {
         // 1.1 TODO common parameter validations
@@ -176,13 +175,13 @@ class DeploymentServiceImpl(
         // 1.5. check if action is performed on proper scenario (not fragment, not archived)
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
         // 1.6. check if action is allowed for current state
-        inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-        processState          <- getProcessState(processDetails, inProgressActionTypes)
+        inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
+        processState          <- getProcessState(processDetails, inProgressActionNames)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         // 1.7. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
           processDetails.processId,
-          actionType,
+          actionName,
           versionOnWhichActionIsDone,
           buildInfoProcessingType
         )
@@ -262,12 +261,12 @@ class DeploymentServiceImpl(
       processDetails: ScenarioWithDetailsEntity[PS],
       ps: ProcessState
   )(implicit user: LoggedUser): Set[ScenarioActionName] = {
-    val actionsDefinedInState = ps.allowedActions.map(ScenarioActionName(_)).toSet
+    val actionsDefinedInState = ps.allowedActions.toSet
     val actionsDefinedInCustomActions = dispatcher
       .deploymentManagerUnsafe(processDetails.processingType)
       .customActionsDefinitions
       .collect {
-        case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
+        case a if a.allowedStateStatusNames.contains(ps.status.name) => a.actionName
       }
       .toSet
     actionsDefinedInState ++ actionsDefinedInCustomActions
@@ -299,14 +298,14 @@ class DeploymentServiceImpl(
   }
 
   private def runActionAndHandleResults[T, PS: ScenarioShapeFetchStrategy](
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       deploymentComment: Option[DeploymentComment],
       ctx: CommandContext[PS]
   )(runAction: => Future[T])(implicit user: LoggedUser, ec: ExecutionContext): Future[T] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionFuture                        = runAction
     val actionString =
-      s"${actionType.toString.toLowerCase} (id: ${ctx.actionId.value}) of ${ctx.latestScenarioDetails.name}"
+      s"${actionName.toString.toLowerCase} (id: ${ctx.actionId.value}) of ${ctx.latestScenarioDetails.name}"
     actionFuture.transformWith {
       case Failure(exception) =>
         logger.error(s"Action: $actionString finished with failure", exception)
@@ -318,7 +317,7 @@ class DeploymentServiceImpl(
             actionRepository.markActionAsFailed(
               ctx.actionId,
               ctx.latestScenarioDetails.processId,
-              actionType,
+              actionName,
               ctx.versionOnWhichActionIsDone,
               performedAt,
               exception.getMessage,
@@ -331,7 +330,7 @@ class DeploymentServiceImpl(
           .map { versionOnWhichActionIsDone =>
             logger.info(s"Finishing $actionString")
             val performedAt = clock.instant()
-            val comment     = deploymentComment.map(_.toComment(actionType))
+            val comment     = deploymentComment.map(_.toComment(actionName))
             // TODO: rename to OnActionSuccess
             processChangeListener.handle(
               OnDeployActionSuccess(
@@ -339,14 +338,14 @@ class DeploymentServiceImpl(
                 versionOnWhichActionIsDone,
                 comment,
                 performedAt,
-                actionType
+                actionName
               )
             )
             dbioRunner.runInTransaction(
               actionRepository.markActionAsFinished(
                 ctx.actionId,
                 ctx.latestScenarioDetails.processId,
-                actionType,
+                actionName,
                 versionOnWhichActionIsDone,
                 performedAt,
                 comment,
@@ -378,8 +377,8 @@ class DeploymentServiceImpl(
     dbioRunner.run(for {
       processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
-      inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionTypes)
+      inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
+      result                <- getProcessState(processDetails, inProgressActionNames)
     } yield result)
   }
 
@@ -387,8 +386,8 @@ class DeploymentServiceImpl(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
-      inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result                <- getProcessState(processDetails, inProgressActionTypes)
+      inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
+      result                <- getProcessState(processDetails, inProgressActionNames)
     } yield result)
   }
 
@@ -418,22 +417,22 @@ class DeploymentServiceImpl(
   // we do one call for all in progress action types for all scenarios
   private def getInProgressActionTypesForProcessTraverse[F[_]: Traverse](
       processTraverse: F[ScenarioWithDetails]
-  )(implicit ec: ExecutionContext): DB[Map[ProcessId, Set[ProcessActionType]]] = {
+  )(implicit ec: ExecutionContext): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
     processTraverse.toList match {
       case Nil => DBIO.successful(Map.empty)
       case head :: Nil =>
         actionRepository
-          .getInProgressActionTypes(head.processIdUnsafe)
-          .map(actionTypes => Map(head.processIdUnsafe -> actionTypes))
+          .getInProgressActionNames(head.processIdUnsafe)
+          .map(actionNames => Map(head.processIdUnsafe -> actionNames))
       case _ =>
         // We are getting only Deploy and Cancel InProgress actions as only these two impact ProcessState
-        actionRepository.getInProgressActionTypes(Set(Deploy, Cancel))
+        actionRepository.getInProgressActionNames(Set(Deploy, Cancel))
     }
   }
 
   private def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_],
-      inProgressActionTypes: Set[ProcessActionType]
+      inProgressActionNames: Set[ScenarioActionName]
   )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
     dispatcher
       .deploymentManager(processDetails.processingType)
@@ -442,12 +441,12 @@ class DeploymentServiceImpl(
           throw new FragmentStateException
         } else if (processDetails.isArchived) {
           getArchivedProcessState(processDetails)(manager)
-        } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
+        } else if (inProgressActionNames.contains(ScenarioActionName.Deploy)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
           DBIOAction.successful(
             manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.DuringDeploy, None))
           )
-        } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
+        } else if (inProgressActionNames.contains(ScenarioActionName.Cancel)) {
           logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
           DBIOAction.successful(
             manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.DuringCancel, None))
@@ -460,7 +459,7 @@ class DeploymentServiceImpl(
                 .map { statusWithFreshness =>
                   logger.debug(
                     s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction
-                        .map(_.actionType)})"
+                        .map(_.actionName)})"
                   )
                   statusWithFreshness.value
                 }
@@ -479,7 +478,7 @@ class DeploymentServiceImpl(
   private def getArchivedProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
   )(implicit manager: DeploymentManager) = {
-    processDetails.lastStateAction.map(a => (a.actionType, a.state)) match {
+    processDetails.lastStateAction.map(a => (a.actionName, a.state)) match {
       case Some((Cancel, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(
@@ -573,7 +572,7 @@ class DeploymentServiceImpl(
         _ <- validateExpectedProcessingType(expectedProcessingType, processId)
         lastStateAction <- actionRepository.getFinishedProcessActions(
           processId,
-          Some(ProcessActionType.StateActionsTypes)
+          Some(ScenarioActionName.StateActions)
         )
       } yield lastStateAction.headOption
     }
@@ -646,7 +645,7 @@ class DeploymentServiceImpl(
           loggedUser.toManagerUser,
           params
         )
-        customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
+        customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
         _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
