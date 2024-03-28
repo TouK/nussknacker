@@ -13,6 +13,7 @@ export const MARGIN_TOP = 7;
 export const CONTENT_PADDING = 10;
 export const iconBackgroundSize = RECT_HEIGHT;
 export const iconSize = iconBackgroundSize / 2;
+export const portSize = iconSize / 3;
 
 const background: dia.MarkupNodeJSON = {
     selector: "background",
@@ -75,7 +76,6 @@ const content = (theme: Theme): dia.MarkupNodeJSON => ({
     },
 });
 
-const portSize = iconSize / 3;
 const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
     selector: "port",
     tagName: "circle",
