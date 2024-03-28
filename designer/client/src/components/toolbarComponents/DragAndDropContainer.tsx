@@ -52,7 +52,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                             bottom: 0,
                             backdropFilter: "blur(0.5px)",
                             background: theme.palette.action.selected,
-                            outline: `3px dashed ${theme.palette.action.active}`,
+                            outline: `3px dashed ${theme.palette.common.white}`,
                             outlineOffset: -4,
 
                             [`.${DRAGGING_FROM_CLASSNAME} > &`]: {

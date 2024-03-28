@@ -74,6 +74,7 @@ export const nuTheme = createTheme({
         },
         action: {
             hover: alpha("#D2A8FF", 0.24),
+            active: alpha("#D2A8FF", 0.24),
         },
     },
     typography: (palette) => ({

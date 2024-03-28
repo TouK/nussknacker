@@ -101,11 +101,11 @@ export function Menu(): JSX.Element {
                 .filter((t) => !!t.title)
                 .map((tab) => (
                     <PlainLink
-                        className={css({
+                        sx={(theme) => ({
                             fontWeight: 400,
                             padding: ".8em 1.2em",
                             "&.active": {
-                                background: "rgba(0, 0, 0, 0.3)",
+                                background: theme.palette.action.active,
                             },
                         })}
                         key={tab.id}
