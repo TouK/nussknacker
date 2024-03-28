@@ -8,6 +8,7 @@ import org.apache.flink.api.java.typeutils.runtime.NullableSerializer
 
 import java.lang.reflect.Type
 import scala.reflect._
+import scala.reflect.runtime.universe._
 
 // Generic class factory for creating CaseClassTypeInfo
 abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfoFactory[T] with Serializable {
@@ -16,14 +17,26 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
       t: Type,
       genericParameters: java.util.Map[String, TypeInformation[_]]
   ): TypeInformation[T] = {
-    val tClass     = classTag[T].runtimeClass.asInstanceOf[Class[T]]
-    val fieldNames = tClass.getDeclaredFields.map(_.getName).toList
-    val fieldTypes = tClass.getDeclaredFields.map(_.getType).map(TypeExtractor.getForClass(_))
+    val runtimeClassType = classTag[T].runtimeClass
+    val mirror           = runtimeMirror(getClass.getClassLoader)
 
-    new CaseClassTypeInfo[T](tClass, Array.empty, fieldTypes.toIndexedSeq, fieldNames) {
+    val fields = mirror
+      .classSymbol(runtimeClassType)
+      .primaryConstructor
+      .asMethod
+      .paramLists
+      .head
+    val fieldNames = fields.map(_.name.decodedName.toString)
+    val fieldTypes = fields.map { field =>
+      val fieldClass = mirror.runtimeClass(field.typeSignature.typeSymbol.asClass)
+      TypeExtractor.getForClass(fieldClass)
+    }
+
+    val classType = runtimeClassType.asInstanceOf[Class[T]]
+    new CaseClassTypeInfo[T](classType, Array.empty, fieldTypes.toIndexedSeq, fieldNames) {
       override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
         new ScalaCaseClassSerializer[T](
-          tClass,
+          classType,
           fieldTypes.map(typeInfo => NullableSerializer.wrap(typeInfo.createSerializer(config), true)).toArray
         )
       }
