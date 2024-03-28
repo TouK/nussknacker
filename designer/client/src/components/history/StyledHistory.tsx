@@ -75,7 +75,11 @@ export const ProcessHistoryWrapper = styled("ul")`
     margin: 0;
 `;
 
-export const StyledBadge = styled(Badge)`
-    height: 1.2em;
-    margin: 0 1.2em;
-`;
+export const StyledBadge = styled(Badge)(({ theme }) => ({
+    color: theme.palette.getContrastText(theme.palette.primary.main),
+    height: "1.2em",
+    margin: "0 1.2em",
+    "path:first-of-type": {
+        fill: theme.palette.primary.main,
+    },
+}));
