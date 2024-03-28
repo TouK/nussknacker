@@ -602,7 +602,12 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActionsDefinitions.find(_.name == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExistingError(s"${actionName.value} doesn't exist"))
+        _ <- existsOrFail(
+          customActionOpt,
+          CustomActionNonExistingError(
+            s"Couldn't find definition of action ${actionName.value} for scenario ${processIdWithName.name} when trying to validate"
+          )
+        )
         validator = new CustomActionValidator(customActionOpt.get)
         // TODO: remove this validation prosthesis
         _ <- validateActionCommand(actionCommand, validator)

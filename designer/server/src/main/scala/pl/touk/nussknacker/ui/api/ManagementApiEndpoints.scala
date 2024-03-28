@@ -47,11 +47,11 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
         oneOf[ManagementApiError](
           oneOfVariantFromMatchType(
             StatusCode.NotFound,
-            jsonBody[NoScenario]
+            plainBody[NoScenario]
           ),
           oneOfVariantFromMatchType(
             StatusCode.NotFound,
-            jsonBody[NoActionDefinition]
+            plainBody[NoActionDefinition]
           ),
         )
       )
@@ -67,28 +67,19 @@ object ManagementApiEndpoints {
 
   sealed trait ManagementApiError
 
-  // GSK: Here we have definitions of what might go wrong in "ManagementApiEndpoints".
-  // Those classes/trait are in the scope of endpoint, not the scope of validation.
-  // Validation has its own errors ("validation errors") and they are transformed into ManagementApiError ("endpoint errors").
-  // Now we have customaction validation, but we want to get all endpoints from old ManagementResources (akka).
-  // NoPermission is copied from NodesError.
   object ManagementApiError {
     final case object NoPermission                         extends ManagementApiError with CustomAuthorizationError
     final case class NoScenario(scenarioName: ProcessName) extends ManagementApiError
     final case class NoActionDefinition(scenarioName: ProcessName, actionName: ScenarioActionName)
         extends ManagementApiError
 
-    // GSK: This is temporary, to handle either transfromations in CustomActionValidator. We want to define specific exceptions, this is too generic.
-    final case object SomethingWentWrong extends ManagementApiError
-
-    // GSK: copied from NodesError
     private def deserializationNotSupportedException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
       Codec.string.map(
         Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
-          s"No scenario ${e.scenarioName} found"
+          s"Couldn't find ${e.scenarioName} when trying to validate action"
         )
       )
     }
@@ -96,7 +87,7 @@ object ManagementApiEndpoints {
     implicit val noActionDefinitionCodec: Codec[String, NoActionDefinition, CodecFormat.TextPlain] = {
       Codec.string.map(
         Mapping.from[String, NoActionDefinition](deserializationNotSupportedException)(e =>
-          s"No definition of action ${e.actionName} for scenario ${e.scenarioName} found"
+          s"Couldn't find definition of action ${e.actionName} for scenario ${e.scenarioName} when trying to validate"
         )
       )
     }
