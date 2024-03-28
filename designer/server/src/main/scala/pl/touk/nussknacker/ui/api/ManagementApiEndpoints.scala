@@ -42,8 +42,6 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
         )
       )
       .errorOut(
-        // GSK: Here I can specify what can go wrong in this particular endpoint
-        // using group of ManagementApiError dedicated for ManagementApiEndpoints
         oneOf[ManagementApiError](
           oneOfVariantFromMatchType(
             StatusCode.NotFound,
