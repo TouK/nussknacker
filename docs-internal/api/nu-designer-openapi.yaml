@@ -458,13 +458,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomActionValidationResult'
+                $ref: '#/components/schemas/CustomActionValidationDto'
         '400':
-          description: ''
+          description: 'Invalid value for: body'
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/CustomActionValidationError'
+                type: string
         '401':
           description: ''
           content:
@@ -486,6 +486,12 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
       security:
       - {}
       - httpAuth: []
@@ -1273,22 +1279,6 @@ components:
         createDate:
           type: string
           format: date-time
-    BlankParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
     BoolParameterEditor:
       type: object
     BranchEndData:
@@ -1490,30 +1480,27 @@ components:
           $ref: '#/components/schemas/ProcessAction'
     CronParameterEditor:
       type: object
-    CustomActionNonExistingError:
-      required:
-      - message
-      type: object
-      properties:
-        message:
-          type: string
     CustomActionRequest:
       required:
       - actionName
+      - params
       type: object
       properties:
         actionName:
           type: string
         params:
           $ref: '#/components/schemas/Map_String'
-    CustomActionValidationError:
-      oneOf:
-      - $ref: '#/components/schemas/CustomActionNonExistingError'
-      - $ref: '#/components/schemas/MismatchedParamsError'
-    CustomActionValidationResult:
-      oneOf:
-      - $ref: '#/components/schemas/Invalid'
-      - $ref: '#/components/schemas/Valid'
+    CustomActionValidationDto:
+      required:
+      - validationPerformed
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
     CustomNode:
       required:
       - id
@@ -1534,22 +1521,6 @@ components:
             $ref: '#/components/schemas/Parameter'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    CustomParameterValidationError:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
     DataToRefresh:
       type: string
       enum:
@@ -1570,79 +1541,6 @@ components:
           type: string
         valueType:
           $ref: '#/components/schemas/TypedTaggedValue'
-    DictEntryWithKeyNotExists:
-      required:
-      - dictId
-      - key
-      - nodeId
-      - paramName
-      type: object
-      properties:
-        dictId:
-          type: string
-        key:
-          type: string
-        possibleKeys:
-          type:
-          - array
-          - 'null'
-          items:
-            type: string
-        nodeId:
-          type: string
-        paramName:
-          type: string
-    DictEntryWithLabelNotExists:
-      required:
-      - dictId
-      - label
-      - nodeId
-      - paramName
-      type: object
-      properties:
-        dictId:
-          type: string
-        label:
-          type: string
-        possibleLabels:
-          type:
-          - array
-          - 'null'
-          items:
-            type: string
-        nodeId:
-          type: string
-        paramName:
-          type: string
-    DictLabelByKeyResolutionFailed:
-      required:
-      - dictId
-      - key
-      - nodeId
-      - paramName
-      type: object
-      properties:
-        dictId:
-          type: string
-        key:
-          type: string
-        nodeId:
-          type: string
-        paramName:
-          type: string
-    DictNotDeclared:
-      required:
-      - dictId
-      - nodeId
-      - paramName
-      type: object
-      properties:
-        dictId:
-          type: string
-        nodeId:
-          type: string
-        paramName:
-          type: string
     DictParameterEditor:
       required:
       - dictId
@@ -1684,16 +1582,6 @@ components:
           $ref: '#/components/schemas/SimpleParameterEditor'
         defaultMode:
           type: string
-    DuplicateFragmentInputParameter:
-      required:
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        paramName:
-          type: string
-        nodeId:
-          type: string
     DurationParameterEditor:
       type: object
       properties:
@@ -1720,22 +1608,6 @@ components:
       - $ref: '#/components/schemas/FragmentOutput'
       - $ref: '#/components/schemas/NextSwitch'
       - $ref: '#/components/schemas/SwitchDefault'
-    EmptyMandatoryParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
     Enricher:
       required:
       - id
@@ -1763,43 +1635,6 @@ components:
         language:
           type: string
         expression:
-          type: string
-    ExpressionParserCompilationError:
-      required:
-      - message
-      - nodeId
-      - originalExpr
-      type: object
-      properties:
-        message:
-          type: string
-        nodeId:
-          type: string
-        fieldName:
-          type:
-          - string
-          - 'null'
-        originalExpr:
-          type: string
-    ExpressionParserCompilationErrorInFragmentDefinition:
-      required:
-      - message
-      - nodeId
-      - paramName
-      - originalExpr
-      type: object
-      properties:
-        message:
-          type: string
-        nodeId:
-          type: string
-        paramName:
-          type: string
-        subFieldName:
-          type:
-          - string
-          - 'null'
-        originalExpr:
           type: string
     ExpressionSuggestionDto:
       required:
@@ -1958,19 +1793,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Field'
-    FragmentParamClassLoadError:
-      required:
-      - fieldName
-      - refClazzName
-      - nodeId
-      type: object
-      properties:
-        fieldName:
-          type: string
-        refClazzName:
-          type: string
-        nodeId:
-          type: string
     FragmentParameter:
       required:
       - name
@@ -2032,22 +1854,6 @@ components:
           $ref: '#/components/schemas/FragmentOutputVarDefinition'
         additionalFields:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
-    GreaterThanRequiredParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
     HealthCheckProcessErrorResponseDto:
       required:
       - status
@@ -2082,91 +1888,6 @@ components:
           - 'null'
           items:
             type: string
-    InitialValueNotPresentInPossibleValues:
-      required:
-      - paramName
-      type: object
-      properties:
-        paramName:
-          type: string
-        nodeIds:
-          type: array
-          items:
-            type: string
-    Invalid:
-      required:
-      - errorMap
-      type: object
-      properties:
-        errorMap:
-          $ref: '#/components/schemas/Map_List_PartSubGraphCompilationError'
-    InvalidIntegerLiteralParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
-    InvalidPropertyFixedValue:
-      required:
-      - paramName
-      - value
-      - nodeId
-      type: object
-      properties:
-        paramName:
-          type: string
-        label:
-          type:
-          - string
-          - 'null'
-        value:
-          type: string
-        values:
-          type: array
-          items:
-            type: string
-        nodeId:
-          type: string
-    InvalidValidationExpression:
-      required:
-      - message
-      - nodeId
-      - paramName
-      - originalExpr
-      type: object
-      properties:
-        message:
-          type: string
-        nodeId:
-          type: string
-        paramName:
-          type: string
-        originalExpr:
-          type: string
-    InvalidVariableName:
-      required:
-      - name
-      - nodeId
-      type: object
-      properties:
-        name:
-          type: string
-        nodeId:
-          type: string
-        paramName:
-          type:
-          - string
-          - 'null'
     Join:
       required:
       - id
@@ -2193,38 +1914,6 @@ components:
           $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
     JsonParameterEditor:
       type: object
-    JsonRequiredParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
-    KeyWithLabelExpressionParsingError:
-      required:
-      - keyWithLabel
-      - message
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        keyWithLabel:
-          type: string
-        message:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
     LayoutData:
       required:
       - x
@@ -2237,34 +1926,12 @@ components:
         y:
           type: integer
           format: int64
-    LowerThanRequiredParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
     Map_EngineSetupName_List_String:
       type: object
       additionalProperties:
         type: array
         items:
           type: string
-    Map_List_PartSubGraphCompilationError:
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: '#/components/schemas/PartSubGraphCompilationError'
     Map_List_String:
       type: object
       additionalProperties:
@@ -2297,64 +1964,6 @@ components:
       type: object
       properties:
         content:
-          type: string
-    MismatchParameter:
-      required:
-      - message
-      - description
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        message:
-          type: string
-        description:
-          type: string
-        paramName:
-          type: string
-        nodeId:
-          type: string
-    MismatchedParamsError:
-      required:
-      - message
-      type: object
-      properties:
-        message:
-          type: string
-    MissingParameters:
-      required:
-      - nodeId
-      type: object
-      properties:
-        params:
-          type: array
-          items:
-            type: string
-        nodeId:
-          type: string
-    MissingRequiredProperty:
-      required:
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        paramName:
-          type: string
-        label:
-          type:
-          - string
-          - 'null'
-        nodeId:
-          type: string
-    MissingService:
-      required:
-      - serviceId
-      - nodeId
-      type: object
-      properties:
-        serviceId:
-          type: string
-        nodeId:
           type: string
     NextSwitch:
       required:
@@ -2451,16 +2060,6 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
-    NotSupportedExpressionLanguage:
-      required:
-      - languageId
-      - nodeId
-      type: object
-      properties:
-        languageId:
-          type: string
-        nodeId:
-          type: string
     Notification:
       required:
       - id
@@ -2487,20 +2086,6 @@ components:
       - info
       - success
       - error
-    OverwrittenVariable:
-      required:
-      - variableName
-      - nodeId
-      type: object
-      properties:
-        variableName:
-          type: string
-        nodeId:
-          type: string
-        paramName:
-          type:
-          - string
-          - 'null'
     Parameter:
       required:
       - name
@@ -2573,40 +2158,6 @@ components:
             $ref: '#/components/schemas/NodeValidationError'
         validationPerformed:
           type: boolean
-    PartSubGraphCompilationError:
-      oneOf:
-      - $ref: '#/components/schemas/BlankParameter'
-      - $ref: '#/components/schemas/CustomParameterValidationError'
-      - $ref: '#/components/schemas/DictEntryWithKeyNotExists'
-      - $ref: '#/components/schemas/DictEntryWithLabelNotExists'
-      - $ref: '#/components/schemas/DictLabelByKeyResolutionFailed'
-      - $ref: '#/components/schemas/DictNotDeclared'
-      - $ref: '#/components/schemas/DuplicateFragmentInputParameter'
-      - $ref: '#/components/schemas/EmptyMandatoryParameter'
-      - $ref: '#/components/schemas/ExpressionParserCompilationError'
-      - $ref: '#/components/schemas/ExpressionParserCompilationErrorInFragmentDefinition'
-      - $ref: '#/components/schemas/FragmentParamClassLoadError'
-      - $ref: '#/components/schemas/GreaterThanRequiredParameter'
-      - $ref: '#/components/schemas/InitialValueNotPresentInPossibleValues'
-      - $ref: '#/components/schemas/InvalidIntegerLiteralParameter'
-      - $ref: '#/components/schemas/InvalidPropertyFixedValue'
-      - $ref: '#/components/schemas/InvalidValidationExpression'
-      - $ref: '#/components/schemas/InvalidVariableName'
-      - $ref: '#/components/schemas/JsonRequiredParameter'
-      - $ref: '#/components/schemas/KeyWithLabelExpressionParsingError'
-      - $ref: '#/components/schemas/LowerThanRequiredParameter'
-      - $ref: '#/components/schemas/MismatchParameter'
-      - $ref: '#/components/schemas/MissingParameters'
-      - $ref: '#/components/schemas/MissingRequiredProperty'
-      - $ref: '#/components/schemas/MissingService'
-      - $ref: '#/components/schemas/NotSupportedExpressionLanguage'
-      - $ref: '#/components/schemas/OverwrittenVariable'
-      - $ref: '#/components/schemas/RedundantParameters'
-      - $ref: '#/components/schemas/RequireValueFromEmptyFixedList'
-      - $ref: '#/components/schemas/UnknownProperty'
-      - $ref: '#/components/schemas/UnresolvedFragment'
-      - $ref: '#/components/schemas/UnsupportedFixedValuesType'
-      - $ref: '#/components/schemas/WrongParameters'
     PeriodParameterEditor:
       type: object
       properties:
@@ -2748,28 +2299,6 @@ components:
           $ref: '#/components/schemas/ProcessName'
     RawParameterEditor:
       type: object
-    RedundantParameters:
-      required:
-      - nodeId
-      type: object
-      properties:
-        params:
-          type: array
-          items:
-            type: string
-        nodeId:
-          type: string
-    RequireValueFromEmptyFixedList:
-      required:
-      - paramName
-      type: object
-      properties:
-        paramName:
-          type: string
-        nodeIds:
-          type: array
-          items:
-            type: string
     ScenarioActivity:
       type: object
       properties:
@@ -3121,37 +2650,6 @@ components:
     Unknown:
       title: Unknown
       type: object
-    UnknownProperty:
-      required:
-      - paramName
-      - nodeId
-      type: object
-      properties:
-        paramName:
-          type: string
-        nodeId:
-          type: string
-    UnresolvedFragment:
-      required:
-      - nodeId
-      type: object
-      properties:
-        nodeId:
-          type: string
-    UnsupportedFixedValuesType:
-      required:
-      - paramName
-      - typ
-      type: object
-      properties:
-        paramName:
-          type: string
-        typ:
-          type: string
-        nodeIds:
-          type: array
-          items:
-            type: string
     UserDefinedAdditionalNodeFields:
       type: object
       properties:
@@ -3161,8 +2659,6 @@ components:
           - 'null'
         layoutData:
           $ref: '#/components/schemas/LayoutData'
-    Valid:
-      type: object
     ValueInputWithFixedValues:
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
@@ -3216,21 +2712,6 @@ components:
         value:
           type: integer
           format: int64
-    WrongParameters:
-      required:
-      - nodeId
-      type: object
-      properties:
-        requiredParameters:
-          type: array
-          items:
-            type: string
-        passedParameters:
-          type: array
-          items:
-            type: string
-        nodeId:
-          type: string
   securitySchemes:
     httpAuth:
       type: http
