@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation.NullComponent
+import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation.FakeComponentWithAllowedProcessingModesSpecified
 import pl.touk.nussknacker.engine.definition.component.{
   ComponentDefinitionWithImplementation,
   ComponentImplementationInvoker,
@@ -32,7 +32,7 @@ object FragmentComponentDefinition {
     MethodBasedComponentDefinitionWithImplementation(
       name = name,
       implementationInvoker = implementationInvoker,
-      component = new NullComponent(allowedProcessingModes),
+      component = new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
       componentTypeSpecificData = FragmentSpecificData(outputNames),
       staticDefinition = ComponentStaticDefinition(
         parameters,

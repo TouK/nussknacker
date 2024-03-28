@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import cats.data.NonEmptySet
+import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component._
@@ -47,14 +46,14 @@ object MethodBasedComponentDefinitionWithImplementation {
     MethodBasedComponentDefinitionWithImplementation(
       name,
       ComponentImplementationInvoker.nullReturningComponentImplementationInvoker,
-      new NullComponent(allowedProcessingModes),
+      new FakeComponentWithAllowedProcessingModesSpecified(allowedProcessingModes),
       componentTypeSpecificData,
       staticDefinition,
       uiDefinition
     )
   }
 
-  // FIXME: private
-  class NullComponent(override val allowedProcessingModes: AllowedProcessingModes) extends Component
+  class FakeComponentWithAllowedProcessingModesSpecified(override val allowedProcessingModes: AllowedProcessingModes)
+      extends Component
 
 }
