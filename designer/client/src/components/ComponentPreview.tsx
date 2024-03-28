@@ -5,7 +5,7 @@ import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
-import { styled, useTheme } from "@mui/material";
+import { alpha, styled, useTheme } from "@mui/material";
 import { blendLighten } from "../containers/theme/nuTheme";
 import { blend } from "@mui/system";
 
@@ -19,7 +19,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
         borderRadius: BORDER_RADIUS,
         boxSizing: "content-box",
         display: "inline-flex",
-        filter: "drop-shadow(0 4px 8px rgba(0,0,0,.5))",
+        filter: `drop-shadow(0 4px 8px ${alpha(theme.palette.common.black, 0.5)})`,
         borderWidth: 2,
         borderStyle: "solid",
         transformOrigin: "80% 50%",
