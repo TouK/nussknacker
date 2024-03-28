@@ -59,7 +59,7 @@ class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
 }
 
 @derive(schema, encoder)
-final case class CustomActionValidationDto(errors: List[NodeValidationError], validationPerformed: Boolean)
+final case class CustomActionValidationDto(validationErrors: List[NodeValidationError], validationPerformed: Boolean)
 
 object ManagementApiEndpoints {
 

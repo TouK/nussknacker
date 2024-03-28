@@ -498,7 +498,7 @@ class HttpService {
 
     validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
         return api
-            .post(`/proceessManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
+            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
             .then((res) => res.data)
             .catch((error) => {
                 this.#addError(
