@@ -1,25 +1,17 @@
 import React from "react";
-import { styled } from "@mui/material";
+import { Theme, useTheme } from "@mui/material";
 import { Subtype } from "./Subtype";
 import { Docs } from "./Docs";
+import { blendLighten } from "../../../../containers/theme/nuTheme";
 
-const SubtypeHeaderDocs = styled(Docs)`
-    background: #3a3a3a !important;
-    height: 30px;
-    &:hover {
-        background-color: #585858 !important;
-    }
-`;
-
-const SubtypeHeaderDocsLink = {
-    color: "#ffffff !important",
-    background: "#3a3a3a",
+const SubtypeHeaderDocsLink = (theme: Theme) => ({
+    backgroundColor: blendLighten(theme.palette.background.paper, 0.1),
     padding: "0 10px",
     height: "30px",
     alignItems: "center",
     textDecoration: "none",
     display: "flex",
-};
+});
 
 enum HeaderType {
     SUBTYPE_DOCS,
@@ -41,20 +33,22 @@ const getModalHeaderType = (docsUrl?: string, nodeClass?: string) => {
 };
 
 export const NodeClassDocs = ({ nodeClass, docsUrl }: { nodeClass?: string; docsUrl?: string }) => {
+    const theme = useTheme();
+
     switch (getModalHeaderType(docsUrl, nodeClass)) {
         case HeaderType.SUBTYPE_DOCS:
             return (
-                <SubtypeHeaderDocs docsUrl={docsUrl} style={SubtypeHeaderDocsLink}>
+                <Docs docsUrl={docsUrl} style={SubtypeHeaderDocsLink(theme)}>
                     {nodeClass}
-                </SubtypeHeaderDocs>
+                </Docs>
             );
         case HeaderType.SUBTYPE:
             return <Subtype>{nodeClass}</Subtype>;
         case HeaderType.DOCS:
             return (
-                <SubtypeHeaderDocs docsUrl={docsUrl} style={SubtypeHeaderDocsLink}>
+                <Docs docsUrl={docsUrl} style={SubtypeHeaderDocsLink(theme)}>
                     {nodeClass}
-                </SubtypeHeaderDocs>
+                </Docs>
             );
         default:
             return null;

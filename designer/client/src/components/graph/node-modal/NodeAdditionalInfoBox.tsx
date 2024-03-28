@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { getProcessName } from "./NodeDetailsContent/selectors";
 import NodeUtils from "../NodeUtils";
 import { styled } from "@mui/material";
+import { blendLighten } from "../../../containers/theme/nuTheme";
 
 interface Props {
     node: NodeType;
@@ -20,27 +21,26 @@ interface MarkdownAdditionalInfo {
     content: string;
 }
 
-const ReactMarkdownStyled = styled(ReactMarkdown)`
-    margin-top: 20px;
-    margin-bottom: 10px;
-    font-size: 14px;
-    table {
-        background-color: #333;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        width: 95%;
-    }
-    th,
-    td {
-        padding: 10px 10px;
-        border: 1px solid;
-        border-color: #666;
-        font-size: 12px;
-    }
-    a {
-        color: #359af1 !important;
-    }
-`;
+const ReactMarkdownStyled = styled(ReactMarkdown)(({ theme }) => ({
+    ...theme.typography.body2,
+    marginTop: theme.spacing(1.5),
+    marginBottom: theme.spacing(1.25),
+    table: {
+        backgroundColor: theme.palette.background.paper,
+        marginTop: theme.spacing(0.5),
+        marginBottom: theme.spacing(0.5),
+        width: "95%",
+    },
+    "th, td": {
+        padding: theme.spacing(1.25),
+        border: "1px solid",
+        borderColor: blendLighten(theme.palette.background.paper, 0.25),
+        fontSize: "12px",
+    },
+    a: {
+        color: `${theme.palette.primary.main} !important`,
+    },
+}));
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const { node } = props;
