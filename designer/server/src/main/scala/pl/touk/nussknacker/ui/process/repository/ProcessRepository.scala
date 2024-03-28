@@ -175,7 +175,7 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
       json = Some(canonicalProcess),
       createDate = Timestamp.from(now),
       user = userName,
-      modelVersion = modelVersion.forType(processingType),
+      modelVersion = modelVersion.forProcessingType(processingType),
       componentsUsages = Some(ScenarioComponentsUsagesHelper.compute(canonicalProcess)),
     )
 

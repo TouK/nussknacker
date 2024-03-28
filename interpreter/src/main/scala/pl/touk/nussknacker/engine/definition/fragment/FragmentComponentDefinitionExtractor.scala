@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.data.Validated
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,
@@ -24,6 +25,7 @@ class FragmentComponentDefinitionExtractor(
 
   def extractFragmentComponentDefinition(
       fragment: CanonicalProcess,
+      allowedProcessingModes: AllowedProcessingModes
   ): Validated[FragmentDefinitionError, ComponentDefinitionWithImplementation] = {
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
@@ -40,6 +42,7 @@ class FragmentComponentDefinitionExtractor(
         docsUrl = docsUrl,
         translateGroupName = translateGroupName,
         designerWideId = componentId,
+        allowedProcessingModes = allowedProcessingModes,
       )
     }
   }

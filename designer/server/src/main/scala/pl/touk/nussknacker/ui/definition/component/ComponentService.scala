@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.api.component.{ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -126,7 +126,6 @@ class DefaultComponentService(
       .map { definition =>
         val designerWideId = definition.designerWideId
         val links          = createComponentLinks(designerWideId, definition)
-
         ComponentListElement(
           id = designerWideId,
           name = definition.name,
@@ -135,7 +134,8 @@ class DefaultComponentService(
           componentGroupName = definition.componentGroup,
           categories = List(category),
           links = links,
-          usageCount = -1 // It will be enriched in the next step, after merge of components definitions
+          usageCount = -1, // It will be enriched in the next step, after merge of components definitions
+          allowedProcessingModes = definition.allowedProcessingModes
         )
       }
   }

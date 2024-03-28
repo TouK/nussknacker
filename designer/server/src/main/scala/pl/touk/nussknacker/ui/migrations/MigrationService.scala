@@ -75,7 +75,7 @@ class MigrationService(
 
       validation <-
         processResolver
-          .forTypeE(processingType) match {
+          .forProcessingTypeE(processingType) match {
           case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
           case Right(uiProcessResolverO) =>
             uiProcessResolverO match {

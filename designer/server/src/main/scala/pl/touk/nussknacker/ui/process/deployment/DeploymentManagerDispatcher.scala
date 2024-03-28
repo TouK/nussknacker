@@ -20,11 +20,11 @@ class DeploymentManagerDispatcher(
   }
 
   def deploymentManager(processingType: ProcessingType)(implicit user: LoggedUser): Option[DeploymentManager] = {
-    managers.forType(processingType)
+    managers.forProcessingType(processingType)
   }
 
   def deploymentManagerUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): DeploymentManager = {
-    managers.forTypeUnsafe(processingType)
+    managers.forProcessingTypeUnsafe(processingType)
   }
 
 }

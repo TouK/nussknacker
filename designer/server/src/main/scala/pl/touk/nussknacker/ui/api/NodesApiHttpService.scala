@@ -14,8 +14,25 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoPermission, NoProcessingType, NoScenario}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationRequest, NodeValidationRequestDto, NodeValidationResult, NodeValidationResultDto, NodesError, ParametersValidationRequest, ParametersValidationRequestDto, ParametersValidationResultDto, decodeVariableTypes, prepareTypingResultDecoder}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoPermission,
+  NoProcessingType,
+  NoScenario
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  ExpressionSuggestionDto,
+  NodeValidationRequest,
+  NodeValidationRequestDto,
+  NodeValidationResult,
+  NodeValidationResultDto,
+  NodesError,
+  ParametersValidationRequest,
+  ParametersValidationRequestDto,
+  ParametersValidationResultDto,
+  decodeVariableTypes,
+  prepareTypingResultDecoder
+}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -70,7 +87,7 @@ class NodesApiHttpService(
             scenarioId <- getScenarioIdByName(scenarioName)
             scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
             modelData  <- getModelData(scenario.processingType)
-            nodeValidator = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
+            nodeValidator = typeToNodeValidator.forProcessingTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
             validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
             validationDto = NodeValidationResultDto.apply(validation)
@@ -108,7 +125,7 @@ class NodesApiHttpService(
             scenarioWithDetails <- getScenarioWithDetails(scenarioId, scenarioName)
             scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
             result = typeToProcessValidator
-              .forTypeUnsafe(scenarioWithDetails.processingType)
+              .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
               .validate(scenario, request.name, scenarioWithDetails.isFragment)
             validation = NodeValidationResultDto(
               parameters = None,
@@ -128,7 +145,7 @@ class NodesApiHttpService(
         { case (processingType, request) =>
           for {
             modelData <- getModelData(processingType)
-            validator = typeToParametersValidator.forTypeUnsafe(processingType)
+            validator = typeToParametersValidator.forProcessingTypeUnsafe(processingType)
             requestWithTypingResult <- dtoToParameterRequest(request, modelData)
             validationResults = validator.validate(requestWithTypingResult)
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
@@ -143,7 +160,7 @@ class NodesApiHttpService(
         { case (processingType, request) =>
           for {
             modelData <- getModelData(processingType)
-            expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
+            expressionSuggester = typeToExpressionSuggester.forProcessingTypeUnsafe(processingType)
             suggestions   <- getSuggestions(expressionSuggester, request, modelData)
             suggestionDto <- getExpressionSuggestion(suggestions)
           } yield suggestionDto
@@ -185,7 +202,7 @@ class NodesApiHttpService(
 
   private def getModelData(processingType: ProcessingType)(implicit user: LoggedUser) = {
     Future(
-      Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map {
+      Try(typeToConfig.forProcessingTypeUnsafe(processingType)).toEither.left.map {
         case _: IllegalArgumentException =>
           NoProcessingType(processingType)
         case _: UnauthorizedError =>

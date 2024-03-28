@@ -104,7 +104,7 @@ class AutomaticMigration(
   )(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     DBIOAction
       .sequenceOption(for {
-        migrator        <- migrators.forType(processDetails.processingType)
+        migrator        <- migrators.forProcessingType(processDetails.processingType)
         migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
         updateAction = migrationResult.toUpdateAction(processDetails.processId)
       } yield {

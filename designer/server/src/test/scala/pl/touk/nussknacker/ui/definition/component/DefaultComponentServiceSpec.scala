@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -8,7 +9,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.{ProcessingMode, _}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._
@@ -331,7 +333,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       availableCategories,
       links,
-      usageCount
+      usageCount,
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
     )
   }
 
@@ -341,7 +344,19 @@ class DefaultComponentServiceSpec
     val designerWideComponentId = cid(ProcessingTypeStreaming, componentId)
     val icon                    = DefaultsComponentIcon.fromComponentId(componentId, None)
     val links                   = createLinks(designerWideComponentId, componentId)
-    List(ComponentListElement(designerWideComponentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
+    List(
+      ComponentListElement(
+        designerWideComponentId,
+        cat,
+        icon,
+        Fragment,
+        FragmentsGroupName,
+        List(cat),
+        links,
+        0,
+        AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      )
+    )
   }
 
   private val fragmentFraudComponents: List[ComponentListElement] = {
@@ -358,7 +373,8 @@ class DefaultComponentServiceSpec
         FragmentsGroupName,
         List(cat),
         links,
-        0
+        0,
+        AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
       )
     )
   }
@@ -415,7 +431,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       categories,
       links,
-      usageCount
+      usageCount,
+      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
     )
   }
 
@@ -436,7 +453,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       categories,
       links,
-      0
+      0,
+      AllowedProcessingModes.All
     )
   }
 
@@ -776,7 +794,7 @@ class DefaultComponentServiceSpec
       ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
-        processingTypeData.designerModelData.modelData
+        processingTypeData.designerModelData
       )
       ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
     }

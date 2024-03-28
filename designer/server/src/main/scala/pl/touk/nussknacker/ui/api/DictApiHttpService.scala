@@ -34,7 +34,7 @@ class DictApiHttpService(
       .serverLogic { implicit loggedUser: LoggedUser => queryParams =>
         val (processingType, dictId, labelPattern) = queryParams
 
-        processingTypeData.forType(processingType) match {
+        processingTypeData.forProcessingType(processingType) match {
           case Some((dictQueryService, _, _)) =>
             dictQueryService.queryEntriesByLabel(dictId, labelPattern) match {
               case Valid(dictEntries)          => dictEntries.map(success)
@@ -52,7 +52,7 @@ class DictApiHttpService(
       .serverLogic { implicit loggedUser: LoggedUser => queryParams =>
         val (processingType, dictListRequestDto) = queryParams
 
-        processingTypeData.forType(processingType) match {
+        processingTypeData.forProcessingType(processingType) match {
           case Some((_, dictionaries, classLoader)) =>
             val decoder = new TypingResultDecoder(ClassUtils.forName(_, classLoader)).decodeTypingResults
 

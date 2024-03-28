@@ -94,7 +94,7 @@ class ProcessesExportResources(
       processName: ProcessName,
       isFragment: Boolean
   )(implicit user: LoggedUser): HttpResponse = {
-    val processResolver = processResolvers.forTypeUnsafe(processingType)
+    val processResolver = processResolvers.forProcessingTypeUnsafe(processingType)
     val resolvedProcess = processResolver.validateAndResolve(processWithDictLabels, processName, isFragment)
     fileResponse(resolvedProcess)
   }
