@@ -22,8 +22,9 @@ import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValida
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
-import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
+import pl.touk.nussknacker.engine.graph.EdgeType
+import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => EvaluatedParameter}
+import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
@@ -94,11 +95,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 ServiceRef(
                   "paramService",
                   List(
-                    evaluatedparam.Parameter(ParameterName("id"), Expression(Language.Spel, "'a'"))
+                    EvaluatedParameter(ParameterName("id"), Expression(Language.Spel, "'a'"))
                   )
                 ),
                 "out",
-                None
+                additionalFields = None
               )
             )
           )
@@ -134,33 +135,41 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
           .examples(
             List(
               Example.of(
-                NodeValidationRequestDto(
+                value = NodeValidationRequestDto(
                   Filter("id", Expression(Language.Spel, "#longValue > 1"), None, None),
                   ProcessProperties.apply(ProcessAdditionalFields(None, Map.empty, "")),
                   Map(
                     "existButString" -> TypingResultInJson(
-                      encoder.apply(Typed.apply(Class.forName("java.lang.String")))
+                      encoder.apply(Typed[java.lang.String])
                     ),
-                    "longValue" -> TypingResultInJson(encoder.apply(Typed.apply(Class.forName("java.lang.Long"))))
+                    "longValue" -> TypingResultInJson(encoder.apply(Typed[java.lang.Long]))
                   ),
-                  None,
-                  None
+                  branchVariableTypes = None,
+                  outgoingEdges = None
                 ),
                 summary = Some("Validate correct Filter node")
               ),
               Example.of(
                 NodeValidationRequestDto(
-                  Filter("id", Expression(Language.Spel, "#existButString"), None, None),
-                  ProcessProperties.apply(ProcessAdditionalFields(None, Map.empty, "")),
+                  Filter(
+                    "id",
+                    Expression(Language.Spel, "#existButString"),
+                    isDisabled = None,
+                    additionalFields = None
+                  ),
+                  ProcessProperties.apply(
+                    ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "")
+                  ),
                   Map(
                     "existButString" -> TypingResultInJson(
-                      encoder.apply(Typed.apply(Class.forName("java.lang.String")))
+                      encoder.apply(Typed[java.lang.String])
                     ),
-                    "longValue" -> TypingResultInJson(encoder.apply(Typed.apply(Class.forName("java.lang.Long"))))
+                    "longValue" -> TypingResultInJson(encoder.apply(Typed[java.lang.Long]))
                   ),
-                  None,
-                  None
-                )
+                  branchVariableTypes = None,
+                  outgoingEdges = None
+                ),
+                summary = Some("Validate incorrect Filter node - wrong expression type")
               )
             )
           )
@@ -173,16 +182,16 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 Example.of(
                   summary = Some("Node validation without errors"),
                   value = NodeValidationResultDto(
-                    None,
-                    Some(Typed.apply(Class.forName("java.lang.Boolean"))),
-                    List.empty,
+                    parameters = None,
+                    Some(Typed[java.lang.Boolean]),
+                    validationErrors = List.empty,
                     validationPerformed = true
                   )
                 ),
                 Example.of(
                   summary = Some("Wrong parameter type"),
                   value = NodeValidationResultDto(
-                    None,
+                    parameters = None,
                     Some(Unknown),
                     List(
                       NodeValidationError(
@@ -191,7 +200,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         "There is problem with expression in field Some($expression) - it could not be parsed.",
                         Some("$expression"),
                         NodeValidationErrorType.SaveAllowed,
-                        None
+                        details = None
                       )
                     ),
                     validationPerformed = true
@@ -221,9 +230,10 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
         jsonBody[ProcessProperties]
           .example(
             Example.of(
-              ProcessProperties.apply(
+              summary = Some("Proper process properties"),
+              value = ProcessProperties.apply(
                 validPropertiesAdditionalFields
-              )
+              ),
             )
           )
       )
@@ -264,7 +274,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate wrong 'number of threads' property"),
                 value = PropertiesValidationRequestDto(
                   ProcessAdditionalFields(
-                    None,
+                    description = None,
                     Map(
                       "parallelism"                 -> "",
                       "checkpointIntervalInSeconds" -> "",
@@ -288,13 +298,18 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
               List(
                 Example.of(
                   summary = Some("Validation for proper node"),
-                  value = NodeValidationResultDto(None, None, List.empty, validationPerformed = true)
+                  value = NodeValidationResultDto(
+                    parameters = None,
+                    expressionType = None,
+                    validationErrors = List.empty,
+                    validationPerformed = true
+                  )
                 ),
                 Example.of(
                   summary = Some("Validation for properties with errors"),
                   value = NodeValidationResultDto(
-                    None,
-                    None,
+                    parameters = None,
+                    expressionType = None,
                     List(
                       NodeValidationError(
                         "InvalidPropertyFixedValue",
@@ -302,7 +317,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         "Expected one of 1, 2, got: a.",
                         Some("numberOfThreads"),
                         NodeValidationErrorType.SaveAllowed,
-                        None
+                        details = None
                       ),
                       NodeValidationError(
                         "UnknownProperty",
@@ -310,7 +325,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         "Property parallelism is not known",
                         Some("parallelism"),
                         NodeValidationErrorType.SaveAllowed,
-                        None
+                        details = None
                       )
                     ),
                     validationPerformed = true
@@ -344,7 +359,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 List(
                   UIValueParameterDto(
                     "condition",
-                    TypingResultInJson(encoder.apply(Typed.apply(Class.forName("java.lang.Boolean")))),
+                    TypingResultInJson(encoder.apply(Typed[java.lang.Boolean])),
                     Expression(Language.Spel, "#input.amount > 2")
                   )
                 ),
@@ -356,7 +371,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                           Map(
                             "amount" ->
                               TypedObjectWithValue.apply(
-                                Typed.apply(Class.forName("java.lang.Long")).asInstanceOf[TypedClass],
+                                Typed[java.lang.Long].asInstanceOf[TypedClass],
                                 5L
                               )
                           )
@@ -374,14 +389,15 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             .examples(
               List(
                 Example.of(
-                  ParametersValidationResultDto(
-                    List.empty,
+                  summary = Some("Validate correct parameters"),
+                  value = ParametersValidationResultDto(
+                    validationErrors = List.empty,
                     validationPerformed = true
-                  ),
-                  summary = Some("Validate correct parameters")
+                  )
                 ),
                 Example.of(
-                  ParametersValidationResultDto(
+                  summary = Some("Validate incorrect parameters"),
+                  value = ParametersValidationResultDto(
                     List(
                       NodeValidationError(
                         "ExpressionParserCompilationError",
@@ -389,12 +405,11 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                         "There is problem with expression in field Some(condition) - it could not be parsed.",
                         Some("condition"),
                         NodeValidationErrorType.SaveAllowed,
-                        None
+                        details = None
                       )
                     ),
                     validationPerformed = true
                   ),
-                  summary = Some("Validate incorrect parameters")
                 )
               )
             )
@@ -424,7 +439,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
         jsonBody[ExpressionSuggestionRequestDto]
           .example(
             Example.of(
-              ExpressionSuggestionRequestDto(
+              summary = Some("Data in node while typing expression"),
+              value = ExpressionSuggestionRequestDto(
                 Expression(Language.Spel, "#inpu"),
                 CaretPosition2d(0, 5),
                 Map(
@@ -450,24 +466,31 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
       .out(
         statusCode(Ok).and(
           jsonBody[List[ExpressionSuggestionDto]]
-            .example(
-              Example.of(
-                List(
-                  ExpressionSuggestionDto(
-                    "input",
-                    Typed.record(
-                      Map(
-                        "amount" ->
-                          TypedObjectWithValue.apply(
-                            Typed.apply(Class.forName("java.lang.Long")).asInstanceOf[TypedClass],
-                            5L
-                          )
-                      )
-                    ),
-                    fromClass = false,
-                    None,
-                    List.empty
+            .examples(
+              List(
+                Example.of(
+                  summary = Some("Found a suggestion for currently given expression"),
+                  value = List(
+                    ExpressionSuggestionDto(
+                      "input",
+                      Typed.record(
+                        Map(
+                          "amount" ->
+                            TypedObjectWithValue.apply(
+                              Typed[java.lang.Long].asInstanceOf[TypedClass],
+                              5L
+                            )
+                        )
+                      ),
+                      fromClass = false,
+                      description = None,
+                      parameters = List.empty
+                    )
                   )
+                ),
+                Example.of(
+                  summary = Some("No suggestions found for given expression"),
+                  value = List.empty
                 )
               )
             )
@@ -498,7 +521,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
 
   private val validPropertiesAdditionalFields =
     ProcessAdditionalFields(
-      None,
+      description = None,
       Map(
         "parallelism"                 -> "",
         "checkpointIntervalInSeconds" -> "",
@@ -572,7 +595,7 @@ object NodesApiEndpoints {
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
 
-    implicit lazy val parameterSchema: Schema[Parameter]                       = Schema.derived
+    implicit lazy val parameterSchema: Schema[EvaluatedParameter]              = Schema.derived
     implicit lazy val edgeTypeSchema: Schema[EdgeType]                         = Schema.derived
     implicit lazy val edgeSchema: Schema[Edge]                                 = Schema.derived
     implicit lazy val cellErrorSchema: Schema[CellError]                       = Schema.derived
@@ -655,7 +678,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("id"), Schema.string, customNode => Some(customNode.id)),
@@ -667,7 +690,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("parameters"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 customNode => Some(customNode.parameters)
               ),
               SProductField(
@@ -701,7 +724,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("id"), Schema.string, enricher => Some(enricher.id)),
@@ -737,7 +760,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("expression"), expressionSchema, filter => Some(filter.expression)),
@@ -906,7 +929,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("id"), Schema.string, join => Some(join.id)),
@@ -914,7 +937,7 @@ object NodesApiEndpoints {
               SProductField(FieldName("outputVar"), Schema.schemaForOption[String], join => Some(join.outputVar)),
               SProductField(
                 FieldName("parameters"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 join => Some(join.parameters)
               ),
               SProductField(
@@ -948,7 +971,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("id"), Schema.string, processor => Some(processor.id)),
@@ -989,7 +1012,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("id"), Schema.string, sink => Some(sink.id)),
@@ -1033,7 +1056,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("ref"), sourceRefSchema, source => Some(source.ref))
@@ -1069,7 +1092,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
             )
@@ -1097,10 +1120,9 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
-//              This works if expression is not present or is correct but not if null is given (which is current default way of passing it in request)
               SProductField(
                 FieldName("expression"),
                 Schema.schemaForOption[Expression],
@@ -1172,7 +1194,7 @@ object NodesApiEndpoints {
               ),
               SProductField(
                 FieldName("branchParametersTemplate"),
-                Schema.schemaForIterable[Parameter, List],
+                Schema.schemaForIterable[EvaluatedParameter, List],
                 _ => None
               ),
               SProductField(FieldName("id"), Schema.string, variableBuilder => Some(variableBuilder.id)),
@@ -1231,10 +1253,8 @@ object NodesApiEndpoints {
             case switch: Switch                   => Some(SchemaWithValue(switchSchema, switch))
             case variable: Variable               => Some(SchemaWithValue(variableSchema, variable))
             case variableBuilder: VariableBuilder => Some(SchemaWithValue(variableBuilderSchema, variableBuilder))
-            case _                                => None
 //          This one is more of internal so we don't provide schemas for it for outside world
-//          case fragmentUsageOutput: FragmentUsageOutput =>
-//            Some(SchemaWithValue(fragmentUsageOutputSchema, fragmentUsageOutput))
+            case _: FragmentUsageOutput => None
           },
           Some(SName("NodeData"))
         )
