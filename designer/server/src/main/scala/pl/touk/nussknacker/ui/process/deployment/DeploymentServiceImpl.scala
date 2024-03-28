@@ -279,7 +279,7 @@ class DeploymentServiceImpl(
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
     for {
       resolvedCanonicalProcess <- Future.fromTry(
-        scenarioResolver.forProcessingType(processDetails.processingType).resolveScenario(processDetails.json)
+        scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
       )
       deploymentData = prepareDeploymentData(
         user.toManagerUser,
