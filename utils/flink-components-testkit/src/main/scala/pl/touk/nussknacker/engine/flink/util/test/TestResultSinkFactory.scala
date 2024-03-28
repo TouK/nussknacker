@@ -21,10 +21,14 @@ class TestResultSinkFactory(runId: TestRunId) extends SinkFactory {
 
 object TestResultSinkFactory {
 
-  private[TestResultSinkFactory] val sinksOutputs = new ConcurrentSkipListMap[TestRunId, Output]()
+  private final case class SinkId(runId: TestRunId) extends Comparable[SinkId] {
+    override def compareTo(o: SinkId): Int = runId.id.compareTo(o.runId.id)
+  }
+
+  private[TestResultSinkFactory] val sinksOutputs = new ConcurrentSkipListMap[SinkId, Output]()
 
   def extractSinkOutputFor(runId: TestRunId): Output = {
-    Option(sinksOutputs.remove(runId)).getOrElse(Output.None)
+    Option(sinksOutputs.remove(SinkId(runId))).getOrElse(Output.None)
   }
 
   def clean(runId: TestRunId): Unit = {
@@ -44,8 +48,8 @@ object TestResultSinkFactory {
 
       override def invoke(value: Value, context: SinkFunction.Context): Unit = {
         sinksOutputs.compute(
-          runId,
-          (_: TestRunId, output: Output) => {
+          SinkId(runId),
+          (_: SinkId, output: Output) => {
             Option(output) match {
               case Some(o) => Output.semigroup.combine(o, Output.Present(List(value)))
               case None    => Output.Present(List(value))

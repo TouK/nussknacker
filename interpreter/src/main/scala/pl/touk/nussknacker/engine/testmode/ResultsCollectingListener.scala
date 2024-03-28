@@ -12,9 +12,7 @@ object TestRunId {
   def generate: TestRunId = new TestRunId(UUID.randomUUID().toString)
 }
 
-case class TestRunId private (id: String) extends Comparable[TestRunId] {
-  override def compareTo(o: TestRunId): Int = this.id.compareTo(o.id)
-}
+case class TestRunId private (id: String)
 
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
 case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, variableEncoder: Any => T)
