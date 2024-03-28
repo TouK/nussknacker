@@ -31,7 +31,7 @@ case class CustomActionDefinition(
 case class CustomActionParameter(
     name: String,
     editor: ParameterEditor,
-    validators: List[ParameterValidator] = List.empty
+    validators: List[ParameterValidator] = List.empty[ParameterValidator]
 )
 
 case class CustomActionResult(msg: String)

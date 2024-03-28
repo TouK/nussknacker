@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.ui.services
 
-import cats.data.{EitherT, Validated, ValidatedNel}
+import cats.data.{EitherT, Validated}
 import cats.syntax.all._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
 import pl.touk.nussknacker.ui.api.{CustomActionValidationDto, ManagementApiEndpoints}
@@ -18,7 +16,7 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.util.EitherTImplicits._
-import pl.touk.nussknacker.ui.validation.{CustomActionValidationError, CustomActionValidator}
+import pl.touk.nussknacker.ui.validation.CustomActionValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,7 +41,7 @@ class ManagementApiHttpService(
             scenarioIdWithName = ProcessIdWithName(scenarioId, processName)
             actionDefinition <- getActionDefinition(scenarioIdWithName, req.actionName)
             validator = new CustomActionValidator(actionDefinition)
-            resultsDto <- validateRequest(validator, req)
+            resultsDto <- getValidationResultsDto(validator, req)
           } yield resultsDto
         }
       }
@@ -67,7 +65,7 @@ class ManagementApiHttpService(
       .toRightEitherT(NoActionDefinition(processIdWithName.name, actionName))
   }
 
-  private def validateRequest(
+  private def getValidationResultsDto(
       validator: CustomActionValidator,
       request: CustomActionRequest
   ): EitherT[Future, ManagementApiError, CustomActionValidationDto] = {
@@ -75,10 +73,9 @@ class ManagementApiHttpService(
 
     val validationDto = validationResult match {
       case Validated.Valid(_) => CustomActionValidationDto(Nil, validationPerformed = true)
-      case Validated.Invalid(errors) => {
+      case Validated.Invalid(errors) =>
         val errorList = errors.toList.map(PrettyValidationErrors.formatErrorMessage(_))
         CustomActionValidationDto(errorList, validationPerformed = true)
-      }
     }
     EitherT.rightT[Future, ManagementApiError](validationDto)
   }

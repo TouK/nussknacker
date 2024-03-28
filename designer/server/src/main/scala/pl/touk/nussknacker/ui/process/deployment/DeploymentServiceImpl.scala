@@ -16,14 +16,13 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
   CustomActionResult,
   DeploymentData,
   DeploymentId,
   ExternalDeploymentId,
   User
 }
-import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionFailed, OnDeployActionSuccess}
@@ -36,12 +35,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.{
-  CustomActionNonExistingError,
-  CustomActionValidationError,
-  CustomActionValidator,
-  UIProcessValidator
-}
+import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -651,24 +645,22 @@ class DeploymentServiceImpl(
           loggedUser.toManagerUser,
           params
         )
-        customActionOpt = manager.customActionsDefinitions.find(_.actionName== actionName)
-        _ <- existsOrFail(
+        customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
+        customAction <- existsOrFail(
           customActionOpt,
           CustomActionNonExistingError(
             s"Couldn't find definition of action ${actionName.value} for scenario ${processIdWithName.name} when trying to validate"
           )
         )
-        validator = new CustomActionValidator(customActionOpt.get)
-        // TODO: remove this validation prosthesis
-        _ <- validateActionCommand(actionCommand, validator)
-        _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
+        _ <- validateActionCommand(actionCommand, customAction)
+        _ = checkIfCanPerformActionInState(actionName, processDetails, processState, manager)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
   }
 
-  // todo: use validator
-  private def validateActionCommand(actionCommand: CustomActionCommand, validator: CustomActionValidator) = {
+  private def validateActionCommand(actionCommand: CustomActionCommand, customAction: CustomActionDefinition) = {
+    val validator        = new CustomActionValidator(customAction)
     val validationResult = validator.validateCustomActionParams(actionCommand)
     val validationFlag   = validationResult
     validationFlag match {
@@ -695,3 +687,7 @@ class DeploymentServiceImpl(
 }
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
+
+//TODO: get rid of these exceptions when rewriting ManagementResources to tapir. They are currently here cause it's the only place that uses them.
+case class CustomActionValidationError(message: String)  extends BadRequestError(message)
+case class CustomActionNonExistingError(message: String) extends NotFoundError(message)
