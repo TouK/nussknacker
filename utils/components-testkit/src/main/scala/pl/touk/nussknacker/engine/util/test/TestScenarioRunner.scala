@@ -31,7 +31,7 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult        = ValidatedNel[ProcessCompilationError, RunResult]
+  type RunnerResultUnit    = ValidatedNel[ProcessCompilationError, RunUnitResult]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
   // TODO: Maybe we should replace ids with more meaningful: test-data, rest-result?

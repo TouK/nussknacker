@@ -14,16 +14,20 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.Output
 import pl.touk.nussknacker.engine.flink.util.test.testComponents.{
+  createTestResultSinkComponent,
   noopSourceComponent,
-  testDataSourceComponent,
-  testResultSinkComponent
+  testDataSourceComponent
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
+import pl.touk.nussknacker.engine.testmode.TestRunId
+import pl.touk.nussknacker.engine.util.test.TestScenarioCollectorHandler.TestScenarioCollectorHandler
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResultUnit}
 import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
@@ -43,7 +47,7 @@ private object testComponents {
     )
   }
 
-  def noopSourceComponent: ComponentDefinition = {
+  def noopSourceComponent: TestRunId => ComponentDefinition = { _ =>
     implicit val typeInf: TypeInformation[Any] = TypeInformation.of(classOf[Any])
     ComponentDefinition(
       TestScenarioRunner.noopSource,
@@ -53,8 +57,8 @@ private object testComponents {
     )
   }
 
-  def testResultSinkComponent: ComponentDefinition = {
-    ComponentDefinition(TestScenarioRunner.testResultSink, new TestResultSinkFactory)
+  def createTestResultSinkComponent: TestRunId => ComponentDefinition = { runId =>
+    ComponentDefinition(TestScenarioRunner.testResultSink, new TestResultSinkFactory(runId))
   }
 
 }
@@ -66,6 +70,8 @@ class FlinkTestScenarioRunner(
     flinkMiniCluster: FlinkMiniClusterHolder,
     componentUseCase: ComponentUseCase
 ) extends ClassBasedTestScenarioRunner {
+
+  private val componentsCreators: List[TestRunId => ComponentDefinition] = components.map(c => (_: TestRunId) => c)
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] =
@@ -90,12 +96,11 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       testDataSourceComponent: ComponentDefinition
   ): RunnerListResult[R] = {
-    val testComponents = testDataSourceComponent :: noopSourceComponent :: testResultSinkComponent :: Nil
-    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+    val testComponents: List[TestRunId => ComponentDefinition] =
+      ((_: TestRunId) => testDataSourceComponent) :: noopSourceComponent :: createTestResultSinkComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(componentsCreators ++ testComponents, globalVariables)) {
       testComponentHolder =>
-        run(scenario, testComponentHolder).map { runResult =>
-          collectResults(testComponentHolder, runResult)
-        }
+        run[R](scenario, testComponentHolder)
     }
   }
 
@@ -103,29 +108,33 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
   def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
-    val testComponents = noopSourceComponent :: testResultSinkComponent :: Nil
-    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
-      testComponentHolder =>
-        run(scenario, testComponentHolder).map { runResult =>
-          collectResults(testComponentHolder, runResult)
-        }
+    val testComponents: List[TestRunId => ComponentDefinition] =
+      noopSourceComponent :: createTestResultSinkComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(componentsCreators ++ testComponents, globalVariables)) {
+      testComponentHolder => run[R](scenario, testComponentHolder)
     }
   }
 
   /**
    * Can be used to test Flink based sinks.
    */
-  def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult = {
+  def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResultUnit = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
-    Using.resource(TestExtensionsHolder.registerTestExtensions(components ++ testComponents, globalVariables)) {
+    val testComponents: List[TestRunId => ComponentDefinition] =
+      ((_: TestRunId) => testDataSourceComponent(data, None)) :: noopSourceComponent :: Nil
+    Using.resource(TestExtensionsHolder.registerTestExtensions(componentsCreators ++ testComponents, globalVariables)) {
       testComponentHolder =>
-        run(scenario, testComponentHolder)
+        run[AnyRef](scenario, testComponentHolder).map { case RunListResult(errors, _) =>
+          RunUnitResult(errors)
+        }
     }
   }
 
-  private def run(scenario: CanonicalProcess, testExtensionsHolder: TestExtensionsHolder): RunnerResult = {
+  private def run[OUTPUT](
+      scenario: CanonicalProcess,
+      testExtensionsHolder: TestExtensionsHolder
+  ): RunnerListResult[OUTPUT] = {
     val modelData = LocalModelData(
       inputConfig = config,
       // We can't just pass extra components here because we don't want Flink to serialize them.
@@ -172,19 +181,34 @@ class FlinkTestScenarioRunner(
 
         env.executeAndWaitForFinished(scenario.name.value)()
 
-        RunUnitResult(errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions)
+        TestResultSinkFactory.extractSinkOutputFor(testExtensionsHolder.runId) match {
+          case Output.None =>
+            RunListResult(
+              successes = tryToCollectResultsFromExternalInvocationResults(scenario, testScenarioCollectorHandler)
+                .asInstanceOf[List[OUTPUT]],
+              errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
+            )
+          case Output.Present(results) =>
+            RunListResult(
+              successes = results.asInstanceOf[List[OUTPUT]],
+              errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
+            )
+        }
       }
     }
   }
 
-  private def collectResults[R](
-      testExtensionsHolder: TestExtensionsHolder,
-      runResult: RunResult
-  ): RunListResult[R] = {
-    val results = TestResultSinkFactory.extractFromTestComponentsHolder(testExtensionsHolder)
-//    val results = TestResultService.extractFromTestComponentsHolder(testExtensionsHolder) // todo:
-//    val results2 = ResultsCollectingListenerHolder.resultsForId(testExtensionsHolder.runId)
-    RunListResult(successes = results, errors = runResult.errors)
+  private def tryToCollectResultsFromExternalInvocationResults(
+      scenario: CanonicalProcess,
+      testScenarioCollectorHandler: TestScenarioCollectorHandler
+  ) = {
+    val allSinks = scenario.collectAllNodes.collect { case sink: node.Sink => sink }
+    testScenarioCollectorHandler.resultsCollectingListener.results.externalInvocationResults.flatMap {
+      case (id, externalInvocationResults) if allSinks.exists(_.id == id) =>
+        externalInvocationResults.map(_.value)
+      case _ =>
+        List.empty
+    }.toList
   }
 
 }
