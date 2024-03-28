@@ -576,7 +576,6 @@ class DeploymentServiceImpl(
       ec: ExecutionContext
   ): Future[CustomActionResult] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-
     dbioRunner.run(
       for {
         // Fetch and validate process details
