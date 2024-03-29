@@ -51,10 +51,10 @@ class NodeDataGen private {
     y <- Gen.long
   } yield LayoutData(x, y)
 
-  lazy val userDefinedNodeFieldsGen: Gen[Option[UserDefinedAdditionalNodeFields]] = for {
+  lazy val userDefinedNodeFieldsGen: Gen[UserDefinedAdditionalNodeFields] = for {
     description <- Gen.option(stringGen)
     layoutData  <- Gen.option(layoutDataGen)
-  } yield Option(UserDefinedAdditionalNodeFields(description, layoutData))
+  } yield UserDefinedAdditionalNodeFields(description, layoutData)
 
   lazy val fieldGen: Gen[Field] = for {
     name       <- stringGen
@@ -109,14 +109,14 @@ class NodeDataGen private {
     id               <- stringGen
     varName          <- stringGen
     expression       <- expressionGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Variable(id, varName, expression, additionalFields)
 
   private lazy val variableBuilderGen: Gen[VariableBuilder] = for {
     id               <- stringGen
     varName          <- stringGen
     fields           <- fieldListGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield VariableBuilder(id, varName, fields, additionalFields)
 
   private lazy val branchEndDataGen: Gen[BranchEndData] = for {
@@ -128,27 +128,27 @@ class NodeDataGen private {
     outputVar        <- Gen.option(stringGen)
     nodeType         <- stringGen
     parameters       <- parametersListGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield CustomNode(id, outputVar, nodeType, parameters, additionalFields)
 
   private lazy val enricherGen: Gen[Enricher] = for {
     id               <- stringGen
     service          <- serviceRefGen
     output           <- stringGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Enricher(id, service, output, additionalFields)
 
   private lazy val filterGen: Gen[Filter] = for {
     id               <- stringGen
     expression       <- expressionGen
     isDisabled       <- Gen.option(booleanGen)
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Filter(id, expression, isDisabled, additionalFields)
 
   private lazy val fragmentInputGen: Gen[FragmentInput] = for {
     id               <- stringGen
     ref              <- fragmentRefGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
     isDisabled       <- Gen.option(booleanGen)
     fragmentParams   <- Gen.option(fragmentParametersGen)
   } yield FragmentInput(id, ref, additionalFields, isDisabled, fragmentParams)
@@ -156,14 +156,14 @@ class NodeDataGen private {
   private lazy val fragmentInputDefinitionGen: Gen[FragmentInputDefinition] = for {
     id               <- stringGen
     parameters       <- fragmentParametersGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield FragmentInputDefinition(id, parameters, additionalFields)
 
   private lazy val fragmentOutputDefinitionGen: Gen[FragmentOutputDefinition] = for {
     id               <- stringGen
     outputName       <- stringGen
     fields           <- fieldListGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield FragmentOutputDefinition(id, outputName, fields, additionalFields)
 
   private lazy val joinGen: Gen[Join] = for {
@@ -172,32 +172,32 @@ class NodeDataGen private {
     nodeType         <- stringGen
     parameters       <- parametersListGen
     branchParameters <- branchParametersGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Join(id, outputVar, nodeType, parameters, branchParameters, additionalFields)
 
   private lazy val processorGen: Gen[Processor] = for {
     id               <- stringGen
     service          <- serviceRefGen
     isDisabled       <- Gen.option(booleanGen)
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Processor(id, service, isDisabled, additionalFields)
 
   private lazy val sourceGen: Gen[Source] = for {
     id               <- stringGen
     ref              <- sourceRefGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Source(id, ref, additionalFields)
 
   private lazy val splitGen: Gen[Split] = for {
     id               <- stringGen
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Split(id, additionalFields)
 
   private lazy val switchGen: Gen[Switch] = for {
     id               <- stringGen
     expression       <- Gen.option(expressionGen)
     exprVal          <- Gen.option(stringGen)
-    additionalFields <- userDefinedNodeFieldsGen
+    additionalFields <- Gen.option(userDefinedNodeFieldsGen)
   } yield Switch(id, expression, exprVal, additionalFields)
 
   private def genFromListOfGens[T](list: List[Gen[T]]): Gen[T] = {
