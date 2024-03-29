@@ -17,7 +17,7 @@ While Designer GUI in most cases is self-explanatory and forgiving, there are a 
 * **Deleting a scenario** - scenarios can be archived and unarchived, they are never completely deleted. 
 * **Inserting a node into the flow** - you can drop a node on the edge connecting nodes and Designer will fit it into the flow.
 
-
+&nbsp;
 ## SpEL
 
 ### Common errors and misunderstandings
@@ -40,7 +40,7 @@ Both AVRO and JSON schema specification allow you to define an enumeration value
   "symbols" : ["ORDERED", "READY", "DELIVERED"]
 }
 ```
-Suppose we want to define some kind of logic dependent on delivery status. If we just use this field in filter/choice, we can discover that it is of type EnumSymbol and cannot be just compared with plain String - even if it contains one of the  allowed values.
+Suppose we want to define some kind of logic dependent on delivery status. If we use field of this type in a filter/choice node, we will discover that it is of type EnumSymbol (a generic Java type representing the enum) and cannot be compared with plain String - even if it contains one of the allowed values.
 
 ![img](img/enumComparisonToStringProblem.png)
 
@@ -63,13 +63,13 @@ The `!` operator is truly powerful; one can achieve a lot of magic with it. A fe
 
 **Convert record to a list**
 
-In this example, not only record is converted to a list, but also additional transformations are performed. Note use of the 
+Suppose one wants to convert a JSON record to a list containing records with fieldName and fieldValue fields. 
 
-Expression:
+The example input record (referred to as `#myInputRecord` later) look like this:
 
-`{"fieldA": "124.60", "fieldB": "123"}.![{"fieldName":  #this.key, "numValue": #CONV.toNumber(#this.value)}]`
+`{"fieldA": "124.60", "fieldB": "123"}`
 
-Result (in JSON notation):
+and the expected result list is below.  
 
 ```
 [
@@ -84,6 +84,11 @@ Result (in JSON notation):
 ]
 ```
 
+The expression to use is as follows:
+
+`#myRecord.![{"fieldName":  #this.key, "numValue": #CONV.toNumber(#this.value)}]`
+
+&nbsp;
 **Not trivial list transformations**
 
 In this example, a `{1,2,3,4,5}` list is transformed to a list of records in two steps.
@@ -115,7 +120,7 @@ Final result (JSON notation):
   {"value": 5, "odd?": true }
 ]
 ```
-
+&nbsp;
 ## Scenario Authoring
 
 ### Passing the context after the Union node
