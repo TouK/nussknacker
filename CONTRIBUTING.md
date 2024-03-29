@@ -126,6 +126,8 @@ Building:
 
 Run `./runServer.sh` in `designer`Documentation
 
+Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`, e.g. `NUSSKNACKER_SCALA_VERSION=2.12 ./buildServer.sh`
+
 #### Running using integration environment
 
 - Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
