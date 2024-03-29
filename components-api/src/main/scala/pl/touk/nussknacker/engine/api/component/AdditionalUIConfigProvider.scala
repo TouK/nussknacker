@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
   ParameterValueCompileTimeValidation,
-  ValueInputWithFixedValues
+  ParameterValueInput
 }
 
 /**
@@ -37,6 +37,6 @@ case class ParameterAdditionalUIConfig(
     required: Boolean,
     initialValue: Option[FixedExpressionValue],
     hintText: Option[String],
-    valueEditor: Option[ValueInputWithFixedValues],
+    valueEditor: Option[ParameterValueInput],
     valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation]
 )

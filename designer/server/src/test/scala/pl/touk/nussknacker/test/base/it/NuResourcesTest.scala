@@ -522,7 +522,7 @@ object ProcessJson extends OptionValues {
     new ProcessJson(
       process.hcursor.downField("name").as[String].toOption.value,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
-      lastAction.map(_.hcursor.downField("actionType").as[String].toOption.value),
+      lastAction.map(_.hcursor.downField("actionName").as[String].toOption.value),
       state.map(StateJson(_)),
       process.hcursor.downField("processCategory").as[String].toOption.value,
       process.hcursor.downField("isArchived").as[Boolean].toOption.value,
@@ -543,9 +543,9 @@ final case class ProcessJson(
     history: Option[List[ProcessVersionJson]]
 ) {
 
-  def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
+  def isDeployed: Boolean = lastActionType.contains(ScenarioActionName.Deploy.value)
 
-  def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
+  def isCanceled: Boolean = lastActionType.contains(ScenarioActionName.Cancel.value)
 }
 
 final case class StateJson(name: String, icon: URI, tooltip: String, description: String)

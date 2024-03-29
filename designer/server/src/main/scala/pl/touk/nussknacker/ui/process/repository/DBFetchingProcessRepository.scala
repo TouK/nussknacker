@@ -5,7 +5,7 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
@@ -71,11 +71,11 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       )
       lastStateActionPerProcess <- fetchActionsOrEmpty(
         actionRepository
-          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ProcessActionType.StateActionsTypes))
+          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
       )
       // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ProcessActionType.Deploy)))
+        actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ScenarioActionName.Deploy)))
       )
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield latestProcesses
@@ -176,10 +176,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find(a => ProcessActionType.StateActionsTypes.contains(a.actionType)),
+      lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
       // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
       lastDeployedActionData = actions.headOption.filter(a =>
-        a.actionType == ProcessActionType.Deploy && a.state == ProcessActionState.Finished
+        a.actionName == ScenarioActionName.Deploy && a.state == ProcessActionState.Finished
       ),
       isLatestVersion = isLatestVersion,
       tags = Some(tags),

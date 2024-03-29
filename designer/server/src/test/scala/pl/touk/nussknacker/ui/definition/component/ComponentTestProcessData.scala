@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{
+  ProcessAction,
+  ProcessActionId,
+  ProcessActionState,
+  ScenarioActionName
+}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -42,11 +46,11 @@ private[component] object ComponentTestProcessData {
   val CanceledFraudProcessName: ProcessName     = ProcessName("canceledFraudProcessName")
   val FraudProcessWithFragmentName: ProcessName = ProcessName("fraudProcessWithFragment")
 
-  private val deployedAction = prepareTestAction(ProcessActionType.Deploy)
-  private val canceledAction = prepareTestAction(ProcessActionType.Cancel)
-  private val archivedAction = prepareTestAction(ProcessActionType.Archive)
+  private val deployedAction = prepareTestAction(ScenarioActionName.Deploy)
+  private val canceledAction = prepareTestAction(ScenarioActionName.Cancel)
+  private val archivedAction = prepareTestAction(ScenarioActionName.Archive)
 
-  private def prepareTestAction(actionType: ProcessActionType) =
+  private def prepareTestAction(actionName: ScenarioActionName) =
     ProcessAction(
       id = ProcessActionId(UUID.randomUUID()),
       processId = ProcessId(123),
@@ -54,7 +58,7 @@ private[component] object ComponentTestProcessData {
       user = "user",
       createdAt = Instant.now(),
       performedAt = Instant.now(),
-      actionType = actionType,
+      actionName = actionName,
       state = ProcessActionState.Finished,
       failureMessage = Option.empty,
       commentId = Option.empty,

@@ -5,24 +5,27 @@ import pl.touk.nussknacker.engine.api.{Context, ContextId}
 
 object TestProcess {
 
-  case class TestResults(
-      nodeResults: Map[String, List[Context]],
-      invocationResults: Map[String, List[ExpressionInvocationResult]],
-      externalInvocationResults: Map[String, List[ExternalInvocationResult]],
-      exceptions: List[NuExceptionInfo[_ <: Throwable]]
+  case class TestResults[T](
+      nodeResults: Map[String, List[ResultContext[T]]],
+      invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
+      externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
+      exceptions: List[ExceptionResult[T]]
   ) {
 
-    def updateNodeResult(nodeId: String, context: Context): TestResults = {
-      copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ context)))
-    }
+    def updateNodeResult(nodeId: String, context: Context, variableEncoder: Any => T): TestResults[T] =
+      copy(nodeResults =
+        nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ ResultContext
+          .fromContext(context, variableEncoder)))
+      )
 
     def updateExpressionResult(
         nodeId: String,
         context: Context,
         name: String,
-        result: Any
-    ): TestResults = {
-      val invocationResult = ExpressionInvocationResult(context.id, name, result)
+        result: Any,
+        variableEncoder: Any => T
+    ): TestResults[T] = {
+      val invocationResult = ExpressionInvocationResult(context.id, name, variableEncoder(result))
       copy(invocationResults =
         invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List())))
       )
@@ -32,30 +35,59 @@ object TestProcess {
         nodeId: String,
         contextId: ContextId,
         name: String,
-        result: Any
-    ): TestResults = {
-      val invocation = ExternalInvocationResult(contextId.value, name, result)
+        result: Any,
+        variableEncoder: Any => T
+    ): TestResults[T] = {
+      val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
       copy(externalInvocationResults =
         externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation))
       )
     }
 
-    def updateExceptionResult(exceptionInfo: NuExceptionInfo[_ <: Throwable]): TestResults =
-      copy(exceptions = exceptions :+ exceptionInfo)
+    def updateExceptionResult(
+        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        variableEncoder: Any => T
+    ): TestResults[T] =
+      copy(exceptions = exceptions :+ ExceptionResult.fromNuExceptionInfo(exceptionInfo, variableEncoder))
 
     // when evaluating e.g. keyBy expression can be invoked more than once...
     // TODO: is it the best way to handle it??
     private def addResults(
-        invocationResult: ExpressionInvocationResult,
-        resultsSoFar: List[ExpressionInvocationResult]
-    ) = resultsSoFar.filterNot(res =>
+        invocationResult: ExpressionInvocationResult[T],
+        resultsSoFar: List[ExpressionInvocationResult[T]]
+    ): List[ExpressionInvocationResult[T]] = resultsSoFar.filterNot(res =>
       res.contextId == invocationResult.contextId && res.name == invocationResult.name
     ) :+ invocationResult
 
   }
 
-  case class ExpressionInvocationResult(contextId: String, name: String, value: Any)
+  case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
-  case class ExternalInvocationResult(contextId: String, name: String, value: Any)
+  case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
+
+  object ExceptionResult {
+
+    def fromNuExceptionInfo[T](
+        exceptionInfo: NuExceptionInfo[_ <: Throwable],
+        variableEncoder: Any => T
+    ): ExceptionResult[T] =
+      ExceptionResult(
+        ResultContext.fromContext(exceptionInfo.context, variableEncoder),
+        exceptionInfo.nodeComponentInfo.map(_.nodeId),
+        exceptionInfo.throwable
+      )
+
+  }
+
+  case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
+
+  object ResultContext {
+    def fromContext[T](context: Context, variableEncoder: Any => T): ResultContext[T] =
+      ResultContext(context.id, context.variables.map { case (k, v) => k -> variableEncoder(v) })
+  }
+
+  case class ResultContext[T](id: String, variables: Map[String, T]) {
+    def variableTyped[U <: T](name: String): Option[U] = variables.get(name).map(_.asInstanceOf[U])
+  }
 
 }

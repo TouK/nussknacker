@@ -13,12 +13,6 @@ import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileNam
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.auto._
-import io.circe.syntax._
-import cats.syntax.functor._
-
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos
 
 object TapirCodecs {
 

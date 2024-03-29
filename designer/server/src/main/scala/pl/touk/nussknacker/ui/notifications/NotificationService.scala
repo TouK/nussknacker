@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.notifications
 
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -32,22 +32,22 @@ class NotificationServiceImpl(
       .run(
         actionRepository.getUserActionsAfter(
           user,
-          Set(ProcessActionType.Deploy, ProcessActionType.Cancel),
+          Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel),
           ProcessActionState.FinishedStates + ProcessActionState.Failed,
           limit
         )
       )
       .map(_.map {
         case (
-              ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Finished, _, _, _),
+              ProcessActionEntityData(id, _, _, _, _, _, actionName, ProcessActionState.Finished, _, _, _),
               processName
             ) =>
-          Notification.actionFinishedNotification(id.toString, actionType, processName)
+          Notification.actionFinishedNotification(id.toString, actionName, processName)
         case (
-              ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.ExecutionFinished, _, _, _),
+              ProcessActionEntityData(id, _, _, _, _, _, actionName, ProcessActionState.ExecutionFinished, _, _, _),
               processName
             ) =>
-          Notification.actionExecutionFinishedNotification(id.toString, actionType, processName)
+          Notification.actionExecutionFinishedNotification(id.toString, actionName, processName)
         case (
               ProcessActionEntityData(
                 id,
@@ -56,7 +56,7 @@ class NotificationServiceImpl(
                 _,
                 _,
                 _,
-                actionType,
+                actionName,
                 ProcessActionState.Failed,
                 failureMessageOpt,
                 _,
@@ -64,7 +64,7 @@ class NotificationServiceImpl(
               ),
               processName
             ) =>
-          Notification.actionFailedNotification(id.toString, actionType, processName, failureMessageOpt)
+          Notification.actionFailedNotification(id.toString, actionName, processName, failureMessageOpt)
         case (a, processName) =>
           throw new IllegalStateException(s"Unexpected action returned by query: $a, for scenario: $processName")
       }.toList)

@@ -6,7 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#5609](https://github.com/TouK/nussknacker/pull/5609) Refactoring around DeploymentManager's actions:
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) Refactoring around DeploymentManager's actions:
   * Custom Actions
     * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
     * `CustomActionResult.req` was removed
@@ -22,12 +22,33 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `stop` without `deploymentId` argument - `StopScenarioCommand`
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
+  * "Action type" is renamed to "action name". Loosened the restriction on the name of the action:
+    * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
+    * in `ProcessAction` attribute `actionType` renamed to `actionName`
+    * in table `process_actions` column `action_type` is renamed to `action_name`
+
+### Configuration changes
+
+* [#5744](https://github.com/TouK/nussknacker/pull/5744) Extracted unbounded stream specific components into separate
+  module:
+    * Components `periodic`, `union-memo`, `previousValue`, aggregates, joins and `delay` from `base` were moved into
+      `base-unbounded` module. They are now built as `flinkBaseUnbounded.jar` under
+      `work/components/flink/flinkBaseUnbounded.jar`.
+    * Configuration of tumbling windows aggregate offset is changed at the ComponentProvider level:
+      `components.base.aggregateWindowsConfig.tumblingWindowsOffset` should now be set
+      as `components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset`
+    * If you previously specified base component jar explicitly in `modelConfig.classPath`
+      as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
+      `components/flink/flinkBaseUnbounded.jar` explicitly.
 
 ### Other changes
 
-* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
+* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the pluggable expression languages: `ExpressionConfig.languages` removed
+* [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
+  * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
+  * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
 
-## In version 1.14.x (Not released yet)
+## In version 1.14.0
 
 ### Code API changes
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
@@ -142,6 +163,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
 * [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
 * [#5707](https://github.com/TouK/nussknacker/pull/5707) `ParameterName` data class was introduced. It replaces `String` in whole places where it's used as a parameter name
+* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+    * Classes `ResultsCollectingListener`, `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
+    * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
+    * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
+    * Added `variableEncoder` to `ResultsCollectingListenerHolder.registerRun`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
@@ -195,6 +221,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   than wildcard.
   On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
   have components with other processing modes or other deployment configuration.
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) The `processToolbarConfig` toolbar with `type: "process-info-panel"` no longer accepts the `buttons` property. It only display scenario information now. However, a new toolbar with `type: "process-actions-panel"` has been introduced, which does accept the `buttons` property and renders actions similar to the old `type: "process-info-panel"`.
 
 ### Helm chart changes
 * [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Helm chart now has two preconfigured scenario types (`streaming` and `request-response`) instead of one (`default`).

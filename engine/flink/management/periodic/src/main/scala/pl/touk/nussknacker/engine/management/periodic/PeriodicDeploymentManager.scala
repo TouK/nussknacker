@@ -2,19 +2,10 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{
-  CustomActionDefinition,
-  CustomActionResult,
-  DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId,
-  User
-}
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
@@ -25,7 +16,6 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
   PeriodicProcessListenerFactory,
   ProcessConfigEnricherFactory
 }
-import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import slick.jdbc
 import slick.jdbc.JdbcProfile

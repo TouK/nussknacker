@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
   ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -47,7 +48,7 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         |}""".stripMargin) shouldBe Right(referenceFragmentParameter)
   }
 
-  test("should deserialize FragmentParameter") {
+  test("should deserialize FragmentParameter - ValueInputWithFixedValuesProvided") {
     decode[FragmentParameter]("""{
       "name" : "paramString",
       "typ" : {
@@ -99,6 +100,39 @@ class FragmentParameterSerializationSpec extends AnyFunSuite with Matchers {
         valueCompileTimeValidation = Some(
           ParameterValueCompileTimeValidation(Expression.spel("#value.length() < 7"), Some("some failed message"))
         ),
+      )
+    )
+  }
+
+  test("should deserialize FragmentParameter - ValueInputWithDictEditor") {
+    decode[FragmentParameter]("""{
+      "name" : "paramString",
+      "typ" : {
+        "refClazzName" : "java.lang.String"
+      },
+      "required" : false,
+      "initialValue" : null,
+      "hintText" : null,
+      "valueEditor" : {
+        "type": "ValueInputWithDictEditor",
+        "allowOtherValue" : false,
+        "dictId" : "someDictId"
+      },
+      "valueCompileTimeValidation" : null
+    }""") shouldBe Right(
+      FragmentParameter(
+        ParameterName("paramString"),
+        FragmentClazzRef[String],
+        required = false,
+        initialValue = None,
+        hintText = None,
+        valueEditor = Some(
+          ValueInputWithDictEditor(
+            dictId = "someDictId",
+            allowOtherValue = false
+          )
+        ),
+        valueCompileTimeValidation = None
       )
     )
   }

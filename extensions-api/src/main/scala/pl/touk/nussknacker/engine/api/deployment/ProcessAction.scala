@@ -4,7 +4,6 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
@@ -19,8 +18,7 @@ import java.util.UUID
     createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
     performedAt: Instant,
-    // TODO: switch ProcessActionType to ScenarioActionName
-    actionType: ProcessActionType,
+    actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
     commentId: Option[Long],
@@ -37,23 +35,6 @@ object ProcessActionId {
   implicit val typeEncoder: Encoder[ProcessActionId] = Encoder.encodeUUID.contramap(_.value)
   implicit val typeDecoder: Decoder[ProcessActionId] = Decoder.decodeUUID.map(ProcessActionId(_))
 
-}
-
-object ProcessActionType extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.encodeEnumeration(ProcessActionType)
-  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.decodeEnumeration(ProcessActionType)
-
-  type ProcessActionType = Value
-  val Deploy: Value    = Value("DEPLOY")
-  val Cancel: Value    = Value("CANCEL")
-  val Archive: Value   = Value("ARCHIVE")
-  val UnArchive: Value = Value("UNARCHIVE")
-  val Pause: Value     = Value("PAUSE") // TODO: To implement in future..
-  val Rename: Value    = Value("RENAME")
-
-  val DefaultActions: List[ProcessActionType] = Nil
-
-  val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 }
 
 object ProcessActionState extends Enumeration {
@@ -80,7 +61,14 @@ object ScenarioActionName {
   implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
   implicit val decoder: Decoder[ScenarioActionName] = deriveUnwrappedDecoder
 
-  // TODO: Temporary action type to name mapping to handle alignment of ProcessAction and CustomAction.
-  //   Probably obsolete when a consistent api is introduced.
-  def apply(actionType: ProcessActionType): ScenarioActionName = new ScenarioActionName(actionType.toString)
+  val Deploy: ScenarioActionName    = ScenarioActionName("DEPLOY")
+  val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
+  val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
+  val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
+  val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
+  val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
+
+  val DefaultActions: List[ScenarioActionName] = Nil
+
+  val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
 }
