@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.util.Try
 
-final case class TestRunId private (id: String)
+case class TestRunId private (id: String)
 
 object TestRunId {
   def generate: TestRunId = new TestRunId(UUID.randomUUID().toString)
