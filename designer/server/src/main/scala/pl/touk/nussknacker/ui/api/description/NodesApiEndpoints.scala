@@ -136,8 +136,10 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
             List(
               Example.of(
                 value = NodeValidationRequestDto(
-                  Filter("id", Expression(Language.Spel, "#longValue > 1"), None, None),
-                  ProcessProperties.apply(ProcessAdditionalFields(None, Map.empty, "")),
+                  Filter("id", Expression(Language.Spel, "#longValue > 1"), isDisabled = None, additionalFields = None),
+                  ProcessProperties.apply(
+                    ProcessAdditionalFields(description = None, properties = Map.empty, metaDataType = "")
+                  ),
                   Map(
                     "existButString" -> TypingResultInJson(
                       encoder.apply(Typed[java.lang.String])
@@ -150,7 +152,8 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                 summary = Some("Validate correct Filter node")
               ),
               Example.of(
-                NodeValidationRequestDto(
+                summary = Some("Validate incorrect Filter node - wrong expression type"),
+                value = NodeValidationRequestDto(
                   Filter(
                     "id",
                     Expression(Language.Spel, "#existButString"),
@@ -169,7 +172,6 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                   branchVariableTypes = None,
                   outgoingEdges = None
                 ),
-                summary = Some("Validate incorrect Filter node - wrong expression type")
               )
             )
           )
@@ -439,7 +441,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
         jsonBody[ExpressionSuggestionRequestDto]
           .example(
             Example.of(
-              summary = Some("Data in node while typing expression"),
+              summary = Some("Get suggestions for given expression"),
               value = ExpressionSuggestionRequestDto(
                 Expression(Language.Spel, "#inpu"),
                 CaretPosition2d(0, 5),
@@ -451,7 +453,7 @@ class NodesApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoi
                           Map(
                             "amount" ->
                               TypedObjectWithValue.apply(
-                                Typed.apply(Class.forName("java.lang.Long")).asInstanceOf[TypedClass],
+                                Typed[java.lang.Long].asInstanceOf[TypedClass],
                                 5L
                               )
                           )
@@ -1253,7 +1255,7 @@ object NodesApiEndpoints {
             case switch: Switch                   => Some(SchemaWithValue(switchSchema, switch))
             case variable: Variable               => Some(SchemaWithValue(variableSchema, variable))
             case variableBuilder: VariableBuilder => Some(SchemaWithValue(variableBuilderSchema, variableBuilder))
-//          This one is more of internal so we don't provide schemas for it for outside world
+//          This one is more of internal so we don't provide schema for it for outside world
             case _: FragmentUsageOutput => None
           },
           Some(SName("NodeData"))
