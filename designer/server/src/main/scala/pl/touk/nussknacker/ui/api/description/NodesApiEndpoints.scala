@@ -17,8 +17,11 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ParameterValueInput
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -613,11 +616,11 @@ object NodesApiEndpoints {
     implicit lazy val caretPosition2dSchema: Schema[CaretPosition2d] = Schema.derived
 
     object NodeDataSchemas {
-      implicit lazy val fragmentRefSchema: Schema[FragmentRef]                             = Schema.derived
-      implicit lazy val fragmentClazzRefSchema: Schema[FragmentClazzRef]                   = Schema.derived
-      implicit lazy val valueInputWithFixedValuesSchema: Schema[ValueInputWithFixedValues] = Schema.derived
+      implicit lazy val fragmentRefSchema: Schema[FragmentRef]           = Schema.derived
+      implicit lazy val fragmentClazzRefSchema: Schema[FragmentClazzRef] = Schema.derived
       implicit lazy val parameterValueCompileTimeValidationSchema: Schema[ParameterValueCompileTimeValidation] =
         Schema.derived
+      implicit lazy val parameterValueInputSchema: Schema[ParameterValueInput]                         = Schema.derived
       implicit lazy val fragmentParameterSchema: Schema[FragmentParameter]                             = Schema.derived
       implicit lazy val serviceRefSchema: Schema[ServiceRef]                                           = Schema.derived
       implicit lazy val branchEndDefinitionSchema: Schema[BranchEndDefinition]                         = Schema.derived
