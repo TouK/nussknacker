@@ -9,19 +9,9 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{
-  NuItTest,
-  WithAccessControlCheckingConfigScenarioHelper,
-  WithSimplifiedConfigScenarioHelper
-}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.{
-  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
-  WithAccessControlCheckingDesignerConfig,
-  WithBusinessCaseRestAssuredUsersExtensions,
-  WithMockableDeploymentManager,
-  WithSimplifiedDesignerConfig
-}
+import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -197,7 +187,7 @@ class MigrationApiHttpServiceBusinessSpec
        |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",
        |  "isFragment": $isFragment,
-       |  "processCategory": "Category1",
+       |  "processCategory": "${Category1.stringify}",
        |  "scenarioGraph": ${scenarioGraph.asJson.noSpaces}
        |}
        |""".stripMargin
