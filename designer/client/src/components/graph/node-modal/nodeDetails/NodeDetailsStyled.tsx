@@ -6,8 +6,8 @@ export const ComponentIconStyled = styled(ComponentIcon)<{ backgroundColor: stri
     width: "30px",
     height: "30px",
     backgroundColor,
-    use: {
-        transform: "scale(0.7)",
+    "use, path": {
+        transform: "scale(0.8)",
         transformOrigin: "16px 16px",
     },
 }));

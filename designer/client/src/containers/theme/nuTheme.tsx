@@ -37,22 +37,22 @@ const custom = {
     colors: {
         nodes: {
             Source: {
-                fill: "#2d8e54",
+                fill: "#509D6E",
             },
             FragmentInputDefinition: {
-                fill: "#db4646",
+                fill: "#DB4646",
             },
             Sink: {
-                fill: "#db4646",
+                fill: "#DB4646",
             },
             FragmentOutputDefinition: {
-                fill: "#db4646",
+                fill: "#DB4646",
             },
             Filter: {
-                fill: "#db7e3a",
+                fill: "#FAA05A",
             },
             Switch: {
-                fill: "#70c6ce",
+                fill: "#1B78BC",
             },
             VariableBuilder: {
                 fill: "#FEB58A",
@@ -61,13 +61,13 @@ const custom = {
                 fill: "#FEB58A",
             },
             Enricher: {
-                fill: "#805db2",
+                fill: "#A171E6",
             },
             FragmentInput: {
-                fill: "#805db2",
+                fill: "#A171E6",
             },
             Split: {
-                fill: "#FCC56D",
+                fill: "#F9C542",
             },
             Processor: {
                 fill: "#4583dd",
@@ -79,14 +79,19 @@ const custom = {
                 fill: "#46ca94",
             },
             CustomNode: {
-                fill: "#1aada6",
+                fill: "#1EC6BE",
             },
             Join: {
-                fill: "#1aada6",
+                fill: "#1EC6BE",
             },
             _group: {
-                fill: "#1aada6",
+                fill: "#1EC6BE",
             },
+        },
+        windows: {
+            compareVersions: { backgroundColor: "#1ba1af", color: "white" },
+            customAction: { backgroundColor: "white", color: "black" },
+            default: { backgroundColor: "#2D8E54", color: "white" },
         },
     },
 };

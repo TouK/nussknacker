@@ -26,7 +26,7 @@ const NodeDetailsModalHeader = ({ node }: { node: NodeType }): JSX.Element => {
     const theme = useTheme();
 
     const attributes = getNodeAttributes(node);
-    const nodeStyles = theme.custom.colors.nodes[node.type];
+    const nodeStyles = theme.custom.colors.nodes[NodeUtils.nodeType(node)];
 
     const variableLanguage = node?.value?.language;
     const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name;

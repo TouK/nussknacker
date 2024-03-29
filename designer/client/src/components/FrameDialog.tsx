@@ -3,14 +3,14 @@ import React, { useMemo } from "react";
 import { WindowContent, WindowKind } from "../windowManager";
 import { styled } from "@mui/material";
 
-const FullSizeBorderlessIFrame = styled("iframe")({
+const FullSizeBorderlessIFrame = styled("iframe")(({ theme }) => ({
     border: 0,
-    background: "white",
+    background: theme.palette.common.white,
     width: "100%",
     height: "100%",
     minWidth: 0,
     minHeight: 0,
-});
+}));
 
 export function FrameDialog(props: WindowContentProps<WindowKind, string>): JSX.Element {
     const {

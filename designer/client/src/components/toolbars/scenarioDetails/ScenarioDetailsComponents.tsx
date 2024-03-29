@@ -30,9 +30,9 @@ export const ProcessName = styled(Typography)`
     white-space: pre;
 `;
 
-export const ProcessRename = styled(ProcessName)`
-    color: orange;
-`;
+export const ProcessRename = styled(ProcessName)(({ theme }) => ({
+    color: theme.palette.warning.main,
+}));
 
 export const ScenarioDetailsDescription = styled("div")`
     font-size: 12px;
