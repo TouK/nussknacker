@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.ExecutionConfig
+import org.apache.flink.configuration.{Configuration, PipelineOptions}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -12,8 +14,13 @@ import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConf
 
 object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnvironment] {
 
-  override protected def getExecutionEnvironment: StreamExecutionEnvironment =
-    StreamExecutionEnvironment.getExecutionEnvironment
+  @silent("deprecated") override protected def getExecutionEnvironment: StreamExecutionEnvironment = {
+    import scala.collection.JavaConverters._
+
+    val cfg = new Configuration()
+    cfg.set(PipelineOptions.CLASSPATHS, List("http://dummy-classpath.invalid").asJava)
+    StreamExecutionEnvironment.getExecutionEnvironment(cfg)
+  }
 
   override protected def getConfig(env: StreamExecutionEnvironment): ExecutionConfig = env.getConfig
 

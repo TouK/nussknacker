@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
+import java.net.URL
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
@@ -42,7 +43,8 @@ trait FlinkStubbedRunner {
     streamGraph.setJobName(process.name.value)
 
     val jobGraph = streamGraph.getJobGraph()
-    jobGraph.setClasspaths(modelData.modelClassLoader.urls.asJava)
+    val urls     = modelClasspathWithFallbackToDummyEntry
+    jobGraph.setClasspaths(urls.asJava)
     jobGraph.setSavepointRestoreSettings(savepointRestoreSettings)
 
     val configuration: Configuration = new Configuration
@@ -67,6 +69,17 @@ trait FlinkStubbedRunner {
       exec.start()
       val id = exec.submitJob(jobGraph).get().getJobID
       exec.requestJobResult(id).get().toJobExecutionResult(getClass.getClassLoader)
+    }
+  }
+
+  private def modelClasspathWithFallbackToDummyEntry = {
+    modelData.modelClassLoaderUrls match {
+      case Nil =>
+        // The class is also used in some scala tests
+        // and this is a work around for a behaviour added in https://issues.apache.org/jira/browse/FLINK-32265
+        // see details in pl.touk.nussknacker.engine.flink.test.MiniClusterExecutionEnvironment#execute
+        List(new URL("http://dummy-classpath.invalid"))
+      case list => list
     }
   }
 
