@@ -1951,6 +1951,7 @@ lazy val designer = (project in file("designer/server"))
     listenerApi,
     testUtils                         % Test,
     componentsApi                     % "test->test",
+    scenarioApi                       % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes

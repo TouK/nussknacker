@@ -8,8 +8,6 @@ import org.json.JSONObject
 import sttp.tapir.docs.apispec.schema.TapirSchemaToJsonSchema
 import sttp.apispec.circe._
 
-import java.time.Instant
-
 trait NuTapirSchemaTestHelpers {
 
   protected def prepareJsonSchemaFromTapirSchema[T](schema: sttp.tapir.Schema[T]): org.everit.json.schema.Schema = {
@@ -32,15 +30,10 @@ trait NuTapirSchemaTestHelpers {
   }
 
   protected def createJsonObjectFrom[T](value: T)(implicit encoder: Encoder[T]): JSONObject = {
-//    println("before " + Instant.now())
-    val sampleJson = encoder.apply(value)
-//    println("encoded " + Instant.now())
+    val sampleJson        = encoder.apply(value)
     val sampleStr: String = Printer.spaces2.print(sampleJson.deepDropNullValues)
-//    println("trimmed " + Instant.now())
-    val json = new JSONObject(sampleStr)
-//    println(json)
-//    println("createdProper      " + Instant.now())
-    json
+
+    new JSONObject(sampleStr)
   }
 
   protected def createJsonFromString(json: String): JSONObject = {

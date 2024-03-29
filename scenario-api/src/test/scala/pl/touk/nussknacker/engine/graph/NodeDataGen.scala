@@ -35,6 +35,8 @@ import java.util.Collections
 import scala.jdk.CollectionConverters._
 
 class NodeDataGen private {
+  private lazy val nullGen = Gen.const(null)
+
   private lazy val booleanGen = Arbitrary.arbitrary[Boolean]
 
   private lazy val stringGen = Gen.oneOf("foo", "bar")
@@ -203,7 +205,7 @@ class NodeDataGen private {
 
   private lazy val switchGen: Gen[Switch] = for {
     id               <- stringGen
-    expression       <- expressionGen
+    expression       <- genFromListOfGens(List(expressionGen, nullGen))
     exprVal          <- stringGen
     additionalFields <- userDefinedNodeFieldsGen
   } yield Switch(id, Option(expression), Option(exprVal), additionalFields)
