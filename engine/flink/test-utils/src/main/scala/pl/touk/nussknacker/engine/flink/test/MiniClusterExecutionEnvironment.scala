@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
+import org.apache.flink.client.deployment.executors.PipelineExecutorUtils
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
-import org.apache.flink.runtime.jobgraph.JobGraph
+import org.apache.flink.runtime.jobgraph.{JobGraph, SavepointRestoreSettings}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
@@ -110,14 +111,12 @@ class MiniClusterExecutionEnvironment(
   }
 
   override def execute(streamGraph: StreamGraph): JobExecutionResult = {
-    val jobGraph: JobGraph = streamGraph.getJobGraph
+    val jobGraph = PipelineExecutorUtils.getJobGraph(streamGraph, userFlinkClusterConfig, getUserClassloader)
+    if (jobGraph.getSavepointRestoreSettings == SavepointRestoreSettings.none) {
+      // similar behaviour to MiniClusterExecutor.execute - PipelineExecutorUtils.getJobGraph overrides a few settings done directly on StreamGraph by settings from configuration
+      jobGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings)
+    }
 
-    // a work around for a behaviour added in https://issues.apache.org/jira/browse/FLINK-32265
-    // Flink overwrite user classloader by the AppClassLoader if classpaths parameter is empty
-    // (implementation in org.apache.flink.runtime.execution.librarycache.BlobLibraryCacheManager)
-    // which holds all needed jars/classes in case of running from Scala plugin in IDE.
-    // but in case of running from sbt it contains only sbt-launcher.jar
-    jobGraph.setClasspaths(List(new URL("http://dummy-classpath.invalid")).asJava)
     logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
