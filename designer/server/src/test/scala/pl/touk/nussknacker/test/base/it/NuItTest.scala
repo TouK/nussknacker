@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.test.base.it
 
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
@@ -16,11 +17,15 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Bef
 
   val nuDesignerHttpAddress = s"http://localhost:$port"
 
-  private val (_, releaseAppResources) = {
-    new NussknackerAppFactory()
+  private var releaseAppResources: IO[Unit] = IO.unit
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    releaseAppResources = new NussknackerAppFactory()
       .createApp(adjustNuTestConfig())
       .allocated
       .unsafeRunSync()
+      ._2
   }
 
   override protected def afterAll(): Unit = {

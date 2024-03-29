@@ -22,7 +22,7 @@ trait DockerTest
 
   protected val userToAct: User = User("testUser", "Test User")
 
-  override val container: Container = MultipleContainers((kafka: LazyContainer[_]) :: flinkContainers: _*)
+  override val container: Container = MultipleContainers((kafkaContainer: LazyContainer[_]) :: flinkContainers: _*)
 
   def config: Config = ConfigFactory
     .load()
