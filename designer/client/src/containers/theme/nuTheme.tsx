@@ -34,6 +34,61 @@ const custom = {
         baseUnit: 4,
     },
     fontSize: 14,
+    colors: {
+        nodes: {
+            Source: {
+                fill: "#2d8e54",
+            },
+            FragmentInputDefinition: {
+                fill: "#db4646",
+            },
+            Sink: {
+                fill: "#db4646",
+            },
+            FragmentOutputDefinition: {
+                fill: "#db4646",
+            },
+            Filter: {
+                fill: "#db7e3a",
+            },
+            Switch: {
+                fill: "#70c6ce",
+            },
+            VariableBuilder: {
+                fill: "#FEB58A",
+            },
+            Variable: {
+                fill: "#FEB58A",
+            },
+            Enricher: {
+                fill: "#805db2",
+            },
+            FragmentInput: {
+                fill: "#805db2",
+            },
+            Split: {
+                fill: "#FCC56D",
+            },
+            Processor: {
+                fill: "#4583dd",
+            },
+            Aggregate: {
+                fill: "#e892bd",
+            },
+            Properties: {
+                fill: "#46ca94",
+            },
+            CustomNode: {
+                fill: "#1aada6",
+            },
+            Join: {
+                fill: "#1aada6",
+            },
+            _group: {
+                fill: "#1aada6",
+            },
+        },
+    },
 };
 
 const headerCommonStyles = {

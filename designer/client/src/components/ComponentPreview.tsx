@@ -1,6 +1,5 @@
 import { css, cx } from "@emotion/css";
 import React from "react";
-import customAttrs from "../assets/json/nodeAttributes.json";
 import { NodeType } from "../types";
 import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, portSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
@@ -52,7 +51,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     });
 
     const imageColors = css({
-        background: customAttrs[node?.type]?.styles.fill,
+        background: theme.custom.colors.nodes[node?.type]?.fill,
         color: theme.palette.common.white,
     });
 

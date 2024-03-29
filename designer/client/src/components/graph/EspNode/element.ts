@@ -1,7 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { attributes, dia, shapes } from "jointjs";
 import { cloneDeepWith, get, isEmpty, toString } from "lodash";
-import customAttrs from "../../../assets/json/nodeAttributes.json";
 import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
@@ -135,7 +134,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     text: description,
                 },
                 iconBackground: {
-                    fill: customAttrs[node.type].styles.fill,
+                    fill: theme.custom.colors.nodes[node.type].fill,
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
                 icon: {
