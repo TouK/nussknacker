@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.implicits.toTraverseOps
+import cats.implicits.{toFunctorOps, toTraverseOps}
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
