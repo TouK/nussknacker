@@ -596,19 +596,17 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"          %% "cats-core"                      % catsV                % Provided,
-        "org.apache.flink"        % "flink-streaming-java"           % flinkV               % flinkScope
+        "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
+        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % flinkScope
           excludeAll (
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
-        "org.apache.flink"        % "flink-statebackend-rocksdb"     % flinkV               % flinkScope,
-        "com.softwaremill.retry" %% "retry"                          % "0.3.6",
-        "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
-        "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test,
-        "org.scalatestplus"      %% "mockito-4-11"                   % scalaTestPlusV       % Test,
+        "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
+        "com.softwaremill.retry" %% "retry"                      % "0.3.6",
+        "com.github.tomakehurst"  % "wiremock-jre8"              % wireMockV      % Test,
+        "org.scalatestplus"      %% "mockito-4-11"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -620,6 +618,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     componentsApi        % Provided,
     httpUtils            % Provided,
     flinkScalaUtils      % Provided,
+    flinkTestUtils       % IntegrationTest,
     kafkaTestUtils       % "it,test"
   )
 
@@ -1162,15 +1161,17 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java"           % flinkV % Provided,
         // intellij has some problems with provided...
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV,
-        "org.apache.flink" % "flink-test-utils"           % flinkV excludeAll (
+        "org.apache.flink" % "flink-statebackend-rocksdb"     % flinkV,
+        "org.apache.flink" % "flink-test-utils"               % flinkV excludeAll (
           // we use logback in NK
           ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
         ),
-        "org.apache.flink" % "flink-runtime"              % flinkV % Compile classifier "tests",
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV
+        "org.apache.flink" % "flink-runtime"                  % flinkV % Compile classifier "tests",
+        "org.apache.flink" % "flink-metrics-dropwizard"       % flinkV,
+        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV,
+        "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )

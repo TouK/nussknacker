@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, OptionValues, Suite}
+import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -12,7 +13,8 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.DockerTest
 
-trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { self: Suite =>
+trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matchers with OptionValues {
+  self: Suite with LazyLogging =>
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
