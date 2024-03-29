@@ -26,6 +26,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
     * in `ProcessAction` attribute `actionType` renamed to `actionName`
     * in table `process_actions` column `action_type` is renamed to `action_name`
+  * for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
 
 ### Configuration changes
 

@@ -8,11 +8,11 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
 import scala.util.Try
 
+final case class TestRunId private (id: String)
+
 object TestRunId {
   def generate: TestRunId = new TestRunId(UUID.randomUUID().toString)
 }
-
-case class TestRunId private (id: String)
 
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
 case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, variableEncoder: Any => T)
