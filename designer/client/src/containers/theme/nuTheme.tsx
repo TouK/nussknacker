@@ -1,6 +1,6 @@
-import { alpha, createTheme, rgbToHex } from "@mui/material";
-import { blend } from "@mui/system";
+import { alpha, createTheme } from "@mui/material";
 import { fontFamily, globalStyles } from "./styles";
+import { blendDarken, blendLighten } from "./helpers";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -21,9 +21,6 @@ declare module "@mui/material/styles" {
         custom?: typeof custom;
     }
 }
-
-export const blendDarken = (color: string, opacity: number) => rgbToHex(blend(color, "#000000", opacity));
-export const blendLighten = (color: string, opacity: number) => rgbToHex(blend(color, "#ffffff", opacity));
 
 const custom = {
     ConnectionErrorModal: {

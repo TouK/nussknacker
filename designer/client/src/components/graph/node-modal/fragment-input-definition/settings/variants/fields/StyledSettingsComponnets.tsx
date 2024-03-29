@@ -2,7 +2,8 @@ import React from "react";
 import { Switch, styled, FormLabel, css, alpha } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { StyledNodeTip } from "../../../../FieldLabel";
-import { blendLighten } from "../../../../../../../containers/theme/nuTheme";
+
+import { blendLighten } from "../../../../../../../containers/theme/helpers";
 
 export const SettingsWrapper = styled("div")(({ theme }) => ({
     padding: "10px",

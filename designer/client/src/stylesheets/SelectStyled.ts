@@ -1,7 +1,7 @@
 import { alpha, css, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
-import { blendDarken, blendLighten } from "../containers/theme/nuTheme";
+import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
@@ -23,7 +23,7 @@ export const selectStyled = (theme: Theme) => {
         border: none;
         border-radius: 0;
         box-shadow: 0;
-        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.25)} !important;
+        outline: 1px solid ${getBorderColor(theme)} !important;
         ${isFocused &&
         css`
             outline: 1px solid ${theme.palette.primary.main} !important;

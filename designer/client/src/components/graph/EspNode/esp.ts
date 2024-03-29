@@ -3,8 +3,8 @@ import { Theme } from "@mui/material";
 import { dia, shapes, util } from "jointjs";
 import { getStringWidth } from "./element";
 import { getRoundedRectPath } from "./getRoundedRectPath";
-import { blendLighten } from "../../../containers/theme/nuTheme";
 import { NodeType } from "../../../types";
+import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 
 export const RECT_WIDTH = 232;
 export const RECT_HEIGHT = 48;
@@ -70,7 +70,7 @@ const content = (theme: Theme): dia.MarkupNodeJSON => ({
     attributes: {
         x: iconBackgroundSize + CONTENT_PADDING,
         y: RECT_HEIGHT / 2,
-        fill: blendLighten(theme.palette.background.paper, 0.25),
+        fill: getBorderColor(theme),
         "pointer-events": "none",
         ...theme.typography.caption,
     },
@@ -82,7 +82,7 @@ const portMarkup = (theme: Theme, node: NodeType): dia.MarkupNodeJSON => ({
     attributes: {
         magnet: true,
         r: portSize,
-        stroke: node.isDisabled ? "none" : blendLighten(theme.palette.background.paper, 0.25),
+        stroke: node.isDisabled ? "none" : getBorderColor(theme),
         fill: blendLighten(theme.palette.background.paper, 0.04),
         strokeWidth: 0.5,
         disabled: node.isDisabled,
@@ -130,7 +130,7 @@ const defaults = (theme: Theme) =>
                     textVerticalAnchor: "middle",
                 },
                 border: {
-                    stroke: blendLighten(theme.palette.background.paper, 0.25),
+                    stroke: getBorderColor(theme),
                 },
                 testResults: {
                     refX,

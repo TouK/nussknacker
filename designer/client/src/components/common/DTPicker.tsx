@@ -3,7 +3,6 @@ import DateTimePicker from "react-datetime";
 import { useTranslation } from "react-i18next";
 import { styled } from "@mui/material";
 import { nodeInputCss } from "../NodeInput";
-import "./DTPicker.css";
 
 const DTPickerStyled = styled(DateTimePicker)(() => ({
     ...nodeInputCss,

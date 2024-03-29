@@ -5,8 +5,8 @@ import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, portSize,
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
 import { alpha, styled, useTheme } from "@mui/material";
-import { blendLighten } from "../containers/theme/nuTheme";
 import { blend } from "@mui/system";
+import { blendLighten, getBorderColor } from "../containers/theme/helpers";
 
 export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; isActive?: boolean; isOver?: boolean }): JSX.Element {
     const theme = useTheme();
@@ -32,11 +32,11 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
 
     const nodeColors = css({
         opacity: 0.5,
-        borderColor: blendLighten(theme.palette.background.paper, 0.25),
+        borderColor: getBorderColor(theme),
         backgroundColor: blendLighten(theme.palette.background.paper, 0.04),
     });
     const nodeColorsHover = css({
-        borderColor: blend(blendLighten(theme.palette.background.paper, 0.25), theme.palette.secondary.main, 0.2),
+        borderColor: blend(getBorderColor(theme), theme.palette.secondary.main, 0.2),
         backgroundColor: blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.secondary.main, 0.2),
     });
 

@@ -7,7 +7,8 @@ import { useSelector } from "react-redux";
 import { getProcessName } from "./NodeDetailsContent/selectors";
 import NodeUtils from "../NodeUtils";
 import { styled } from "@mui/material";
-import { blendLighten } from "../../../containers/theme/nuTheme";
+
+import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 
 interface Props {
     node: NodeType;
@@ -33,8 +34,7 @@ const ReactMarkdownStyled = styled(ReactMarkdown)(({ theme }) => ({
     },
     "th, td": {
         padding: theme.spacing(1.25),
-        border: "1px solid",
-        borderColor: blendLighten(theme.palette.background.paper, 0.25),
+        border: `1px solid ${getBorderColor(theme)}`,
         fontSize: "12px",
     },
     a: {

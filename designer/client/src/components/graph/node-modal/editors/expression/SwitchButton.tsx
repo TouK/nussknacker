@@ -8,7 +8,8 @@ import TextIcon from "./icons/code_off.svg";
 import ListIcon from "./icons/list.svg";
 import ScheduleIcon from "./icons/schedule.svg";
 import DateIcon from "./icons/date_range.svg";
-import { blendLighten } from "../../../../../containers/theme/nuTheme";
+
+import { blendLighten } from "../../../../../containers/theme/helpers";
 
 export const SwitchButton = styled(Button)(({ disabled, theme }) => ({
     width: 35,

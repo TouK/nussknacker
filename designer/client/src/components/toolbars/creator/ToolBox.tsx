@@ -8,7 +8,8 @@ import { ToolboxComponentGroup } from "./ToolboxComponentGroup";
 import Tool from "./Tool";
 import { useTranslation } from "react-i18next";
 import { lighten, styled } from "@mui/material";
-import { blendLighten } from "../../../containers/theme/nuTheme";
+
+import { blendLighten } from "../../../containers/theme/helpers";
 
 const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",

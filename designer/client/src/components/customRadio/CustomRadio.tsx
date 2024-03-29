@@ -2,7 +2,8 @@ import React, { ComponentType, ForwardedRef, forwardRef, SVGProps } from "react"
 import { Box, Checkbox, MenuItem, Paper, Typography } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { SvgIconComponent } from "@mui/icons-material";
-import { blendLighten } from "../../containers/theme/nuTheme";
+
+import { blendLighten } from "../../containers/theme/helpers";
 
 interface Props {
     label: string;

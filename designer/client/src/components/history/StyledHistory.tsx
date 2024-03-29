@@ -1,7 +1,7 @@
 import { styled } from "@mui/material";
 import { VersionType } from "./HistoryItem";
 import Badge from "../deployed.svg";
-import { blendDarken, blendLighten } from "../../containers/theme/nuTheme";
+import { blendDarken, blendLighten } from "../../containers/theme/helpers";
 
 export const HistoryItemStyled = styled("li")<{ type: VersionType }>(({ theme, type }) => ({
     cursor: "pointer",

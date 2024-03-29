@@ -1,5 +1,6 @@
 import { Theme } from "@mui/material";
-import { blendDarken, blendLighten } from "./nuTheme";
+import "react-datetime/css/react-datetime.css";
+import { blendDarken, blendLighten, getBorderColor } from "./helpers";
 
 const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_gutter": {
@@ -25,7 +26,7 @@ const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker": {
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.secondary,
-        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        outline: `1px solid ${getBorderColor(theme)}`,
         "&:focus-within": {
             outline: `1px solid ${theme.palette.primary.main}`,
         },
@@ -153,6 +154,44 @@ const aceEditorStyles = (theme: Theme) => ({
     },
 });
 
+const DTPickerStyles = (theme: Theme) => ({
+    ".rdtOpen .rdtPicker": {
+        position: "fixed",
+        backgroundColor: "#222222",
+        borderColor: getBorderColor(theme),
+    },
+
+    ".rdtPicker tfoot, .rdtPicker th": {
+        borderColor: getBorderColor(theme),
+        paddingTop: "0.25em",
+        paddingBottom: "0.25em",
+    },
+
+    ".rdtPicker td.rdtActive, .rdtPicker td.rdtActive:hover": {
+        backgroundColor: "#db7e3a",
+        color: theme.palette.common.black,
+    },
+
+    ".rdtPicker thead tr:first-child th:hover": {
+        backgroundColor: "inherit",
+        color: "#db7e3a",
+    },
+
+    ".rdtCounter .rdtBtn:hover, td.rdtMonth:hover, td.rdtYear:hover, .rdtPicker td.rdtDay:hover, .rdtPicker td.rdtHour:hover, .rdtPicker td.rdtMinute:hover, .rdtPicker td.rdtSecond:hover, .rdtPicker .rdtTimeToggle:hover":
+        {
+            backgroundColor: theme.palette.common.black,
+            color: "#db7e3a",
+        },
+
+    ".rdtPicker td.rdtToday:before": {
+        borderBottomColor: "#db7e3a",
+    },
+
+    ".rdtPicker td.rdtActive.rdtToday:before": {
+        borderBottomColor: theme.palette.common.black,
+    },
+});
+
 export const fontFamily = [
     "Inter",
     "-apple-system",
@@ -186,7 +225,7 @@ export const globalStyles = (theme: Theme) => ({
         boxShadow: "none",
         border: "none",
         backgroundColor: theme.palette.background.paper,
-        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        outline: `1px solid ${getBorderColor(theme)}`,
         "&:focus, &:focus-within": {
             outline: `1px solid ${theme.palette.primary.main}`,
         },
@@ -194,7 +233,7 @@ export const globalStyles = (theme: Theme) => ({
     button: {
         ...theme.typography.button,
         textTransform: "none",
-        outline: `1px solid ${blendLighten(theme.palette.background.paper, 0.25)}`,
+        outline: `1px solid ${getBorderColor(theme)}`,
         ":hover": {
             cursor: "pointer",
             backgroundColor: theme.palette.action.hover,
@@ -248,4 +287,5 @@ export const globalStyles = (theme: Theme) => ({
         display: "none",
     },
     ...aceEditorStyles(theme),
+    ...DTPickerStyles(theme),
 });

@@ -2,7 +2,8 @@ import React, { PropsWithChildren } from "react";
 import { useTheme } from "@mui/material";
 import { WindowManagerProvider } from "@touk/window-manager";
 import { ContentGetter } from "./ContentGetter";
-import { blendDarken } from "../containers/theme/nuTheme";
+
+import { blendDarken } from "../containers/theme/helpers";
 
 export function WindowManager(props: PropsWithChildren<{ className: string }>) {
     const {

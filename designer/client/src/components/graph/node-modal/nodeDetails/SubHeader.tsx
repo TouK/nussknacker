@@ -2,7 +2,8 @@ import React from "react";
 import { Theme, useTheme } from "@mui/material";
 import { Subtype } from "./Subtype";
 import { Docs } from "./Docs";
-import { blendLighten } from "../../../../containers/theme/nuTheme";
+
+import { blendLighten } from "../../../../containers/theme/helpers";
 
 const SubtypeHeaderDocsLink = (theme: Theme) => ({
     backgroundColor: blendLighten(theme.palette.background.paper, 0.1),

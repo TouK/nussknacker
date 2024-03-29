@@ -2,8 +2,8 @@
 import { dia, routers } from "jointjs";
 import { Edge, EdgeKind, ScenarioGraph, ProcessDefinitionData } from "../../../types";
 import NodeUtils from "../NodeUtils";
-import { blendLighten } from "../../../containers/theme/nuTheme";
 import { Theme } from "@mui/material";
+import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 
 function makeLabels(theme: Theme, label = "", prefix = ""): dia.Link.Label[] {
     const havePrefix = prefix.length > 0;
@@ -21,7 +21,7 @@ function makeLabels(theme: Theme, label = "", prefix = ""): dia.Link.Label[] {
                           refHeight: "100%",
                           refWidth2: 12,
                           refHeight2: 12,
-                          stroke: blendLighten(theme.palette.background.paper, 0.25),
+                          stroke: getBorderColor(theme),
                           fill: blendLighten(theme.palette.background.paper, 0.04),
                           strokeWidth: 0.5,
                           rx: 5,

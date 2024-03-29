@@ -1,5 +1,6 @@
 import { css, Theme } from "@mui/material";
-import { blendLighten } from "../../../../containers/theme/nuTheme";
+
+import { blendLighten } from "../../../../containers/theme/helpers";
 
 export const customCheckbox = (checkboxWidth: string, theme: Theme) => css`
     input[type="checkbox"] {
