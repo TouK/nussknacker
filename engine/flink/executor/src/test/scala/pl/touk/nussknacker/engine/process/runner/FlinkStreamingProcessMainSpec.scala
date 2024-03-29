@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.runner
 
 import io.circe.Encoder
 import io.circe.syntax._
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -9,8 +10,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
+import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.runner.SimpleProcessConfigCreator.{
   sinkForIntsResultsHolder,
   valueMonitorResultsHolder
@@ -23,6 +25,14 @@ class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Insid
 
   import spel.Implicits._
 
+  object TestFlinkStreamingProcessMain extends FlinkStreamingProcessMain {
+
+    override protected def getExecutionEnvironment: StreamExecutionEnvironment = {
+      StreamExecutionEnvironment.getExecutionEnvironment(FlinkTestConfiguration.configuration())
+    }
+
+  }
+
   it should "be able to compile and serialize services" in {
     val process =
       ScenarioBuilder
@@ -32,7 +42,7 @@ class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Insid
         .processor("proc2", "logService", "all" -> "#distinct(#input.![value2])")
         .emptySink("out", "monitor")
 
-    FlinkStreamingProcessMain.main(
+    TestFlinkStreamingProcessMain.main(
       Array(
         process.asJson.spaces2,
         Encoder[ProcessVersion].apply(ProcessVersion.empty).noSpaces,
