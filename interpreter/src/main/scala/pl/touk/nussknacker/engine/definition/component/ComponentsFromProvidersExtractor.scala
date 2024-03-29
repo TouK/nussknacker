@@ -107,7 +107,13 @@ class ComponentsFromProvidersExtractor(
       name -> provider.resolveConfigForExecution(config.config)
     }
     resolvedConfigs.foldLeft(inputConfig) { case (acc, (name, conf)) =>
-      acc.withValue(s"$componentConfigPath.$name", conf.root())
+      // We don't load empty configs to avoid changing the behaviour of components loading.
+      // (We don't want auto loaded components to be recognized as manually loaded).
+      if (conf.isEmpty) {
+        acc
+      } else {
+        acc.withValue(s"$componentConfigPath.$name", conf.root())
+      }
     }
   }
 

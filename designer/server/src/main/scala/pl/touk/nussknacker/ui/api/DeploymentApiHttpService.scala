@@ -26,17 +26,19 @@ class DeploymentApiHttpService(
       // FIXME: authorize canDeploy
       .serverSecurityLogic(authorizeKnownUser[DeploymentError])
       .serverLogicEitherT { implicit loggedUser =>
-        // FIXME: use params
+        // TODO: use params
         { case (scenarioName, deploymentId, request) =>
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
             // TODO: Currently it is done sync, but eventually we should make it async and add status checking
             _ <- EitherT.right(
-              deploymentService.deployProcessAsync(
-                ProcessIdWithName(scenarioId, scenarioName),
-                savepointPath = None,
-                comment = None
-              )
+              deploymentService
+                .deployProcessAsync(
+                  ProcessIdWithName(scenarioId, scenarioName),
+                  savepointPath = None,
+                  comment = None
+                )
+                .flatten
             )
           } yield ()
         }
