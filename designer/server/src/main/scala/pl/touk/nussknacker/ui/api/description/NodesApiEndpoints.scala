@@ -1628,8 +1628,7 @@ object TypingDtoSchemas {
             typedTaggedTypeSchema,
             _ => Some(TypedTaggedSchemaHelper.Types.TypedTaggedValue)
           ),
-        ) :::
-          sProductFieldForKlassAndParams
+        )
       ),
       Some(SName("TypedTaggedValue"))
     )
