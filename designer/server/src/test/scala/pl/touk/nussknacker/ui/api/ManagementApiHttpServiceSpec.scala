@@ -52,7 +52,7 @@ class ManagementApiHttpServiceSpec
           .statusCode(200)
           .equalsJsonBody(
             s"""{
-               |    "errors": [
+               |    "validationErrors": [
                |
                |    ],
                |    "validationPerformed": true
@@ -80,7 +80,7 @@ class ManagementApiHttpServiceSpec
           .statusCode(200)
           .equalsJsonBody(
             s"""{
-               |    "errors": [
+               |    "validationErrors": [
                |
                |    ],
                |    "validationPerformed": true
@@ -108,7 +108,7 @@ class ManagementApiHttpServiceSpec
           .statusCode(200)
           .equalsJsonBody(
             s"""{
-               |    "errors": [
+               |    "validationErrors": [
                |        {
                |            "typ": "BlankParameter",
                |            "message": "This field value is required and can not be blank",
@@ -144,7 +144,7 @@ class ManagementApiHttpServiceSpec
           .statusCode(200)
           .equalsJsonBody(
             s"""{
-               |    "errors": [
+               |    "validationErrors": [
                |        {
                |            "typ": "MismatchParameter",
                |            "message": "Couldn't find a matching parameter in action definition for this param: property1",
