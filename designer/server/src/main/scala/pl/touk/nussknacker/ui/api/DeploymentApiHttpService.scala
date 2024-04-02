@@ -30,7 +30,7 @@ class DeploymentApiHttpService(
         { case (scenarioName, deploymentId, request) =>
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
-            // TODO: Currently it is done sync, but eventually we should make it async and add status checking
+            // TODO: Currently it is done sync, but eventually we should make it async and add an endpoint for deployment status verification
             _ <- EitherT.right(
               deploymentService
                 .deployProcessAsync(

@@ -584,6 +584,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / Keys.test                     := (IntegrationTest / Keys.test)
       .dependsOn(
         flinkExecutor / Compile / assembly,
+        flinkExecutor / prepareItLibs,
         flinkDevModel / Compile / assembly,
         flinkDevModelJava / Compile / assembly,
         experimentalFlinkTableApiComponents / Compile / assembly,
@@ -669,6 +670,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
   .dependsOn(
     commonComponents,
     flinkSchemedKafkaComponentsUtils,
+    liteComponentsApi    % Compile,
     flinkComponentsUtils % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
     liteComponentsApi    % Provided,
@@ -1867,7 +1869,8 @@ lazy val designer = (project in file("designer/server"))
         defaultModel / Compile / assembly,
         experimentalFlinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
-        flinkExecutor / Compile / assembly
+        flinkExecutor / Compile / assembly,
+        flinkExecutor / prepareItLibs
       )
       .value,
     /*

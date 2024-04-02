@@ -1,7 +1,7 @@
 CREATE TABLE transactions
 (
     client_id STRING,
-    amount    INT
+    amount    DECIMAL(15, 2)
 ) WITH (
       'connector' = 'filesystem',
       'path' = 'file:///transactions',
@@ -11,9 +11,9 @@ CREATE TABLE transactions
 CREATE TABLE transactions_summary
 (
     client_id STRING,
-    amount    INT
+    amount    DECIMAL(15, 2)
 ) WITH (
       'connector' = 'filesystem',
-      'path' = 'file:///transactions_summary',
+      'path' = 'file:///output/transactions_summary',
       'format' = 'csv'
       )
