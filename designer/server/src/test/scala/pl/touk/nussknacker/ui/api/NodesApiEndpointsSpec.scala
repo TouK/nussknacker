@@ -28,7 +28,6 @@ class NodesApiEndpointsSpec
         if (json.toString.length() > 750) {
           break()
         } else {
-          println(json)
           schema should validateJson(json)
         }
       }
