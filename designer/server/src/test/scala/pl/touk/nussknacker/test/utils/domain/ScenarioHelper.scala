@@ -3,7 +3,7 @@ package pl.touk.nussknacker.test.utils.domain
 import com.typesafe.config.{Config, ConfigObject, ConfigRenderOptions}
 import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -105,13 +105,13 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
   }
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
-    val actionType = ProcessActionType.Deploy
-    val comment    = DeploymentComment.unsafe("Deploy comment").toComment(actionType)
+    val actionName = ScenarioActionName.Deploy
+    val comment    = DeploymentComment.unsafe("Deploy comment").toComment(actionName)
     dbioRunner.run(
       actionRepository.addInstantAction(
         scenarioId,
         VersionId.initialVersionId,
-        actionType,
+        actionName,
         Some(comment),
         Some(processingType)
       )
@@ -119,10 +119,10 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
   }
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
-    val actionType = ProcessActionType.Cancel
-    val comment    = DeploymentComment.unsafe("Cancel comment").toComment(actionType)
+    val actionName = ScenarioActionName.Cancel
+    val comment    = DeploymentComment.unsafe("Cancel comment").toComment(actionName)
     dbioRunner.run(
-      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionType, Some(comment), None)
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )
   }
 

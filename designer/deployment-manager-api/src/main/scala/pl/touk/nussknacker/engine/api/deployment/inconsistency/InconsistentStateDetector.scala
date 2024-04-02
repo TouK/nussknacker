@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.inconsistency
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName, StatusDetails}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector
@@ -17,13 +17,13 @@ class InconsistentStateDetector extends LazyLogging {
       case (Right(Some(state)), _) if state.status == SimpleStateStatus.Restarting =>
         handleRestartingState(state, lastStateAction)
       case (Right(statusDetailsOpt), Some(action))
-          if action.actionType == ProcessActionType.Deploy && action.state == ProcessActionState.ExecutionFinished =>
+          if action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.ExecutionFinished =>
         handleLastActionFinishedDeploy(statusDetailsOpt, action)
-      case (Right(statusDetailsOpt), Some(action)) if action.actionType == ProcessActionType.Deploy =>
+      case (Right(statusDetailsOpt), Some(action)) if action.actionName == ScenarioActionName.Deploy =>
         handleLastActionDeploy(statusDetailsOpt, action)
       case (Right(Some(state)), _) if isFollowingDeployStatus(state) =>
         handleFollowingDeployState(state, lastStateAction)
-      case (Right(statusDetailsOpt), Some(action)) if action.actionType == ProcessActionType.Cancel =>
+      case (Right(statusDetailsOpt), Some(action)) if action.actionName == ScenarioActionName.Cancel =>
         handleCanceledState(statusDetailsOpt)
       case (Right(Some(state)), _) => handleState(state, lastStateAction)
       case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId.fromActionId(a.id)))
@@ -77,8 +77,8 @@ class InconsistentStateDetector extends LazyLogging {
       lastStateAction: Option[ProcessAction]
   ): StatusDetails =
     lastStateAction match {
-      case Some(action) if action.actionType.equals(ProcessActionType.Deploy) => statusDetails
-      case _ => handleState(statusDetails, lastStateAction)
+      case Some(action) if action.actionName == ScenarioActionName.Deploy => statusDetails
+      case _                                                              => handleState(statusDetails, lastStateAction)
     }
 
   // This method handles some corner cases for following deploy state mismatch last action version
@@ -87,7 +87,7 @@ class InconsistentStateDetector extends LazyLogging {
       lastStateAction: Option[ProcessAction]
   ): StatusDetails =
     lastStateAction match {
-      case Some(action) if !action.actionType.equals(ProcessActionType.Deploy) =>
+      case Some(action) if action.actionName != ScenarioActionName.Deploy =>
         statusDetails.copy(status = ProblemStateStatus.shouldNotBeRunning(true))
       case Some(_) =>
         statusDetails

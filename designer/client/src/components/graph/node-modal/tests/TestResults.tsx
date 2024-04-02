@@ -2,11 +2,11 @@ import { isEmpty, isObject, join } from "lodash";
 import React from "react";
 import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
-import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { Box, FormControl, FormLabel, Link } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import TestResultsVariables from "./TestResultsVariables";
 import { Download } from "@mui/icons-material";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
@@ -26,11 +26,8 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
             </FormControl>
             {Object.keys(results.testResultsToShow.context.variables)
                 .sort((a, b) => a.localeCompare(b))
-                .map((key, ikey) => (
-                    <FormControl key={ikey}>
-                        <FormLabel>{key}:</FormLabel>
-                        <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
-                    </FormControl>
+                .map((key, index) => (
+                    <TestResultsVariables key={index} labelText={key} result={results.testResultsToShow.context.variables[key]} />
                 ))}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForCurrentContext)
                 ? results.testResultsToShow.externalInvocationResultsForCurrentContext.map((mockedValue, index) => (

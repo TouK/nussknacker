@@ -7,6 +7,8 @@ import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from 
 import api from "../api";
 import { UserData } from "../common/models/User";
 import {
+    ActionName,
+    PredefinedActionName,
     ProcessActionType,
     ProcessName,
     ProcessStateType,
@@ -227,7 +229,7 @@ class HttpService {
     }
 
     fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
-        return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`);
+        return api.get(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${labelPattern}`);
     }
 
     fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
@@ -285,10 +287,12 @@ class HttpService {
             .get<
                 {
                     performedAt: string;
-                    actionType: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY";
+                    actionName: ActionName;
                 }[]
             >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
+            .then((res) =>
+                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
+            );
     }
 
     deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
@@ -700,7 +704,7 @@ class HttpService {
 
     fetchProcessDefinitionDataDict(processingType: ProcessingType, dictId: string, label: string) {
         return api
-            .get<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${label}`)
+            .get<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${label}`)
             .catch((error) =>
                 Promise.reject(
                     this.#addError(

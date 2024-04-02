@@ -3,13 +3,15 @@ import { UnknownRecord, Instant } from "../../types/common";
 import { ScenarioGraph, ValidationResult } from "../../types";
 import { ProcessingMode } from "../../http/HttpService";
 
-export enum ActionType {
+export enum PredefinedActionName {
     Deploy = "DEPLOY",
     Cancel = "CANCEL",
     Archive = "ARCHIVE",
     UnArchive = "UNARCHIVE",
     Pause = "PAUSE",
 }
+
+export type ActionName = string;
 
 export type ProcessVersionId = number;
 
@@ -23,7 +25,7 @@ export type BuildInfoType = {
 export type ProcessActionType = {
     performedAt: Instant;
     user: string;
-    actionType: ActionType;
+    actionName: ActionName;
     commentId?: number;
     comment?: string;
     buildInfo?: BuildInfoType;
@@ -67,7 +69,7 @@ export type ProcessName = Scenario["name"];
 export type ProcessStateType = {
     status: StatusType;
     externalDeploymentId?: string;
-    allowedActions: Array<ActionType>;
+    allowedActions: Array<ActionName>;
     icon: string;
     tooltip: string;
     description: string;

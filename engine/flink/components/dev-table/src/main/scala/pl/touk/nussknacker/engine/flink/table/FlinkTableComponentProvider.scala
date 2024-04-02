@@ -26,12 +26,12 @@ import scala.util.{Failure, Success, Try}
  *  kafka and schema registry addresses are provided as environment variables that are different for designer and
  *  jobmanager/taskmanager services. For reference see the nussknacker-quickstart repository.
  */
- class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
+class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
 
   override def providerName: String = "flinkTable"
-  private val tableComponentName = "table"
+  private val tableComponentName    = "table"
 
   override def resolveConfigForExecution(config: Config): Config = config
 

@@ -738,7 +738,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
 
       forScenarioReturned(processName) { process =>
-        process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
+        process.lastActionType shouldBe Some(ScenarioActionName.Archive.toString)
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe true
       }
@@ -752,7 +752,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
 
       forScenarioReturned(processName) { process =>
-        process.lastActionType shouldBe Some(ProcessActionType.UnArchive.toString)
+        process.lastActionType shouldBe Some(ScenarioActionName.UnArchive.toString)
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe false
       }

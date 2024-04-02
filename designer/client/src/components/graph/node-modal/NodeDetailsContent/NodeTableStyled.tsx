@@ -51,8 +51,9 @@ export const NodeTableStyled = styled("div")(
                 width: 70%;
             }
             .fadeout {
-                position: relative;
-                bottom: 4em;
+                position: absolute;
+                bottom: 0;
+                width: 100%;
                 height: 4em;
                 background: -webkit-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
                 background-image: -moz-linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%);
