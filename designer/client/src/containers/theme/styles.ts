@@ -172,7 +172,7 @@ const DTPickerStyles = (theme: Theme) => ({
         color: theme.palette.common.black,
     },
 
-    ".rdtPicker thead tr:first-child th:hover": {
+    ".rdtPicker thead tr:first-of-type th:hover": {
         backgroundColor: "inherit",
         color: "#db7e3a",
     },
