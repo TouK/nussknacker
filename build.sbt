@@ -1864,6 +1864,8 @@ lazy val designer = (project in file("designer/server"))
       .value,
     Test / test                      := (Test / test)
       .dependsOn(
+        defaultModel / Compile / assembly,
+        experimentalFlinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
         flinkExecutor / Compile / assembly
       )

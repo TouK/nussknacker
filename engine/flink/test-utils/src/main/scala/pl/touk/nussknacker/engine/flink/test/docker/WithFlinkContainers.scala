@@ -21,6 +21,10 @@ trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogg
 
   protected lazy val taskManagerSlotCount = 8
 
+  protected def jobManagerExtraFSBinds: List[FileSystemBind] = List.empty
+
+  protected def taskManagerExtraFSBinds: List[FileSystemBind] = List.empty
+
   protected def jobManagerRestUrl =
     s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"
 
@@ -44,6 +48,9 @@ trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogg
       self.setNetworkAliases(asList("jobmanager"))
       self.withLogConsumer(logConsumer.withPrefix("jobmanager"))
       self.withFileSystemBind(savepointDir.toString, savepointDir.toString, BindMode.READ_WRITE)
+      jobManagerExtraFSBinds.foreach { bind =>
+        self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)
+      }
     }
   }
 
@@ -57,6 +64,9 @@ trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogg
       self.setNetwork(network)
       self.setNetworkAliases(asList("taskmanager"))
       self.withLogConsumer(logConsumer.withPrefix("taskmanager"))
+      taskManagerExtraFSBinds.foreach { bind =>
+        self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)
+      }
     }
   }
 
