@@ -235,6 +235,8 @@ class DefaultComponentServiceSpec
         ComponentId(Source, SharedSourceName),
         SourceIcon,
         SourcesGroupName,
+        nonDefaultAllowedProcessingModes =
+          Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
       ),
       sharedComponent(
         ComponentId(Sink, SharedSinkName),
@@ -255,7 +257,9 @@ class DefaultComponentServiceSpec
         ComponentId(Source, SourceSinkSameNameComponentName),
         SourceIcon,
         SourcesGroupName,
-        designerWideComponentId = Some(overrideSourceComponentId)
+        designerWideComponentId = Some(overrideSourceComponentId),
+        nonDefaultAllowedProcessingModes =
+          Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
       ),
       sharedComponent(
         ComponentId(Sink, SourceSinkSameNameComponentName),
@@ -289,8 +293,20 @@ class DefaultComponentServiceSpec
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
-    marketingComponent(ComponentId(Source, SuperMarketingSourceName), SourceIcon, SourcesGroupName),
-    marketingComponent(ComponentId(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
+    marketingComponent(
+      ComponentId(Source, SuperMarketingSourceName),
+      SourceIcon,
+      SourcesGroupName,
+      nonDefaultAllowedProcessingModes =
+        Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+    ),
+    marketingComponent(
+      ComponentId(Source, NotSharedSourceName),
+      SourceIcon,
+      SourcesGroupName,
+      nonDefaultAllowedProcessingModes =
+        Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+    ),
     marketingComponent(
       ComponentId(Service, SingleProvidedComponentName),
       ServiceIcon,
@@ -309,7 +325,13 @@ class DefaultComponentServiceSpec
     ),
     fraudComponent(ComponentId(Sink, SecondMonitorName), SinkIcon, executionGroupName),
     fraudComponent(ComponentId(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
-    fraudComponent(ComponentId(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
+    fraudComponent(
+      ComponentId(Source, NotSharedSourceName),
+      SourceIcon,
+      SourcesGroupName,
+      nonDefaultAllowedProcessingModes =
+        Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+    ),
     fraudComponent(ComponentId(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )
 
@@ -317,7 +339,8 @@ class DefaultComponentServiceSpec
       componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) = {
     val id         = designerWideComponentId.getOrElse(DesignerWideComponentId(componentId.name))
     val links      = createLinks(id, componentId)
@@ -334,7 +357,7 @@ class DefaultComponentServiceSpec
       availableCategories,
       links,
       usageCount,
-      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
     )
   }
 
@@ -379,6 +402,7 @@ class DefaultComponentServiceSpec
     )
   }
 
+  // It would be good to rewrite these tests to make expected component list static which would also make expected values more readable
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ fragmentMarketingComponents ++ fragmentFraudComponents
 
@@ -386,7 +410,8 @@ class DefaultComponentServiceSpec
       componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) =
     createComponent(
       ProcessingTypeStreaming,
@@ -394,14 +419,16 @@ class DefaultComponentServiceSpec
       icon,
       componentGroupName,
       List(CategoryMarketing),
-      designerWideComponentId
+      designerWideComponentId,
+      nonDefaultAllowedProcessingModes
     )
 
   private def fraudComponent(
       componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) =
     createComponent(
       ProcessingTypeFraud,
@@ -409,7 +436,8 @@ class DefaultComponentServiceSpec
       icon,
       componentGroupName,
       List(CategoryFraud),
-      designerWideComponentId
+      designerWideComponentId,
+      nonDefaultAllowedProcessingModes
     )
 
   private def createComponent(
@@ -418,7 +446,8 @@ class DefaultComponentServiceSpec
       icon: String,
       componentGroupName: ComponentGroupName,
       categories: List[String],
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) = {
     val compId     = designerWideComponentId.getOrElse(cid(processingType, componentId))
     val links      = createLinks(compId, componentId)
@@ -432,7 +461,7 @@ class DefaultComponentServiceSpec
       categories,
       links,
       usageCount,
-      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
     )
   }
 
