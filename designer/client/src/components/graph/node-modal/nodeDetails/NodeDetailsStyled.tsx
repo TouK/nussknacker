@@ -5,6 +5,7 @@ import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 export const ComponentIconStyled = styled(ComponentIcon)<{ backgroundColor: string }>(({ backgroundColor, theme }) => ({
     width: "30px",
     height: "30px",
+    color: theme.palette.common.white,
     backgroundColor,
     "use, path": {
         transform: "scale(0.8)",

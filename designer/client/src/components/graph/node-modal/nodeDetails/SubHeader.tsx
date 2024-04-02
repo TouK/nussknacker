@@ -3,10 +3,14 @@ import { Theme, useTheme } from "@mui/material";
 import { Subtype } from "./Subtype";
 import { Docs } from "./Docs";
 
-import { blendLighten } from "../../../../containers/theme/helpers";
+import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
+import { getLuminance } from "@mui/system/colorManipulator";
 
 const SubtypeHeaderDocsLink = (theme: Theme) => ({
-    backgroundColor: blendLighten(theme.palette.background.paper, 0.1),
+    backgroundColor:
+        getLuminance(theme.palette.background.paper) > 0.5
+            ? blendDarken(theme.palette.background.paper, 0.1)
+            : blendLighten(theme.palette.background.paper, 0.1),
     padding: "0 10px",
     height: "30px",
     alignItems: "center",

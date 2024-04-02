@@ -9,7 +9,8 @@ import Tool from "./Tool";
 import { useTranslation } from "react-i18next";
 import { lighten, styled } from "@mui/material";
 
-import { blendLighten } from "../../../containers/theme/helpers";
+import { blendDarken, blendLighten } from "../../../containers/theme/helpers";
+import { getLuminance } from "@mui/system/colorManipulator";
 
 const StyledToolbox = styled("div")(({ theme }) => ({
     fontSize: "14px",
@@ -21,7 +22,10 @@ const StyledToolbox = styled("div")(({ theme }) => ({
     },
 
     ".tree-view_item": {
-        backgroundColor: blendLighten(theme.palette.background.paper, 0.04),
+        backgroundColor:
+            getLuminance(theme.palette.background.paper) > 0.5
+                ? blendDarken(theme.palette.background.paper, 0.04)
+                : blendLighten(theme.palette.background.paper, 0.04),
         border: "none",
         borderLeft: 0,
         borderRight: 0,
