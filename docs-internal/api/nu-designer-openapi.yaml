@@ -3320,7 +3320,6 @@ components:
       required:
       - tag
       - type
-      - refClazzName
       type: object
       properties:
         tag:
@@ -3329,12 +3328,6 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/Types5'
-        refClazzName:
-          type: string
-        params:
-          type: array
-          items:
-            $ref: '#/components/schemas/TypingResult'
     TypedUnion:
       title: TypedUnion
       required:

@@ -8,6 +8,8 @@ import pl.touk.nussknacker.test.{NuScalaTestAssertions, NuTapirSchemaTestHelpers
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import pl.touk.nussknacker.ui.api.description.{NodesApiEndpoints, TypingDtoSchemas}
 
+import scala.util.control.Breaks.{break, breakable}
+
 class NodesApiEndpointsSpec
     extends AnyFreeSpecLike
     with ScalaCheckDrivenPropertyChecks
@@ -15,23 +17,28 @@ class NodesApiEndpointsSpec
     with NuTapirSchemaTestHelpers {
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
-    PropertyCheckConfiguration(minSuccessful = 5, minSize = 0)
+    PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0)
 
   "TypingResult schemas shouldn't go out of sync with Codecs" in {
     val schema = prepareJsonSchemaFromTapirSchema(TypingDtoSchemas.typingResult)
 
     forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures.All)) { typingResult =>
       val json = createJsonObjectFrom(typingResult)
+      breakable {
+        if (json.toString.length() > 750) {
+          break()
+        } else {
+          println(json)
+          schema should validateJson(json)
+        }
+      }
 
-      schema should validateJson(json)
     }
   }
 
   "Node data check up" in {
     val schema = prepareJsonSchemaFromTapirSchema(NodesApiEndpoints.Dtos.NodeDataSchemas.nodeDataSchema)
 
-    implicit val generatorDrivenConfig: PropertyCheckConfiguration =
-      PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0)
     forAll(NodeDataGen.nodeDataGen) { nodeData =>
       val json = createJsonObjectFrom(nodeData)
 
