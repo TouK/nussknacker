@@ -671,8 +671,8 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
-    liteComponentsApi,
-    componentsUtils,
+    liteComponentsApi    % Provided,
+    componentsUtils      % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter          % Provided,
     flinkExecutor        % Test,
@@ -692,7 +692,7 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
       )
     }
   )
-  .dependsOn(flinkComponentsUtils % Provided, componentsUtils)
+  .dependsOn(flinkComponentsUtils % Provided)
 
 lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm"))
   .settings(commonSettings)
@@ -1137,8 +1137,8 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
     flinkExtensionsApi,
     mathUtils,
     flinkScalaUtils,
-    componentsUtils % Provided,
-    testUtils       % Test
+    componentsUtils,
+    testUtils % Test
   )
 
 lazy val flinkScalaUtils = (project in flink("scala-utils"))
