@@ -715,6 +715,26 @@ class HttpService {
             );
     }
 
+    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, type: any) {
+        return Promise.resolve([
+            { id: "boolean", label: "boolean" },
+            {
+                id: "string",
+                label: "string",
+            },
+        ]);
+        // return api
+        //     .post<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts`, type)
+        //     .catch((error) =>
+        //         Promise.reject(
+        //             this.#addError(
+        //                 i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch dictionaries"),
+        //                 error,
+        //             ),
+        //         ),
+        //     );
+    }
+
     #addInfo(message: string) {
         if (this.#notificationActions) {
             this.#notificationActions.success(message);

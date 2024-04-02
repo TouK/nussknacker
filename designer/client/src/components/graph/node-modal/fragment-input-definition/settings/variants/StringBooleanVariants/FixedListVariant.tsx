@@ -5,24 +5,26 @@ import InitialValue from "../fields/InitialValue";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
 import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
-import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
+import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { useGetAllDicts } from "./useGetAllDicts";
 
 interface Props {
     item: FixedListParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
-    fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     variableTypes: VariableTypes;
     errors: NodeValidationError[];
 }
 
-export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, readOnly, variableTypes, errors }: Props) => {
+export const FixedListVariant = ({ item, path, onChange, readOnly, variableTypes, errors }: Props) => {
     const { t } = useTranslation();
+    const { processDefinitionDicts } = useGetAllDicts();
 
-    const presetListItemOptions = fixedValuesPresets?.[item.fixedValuesListPresetId] ?? [];
+    const presetListItemOptions = processDefinitionDicts?.[item.fixedValuesListPresetId] ?? [];
 
     const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
 
@@ -30,14 +32,13 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
 
     return (
         <>
-            {/*<FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />*/}
+            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
                 fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
                 fixedValuesList={fixedValuesList}
-                fixedValuesPresets={fixedValuesPresets}
                 fixedValuesListPresetId={item.fixedValuesListPresetId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
@@ -45,12 +46,13 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
                 typ={item.typ}
                 name={item.name}
                 initialValue={item.initialValue}
+                processDefinitionDicts={processDefinitionDicts}
             />
             <InitialValue
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : presetListItemOptions}
+                options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : undefined}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}

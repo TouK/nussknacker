@@ -1,6 +1,6 @@
 import React from "react";
 import { onChangeType, FragmentInputParameter, isStringOrBooleanVariant } from "../item";
-import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../types";
 import { DefaultVariant, StringBooleanVariant } from "./variants";
 
 interface Settings {
@@ -8,7 +8,6 @@ interface Settings {
     path: string;
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
-    fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     errors: NodeValidationError[];
 }

@@ -4,16 +4,15 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesType, onChangeType, FixedValuesOption, FixedListParameterVariant } from "../../../item";
 import { ListItems } from "./ListItems";
 import { Option, TypeSelect } from "../../../TypeSelect";
-import { FixedValuesPresets, NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
+import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import { UserDefinedListInput } from "./UserDefinedListInput";
-import { FieldsControl } from "../../../../node-row-fields-provider/FieldsControl";
+import { FormControl } from "@mui/material";
 
 interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSelection"> {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     fixedValuesType: FixedValuesType;
     fixedValuesList: FixedValuesOption[];
-    fixedValuesPresets: FixedValuesPresets;
     fixedValuesListPresetId: string;
     readOnly: boolean;
     variableTypes: VariableTypes;
@@ -21,6 +20,7 @@ interface FixedValuesSetting extends Pick<FixedListParameterVariant, "presetSele
     typ: ReturnedType;
     name: string;
     initialValue: FixedValuesOption;
+    processDefinitionDicts: Option[];
 }
 
 export function FixedValuesSetting({
@@ -28,7 +28,6 @@ export function FixedValuesSetting({
     fixedValuesType,
     onChange,
     fixedValuesListPresetId,
-    fixedValuesPresets,
     fixedValuesList,
     readOnly,
     variableTypes,
@@ -36,19 +35,14 @@ export function FixedValuesSetting({
     typ,
     name,
     initialValue,
+    processDefinitionDicts,
 }: FixedValuesSetting) {
     const { t } = useTranslation();
-
-    const presetListOptions: Option[] = Object.keys(fixedValuesPresets ?? {}).map((key) => ({ label: key, value: key }));
-
-    const selectedPresetValueExpressions: Option[] = (fixedValuesPresets?.[fixedValuesListPresetId] ?? []).map(
-        (selectedPresetValueExpression) => ({ label: selectedPresetValueExpression.label, value: selectedPresetValueExpression.label }),
-    );
 
     return (
         <>
             {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesPreset && (
-                <FieldsControl>
+                <FormControl>
                     <SettingLabelStyled required>{t("fragment.presetSelection", "Preset selection:")}</SettingLabelStyled>
                     <TypeSelect
                         readOnly={readOnly}
@@ -56,18 +50,13 @@ export function FixedValuesSetting({
                             onChange(`${path}.fixedValuesListPresetId`, value);
                             onChange(`${path}.initialValue`, null);
                         }}
-                        value={presetListOptions.find((presetListOption) => presetListOption.value === fixedValuesListPresetId)}
-                        options={presetListOptions}
-                        fieldErrors={undefined}
+                        value={
+                            processDefinitionDicts.find((presetListOption) => presetListOption.value === fixedValuesListPresetId) ?? null
+                        }
+                        options={processDefinitionDicts}
+                        fieldErrors={[]}
                     />
-                    {selectedPresetValueExpressions?.length > 0 && (
-                        <ListItems
-                            items={selectedPresetValueExpressions}
-                            errors={errors}
-                            fieldName={`$param.${name}.$fixedValuesPresets`}
-                        />
-                    )}
-                </FieldsControl>
+                </FormControl>
             )}
             {fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided && (
                 <UserDefinedListInput

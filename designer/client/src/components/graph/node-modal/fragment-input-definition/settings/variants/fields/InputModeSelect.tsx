@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
-import { FixedValuesPresets, NodeValidationError } from "../../../../../../../types";
+import { NodeValidationError } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 
@@ -15,12 +15,11 @@ interface Props {
     path: string;
     inputModeOptions: Option[];
     readOnly: boolean;
-    fixedValuesPresets: FixedValuesPresets;
     errors: NodeValidationError[];
 }
 
 export default function InputModeSelect(props: Props) {
-    const { onChange, path, item, inputModeOptions, fixedValuesPresets, errors } = props;
+    const { onChange, path, item, inputModeOptions, errors } = props;
     const { t } = useTranslation();
     const { temporaryUserDefinedList } = useSettings();
 
@@ -51,17 +50,7 @@ export default function InputModeSelect(props: Props) {
                             }
 
                             if (item?.valueEditor?.type === FixedValuesType.ValueInputWithFixedValuesPreset) {
-                                const presetListOptions: Option[] = Object.keys(fixedValuesPresets ?? {}).map((key) => ({
-                                    label: key,
-                                    value: key,
-                                }));
-
-                                return onChange(
-                                    `${path}.initialValue`,
-                                    presetListOptions.find((presetListOption) => presetListOption.label === item.initialValue.label)
-                                        ? item.initialValue
-                                        : null,
-                                );
+                                return onChange(`${path}.initialValue`, item.initialValue);
                             }
 
                             return onChange(`${path}.initialValue`, null);
