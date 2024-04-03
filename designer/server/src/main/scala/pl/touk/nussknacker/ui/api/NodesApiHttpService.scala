@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
@@ -285,26 +286,22 @@ class NodesApiHttpService(
   private def fromNodeRequestDto(
       node: NodeValidationRequestDto
   )(typingResultDecoder: Decoder[TypingResult]): Either[NodesError, NodeValidationRequest] = {
-    val variableTypes = decodeVariableTypes(node.variableTypes, typingResultDecoder) match {
-      case Left(value)  => return Left(value)
-      case Right(value) => value
-    }
-    val branchVariableTypes = node.branchVariableTypes.map { outerMap =>
-      outerMap.map { case (name, innerMap) =>
-        decodeVariableTypes(innerMap, typingResultDecoder) match {
-          case Right(changedMap) => (name, changedMap)
-          case Left(value)       => return Left(value)
-        }
-      }
-    }
-    Right(
-      NodeValidationRequest(
-        nodeData = node.nodeData,
-        processProperties = node.processProperties,
-        variableTypes = variableTypes,
-        branchVariableTypes = branchVariableTypes,
-        outgoingEdges = node.outgoingEdges
-      )
+    for {
+      variableTypes <- decodeVariableTypes(node.variableTypes, typingResultDecoder)
+      branchVariableTypes <- node.branchVariableTypes.map { outerMap =>
+        outerMap.toList
+          .map { case (name, innerMap) =>
+            decodeVariableTypes(innerMap, typingResultDecoder).map((name, _))
+          }
+          .sequence
+          .map(_.toMap)
+      }.sequence
+    } yield NodeValidationRequest(
+      nodeData = node.nodeData,
+      processProperties = node.processProperties,
+      variableTypes = variableTypes,
+      branchVariableTypes = branchVariableTypes,
+      outgoingEdges = node.outgoingEdges
     )
   }
 
@@ -313,23 +310,22 @@ class NodesApiHttpService(
       modelData: ModelData
   ): Either[NodesError, ParametersValidationRequest] = {
     val typingResultDecoder = prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
-    val parameters = request.parameters.map { parameter =>
-      UIValueParameter(
-        name = parameter.name,
-        typ = typingResultDecoder
-          .decodeJson(parameter.typ) match {
-          case Left(failure)       => return Left(MalformedTypingResult(failure.getMessage()))
-          case Right(typingResult) => typingResult
-        },
-        expression = parameter.expression
-      )
-    }
-    val variableTypes =
-      decodeVariableTypes(request.variableTypes, typingResultDecoder) match {
-        case Left(value)  => return Left(value)
-        case Right(value) => value
-      }
-    Right(ParametersValidationRequest(parameters, variableTypes))
+    for {
+      parameters <- request.parameters.map { parameter =>
+        typingResultDecoder
+          .decodeJson(parameter.typ)
+          .left
+          .map(failure => MalformedTypingResult(failure.getMessage()))
+          .map { typ =>
+            UIValueParameter(
+              name = parameter.name,
+              typ = typ,
+              expression = parameter.expression
+            )
+          }
+      }.sequence
+      variableTypes <- decodeVariableTypes(request.variableTypes, typingResultDecoder)
+    } yield ParametersValidationRequest(parameters, variableTypes)
   }
 
 }
