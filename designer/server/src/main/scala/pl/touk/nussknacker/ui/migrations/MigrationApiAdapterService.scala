@@ -45,19 +45,19 @@ class MigrationApiAdapterService {
 
   }
 
-  /*
-    FIXME: These two functions should be expanded to take additional argument `versionToAdapt` and adapt
-           to determined version. Currently it is very greedy and paranoic beacuse we lower version as much
-           as possible and possibly it would need to be lifted up on the other side. So, one should delete
-           `adaptToLowestVersion` and create `adaptToLowerVersion(req, versionToAdapt)`.
-   */
-
   // @tailrec <- later
   def adaptToHighestVersion(migrateScenarioRequest: MigrateScenarioRequest): CurrentScenarioMigrateRequest =
     migrateScenarioRequest match {
       case v14 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => Adapters.adapterV14ToV15.map(v14)
       case currentVersion: CurrentScenarioMigrateRequest          => currentVersion
     }
+
+  /*
+    FIXME: This function should be expanded to take additional argument `versionToAdapt` and adapt
+           to determined version. Currently it is very greedy and paranoic beacuse we lower version as much
+           as possible and possibly it would need to be lifted up on the other side. So, one should delete
+           `adaptToLowestVersion` and create `adaptToLowerVersion(req, versionToAdapt)`.
+   */
 
   // @tailrec - later
   def adaptToLowestVersion(migrateScenarioRequest: MigrateScenarioRequest): LowestScenarioMigrateRequest =
