@@ -14,15 +14,31 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{MalformedTypingResult, NoPermission, NoProcessingType, NoScenario}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{ExpressionSuggestionDto, NodeValidationRequest, NodeValidationRequestDto, NodeValidationResult, NodeValidationResultDto, NodesError, ParametersValidationRequest, ParametersValidationRequestDto, ParametersValidationResultDto, decodeVariableTypes, prepareTypingResultDecoder}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
+  MalformedTypingResult,
+  NoPermission,
+  NoProcessingType,
+  NoScenario
+}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
+  ExpressionSuggestionDto,
+  NodeValidationRequest,
+  NodeValidationRequestDto,
+  NodeValidationResult,
+  NodeValidationResultDto,
+  NodesError,
+  ParametersValidationRequest,
+  ParametersValidationRequestDto,
+  ParametersValidationResultDto,
+  decodeVariableTypes,
+  prepareTypingResultDecoder
+}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
-import pl.touk.nussknacker.ui.util.EitherTImplicits
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +55,6 @@ class NodesApiHttpService(
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authenticator)
     with LazyLogging {
-  import EitherTImplicits._
 
   private val nodesApiEndpoints = new NodesApiEndpoints(authenticator.authenticationMethod())
 
@@ -53,9 +68,9 @@ class NodesApiHttpService(
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
             scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
-            additionalInfo <- additionalInfoProviders
-              .prepareAdditionalInfoForNode(nodeData, scenario.processingType)
-              .eitherT()
+            additionalInfo <- EitherT.right(
+              additionalInfoProviders.prepareAdditionalInfoForNode(nodeData, scenario.processingType)
+            )
           } yield additionalInfo
         }
       }
@@ -87,12 +102,13 @@ class NodesApiHttpService(
           for {
             scenarioId <- getScenarioIdByName(scenarioName)
             scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
-            additionalInfo <- additionalInfoProviders
-              .prepareAdditionalInfoForProperties(
-                scenarioProperties.toMetaData(scenarioName),
-                scenario.processingType
-              )
-              .eitherT()
+            additionalInfo <- EitherT.right(
+              additionalInfoProviders
+                .prepareAdditionalInfoForProperties(
+                  scenarioProperties.toMetaData(scenarioName),
+                  scenario.processingType
+                )
+            )
           } yield additionalInfo
         }
       }
@@ -151,23 +167,24 @@ class NodesApiHttpService(
       }
   }
 
-  private def getScenarioIdByName(scenarioName: ProcessName) = {
-    scenarioService
-      .getProcessId(scenarioName)
-      .toRightEitherT(NoScenario(scenarioName))
+  private def getScenarioIdByName(scenarioName: ProcessName): EitherT[Future, NoScenario, ProcessId] = {
+    EitherT.fromOptionF(
+      scenarioService.getProcessId(scenarioName),
+      NoScenario(scenarioName)
+    )
   }
 
   private def getScenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(
       implicit user: LoggedUser
   ): EitherT[Future, NodesError, ScenarioWithDetails] = {
-    scenarioWithDetails(scenarioId, scenarioName)
-      .eitherT()
-      .leftMap { no: NoScenario =>
-        NodesError.NoScenario(no.scenarioName)
-      }
+    EitherT(scenarioWithDetails(scenarioId, scenarioName)).leftMap { no: NoScenario =>
+      NodesError.NoScenario(no.scenarioName)
+    }
   }
 
-  private def scenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(implicit user: LoggedUser) = {
+  private def scenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(
+      implicit user: LoggedUser
+  ): Future[Either[NoScenario, ScenarioWithDetails]] = {
     scenarioService
       .getLatestProcessWithDetails(
         ProcessIdWithName(scenarioId, scenarioName),
@@ -177,22 +194,28 @@ class NodesApiHttpService(
       .recover { case _: Throwable => Left(NoScenario(scenarioName)) }
   }
 
-  private def dtoToNodeRequest(nodeValidationRequestDto: NodeValidationRequestDto, modelData: ModelData) = {
-    Future[Either[NodesError, NodeValidationRequest]](
+  private def dtoToNodeRequest(
+      nodeValidationRequestDto: NodeValidationRequestDto,
+      modelData: ModelData
+  ): EitherT[Future, NodesError, NodeValidationRequest] = {
+    EitherT.fromEither(
       fromNodeRequestDto(nodeValidationRequestDto)(prepareTypingResultDecoder(modelData.modelClassLoader.classLoader))
-    ).eitherT()
+    )
   }
 
-  private def getModelData(processingType: ProcessingType)(implicit user: LoggedUser) = {
-    Future(
-      Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map {
-        case _: IllegalArgumentException =>
-          NoProcessingType(processingType)
-        case _: UnauthorizedError =>
-          NoPermission
-      }
-    )
-      .eitherT()
+  private def getModelData(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): EitherT[Future, NodesError, ModelData] = {
+    EitherT
+      .fromEither[Future]
+      .apply(
+        Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map {
+          case _: IllegalArgumentException =>
+            NoProcessingType(processingType)
+          case _: UnauthorizedError =>
+            NoPermission
+        }
+      )
   }
 
   private def getNodeValidation(
@@ -201,8 +224,8 @@ class NodesApiHttpService(
       nodeData: NodeValidationRequest
   )(
       implicit user: LoggedUser
-  ) =
-    Future[Either[NodesError, NodeValidationResult]](
+  ): EitherT[Future, NodesError, NodeValidationResult] =
+    EitherT.fromEither(
       try {
         Right(nodeValidator.validate(scenarioName, nodeData))
       } catch {
@@ -210,20 +233,21 @@ class NodesApiHttpService(
           Left(NoScenario(ProcessName(e.name.value)))
       }
     )
-      .eitherT()
 
-  private def dtoToParameterRequest(request: ParametersValidationRequestDto, modelData: ModelData) =
-    Future[Either[NodesError, ParametersValidationRequest]](
-      parametersValidationRequestFromDto(request, modelData)
-    ).eitherT()
+  private def dtoToParameterRequest(
+      request: ParametersValidationRequestDto,
+      modelData: ModelData
+  ): EitherT[Future, NodesError, ParametersValidationRequest] =
+    EitherT.fromEither(parametersValidationRequestFromDto(request, modelData))
 
   private def getExpressionSuggestion(
       suggestions: Future[List[ExpressionSuggestion]]
-  ): EitherT[Future, NodesError, List[ExpressionSuggestionDto]] = {
+  ): EitherT[Future, NodesError, List[ExpressionSuggestionDto]] =
     toExpressionSuggestionResponse(suggestions).leftMap(identity)
-  }
 
-  private def toExpressionSuggestionResponse(suggestions: Future[List[ExpressionSuggestion]]) = {
+  private def toExpressionSuggestionResponse(
+      suggestions: Future[List[ExpressionSuggestion]]
+  ): EitherT[Future, MalformedTypingResult, List[ExpressionSuggestionDto]] = {
     EitherT
       .liftF(
         suggestions
@@ -240,8 +264,8 @@ class NodesApiHttpService(
       expressionSuggester: ExpressionSuggester,
       request: Dtos.ExpressionSuggestionRequestDto,
       modelData: ModelData
-  ) = {
-    Future[Either[NodesError, Future[List[ExpressionSuggestion]]]](
+  ): EitherT[Future, NodesError, Future[List[ExpressionSuggestion]]] =
+    EitherT.fromEither[Future](
       decodeVariableTypes(
         request.variableTypes,
         prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
@@ -257,8 +281,6 @@ class NodesApiHttpService(
           )
       }
     )
-      .eitherT()
-  }
 
   private def fromNodeRequestDto(
       node: NodeValidationRequestDto
