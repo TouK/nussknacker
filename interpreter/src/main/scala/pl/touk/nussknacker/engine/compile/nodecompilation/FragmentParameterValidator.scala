@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.graph.node.{
   ParameterNameFieldName,
   qualifiedParamFieldName
 }
+import pl.touk.nussknacker.engine.language.dictWithLabel.DictKeyWithLabelExpressionParser
 
 object FragmentParameterValidator {
 
@@ -80,11 +81,22 @@ object FragmentParameterValidator {
     ) = {
       fixedExpressions
         .map { fixedExpressionValue =>
-          expressionCompiler.compile(
-            Expression.spel(fixedExpressionValue.expression),
-            paramName = Some(fragmentParameter.name),
-            validationCtx = validationContext,
-            expectedType = validationContext(fragmentParameter.name.value),
+          val expr = fragmentParameter.valueEditor match {
+            case Some(ValueInputWithDictEditor(_, _)) =>
+              DictKeyWithLabelExpressionParser
+                .parseDictKeyWithLabelExpression(fixedExpressionValue.expression)
+                .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, fragmentParameter.name)))
+                .andThen(e => valid(Expression.dictKeyWithLabel(e.key, e.label)))
+            case _ => valid(Expression.spel(fixedExpressionValue.expression))
+          }
+
+          expr.andThen(e =>
+            expressionCompiler.compile(
+              e,
+              paramName = Some(fragmentParameter.name),
+              validationCtx = validationContext,
+              expectedType = validationContext(fragmentParameter.name.value),
+            )
           )
         }
         .toList
