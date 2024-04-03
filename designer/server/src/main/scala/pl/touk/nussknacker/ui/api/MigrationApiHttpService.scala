@@ -26,8 +26,8 @@ class MigrationApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
       .serverLogicEitherT { implicit loggedUser =>
         {
-          case migrateScenarioRequestV1_15 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) =>
-            EitherT(migrationService.migrate(migrateScenarioRequestV1_15))
+          case currentMigrateScenarioRequest: CurrentScenarioMigrateRequest =>
+            EitherT(migrationService.migrate(currentMigrateScenarioRequest))
           case migrateScenarioRequestOld: MigrateScenarioRequest =>
             val migrateScenarioRequestNew = migrationApiAdapterService.adaptToHighestVersion(migrateScenarioRequestOld)
             EitherT(migrationService.migrate(migrateScenarioRequestNew))
