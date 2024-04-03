@@ -28,7 +28,7 @@ object TableAggregationFactory {
     ParameterDeclaration.lazyMandatory[AnyRef](aggregateByParamName).withCreator()
 
   private val aggregatorFunctionParam = {
-    val aggregators = Aggregator.allAggregators.map(a => FixedExpressionValue(s"'${a.name}'", a.name))
+    val aggregators = TableAggregator.values.map(a => FixedExpressionValue(s"'${a.name}'", a.name)).toList
     ParameterDeclaration
       .mandatory[String](aggregatorFunctionParamName)
       .withCreator(
@@ -62,7 +62,7 @@ class TableAggregationFactory
         ) =>
       val outName = OutputVariableNameDependency.extract(dependencies)
 
-      val selectedAggregator = Aggregator.allAggregators
+      val selectedAggregator = TableAggregator.values
         .find(_.name == aggregatorName)
         .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
 
@@ -105,7 +105,7 @@ class TableAggregationFactory
     val aggregateByLazyParam = aggregateByParam.extractValueUnsafe(params)
     val aggregatorVal        = aggregatorFunctionParam.extractValueUnsafe(params)
 
-    val aggregator = Aggregator.allAggregators
+    val aggregator = TableAggregator.values
       .find(_.name == aggregatorVal)
       .getOrElse(
         throw new IllegalStateException("Specified aggregator not found. Should be invalid at parameter level.")
