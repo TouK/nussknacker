@@ -28,7 +28,7 @@ class MigrationApiHttpService(
         {
           case migrateScenarioRequestV1_15 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) =>
             EitherT(migrationService.migrate(migrateScenarioRequestV1_15))
-          case migrateScenarioRequestOld @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) =>
+          case migrateScenarioRequestOld: MigrateScenarioRequest =>
             val migrateScenarioRequestNew = migrationApiAdapterService.adaptToHighestVersion(migrateScenarioRequestOld)
             EitherT(migrationService.migrate(migrateScenarioRequestNew))
         }
