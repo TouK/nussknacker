@@ -178,7 +178,7 @@ class FlinkTestScenarioRunner(
 
         env.executeAndWaitForFinished(scenario.name.value)()
 
-        TestResultSinkFactory.extractSinkOutputFor(testExtensionsHolder.runId) match {
+        TestResultSinkFactory.extractOutputFor(testExtensionsHolder.runId) match {
           case Output.None =>
             RunListResult(
               successes = tryToCollectResultsFromExternalInvocationResults(scenario, testScenarioCollectorHandler)

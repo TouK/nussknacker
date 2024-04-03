@@ -34,7 +34,7 @@ object TestScenarioRunner {
   type RunnerResultUnit    = ValidatedNel[ProcessCompilationError, RunUnitResult]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
-  // TODO: Maybe we should replace ids with more meaningful: test-data, rest-result?
+  // TODO: Maybe we should replace ids with more meaningful: test-data, test-result?
   val testDataSource = "source"
   val noopSource     = "noopSource"
   val testResultSink = "sink"

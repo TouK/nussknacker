@@ -12,7 +12,7 @@ case class TestExtensionsHolder(runId: TestRunId) extends Serializable with Auto
 
   def close(): Unit = {
     TestExtensionsHolder.clean(runId)
-    TestResultSinkFactory.extractSinkOutputFor(runId)
+    TestResultSinkFactory.clean(runId)
   }
 
 }

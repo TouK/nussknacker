@@ -20,20 +20,16 @@ class TestResultSinkFactory(runId: TestRunId) extends SinkFactory {
 
 object TestResultSinkFactory {
 
-  private final case class SinkId(runId: TestRunId) extends Comparable[SinkId] {
-    override def compareTo(o: SinkId): Int = runId.id.compareTo(o.runId.id)
-  }
+  private val sinksOutputs = new ConcurrentSkipListMap[TestRunId, Vector[AnyRef]]()
 
-  private[TestResultSinkFactory] val sinksOutputs = new ConcurrentSkipListMap[SinkId, Vector[AnyRef]]()
-
-  def extractSinkOutputFor(runId: TestRunId): Output = {
-    Option(sinksOutputs.remove(SinkId(runId)))
+  def extractOutputFor(runId: TestRunId): Output = {
+    Option(sinksOutputs.remove(runId))
       .map(l => Output.Present(l.toList))
       .getOrElse(Output.None)
   }
 
   def clean(runId: TestRunId): Unit = {
-    extractSinkOutputFor(runId)
+    extractOutputFor(runId)
   }
 
   class TestResultSink(value: LazyParameter[AnyRef], runId: TestRunId) extends BasicFlinkSink with Serializable {
@@ -49,8 +45,8 @@ object TestResultSinkFactory {
 
       override def invoke(value: Value, context: SinkFunction.Context): Unit = {
         sinksOutputs.compute(
-          SinkId(runId),
-          (_: SinkId, output: Vector[AnyRef]) => {
+          runId,
+          (_: TestRunId, output: Vector[AnyRef]) => {
             Option(output) match {
               case Some(o) => o :+ value
               case None    => Vector(value)

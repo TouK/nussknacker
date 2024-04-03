@@ -6,12 +6,17 @@ import TestProcess._
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 
+import java.util.concurrent.ConcurrentSkipListMap
 import scala.util.Try
 
-case class TestRunId private (id: String)
+case class TestRunId private (id: String) extends Comparable[TestRunId] {
+  override def compareTo(other: TestRunId): Int = id.compareTo(other.id)
+}
 
 object TestRunId {
   def generate: TestRunId = new TestRunId(UUID.randomUUID().toString)
+
+  def apply(id: String): TestRunId = throw new IllegalArgumentException("Please use generate instead of apply")
 }
 
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
@@ -69,33 +74,37 @@ case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, v
 
 object ResultsCollectingListenerHolder {
 
-  private var results = Map[TestRunId, TestResults[Any]]()
+  private val results = new ConcurrentSkipListMap[TestRunId, TestResults[Any]]()
 
   // TODO: casting is not so nice, but currently no other idea...
-  def resultsForId[T](id: TestRunId): TestResults[T] = results(id).asInstanceOf[TestResults[T]]
+  def resultsForId[T](id: TestRunId): TestResults[T] = results.get(id).asInstanceOf[TestResults[T]]
 
-  def registerTestEngineListener: ResultsCollectingListener[Json] = synchronized {
+  def registerTestEngineListener: ResultsCollectingListener[Json] = {
     registerListener(TestInterpreterRunner.testResultsVariableEncoder)
   }
 
-  def registerListener: ResultsCollectingListener[Any] = synchronized {
+  def registerListener: ResultsCollectingListener[Any] = {
     registerListener(identity)
   }
 
-  def cleanResult(runId: TestRunId): Unit = synchronized {
-    results -= runId
+  def cleanResult(runId: TestRunId): Unit = {
+    results.remove(runId)
   }
 
-  private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = synchronized {
+  private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = {
     val runId = TestRunId.generate
-    results += (runId -> TestResults(Map(), Map(), Map(), List()))
+    results.put(runId, TestResults(Map(), Map(), Map(), List()))
     ResultsCollectingListener(getClass.getCanonicalName, runId, variableEncoder)
   }
 
-  private[testmode] def updateResults(runId: TestRunId, action: TestResults[Any] => TestResults[Any]): Unit =
-    synchronized {
-      val current = results.getOrElse(runId, throw new IllegalArgumentException("Run was not registered..."))
-      results += (runId -> action(current))
+  private[testmode] def updateResults(runId: TestRunId, action: TestResults[Any] => TestResults[Any]): Unit = {
+    Option {
+      results.computeIfPresent(runId, (_: TestRunId, output: TestResults[Any]) => action(output))
+    } match {
+      case Some(_) =>
+      case None =>
+        throw new IllegalArgumentException("Run was not registered...")
     }
+  }
 
 }
