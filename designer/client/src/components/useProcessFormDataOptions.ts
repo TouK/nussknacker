@@ -68,7 +68,7 @@ export const useProcessFormDataOptions = ({ allCombinations, value }: Props) => 
         return multipleEnginesSelectable;
     }, [allCombinations]);
 
-    const isCategoryFieldVisible = categories.length > 1;
+    const isCategoryFieldVisible = true; // QUICK-BUG-FIX categories.length > 1;
 
     const isProcessingModeBatchAvailable = allCombinations.some((allCombination) => allCombination.processingMode === ProcessingMode.batch);
 
