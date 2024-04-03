@@ -5,7 +5,7 @@ import org.apache.flink.table.types.DataType
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-object TypeConversions {
+object TableTypeConversions {
 
   def getFlinkTypeForNuTypeOrThrow(nuType: TypingResult): DataType =
     nuTypeToFlinkTableType(nuType).getOrElse(

@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation.{
   groupByInternalColumnName
 }
 import pl.touk.nussknacker.engine.flink.table.utils.NestedRowConversions.ColumnFlinkSchema
-import pl.touk.nussknacker.engine.flink.table.utils.TypeConversions.getFlinkTypeForNuTypeOrThrow
+import pl.touk.nussknacker.engine.flink.table.utils.TableTypeConversions.getFlinkTypeForNuTypeOrThrow
 import pl.touk.nussknacker.engine.flink.table.utils.{NestedRowConversions, RowConversions}
 
 object TableAggregation {
@@ -34,7 +34,7 @@ object TableAggregation {
 class TableAggregation(
     groupByLazyParam: LazyParameter[AnyRef],
     aggregateByLazyParam: LazyParameter[AnyRef],
-    selectedAggregator: Aggregator,
+    selectedAggregator: TableAggregator,
     nodeId: NodeId
 ) extends FlinkCustomStreamTransformation
     with Serializable {
