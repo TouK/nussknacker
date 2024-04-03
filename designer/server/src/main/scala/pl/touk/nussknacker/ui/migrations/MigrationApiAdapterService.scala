@@ -62,7 +62,7 @@ class MigrationApiAdapterService {
   // @tailrec - later
   def adaptToLowestVersion(migrateScenarioRequest: MigrateScenarioRequest): LowestScenarioMigrateRequest =
     migrateScenarioRequest match {
-      case v14 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => v14
+      case lowestVersion: LowestScenarioMigrateRequest            => lowestVersion
       case v15 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) => Adapters.adapterV14ToV15.comap(v15)
     }
 
