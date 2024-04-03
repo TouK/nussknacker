@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
-import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
@@ -43,7 +42,6 @@ import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class NodesApiHttpService(
     authenticator: AuthenticationResources,
@@ -161,8 +159,8 @@ class NodesApiHttpService(
           for {
             modelData <- getModelData(processingType)
             expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
-            suggestions   <- getSuggestions(expressionSuggester, request, modelData)
-            suggestionDto <- getExpressionSuggestion(suggestions)
+            suggestions <- getSuggestions(expressionSuggester, request, modelData)
+            suggestionDto = suggestions.map(expression => ExpressionSuggestionDto(expression))
           } yield suggestionDto
         }
       }
@@ -178,21 +176,15 @@ class NodesApiHttpService(
   private def getScenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(
       implicit user: LoggedUser
   ): EitherT[Future, NodesError, ScenarioWithDetails] = {
-    EitherT(scenarioWithDetails(scenarioId, scenarioName)).leftMap { no: NoScenario =>
-      NodesError.NoScenario(no.scenarioName)
-    }
-  }
-
-  private def scenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(
-      implicit user: LoggedUser
-  ): Future[Either[NoScenario, ScenarioWithDetails]] = {
-    scenarioService
-      .getLatestProcessWithDetails(
-        ProcessIdWithName(scenarioId, scenarioName),
-        GetScenarioWithDetailsOptions.detailsOnly
-      )
-      .map(scenario => Right(scenario))
-      .recover { case _: Throwable => Left(NoScenario(scenarioName)) }
+    EitherT(
+      scenarioService
+        .getLatestProcessWithDetails(
+          ProcessIdWithName(scenarioId, scenarioName),
+          GetScenarioWithDetailsOptions.detailsOnly
+        )
+        .map(scenario => Right(scenario))
+        .recover { case ProcessNotFoundError(_) => Left(NoScenario(scenarioName)) }
+    )
   }
 
   private def dtoToNodeRequest(
@@ -207,16 +199,13 @@ class NodesApiHttpService(
   private def getModelData(
       processingType: ProcessingType
   )(implicit user: LoggedUser): EitherT[Future, NodesError, ModelData] = {
-    EitherT
-      .fromEither[Future]
-      .apply(
-        Try(typeToConfig.forTypeUnsafe(processingType)).toEither.left.map {
-          case _: IllegalArgumentException =>
-            NoProcessingType(processingType)
-          case _: UnauthorizedError =>
-            NoPermission
-        }
-      )
+    EitherT.fromEither(
+      typeToConfig
+        .forTypeE(processingType)
+        .left
+        .map(_ => NoPermission)
+        .flatMap(_.toRight(NoProcessingType(processingType)))
+    )
   }
 
   private def getNodeValidation(
@@ -241,47 +230,26 @@ class NodesApiHttpService(
   ): EitherT[Future, NodesError, ParametersValidationRequest] =
     EitherT.fromEither(parametersValidationRequestFromDto(request, modelData))
 
-  private def getExpressionSuggestion(
-      suggestions: Future[List[ExpressionSuggestion]]
-  ): EitherT[Future, NodesError, List[ExpressionSuggestionDto]] =
-    toExpressionSuggestionResponse(suggestions).leftMap(identity)
-
-  private def toExpressionSuggestionResponse(
-      suggestions: Future[List[ExpressionSuggestion]]
-  ): EitherT[Future, MalformedTypingResult, List[ExpressionSuggestionDto]] = {
-    EitherT
-      .liftF(
-        suggestions
-          .map(expressionList =>
-            expressionList
-              .map(expression => ExpressionSuggestionDto(expression))
-          )
-      )
-      // This should not happen as getSuggestions should have already deal with Malformed requests
-      .leftMap { _: Any => MalformedTypingResult("Internally passed malformed TypingResult") }
-  }
-
   private def getSuggestions(
       expressionSuggester: ExpressionSuggester,
       request: Dtos.ExpressionSuggestionRequestDto,
       modelData: ModelData
-  ): EitherT[Future, NodesError, Future[List[ExpressionSuggestion]]] =
-    EitherT.fromEither[Future](
-      decodeVariableTypes(
-        request.variableTypes,
-        prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
-      ) match {
-        case Left(value) => Left(value)
-        case Right(localVariables) =>
-          Right(
-            expressionSuggester.expressionSuggestions(
-              request.expression,
-              request.caretPosition2d,
-              localVariables
-            )
-          )
-      }
-    )
+  ): EitherT[Future, NodesError, List[ExpressionSuggestion]] =
+    for {
+      localVariables <- EitherT.fromEither[Future](
+        decodeVariableTypes(
+          request.variableTypes,
+          prepareTypingResultDecoder(modelData.modelClassLoader.classLoader)
+        )
+      )
+      suggestions <- EitherT.right(
+        expressionSuggester.expressionSuggestions(
+          request.expression,
+          request.caretPosition2d,
+          localVariables
+        )
+      )
+    } yield suggestions
 
   private def fromNodeRequestDto(
       node: NodeValidationRequestDto
