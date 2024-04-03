@@ -25,6 +25,9 @@ class NodesApiEndpointsSpec
     forAll(TypingResultGen.typingResultGen(EnabledTypedFeatures.All)) { typingResult =>
       val json = createJsonObjectFrom(typingResult)
       breakable {
+//        This test gets stuck when validating schema of a too big size
+//        There is no problem with creating json schema, just with validating it, so introduced a size limit
+//        This also allows us to test 1000 examples instead of 5 and don't worry for the test to take too long
         if (json.toString.length() > 750) {
           break()
         } else {
