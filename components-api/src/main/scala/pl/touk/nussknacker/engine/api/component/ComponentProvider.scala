@@ -54,17 +54,17 @@ object Component {
 
 trait UnboundedStreamComponent { self: Component =>
   override def allowedProcessingModes: AllowedProcessingModes =
-    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+    AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
 }
 
 trait BoundedStreamComponent { self: Component =>
   override def allowedProcessingModes: AllowedProcessingModes =
-    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.BoundedStream))
+    AllowedProcessingModes.SetOf(ProcessingMode.BoundedStream)
 }
 
 trait RequestResponseComponent { self: Component =>
   override def allowedProcessingModes: AllowedProcessingModes =
-    AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.RequestResponse))
+    AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
 }
 
 trait AllProcessingModesComponent { self: Component =>
