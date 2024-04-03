@@ -22,8 +22,9 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
+  CurrentScenarioMigrateRequest,
+  MigrateScenarioRequestV1_14,
+  MigrateScenarioRequestV1_15
 }
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
@@ -211,8 +212,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processName: ProcessName,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val migrateScenarioRequestV2: MigrateScenarioRequestV2 =
-      MigrateScenarioRequestV2(
+    val migrateScenarioRequest: CurrentScenarioMigrateRequest =
+      MigrateScenarioRequestV1_15(
         environmentId,
         processingMode,
         engineSetupName,
@@ -230,14 +231,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       versionComparisonResultE = migrationApiAdapterService.compareNuVersions(localNuVersion, remoteNuVersion.value)
       versionComparisonResult <- EitherT(Future.successful(versionComparisonResultE))
 
-      migrateScenarioRequest = migrationApiAdapterService.decideMigrationRequestDto(
-        migrateScenarioRequestV2,
+      decidedMigrateScenarioRequest = migrationApiAdapterService.decideMigrationRequestDto(
+        migrateScenarioRequest,
         versionComparisonResult
       )
 
-      versionTag = migrateScenarioRequest match {
-        case _: MigrateScenarioRequestV1 => "V1"
-        case _: MigrateScenarioRequestV2 => "V2"
+      versionTag = decidedMigrateScenarioRequest match {
+        case _: MigrateScenarioRequestV1_14 => "V1_14"
+        case _: MigrateScenarioRequestV1_15 => "V1_15"
       }
 
       res <- EitherT(
@@ -245,7 +246,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           HttpMethods.POST,
           List("migrate"),
           Query.Empty,
-          HttpEntity(migrateScenarioRequest.asJson.noSpaces),
+          HttpEntity(decidedMigrateScenarioRequest.asJson.noSpaces),
           List(
             RawHeader("X-MigrateDtoVersion", versionTag)
           ) // Only for testing purposes, see: StandardRemoteEnvironmentSpec#remotgeEnvironmentMock

@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequest,
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
+  MigrateScenarioRequestV1_14,
+  MigrateScenarioRequestV1_15
 }
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
@@ -116,12 +116,12 @@ object TapirCodecs {
 
   object MigrateScenarioRequestV1Codec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestV1] = Schema.anyObject
+    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestV1_14] = Schema.anyObject
   }
 
   object MigrateScenarioRequestV2Codec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestV2] = Schema.anyObject
+    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestV1_15] = Schema.anyObject
   }
 
   object MigrateScenarioRequestCodec {
@@ -129,13 +129,13 @@ object TapirCodecs {
     implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
 
     implicit val migrateScenarioRequestEncoder: Encoder[MigrateScenarioRequest] = Encoder.instance {
-      case v1 @ MigrateScenarioRequestV1(_, _, _, _, _, _, _) => v1.asJson
-      case v2 @ MigrateScenarioRequestV2(_, _, _, _, _, _, _) => v2.asJson
+      case v1 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => v1.asJson
+      case v2 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) => v2.asJson
     }
 
     implicit val migrateScenarioRequestDecoder: Decoder[MigrateScenarioRequest] = List[Decoder[MigrateScenarioRequest]](
-      Decoder[MigrateScenarioRequestV1].widen,
-      Decoder[MigrateScenarioRequestV2].widen,
+      Decoder[MigrateScenarioRequestV1_14].widen,
+      Decoder[MigrateScenarioRequestV1_15].widen,
     ).reduceLeft(_ or _)
 
   }

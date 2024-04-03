@@ -20,8 +20,8 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequest,
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
+  MigrateScenarioRequestV1_14,
+  MigrateScenarioRequestV1_15
 }
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
@@ -130,7 +130,7 @@ class StandardRemoteEnvironmentSpec
     ) { res =>
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1]
+        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1_14]
         case _                            => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -153,7 +153,7 @@ class StandardRemoteEnvironmentSpec
     ) { res =>
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV2]
+        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1_15]
         case _                            => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -178,7 +178,7 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest shouldBe a[MigrateScenarioRequestV2]
+          migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1_15]
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -267,16 +267,16 @@ class StandardRemoteEnvironmentSpec
           }
         case Migrate() =>
           header.find(_.name() == "X-MigrateDtoVersion") match {
-            case Some(RawHeader("X-MigrateDtoVersion", "V1")) =>
-              parseBodyToJson(request).as[MigrateScenarioRequestV1] match {
-                case Right(migrateScenarioRequestV1) =>
-                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1)
+            case Some(RawHeader("X-MigrateDtoVersion", "V1_14")) =>
+              parseBodyToJson(request).as[MigrateScenarioRequestV1_14] match {
+                case Right(migrateScenarioRequestV1_14) =>
+                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1_14)
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
-            case Some(RawHeader("X-MigrateDtoVersion", "V2")) =>
-              parseBodyToJson(request).as[MigrateScenarioRequestV2] match {
-                case Right(migrateScenarioRequestV2) =>
-                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV2)
+            case Some(RawHeader("X-MigrateDtoVersion", "V1_15")) =>
+              parseBodyToJson(request).as[MigrateScenarioRequestV1_15] match {
+                case Right(migrateScenarioRequestV1_15) =>
+                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1_15)
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
             case Some(unexpectedHttpHeader) =>

@@ -33,7 +33,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         jsonBody[MigrateScenarioRequest].example(
           Example.of(
             summary = Some("example of migration request between environments"),
-            value = MigrateScenarioRequestV2(
+            value = MigrateScenarioRequestV1_15(
               sourceEnvironmentId = "testEnv",
               processingMode = ProcessingMode.UnboundedStream,
               engineSetupName = EngineSetupName("Flink"),
@@ -144,7 +144,7 @@ object MigrationApiEndpoints {
     sealed trait MigrateScenarioRequest
 
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestV1(
+    final case class MigrateScenarioRequestV1_14(
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
@@ -155,7 +155,7 @@ object MigrationApiEndpoints {
     ) extends MigrateScenarioRequest
 
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestV2(
+    final case class MigrateScenarioRequestV1_15(
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
@@ -164,6 +164,11 @@ object MigrationApiEndpoints {
         processName: ProcessName,
         isFragment: Boolean,
     ) extends MigrateScenarioRequest
+
+    type CurrentScenarioMigrateRequest = MigrateScenarioRequestV1_15
+
+    // FIXME:  LowestScenarioMigrateRequest should be removed when expanded adapter to lower api version
+    type LowestScenarioMigrateRequest = MigrateScenarioRequestV1_14
 
   }
 

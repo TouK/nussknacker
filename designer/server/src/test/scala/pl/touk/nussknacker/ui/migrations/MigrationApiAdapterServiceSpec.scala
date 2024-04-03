@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
+  MigrateScenarioRequestV1_14,
+  MigrateScenarioRequestV1_15
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.migrate.NuVersionDeserializationError
@@ -18,16 +18,16 @@ class MigrationApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
 
   private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
 
-  it should "adapt lower version of request DTO into higher version" in {
-    val adaptedDTO  = migrationApiAdapterService.adaptToLowerVersion(migrateScenarioRequestV2)
-    val expectedDTO = migrateScenarioRequestV1
+  it should "adapt lower version of request DTO into highest version" in {
+    val adaptedDTO  = migrationApiAdapterService.adaptToLowestVersion(migrateScenarioRequestV1_15)
+    val expectedDTO = migrateScenarioRequestV1_14
 
     adaptedDTO shouldEqual expectedDTO
   }
 
-  it should "adapt higher version of request DTO into lower version" in {
-    val adaptedDTO  = migrationApiAdapterService.adaptToHigherVersion(migrateScenarioRequestV1)
-    val expectedDTO = migrateScenarioRequestV2
+  it should "adapt higher version of request DTO into lowest version" in {
+    val adaptedDTO  = migrationApiAdapterService.adaptToHighestVersion(migrateScenarioRequestV1_14)
+    val expectedDTO = migrateScenarioRequestV1_15
 
     adaptedDTO shouldEqual expectedDTO
   }
@@ -118,8 +118,8 @@ class MigrationApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
 
   private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
-  private val migrateScenarioRequestV1: MigrateScenarioRequestV1 =
-    MigrateScenarioRequestV1(
+  private val migrateScenarioRequestV1_14: MigrateScenarioRequestV1_14 =
+    MigrateScenarioRequestV1_14(
       sourceEnvironmentId = "DEV",
       processingMode = UnboundedStream,
       engineSetupName = EngineSetupName("Flink"),
@@ -129,8 +129,8 @@ class MigrationApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
       isFragment = false
     )
 
-  private val migrateScenarioRequestV2: MigrateScenarioRequestV2 =
-    MigrateScenarioRequestV2(
+  private val migrateScenarioRequestV1_15: MigrateScenarioRequestV1_15 =
+    MigrateScenarioRequestV1_15(
       sourceEnvironmentId = "DEV",
       processingMode = UnboundedStream,
       engineSetupName = EngineSetupName("Flink"),

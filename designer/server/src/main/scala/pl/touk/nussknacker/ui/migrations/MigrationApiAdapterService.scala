@@ -2,47 +2,78 @@ package pl.touk.nussknacker.ui.migrations
 
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
+  CurrentScenarioMigrateRequest,
+  LowestScenarioMigrateRequest,
   MigrateScenarioRequest,
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2
+  MigrateScenarioRequestV1_14,
+  MigrateScenarioRequestV1_15
 }
 import pl.touk.nussknacker.ui.process.migrate.NuVersionDeserializationError
 
+import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
 class MigrationApiAdapterService {
+  private class MigrationApiAdapter[S, T](val map: S => T, val comap: T => S)
 
-  def adaptToLowerVersion(migrateScenarioRequestV2: MigrateScenarioRequestV2): MigrateScenarioRequestV1 =
-    MigrateScenarioRequestV1(
-      sourceEnvironmentId = migrateScenarioRequestV2.sourceEnvironmentId,
-      processingMode = migrateScenarioRequestV2.processingMode,
-      engineSetupName = migrateScenarioRequestV2.engineSetupName,
-      processCategory = migrateScenarioRequestV2.processCategory,
-      scenarioGraph = migrateScenarioRequestV2.scenarioGraph,
-      processName = migrateScenarioRequestV2.processName,
-      isFragment = migrateScenarioRequestV2.isFragment
-    )
+  private object Adapters {
 
-  def adaptToHigherVersion(migrateScenarioRequestV1: MigrateScenarioRequestV1): MigrateScenarioRequestV2 =
-    MigrateScenarioRequestV2(
-      sourceEnvironmentId = migrateScenarioRequestV1.sourceEnvironmentId,
-      processingMode = migrateScenarioRequestV1.processingMode,
-      engineSetupName = migrateScenarioRequestV1.engineSetupName,
-      processCategory = migrateScenarioRequestV1.processCategory,
-      scenarioGraph = migrateScenarioRequestV1.scenarioGraph,
-      processName = migrateScenarioRequestV1.processName,
-      isFragment = migrateScenarioRequestV1.isFragment
-    )
+    val adapterV14ToV15: MigrationApiAdapter[MigrateScenarioRequestV1_14, MigrateScenarioRequestV1_15] =
+      new MigrationApiAdapter[MigrateScenarioRequestV1_14, MigrateScenarioRequestV1_15](
+        v14 =>
+          MigrateScenarioRequestV1_15(
+            sourceEnvironmentId = v14.sourceEnvironmentId,
+            processingMode = v14.processingMode,
+            engineSetupName = v14.engineSetupName,
+            processCategory = v14.processCategory,
+            scenarioGraph = v14.scenarioGraph,
+            processName = v14.processName,
+            isFragment = v14.isFragment
+          ),
+        v15 =>
+          MigrateScenarioRequestV1_14(
+            sourceEnvironmentId = v15.sourceEnvironmentId,
+            processingMode = v15.processingMode,
+            engineSetupName = v15.engineSetupName,
+            processCategory = v15.processCategory,
+            scenarioGraph = v15.scenarioGraph,
+            processName = v15.processName,
+            isFragment = v15.isFragment
+          )
+      )
+
+  }
+
+  /*
+    FIXME: These two functions should be expanded to take additional argument `versionToAdapt` and adapt
+           to determined version. Currently it is very greedy and paranoic beacuse we lower version as much
+           as possible and possibly it would need to be lifted up on the other side. So, one should delete
+           `adaptToLowestVersion` and create `adaptToLowerVersion(req, versionToAdapt)`.
+   */
+
+  // @tailrec <- later
+  def adaptToHighestVersion(migrateScenarioRequest: MigrateScenarioRequest): CurrentScenarioMigrateRequest =
+    migrateScenarioRequest match {
+      case v14 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => Adapters.adapterV14ToV15.map(v14)
+      case v15 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) => v15
+    }
+
+  // @tailrec - later
+  def adaptToLowestVersion(migrateScenarioRequest: MigrateScenarioRequest): LowestScenarioMigrateRequest =
+    migrateScenarioRequest match {
+      case v14 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => v14
+      case v15 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) => Adapters.adapterV14ToV15.comap(v15)
+    }
 
   def decideMigrationRequestDto(
-      migrateScenarioRequestV2: MigrateScenarioRequestV2,
+      migrateScenarioRequest: CurrentScenarioMigrateRequest,
       versionComparisionResult: Int
   ): MigrateScenarioRequest = {
     if (versionComparisionResult <= 0) {
-      migrateScenarioRequestV2
+      migrateScenarioRequest
     } else {
-      adaptToLowerVersion(migrateScenarioRequestV2)
+      adaptToLowestVersion(migrateScenarioRequest)
     }
   }
 
