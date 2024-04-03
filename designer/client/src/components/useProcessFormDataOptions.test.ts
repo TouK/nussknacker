@@ -398,39 +398,40 @@ describe("useProcessFormDataOptions", () => {
         });
     });
 
-    it("should return isCategoryFieldVisible false when there is only one category available", () => {
-        const jsonDataOneUnique: ScenarioParametersCombination[] = [
-            { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
-            { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
-            { processingMode: ProcessingMode.batch, category: "Category1", engineSetupName: "Engine2" },
-        ];
-
-        const value: Record<string, string> = {
-            processingMode: "",
-            processCategory: "",
-            processEngine: "",
-        };
-
-        const { result } = renderHook(() =>
-            useProcessFormDataOptions({
-                allCombinations: jsonDataOneUnique,
-                value,
-            }),
-        );
-
-        expect(result.current).toEqual({
-            categories: [
-                {
-                    disabled: false,
-                    value: "Category1",
-                },
-            ],
-            engines: ["Engine1", "Engine2"],
-            isCategoryFieldVisible: false,
-            isProcessingModeBatchAvailable: true,
-            isEngineFieldVisible: false,
-
-            processingModes: ["Unbounded-Stream", "Bounded-Stream"],
-        });
-    });
+    // TODO: Uncomment when temporary fix is removed. See useProcessFormDataOptions
+    // it("should return isCategoryFieldVisible false when there is only one category available", () => {
+    //     const jsonDataOneUnique: ScenarioParametersCombination[] = [
+    //         { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
+    //         { processingMode: ProcessingMode.streaming, category: "Category1", engineSetupName: "Engine1" },
+    //         { processingMode: ProcessingMode.batch, category: "Category1", engineSetupName: "Engine2" },
+    //     ];
+    //
+    //     const value: Record<string, string> = {
+    //         processingMode: "",
+    //         processCategory: "",
+    //         processEngine: "",
+    //     };
+    //
+    //     const { result } = renderHook(() =>
+    //         useProcessFormDataOptions({
+    //             allCombinations: jsonDataOneUnique,
+    //             value,
+    //         }),
+    //     );
+    //
+    //     expect(result.current).toEqual({
+    //         categories: [
+    //             {
+    //                 disabled: false,
+    //                 value: "Category1",
+    //             },
+    //         ],
+    //         engines: ["Engine1", "Engine2"],
+    //         isCategoryFieldVisible: false,
+    //         isProcessingModeBatchAvailable: true,
+    //         isEngineFieldVisible: false,
+    //
+    //         processingModes: ["Unbounded-Stream", "Bounded-Stream"],
+    //     });
+    // });
 });

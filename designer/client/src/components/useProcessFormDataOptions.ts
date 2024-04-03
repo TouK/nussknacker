@@ -68,6 +68,7 @@ export const useProcessFormDataOptions = ({ allCombinations, value }: Props) => 
         return multipleEnginesSelectable;
     }, [allCombinations]);
 
+    // TODO: Remove this temporary fix. When category field is hidden the request is incomplete and backend raises unintelligible exception.
     const isCategoryFieldVisible = true; // QUICK-BUG-FIX categories.length > 1;
 
     const isProcessingModeBatchAvailable = allCombinations.some((allCombination) => allCombination.processingMode === ProcessingMode.batch);
