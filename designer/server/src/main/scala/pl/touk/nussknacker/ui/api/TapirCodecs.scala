@@ -129,8 +129,8 @@ object TapirCodecs {
     implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
 
     implicit val migrateScenarioRequestEncoder: Encoder[MigrateScenarioRequest] = Encoder.instance {
-      case v1 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => v1.asJson
-      case v2 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) => v2.asJson
+      case v14: MigrateScenarioRequestV1_14 => v14.asJson
+      case v15: MigrateScenarioRequestV1_15 => v15.asJson
     }
 
     implicit val migrateScenarioRequestDecoder: Decoder[MigrateScenarioRequest] = List[Decoder[MigrateScenarioRequest]](
