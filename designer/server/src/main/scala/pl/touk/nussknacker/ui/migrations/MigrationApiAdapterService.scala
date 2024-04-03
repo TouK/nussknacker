@@ -56,7 +56,7 @@ class MigrationApiAdapterService {
   def adaptToHighestVersion(migrateScenarioRequest: MigrateScenarioRequest): CurrentScenarioMigrateRequest =
     migrateScenarioRequest match {
       case v14 @ MigrateScenarioRequestV1_14(_, _, _, _, _, _, _) => Adapters.adapterV14ToV15.map(v14)
-      case v15 @ MigrateScenarioRequestV1_15(_, _, _, _, _, _, _) => v15
+      case currentVersion: CurrentScenarioMigrateRequest          => currentVersion
     }
 
   // @tailrec - later
