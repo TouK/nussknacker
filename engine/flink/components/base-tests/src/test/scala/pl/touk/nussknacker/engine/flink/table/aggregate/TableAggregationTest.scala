@@ -35,7 +35,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         TableAggregationFactory.aggregateByParamName.value        -> "#input.someAmount",
         TableAggregationFactory.aggregatorFunctionParamName.value -> "'Sum'",
       )
-      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "{#key, #agg}")
+      .processorEnd("end", TestScenarioRunner.testResultSink, "value" -> "{#key, #agg}")
 
     val result = runner.runWithDataInBoundedMode(
       scenario,
