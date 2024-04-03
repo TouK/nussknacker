@@ -78,7 +78,12 @@ trait NuRestAssureExtensions {
 
   }
 
-  implicit class VerifyExternalState(validatableResponse: ValidatableResponse) {
+  implicit class VerifyState(validatableResponse: ValidatableResponse) {
+
+    def verifyApplicationState(f: => Unit): ValidatableResponse = {
+      val _ = f
+      validatableResponse
+    }
 
     def verifyExternalState(f: => Unit): ValidatableResponse = {
       val _ = f
