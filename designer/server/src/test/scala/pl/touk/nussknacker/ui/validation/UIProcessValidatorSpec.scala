@@ -612,7 +612,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
-                  ParameterName("subParam3_valid"),
+                  ParameterName("subParam3"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam4_valid"),
                   FragmentClazzRef[java.lang.String],
                   initialValue =
                     Some(FixedExpressionValue("""{"key":"some string key","label":"some label"}""", "some label")),
@@ -658,6 +671,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               "Values in dictionary 'someDictId' are of type 'String @ dictValue:someDictId' and cannot be treated as expected type: 'Boolean'",
               Some("$param.subParam2.$dictId"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            ),
+            NodeValidationError(
+              "EmptyMandatoryParameterConfigurationField",
+              "This field is mandatory and cannot be empty",
+              _,
+              Some("$param.subParam3.$dictId"),
               NodeValidationErrorType.SaveAllowed,
               None
             )

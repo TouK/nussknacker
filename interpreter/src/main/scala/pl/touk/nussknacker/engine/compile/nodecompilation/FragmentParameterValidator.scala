@@ -138,36 +138,53 @@ object FragmentParameterValidator {
   )(implicit nodeId: NodeId): Validated[NonEmptyList[PartSubGraphCompilationError], Unit] =
     fragmentParameter.valueEditor match {
       case Some(ValueInputWithDictEditor(dictId, _)) =>
-        dictionaries.get(dictId) match {
-          case Some(dictDefinition) =>
-            val fragmentParameterTypingResult = fragmentParameter.typ
-              .toRuntimeClass(classLoader)
-              .map(Typed(_))
-              .getOrElse(Unknown)
+        validateNonEmptyDictId(dictId, fragmentParameter.name).andThen(_ =>
+          dictionaries.get(dictId) match {
+            case Some(dictDefinition) =>
+              val fragmentParameterTypingResult = fragmentParameter.typ
+                .toRuntimeClass(classLoader)
+                .map(Typed(_))
+                .getOrElse(Unknown)
 
-            val dictValueType = dictDefinition.valueType(dictId)
+              val dictValueType = dictDefinition.valueType(dictId)
 
-            if (dictValueType.canBeSubclassOf(fragmentParameterTypingResult)) {
-              Valid(())
-            } else {
+              if (dictValueType.canBeSubclassOf(fragmentParameterTypingResult)) {
+                Valid(())
+              } else {
+                invalidNel(
+                  DictIsOfInvalidType(
+                    dictId,
+                    dictValueType,
+                    fragmentParameterTypingResult,
+                    nodeId.id,
+                    qualifiedParamFieldName(fragmentParameter.name, Some(DictIdFieldName))
+                  )
+                )
+              }
+            case None =>
               invalidNel(
-                DictIsOfInvalidType(
+                DictNotDeclared(
                   dictId,
-                  dictValueType,
-                  fragmentParameterTypingResult,
                   nodeId.id,
                   qualifiedParamFieldName(fragmentParameter.name, Some(DictIdFieldName))
                 )
               )
-            }
-          case None =>
-            invalidNel(
-              DictNotDeclared(dictId, nodeId.id, qualifiedParamFieldName(fragmentParameter.name, Some(DictIdFieldName)))
-            )
-        }
+          }
+        )
 
       case _ => Valid(())
     }
+
+  private def validateNonEmptyDictId(dictId: String, parameterName: ParameterName)(implicit nodeId: NodeId) =
+    if (dictId.isBlank)
+      invalidNel(
+        EmptyMandatoryParameterConfigurationField(
+          nodeId.id,
+          qualifiedParamFieldName(parameterName, Some(DictIdFieldName))
+        )
+      )
+    else
+      valid(())
 
   def validateParameterNames(
       parameters: List[Parameter]

@@ -351,6 +351,10 @@ object ProcessCompilationError {
       extends DuplicateFragmentOutputNames
       with ScenarioGraphLevelError
 
+  final case class EmptyMandatoryParameterConfigurationField(nodeId: String, qualifiedParamName: ParameterName)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class DictNotDeclared(dictId: String, nodeId: String, paramName: ParameterName)
       extends PartSubGraphCompilationError
       with InASingleNode
