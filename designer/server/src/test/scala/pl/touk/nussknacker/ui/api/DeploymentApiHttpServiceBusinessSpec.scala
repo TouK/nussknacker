@@ -85,11 +85,6 @@ class DeploymentApiHttpServiceBusinessSpec
       "Value" -> Expression.spel("#input")
     )
 
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    createSavedScenario(scenario)
-  }
-
   override protected def afterAll(): Unit = {
     FileUtils.deleteQuietly(outputDirectory.toFile) // it might not work because docker user can has other uid
     super.afterAll()
@@ -100,6 +95,9 @@ class DeploymentApiHttpServiceBusinessSpec
       "run deployment" in {
         val requestedDeploymentId = "some-requested-deployment-id"
         given()
+          .applicationState {
+            createSavedScenario(scenario)
+          }
           .when()
           .basicAuthAdmin()
           .jsonBody("{}")
@@ -116,6 +114,9 @@ class DeploymentApiHttpServiceBusinessSpec
     "not authenticated should" - {
       "return unauthenticated status code" in {
         given()
+          .applicationState {
+            createSavedScenario(scenario)
+          }
           .when()
           .jsonBody("{}")
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
@@ -127,6 +128,9 @@ class DeploymentApiHttpServiceBusinessSpec
     "badly authenticated should" - {
       "return unauthenticated status code" in {
         given()
+          .applicationState {
+            createSavedScenario(scenario)
+          }
           .when()
           .basicAuthUnknownUser()
           .jsonBody("{}")
@@ -139,6 +143,9 @@ class DeploymentApiHttpServiceBusinessSpec
     "authenticated without read access to category should" - {
       "forbid access" in {
         given()
+          .applicationState {
+            createSavedScenario(scenario)
+          }
           .when()
           .basicAuthNoPermUser()
           .jsonBody("{}")
@@ -151,6 +158,9 @@ class DeploymentApiHttpServiceBusinessSpec
     "authenticated without deploy access to category should" - {
       "forbid access" in {
         given()
+          .applicationState {
+            createSavedScenario(scenario)
+          }
           .when()
           .basicAuthWriter()
           .jsonBody("{}")

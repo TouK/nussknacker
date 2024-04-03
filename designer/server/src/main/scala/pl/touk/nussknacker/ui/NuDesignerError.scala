@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui
 
-import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object NuDesignerError {
