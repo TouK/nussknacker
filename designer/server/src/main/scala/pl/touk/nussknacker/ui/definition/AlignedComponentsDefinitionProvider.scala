@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -48,7 +48,7 @@ class AlignedComponentsDefinitionProvider(
     for {
       scenario <- fragmentsScenarios
       definition <- fragmentComponentDefinitionExtractor
-        .extractFragmentComponentDefinition(scenario, AllowedProcessingModes.SetOf(NonEmptySet.one(processingMode)))
+        .extractFragmentComponentDefinition(scenario, AllowedProcessingModes.SetOf(processingMode))
         .toOption
     } yield definition
 

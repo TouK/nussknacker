@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
 import pl.touk.nussknacker.engine.api.component.Component
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.component._

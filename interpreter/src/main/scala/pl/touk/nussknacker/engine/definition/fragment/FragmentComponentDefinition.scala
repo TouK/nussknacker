@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, DesignerWideComponentId}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}

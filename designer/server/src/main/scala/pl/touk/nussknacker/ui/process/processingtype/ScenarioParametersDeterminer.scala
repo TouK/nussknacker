@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -24,17 +24,16 @@ object ScenarioParametersDeterminer {
       // FIXME: some proper errors and tests for that
       case Nil => throw new IllegalStateException(s"Empty list of components for processing type: $processingType")
       case nonEmptyList =>
-        val intersection = nonEmptyList.foldLeft(ProcessingMode.all) {
-          case (acc, AllowedProcessingModes.SetOf(componentProcessingModes)) =>
-            acc.intersect(componentProcessingModes.toSortedSet)
-          case (acc, AllowedProcessingModes.All) => acc
+        val intersection = nonEmptyList.foldLeft(ProcessingMode.all) { case (acc, allowedProcessingModes) =>
+          acc.intersect(allowedProcessingModes.toProcessingModes)
         }
         intersection.toList match {
           case oneMode :: Nil => oneMode
           // FIXME: some proper errors and tests for that
           case Nil =>
-            val componentsWithDefinedAllowedProcessingModes = componentsToProcessingMode.collect {
-              case (id, AllowedProcessingModes.SetOf(modes)) => id -> modes
+            val componentsWithDefinedAllowedProcessingModes = componentsToProcessingMode.flatMap {
+              case (id, AllowedProcessingModes.SetOf(modes)) => id -> modes :: Nil
+              case (_, AllowedProcessingModes.All)           => Nil
             }
             throw new IllegalStateException(
               s"Detected collision of allowed processing modes for processing type: $processingType among components: $componentsWithDefinedAllowedProcessingModes"

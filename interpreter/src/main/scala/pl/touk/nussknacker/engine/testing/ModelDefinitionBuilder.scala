@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,

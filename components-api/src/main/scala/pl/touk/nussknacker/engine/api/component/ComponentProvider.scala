@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.api.component
 
+import cats.Order
 import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -21,6 +22,34 @@ trait Component extends Serializable {
   // and we don't know if this class allow given processing mode or not so the developer have to specify this
   // by his/her own
   def allowedProcessingModes: AllowedProcessingModes
+}
+
+object Component {
+  sealed trait AllowedProcessingModes
+
+  object AllowedProcessingModes {
+    case object All                                                             extends AllowedProcessingModes
+    final case class SetOf(allowedProcessingModes: NonEmptySet[ProcessingMode]) extends AllowedProcessingModes
+
+    object SetOf {
+
+      def apply(processingMode: ProcessingMode, processingModes: ProcessingMode*): SetOf = {
+        new SetOf(NonEmptySet.of(processingMode, processingModes: _*))
+      }
+
+    }
+
+  }
+
+  implicit class ToProcessingModes(val allowedProcessingModes: AllowedProcessingModes) extends AnyVal {
+
+    def toProcessingModes: Set[ProcessingMode] = allowedProcessingModes match {
+      case AllowedProcessingModes.All                              => ProcessingMode.all
+      case AllowedProcessingModes.SetOf(allowedProcessingModesSet) => allowedProcessingModesSet.toSortedSet
+    }
+
+  }
+
 }
 
 trait UnboundedStreamComponent { self: Component =>

@@ -8,8 +8,8 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ProcessingMode, _}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
@@ -235,8 +235,7 @@ class DefaultComponentServiceSpec
         ComponentId(Source, SharedSourceName),
         SourceIcon,
         SourcesGroupName,
-        nonDefaultAllowedProcessingModes =
-          Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+        nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
       ),
       sharedComponent(
         ComponentId(Sink, SharedSinkName),
@@ -258,8 +257,7 @@ class DefaultComponentServiceSpec
         SourceIcon,
         SourcesGroupName,
         designerWideComponentId = Some(overrideSourceComponentId),
-        nonDefaultAllowedProcessingModes =
-          Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+        nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
       ),
       sharedComponent(
         ComponentId(Sink, SourceSinkSameNameComponentName),
@@ -297,15 +295,13 @@ class DefaultComponentServiceSpec
       ComponentId(Source, SuperMarketingSourceName),
       SourceIcon,
       SourcesGroupName,
-      nonDefaultAllowedProcessingModes =
-        Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+      nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
     ),
     marketingComponent(
       ComponentId(Source, NotSharedSourceName),
       SourceIcon,
       SourcesGroupName,
-      nonDefaultAllowedProcessingModes =
-        Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+      nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
     ),
     marketingComponent(
       ComponentId(Service, SingleProvidedComponentName),

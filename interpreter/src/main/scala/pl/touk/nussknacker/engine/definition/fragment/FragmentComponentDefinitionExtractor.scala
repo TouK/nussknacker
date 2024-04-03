@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.fragment
 
 import cats.data.Validated
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
   ComponentId,

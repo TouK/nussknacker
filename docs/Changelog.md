@@ -7,6 +7,7 @@
   * openapi-circe-yaml: 0.6.0 -> 0.7.4 
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+* [#5783](https://github.com/TouK/nussknacker/pull/5783) Added allowedProcessingModes field to components endpoint
 
 1.14.0 (21 Mar 2024)
 -------------------------

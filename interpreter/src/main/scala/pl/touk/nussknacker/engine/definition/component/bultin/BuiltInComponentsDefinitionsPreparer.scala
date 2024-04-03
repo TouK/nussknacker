@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.bultin
 
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.BuiltInComponentId
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{

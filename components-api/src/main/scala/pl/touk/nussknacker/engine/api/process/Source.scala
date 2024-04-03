@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.process
 
 import cats.data.NonEmptySet
-import pl.touk.nussknacker.engine.api.component.ProcessingMode.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{Parameter, WithExplicitTypesToExtract}
@@ -66,7 +66,7 @@ object SourceFactory {
     NoParamSourceFactory(
       _ => source,
       inputType,
-      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
 
   def noParamUnboundedStreamFactory[T: TypeTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =

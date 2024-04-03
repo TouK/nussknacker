@@ -34,13 +34,6 @@ object ProcessingMode {
     case other                               => throw new IllegalArgumentException(s"Not known processing mode: $other")
   }
 
-  sealed trait AllowedProcessingModes
-
-  object AllowedProcessingModes {
-    case object All                                                             extends AllowedProcessingModes
-    final case class SetOf(allowedProcessingModes: NonEmptySet[ProcessingMode]) extends AllowedProcessingModes
-  }
-
   implicit val processingModeOrdering: Ordering[ProcessingMode] = Ordering.by(_.value)
   implicit val processingModeOrder: Order[ProcessingMode]       = Order.fromOrdering
 }
