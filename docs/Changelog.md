@@ -1,5 +1,9 @@
 # Changelog
 
+1.14.1 (not released yet)
+-------------------------
+* [#5813](https://github.com/TouK/nussknacker/pull/5813) Fixed "More than one processing type ..." error during scenario creation when user has limited access to categories.
+
 1.14.0 (21 Mar 2024)
 -------------------------
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:

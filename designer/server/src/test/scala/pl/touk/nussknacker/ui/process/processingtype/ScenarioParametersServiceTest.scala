@@ -124,6 +124,46 @@ class ScenarioParametersServiceTest
     service.queryProcessingTypeWithWritePermission(Some(bCategory), None, None).validValue shouldEqual bCategoryType
   }
 
+  test(
+    "should return correct processing type when there is no category passed and some non visible for user combinations are available"
+  ) {
+    val categoryWithAccess    = "categoryWithAccess"
+    val categoryWithoutAccess = "categoryWithoutAccess"
+
+    val processingTypeWithAccess    = "processingTypeWithAccess"
+    val processingTypeWithoutAccess = "processingTypeWithoutAccess"
+
+    val service = ScenarioParametersService
+      .create(
+        Map(
+          processingTypeWithAccess ->
+            ScenarioParametersWithEngineSetupErrors(
+              ScenarioParameters(ProcessingMode.UnboundedStream, categoryWithAccess, EngineSetupName("aSetup")),
+              List.empty
+            ),
+          processingTypeWithoutAccess ->
+            ScenarioParametersWithEngineSetupErrors(
+              ScenarioParameters(ProcessingMode.UnboundedStream, categoryWithoutAccess, EngineSetupName("aSetup")),
+              List.empty
+            )
+        )
+      )
+      .validValue
+
+    implicit val user: LoggedUser = LoggedUser(
+      "userWithLimitedAccess",
+      "userWithLimitedAccess",
+      Map(categoryWithAccess -> Set(Permission.Write))
+    )
+    service
+      .queryProcessingTypeWithWritePermission(
+        category = None,
+        processingMode = Some(ProcessingMode.UnboundedStream),
+        engineSetupName = None
+      )
+      .validValue shouldEqual processingTypeWithAccess
+  }
+
   test("should return engine errors that are only available for user with write access to the given category") {
     val writeAccessCategory        = "writeAccessCategory"
     val noAccessCategory           = "noAccessCategory"
