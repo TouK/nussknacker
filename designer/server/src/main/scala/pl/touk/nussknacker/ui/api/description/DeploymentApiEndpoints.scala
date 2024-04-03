@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.NoScenario
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{
@@ -64,7 +65,9 @@ object DeploymentApiEndpoints {
 
     object DeploymentError {
 
-      case class NoScenario(scenarioName: ProcessName) extends DeploymentError
+      final case class NoScenario(scenarioName: ProcessName) extends DeploymentError
+
+      final case object NoPermission extends DeploymentError with CustomAuthorizationError
 
       private def deserializationNotSupportedException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")

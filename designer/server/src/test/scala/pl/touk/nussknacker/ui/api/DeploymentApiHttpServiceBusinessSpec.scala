@@ -35,7 +35,7 @@ class DeploymentApiHttpServiceBusinessSpec
     with Matchers {
 
   private lazy val outputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary")
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
 
   private lazy val tablesDefinitionBind = FileSystemBind(
     "designer/server/src/test/resources/config/business-cases/tables-definition.sql",
@@ -73,34 +73,91 @@ class DeploymentApiHttpServiceBusinessSpec
     )
   }
 
-  "The endpoint for deployment requesting should" - {
-    "run deployment" in {
-      val scenarioName = "batch-test"
-      val scenario = ScenarioBuilder
-        .streaming(scenarioName)
-        .source("source", "table", "Table" -> Expression.spel("'transactions'"))
-        .emptySink(
-          "sink",
-          "table",
-          "Table" -> Expression.spel("'transactions_summary'"),
-          "Value" -> Expression.spel("#input")
-        )
-      val requestedDeploymentId = "some-requested-deployment-id"
+  private val scenarioName = "batch-test"
 
-      given()
-        .applicationState {
-          createSavedScenario(scenario)
-        }
-        .when()
-        .basicAuthAdmin()
-        .jsonBody("{}")
-        .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId")
-        .Then()
-        // TODO: we should return 201 and we should check status of deployment before we verify output
-        .statusCode(200)
-        .verifyExternalState {
-          outputTransactionSummaryContainsResult()
-        }
+  private val scenario = ScenarioBuilder
+    .streaming(scenarioName)
+    .source("source", "table", "Table" -> Expression.spel("'transactions'"))
+    .emptySink(
+      "sink",
+      "table",
+      "Table" -> Expression.spel("'transactions_summary'"),
+      "Value" -> Expression.spel("#input")
+    )
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    createSavedScenario(scenario)
+  }
+
+  override protected def afterAll(): Unit = {
+    FileUtils.deleteQuietly(outputDirectory.toFile) // it might not work because docker user can has other uid
+    super.afterAll()
+  }
+
+  "The endpoint for deployment requesting" - {
+    "authenticated as user with deploy access should" - {
+      "run deployment" in {
+        val requestedDeploymentId = "some-requested-deployment-id"
+        given()
+          .when()
+          .basicAuthAdmin()
+          .jsonBody("{}")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId")
+          .Then()
+          // TODO (next PRs): we should return 201 and we should check status of deployment before we verify output
+          .statusCode(200)
+          .verifyExternalState {
+            outputTransactionSummaryContainsResult()
+          }
+      }
+    }
+
+    "not authenticated should" - {
+      "return unauthenticated status code" in {
+        given()
+          .when()
+          .jsonBody("{}")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .Then()
+          .statusCode(401)
+      }
+    }
+
+    "badly authenticated should" - {
+      "return unauthenticated status code" in {
+        given()
+          .when()
+          .basicAuthUnknownUser()
+          .jsonBody("{}")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .Then()
+          .statusCode(401)
+      }
+    }
+
+    "authenticated without read access to category should" - {
+      "forbid access" in {
+        given()
+          .when()
+          .basicAuthNoPermUser()
+          .jsonBody("{}")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .Then()
+          .statusCode(403)
+      }
+    }
+
+    "authenticated without deploy access to category should" - {
+      "forbid access" in {
+        given()
+          .when()
+          .basicAuthWriter()
+          .jsonBody("{}")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .Then()
+          .statusCode(403)
+      }
     }
   }
 
@@ -109,7 +166,7 @@ class DeploymentApiHttpServiceBusinessSpec
     transactionSummaryFiles should have size 1
     val transactionsSummaryContent =
       FileUtils.readFileToString(transactionSummaryFiles.head, StandardCharset.UTF_8)
-    // TODO: aggregate by clientId
+    // TODO (next PRs): aggregate by clientId
     transactionsSummaryContent should include(
       """client1,1.12
         |client2,2.21

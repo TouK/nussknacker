@@ -2,15 +2,19 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.NoScenario
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{NoPermission, NoScenario}
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import pl.touk.nussknacker.ui.util.EitherTImplicits.EitherTFromOptionInstance
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class DeploymentApiHttpService(
     authenticator: AuthenticationResources,
@@ -23,18 +27,20 @@ class DeploymentApiHttpService(
 
   expose {
     endpoints.requestScenarioDeploymentEndpoint
-      // FIXME: authorize canDeploy
       .serverSecurityLogic(authorizeKnownUser[DeploymentError])
       .serverLogicEitherT { implicit loggedUser =>
-        // TODO: use params
+        // TODO (next PRs): use params
         { case (scenarioName, deploymentId, request) =>
           for {
-            scenarioId <- getScenarioIdByName(scenarioName)
-            // TODO: Currently it is done sync, but eventually we should make it async and add an endpoint for deployment status verification
-            _ <- EitherT.right(
+            scenarioDetails <- getScenarioDetailsByName(scenarioName)
+            _ <- EitherT.fromEither[Future](
+              Either.cond(loggedUser.can(scenarioDetails.processCategory, Permission.Deploy), (), NoPermission)
+            )
+            // TODO (next PRs): Currently it is done sync, but eventually we should make it async and add an endpoint for deployment status verification
+            _ <- extractErrors(
               deploymentService
                 .deployProcessAsync(
-                  ProcessIdWithName(scenarioId, scenarioName),
+                  scenarioDetails.idWithNameUnsafe,
                   savepointPath = None,
                   comment = None
                 )
@@ -45,10 +51,31 @@ class DeploymentApiHttpService(
       }
   }
 
-  private def getScenarioIdByName(scenarioName: ProcessName) = {
-    scenarioService
-      .getProcessId(scenarioName)
-      .toRightEitherT(NoScenario(scenarioName))
+  // TODO: It is a copy-paste of akka-based AuthorizeProcess variant. We should:
+  //       - reuse fetched scenario inside DeploymentService.deployProcessAsync
+  //       - extract this boilerplate for permission checking to some class - but before that we should rethink errors
+  //         type hierarchy. currently we have dedicated errors for each endpoint which makes this hard to achieve
+  private def getScenarioDetailsByName(
+      scenarioName: ProcessName
+  )(implicit loggedUser: LoggedUser): EitherT[Future, DeploymentError, ScenarioWithDetails] =
+    for {
+      scenarioId <- EitherT.fromOptionF(scenarioService.getProcessId(scenarioName), NoScenario(scenarioName))
+      scenarioDetails <- extractErrors(
+        scenarioService.getLatestProcessWithDetails(
+          ProcessIdWithName(scenarioId, scenarioName),
+          GetScenarioWithDetailsOptions.detailsOnly
+        )
+      )
+    } yield scenarioDetails
+
+  private def extractErrors[T](future: Future[T]): EitherT[Future, DeploymentError, T] = {
+    EitherT(
+      future.transform {
+        case Success(result)               => Success(Right(result))
+        case Failure(_: UnauthorizedError) => Success(Left(NoPermission))
+        case Failure(ex)                   => Failure(ex)
+      }
+    )
   }
 
 }

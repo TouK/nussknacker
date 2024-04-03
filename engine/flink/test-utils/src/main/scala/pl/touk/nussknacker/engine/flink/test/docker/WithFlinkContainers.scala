@@ -30,9 +30,10 @@ trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogg
 
   protected def flinkContainers: List[LazyContainer[_]] = List(jobManagerContainer, taskManagerContainer)
 
+  protected lazy val savepointDir: Path = prepareSavepointVolumeDir()
+
   protected val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
-    val savepointDir = prepareSavepointVolumeDir()
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
       command = "jobmanager" :: Nil,
