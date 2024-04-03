@@ -178,19 +178,17 @@ class FlinkTestScenarioRunner(
 
         env.executeAndWaitForFinished(scenario.name.value)()
 
-        TestResultSinkFactory.extractOutputFor(testExtensionsHolder.runId) match {
-          case Output.None =>
-            RunListResult(
-              successes = tryToCollectResultsFromExternalInvocationResults(scenario, testScenarioCollectorHandler)
-                .asInstanceOf[List[OUTPUT]],
-              errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
-            )
-          case Output.Present(results) =>
-            RunListResult(
-              successes = results.asInstanceOf[List[OUTPUT]],
-              errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
-            )
+        val successes = TestResultSinkFactory.extractOutputFor(testExtensionsHolder.runId) match {
+          case Output.NotAvailable =>
+            // we assume that if there is no output, maybe we can try to get from the external invocation results
+            tryToCollectResultsFromExternalInvocationResults(scenario, testScenarioCollectorHandler)
+          case Output.Available(results) =>
+            results.toList
         }
+        RunListResult(
+          successes = successes.asInstanceOf[List[OUTPUT]],
+          errors = testScenarioCollectorHandler.resultsCollectingListener.results.exceptions
+        )
       }
     }
   }

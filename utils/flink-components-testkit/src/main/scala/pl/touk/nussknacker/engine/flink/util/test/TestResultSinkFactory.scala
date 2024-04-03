@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import cats.data.NonEmptyList
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api._
@@ -10,6 +11,9 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 
 import java.util.concurrent.ConcurrentSkipListMap
 
+// `TestResultSinkFactory` is closely related to the ID of the running test. We use the ID to extract results from
+// the shared map with results collected from all instances of TestResultSink (see `TestResultSinkFactory.sinksOutputs`)
+// We have to do it like this because there is no other way to intercept data flowing out of the Flink's sink
 class TestResultSinkFactory(runId: TestRunId) extends SinkFactory {
 
   @MethodToInvoke
@@ -20,12 +24,12 @@ class TestResultSinkFactory(runId: TestRunId) extends SinkFactory {
 
 object TestResultSinkFactory {
 
-  private val sinksOutputs = new ConcurrentSkipListMap[TestRunId, Vector[AnyRef]]()
+  private val sinksOutputs = new ConcurrentSkipListMap[TestRunId, NonEmptyList[AnyRef]]()
 
   def extractOutputFor(runId: TestRunId): Output = {
     Option(sinksOutputs.remove(runId))
-      .map(l => Output.Present(l.toList))
-      .getOrElse(Output.None)
+      .map(l => Output.Available(l))
+      .getOrElse(Output.NotAvailable)
   }
 
   def clean(runId: TestRunId): Unit = {
@@ -46,10 +50,10 @@ object TestResultSinkFactory {
       override def invoke(value: Value, context: SinkFunction.Context): Unit = {
         sinksOutputs.compute(
           runId,
-          (_: TestRunId, output: Vector[AnyRef]) => {
+          (_: TestRunId, output: NonEmptyList[AnyRef]) => {
             Option(output) match {
               case Some(o) => o :+ value
-              case None    => Vector(value)
+              case None    => NonEmptyList.one(value)
             }
           }
         )
@@ -62,8 +66,8 @@ object TestResultSinkFactory {
   sealed trait Output
 
   object Output {
-    case object None                               extends Output
-    final case class Present(values: List[AnyRef]) extends Output
+    case object NotAvailable                                 extends Output
+    final case class Available(values: NonEmptyList[AnyRef]) extends Output
   }
 
 }
