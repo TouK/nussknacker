@@ -26,31 +26,51 @@
 
 ## What is Nussknacker
 
-Nussknacker is a low-code visual tool for domain experts to define and run real-time decisioning algorithms instead of implementing them in the code.
+Nussknacker is a low-code visual tool for domain experts to build, run and monitor real-time decision algorithms instead of implementing them in the code.
 
 In all IT systems, no matter the domain, decisions are made all the time. Which offer should a customer get? Who should receive a marketing message? Does this device need servicing? Is this a fraud?
 
-Algorithms for making such decisions can be implemented in the code. Especially if high performance or integration of data from many sources is needed. But those algorithms often change: we have a new product we want to promote or we learn that some strange activity is not really a fraud. That requires changes in the code that would have to be made by developers.
+Algorithms for making such decisions can be developed by programmers. With Nussknacker however, such decision algorithms can be authored and deployed without the need to involve IT.
 
-Instead, such decision algorithms can be run by Nussknacker, where business experts can define and change them, without the need to trouble IT.
+An essential part of Nussknacker is a visual design tool for decision algorithms. It allows not-so-technical users, like analysts or business people, to author decision logic in an imperative, easy-to-follow and understandable way. Once authored, with a click of a button, scenarios are deployed for execution. And can be changed and redeployed anytime there’s a need.
 
-Nussknacker can make those decisions by processing event streams or in a request-response model, providing horizontal scalability and high availability. That way it fits various use cases in microservice and/or event driven architectures.
+Nussknacker supports two [processing modes](https://nussknacker.io/documentation/about/ProcessingModes/): streaming and request-response. In streaming mode, it uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions. And since input events or requests are often not enough to make a decision, Nussknacker can enrich them with data from databases and OpenAPI endpoints.
+
+Nussknacker can be used with its own, lightweight, Kubernetes-based [engine](https://nussknacker.io/documentation/about/engines/). It provides scalability and high availability while being straightforward to set up and maintain. However, in advanced streaming use cases, when aggregations in time windows are needed, Nussknacker can execute decision scenarios on Flink – one of the most advanced platforms for stream processing.
 
 ## Why Nussknacker
 
-An essential part of Nussknacker is a visual design tool for decision algorithms. It allows not-so-technical users – analysts or business people – to define decision logic in an imperative, easy to follow and understand way. Once authored, with a click of a button, scenarios are deployed for execution. And can be changed and redeployed anytime there’s a need.
+Nussknacker promises to make developing and deploying real-time decision algorithms as easy as it is with spreadsheets and data at rest. If so, domain experts and developers can focus on tasks that each of these two groups is most happy to perform - domain experts can author the decision algorithms and developers can solve problems beyond the reach of tools like Nussknacker.
 
-Nussknacker supports two processing modes: streaming and request-response. In streaming mode it uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode it exposes HTTP endpoints with OpenAPI definitions. And since input events or requests are often not enough to make a decision, Nussknacker can enrich them with data from databases and OpenAPI endpoints.
+We discovered that several factors heavily influence the development of algorithms that work with real-time data:
+- Often these algorithms are conceptualized by domain experts and the expertize required is very domain specific. Without proper tools for converting algorithms to code, domain experts have to delegate this work to programmers, proficient in multiple tools, programming languages and technologies. This approach costs money and takes time. With Nussknacker domain experts can build the algorithm from prefabricated blocks. The trick is to make these prefabricated blocks infinitely flexible -  Nussknacker achieves this by using [SpEL](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/#spel), an easy-to-learn expression language, to express data transformations and control the flow of the algorithm.
+- The algorithms may require a lot of experimentation before one gets them right. If so, the iteration time required to implement a change, deploy it, and see the result should be in single minutes if not seconds. With Nussknacker, unless the change is significant, non-technical users can achieve iteration time below one minute. 
+- To support high productivity, low-code tools need to provide features used by developers in professional IDEs - Nussknacker Designer has built in syntax checking, code completion, debugging, and testing support. 
+- Last but not least, Nu comes with an integrated and ready-to-use monitoring subsystem built on top of InfluxDB and Grafana.
 
-Nussknacker can be used with its own, lightweight, Kubernetes-based [engine](/about/GLOSSARY.md#engine). It provides scalability and high availability, while being straightforward to set up and maintain. However, in advanced streaming use cases, when aggregations are needed, Nussknacker can execute decision scenarios on Flink – one of the most advanced platforms for stream processing. 
+Check out [this document](https://nussknacker.io/documentation/about/KeyFeatures/) for a concise summary of Nussknacker features. 
+
+
+## Use cases
+
+![image](./docs/NuHighLevelView.png)
+
+Nussknacker use cases follow a common pattern: a program working on a data stream, file or in a request-response interaction style receives a set of data (event or request) and has to deliver a decision. To “take” the decision it needs to perform one or more of the following: discard irrelevant records, enrich incoming records with data from external sources, aggregate events in time windows (if working on a data stream), run one or more ML models, compute the decision and finally deliver it either as another data stream or a response.  The ‘decisions’ can be from a broad spectrum of vertical and horizontal applications:
+- Is it a fraud?
+- Should a loan be granted?
+- Next Best Offer
+- Clickstream analysis
+- Real-time marketing
+- ML models deployments with non-trivial pre and post-processing 
+- IoT sensor readouts real-time analysis
+- … 
+
 
 ## Where to learn more
 
-- [Key features](https://nussknacker.io/documentation/about/KeyFeatures/) 
-- [Processing modes](https://nussknacker.io/documentation/about/ProcessingModes/) 
-- [Engines](https://nussknacker.io/documentation/about/engines/) 
-- [Typical implementation](https://nussknacker.io/documentation/about/TypicalImplementationStreaming/)
+- [Typical deployment](https://nussknacker.io/documentation/about/TypicalImplementationStreaming/)
 - [Authoring decision scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) 
+- [Customer success story](https://nussknacker.io/case-studies/real-time-marketing-for-a-telecom-service-provider/)
 
 ## Quickstart
 
