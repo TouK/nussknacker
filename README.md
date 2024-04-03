@@ -69,7 +69,7 @@ Nussknacker use cases follow a common pattern: a program working on a data strea
 ## Where to learn more
 
 - [Typical deployment](https://nussknacker.io/documentation/about/TypicalImplementationStreaming/)
-- [Authoring decision scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) 
+- [Authoring decision algorithms with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) 
 - [Customer success story](https://nussknacker.io/case-studies/real-time-marketing-for-a-telecom-service-provider/)
 
 ## Quickstart
