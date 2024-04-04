@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,6 +15,8 @@ import scala.util.{Failure, Success}
 
 trait ScenarioHttpServiceExtensions {
 
+  // TODO: We should introduce the common structure of Errors between different endpoints. Thanks to that
+  //       we avoid code duplication and we can fix this type and methods creating specific errors
   protected type BusinessErrorType
 
   protected def scenarioService: ProcessService
@@ -42,9 +45,10 @@ trait ScenarioHttpServiceExtensions {
   ): EitherT[Future, BusinessErrorType, T] = {
     EitherT(
       future.transform {
-        case Success(result)               => Success(Right(result))
-        case Failure(_: UnauthorizedError) => Success(Left(noPermissionError))
-        case Failure(ex)                   => Failure(ex)
+        case Success(result)                             => Success(Right(result))
+        case Failure(_: UnauthorizedError)               => Success(Left(noPermissionError))
+        case Failure(ProcessNotFoundError(scenarioName)) => Success(Left(noScenarioError(scenarioName)))
+        case Failure(ex)                                 => Failure(ex)
       }
     )
   }
