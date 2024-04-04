@@ -46,7 +46,7 @@ We discovered that several factors heavily influence the development of algorith
 - Often these algorithms are conceptualized by domain experts and the expertize required is very domain specific. Without proper tools for converting algorithms to code, domain experts have to delegate this work to programmers, proficient in multiple tools, programming languages and technologies. This approach costs money and takes time. With Nussknacker domain experts can build the algorithm from prefabricated blocks. The trick is to make these prefabricated blocks infinitely flexible -  Nussknacker achieves this by using [SpEL](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/#spel), an easy-to-learn expression language, to express data transformations and control the flow of the algorithm.
 - The algorithms may require a lot of experimentation before one gets them right. If so, the iteration time required to implement a change, deploy it, and see the result should be in single minutes if not seconds. With Nussknacker, unless the change is significant, non-technical users can achieve iteration time below one minute. 
 - To support high productivity, low-code tools need to provide features used by developers in professional IDEs - Nussknacker Designer has built in syntax checking, code completion, debugging, and testing support. 
-- Last but not least, Nu comes with an integrated and ready-to-use monitoring subsystem built on top of InfluxDB and Grafana.
+- Last but not least, Nu comes with an integrated and ready-to-use monitoring subsystem built on top of InfluxDB and Grafana - you will not need to spend developers' time on it.
 
 Check out [this document](https://nussknacker.io/documentation/about/KeyFeatures/) for a concise summary of Nussknacker features. 
 
@@ -55,7 +55,7 @@ Check out [this document](https://nussknacker.io/documentation/about/KeyFeatures
 
 ![image](./docs/NuHighLevelView.png)
 
-Nussknacker use cases follow a common pattern: a program working on a data stream, file or in a request-response interaction style receives a set of data (event or request) and has to deliver a decision. To “take” the decision it needs to perform one or more of the following: discard irrelevant records, enrich incoming records with data from external sources, aggregate events in time windows (if working on a data stream), run one or more ML models, compute the decision and finally deliver it either as another data stream or a response.  The ‘decisions’ can be from a broad spectrum of vertical and horizontal applications:
+Nussknacker use cases follow a common pattern: a program working on a data stream, file or in a request-response interaction style receives a set of data (event or request) and has to deliver a decision. To “take” the decision it needs to perform one or more of the following: discard irrelevant records, enrich incoming records with data from external sources, aggregate events in time windows (if working on a data stream), run one or more ML models, compute the decision and finally deliver it either as another data stream, file or a response.  The ‘decisions’ can be from a broad spectrum of vertical and horizontal applications:
 - Is it a fraud?
 - Should a loan be granted?
 - Next Best Offer
