@@ -38,17 +38,9 @@ class FlinkProcessCompilerData(
 
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
-    componentUseCase match {
-      case ComponentUseCase.TestRuntime =>
-        lifecycle.foreach {
-          _.open(FlinkTestEngineRuntimeContextImpl(jobData, runtimeContext))
-        }
-      case _ =>
-        lifecycle.foreach {
-          _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
-        }
+    lifecycle.foreach {
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
     }
-
   }
 
   def close(nodesToUse: List[_ <: NodeData]): Unit = {
@@ -78,15 +70,8 @@ class FlinkProcessCompilerData(
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
-    componentUseCase match {
-      case ComponentUseCase.TestRuntime =>
-        exceptionHandler.open(FlinkTestEngineRuntimeContextImpl(jobData, runtimeContext))
-        exceptionHandler
-      case _ =>
-        exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
-        exceptionHandler
-    }
-
+    exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+    exceptionHandler
   }
 
 }

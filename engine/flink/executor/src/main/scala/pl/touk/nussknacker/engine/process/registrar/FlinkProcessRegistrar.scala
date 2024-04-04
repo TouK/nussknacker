@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -26,7 +27,6 @@ import pl.touk.nussknacker.engine.process.compiler.{
   FlinkEngineRuntimeContextImpl,
   FlinkProcessCompilerData,
   FlinkProcessCompilerDataFactory,
-  FlinkTestEngineRuntimeContextImpl,
   UsedNodes
 }
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
@@ -141,16 +141,12 @@ class FlinkProcessRegistrar(
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
       val jobData = compilerData.jobData
-      val engineRuntimeContext =
-        compilerData.componentUseCase match {
-          case ComponentUseCase.TestRuntime => eng => FlinkTestEngineRuntimeContextImpl(jobData, eng)
-          case _                            => eng => FlinkEngineRuntimeContextImpl(jobData, eng)
-        }
+
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = engineRuntimeContext,
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
@@ -182,16 +178,9 @@ class FlinkProcessRegistrar(
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
       val start: SingleOutputStreamOperator[Context] =
-        compilerData.componentUseCase match {
-          case ComponentUseCase.TestRuntime =>
-            source
-              .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-              .process(new TestSourceMetricsFunction(part.id), contextTypeInformation)
-          case _ =>
-            source
-              .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-              .process(new SourceMetricsFunction(part.id), contextTypeInformation)
-        }
+        source
+          .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+          .process(new SourceMetricsFunction(part.id, compilerData.componentUseCase), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 
