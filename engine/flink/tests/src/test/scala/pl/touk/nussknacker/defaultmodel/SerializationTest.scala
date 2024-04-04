@@ -18,7 +18,7 @@ class SerializationTest extends FlinkWithKafkaSuite with LazyLogging {
       .streaming("serialization-test")
       .parallelism(1)
       .source("start", TestScenarioRunner.testDataSource)
-      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#input.field2")
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input.field2")
     val testScenarioRunner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
       .build()

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.api.description
 
+import cats.implicits.toTraverseOps
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import io.circe.{Decoder, DecodingFailure, Encoder, Json, KeyDecoder, KeyEncoder}
+import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.AdditionalInfo
@@ -36,7 +37,6 @@ import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import sttp.model.StatusCode.{BadRequest, NotFound, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.SchemaType.SString
-
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{decodeVariableTypes, prepareTypingResultDecoder}
 import pl.touk.nussknacker.ui.api.description.TypingDtoSchemas._
@@ -465,17 +465,15 @@ object NodesApiEndpoints {
         variableTypes: Map[String, Dtos.TypingResultInJson],
         typingResultDecoder: Decoder[TypingResult]
     ): Either[MalformedTypingResult, Map[String, TypingResult]] = {
-      val result: Map[ProcessingType, TypingResult] = variableTypes
+      variableTypes.toList
         .map { case (key, typingResult) =>
           (key, typingResultDecoder.decodeJson(typingResult))
         }
         .map { case (key, maybeValue) =>
-          maybeValue match {
-            case Left(failure: DecodingFailure) => return Left(MalformedTypingResult(failure.message))
-            case Right(value)                   => (key, value)
-          }
+          maybeValue.left.map(failure => MalformedTypingResult(failure.message)).map((key, _))
         }
-      Right(result)
+        .sequence
+        .map(_.toMap)
     }
 
     sealed trait NodesError
