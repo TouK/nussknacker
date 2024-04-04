@@ -45,7 +45,7 @@ class ProcessDictSubstitutor(
       val nodeTypingInfo               = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)
 
-      if (expr.language == Expression.Language.DictKeyWithLabel) {
+      if (expr.language == Expression.Language.DictKeyWithLabel && !expr.expression.isBlank) {
         if (isReverse)
           addLabelToDictKeyExpression(process, expr, optionalExpressionTypingInfo, nodeExpressionId)
         else
