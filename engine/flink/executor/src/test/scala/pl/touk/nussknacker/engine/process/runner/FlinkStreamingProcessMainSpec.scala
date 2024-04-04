@@ -25,7 +25,7 @@ class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Insid
 
   import spel.Implicits._
 
-  object TestFlinkStreamingProcessMain extends FlinkStreamingProcessMain {
+  object TestFlinkStreamingProcessMain extends BaseFlinkStreamingProcessMain {
 
     override protected def getExecutionEnvironment: StreamExecutionEnvironment = {
       StreamExecutionEnvironment.getExecutionEnvironment(FlinkTestConfiguration.configuration())
