@@ -458,10 +458,6 @@ paths:
       responses:
         '200':
           description: ''
-          content:
-            application/json:
-              schema:
-                type: object
         '400':
           description: 'Invalid value for: body'
           content:
