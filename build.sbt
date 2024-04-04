@@ -669,12 +669,14 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     }
   )
   .dependsOn(
+    extensionsApi,
     commonComponents,
     flinkSchemedKafkaComponentsUtils,
-    liteComponentsApi    % Compile,
     flinkComponentsUtils % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
-    liteComponentsApi    % Provided,
+    // It has to be in the default, Compile scope because all components are eagerly loaded so it will be loaded also
+    // on the Flink side where this library is missing
+    liteComponentsApi,
     componentsUtils      % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter          % Provided,
@@ -695,7 +697,10 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
       )
     }
   )
-  .dependsOn(flinkComponentsUtils % Provided)
+  .dependsOn(
+    extensionsApi,
+    flinkComponentsUtils % Provided
+  )
 
 lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm"))
   .settings(commonSettings)
@@ -802,7 +807,7 @@ lazy val interpreter = (project in file("interpreter"))
       )
     }
   )
-  .dependsOn(utilsInternal, mathUtils, testUtils % Test, componentsUtils % Test)
+  .dependsOn(componentsUtils, utilsInternal, mathUtils, testUtils % Test)
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(commonSettings)
@@ -867,7 +872,7 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils"))
       )
     }
   )
-  .dependsOn(kafkaUtils, componentsUtils % Provided, componentsApi % Provided, testUtils % "it, test")
+  .dependsOn(kafkaUtils, componentsUtils % Provided, testUtils % "it, test")
 
 lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-components-utils"))
   .configs(ExternalDepsTests)
@@ -952,6 +957,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     componentsApi        % Provided,
     kafkaComponentsUtils,
     flinkComponentsUtils % Provided,
+    flinkExtensionsApi   % Provided,
     componentsUtils      % Provided,
     flinkExecutor        % Test,
     kafkaTestUtils       % Test,
@@ -974,12 +980,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
   )
   .dependsOn(testUtils, kafkaUtils, commonUtils % Provided)
 
-// This module:
-// - should not be a dependant of runtime (interpreter, flinkExecutor, *Runtime modules) production code
-// - should not be a dependant of designer production code
-// - can be a provided dependant of component extensions
-// - should be a compile/runtime dependant of defaultModel module
-// Thanks to that, it will be provided in one place, and will be visible in compilation which classes are part of root API and which of utils
+// This module should be provided by one module - interpreter, because it is is the common module shared between designer and runtime
 lazy val componentsUtils = (project in utils("components-utils"))
   .settings(commonSettings)
   .settings(
@@ -1061,6 +1062,7 @@ lazy val utilsInternal = (project in utils("utils-internal"))
   )
   .dependsOn(commonUtils, extensionsApi, testUtils % Test)
 
+// This module should be provided by one module - interpreter
 lazy val mathUtils = (project in utils("math-utils"))
   .settings(commonSettings)
   .settings(
@@ -1122,9 +1124,9 @@ lazy val jsonUtils = (project in utils("json-utils"))
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
   )
-  .dependsOn(componentsUtils, testUtils % Test)
+  .dependsOn(componentsUtils % Provided, testUtils % Test)
 
-// Similar to components-utils, this module should be provided in one place - by flinkExecutor
+// Similar to components-utils, this module should be provided by one module - flinkExecutor
 lazy val flinkComponentsUtils = (project in flink("components-utils"))
   .settings(commonSettings)
   .settings(
@@ -1138,11 +1140,11 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
   )
   .dependsOn(
     flinkComponentsApi,
-    flinkExtensionsApi,
-    mathUtils,
+    flinkExtensionsApi % Provided,
+    mathUtils          % Provided,
     flinkScalaUtils,
-    componentsUtils,
-    testUtils % Test
+    componentsUtils    % Provided,
+    testUtils          % Test
   )
 
 lazy val flinkScalaUtils = (project in flink("scala-utils"))
@@ -1180,7 +1182,7 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
-  .dependsOn(testUtils, flinkComponentsUtils, componentsUtils, interpreter)
+  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, componentsUtils, interpreter)
 
 lazy val requestResponseComponentsUtils = (project in lite("request-response/components-utils"))
   .settings(commonSettings)
@@ -1246,7 +1248,7 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
       )
     },
   )
-  .dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsTestkit % Test)
+  .dependsOn(liteEngineKafkaComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response"))
   .settings(commonSettings)
@@ -1274,7 +1276,7 @@ lazy val liteRequestResponseComponentsTests: Project = (project in lite("compone
       )
     },
   )
-  .dependsOn(requestResponseComponentsApi % Provided, liteComponentsTestkit % Test)
+  .dependsOn(requestResponseComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
 
 lazy val liteEngineRuntime = (project in lite("runtime"))
   .settings(commonSettings)
@@ -1652,7 +1654,7 @@ lazy val openapiComponents = (project in component("openapi"))
     ),
   )
   .dependsOn(
-    componentsApi                  % Provided,
+    componentsUtils                % Provided,
     jsonUtils                      % Provided,
     httpUtils,
     requestResponseComponentsUtils % "it,test",
@@ -1733,7 +1735,8 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
   .dependsOn(
     commonComponents,
     flinkComponentsUtils % Provided,
-    componentsUtils      % Provided
+    componentsUtils      % Provided,
+    mathUtils            % Provided
   )
 
 lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
@@ -1754,9 +1757,8 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     name := "nussknacker-flink-kafka-components",
   )
   .dependsOn(
-    flinkComponentsApi % Provided,
-    flinkKafkaComponentsUtils,
     flinkSchemedKafkaComponentsUtils,
+    flinkComponentsApi % Provided,
     commonUtils        % Provided,
     componentsUtils    % Provided
   )
