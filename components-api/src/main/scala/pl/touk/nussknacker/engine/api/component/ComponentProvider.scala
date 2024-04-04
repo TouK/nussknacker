@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.component
 
-import cats.Order
 import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import com.vdurmont.semver4j.Semver
@@ -91,7 +90,6 @@ object ComponentProviderConfig {
 
    */
   implicit val reader: ValueReader[ComponentProviderConfig] = new ValueReader[ComponentProviderConfig] {
-    import net.ceedubs.ficus.Ficus._
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
 
     override def read(config: Config, path: String): ComponentProviderConfig = {
