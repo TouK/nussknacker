@@ -39,7 +39,7 @@ class CaseClassSerializationTest extends AnyFunSuite with Matchers {
   }
 
   test("Case class with secondary constructor should be the same after serialization and deserialization") {
-    val input = SimpleCaseClassWithMultipleConstructors("value", 2.2)
+    val input = new SimpleCaseClassWithMultipleConstructors(2, "value")
 
     val serializer   = getSerializer[SimpleCaseClassWithMultipleConstructors]
     val deserialized = serializeAndDeserialize(serializer, input)
@@ -82,6 +82,10 @@ final case class SimpleCaseClassWithMultipleConstructors(firstField: String, sec
   val bodyField: String = "body " + firstField
 
   def this(someField: Int, someSecondField: String) = {
+    this(someSecondField, someField)
+  }
+
+  def this(someField: Int, someSecondField: String, toIgnore: String) = {
     this(someSecondField, someField)
   }
 

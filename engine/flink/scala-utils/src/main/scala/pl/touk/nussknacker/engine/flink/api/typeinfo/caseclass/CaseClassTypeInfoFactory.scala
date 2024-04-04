@@ -17,22 +17,9 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
       t: Type,
       genericParameters: java.util.Map[String, TypeInformation[_]]
   ): TypeInformation[T] = {
-    val runtimeClassType = classTag[T].runtimeClass
-    val mirror           = runtimeMirror(getClass.getClassLoader)
-
-    val fields = mirror
-      .classSymbol(runtimeClassType)
-      .primaryConstructor
-      .asMethod
-      .paramLists
-      .head
-    val fieldNames = fields.map(_.name.decodedName.toString)
-    val fieldTypes = fields.map { field =>
-      val fieldClass = mirror.runtimeClass(field.typeSignature.typeSymbol.asClass)
-      TypeExtractor.getForClass(fieldClass)
-    }
-
-    val classType = runtimeClassType.asInstanceOf[Class[T]]
+    val runtimeClassType         = classTag[T].runtimeClass
+    val (fieldNames, fieldTypes) = getClassFieldsInfo(runtimeClassType)
+    val classType                = runtimeClassType.asInstanceOf[Class[T]]
     new CaseClassTypeInfo[T](classType, Array.empty, fieldTypes.toIndexedSeq, fieldNames) {
       override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
         new ScalaCaseClassSerializer[T](
@@ -41,6 +28,22 @@ abstract class CaseClassTypeInfoFactory[T <: Product: ClassTag] extends TypeInfo
         )
       }
     }
+  }
+
+  private def getClassFieldsInfo(runtimeClassType: Class[_]): (List[String], List[TypeInformation[_]]) = {
+    val mirror = runtimeMirror(getClass.getClassLoader)
+    val fields = mirror
+      .classSymbol(runtimeClassType)
+      .primaryConstructor
+      .asMethod
+      .paramLists
+      .head
+    val fieldNames = fields.map(_.name.decodedName.toString)
+    val fieldTypes = fields.map { field =>
+      val fieldClass = mirror.runtimeClass(field.typeSignature)
+      TypeExtractor.getForClass(fieldClass)
+    }
+    (fieldNames, fieldTypes)
   }
 
 }
