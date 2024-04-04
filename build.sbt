@@ -287,19 +287,20 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV             = "1.17.2"
-val flinkCommonsLang3V = "3.12.0"
-val flinkCommonsTextV  = "1.10.0"
-val flinkCommonsIOV    = "2.11.0"
-val avroV              = "1.11.3"
+val flinkV               = "1.18.1"
+val flinkConnectorKafkaV = "3.1.0-1.18"
+val flinkCommonsLang3V   = "3.12.0"
+val flinkCommonsTextV    = "1.10.0"
+val flinkCommonsIOV      = "2.11.0"
+val avroV                = "1.11.3"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV             = "3.6.1"
+val kafkaV               = "3.6.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV            = "5.2.23.RELEASE"
-val scalaTestV         = "3.2.17"
-val scalaCheckV        = "1.17.0"
-val scalaCheckVshort   = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV     =
+val springV              = "5.2.23.RELEASE"
+val scalaTestV           = "3.2.17"
+val scalaCheckV          = "1.17.0"
+val scalaCheckVshort     = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV       =
   "3.2.17.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.12"
@@ -713,6 +714,7 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
+        "org.apache.flink" % "flink-connector-base"       % flinkV % Provided,
         "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided
       )
@@ -915,10 +917,10 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     name := "nussknacker-flink-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"   % flinkV     % Provided,
+        "org.apache.flink" % "flink-streaming-java"   % flinkV               % Provided,
         "org.apache.flink" % "flink-avro"             % flinkV,
-        "org.apache.flink" % s"flink-connector-kafka" % flinkV     % Test,
-        "org.scalatest"   %% "scalatest"              % scalaTestV % Test
+        "org.apache.flink" % s"flink-connector-kafka" % flinkConnectorKafkaV % Test,
+        "org.scalatest"   %% "scalatest"              % scalaTestV           % Test
       )
     }
   )
@@ -939,7 +941,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     name := "nussknacker-flink-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-kafka" % flinkV,
+        "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
         "org.scalatest"   %% "scalatest"             % scalaTestV % Test
       )
@@ -1770,7 +1772,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
-        "org.apache.flink" % "flink-connector-kafka"       % flinkV,
+        "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-json"                  % flinkV,
         "org.scalatest"   %% "scalatest"                   % scalaTestV % Test
       )
