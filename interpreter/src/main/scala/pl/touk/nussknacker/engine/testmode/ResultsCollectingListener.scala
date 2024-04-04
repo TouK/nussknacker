@@ -9,9 +9,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
 
-case class TestRunId private (id: String) extends Comparable[TestRunId] {
-  override def compareTo(other: TestRunId): Int = id.compareTo(other.id)
-}
+case class TestRunId private (id: String)
 
 object TestRunId {
   def generate: TestRunId = new TestRunId(UUID.randomUUID().toString)
