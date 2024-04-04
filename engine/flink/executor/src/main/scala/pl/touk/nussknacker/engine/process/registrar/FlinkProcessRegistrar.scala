@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor.fromScenarioNode
+import pl.touk.nussknacker.engine.process.compiler.FlinkEngineRuntimeContextImpl.setupMetricsProvider
 import pl.touk.nussknacker.engine.process.compiler.{
   FlinkEngineRuntimeContextImpl,
   FlinkProcessCompilerData,
@@ -37,6 +38,7 @@ import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splitte
 import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import shapeless.syntax.typeable.typeableOps
 
@@ -146,7 +148,13 @@ class FlinkProcessRegistrar(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
+        // TODO: this has to be changed
+        convertToEngineRuntimeContext = eng => {
+//          This throws org.apache.flink.api.common.InvalidProgramException: The implementation of the RichMapFunction is not serializable
+//          val metricsProvider = FlinkEngineRuntimeContextImpl.setupMetricsProvider(compilerData.componentUseCase, eng)
+//          FlinkEngineRuntimeContextImpl(jobData, eng, metricsProvider)
+          FlinkEngineRuntimeContextImpl(jobData, eng, NoOpMetricsProviderForScenario)
+        },
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
