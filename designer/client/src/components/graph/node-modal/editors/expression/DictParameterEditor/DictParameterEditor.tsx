@@ -87,7 +87,7 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange(JSON.stringify(value) || "");
+                    onValueChange(value ? JSON.stringify(value) : "");
                     setValue(value);
                     setOpen(false);
                 }}
