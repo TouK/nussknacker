@@ -1,27 +1,29 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.UnauthorizedError
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{NoPermission, NoScenario}
+import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 class DeploymentApiHttpService(
     authenticator: AuthenticationResources,
-    scenarioService: ProcessService,
+    override protected val scenarioService: ProcessService,
     deploymentService: DeploymentService
-)(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator) {
+)(override protected implicit val executionContext: ExecutionContext)
+    extends BaseHttpService(authenticator)
+    with ScenarioHttpServiceExtensions {
+
+  override protected type BusinessErrorType = DeploymentError
+  override protected def noScenarioError(scenarioName: ProcessName): DeploymentError = NoScenario(scenarioName)
+  override protected def noPermissionError: NoPermission.type                        = NoPermission
 
   private val endpoints = new DeploymentApiEndpoints(authenticator.authenticationMethod())
 
@@ -32,7 +34,8 @@ class DeploymentApiHttpService(
         // TODO (next PRs): use params
         { case (scenarioName, deploymentId, request) =>
           for {
-            scenarioDetails <- getScenarioDetailsByName(scenarioName)
+            // TODO (next PRs) reuse fetched scenario inside DeploymentService.deployProcessAsync
+            scenarioDetails <- getScenarioWithDetailsByName(scenarioName)
             _ <- EitherT.fromEither[Future](
               Either.cond(loggedUser.can(scenarioDetails.processCategory, Permission.Deploy), (), NoPermission)
             )
@@ -49,33 +52,6 @@ class DeploymentApiHttpService(
           } yield ()
         }
       }
-  }
-
-  // TODO: It is a copy-paste of akka-based AuthorizeProcess variant. We should:
-  //       - reuse fetched scenario inside DeploymentService.deployProcessAsync
-  //       - extract this boilerplate for permission checking to some class - but before that we should rethink errors
-  //         type hierarchy. currently we have dedicated errors for each endpoint which makes this hard to achieve
-  private def getScenarioDetailsByName(
-      scenarioName: ProcessName
-  )(implicit loggedUser: LoggedUser): EitherT[Future, DeploymentError, ScenarioWithDetails] =
-    for {
-      scenarioId <- EitherT.fromOptionF(scenarioService.getProcessId(scenarioName), NoScenario(scenarioName))
-      scenarioDetails <- extractErrors(
-        scenarioService.getLatestProcessWithDetails(
-          ProcessIdWithName(scenarioId, scenarioName),
-          GetScenarioWithDetailsOptions.detailsOnly
-        )
-      )
-    } yield scenarioDetails
-
-  private def extractErrors[T](future: Future[T]): EitherT[Future, DeploymentError, T] = {
-    EitherT(
-      future.transform {
-        case Success(result)               => Success(Right(result))
-        case Failure(_: UnauthorizedError) => Success(Left(NoPermission))
-        case Failure(ex)                   => Failure(ex)
-      }
-    )
   }
 
 }
