@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.testmode
 
-import java.util.UUID
-import pl.touk.nussknacker.engine.api._
-import TestProcess._
 import io.circe.Json
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 
-import java.util.concurrent.ConcurrentSkipListMap
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
 
 case class TestRunId private (id: String) extends Comparable[TestRunId] {
@@ -74,7 +74,7 @@ case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, v
 
 object ResultsCollectingListenerHolder {
 
-  private val results = new ConcurrentSkipListMap[TestRunId, TestResults[Any]]()
+  private val results = new ConcurrentHashMap[TestRunId, TestResults[Any]]()
 
   // TODO: casting is not so nice, but currently no other idea...
   def resultsForId[T](id: TestRunId): TestResults[T] = results.get(id).asInstanceOf[TestResults[T]]

@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.flink.util.test
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
+import java.util.concurrent.ConcurrentHashMap
+
 // This class is because we don't want Flink to serialize components - we want to allow the communication between
 // the test case code and the component code.
 case class TestExtensionsHolder(runId: TestRunId) extends Serializable with AutoCloseable {
@@ -19,29 +21,29 @@ case class TestExtensionsHolder(runId: TestRunId) extends Serializable with Auto
 
 object TestExtensionsHolder {
 
-  private var extensions = Map[TestRunId, Extensions]()
+  private val extensions = new ConcurrentHashMap[TestRunId, Extensions]()
 
-  private def componentsForId(id: TestRunId): List[ComponentDefinition] = synchronized {
-    extensions(id).components
+  private def componentsForId(id: TestRunId): List[ComponentDefinition] = {
+    extensions.get(id).components
   }
 
-  private def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = synchronized {
-    extensions(id).globalVariables
+  private def globalVariablesForId(id: TestRunId): Map[String, AnyRef] = {
+    extensions.get(id).globalVariables
   }
 
   def registerTestExtensions(
       components: List[ComponentDefinition],
       testRunIdAwareComponentCreators: List[TestRunId => ComponentDefinition],
       globalVariables: Map[String, AnyRef]
-  ): TestExtensionsHolder = synchronized {
+  ): TestExtensionsHolder = {
     val runId                    = TestRunId.generate
     val testRunIdAwareComponents = testRunIdAwareComponentCreators.map(_.apply(runId))
-    extensions += (runId -> Extensions(components ::: testRunIdAwareComponents, globalVariables))
+    extensions.put(runId, Extensions(components ::: testRunIdAwareComponents, globalVariables))
     TestExtensionsHolder(runId)
   }
 
-  private def clean(runId: TestRunId): Unit = synchronized {
-    extensions -= runId
+  private def clean(runId: TestRunId): Unit = {
+    extensions.remove(runId)
   }
 
   private case class Extensions(components: List[ComponentDefinition], globalVariables: Map[String, AnyRef])

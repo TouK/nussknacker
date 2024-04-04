@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyPa
 import pl.touk.nussknacker.engine.flink.util.test.TestResultSinkFactory.TestResultSink
 import pl.touk.nussknacker.engine.testmode.TestRunId
 
-import java.util.concurrent.ConcurrentSkipListMap
+import java.util.concurrent.ConcurrentHashMap
 
 // `TestResultSinkFactory` is closely related to the ID of the running test. We use the ID to extract results from
 // the shared map with results collected from all instances of TestResultSink (see `TestResultSinkFactory.sinksOutputs`)
@@ -24,7 +24,7 @@ class TestResultSinkFactory(runId: TestRunId) extends SinkFactory {
 
 object TestResultSinkFactory {
 
-  private val sinksOutputs = new ConcurrentSkipListMap[TestRunId, NonEmptyList[AnyRef]]()
+  private val sinksOutputs = new ConcurrentHashMap[TestRunId, NonEmptyList[AnyRef]]()
 
   def extractOutputFor(runId: TestRunId): Output = {
     Option(sinksOutputs.remove(runId))
@@ -33,7 +33,7 @@ object TestResultSinkFactory {
   }
 
   def clean(runId: TestRunId): Unit = {
-    extractOutputFor(runId)
+    sinksOutputs.remove(runId)
   }
 
   class TestResultSink(value: LazyParameter[AnyRef], runId: TestRunId) extends BasicFlinkSink with Serializable {
