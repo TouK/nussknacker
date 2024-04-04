@@ -675,7 +675,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               None
             ),
             NodeValidationError(
-              "EmptyMandatoryParameterConfigurationField",
+              "EmptyMandatoryField",
               "This field is mandatory and cannot be empty",
               _,
               Some("$param.subParam3.$dictId"),
