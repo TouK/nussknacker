@@ -32,7 +32,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .put
       .in("scenarios" / path[ProcessName]("scenarioName") / "deployments" / path[RequestedDeploymentId]("deploymentId"))
       .in(jsonBody[DeploymentRequest])
-      .out(statusCode(Ok).and(jsonBody[Unit]))
+      .out(statusCode(Ok))
       .errorOut(
         oneOf[DeploymentError](
           oneOfVariantFromMatchType(
