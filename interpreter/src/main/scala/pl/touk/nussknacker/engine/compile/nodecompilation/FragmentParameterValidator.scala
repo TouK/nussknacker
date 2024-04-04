@@ -178,7 +178,7 @@ object FragmentParameterValidator {
   private def validateNonEmptyDictId(dictId: String, parameterName: ParameterName)(implicit nodeId: NodeId) =
     if (dictId.isBlank)
       invalidNel(
-        EmptyMandatoryParameterConfigurationField(
+        EmptyMandatoryField(
           nodeId.id,
           qualifiedParamFieldName(parameterName, Some(DictIdFieldName))
         )

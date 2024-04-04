@@ -211,11 +211,11 @@ object PrettyValidationErrors {
           paramName =
             Some(qualifiedParamFieldName(paramName = paramName, subFieldName = Some(ValidationExpressionFieldName)))
         )
-      case EmptyMandatoryParameterConfigurationField(_, qualifiedParamName) =>
+      case EmptyMandatoryField(_, qualifiedFieldName) =>
         node(
           message = s"This field is mandatory and cannot be empty",
           description = s"This field is mandatory and cannot be empty",
-          paramName = Some(qualifiedParamName)
+          paramName = Some(qualifiedFieldName)
         )
       case DictNotDeclared(dictId, _, paramName) =>
         node(
