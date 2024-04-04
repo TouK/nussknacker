@@ -45,11 +45,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class NodesApiHttpService(
     authenticator: AuthenticationResources,
-    typeToConfig: ProcessingTypeDataProvider[ModelData, _],
-    typeToProcessValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
-    typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
-    typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
-    typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
+    processingTypeToConfig: ProcessingTypeDataProvider[ModelData, _],
+    processingTypeToProcessValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
+    processingTypeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
+    processingTypeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
+    processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     protected val scenarioService: ProcessService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authenticator)
@@ -57,7 +57,7 @@ class NodesApiHttpService(
 
   private val nodesApiEndpoints = new NodesApiEndpoints(authenticator.authenticationMethod())
 
-  private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
+  private val additionalInfoProviders = new AdditionalInfoProviders(processingTypeToConfig)
 
   expose {
     nodesApiEndpoints.nodesAdditionalInfoEndpoint
@@ -84,7 +84,7 @@ class NodesApiHttpService(
             scenarioId <- getScenarioIdByName(scenarioName)
             scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
             modelData  <- getModelData(scenario.processingType)
-            nodeValidator = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
+            nodeValidator = processingTypeToNodeValidator.forProcessingTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
             validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
             validationDto = NodeValidationResultDto.apply(validation)
@@ -122,8 +122,8 @@ class NodesApiHttpService(
             scenarioId          <- getScenarioIdByName(scenarioName)
             scenarioWithDetails <- getScenarioWithDetails(scenarioId, scenarioName)
             scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
-            result = typeToProcessValidator
-              .forTypeUnsafe(scenarioWithDetails.processingType)
+            result = processingTypeToProcessValidator
+              .forProcessingTypeUnsafe(scenarioWithDetails.processingType)
               .validate(scenario, request.name, scenarioWithDetails.isFragment)
             validation = NodeValidationResultDto(
               parameters = None,
@@ -143,7 +143,7 @@ class NodesApiHttpService(
         { case (processingType, request) =>
           for {
             modelData <- getModelData(processingType)
-            validator = typeToParametersValidator.forTypeUnsafe(processingType)
+            validator = processingTypeToParametersValidator.forProcessingTypeUnsafe(processingType)
             requestWithTypingResult <- dtoToParameterRequest(request, modelData)
             validationResults = validator.validate(requestWithTypingResult)
           } yield ParametersValidationResultDto(validationResults, validationPerformed = true)
@@ -158,7 +158,7 @@ class NodesApiHttpService(
         { case (processingType, request) =>
           for {
             modelData <- getModelData(processingType)
-            expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
+            expressionSuggester = processingTypeToExpressionSuggester.forProcessingTypeUnsafe(processingType)
             suggestions <- getSuggestions(expressionSuggester, request, modelData)
             suggestionDto = suggestions.map(expression => ExpressionSuggestionDto(expression))
           } yield suggestionDto
@@ -200,8 +200,8 @@ class NodesApiHttpService(
       processingType: ProcessingType
   )(implicit user: LoggedUser): EitherT[Future, NodesError, ModelData] = {
     EitherT.fromEither(
-      typeToConfig
-        .forTypeE(processingType)
+      processingTypeToConfig
+        .forProcessingTypeE(processingType)
         .left
         .map(_ => NoPermission)
         .flatMap(_.toRight(NoProcessingType(processingType)))

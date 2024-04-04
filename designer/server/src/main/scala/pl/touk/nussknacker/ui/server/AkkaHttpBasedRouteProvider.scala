@@ -275,15 +275,15 @@ class AkkaHttpBasedRouteProvider(
 
       val nodesApiHttpService = new NodesApiHttpService(
         authenticator = authenticationResources,
-        typeToConfig = processingTypeDataProvider.mapValues(_.designerModelData.modelData),
-        typeToProcessValidator = processValidator,
-        typeToNodeValidator = processingTypeDataProvider.mapValues(v =>
+        processingTypeToConfig = processingTypeDataProvider.mapValues(_.designerModelData.modelData),
+        processingTypeToProcessValidator = processValidator,
+        processingTypeToNodeValidator = processingTypeDataProvider.mapValues(v =>
           new NodeValidator(v.designerModelData.modelData, fragmentRepository)
         ),
-        typeToExpressionSuggester = processingTypeDataProvider.mapValues(v =>
+        processingTypeToExpressionSuggester = processingTypeDataProvider.mapValues(v =>
           ExpressionSuggester(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
-        typeToParametersValidator = processingTypeDataProvider.mapValues(v =>
+        processingTypeToParametersValidator = processingTypeDataProvider.mapValues(v =>
           new ParametersValidator(v.designerModelData.modelData, v.deploymentData.scenarioPropertiesConfig.keys)
         ),
         scenarioService = processService

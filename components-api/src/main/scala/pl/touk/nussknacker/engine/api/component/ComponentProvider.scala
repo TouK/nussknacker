@@ -90,6 +90,7 @@ object ComponentProviderConfig {
 
    */
   implicit val reader: ValueReader[ComponentProviderConfig] = new ValueReader[ComponentProviderConfig] {
+    import net.ceedubs.ficus.Ficus._
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
 
     override def read(config: Config, path: String): ComponentProviderConfig = {
