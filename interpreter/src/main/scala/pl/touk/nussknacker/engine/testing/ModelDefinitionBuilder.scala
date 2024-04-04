@@ -57,7 +57,7 @@ final case class ModelDefinitionBuilder(
     withSource(
       name,
       ComponentStaticDefinition(params.toList, returnType),
-      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
 
   def withSink(name: String, params: Parameter*): ModelDefinitionBuilder =

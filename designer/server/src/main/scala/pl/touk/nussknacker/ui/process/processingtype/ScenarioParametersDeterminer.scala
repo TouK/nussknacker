@@ -24,7 +24,7 @@ object ScenarioParametersDeterminer {
       // FIXME: some proper errors and tests for that
       case Nil => throw new IllegalStateException(s"Empty list of components for processing type: $processingType")
       case nonEmptyList =>
-        val intersection = nonEmptyList.foldLeft(ProcessingMode.all) { case (acc, allowedProcessingModes) =>
+        val intersection = nonEmptyList.foldLeft(ProcessingMode.values.toSet) { case (acc, allowedProcessingModes) =>
           acc.intersect(allowedProcessingModes.toProcessingModes)
         }
         intersection.toList match {

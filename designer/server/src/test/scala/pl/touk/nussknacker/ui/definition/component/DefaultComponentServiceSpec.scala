@@ -325,8 +325,7 @@ class DefaultComponentServiceSpec
       ComponentId(Source, NotSharedSourceName),
       SourceIcon,
       SourcesGroupName,
-      nonDefaultAllowedProcessingModes =
-        Some(AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream)))
+      nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
     ),
     fraudComponent(ComponentId(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )
@@ -373,7 +372,7 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
       )
     )
   }
@@ -393,7 +392,7 @@ class DefaultComponentServiceSpec
         List(cat),
         links,
         0,
-        AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
       )
     )
   }

@@ -73,7 +73,7 @@ object SourceFactory {
     NoParamSourceFactory(
       _ => source,
       Typed.fromDetailedType[T],
-      AllowedProcessingModes.SetOf(NonEmptySet.one((ProcessingMode.UnboundedStream)))
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
 
   def noParamUnboundedStreamFactory[T: TypeTag](createSource: NodeId => Source)(
@@ -82,14 +82,14 @@ object SourceFactory {
     NoParamSourceFactory(
       createSource,
       Typed.fromDetailedType[T],
-      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
 
   def noParamUnboundedStreamFromClassTag[T: ClassTag](source: => Source)(implicit ev: T =:!= Nothing): SourceFactory =
     NoParamSourceFactory(
       _ => source,
       Typed.apply[T],
-      AllowedProcessingModes.SetOf(NonEmptySet.one(ProcessingMode.UnboundedStream))
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
 
   case class NoParamSourceFactory(

@@ -44,7 +44,7 @@ object Component {
   implicit class ToProcessingModes(val allowedProcessingModes: AllowedProcessingModes) extends AnyVal {
 
     def toProcessingModes: Set[ProcessingMode] = allowedProcessingModes match {
-      case AllowedProcessingModes.All                              => ProcessingMode.all
+      case AllowedProcessingModes.All                              => ProcessingMode.values.toSet
       case AllowedProcessingModes.SetOf(allowedProcessingModesSet) => allowedProcessingModesSet.toSortedSet
     }
 

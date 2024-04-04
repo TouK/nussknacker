@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.component.{
 }
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import sttp.tapir.{Schema, SchemaType}
+import sttp.tapir.{Codec, CodecFormat, Schema, SchemaType}
 
 import java.net.URI
 import java.time.Instant
@@ -56,7 +56,7 @@ package object component {
   }
 
   implicit val allowedProcessingModesEncoder: Encoder[AllowedProcessingModes] = Encoder.instance {
-    case AllowedProcessingModes.All                           => ProcessingMode.all.asJson
+    case AllowedProcessingModes.All                           => ProcessingMode.values.asJson
     case AllowedProcessingModes.SetOf(allowedProcessingModes) => allowedProcessingModes.asJson
   }
 
@@ -66,17 +66,17 @@ package object component {
       .map(NonEmptySet.fromSet)
       .flatMap {
         case None => Left(DecodingFailure("Set of allowed ProcessingModes cannot be empty", Nil))
-        case Some(nonEmptySet) =>
-          if (nonEmptySet.toSortedSet == ProcessingMode.all) {
+        case Some(nonEmptySetOfAllowedProcessingModes) =>
+          if (nonEmptySetOfAllowedProcessingModes.toSortedSet == ProcessingMode.values.toSet) {
             Right(AllowedProcessingModes.All)
           } else {
-            Right(AllowedProcessingModes.SetOf(nonEmptySet))
+            Right(AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes))
           }
       }
   }
 
   implicit val nonEmptySetOfProcessingModesSchema: Schema[NonEmptySet[ProcessingMode]] = Schema(
-    SchemaType.SArray(Schema.schemaForString)(_.toSortedSet.toList.map(_.value))
+    SchemaType.SArray(Schema.schemaForString)(_.toSortedSet.toList.map(_.toJsonString))
   )
 
   @JsonCodec
