@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.util.test
 
 import cats.data.ValidatedNel
-import io.circe.Json
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -33,15 +31,13 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult        = ValidatedNel[ProcessCompilationError, RunResult]
+  type RunnerResultUnit    = ValidatedNel[ProcessCompilationError, RunUnitResult]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
-  // Maybe we should replace ids with more meaningful: test-data, rest-result?
+  // TODO: Maybe we should replace ids with more meaningful: test-data, test-result?
   val testDataSource = "source"
   val noopSource     = "noopSource"
-  // Maybe we should unify those two test result nodes?
-  val testResultSink    = "sink"
-  val testResultService = "invocationCollector"
+  val testResultSink = "sink"
 
   def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
 }
