@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.javasample
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
@@ -12,6 +13,7 @@ class Objects extends Serializable {
   def source: WithCategories[SourceFactory] =
     WithCategories.anyCategory(SourceFactory.noParamUnboundedStreamFactory[Model](new BasicFlinkSource[Model] {
 
+      @silent("deprecated")
       override def flinkSourceFunction: SourceFunction[Model] = new SourceFunction[Model] {
 
         override def cancel(): Unit = {}

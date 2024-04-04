@@ -28,7 +28,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
         .enricher("service", "output", TestService.ServiceId, "param" -> "#input")
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#output")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output")
 
     val runResults =
       TestScenarioRunner
@@ -48,7 +48,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
         .enricher("service", "output", TestService.ServiceId, "param" -> "#input")
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#output")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output")
 
     val runResults =
       TestScenarioRunner
@@ -66,7 +66,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#SAMPLE.foo")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#SAMPLE.foo")
 
     val runResults =
       TestScenarioRunner
@@ -83,7 +83,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#NUMERIC.negate(#input)")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#NUMERIC.negate(#input)")
 
     val runResults =
       TestScenarioRunner
@@ -100,7 +100,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
         .filter("filter", "#input / 0 != 0") // intentional throwing of an exception
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#input")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input")
 
     val runResults =
       TestScenarioRunner
