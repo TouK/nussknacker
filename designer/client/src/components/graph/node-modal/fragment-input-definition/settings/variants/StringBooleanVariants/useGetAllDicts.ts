@@ -3,16 +3,20 @@ import { getProcessingType } from "../../../../../../../reducers/selectors/graph
 import { useEffect, useState } from "react";
 import httpService from "../../../../../../../http/HttpService";
 import { Option } from "../../../FieldsSelect";
+import { ReturnedType } from "../../../../../../../types";
 
-export const useGetAllDicts = () => {
+interface Props {
+    typ: ReturnedType;
+}
+export const useGetAllDicts = ({ typ }: Props) => {
     const [processDefinitionDicts, setProcessDefinitionDicts] = useState<Option[]>([]);
     const processingType = useSelector(getProcessingType);
 
     useEffect(() => {
-        httpService.fetchAllProcessDefinitionDataDicts(processingType).then((data) => {
-            setProcessDefinitionDicts(data.map(({ id, label }) => ({ label, value: id })));
+        httpService.fetchAllProcessDefinitionDataDicts(processingType, typ).then((response) => {
+            setProcessDefinitionDicts(response.data.map(({ id, label }) => ({ label, value: id })));
         });
-    }, [processingType]);
+    }, [processingType, typ]);
 
     return { processDefinitionDicts };
 };

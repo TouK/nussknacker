@@ -9,7 +9,6 @@ import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
-import { useGetAllDicts } from "./useGetAllDicts";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -22,9 +21,6 @@ interface Props {
 
 export const FixedListVariant = ({ item, path, onChange, readOnly, variableTypes, errors }: Props) => {
     const { t } = useTranslation();
-    const { processDefinitionDicts } = useGetAllDicts();
-
-    const presetListItemOptions = processDefinitionDicts?.[item.fixedValuesListPresetId] ?? [];
 
     const fixedValuesList = item.valueEditor.fixedValuesList ?? [];
 
@@ -32,21 +28,20 @@ export const FixedListVariant = ({ item, path, onChange, readOnly, variableTypes
 
     return (
         <>
-            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} />
+            <FixedValuesGroup fixedValuesType={fixedValuesType} path={path} onChange={onChange} readOnly={readOnly} item={item} />
             <FixedValuesSetting
                 path={path}
                 onChange={onChange}
                 fixedValuesType={fixedValuesType}
                 presetSelection={item.presetSelection}
                 fixedValuesList={fixedValuesList}
-                fixedValuesListPresetId={item.fixedValuesListPresetId}
+                dictId={item.valueEditor.dictId}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 errors={errors}
                 typ={item.typ}
                 name={item.name}
                 initialValue={item.initialValue}
-                processDefinitionDicts={processDefinitionDicts}
             />
             <InitialValue
                 path={path}

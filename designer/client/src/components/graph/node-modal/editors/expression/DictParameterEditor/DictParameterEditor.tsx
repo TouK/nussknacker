@@ -71,6 +71,7 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
     return (
         <Box className={"node-value"}>
             <Autocomplete
+                disabled={readOnly}
                 renderInput={({ inputProps, InputProps }) => (
                     <div ref={InputProps.ref}>
                         <NodeInput

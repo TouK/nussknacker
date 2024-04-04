@@ -2,16 +2,17 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { SettingLabelStyled, StyledFormControlLabel } from "./StyledSettingsComponnets";
 import { FormControl, FormControlLabel, Radio, RadioGroup, useTheme } from "@mui/material";
-import { FixedValuesType, onChangeType } from "../../../item";
+import { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 
 interface FixedValuesGroup {
+    item: AnyValueWithSuggestionsParameterVariant | FixedListParameterVariant;
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     fixedValuesType: FixedValuesType;
     readOnly: boolean;
 }
 
-export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: FixedValuesGroup) {
+export function FixedValuesGroup({ item, onChange, path, fixedValuesType, readOnly }: FixedValuesGroup) {
     const { t } = useTranslation();
     const theme = useTheme();
 
@@ -23,11 +24,17 @@ export function FixedValuesGroup({ onChange, path, fixedValuesType, readOnly }: 
                 onChange={(event) => {
                     onChange(`${path}.initialValue`, null);
                     onChange(`${path}.valueEditor.type`, event.target.value);
+
+                    if (event.target.value === FixedValuesType.ValueInputWithFixedValuesProvided) {
+                        onChange(`${path}.valueEditor.fixedValuesList`, item?.valueEditor?.fixedValuesList || []);
+                    } else {
+                        onChange(`${path}.valueEditor.dictId`, item.valueEditor.dictId || "");
+                    }
                 }}
             >
                 <FormControlLabel
                     sx={{ color: theme.custom.colors.secondaryColor }}
-                    value={FixedValuesType.ValueInputWithFixedValuesPreset}
+                    value={FixedValuesType.ValueInputWithDictEditor}
                     control={<Radio />}
                     label={<StyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</StyledFormControlLabel>}
                 />

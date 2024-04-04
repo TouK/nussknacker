@@ -28,7 +28,7 @@ describe(FixedValuesGroup.name, () => {
                 <FixedValuesGroup
                     onChange={mockOnChange}
                     path={"test"}
-                    fixedValuesType={FixedValuesType.ValueInputWithFixedValuesPreset}
+                    fixedValuesType={FixedValuesType.ValueInputWithDictEditor}
                     readOnly={false}
                 />
             </NuThemeProvider>,

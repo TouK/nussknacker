@@ -49,7 +49,7 @@ export default function InputModeSelect(props: Props) {
                                 );
                             }
 
-                            if (item?.valueEditor?.type === FixedValuesType.ValueInputWithFixedValuesPreset) {
+                            if (item?.valueEditor?.type === FixedValuesType.ValueInputWithDictEditor) {
                                 return onChange(`${path}.initialValue`, item.initialValue);
                             }
 
@@ -61,13 +61,13 @@ export default function InputModeSelect(props: Props) {
                         } else if (value === InputMode.AnyValueWithSuggestions) {
                             onChange(`${path}.valueEditor.allowOtherValue`, true);
                             onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
-                            onChange(`${path}.valueEditor.fixedValuesPresetId`, null);
+                            onChange(`${path}.valueEditor.dictId`, "");
                             onChange(`${path}.valueEditor.type`, FixedValuesType.ValueInputWithFixedValuesProvided);
                             setInitialValue();
                         } else {
                             onChange(`${path}.valueEditor.allowOtherValue`, false);
                             onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
-                            onChange(`${path}.valueEditor.fixedValuesPresetId`, null);
+                            onChange(`${path}.valueEditor.dictId`, "");
                             onChange(`${path}.valueEditor.type`, FixedValuesType.ValueInputWithFixedValuesProvided);
                             setInitialValue();
                         }

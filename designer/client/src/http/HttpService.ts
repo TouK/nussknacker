@@ -18,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -715,24 +715,21 @@ class HttpService {
             );
     }
 
-    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, type: any) {
-        return Promise.resolve([
-            { id: "boolean", label: "boolean" },
-            {
-                id: "string",
-                label: "string",
-            },
-        ]);
-        // return api
-        //     .post<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts`, type)
-        //     .catch((error) =>
-        //         Promise.reject(
-        //             this.#addError(
-        //                 i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch dictionaries"),
-        //                 error,
-        //             ),
-        //         ),
-        //     );
+    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, { refClazzName }: ReturnedType) {
+        return api
+            .post<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
+                expectedType: {
+                    value: { type: "TypedClass", refClazzName, params: [] },
+                },
+            })
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch presets"),
+                        error,
+                    ),
+                ),
+            );
     }
 
     #addInfo(message: string) {
