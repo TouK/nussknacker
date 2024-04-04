@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.process.compiler.FlinkMetricsProviderForScenario
+import pl.touk.nussknacker.engine.process.compiler.FlinkEngineRuntimeContextImpl
 import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
-import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOpMetricsProviderForScenario}
 
 private[registrar] class SourceMetricsFunction[T](sourceId: String, componentUseCase: ComponentUseCase)
     extends ProcessFunction[T, T] {
@@ -16,20 +14,13 @@ private[registrar] class SourceMetricsFunction[T](sourceId: String, componentUse
 
   override def open(parameters: Configuration): Unit = {
     metrics = new OneSourceMetrics(sourceId)
-    val metricsProvider = setupMetricsProvider(componentUseCase, getRuntimeContext)
+    val metricsProvider = FlinkEngineRuntimeContextImpl.setupMetricsProvider(componentUseCase, getRuntimeContext)
     metrics.registerOwnMetrics(metricsProvider)
   }
 
   override def processElement(value: T, ctx: ProcessFunction[T, T]#Context, out: Collector[T]): Unit = {
     metrics.process(ctx.timestamp())
     out.collect(value)
-  }
-
-  def setupMetricsProvider(useCase: ComponentUseCase, runtimeContext: RuntimeContext): MetricsProviderForScenario = {
-    useCase match {
-      case ComponentUseCase.TestRuntime => NoOpMetricsProviderForScenario
-      case _                            => new FlinkMetricsProviderForScenario(runtimeContext)
-    }
   }
 
 }
