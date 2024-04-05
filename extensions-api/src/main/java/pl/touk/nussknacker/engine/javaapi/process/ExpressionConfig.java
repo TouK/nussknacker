@@ -29,6 +29,7 @@ public class ExpressionConfig implements Serializable {
 
     private final boolean dynamicPropertyAccessAllowed;
 
+    @SuppressWarnings("deprecation")
     public ExpressionConfig(Map<String, WithCategories<Object>> globalProcessVariables, List<String> globalImports) {
         this(globalProcessVariables, globalImports, JavaConverters.seqAsJavaList(ExpressionConfig$.MODULE$.defaultAdditionalClasses()), true, Collections.emptyMap(), false, false, false);
     }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -40,6 +41,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
 
   val contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
+  @silent("deprecated")
   def prepareSourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext,
