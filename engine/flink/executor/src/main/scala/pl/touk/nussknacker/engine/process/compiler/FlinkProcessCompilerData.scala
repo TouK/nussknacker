@@ -39,7 +39,7 @@ class FlinkProcessCompilerData(
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl.withProperMetricsProvider(jobData, runtimeContext, componentUseCase))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase))
     }
   }
 
@@ -71,7 +71,7 @@ class FlinkProcessCompilerData(
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
     exceptionHandler.open(
-      FlinkEngineRuntimeContextImpl.withProperMetricsProvider(jobData, runtimeContext, componentUseCase)
+      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase)
     )
     exceptionHandler
   }

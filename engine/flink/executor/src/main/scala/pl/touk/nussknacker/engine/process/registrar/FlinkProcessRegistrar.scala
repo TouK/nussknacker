@@ -144,8 +144,7 @@ class FlinkProcessRegistrar(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext =
-          FlinkEngineRuntimeContextImpl.withProperMetricsProvider(jobData, _, componentUseCase),
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseCase),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
