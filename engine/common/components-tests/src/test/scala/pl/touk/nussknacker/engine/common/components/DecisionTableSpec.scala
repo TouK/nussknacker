@@ -100,7 +100,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Expression")),
+                paramName = Some(filterExpressionParamName),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -124,7 +124,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Expression")),
+                paramName = Some(filterExpressionParamName),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -151,7 +151,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Basic Decision Table")),
+                paramName = Some(decisionTableParamName),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
                 details = Some(
                   TabularDataDefinitionParserErrorDetails(
@@ -214,6 +214,9 @@ trait DecisionTableSpec
        |}""".stripMargin
   }
 
+  private val decisionTableParamName    = ParameterName("Decision Table")
+  private val filterExpressionParamName = ParameterName("Filter expression")
+
   private def decisionTableExampleScenario(
       expression: Expression,
       sinkValueExpression: Expression = "#dtResult",
@@ -226,8 +229,8 @@ trait DecisionTableSpec
         "decision-table",
         "dtResult",
         "decision-table",
-        "Basic Decision Table" -> basicDecisionTableDefinition,
-        "Expression"           -> expression,
+        decisionTableParamName.value    -> basicDecisionTableDefinition,
+        filterExpressionParamName.value -> expression,
       )
       .end("end", "value" -> sinkValueExpression)
   }
