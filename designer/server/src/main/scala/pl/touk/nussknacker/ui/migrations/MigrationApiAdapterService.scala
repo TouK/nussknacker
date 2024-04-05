@@ -60,6 +60,36 @@ object Adapters {
   val adapters: Map[Int, MigrationApiAdapter] = Map(1 -> Adapters.AdapterV1ToV2)
 }
 
+trait VersionedDto {
+  def currentVersion(): Int
+}
+
+trait MigrationApiAdapterServiceInterface[D <: VersionedDto] {
+  def getCurrentApiVersion: Int
+
+  def adaptDown(migrateScenarioRequest: D, noOfVersions: Int, adapters: Map[Int, (D => D, D => D)]): D =
+    adaptN(migrateScenarioRequest, -noOfVersions, adapters)
+
+  def adaptUp(migrateScenarioRequest: D, noOfVersions: Int, adapters: Map[Int, (D => D, D => D)]): D =
+    adaptN(migrateScenarioRequest, noOfVersions, adapters)
+
+  @tailrec
+  private def adaptN(migrateScenarioRequest: D, noOfVersions: Int, adapters: Map[Int, (D => D, D => D)]): D = {
+    val currentVersion = migrateScenarioRequest.currentVersion()
+
+    noOfVersions match {
+      case 0 => migrateScenarioRequest
+      case n if n > 0 =>
+        val adapter = adapters(currentVersion - 1)
+        adaptN(adapter._1(migrateScenarioRequest), noOfVersions - 1, adapters)
+      case n if n < 0 =>
+        val adapter = adapters(currentVersion - 1)
+        adaptN(adapter._2(migrateScenarioRequest), noOfVersions + 1, adapters)
+    }
+  }
+
+}
+
 class MigrationApiAdapterService {
 
   def getCurrentApiVersion: Int = Adapters.adapters.keySet.size + 1

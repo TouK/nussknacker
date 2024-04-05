@@ -10,9 +10,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV2
 }
 
-sealed trait MigrateScenarioRequest {
-  def currentVersion(): Int
-}
+sealed trait MigrateScenarioRequest extends VersionedDto
 
 object MigrateScenarioRequest {
 

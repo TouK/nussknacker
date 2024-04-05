@@ -128,16 +128,17 @@ object TapirCodecs {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
     implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequestDto] = Schema.anyObject
 
-    implicit val migrateScenarioRequestEncoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
-      case v14: MigrateScenarioRequestDtoV1 => v14.asJson
-      case v15: MigrateScenarioRequestDtoV2 => v15.asJson
+    implicit val migrateScenarioRequestDtoEncoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
+      case v1: MigrateScenarioRequestDtoV1 => v1.asJson
+      case v2: MigrateScenarioRequestDtoV2 => v2.asJson
     }
 
-    implicit val migrateScenarioRequestDecoder: Decoder[MigrateScenarioRequestDto] =
-      List[Decoder[MigrateScenarioRequestDto]](
-        Decoder[MigrateScenarioRequestDtoV2].widen,
-        Decoder[MigrateScenarioRequestDtoV1].widen,
-      ).reduceLeft(_ or _)
+    implicit val migrateScenarioRequestDtoDecoder: Decoder[MigrateScenarioRequestDto] = Decoder.instance { cursor =>
+      cursor.downField("version").as[Int].flatMap {
+        case 1 => cursor.as[MigrateScenarioRequestDtoV1]
+        case 2 => cursor.as[MigrateScenarioRequestDtoV2]
+      }
+    }
 
   }
 
