@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -12,8 +11,6 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -23,7 +20,6 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor.fromScenarioNode
-import pl.touk.nussknacker.engine.process.compiler.FlinkEngineRuntimeContextImpl.setupMetricsProvider
 import pl.touk.nussknacker.engine.process.compiler.{
   FlinkEngineRuntimeContextImpl,
   FlinkProcessCompilerData,
@@ -38,7 +34,6 @@ import pl.touk.nussknacker.engine.splittedgraph.{SplittedNodesCollector, splitte
 import pl.touk.nussknacker.engine.testmode.TestServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.util.metrics.NoOpMetricsProviderForScenario
 import pl.touk.nussknacker.engine.util.{MetaDataExtractor, ThreadUtils}
 import shapeless.syntax.typeable.typeableOps
 
@@ -142,19 +137,15 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData = compilerData.jobData
+      val jobData          = compilerData.jobData
+      val componentUseCase = compilerData.componentUseCase
 
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        // TODO: this has to be changed
-        convertToEngineRuntimeContext = eng => {
-//          This throws org.apache.flink.api.common.InvalidProgramException: The implementation of the RichMapFunction is not serializable
-//          val metricsProvider = FlinkEngineRuntimeContextImpl.setupMetricsProvider(compilerData.componentUseCase, eng)
-//          FlinkEngineRuntimeContextImpl(jobData, eng, metricsProvider)
-          FlinkEngineRuntimeContextImpl(jobData, eng, NoOpMetricsProviderForScenario)
-        },
+        convertToEngineRuntimeContext =
+          FlinkEngineRuntimeContextImpl.withProperMetricsProvider(jobData, _, componentUseCase),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
