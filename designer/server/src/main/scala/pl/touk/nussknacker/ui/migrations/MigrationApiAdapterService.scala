@@ -28,7 +28,7 @@ object Adapters {
     override def map: MigrateScenarioRequest => MigrateScenarioRequest = {
       case v1: MigrateScenarioRequestV1 =>
         MigrateScenarioRequestV2(
-          version = v1.version,
+          version = v1.version + 1,
           sourceEnvironmentId = v1.sourceEnvironmentId,
           processingMode = v1.processingMode,
           engineSetupName = v1.engineSetupName,
@@ -43,7 +43,7 @@ object Adapters {
     override def comap: MigrateScenarioRequest => MigrateScenarioRequest = {
       case v2: MigrateScenarioRequestV2 =>
         MigrateScenarioRequestV1(
-          version = v2.version,
+          version = v2.version - 1,
           sourceEnvironmentId = v2.sourceEnvironmentId,
           processingMode = v2.processingMode,
           engineSetupName = v2.engineSetupName,
@@ -62,25 +62,26 @@ object Adapters {
 
 class MigrationApiAdapterService {
 
-  def getCurrentApiVersion: Int = Adapters.adapters.keySet.size
+  def getCurrentApiVersion: Int = Adapters.adapters.keySet.size + 1
 
   def adaptDown(migrateScenarioRequest: MigrateScenarioRequest, noOfVersions: Int): MigrateScenarioRequest =
-    adaptN(migrateScenarioRequest, noOfVersions)(_ - 1)
+    adaptN(migrateScenarioRequest, -noOfVersions)
 
   def adaptUp(migrateScenarioRequest: MigrateScenarioRequest, noOfVersions: Int): MigrateScenarioRequest =
-    adaptN(migrateScenarioRequest, noOfVersions)(_ + 1)
+    adaptN(migrateScenarioRequest, noOfVersions)
 
   @tailrec
-  private def adaptN(migrateScenarioRequest: MigrateScenarioRequest, noOfVersions: Int)(
-      modifier: Int => Int
-  ): MigrateScenarioRequest = {
+  private def adaptN(migrateScenarioRequest: MigrateScenarioRequest, noOfVersions: Int): MigrateScenarioRequest = {
     val currentVersion = migrateScenarioRequest.currentVersion()
 
     noOfVersions match {
       case 0 => migrateScenarioRequest
-      case _ =>
-        val adapter = Adapters.adapters(currentVersion + 1)
-        adaptN(adapter.map(migrateScenarioRequest), modifier(noOfVersions))(modifier)
+      case n if n > 0 =>
+        val adapter = Adapters.adapters(currentVersion - 1)
+        adaptN(adapter.map(migrateScenarioRequest), noOfVersions - 1)
+      case n if n < 0 =>
+        val adapter = Adapters.adapters(currentVersion - 1)
+        adaptN(adapter.comap(migrateScenarioRequest), noOfVersions + 1)
     }
   }
 

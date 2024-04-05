@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV2
 }
 import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersionDto
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -42,6 +43,8 @@ class StandardRemoteEnvironmentSpec
 
   implicit val system: ActorSystem = ActorSystem("nussknacker-designer")
   implicit val user: LoggedUser    = LoggedUser("1", "test")
+
+  val migrationApiAdapterService = new MigrationApiAdapterService()
 
   it should "handle spaces in scenario id" in {
     val name          = ProcessName("a b c")
@@ -113,57 +116,10 @@ class StandardRemoteEnvironmentSpec
   }
 
   it should "request to migrate valid scenario when remote Nu version is lower than local Nu version" in {
-    val localNuVersion  = BuildInfo.version
-    val remoteNuVersion = modifyMinorVersion(localNuVersion, _ - 1)
+    val localApiVersion  = migrationApiAdapterService.getCurrentApiVersion
+    val remoteApiVersion = localApiVersion - 1
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
-      remoteEnvironmentMock(nuVersion = remoteNuVersion)
-
-    whenReady(
-      remoteEnvironment.migrate(
-        ProcessTestData.sampleScenarioParameters.processingMode,
-        ProcessTestData.sampleScenarioParameters.engineSetupName,
-        ProcessTestData.sampleScenarioParameters.category,
-        ProcessTestData.validScenarioGraph,
-        ProcessTestData.sampleProcessName,
-        false
-      )
-    ) { res =>
-      res shouldBe Right(())
-      remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestDtoV1]
-        case _                            => fail("lastly sent migrate scenario request should be non empty")
-      }
-    }
-  }
-
-  it should "request to migrate valid scenario when remote Nu version is the same as local Nu version" in {
-    val localNuVersion = BuildInfo.version
-    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
-      remoteEnvironmentMock(nuVersion = localNuVersion)
-
-    whenReady(
-      remoteEnvironment.migrate(
-        ProcessTestData.sampleScenarioParameters.processingMode,
-        ProcessTestData.sampleScenarioParameters.engineSetupName,
-        ProcessTestData.sampleScenarioParameters.category,
-        ProcessTestData.validScenarioGraph,
-        ProcessTestData.sampleProcessName,
-        false
-      )
-    ) { res =>
-      res shouldBe Right(())
-      remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestDtoV2]
-        case _                            => fail("lastly sent migrate scenario request should be non empty")
-      }
-    }
-  }
-
-  it should "request to migrate valid scenario when remote Nu version is higher than local Nu version" in {
-    val localNuVersion  = BuildInfo.version
-    val remoteNuVersion = modifyMinorVersion(localNuVersion, _ + 1)
-    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
-      remoteEnvironmentMock(nuVersion = remoteNuVersion)
+      remoteEnvironmentMock(apiVersion = remoteApiVersion)
 
     whenReady(
       remoteEnvironment.migrate(
@@ -178,7 +134,55 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest shouldBe a[MigrateScenarioRequestDtoV2]
+          migrateScenarioRequest.currentVersion() shouldBe remoteApiVersion
+        case _ => fail("lastly sent migrate scenario request should be non empty")
+      }
+    }
+  }
+
+  it should "request to migrate valid scenario when remote Nu version is the same as local Nu version" in {
+    val localApiVersion = migrationApiAdapterService.getCurrentApiVersion
+    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+      remoteEnvironmentMock(apiVersion = localApiVersion)
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.sampleScenarioParameters.processingMode,
+        ProcessTestData.sampleScenarioParameters.engineSetupName,
+        ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        false
+      )
+    ) { res =>
+      res shouldBe Right(())
+      remoteEnvironment.lastlySentMigrateScenarioRequest match {
+        case Some(migrateScenarioRequest) => migrateScenarioRequest.currentVersion() shouldBe localApiVersion
+        case _                            => fail("lastly sent migrate scenario request should be non empty")
+      }
+    }
+  }
+
+  it should "request to migrate valid scenario when remote Nu version is higher than local Nu version" in {
+    val localApiVersion  = migrationApiAdapterService.getCurrentApiVersion
+    val remoteApiVersion = localApiVersion + 1
+    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+      remoteEnvironmentMock(apiVersion = remoteApiVersion)
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.sampleScenarioParameters.processingMode,
+        ProcessTestData.sampleScenarioParameters.engineSetupName,
+        ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        false
+      )
+    ) { res =>
+      res shouldBe Right(())
+      remoteEnvironment.lastlySentMigrateScenarioRequest match {
+        case Some(migrateScenarioRequest) =>
+          migrateScenarioRequest.currentVersion() shouldBe localApiVersion
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -231,11 +235,11 @@ class StandardRemoteEnvironmentSpec
   }
 
   private trait LastSentMigrateScenarioRequest {
-    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioRequestDto] = None
+    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioRequest] = None
   }
 
   private def remoteEnvironmentMock(
-      nuVersion: String
+      apiVersion: Int
   ) = new MockRemoteEnvironment with LastSentMigrateScenarioRequest {
 
     override protected def request(
@@ -251,8 +255,8 @@ class StandardRemoteEnvironmentSpec
         uri.toString.startsWith(s"$baseUri$relative") && method == m
       }
 
-      object GetNuVersion {
-        def unapply(arg: (String, HttpMethod)): Boolean = is("/app/version", GET)
+      object GetMigrateApiVersion {
+        def unapply(arg: (String, HttpMethod)): Boolean = is("/migrate/apiVersion", GET)
       }
 
       object Migrate {
@@ -261,29 +265,20 @@ class StandardRemoteEnvironmentSpec
       // end helpers
 
       (uri.toString(), method) match {
-        case GetNuVersion() =>
-          Marshal(NuVersionDto(value = nuVersion)).to[RequestEntity].map { entity =>
+        case GetMigrateApiVersion() =>
+          Marshal(apiVersion).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
-          header.find(_.name() == "X-MigrateDtoVersion") match {
-            case Some(RawHeader("X-MigrateDtoVersion", "V1_14")) =>
+          parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
+            case Right(migrateScenarioRequestDtoV2) =>
+              lastlySentMigrateScenarioRequest = Some(MigrateScenarioRequest.toDomain(migrateScenarioRequestDtoV2))
+            case Left(_) =>
               parseBodyToJson(request).as[MigrateScenarioRequestDtoV1] match {
-                case Right(migrateScenarioRequestV1_14) =>
-                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1_14)
+                case Right(migrateScenarioRequestDtoV1) =>
+                  lastlySentMigrateScenarioRequest = Some(MigrateScenarioRequest.toDomain(migrateScenarioRequestDtoV1))
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
-            case Some(RawHeader("X-MigrateDtoVersion", "V1_15")) =>
-              parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
-                case Right(migrateScenarioRequestV1_15) =>
-                  lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1_15)
-                case Left(_) => lastlySentMigrateScenarioRequest = None
-              }
-            case Some(unexpectedHttpHeader) =>
-              throw new AssertionError(
-                s"Unexpected HTTP header: (${unexpectedHttpHeader.name()}, ${unexpectedHttpHeader.value()})"
-              )
-            case None => throw new AssertionError("Missing HTTP header: X-MigrateDtoVersion")
           }
 
           Marshal(Right[NuDesignerError, Unit](())).to[RequestEntity].map { entity =>
@@ -350,18 +345,6 @@ class StandardRemoteEnvironmentSpec
       }
     }
 
-  }
-
-  private def modifyMinorVersion(version: String, modifier: Int => Int): String = {
-    val parts = version.split("\\.")
-
-    val major = parts(0).toInt
-    val minor = parts(1).toInt
-    val patch = parts(2).takeWhile(_.isDigit).toInt
-
-    val newMinor = modifier(minor)
-
-    s"$major.$newMinor.$patch${parts(2).dropWhile(_.isDigit)}"
   }
 
 }
