@@ -32,7 +32,7 @@ trait ScenarioHttpServiceExtensions {
   )(implicit loggedUser: LoggedUser): EitherT[Future, BusinessErrorType, ScenarioWithDetails] =
     for {
       scenarioId <- EitherT.fromOptionF(scenarioService.getProcessId(scenarioName), noScenarioError(scenarioName))
-      scenarioDetails <- eitherifyBusinessErrors(
+      scenarioDetails <- eitherifyErrors(
         scenarioService.getLatestProcessWithDetails(
           ProcessIdWithName(scenarioId, scenarioName),
           GetScenarioWithDetailsOptions.detailsOnly
@@ -40,7 +40,7 @@ trait ScenarioHttpServiceExtensions {
       )
     } yield scenarioDetails
 
-  protected def eitherifyBusinessErrors[T](
+  protected def eitherifyErrors[T](
       future: Future[T]
   ): EitherT[Future, BusinessErrorType, T] = {
     EitherT(

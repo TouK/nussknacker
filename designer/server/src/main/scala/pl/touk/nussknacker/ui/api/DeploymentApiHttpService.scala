@@ -40,7 +40,7 @@ class DeploymentApiHttpService(
               Either.cond(loggedUser.can(scenarioDetails.processCategory, Permission.Deploy), (), NoPermission)
             )
             // TODO (next PRs): Currently it is done sync, but eventually we should make it async and add an endpoint for deployment status verification
-            _ <- eitherifyBusinessErrors(
+            _ <- eitherifyErrors(
               deploymentService
                 .deployProcessAsync(
                   scenarioDetails.idWithNameUnsafe,
