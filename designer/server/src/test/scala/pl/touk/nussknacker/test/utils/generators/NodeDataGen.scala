@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.graph
+package pl.touk.nussknacker.test.utils.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import pl.touk.nussknacker.engine.api.LayoutData
@@ -8,25 +8,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.graph.node.{
-  BranchEndData,
-  BranchEndDefinition,
-  CustomNode,
-  Enricher,
-  Filter,
-  FragmentInput,
-  FragmentInputDefinition,
-  FragmentOutputDefinition,
-  Join,
-  NodeData,
-  Processor,
-  Source,
-  Split,
-  Switch,
-  UserDefinedAdditionalNodeFields,
-  Variable,
-  VariableBuilder
-}
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field

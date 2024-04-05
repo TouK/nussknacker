@@ -1541,7 +1541,6 @@ lazy val scenarioApi = (project in file("scenario-api"))
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
       "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
-      "org.scalacheck"    %% "scalacheck"    % scalaCheckV % Test
     )
   )
   .dependsOn(commonApi, testUtils % Test)
@@ -1959,7 +1958,6 @@ lazy val designer = (project in file("designer/server"))
     testUtils                         % Test,
     flinkTestUtils                    % Test,
     componentsApi                     % "test->test",
-    scenarioApi                       % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
