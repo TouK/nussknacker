@@ -10,10 +10,12 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{DictKeyWithLabelExpression, Expression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.KeyWithLabelExpressionParsingError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 
 case class DictKeyWithLabelExpressionTypingInfo(key: String, label: Option[String], typingResult: TypingResult)
     extends ExpressionTypingInfo
@@ -27,35 +29,42 @@ object DictKeyWithLabelExpressionParser extends ExpressionParser {
       ctx: ValidationContext,
       expectedType: typing.TypingResult
   ): Validated[NonEmptyList[ExpressionParseError], TypedExpression] =
-    parseDictKeyWithLabelExpression(keyWithLabel).map(expr =>
-      TypedExpression(
-        CompiledDictKeyExpression(expr.key, expectedType),
-        DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, expectedType)
+    if (keyWithLabel.isBlank)
+      Valid(
+        TypedExpression(
+          NullExpression(keyWithLabel, SpelExpressionParser.Standard),
+          DictKeyWithLabelExpressionTypingInfo("", None, expectedType)
+        )
       )
-    )
+    else
+      parseDictKeyWithLabelExpression(keyWithLabel).map(expr =>
+        TypedExpression(
+          CompiledDictKeyExpression(expr.key, expectedType),
+          DictKeyWithLabelExpressionTypingInfo(expr.key, expr.label, expectedType)
+        )
+      )
 
   override def parseWithoutContextValidation(
       keyWithLabel: String,
       expectedType: TypingResult
   ): Validated[NonEmptyList[ExpressionParseError], CompiledExpression] = {
-    parseDictKeyWithLabelExpression(keyWithLabel).map(expr => CompiledDictKeyExpression(expr.key, expectedType))
+    if (keyWithLabel.isBlank)
+      Valid(NullExpression(keyWithLabel, SpelExpressionParser.Standard))
+    else
+      parseDictKeyWithLabelExpression(keyWithLabel).map(expr => CompiledDictKeyExpression(expr.key, expectedType))
   }
 
   def parseDictKeyWithLabelExpression(
       keyWithLabelJson: String
-  ): Validated[NonEmptyList[KeyWithLabelExpressionParsingError], DictKeyWithLabelExpression] = {
-    if (keyWithLabelJson.isBlank)
-      Valid(DictKeyWithLabelExpression("", None))
-    else
-      parser.parse(keyWithLabelJson) match {
-        case Left(e) => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
-        case Right(json) =>
-          json.as[DictKeyWithLabelExpression] match {
-            case Right(expr) => Valid(expr)
-            case Left(e)     => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
-          }
-      }
-  }
+  ): Validated[NonEmptyList[KeyWithLabelExpressionParsingError], DictKeyWithLabelExpression] =
+    parser.parse(keyWithLabelJson) match {
+      case Left(e) => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
+      case Right(json) =>
+        json.as[DictKeyWithLabelExpression] match {
+          case Right(expr) => Valid(expr)
+          case Left(e)     => invalidNel(KeyWithLabelExpressionParsingError(keyWithLabelJson, e.message))
+        }
+    }
 
   case class CompiledDictKeyExpression(key: String, expectedType: TypingResult) extends CompiledExpression {
     override def language: Language = languageId
