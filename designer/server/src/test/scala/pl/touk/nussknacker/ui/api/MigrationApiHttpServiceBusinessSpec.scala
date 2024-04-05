@@ -35,7 +35,7 @@ class MigrationApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/migrate/apiVersion")
         .Then()
         .statusCode(200)
-        .equalsPlainBody("1")
+        .equalsPlainBody("2")
     }
   }
 
@@ -194,7 +194,7 @@ class MigrationApiHttpServiceBusinessSpec
   ): String =
     s"""
        |{
-       |  "version": "1",
+       |  "version": "2",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Mockable",

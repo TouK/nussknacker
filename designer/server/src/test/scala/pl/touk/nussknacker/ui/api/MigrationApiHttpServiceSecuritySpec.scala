@@ -102,7 +102,7 @@ class MigrationApiHttpServiceSecuritySpec
   private def prepareRequestData(scenarioName: String): String =
     s"""
        |{
-       |  "version": "1",
+       |  "version": "2",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Mockable",
