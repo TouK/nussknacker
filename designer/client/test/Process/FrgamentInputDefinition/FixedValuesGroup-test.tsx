@@ -5,6 +5,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { NuThemeProvider } from "../../../src/containers/theme/nuThemeProvider";
 import { FixedValuesGroup } from "../../../src/components/graph/node-modal/fragment-input-definition/settings/variants/fields/FixedValuesGroup";
 import { FixedValuesType } from "../../../src/components/graph/node-modal/fragment-input-definition/item";
+import { ReturnedType } from "../../../src/types";
 
 jest.mock("../../../src/brace/theme/nussknacker.js", () => ({}));
 
@@ -30,6 +31,18 @@ describe(FixedValuesGroup.name, () => {
                     path={"test"}
                     fixedValuesType={FixedValuesType.ValueInputWithDictEditor}
                     readOnly={false}
+                    item={{
+                        uuid: "fc92fce2-5e63-40fd-808f-4942468ab995",
+                        name: "",
+                        required: false,
+                        hintText: "",
+                        initialValue: null,
+                        valueEditor: null,
+                        valueCompileTimeValidation: null,
+                        typ: {
+                            refClazzName: "java.lang.String",
+                        } as ReturnedType,
+                    }}
                 />
             </NuThemeProvider>,
         );

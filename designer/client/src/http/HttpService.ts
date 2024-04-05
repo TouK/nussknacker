@@ -150,6 +150,7 @@ export interface ScenarioParametersCombinations {
 }
 
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
+type DictOption = { id: string; label: string };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -717,7 +718,7 @@ class HttpService {
 
     fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, { refClazzName }: ReturnedType) {
         return api
-            .post<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
+            .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
                 expectedType: {
                     value: { type: "TypedClass", refClazzName, params: [] },
                 },
