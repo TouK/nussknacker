@@ -2132,6 +2132,7 @@ lazy val root = (project in file("."))
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 
 prepareDev := {
+  (flinkExecutor / prepareItLibs).value
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts  = componentArtifacts.value ++ devArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
     Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value ++

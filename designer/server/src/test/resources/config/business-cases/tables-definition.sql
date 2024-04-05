@@ -1,5 +1,6 @@
 CREATE TABLE transactions
 (
+    datatime TIMESTAMP,
     client_id STRING,
     amount    DECIMAL(15, 2)
 ) WITH (
@@ -10,6 +11,7 @@ CREATE TABLE transactions
 
 CREATE TABLE transactions_summary
 (
+    datatime TIMESTAMP,
     client_id STRING,
     amount    DECIMAL(15, 2)
 ) WITH (
