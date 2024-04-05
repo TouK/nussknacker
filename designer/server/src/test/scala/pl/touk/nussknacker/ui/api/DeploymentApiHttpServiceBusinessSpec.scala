@@ -172,12 +172,20 @@ class DeploymentApiHttpServiceBusinessSpec
   }
 
   private def outputTransactionSummaryContainsResult(): Unit = {
-    val transactionSummaryFiles = Option(outputDirectory.toFile.listFiles()).toList.flatten
-    transactionSummaryFiles should have size 1
-    val transactionsSummaryContent =
-      FileUtils.readFileToString(transactionSummaryFiles.head, StandardCharset.UTF_8)
+    val transactionSummaryDirectories = Option(outputDirectory.toFile.listFiles()).toList.flatten
+    transactionSummaryDirectories should have size 1
+    val matchingPartitionDirectory = transactionSummaryDirectories.head
+    matchingPartitionDirectory.getName shouldEqual "dd=2024-01-01"
+
+    val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
+    partitionFiles should have size 1
+    val firstFile = partitionFiles.head
+
+    val content =
+      FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
+
     // TODO (next PRs): aggregate by clientId
-    transactionsSummaryContent should include(
+    content should include(
       """"2024-01-01 10:00:00",client1,1.12
         |"2024-01-01 10:01:00",client2,2.21
         |"2024-01-01 10:02:00",client1,3""".stripMargin

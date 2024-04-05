@@ -4,6 +4,7 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.Context
@@ -26,7 +27,10 @@ class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlState
 
     sqlStatements.foreach(tableEnv.executeSql)
 
-    val table = tableEnv.from(tableDefinition.tableName)
+    val table = tableEnv
+      .from(tableDefinition.tableName)
+      // FIXME: use passed parameters
+      .filter($("dd").isEqual("2024-01-01"))
 
     val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
 
