@@ -4,6 +4,8 @@ import cats.Order
 import enumeratum._
 import io.circe.{Decoder, Encoder}
 
+import scala.collection.immutable
+
 sealed trait ProcessingMode extends EnumEntry
 
 object ProcessingMode extends Enum[ProcessingMode] {
@@ -11,7 +13,7 @@ object ProcessingMode extends Enum[ProcessingMode] {
   case object BoundedStream   extends ProcessingMode
   case object UnboundedStream extends ProcessingMode
 
-  override def values: IndexedSeq[ProcessingMode] = findValues
+  override def values: immutable.IndexedSeq[ProcessingMode] = findValues
 
   private val RequestResponseJsonValue = "Request-Response"
   private val BoundedStreamJsonValue   = "Bounded-Stream"
