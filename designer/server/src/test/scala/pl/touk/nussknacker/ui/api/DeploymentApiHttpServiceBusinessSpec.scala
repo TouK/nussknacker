@@ -172,18 +172,26 @@ class DeploymentApiHttpServiceBusinessSpec
   }
 
   private def outputTransactionSummaryContainsResult(): Unit = {
-
     // finished deploy doesn't mean that processing is finished
     // TODO (next PRs): we need to wait for the job completed status instead
-    val transactionsSummaryFiles = eventually {
-      val files = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
-      files should have size 1
-      files
+    val transactionSummaryDirectories = eventually {
+      val directories = Option(outputDirectory.toFile.listFiles()).toList.flatten
+      directories should have size 1
+      directories
     }
-    val transactionsSummaryContent =
-      FileUtils.readFileToString(transactionsSummaryFiles.head, StandardCharset.UTF_8)
+    transactionSummaryDirectories should have size 1
+    val matchingPartitionDirectory = transactionSummaryDirectories.head
+    matchingPartitionDirectory.getName shouldEqual "date=2024-01-01"
+
+    val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
+    partitionFiles should have size 1
+    val firstFile = partitionFiles.head
+
+    val content =
+      FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
+
     // TODO (next PRs): aggregate by clientId
-    transactionsSummaryContent should include(
+    content should include(
       """"2024-01-01 10:00:00",client1,1.12
         |"2024-01-01 10:01:00",client2,2.21
         |"2024-01-01 10:02:00",client1,3""".stripMargin
