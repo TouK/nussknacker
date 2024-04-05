@@ -18,7 +18,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
   import scala.jdk.CollectionConverters._
 
-  test("should emit groupBy key and aggregated values as separate variables") {
+  test("table aggregation should emit groupBy key and aggregated values as separate variables") {
     val runner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
       .withExtraComponents(FlinkTableComponentProvider.configIndependentComponents)

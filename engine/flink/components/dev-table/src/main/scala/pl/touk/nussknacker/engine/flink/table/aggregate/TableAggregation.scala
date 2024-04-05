@@ -43,10 +43,7 @@ class TableAggregation(
       start: DataStream[Context],
       context: FlinkCustomNodeContext
   ): DataStream[ValueWithContext[AnyRef]] = {
-    val env = start.getExecutionEnvironment
-    // Setting batch mode to enable global window operations. If source is unbounded it will throw a runtime exception
-    env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-
+    val env      = start.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
 
     val streamOfRows = start.flatMap(new LazyInterpreterFunction(groupByLazyParam, aggregateByLazyParam, context))

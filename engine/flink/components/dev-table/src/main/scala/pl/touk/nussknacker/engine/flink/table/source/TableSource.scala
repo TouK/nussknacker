@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -16,12 +17,20 @@ import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlSt
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
-class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlStatement]) extends FlinkSource {
+class TableSource(
+    tableDefinition: TableDefinition,
+    sqlStatements: List[SqlStatement],
+    enableFlinkBatchExecutionMode: Boolean
+) extends FlinkSource {
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
+    // TODO: move this to flink-executor - ideally should set be near level of ExecutionConfigPreparer
+    if (enableFlinkBatchExecutionMode) {
+      env.setRuntimeMode(RuntimeExecutionMode.BATCH)
+    }
     val tableEnv = StreamTableEnvironment.create(env);
 
     sqlStatements.foreach(tableEnv.executeSql)
