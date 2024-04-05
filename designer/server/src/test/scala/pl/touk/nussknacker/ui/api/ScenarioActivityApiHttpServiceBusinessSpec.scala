@@ -86,11 +86,13 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
         .Then()
         .statusCode(200)
-        .verifyCommentExists(
-          scenarioName = exampleScenarioName,
-          commentContent = commentContent,
-          commentUser = "allpermuser"
-        )
+        .verifyApplicationState {
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = commentContent,
+            commentUser = "allpermuser"
+          )
+        }
     }
     "return 404 for no existing scenario" in {
       given()
@@ -126,7 +128,9 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comments/$commentId")
         .Then()
         .statusCode(200)
-        .verifyEmptyCommentsAndAttachments(exampleScenarioName)
+        .verifyApplicationState {
+          verifyEmptyCommentsAndAttachments(exampleScenarioName)
+        }
     }
     "return 500 for no existing comment" in {
       given()
@@ -163,7 +167,9 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
         .Then()
         .statusCode(200)
-        .verifyAttachmentsExists(exampleScenarioName)
+        .verifyApplicationState {
+          verifyAttachmentsExists(exampleScenarioName)
+        }
     }
     "handle attachments with the same name" in {
       val fileContent1 = "very important content1"
