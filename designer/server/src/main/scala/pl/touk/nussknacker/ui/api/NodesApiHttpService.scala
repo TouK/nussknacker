@@ -6,12 +6,12 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.restmodel.definition.UIValueParameter
-import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.additionalInfo.AdditionalInfoProviders
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
@@ -33,8 +33,8 @@ import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{
   decodeVariableTypes,
   prepareTypingResultDecoder
 }
+import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
@@ -50,10 +50,15 @@ class NodesApiHttpService(
     typeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
     typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
     typeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
-    protected val scenarioService: ProcessService
-)(implicit executionContext: ExecutionContext)
+    protected override val scenarioService: ProcessService
+)(override protected implicit val executionContext: ExecutionContext)
     extends BaseHttpService(authenticator)
+    with ScenarioHttpServiceExtensions
     with LazyLogging {
+
+  override protected type BusinessErrorType = NodesError
+  override protected def noScenarioError(scenarioName: ProcessName): NodesError      = NoScenario(scenarioName)
+  override protected def noPermissionError: NodesError with CustomAuthorizationError = NoPermission
 
   private val nodesApiEndpoints = new NodesApiEndpoints(authenticator.authenticationMethod())
 
@@ -65,8 +70,7 @@ class NodesApiHttpService(
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, nodeData) =>
           for {
-            scenarioId <- getScenarioIdByName(scenarioName)
-            scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
+            scenario <- getScenarioWithDetailsByName(scenarioName)
             additionalInfo <- EitherT.right(
               additionalInfoProviders.prepareAdditionalInfoForNode(nodeData, scenario.processingType)
             )
@@ -81,9 +85,8 @@ class NodesApiHttpService(
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, nodeValidationRequestDto) =>
           for {
-            scenarioId <- getScenarioIdByName(scenarioName)
-            scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
-            modelData  <- getModelData(scenario.processingType)
+            scenario  <- getScenarioWithDetailsByName(scenarioName)
+            modelData <- getModelData(scenario.processingType)
             nodeValidator = typeToNodeValidator.forTypeUnsafe(scenario.processingType)
             nodeData   <- dtoToNodeRequest(nodeValidationRequestDto, modelData)
             validation <- getNodeValidation(nodeValidator, scenarioName, nodeData)
@@ -99,8 +102,7 @@ class NodesApiHttpService(
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, scenarioProperties) =>
           for {
-            scenarioId <- getScenarioIdByName(scenarioName)
-            scenario   <- getScenarioWithDetails(scenarioId, scenarioName)
+            scenario <- getScenarioWithDetailsByName(scenarioName)
             additionalInfo <- EitherT.right(
               additionalInfoProviders
                 .prepareAdditionalInfoForProperties(
@@ -119,8 +121,7 @@ class NodesApiHttpService(
       .serverLogicEitherT { implicit loggedUser =>
         { case (scenarioName, request) =>
           for {
-            scenarioId          <- getScenarioIdByName(scenarioName)
-            scenarioWithDetails <- getScenarioWithDetails(scenarioId, scenarioName)
+            scenarioWithDetails <- getScenarioWithDetailsByName(scenarioName)
             scenario = ScenarioGraph(ProcessProperties(request.additionalFields), Nil, Nil)
             result = typeToProcessValidator
               .forTypeUnsafe(scenarioWithDetails.processingType)
@@ -164,27 +165,6 @@ class NodesApiHttpService(
           } yield suggestionDto
         }
       }
-  }
-
-  private def getScenarioIdByName(scenarioName: ProcessName): EitherT[Future, NoScenario, ProcessId] = {
-    EitherT.fromOptionF(
-      scenarioService.getProcessId(scenarioName),
-      NoScenario(scenarioName)
-    )
-  }
-
-  private def getScenarioWithDetails(scenarioId: ProcessId, scenarioName: ProcessName)(
-      implicit user: LoggedUser
-  ): EitherT[Future, NodesError, ScenarioWithDetails] = {
-    EitherT(
-      scenarioService
-        .getLatestProcessWithDetails(
-          ProcessIdWithName(scenarioId, scenarioName),
-          GetScenarioWithDetailsOptions.detailsOnly
-        )
-        .map(scenario => Right(scenario))
-        .recover { case ProcessNotFoundError(_) => Left(NoScenario(scenarioName)) }
-    )
   }
 
   private def dtoToNodeRequest(

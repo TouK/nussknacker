@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import scala.concurrent.duration._
 
-class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
+class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with LazyLogging {
 
   override protected def classPath: List[String] = ClassPaths.javaClasspath
 
