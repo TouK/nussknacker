@@ -19,11 +19,11 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequest,
-  MigrateScenarioRequestV1_14,
-  MigrateScenarioRequestV1_15
+  MigrateScenarioRequestDto,
+  MigrateScenarioRequestDtoV1,
+  MigrateScenarioRequestDtoV2
 }
-import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
+import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersionDto
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -130,7 +130,7 @@ class StandardRemoteEnvironmentSpec
     ) { res =>
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1_14]
+        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestDtoV1]
         case _                            => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -153,7 +153,7 @@ class StandardRemoteEnvironmentSpec
     ) { res =>
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1_15]
+        case Some(migrateScenarioRequest) => migrateScenarioRequest shouldBe a[MigrateScenarioRequestDtoV2]
         case _                            => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -178,7 +178,7 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest shouldBe a[MigrateScenarioRequestV1_15]
+          migrateScenarioRequest shouldBe a[MigrateScenarioRequestDtoV2]
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -231,7 +231,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   private trait LastSentMigrateScenarioRequest {
-    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioRequest] = None
+    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioRequestDto] = None
   }
 
   private def remoteEnvironmentMock(
@@ -262,19 +262,19 @@ class StandardRemoteEnvironmentSpec
 
       (uri.toString(), method) match {
         case GetNuVersion() =>
-          Marshal(NuVersion(value = nuVersion)).to[RequestEntity].map { entity =>
+          Marshal(NuVersionDto(value = nuVersion)).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
           header.find(_.name() == "X-MigrateDtoVersion") match {
             case Some(RawHeader("X-MigrateDtoVersion", "V1_14")) =>
-              parseBodyToJson(request).as[MigrateScenarioRequestV1_14] match {
+              parseBodyToJson(request).as[MigrateScenarioRequestDtoV1] match {
                 case Right(migrateScenarioRequestV1_14) =>
                   lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1_14)
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
             case Some(RawHeader("X-MigrateDtoVersion", "V1_15")) =>
-              parseBodyToJson(request).as[MigrateScenarioRequestV1_15] match {
+              parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
                 case Right(migrateScenarioRequestV1_15) =>
                   lastlySentMigrateScenarioRequest = Some(migrateScenarioRequestV1_15)
                 case Left(_) => lastlySentMigrateScenarioRequest = None

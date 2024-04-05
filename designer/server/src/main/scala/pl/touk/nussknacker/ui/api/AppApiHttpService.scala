@@ -117,7 +117,7 @@ class AppApiHttpService(
   expose {
     appApiEndpoints.nuVersionEndpoint
       .serverLogicSuccess { _ =>
-        Future.successful(NuVersion(value = BuildInfo.version))
+        Future.successful(NuVersionDto(value = BuildInfo.version))
       }
   }
 

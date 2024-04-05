@@ -22,13 +22,12 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  CurrentScenarioMigrateRequest,
-  MigrateScenarioRequestV1_14,
-  MigrateScenarioRequestV1_15
+  MigrateScenarioRequestDtoV1,
+  MigrateScenarioRequestDtoV2
 }
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
-import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersion
-import pl.touk.nussknacker.ui.migrations.MigrationApiAdapterService
+import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersionDto
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrateScenarioRequestV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
@@ -165,7 +164,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
 
-  private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
+  private val migrationApiAdapterService: MigrationApiAdapterService   = new MigrationApiAdapterService()
+  private val migrationApiAdapterServiceV2: MigrationApiAdapterService = new MigrationApiAdapterService()
 
   def environmentId: String
 
@@ -212,44 +212,40 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processName: ProcessName,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val migrateScenarioRequest: CurrentScenarioMigrateRequest =
-      MigrateScenarioRequestV1_15(
-        environmentId,
-        processingMode,
-        engineSetupName,
-        processCategory,
-        scenarioGraph,
-        processName,
-        isFragment
-      )
 
     val f: EitherT[Future, NuDesignerError, Unit] = for {
-      remoteNuVersion <- EitherT(fetchRemoteNuVersion)
+      remoteApiVersion <- EitherT(fetchRemoteNuVersion.map[Either[NuDesignerError, Int]](Right(_)))
 
-      localNuVersion = BuildInfo.version
+      localApiVersion = migrationApiAdapterServiceV2.getCurrentApiVersion
 
-      versionComparisonResultE = migrationApiAdapterService.compareNuVersions(localNuVersion, remoteNuVersion.value)
-      versionComparisonResult <- EitherT(Future.successful(versionComparisonResultE))
+      migrateScenarioRequest: MigrateScenarioRequest =
+        MigrateScenarioRequestV2(
+          localApiVersion,
+          environmentId,
+          processingMode,
+          engineSetupName,
+          processCategory,
+          scenarioGraph,
+          processName,
+          isFragment
+        )
 
-      decidedMigrateScenarioRequest = migrationApiAdapterService.decideMigrationRequestDto(
-        migrateScenarioRequest,
-        versionComparisonResult
-      )
+      versionsDifference = localApiVersion - remoteApiVersion
 
-      versionTag = decidedMigrateScenarioRequest match {
-        case _: MigrateScenarioRequestV1_14 => "V1_14"
-        case _: MigrateScenarioRequestV1_15 => "V1_15"
-      }
+      transformedMigrateScenarioRequest =
+        if (versionsDifference > 0) migrationApiAdapterServiceV2.adaptDown(migrateScenarioRequest, versionsDifference)
+        else
+          migrateScenarioRequest
 
-      res <- EitherT(
+      dto = MigrateScenarioRequest.fromDomain(transformedMigrateScenarioRequest)
+
+      _ <- EitherT(
         invokeForSuccess(
           HttpMethods.POST,
           List("migrate"),
           Query.Empty,
-          HttpEntity(decidedMigrateScenarioRequest.asJson.noSpaces),
-          List(
-            RawHeader("X-MigrateDtoVersion", versionTag)
-          ) // Only for testing purposes, see: StandardRemoteEnvironmentSpec#remotgeEnvironmentMock
+          HttpEntity(dto.asJson.noSpaces),
+          List()
         )
       )
     } yield ()
@@ -257,12 +253,17 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     f.value
   }
 
-  private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Either[NuDesignerError, NuVersion]] =
-    invokeJson[NuVersion](
+  private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Int] = {
+    invoke[Int](
       HttpMethods.GET,
-      List("app", "version"),
-      Query.Empty
-    )
+      List("migrate", "apiVersion"),
+      Query.Empty,
+      requestEntity = HttpEntity.Empty,
+      headers = Seq.empty
+    ) { res =>
+      Unmarshal(res.entity).to[Int]
+    }
+  }
 
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
   override def testMigration(

@@ -27,6 +27,18 @@ class MigrationApiHttpServiceBusinessSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
 
+  "The endpoint for migration api version should" - {
+    "return current api version" in {
+      given()
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/migrate/apiVersion")
+        .Then()
+        .statusCode(200)
+        .equalsPlainBody("1")
+    }
+  }
+
   "The endpoint for scenario migration between environments should" - {
     "migrate scenario and add update comment when scenario does not exist on target environment" in {
       given()
@@ -182,6 +194,7 @@ class MigrationApiHttpServiceBusinessSpec
   ): String =
     s"""
        |{
+       |  "version": "1",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Mockable",

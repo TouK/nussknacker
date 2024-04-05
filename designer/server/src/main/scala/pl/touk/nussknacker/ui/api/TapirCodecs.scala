@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequest,
-  MigrateScenarioRequestV1_14,
-  MigrateScenarioRequestV1_15
+  MigrateScenarioRequestDto,
+  MigrateScenarioRequestDtoV1,
+  MigrateScenarioRequestDtoV2
 }
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
@@ -116,27 +116,28 @@ object TapirCodecs {
 
   object MigrateScenarioRequestV1Codec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestV1_14] = Schema.anyObject
+    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.anyObject
   }
 
   object MigrateScenarioRequestV2Codec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestV1_15] = Schema.anyObject
+    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.anyObject
   }
 
   object MigrateScenarioRequestCodec {
     // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
+    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequestDto] = Schema.anyObject
 
-    implicit val migrateScenarioRequestEncoder: Encoder[MigrateScenarioRequest] = Encoder.instance {
-      case v14: MigrateScenarioRequestV1_14 => v14.asJson
-      case v15: MigrateScenarioRequestV1_15 => v15.asJson
+    implicit val migrateScenarioRequestEncoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
+      case v14: MigrateScenarioRequestDtoV1 => v14.asJson
+      case v15: MigrateScenarioRequestDtoV2 => v15.asJson
     }
 
-    implicit val migrateScenarioRequestDecoder: Decoder[MigrateScenarioRequest] = List[Decoder[MigrateScenarioRequest]](
-      Decoder[MigrateScenarioRequestV1_14].widen,
-      Decoder[MigrateScenarioRequestV1_15].widen,
-    ).reduceLeft(_ or _)
+    implicit val migrateScenarioRequestDecoder: Decoder[MigrateScenarioRequestDto] =
+      List[Decoder[MigrateScenarioRequestDto]](
+        Decoder[MigrateScenarioRequestDtoV2].widen,
+        Decoder[MigrateScenarioRequestDtoV1].widen,
+      ).reduceLeft(_ or _)
 
   }
 

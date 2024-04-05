@@ -8,13 +8,11 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  CurrentScenarioMigrateRequest,
-  MigrateScenarioRequestV1_15
-}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequestDtoV2
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.migrations.MigrateScenarioRequest.CurrentMigrateScenarioRequest
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
@@ -47,7 +45,7 @@ class MigrationService(
   private val passUsernameInMigration = true
 
   def migrate(
-      migrateScenarioRequest: CurrentScenarioMigrateRequest
+      migrateScenarioRequest: CurrentMigrateScenarioRequest
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
     val targetEnvironmentId = config.getString("environment")

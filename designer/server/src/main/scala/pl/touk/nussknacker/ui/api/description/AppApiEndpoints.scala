@@ -138,13 +138,13 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
         )
       )
 
-  lazy val nuVersionEndpoint: PublicEndpoint[Unit, Unit, NuVersion, Any] =
+  lazy val nuVersionEndpoint: PublicEndpoint[Unit, Unit, NuVersionDto, Any] =
     baseNuApiEndpoint
       .summary("Application version")
       .tag("App")
       .get
       .in("app" / "version")
-      .out(statusCode(Ok).and(jsonBody[NuVersion]))
+      .out(statusCode(Ok).and(jsonBody[NuVersionDto]))
 
   lazy val serverConfigEndpoint: SecuredEndpoint[Unit, Unit, ServerConfigInfoDto, Any] =
     baseNuApiEndpoint
@@ -273,7 +273,7 @@ object AppApiEndpoints {
     }
 
     @derive(encoder, decoder, schema)
-    final case class NuVersion(value: String)
+    final case class NuVersionDto(value: String)
 
     @derive(schema)
     final case class BuildInfoDto(

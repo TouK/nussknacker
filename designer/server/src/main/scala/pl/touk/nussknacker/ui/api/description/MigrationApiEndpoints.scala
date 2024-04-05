@@ -23,17 +23,18 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
   import MigrationApiEndpoints.Dtos._
   import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 
-  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequest, NuDesignerError, Unit, Any] =
+  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequestDto, NuDesignerError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Migration between environments service")
       .tag("Migrations")
       .post
       .in("migrate")
       .in(
-        jsonBody[MigrateScenarioRequest].example(
+        jsonBody[MigrateScenarioRequestDto].example(
           Example.of(
             summary = Some("example of migration request between environments"),
-            value = MigrateScenarioRequestV1_15(
+            value = MigrateScenarioRequestDtoV2(
+              version = 1,
               sourceEnvironmentId = "testEnv",
               processingMode = ProcessingMode.UnboundedStream,
               engineSetupName = EngineSetupName("Flink"),
@@ -46,6 +47,16 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         )
       )
       .out(statusCode(Ok))
+      .errorOut(nuDesignerErrorOutput)
+      .withSecurity(auth)
+
+  lazy val apiVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, Int, Any] =
+    baseNuApiEndpoint
+      .summary("X")
+      .tag("Migrations")
+      .get
+      .in("migrate" / "apiVersion")
+      .out(plainBody[Int])
       .errorOut(nuDesignerErrorOutput)
       .withSecurity(auth)
 
@@ -141,10 +152,11 @@ object MigrationApiEndpoints {
         Mapping.from[String, FatalError](deserializationException)(_.getMessage)
       )
 
-    sealed trait MigrateScenarioRequest
+    sealed trait MigrateScenarioRequestDto
 
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestV1_14(
+    final case class MigrateScenarioRequestDtoV1(
+        version: Int,
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
@@ -152,10 +164,11 @@ object MigrationApiEndpoints {
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,
-    ) extends MigrateScenarioRequest
+    ) extends MigrateScenarioRequestDto
 
     @derive(encoder, decoder)
-    final case class MigrateScenarioRequestV1_15(
+    final case class MigrateScenarioRequestDtoV2(
+        version: Int,
         sourceEnvironmentId: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
@@ -163,12 +176,7 @@ object MigrationApiEndpoints {
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,
-    ) extends MigrateScenarioRequest
-
-    type CurrentScenarioMigrateRequest = MigrateScenarioRequestV1_15
-
-    // FIXME:  LowestScenarioMigrateRequest should be removed when expanded adapter to lower api version
-    type LowestScenarioMigrateRequest = MigrateScenarioRequestV1_14
+    ) extends MigrateScenarioRequestDto
 
   }
 
