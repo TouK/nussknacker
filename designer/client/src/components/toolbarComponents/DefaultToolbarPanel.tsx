@@ -1,20 +1,18 @@
-import React, { PropsWithChildren } from "react";
+import React, { PropsWithChildren, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { ToolbarWrapper, ToolbarWrapperProps } from "./toolbarWrapper/ToolbarWrapper";
-import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons";
+import { ToolbarButtons } from "../toolbarComponents/toolbarButtons";
+import { ToolbarConfig } from "../toolbarSettings/types";
+import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 
-export type ToolbarPanelProps = PropsWithChildren<{
-    id: string;
-    title?: string;
-    buttonsVariant?: ButtonsVariant;
-}>;
+export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons">>;
 
-export function DefaultToolbarPanel(props: ToolbarPanelProps & ToolbarWrapperProps): JSX.Element {
+export function DefaultToolbarPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
     const { children, title, id, buttonsVariant, ...passProps } = props;
+    const label = title ?? id;
     return (
         /* i18next-extract-disable-line */
-        <ToolbarWrapper id={id} title={t(`panels.${id}.title`, title || id)} {...passProps}>
+        <ToolbarWrapper id={id} title={label && t(`panels.${id}.title`, label)} {...passProps}>
             <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>
         </ToolbarWrapper>
     );
