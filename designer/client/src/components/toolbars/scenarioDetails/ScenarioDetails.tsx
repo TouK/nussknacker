@@ -1,30 +1,30 @@
-import React, { memo } from "react";
-import i18next from "i18next";
-import { SwitchTransition } from "react-transition-group";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../reducers";
-import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
-import { getProcessState } from "../../../reducers/selectors/scenarioState";
-import { CssFade } from "../../CssFade";
-import ProcessStateIcon from "../../Process/ProcessStateIcon";
-import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import ProcessStateUtils from "../../Process/ProcessStateUtils";
-import {
-    PanelScenarioDetails,
-    PanelScenarioDetailsIcon,
-    ScenarioDetailsItemWrapper,
-    ProcessName,
-    ProcessRename,
-} from "./ScenarioDetailsComponents";
 import { Box, Chip, Link, Typography } from "@mui/material";
+import i18next from "i18next";
+import React, { memo } from "react";
+import { useSelector } from "react-redux";
+import { SwitchTransition } from "react-transition-group";
 import BatchIcon from "../../../assets/img/batch.svg";
 import RequestResponseIcon from "../../../assets/img/request-response.svg";
 import StreamingIcon from "../../../assets/img/streaming.svg";
 import { ProcessingMode } from "../../../http/HttpService";
+import { RootState } from "../../../reducers";
+import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
+import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { useWindows, WindowKind } from "../../../windowManager";
+import { CssFade } from "../../CssFade";
+import ProcessStateIcon from "../../Process/ProcessStateIcon";
+import ProcessStateUtils from "../../Process/ProcessStateUtils";
+import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import {
+    PanelScenarioDetails,
+    PanelScenarioDetailsIcon,
+    ProcessName,
+    ProcessRename,
+    ScenarioDetailsItemWrapper,
+} from "./ScenarioDetailsComponents";
 
-const ScenarioDetails = memo(({ id }: ToolbarPanelProps) => {
+const ScenarioDetails = memo((props: ToolbarPanelProps) => {
     const { open } = useWindows();
 
     const scenario = useSelector((state: RootState) => getScenario(state));
@@ -43,7 +43,7 @@ const ScenarioDetails = memo(({ id }: ToolbarPanelProps) => {
             : RequestResponseIcon;
 
     return (
-        <ToolbarWrapper title={i18next.t("panels.scenarioDetails.title", "Scenario details")} id={id}>
+        <ToolbarWrapper {...props} title={i18next.t("panels.scenarioDetails.title", "Scenario details")}>
             <SwitchTransition>
                 <CssFade key={transitionKey}>
                     <PanelScenarioDetails>
