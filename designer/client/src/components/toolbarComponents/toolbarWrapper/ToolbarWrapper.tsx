@@ -4,13 +4,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleToolbar } from "../../../actions/nk/toolbars";
 import { RootState } from "../../../reducers";
 import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { variables } from "../../../stylesheets/variables";
+import { SIDEBAR_WIDTH } from "../../../stylesheets/variables";
 import { useDragHandler } from "../../common/dndItems/DragHandle";
 import ErrorBoundary from "../../common/ErrorBoundary";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
-
-const { sidebarWidth } = variables;
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id: string;
@@ -61,7 +59,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
             }}
             expanded={!isCollapsedLocal}
             color={color}
-            width={sidebarWidth}
+            width={SIDEBAR_WIDTH}
             data-testid={id}
             {...(isCollapsible ? {} : handlerProps)}
         >
