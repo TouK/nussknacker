@@ -9,7 +9,7 @@ import { FieldError } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor";
 import { EditorType } from "../../../../editors/expression/Editor";
-import EditableEditor from "../../../../../../graph/node-modal/editors/EditableEditor";
+import { EditableEditor } from "../../../../editors/EditableEditor";
 
 interface InitialValue {
     item: FragmentInputParameter;
