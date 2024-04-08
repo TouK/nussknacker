@@ -80,12 +80,12 @@ class ApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
 
   it should "fail with Left when tried adapt too high" in {
     val adapted = testApiAdapterService.adaptUp(v2, 3)
-    adapted shouldBe Left(OutOfRangeAdapterRequestError(currentVersion = 4, noOfVersionsLeftToApply = 1))
+    adapted shouldBe Left(OutOfRangeAdapterRequestError(currentVersion = 4, signedNoOfVersionsLeftToApply = 1))
   }
 
   it should "fail with Left when tried adapt too low" in {
     val adapted = testApiAdapterService.adaptDown(v2, 3)
-    adapted shouldBe Left(OutOfRangeAdapterRequestError(currentVersion = 1, noOfVersionsLeftToApply = -2))
+    adapted shouldBe Left(OutOfRangeAdapterRequestError(currentVersion = 1, signedNoOfVersionsLeftToApply = -2))
   }
 
 }

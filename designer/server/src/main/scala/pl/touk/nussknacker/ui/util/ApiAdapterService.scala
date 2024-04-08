@@ -4,7 +4,7 @@ import scala.annotation.tailrec
 
 sealed trait ApiAdapterServiceError
 
-case class OutOfRangeAdapterRequestError(currentVersion: Int, noOfVersionsLeftToApply: Int)
+case class OutOfRangeAdapterRequestError(currentVersion: Int, signedNoOfVersionsLeftToApply: Int)
     extends ApiAdapterServiceError
 
 trait ApiAdapterService[D <: VersionedData] {
