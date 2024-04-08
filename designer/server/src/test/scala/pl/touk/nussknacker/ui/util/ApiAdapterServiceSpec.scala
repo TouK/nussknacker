@@ -19,65 +19,73 @@ class ApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
   val v4: TestVersionedApiV4 = TestVersionedApiV4(4, None, List(4, 5, 6), "v1->v2 autogen. description")
 
   it should "adapt up from V1 to V2" in {
-    val lifted     = testApiAdapterService.adaptUp(v1, 1)
-    val downgraded = testApiAdapterService.adaptDown(v2, 1)
-    lifted shouldBe v2
-    downgraded shouldBe v1
+    val lifted = testApiAdapterService.adaptUp(v1, 1)
+    lifted shouldBe Right(v2)
   }
 
   it should "adapt up from V2 to V3" in {
     val adapted = testApiAdapterService.adaptUp(v2, 1)
-    adapted shouldBe v3
+    adapted shouldBe Right(v3)
   }
 
   it should "adapt up from V3 to V4" in {
     val adapted = testApiAdapterService.adaptUp(v3, 1)
-    adapted shouldBe v4
+    adapted shouldBe Right(v4)
   }
 
   it should "adapt up from V1 to V3" in {
     val adapted = testApiAdapterService.adaptUp(v1, 2)
-    adapted shouldBe v3
+    adapted shouldBe Right(v3)
   }
 
   it should "adapt up from V1 to V4" in {
     val adapted = testApiAdapterService.adaptUp(v1, 3)
-    adapted shouldBe v4
+    adapted shouldBe Right(v4)
   }
 
   it should "adapt up from V2 to V4" in {
     val adapted = testApiAdapterService.adaptUp(v2, 2)
-    adapted shouldBe v4
+    adapted shouldBe Right(v4)
   }
 
   it should "adapt down from V2 to V1" in {
     val downgraded = testApiAdapterService.adaptDown(v2, 1)
-    downgraded shouldBe v1
+    downgraded shouldBe Right(v1)
   }
 
   it should "adapt down from V3 to V2" in {
     val downgraded = testApiAdapterService.adaptDown(v3, 1)
-    downgraded shouldBe v2
+    downgraded shouldBe Right(v2)
   }
 
   it should "adapt down from V4 to V3" in {
     val downgraded = testApiAdapterService.adaptDown(v4, 1)
-    downgraded shouldBe v3.copy(foo = None)
+    downgraded shouldBe Right(v3.copy(foo = None))
   }
 
   it should "adapt down from V3 to V1" in {
     val downgraded = testApiAdapterService.adaptDown(v3, 2)
-    downgraded shouldBe v1
+    downgraded shouldBe Right(v1)
   }
 
   it should "adapt down from V4 to V1" in {
     val downgraded = testApiAdapterService.adaptDown(v4, 3)
-    downgraded shouldBe v1.copy(foo = "<<null>>")
+    downgraded shouldBe Right(v1.copy(foo = "<<null>>"))
   }
 
   it should "adapt down from V4 to V2" in {
     val downgraded = testApiAdapterService.adaptDown(v4, 2)
-    downgraded shouldBe v2.copy(foo = "<<null>>")
+    downgraded shouldBe Right(v2.copy(foo = "<<null>>"))
+  }
+
+  it should "fail with Left when tried adapt too high" in {
+    val adapted = testApiAdapterService.adaptUp(v2, 3)
+    adapted shouldBe Left(OutOfRangeAdapterRequestError(currentVersion = 4, noOfVersionsLeftToApply = 1))
+  }
+
+  it should "fail with Left when tried adapt too low" in {
+    val adapted = testApiAdapterService.adaptDown(v2, 3)
+    adapted shouldBe Left(OutOfRangeAdapterRequestError(currentVersion = 1, noOfVersionsLeftToApply = -2))
   }
 
 }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
@@ -17,20 +17,14 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2
-}
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
-import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos.NuVersionDto
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrateScenarioRequestV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
@@ -77,12 +71,18 @@ trait RemoteEnvironment {
 
 }
 
-final case class NuVersionDeserializationError(nuVersionRaw: String)
-    extends FatalError({
-      val message = s"Cannot migrate, problem occurred while interpreting $nuVersionRaw as Nu version."
-
-      message
-    })
+final case class MigrationApiAdapterError(apiAdapterError: ApiAdapterServiceError)
+    extends FatalError(
+      apiAdapterError match {
+        case OutOfRangeAdapterRequestError(currentVersion, noOfVersions) =>
+          noOfVersions match {
+            case n if n >= 0 =>
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $noOfVersions up"
+            case _ =>
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-noOfVersions} down"
+          }
+      }
+    )
 
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String)
     extends FatalError(message)
@@ -164,8 +164,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
 
-  private val migrationApiAdapterService: MigrationApiAdapterService   = new MigrationApiAdapterService()
-  private val migrationApiAdapterServiceV2: MigrationApiAdapterService = new MigrationApiAdapterService()
+  private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
 
   def environmentId: String
 
@@ -216,7 +215,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     val f: EitherT[Future, NuDesignerError, Unit] = for {
       remoteApiVersion <- EitherT(fetchRemoteNuVersion.map[Either[NuDesignerError, Int]](Right(_)))
 
-      localApiVersion = migrationApiAdapterServiceV2.getCurrentApiVersion
+      localApiVersion = migrationApiAdapterService.getCurrentApiVersion
 
       migrateScenarioRequest: MigrateScenarioRequest =
         MigrateScenarioRequestV2(
@@ -232,22 +231,33 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
       versionsDifference = localApiVersion - remoteApiVersion
 
-      transformedMigrateScenarioRequest =
-        if (versionsDifference > 0) migrationApiAdapterServiceV2.adaptDown(migrateScenarioRequest, versionsDifference)
+      transformedMigrateScenarioRequestE =
+        if (versionsDifference > 0)
+          migrationApiAdapterService.adaptDown(migrateScenarioRequest, versionsDifference)
         else
-          migrateScenarioRequest
+          Right(migrateScenarioRequest)
 
-      dto = MigrateScenarioRequest.fromDomain(transformedMigrateScenarioRequest)
-
-      _ <- EitherT(
-        invokeForSuccess(
-          HttpMethods.POST,
-          List("migrate"),
-          Query.Empty,
-          HttpEntity(dto.asJson.noSpaces),
-          List()
-        )
-      )
+      _ <- transformedMigrateScenarioRequestE match {
+        case Left(apiAdapterServiceError) =>
+          EitherT(
+            Future[Either[NuDesignerError, Unit]](
+              Left(
+                MigrationApiAdapterError(apiAdapterServiceError)
+              )
+            )
+          )
+        case Right(transformedMigrateScenarioRequest) =>
+          val dto = MigrateScenarioRequest.fromDomain(transformedMigrateScenarioRequest)
+          EitherT(
+            invokeForSuccess(
+              HttpMethods.POST,
+              List("migrate"),
+              Query.Empty,
+              HttpEntity(dto.asJson.noSpaces),
+              List()
+            )
+          )
+      }
     } yield ()
 
     f.value

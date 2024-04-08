@@ -15,8 +15,13 @@ import pl.touk.nussknacker.ui.migrations.{
   MigrationApiAdapterService,
   MigrationService
 }
-import pl.touk.nussknacker.ui.process.migrate.{MissingScenarioGraphError, RemoteEnvironmentCommunicationError}
+import pl.touk.nussknacker.ui.process.migrate.{
+  MigrationApiAdapterError,
+  MissingScenarioGraphError,
+  RemoteEnvironmentCommunicationError
+}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.util.ApiAdapterServiceError
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,25 +46,38 @@ class MigrationApiHttpService(
           val remoteApiVersion   = migrateScenarioRequest.currentVersion()
           val versionsDifference = localApiVersion - remoteApiVersion
 
-          val liftedMigrateScenarioRequest: MigrateScenarioRequest = if (versionsDifference > 0) {
-            migrationApiAdapterService.adaptUp(migrateScenarioRequest, versionsDifference)
-          } else migrateScenarioRequest
+          val liftedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioRequest] =
+            if (versionsDifference > 0) {
+              migrationApiAdapterService.adaptUp(migrateScenarioRequest, versionsDifference)
+            } else Right(migrateScenarioRequest)
 
-          liftedMigrateScenarioRequest match {
-            case v2: CurrentMigrateScenarioRequest =>
-              EitherT(migrationService.migrate(v2))
-            case _ =>
+          liftedMigrateScenarioRequestE match {
+            case Left(apiAdapterServiceError) =>
               EitherT(
                 Future[Either[NuDesignerError, Unit]](
                   Left(
-                    RemoteEnvironmentCommunicationError(
-                      StatusCode.int2StatusCode(500),
-                      "Migration API adapter service lifted up remote migration request not to its newest local version"
-                    )
+                    MigrationApiAdapterError(apiAdapterServiceError)
                   )
                 )
               )
+            case Right(liftedMigrateScenarioRequest) =>
+              liftedMigrateScenarioRequest match {
+                case v2: CurrentMigrateScenarioRequest =>
+                  EitherT(migrationService.migrate(v2))
+                case _ =>
+                  EitherT(
+                    Future[Either[NuDesignerError, Unit]](
+                      Left(
+                        RemoteEnvironmentCommunicationError(
+                          StatusCode.int2StatusCode(500),
+                          "Migration API adapter service lifted up remote migration request not to its newest local version"
+                        )
+                      )
+                    )
+                  )
+              }
           }
+
         }
       }
   }
