@@ -1,9 +1,9 @@
+import { createSelector } from "reselect";
 import { defaultToolbarsConfig } from "../../components/toolbarSettings/defaultToolbarsConfig";
 import { RootState } from "../index";
 import { ToolbarsSide, ToolbarsState, ToolbarsStates } from "../toolbars";
-import { createSelector } from "reselect";
-import { getSettings } from "./settings";
 import { isArchived, isFragment } from "./graph";
+import { getSettings } from "./settings";
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {};
 export const getToolbarsConfig = createSelector(
@@ -18,7 +18,7 @@ export const getToolbarsInitData = createSelector(getToolbars, (t) => t.initData
 export const getPositions = createSelector(getToolbars, (t) => t.positions || {});
 
 export const getComponentGroupsToolbox = createSelector(getToolbars, (t) => t.componentGroupToolbox);
-export const getOpenedComponentGroups = createSelector(getComponentGroupsToolbox, (t) => t?.opened || {});
+export const getClosedComponentGroups = createSelector(getComponentGroupsToolbox, (t) => t?.closed || {});
 
 const getCollapsed = createSelector(getToolbars, (t) => t.collapsed);
 
