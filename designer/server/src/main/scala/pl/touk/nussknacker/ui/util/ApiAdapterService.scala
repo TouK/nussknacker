@@ -41,20 +41,4 @@ trait ApiAdapterService[D <: VersionedData] {
     }
   }
 
-  @tailrec
-  private def adaptNUnsafe(data: D, noOfVersions: Int): D = {
-    val currentVersion = data.currentVersion()
-    val adapters       = getAdapters
-
-    noOfVersions match {
-      case 0 => data
-      case n if n > 0 =>
-        val adapter = adapters(currentVersion)
-        adaptNUnsafe(adapter.liftVersion(data), noOfVersions - 1)
-      case n if n < 0 =>
-        val adapter = adapters(currentVersion - 1)
-        adaptNUnsafe(adapter.downgradeVersion(data), noOfVersions + 1)
-    }
-  }
-
 }
