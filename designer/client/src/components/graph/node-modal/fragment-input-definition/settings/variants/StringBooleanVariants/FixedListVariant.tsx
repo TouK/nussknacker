@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
+import { FixedListParameterVariant, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
