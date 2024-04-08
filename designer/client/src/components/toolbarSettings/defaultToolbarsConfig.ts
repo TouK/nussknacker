@@ -5,7 +5,6 @@ import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { BuiltinButtonTypes } from "./buttons";
 import { DEV_TOOLBARS } from "./DEV_TOOLBARS";
 import { ToolbarsConfig } from "./types";
-import { WIP_TOOLBARS } from "./WIP_TOOLBARS";
 
 //It's only to local development
 export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
@@ -22,7 +21,7 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
         id: "a7334f9b-87aa-43d4-82ce-a9ac9dd3e5dc",
         [ToolbarsSide.TopRight]: [
             {
-                id: "process-info-panel"
+                id: "process-info-panel",
             },
             {
                 id: "process-actions-panel",
@@ -73,7 +72,7 @@ export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean):
             },
         ],
         [ToolbarsSide.TopLeft]: [
-            ...WIP_TOOLBARS,
+            { id: "survey-panel" },
             { id: "tips-panel" },
             { id: "creator-panel" },
             { id: "versions-panel" },
