@@ -2170,7 +2170,12 @@ components:
     DateTimeParameterEditor:
       type: object
     DeploymentRequest:
+      required:
+      - sourcesEventsFilteringRules
       type: object
+      properties:
+        sourcesEventsFilteringRules:
+          $ref: '#/components/schemas/Map_NodeId_SourceEventsFilteringRules'
     Dict:
       required:
       - id
@@ -2526,6 +2531,10 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
+    Map_NodeId_SourceEventsFilteringRules:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_String'
     Map_String:
       type: object
       additionalProperties:

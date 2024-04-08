@@ -75,15 +75,25 @@ class DeploymentApiHttpServiceBusinessSpec
 
   private val scenarioName = "batch-test"
 
+  private val sourceNodeId = "fooSourceNodeId"
+
   private val scenario = ScenarioBuilder
     .streaming(scenarioName)
-    .source("source", "table", "Table" -> Expression.spel("'transactions'"))
+    .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
     .emptySink(
       "sink",
       "table",
       "Table" -> Expression.spel("'transactions_summary'"),
       "Value" -> Expression.spel("#input")
     )
+
+  private val correctDeploymentRequest = s"""{
+                                            |  "sourcesEventsFilteringRules": {
+                                            |    "$sourceNodeId": {
+                                            |      "date": "2024-01-01"
+                                            |    }
+                                            |  }
+                                            |}""".stripMargin
 
   override protected def afterAll(): Unit = {
     FileUtils.deleteQuietly(outputDirectory.toFile) // it might not work because docker user can has other uid
@@ -100,7 +110,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .basicAuthAdmin()
-          .jsonBody("{}")
+          .jsonBody(correctDeploymentRequest)
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId")
           .Then()
           // TODO (next PRs): we should return 201 and we should check status of deployment before we verify output
@@ -118,7 +128,7 @@ class DeploymentApiHttpServiceBusinessSpec
             createSavedScenario(scenario)
           }
           .when()
-          .jsonBody("{}")
+          .jsonBody(correctDeploymentRequest)
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
           .Then()
           .statusCode(401)
@@ -133,7 +143,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .basicAuthUnknownUser()
-          .jsonBody("{}")
+          .jsonBody(correctDeploymentRequest)
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
           .Then()
           .statusCode(401)
@@ -148,7 +158,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .basicAuthNoPermUser()
-          .jsonBody("{}")
+          .jsonBody(correctDeploymentRequest)
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
           .Then()
           .statusCode(403)
@@ -163,7 +173,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .basicAuthWriter()
-          .jsonBody("{}")
+          .jsonBody(correctDeploymentRequest)
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
           .Then()
           .statusCode(403)

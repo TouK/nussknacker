@@ -14,6 +14,7 @@ import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{
   DeploymentRequest,
   RequestedDeploymentId
 }
+import pl.touk.nussknacker.ui.process.deployment.SourcesEventsFilteringRules
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.Example
@@ -56,10 +57,11 @@ object DeploymentApiEndpoints {
   object Dtos {
 
     // TODO:
-    //  - parameters passed to scenario
-    //  - scenario graph version
+    //  - scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
-    final case class DeploymentRequest()
+    final case class DeploymentRequest(
+        sourcesEventsFilteringRules: SourcesEventsFilteringRules
+    )
 
     sealed trait DeploymentError
 
