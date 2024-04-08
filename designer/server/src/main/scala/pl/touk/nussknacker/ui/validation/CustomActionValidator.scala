@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
-import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 class CustomActionValidator(allowedAction: CustomActionDefinition) {
 
