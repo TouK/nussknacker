@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
-import pl.touk.nussknacker.engine.api.component.{ProcessingMode, _}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, ProcessingType}
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName._

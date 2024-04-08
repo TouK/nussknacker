@@ -75,8 +75,8 @@ package object component {
       }
   }
 
-  implicit val nonEmptySetOfProcessingModesSchema: Schema[NonEmptySet[ProcessingMode]] = Schema(
-    SchemaType.SArray(Schema.schemaForString)(_.toSortedSet.toList.map(_.toJsonString))
+  implicit val allowedProcessingModesSchema: Schema[AllowedProcessingModes] = Schema(
+    SchemaType.SArray(Schema.schemaForString)(_.toProcessingModes.map(_.toJsonString))
   )
 
   @JsonCodec

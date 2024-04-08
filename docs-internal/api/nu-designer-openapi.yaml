@@ -1482,12 +1482,6 @@ components:
     AdditionalInfo:
       oneOf:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
-    All:
-      type: object
-    AllowedProcessingModes:
-      oneOf:
-      - $ref: '#/components/schemas/All'
-      - $ref: '#/components/schemas/SetOf'
     Attachment:
       required:
       - id
@@ -1667,7 +1661,9 @@ components:
           type: integer
           format: int64
         allowedProcessingModes:
-          $ref: '#/components/schemas/AllowedProcessingModes'
+          type: array
+          items:
+            type: string
     ComponentType:
       type: string
       enum:
@@ -2629,15 +2625,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Parameter'
-    SetOf:
-      required:
-      - allowedProcessingModes
-      type: object
-      properties:
-        allowedProcessingModes:
-          type: array
-          items:
-            type: string
     SimpleParameterEditor:
       oneOf:
       - $ref: '#/components/schemas/BoolParameterEditor'
