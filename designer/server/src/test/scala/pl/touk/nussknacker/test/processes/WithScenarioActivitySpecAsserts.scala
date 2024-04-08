@@ -15,18 +15,16 @@ trait WithScenarioActivitySpecAsserts
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers {
 
-  implicit class VerifyCommentExists[T <: ValidatableResponse](validatableResponse: T) {
-
-    def verifyCommentExists(scenarioName: String, commentContent: String, commentUser: String): ValidatableResponse = {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-        .Then()
-        .statusCode(200)
-        .body(
-          matchJsonWithRegexValues(
-            s"""
+  def verifyCommentExists(scenarioName: String, commentContent: String, commentUser: String): Unit = {
+    given()
+      .when()
+      .basicAuthAllPermUser()
+      .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
+      .Then()
+      .statusCode(200)
+      .body(
+        matchJsonWithRegexValues(
+          s"""
                |{
                |  "comments": [
                |    {
@@ -40,43 +38,35 @@ trait WithScenarioActivitySpecAsserts
                |  "attachments": []
                |}
                |""".stripMargin
-          )
         )
-    }
-
+      )
   }
 
-  implicit class VerifyEmptyCommentsAndAttachments[T <: ValidatableResponse](validatableResponse: T) {
-
-    def verifyEmptyCommentsAndAttachments(scenarioName: String): ValidatableResponse = {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-        .Then()
-        .equalsJsonBody(
-          s"""
+  def verifyEmptyCommentsAndAttachments(scenarioName: String): Unit = {
+    given()
+      .when()
+      .basicAuthAllPermUser()
+      .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
+      .Then()
+      .equalsJsonBody(
+        s"""
              |{
              |  "comments": [],
              |  "attachments": []
              |}
              |""".stripMargin
-        )
-    }
-
+      )
   }
 
-  implicit class VerifyAttachmentsExists[T <: ValidatableResponse](validatableResponse: T) {
-
-    def verifyAttachmentsExists(scenarioName: String): ValidatableResponse = {
-      given()
-        .when()
-        .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-        .Then()
-        .body(
-          matchJsonWithRegexValues(
-            s"""
+  def verifyAttachmentsExists(scenarioName: String): Unit = {
+    given()
+      .when()
+      .basicAuthAllPermUser()
+      .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
+      .Then()
+      .body(
+        matchJsonWithRegexValues(
+          s"""
                |{
                |  "comments": [],
                |  "attachments": [
@@ -90,10 +80,8 @@ trait WithScenarioActivitySpecAsserts
                |  ]
                |}
                |""".stripMargin
-          )
         )
-    }
-
+      )
   }
 
 }

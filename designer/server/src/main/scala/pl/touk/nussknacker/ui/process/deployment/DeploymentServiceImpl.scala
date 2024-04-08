@@ -504,7 +504,7 @@ class DeploymentServiceImpl(
     }
   }
 
-  private def existsOrFail[T](checkThisOpt: Option[T], failWith: Exception): DB[T] = {
+  private def existsOrFail[T](checkThisOpt: Option[T], failWith: => Exception): DB[T] = {
     checkThisOpt match {
       case Some(checked) => DBIOAction.successful(checked)
       case None          => DBIOAction.failed(failWith)

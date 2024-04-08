@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
@@ -76,7 +77,7 @@ class DictsFlowTest
         "serviceWithDictParameterEditor",
         "RGBDict"     -> Expression.dictKeyWithLabel("H000000", Some("Black")),
         "BooleanDict" -> Expression.dictKeyWithLabel("true", Some("OLD LABEL")),
-        "LongDict"    -> Expression.dictKeyWithLabel("-1500100900", Some("large (negative) number")),
+        "LongDict"    -> Expression(Language.DictKeyWithLabel, ""), // optional parameter left empty
         "RGBDictRAW"  -> Expression.spel("'someOtherColour'"),
       )
       .emptySink(EndNodeId, "dead-end-lite")
@@ -85,7 +86,7 @@ class DictsFlowTest
       process,
       expressionUsingDictWithLabel = None,
       expectedResult = """RGBDict value to lowercase: h000000
-         |LongDict value + 1: Some(-1500100899)
+         |LongDict value + 1: None
          |BooleanDict value negation: Some(false)
          |RGBDictRAW value to lowercase: Some(someothercolour)""".stripMargin,
       variableToCheck = "data"

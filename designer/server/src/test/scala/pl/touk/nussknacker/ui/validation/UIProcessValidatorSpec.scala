@@ -532,7 +532,10 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   hintText = None,
                   valueEditor = Some(
                     ValueInputWithFixedValuesProvided(
-                      fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue")),
+                      fixedValuesList = List(
+                        FixedExpressionValue("'someValue'", "someValue"),
+                        FixedExpressionValue("", ""),
+                      ),
                       allowOtherValue = false
                     )
                   ),
@@ -629,6 +632,19 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   FragmentClazzRef[java.lang.String],
                   initialValue =
                     Some(FixedExpressionValue("""{"key":"some string key","label":"some label"}""", "some label")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam5_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = Some(FixedExpressionValue("", "")),
                   hintText = None,
                   valueEditor = Some(
                     ValueInputWithDictEditor(

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
@@ -19,7 +20,7 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
+class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
