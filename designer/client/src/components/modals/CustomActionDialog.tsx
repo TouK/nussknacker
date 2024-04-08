@@ -43,24 +43,23 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
     const [errors, setErrors] = useState<NodeValidationError[]>([]);
 
     const processName = useSelector(getProcessName);
-    const validationRequest: CustomActionValidationRequest = {
-        actionName: action.name,
-        params: state,
-    };
-    const debouncedValidateCustomAction = debounce(async () => {
-        const data = await HttpService.validateCustomAction(processName, validationRequest);
-        setErrors(data.validationErrors);
-    }, 300);
-
-    useEffect(() => {
-        debouncedValidateCustomAction();
-    }, [processName, validationRequest]);
-
-    useEffect(() => {
-        return () => {
-            debouncedValidateCustomAction.cancel();
+    const validationRequest: CustomActionValidationRequest = useMemo(() => {
+        return {
+            actionName: action.name,
+            params: state,
         };
-    }, []);
+    }, [action, state]);
+
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            const data = await HttpService.validateCustomAction(processName, validationRequest);
+            setErrors(data.validationErrors);
+        }, 400);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [processName, validationRequest]);
 
     return (
         <NodeTable>
