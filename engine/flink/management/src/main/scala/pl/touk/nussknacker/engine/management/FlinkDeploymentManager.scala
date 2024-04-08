@@ -84,12 +84,12 @@ abstract class FlinkDeploymentManager(
     val finishedDeploymentActionsIds = deploymentActionStatuses.collect { case (id, SimpleStateStatus.Finished) =>
       id
     }
-    Future.sequence(finishedDeploymentActionsIds.map(deploymentService.markActionExecutionFinished)).flatMap {
+    Future.sequence(finishedDeploymentActionsIds.map(actionService.markActionExecutionFinished)).flatMap {
       markingResult =>
         Option(markingResult)
           .filter(_.contains(true))
           .map { _ =>
-            deploymentService.getLastStateAction(idWithName.id)
+            actionService.getLastStateAction(idWithName.id)
           }
           .getOrElse(Future.successful(None))
     }

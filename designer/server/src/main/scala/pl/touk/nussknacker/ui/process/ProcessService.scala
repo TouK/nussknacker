@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -21,7 +21,6 @@ import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.ProcessService._
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
@@ -152,7 +151,7 @@ trait ProcessService {
  * Each action includes verification based on actual process state and checking process is fragment / archived.
  */
 class DBProcessService(
-    deploymentService: DeploymentService,
+    processStateProvider: ProcessStateProvider,
     newProcessPreparers: ProcessingTypeDataProvider[NewProcessPreparer, _],
     scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
     processResolverByProcessingType: ProcessingTypeDataProvider[UIProcessResolver, _],
@@ -248,7 +247,7 @@ class DBProcessService(
           .map(_.map(validateAndReverseResolve(_, validate)))
     }).flatMap { details =>
       if (options.fetchState)
-        deploymentService.enrichDetailsWithProcessState(details)
+        processStateProvider.enrichDetailsWithProcessState(details)
       else
         Future.successful(details)
     }
@@ -450,7 +449,7 @@ class DBProcessService(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    deploymentService
+    processStateProvider
       .getProcessState(process.toEntity)
       .flatMap(state => {
         if (state.allowedActions.contains(actionToCheck)) {

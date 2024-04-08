@@ -787,7 +787,7 @@ class DefaultComponentServiceSpec
       scenarioParametersServiceProvider: ProcessingTypeDataProvider[_, ScenarioParametersService],
   ): DBProcessService =
     new DBProcessService(
-      deploymentService = TestFactory.deploymentService(),
+      processStateProvider = TestFactory.processStateProvider(),
       newProcessPreparers = TestFactory.newProcessPreparerByProcessingType,
       scenarioParametersServiceProvider = scenarioParametersServiceProvider,
       processResolverByProcessingType = TestFactory.processResolverByProcessingType,

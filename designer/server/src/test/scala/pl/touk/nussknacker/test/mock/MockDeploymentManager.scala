@@ -39,14 +39,17 @@ object MockDeploymentManager {
 
 class MockDeploymentManager(
     defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
-    deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(Nil)
+    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
+      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+    actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestFactory.modelDependencies
       ),
       DeploymentManagerDependencies(
-        deploymentService,
+        deployedScenariosProvider,
+        actionService,
         ExecutionContext.global,
         ActorSystem("MockDeploymentManager"),
         SttpBackendStub.asynchronousFuture
