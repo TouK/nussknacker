@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.restmodel.component
 
-import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
