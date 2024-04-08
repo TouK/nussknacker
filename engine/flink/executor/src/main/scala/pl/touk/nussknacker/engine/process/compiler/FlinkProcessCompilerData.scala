@@ -39,7 +39,7 @@ class FlinkProcessCompilerData(
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase))
     }
   }
 
@@ -70,7 +70,9 @@ class FlinkProcessCompilerData(
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
-    exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+    exceptionHandler.open(
+      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase)
+    )
     exceptionHandler
   }
 

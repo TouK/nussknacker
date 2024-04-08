@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -84,7 +83,14 @@ class FlinkProcessRegistrar(
 
       val compilerDataForProcessPart =
         FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
-      register(env, compilerDataForProcessPart, compilerData, process, resultCollector, typeInformationDetection)
+      register(
+        env,
+        compilerDataForProcessPart,
+        compilerData,
+        process,
+        resultCollector,
+        typeInformationDetection
+      )
       streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
   }
@@ -131,12 +137,14 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData = compilerData.jobData
+      val jobData          = compilerData.jobData
+      val componentUseCase = compilerData.componentUseCase
+
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseCase),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
@@ -167,10 +175,10 @@ class FlinkProcessRegistrar(
       val source = part.obj.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
-
-      val start = source
-        .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id), contextTypeInformation)
+      val start: SingleOutputStreamOperator[Context] =
+        source
+          .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+          .process(new SourceMetricsFunction(part.id, compilerData.componentUseCase), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 
@@ -365,7 +373,12 @@ class FlinkProcessRegistrar(
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
         stream.flatMap(
-          new SyncInterpretationFunction(compilerDataForProcessPart(Some(part)), node, validationContext, useIOMonad),
+          new SyncInterpretationFunction(
+            compilerDataForProcessPart(Some(part)),
+            node,
+            validationContext,
+            useIOMonad
+          ),
           ti
         )
       }
