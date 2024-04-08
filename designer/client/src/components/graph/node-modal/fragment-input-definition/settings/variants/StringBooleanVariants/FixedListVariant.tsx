@@ -47,7 +47,7 @@ export const FixedListVariant = ({ item, path, onChange, readOnly, variableTypes
                 path={path}
                 item={item}
                 onChange={onChange}
-                options={fixedValuesType === FixedValuesType.ValueInputWithFixedValuesProvided ? fixedValuesList : undefined}
+                options={fixedValuesList}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}

@@ -57,6 +57,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                 item={item}
                 onChange={onChange}
                 readOnly={readOnly}
+                options={fixedValuesList}
                 variableTypes={variableTypes}
                 fieldErrors={getValidationErrorsForField(errors, `$param.${item.name}.$initialValue`)}
             />

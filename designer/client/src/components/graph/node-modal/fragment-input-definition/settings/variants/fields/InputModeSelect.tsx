@@ -43,7 +43,7 @@ export default function InputModeSelect(props: Props) {
                             if (item?.valueEditor?.type === FixedValuesType.ValueInputWithFixedValuesProvided) {
                                 return onChange(
                                     `${path}.initialValue`,
-                                    fixedValuesList.find((fixedValuesList) => fixedValuesList.label === item.initialValue.label)
+                                    fixedValuesList.find((fixedValuesList) => fixedValuesList.label === item?.initialValue?.label)
                                         ? item.initialValue
                                         : null,
                                 );
