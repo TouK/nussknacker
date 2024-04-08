@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.validation.Validations.validateVariableName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{
   DictIdFieldName,
@@ -83,10 +84,13 @@ object FragmentParameterValidator {
         .map { fixedExpressionValue =>
           val expr = fragmentParameter.valueEditor match {
             case Some(ValueInputWithDictEditor(_, _)) =>
-              DictKeyWithLabelExpressionParser
-                .parseDictKeyWithLabelExpression(fixedExpressionValue.expression)
-                .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, fragmentParameter.name)))
-                .andThen(e => valid(Expression.dictKeyWithLabel(e.key, e.label)))
+              if (fixedExpressionValue.expression.isBlank)
+                valid(Expression(Language.DictKeyWithLabel, ""))
+              else
+                DictKeyWithLabelExpressionParser
+                  .parseDictKeyWithLabelExpression(fixedExpressionValue.expression)
+                  .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, fragmentParameter.name)))
+                  .andThen(e => valid(Expression.dictKeyWithLabel(e.key, e.label)))
             case _ => valid(Expression.spel(fixedExpressionValue.expression))
           }
 

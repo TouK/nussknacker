@@ -1,12 +1,12 @@
 import { styled } from "@mui/material";
-import { variables } from "../../../stylesheets/variables";
+import { PANEL_BUTTON_SIZE } from "../../../stylesheets/variables";
 
 export const Icon = styled("div")({
     flex: 1,
     lineHeight: 0,
     display: "flex",
     flexDirection: "column",
-    width: parseFloat(variables.buttonSize) / 2,
+    width: PANEL_BUTTON_SIZE / 2,
 });
 
 export const ToolbarButtonWrapper = styled("div")(() => ({

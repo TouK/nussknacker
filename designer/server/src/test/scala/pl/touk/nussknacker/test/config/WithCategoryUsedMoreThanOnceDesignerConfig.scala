@@ -2,14 +2,17 @@ package pl.touk.nussknacker.test.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import enumeratum.{Enum, EnumEntry}
-import org.scalatest.Suite
+import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.DesignerTestConfigValidator
 
-trait WithCategoryUsedMoreThanOnceDesignerConfig extends WithDesignerConfig { this: Suite =>
+trait WithCategoryUsedMoreThanOnceDesignerConfig extends WithDesignerConfig with BeforeAndAfterAll { this: Suite =>
 
-  validateConsistency()
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    validateConsistency()
+  }
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
     ConfigFactory.parseResources("config/business-cases/category-used-more-than-once-designer.conf")

@@ -1,7 +1,7 @@
 import { styled } from "@mui/material";
 import React, { forwardRef, PropsWithChildren } from "react";
+import { PANEL_WIDTH } from "../../stylesheets/variables";
 import { PanelSide } from "./SidePanel";
-import { PANEL_WIDTH } from "./SidePanelStyled";
 
 type CollapsiblePanelProps = PropsWithChildren<{
     isCollapsed?: boolean;

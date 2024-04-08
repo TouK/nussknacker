@@ -1,5 +1,5 @@
-import { tintPrimary } from "./helpers";
 import { createTheme, Theme } from "@mui/material";
+import { tintPrimary } from "./helpers";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -302,7 +302,6 @@ export const nuTheme = createTheme({
             letterSpacing: "inherit",
             lineHeight: "inherit",
             textTransform: "inherit",
-            color: custom.colors.silverChalice,
         },
     },
     components: {

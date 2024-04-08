@@ -4,10 +4,11 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchIcon } from "../../table/SearchFilter";
 import { InputWithIcon } from "../../themed/InputWithIcon";
+import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
 
-export function CreatorPanel(): JSX.Element {
+export function CreatorPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
 
     const styles = css({
@@ -27,7 +28,7 @@ export function CreatorPanel(): JSX.Element {
     const clearFilter = useCallback(() => setFilter(""), []);
 
     return (
-        <ToolbarWrapper id="creator-panel" title={t("panels.creator.title", "Creator panel")}>
+        <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
             <InputWithIcon
                 className={styles}
                 onChange={setFilter}
