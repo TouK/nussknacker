@@ -1,13 +1,14 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ProcessComments from "./ProcessComments";
-import { useTranslation } from "react-i18next";
 
-export function CommentsPanel() {
+export function CommentsPanel(props: ToolbarPanelProps) {
     const { t } = useTranslation();
 
     return (
-        <ToolbarWrapper id="comments-panel" title={t("panels.comments.title", "Comments")}>
+        <ToolbarWrapper {...props} title={t("panels.comments.title", "Comments")}>
             <ProcessComments />
         </ToolbarWrapper>
     );

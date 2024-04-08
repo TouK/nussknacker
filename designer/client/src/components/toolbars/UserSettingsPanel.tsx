@@ -1,12 +1,13 @@
+import { Typography, useTheme } from "@mui/material";
 import { defaultsDeep } from "lodash";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
+import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import { Typography, useTheme } from "@mui/material";
 
-export function UserSettingsPanel(): JSX.Element {
+export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
     const {
         custom: { borderRadius, colors, spacing },
@@ -14,7 +15,7 @@ export function UserSettingsPanel(): JSX.Element {
     const [settings, , reset] = useUserSettings();
     const value = Object.entries(settings).map(([label, value]) => ({ label, value }));
     return (
-        <ToolbarWrapper id="user-settings-panel" title={t("panels.userSettings.title", "🧪 User settings")}>
+        <ToolbarWrapper {...props} title={t("panels.userSettings.title", "🧪 User settings")}>
             <Creatable
                 isMulti
                 value={value}
