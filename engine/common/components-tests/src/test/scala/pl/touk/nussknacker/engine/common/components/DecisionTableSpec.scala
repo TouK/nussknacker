@@ -215,7 +215,7 @@ trait DecisionTableSpec
   }
 
   private val decisionTableParamName    = ParameterName("Decision Table")
-  private val filterExpressionParamName = ParameterName("Filter expression")
+  private val filterExpressionParamName = ParameterName("Filtering expression")
 
   private def decisionTableExampleScenario(
       expression: Expression,

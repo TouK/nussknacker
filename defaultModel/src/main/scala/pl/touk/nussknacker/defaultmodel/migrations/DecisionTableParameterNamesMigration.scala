@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.migration.NodeMigration
 
 object DecisionTableParameterNamesMigration extends NodeMigration {
 
-  override val description: String = "Change Decision Table Component parameter names"
+  override val description: String = "Change Decision Table component parameter names"
 
   override def migrateNode(metaData: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
     case enricher @ Enricher(_, service @ ServiceRef(_, params), _, _) =>
@@ -21,7 +21,7 @@ object DecisionTableParameterNamesMigration extends NodeMigration {
     params.map { param =>
       param.name.value match {
         case "Basic Decision Table" => param.copy(name = ParameterName("Decision Table"))
-        case "Expression"           => param.copy(name = ParameterName("Filter expression"))
+        case "Expression"           => param.copy(name = ParameterName("Filtering expression"))
         case _                      => param
       }
     }

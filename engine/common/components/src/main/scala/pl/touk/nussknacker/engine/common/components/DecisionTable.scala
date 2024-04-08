@@ -36,7 +36,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   }
 
   private object FilterDecisionTableExpressionParameter {
-    val name: ParameterName = ParameterName("Filter expression")
+    val name: ParameterName = ParameterName("Filtering expression")
 
     val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
