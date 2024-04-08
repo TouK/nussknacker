@@ -86,11 +86,12 @@ object GenericSourceWithCustomVariablesSample
   ): Source = {
     val elementsValue = elementsParamDeclaration.extractValueUnsafe(params).asScala.toList
 
-    new CollectionSource[String](elementsValue, None, Typed[String])(TypeInformation.of(classOf[String]))
-      with TestDataGenerator
-      with FlinkSourceTestSupport[String] {
-
-      override val contextInitializer: ContextInitializer[String] = customContextInitializer
+    new CollectionSource(
+      list = elementsValue,
+      timestampAssigner = None,
+      returnType = Typed[String],
+      customContextInitializer = Some(customContextInitializer)
+    )(TypeInformation.of(classOf[String])) with TestDataGenerator with FlinkSourceTestSupport[String] {
 
       override def generateTestData(size: Int): TestData = TestData(
         elementsValue.map(el => TestRecord(Json.fromString(el)))
@@ -100,6 +101,8 @@ object GenericSourceWithCustomVariablesSample
         CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+
+      override def typeInformation: TypeInformation[ProcessingType] = TypeInformation.of(classOf[String])
     }
   }
 

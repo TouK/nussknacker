@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
@@ -41,40 +43,21 @@ private object testComponents {
 
   def testDataSourceComponent[T: ClassTag: TypeInformation](
       data: List[T],
-      timestampAssigner: Option[TimestampWatermarkHandler[T]]
+      timestampAssigner: Option[TimestampWatermarkHandler[T]],
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      flinkExecutionMode: RuntimeExecutionMode = RuntimeExecutionMode.STREAMING
   ): ComponentDefinition = {
     ComponentDefinition(
       TestScenarioRunner.testDataSource,
       SourceFactory.noParamUnboundedStreamFromClassTag[T](
-        new CollectionSource[T](data, timestampAssigner, Typed.apply[T])
-      )
-    )
-  }
-
-  // TODO local question: new method vs add flag to `testDataSourceComponent`?
-  def testBoundedDataSourceComponent[T: ClassTag: TypeInformation](
-      data: List[T]
-  ): ComponentDefinition = {
-    ComponentDefinition(
-      TestScenarioRunner.testDataSource,
-      SourceFactory.noParamBoundedStreamFromClassTag[T](
-        new FlinkSource {
-          override def sourceStream(
-              env: StreamExecutionEnvironment,
-              flinkNodeContext: FlinkCustomNodeContext
-          ): DataStream[Context] = {
-            val stream = env.fromCollection(data.asJava)
-            val contextStream = stream.map(
-              new FlinkContextInitializingFunction(
-                new BasicContextInitializer(Typed[T]),
-                flinkNodeContext.nodeId,
-                flinkNodeContext.convertToEngineRuntimeContext
-              ),
-              flinkNodeContext.contextTypeInfo
-            )
-            contextStream
-          }
-        }
+        new CollectionSource[T](
+          list = data,
+          timestampAssigner = timestampAssigner,
+          returnType = Typed.apply[T],
+          boundedness = boundedness,
+          customContextInitializer = None,
+          flinkRuntimeMode = Some(flinkExecutionMode)
+        )
       )
     )
   }
@@ -109,10 +92,15 @@ class FlinkTestScenarioRunner(
     runWithTestSourceComponent(scenario, testDataSourceComponent(data, None))
   }
 
-  def runWithDataInBoundedMode[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
+  def runWithData[I: ClassTag, R](
+      scenario: CanonicalProcess,
+      data: List[I],
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      flinkExecutionMode: RuntimeExecutionMode = RuntimeExecutionMode.AUTOMATIC
+  ): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    runWithTestSourceComponent(scenario, testBoundedDataSourceComponent(data))
+    runWithTestSourceComponent(scenario, testDataSourceComponent(data, None, boundedness, flinkExecutionMode))
   }
 
   /**

@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import com.typesafe.config.ConfigFactory
+import org.apache.flink.api.common.RuntimeExecutionMode
+import org.apache.flink.api.connector.source.Boundedness
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -37,14 +39,16 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
       )
       .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "{#key, #agg}")
 
-    val result = runner.runWithDataInBoundedMode(
+    val result = runner.runWithData(
       scenario,
       List(
         TestRecord("A", 1),
         TestRecord("B", 2),
         TestRecord("A", 1),
         TestRecord("B", 2),
-      )
+      ),
+      Boundedness.BOUNDED,
+      RuntimeExecutionMode.BATCH
     )
 
     result.validValue.successes.toSet shouldBe Set(
