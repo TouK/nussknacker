@@ -9,8 +9,9 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV1,
   MigrateScenarioRequestDtoV2
 }
+import pl.touk.nussknacker.ui.util.VersionedData
 
-sealed trait MigrateScenarioRequest extends VersionedDto
+sealed trait MigrateScenarioRequest extends VersionedData
 
 object MigrateScenarioRequest {
 
