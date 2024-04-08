@@ -9,14 +9,14 @@ import { getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { useSidePanel } from "../../sidePanels/SidePanel";
 import { SearchIcon } from "../../table/SearchFilter";
 import { Focusable, InputWithIcon } from "../../themed/InputWithIcon";
+import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchResults } from "./SearchResults";
 
-export function SearchPanel(): ReactElement {
+export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const toolbarsConfigId = useSelector(getToolbarsConfigId);
-    const id = "search-panel";
 
     const styles = css({
         borderRadius: 0,
@@ -57,7 +57,7 @@ export function SearchPanel(): ReactElement {
                     if (!sidePanel.isOpened) {
                         sidePanel.onToggle();
                     }
-                    dispatch(toggleToolbar(id, toolbarsConfigId, false));
+                    dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
                     searchRef.current.focus();
                     break;
                 }
@@ -66,7 +66,7 @@ export function SearchPanel(): ReactElement {
     });
 
     return (
-        <ToolbarWrapper id={id} title={t("panels.search.title", "Search")} onExpand={() => searchRef.current?.focus()}>
+        <ToolbarWrapper {...props} title={t("panels.search.title", "Search")} onExpand={() => searchRef.current?.focus()}>
             <InputWithIcon
                 ref={searchRef}
                 className={styles}
