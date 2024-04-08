@@ -4,7 +4,7 @@ import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
@@ -39,7 +39,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
 
   def timestampAssigner: Option[TimestampWatermarkHandler[Raw]]
 
-  val contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
+  val contextInitializer: ContextInitializer[Raw] = FlinkIntermediateRawSourceUtils.defaultContextInitializer
 
   @silent("deprecated")
   def prepareSourceStream(
@@ -47,27 +47,50 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
       flinkNodeContext: FlinkCustomNodeContext,
       sourceFunction: SourceFunction[Raw]
   ): DataStream[Context] = {
+    val source = FlinkIntermediateRawSourceUtils.createSource(env, sourceFunction, typeInformation)
+    FlinkIntermediateRawSourceUtils.prepareSource(source, flinkNodeContext, timestampAssigner, Some(contextInitializer))
+  }
 
-    // 1. add source and 2. set UID
-    val rawSourceWithUid = setUidToNodeIdIfNeed(
+}
+
+object FlinkIntermediateRawSourceUtils extends ExplicitUidInOperatorsSupport {
+
+  def defaultContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
+
+  @silent("deprecated")
+  def createSource[Raw](
+      env: StreamExecutionEnvironment,
+      sourceFunction: SourceFunction[Raw],
+      typeInformation: TypeInformation[Raw]
+  ): DataStreamSource[Raw] = {
+    env.addSource[Raw](sourceFunction, typeInformation)
+  }
+
+  def prepareSource[Raw](
+      source: DataStreamSource[Raw],
+      flinkNodeContext: FlinkCustomNodeContext,
+      timestampAssigner: Option[TimestampWatermarkHandler[Raw]] = None,
+      customContextInitializer: Option[ContextInitializer[Raw]] = None,
+  ): DataStream[Context] = {
+
+    // 1. set UID
+    val rawSourceWithUid = setUidToNodeIdIfNeed[Raw](
       flinkNodeContext,
-      env
-        .addSource[Raw](sourceFunction, typeInformation)
+      source
         .name(flinkNodeContext.nodeId)
     )
 
-    // 3. assign timestamp and watermark policy
+    // 2. assign timestamp and watermark policy
     val rawSourceWithUidAndTimestamp = timestampAssigner
       .map(_.assignTimestampAndWatermarks(rawSourceWithUid))
       .getOrElse(rawSourceWithUid)
 
-    // 4. initialize Context and spool Context to the stream
-    val nodeId = flinkNodeContext.nodeId
+    // 3. initialize Context and spool Context to the stream
     rawSourceWithUidAndTimestamp
       .map(
         new FlinkContextInitializingFunction(
-          contextInitializer,
-          nodeId,
+          customContextInitializer.getOrElse(defaultContextInitializer),
+          flinkNodeContext.nodeId,
           flinkNodeContext.convertToEngineRuntimeContext
         ),
         flinkNodeContext.contextTypeInfo

@@ -102,11 +102,14 @@ class StubbedSourcePreparer(
     val samples: List[Object] = collectSamples(originalSource, nodeId)
     originalSource match {
       case sourceWithContextInitializer: FlinkIntermediateRawSource[Object @unchecked] =>
-        new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
+        new CollectionSource[Object](
+          list = samples,
+          timestampAssigner = originalSource.timestampAssignerForTest,
+          returnType = typingResult,
+          customContextInitializer = Some(sourceWithContextInitializer.contextInitializer)
+        )(
           originalSource.typeInformation
-        ) {
-          override val contextInitializer: ContextInitializer[Object] = sourceWithContextInitializer.contextInitializer
-        }
+        )
       case _ =>
         new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
           originalSource.typeInformation
