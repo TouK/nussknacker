@@ -77,9 +77,9 @@ final case class MigrationApiAdapterError(apiAdapterError: ApiAdapterServiceErro
         case OutOfRangeAdapterRequestError(currentVersion, noOfVersions) =>
           noOfVersions match {
             case n if n >= 0 =>
-              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $noOfVersions up"
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $noOfVersions version(s) up"
             case _ =>
-              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-noOfVersions} down"
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-noOfVersions} version(s) down"
           }
       }
     )
