@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, IncContextIdGenerator}
 import pl.touk.nussknacker.engine.flink.api.FlinkEngineRuntimeContext
-import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.getMetricsProvider
+import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.createMetricsProvider
 import pl.touk.nussknacker.engine.util.metrics.MetricsProviderForScenario
 
 case class FlinkEngineRuntimeContextImpl(
@@ -27,7 +27,7 @@ object FlinkEngineRuntimeContextImpl {
       runtimeContext: RuntimeContext,
       componentUseCase: ComponentUseCase
   ): FlinkEngineRuntimeContextImpl = {
-    val properMetricsProvider = getMetricsProvider(componentUseCase, runtimeContext)
+    val properMetricsProvider = createMetricsProvider(componentUseCase, runtimeContext)
     new FlinkEngineRuntimeContextImpl(jobData, runtimeContext, properMetricsProvider)
   }
 

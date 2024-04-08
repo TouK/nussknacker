@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.metrics.{MetricsProviderForScenario, NoOp
 
 object MetricsProviderForFlink {
 
-  def getMetricsProvider(
+  def createMetricsProvider(
       componentUseCase: ComponentUseCase,
       runtimeContext: RuntimeContext
   ): MetricsProviderForScenario = {
