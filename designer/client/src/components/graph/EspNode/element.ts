@@ -1,7 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { attributes, dia, shapes } from "jointjs";
 import { cloneDeepWith, get, isEmpty, toString } from "lodash";
-import customAttrs from "../../../assets/json/nodeAttributes.json";
 import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
@@ -12,6 +11,9 @@ import NodeUtils from "../NodeUtils";
 import { EspNodeShape } from "./esp";
 import millify from "millify";
 import { UserSettings } from "../../../reducers/userSettings";
+import { Theme } from "@mui/material";
+import { blend } from "@mui/system";
+import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 
 const maxLineLength = 24;
 const maxLineCount = 2;
@@ -86,7 +88,7 @@ function getTestCounts(hasCounts: boolean, shortCounts: boolean, count: NodeCoun
 }
 
 export const updateNodeCounts =
-    (processCounts: ProcessCounts, userSettings: UserSettings) =>
+    (processCounts: ProcessCounts, userSettings: UserSettings, theme: Theme) =>
     (node: shapes.devs.Model): void => {
         const shortCounts = userSettings["node.shortCounts"];
         const count = processCounts[node.id];
@@ -97,20 +99,22 @@ export const updateNodeCounts =
 
         const testResultsSummary: attributes.SVGTextAttributes = {
             text: testCounts,
-            fill: "#cccccc",
+            fill: theme.palette.text.secondary,
             x: testResultsWidth / 2,
         };
         const testResults: attributes.SVGRectAttributes = {
             display: hasCounts ? "block" : "none",
-            fill: hasErrors ? "#662222" : "#4d4d4d",
-            stroke: hasErrors ? "red" : "#4d4d4d",
-            strokeWidth: hasErrors ? 3 : 0,
+            fill: hasErrors
+                ? blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3)
+                : blendLighten(theme.palette.background.paper, 0.04),
+            stroke: hasErrors ? theme.palette.error.main : getBorderColor(theme),
+            strokeWidth: hasErrors ? 1 : 0.5,
             width: testResultsWidth,
         };
         node.attr({ testResultsSummary, testResults });
     };
 
-export function makeElement(processDefinitionData: ProcessDefinitionData): (node: NodeType) => shapes.devs.Model {
+export function makeElement(processDefinitionData: ProcessDefinitionData, theme: Theme): (node: NodeType) => shapes.devs.Model {
     return (node: NodeType) => {
         const description = get(node.additionalFields, "description", null);
         const { text: bodyContent } = getBodyContent(node.id);
@@ -123,22 +127,30 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             outPorts: NodeUtils.hasOutputs(node, processDefinitionData) ? ["Out"] : [],
             attrs: {
                 background: {
-                    opacity: node.isDisabled ? 0.4 : 1,
+                    fill: blendLighten(theme.palette.background.paper, 0.04),
+                    opacity: node.isDisabled ? 0.5 : 1,
                 },
                 title: {
                     text: description,
                 },
                 iconBackground: {
-                    fill: customAttrs[node.type].styles.fill,
-                    opacity: node.isDisabled ? 0.4 : 1,
+                    fill: theme.palette.custom.nodes[node.type].fill,
+                    opacity: node.isDisabled ? 0.5 : 1,
                 },
                 icon: {
                     xlinkHref: iconHref,
+                    opacity: node.isDisabled ? 0.5 : 1,
                 },
                 content: {
+                    fontSize: theme.typography.caption.fontSize,
                     text: bodyContent,
-                    opacity: node.isDisabled ? 0.65 : 1,
+                    opacity: node.isDisabled ? 0.3 : 1,
                     disabled: node.isDisabled,
+                    fill: theme.palette.text.primary,
+                },
+                border: {
+                    stroke: node.isDisabled ? "none" : getBorderColor(theme),
+                    strokeWidth: 0.5,
                 },
             },
             rankDir: "R",
@@ -152,7 +164,8 @@ export function makeElement(processDefinitionData: ProcessDefinitionData): (node
             },
         };
 
-        const element = new EspNodeShape(attributes);
+        const ThemedEspNodeShape = EspNodeShape(theme, node);
+        const element = new ThemedEspNodeShape(attributes);
 
         element.once(Events.ADD, (e: dia.Element) => {
             // add event listeners after element setup

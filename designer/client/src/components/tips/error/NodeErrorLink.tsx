@@ -12,13 +12,13 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
     const styles = css({
         whiteSpace: "normal",
         fontWeight: 600,
-        color: theme.custom.colors.error,
+        color: theme.palette.error.main,
         "a&": {
             "&:hover": {
-                color: Color(theme.custom.colors.error).lighten(0.25).hex(),
+                color: Color(theme.palette.error.main).lighten(0.25).hex(),
             },
             "&:focus": {
-                color: theme.custom.colors.error,
+                color: theme.palette.error.main,
                 textDecoration: "none",
             },
         },
@@ -31,7 +31,7 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
             className={cx(
                 styles,
                 css({
-                    color: Color(theme.custom.colors.error).desaturate(0.5).lighten(0.1).hex(),
+                    color: Color(theme.palette.error.main).desaturate(0.5).lighten(0.1).hex(),
                 }),
             )}
         >

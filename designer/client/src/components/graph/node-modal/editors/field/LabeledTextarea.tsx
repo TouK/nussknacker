@@ -1,7 +1,7 @@
 import { isEmpty } from "lodash";
 import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { TextAreaWithFocus, TextAreaWithFocusProps } from "../../../../withFocus";
+import { TextArea, TextAreaWithFocusProps } from "../../../../FormElements";
 import { LabeledInputProps } from "./LabeledInput";
 import { FormControl } from "@mui/material";
 
@@ -18,7 +18,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
         <FormControl>
             {children}
             <div className={`node-value${isMarked ? " marked" : ""}`}>
-                <TextAreaWithFocus
+                <TextArea
                     {...passProps}
                     rows={!isEmpty(value) ? value.split(lineEndPattern).length : rows}
                     cols={cols}

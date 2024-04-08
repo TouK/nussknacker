@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { lighten, styled } from "@mui/material";
 import { NkButton } from "../button/NkButton";
 import { StyledCloseIcon } from "../toolbarComponents/toolbarWrapper/ToolbarStyled";
 
@@ -32,12 +32,9 @@ export const AddCommentPanel = styled("div")(
         font-weight: 400;
         border-radius: 3px;
         border: none;
-        background-color: ${theme.custom.colors.secondaryBackground};
+        background-color: ${lighten(theme.palette.background.paper, 0.1)};
         padding: 4px 6px;
         resize: none;
-        &:focus {
-            outline-color: ${theme.custom.colors.secondaryColor};
-        }
     }
 `,
 );
@@ -45,7 +42,7 @@ export const AddCommentPanel = styled("div")(
 export const CommentButton = styled(NkButton)(
     ({ theme }) => `
     font-size: 12px !important;
-    background-color: ${theme.custom.colors.secondaryBackground} !important;
+    background-color: ${lighten(theme.palette.background.paper, 0.2)} !important;
     border: none !important;
     width: 20% !important;
     height: 30px !important;
@@ -55,23 +52,13 @@ export const CommentButton = styled(NkButton)(
     border-radius: 3px !important;
     cursor: pointer;
     &:hover {
-        background-color: #3d3d3d !important;
+        background-color: ${lighten(theme.palette.background.paper, 0.2)} !important;
     }
 `,
 );
 
-export const PanelComment = styled("div")(
-    ({ theme }) => `
-    margin-top: 1px;
-    font-size: 12px;
-    word-break: break-word;
-    a {
-        color: ${theme.custom.colors.pictonBlue} !important;
-    }
-    p {
-        width: 90%;
-        margin-left: 0;
-        margin-right: 0;
-    }
-  `,
-);
+export const PanelComment = styled("div")(() => ({
+    marginTop: "1px",
+    fontSize: "12px",
+    wordBreak: "break-word",
+}));

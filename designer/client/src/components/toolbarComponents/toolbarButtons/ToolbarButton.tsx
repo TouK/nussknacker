@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { NodeInput } from "../../withFocus";
+import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
@@ -14,9 +14,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
     ref,
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
-    const {
-        custom: { colors },
-    } = useTheme();
+    const { palette } = useTheme();
 
     const margin = 2;
     const width = parseFloat(variant === ButtonsVariant.small ? buttonSmallSize : buttonSize) - 2 * margin;
@@ -37,16 +35,13 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         height: width,
         outline: "none",
 
-        borderColor: hasError ? colors.error : "transparent",
-        ":focus": {
-            borderColor: colors.cobalt,
-        },
+        borderColor: hasError ? palette.error.main : "transparent",
 
-        color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
+        color: hasError ? palette.error.main : isActive ? palette.success.main : palette.text.secondary,
 
-        backgroundColor: colors.primaryBackground,
+        backgroundColor: palette.background.paper,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
+            backgroundColor: disabled ? "inherit" : palette.action.hover,
         },
     });
 

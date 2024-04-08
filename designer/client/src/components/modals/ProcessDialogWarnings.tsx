@@ -8,7 +8,7 @@ import { Typography } from "@mui/material";
 function ProcessDialogWarnings(): JSX.Element {
     const processHasWarnings = useSelector(hasWarnings);
     return processHasWarnings ? (
-        <Typography variant={"body2"} sx={(theme) => ({ color: theme.custom.colors.warning, marginTop: "20px", marginBottom: "10px" })}>
+        <Typography variant={"body2"} sx={(theme) => ({ color: theme.palette.warning.main, marginTop: "20px", marginBottom: "10px" })}>
             <IconWithLabel icon={WarningIcon} message={"Warnings found - please look at left panel to see details. Proceed with caution"} />
         </Typography>
     ) : null;

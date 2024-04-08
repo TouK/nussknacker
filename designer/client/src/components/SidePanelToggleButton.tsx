@@ -29,7 +29,7 @@ const IconWrapper = styled("div")<IconWrapper>(({ isOpened, type, theme }) => ({
     }),
     zIndex: 100,
     cursor: "pointer",
-    color: "black",
+    color: "who",
     [type === PanelSide.Right ? "right" : "left"]: isOpened ? PANEL_WIDTH : 0,
 }));
 

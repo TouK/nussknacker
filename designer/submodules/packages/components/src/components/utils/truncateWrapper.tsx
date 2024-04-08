@@ -1,6 +1,5 @@
 import { Visibility } from "@mui/icons-material";
 import { Box, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
 import React, { PropsWithChildren, useCallback, useRef } from "react";
@@ -30,6 +29,7 @@ const transformOrigin: PopoverOrigin = {
 const TruncateButton = styled("button")(({ theme }) => ({
     background: "none",
     border: "none",
+    outline: "none",
     color: theme.palette.common.white,
     display: "flex",
     alignItems: "center",
@@ -38,11 +38,11 @@ const TruncateButton = styled("button")(({ theme }) => ({
     height: "100%",
     padding: 0,
     ":hover": {
-        backgroundColor: alpha(theme.palette.common.white, 0.08),
+        backgroundColor: theme.palette.action.hover,
     },
     ":focus-visible": {
         outline: "none",
-        backgroundColor: alpha(theme.palette.common.white, 0.08),
+        backgroundColor: theme.palette.action.hover,
     },
 }));
 
@@ -58,7 +58,7 @@ const Truncator = ({
     const { t } = useTranslation();
     return (
         <TruncateButton {...bindTrigger(popupState)} className="truncator">
-            <Visibility sx={{ fontSize: "18px", color: "rgb(224, 224, 224)" }} />
+            <Visibility sx={(theme) => ({ fontSize: "18px", color: theme.palette.common.white })} />
             <Typography sx={{ mx: "4px", fontSize: "13px" }}>
                 {itemsCount === hiddenItemsCount
                     ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })

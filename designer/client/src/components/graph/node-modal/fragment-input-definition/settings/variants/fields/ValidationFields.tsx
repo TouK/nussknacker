@@ -4,7 +4,7 @@ import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../it
 import { fieldLabel } from "./StyledSettingsComponnets";
 import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
-import { NodeInput } from "../../../../../../withFocus";
+import { NodeInput } from "../../../../../../FormElements";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { useSelector } from "react-redux";

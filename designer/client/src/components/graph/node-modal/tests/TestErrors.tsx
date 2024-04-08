@@ -14,7 +14,7 @@ export default function TestErrors(): JSX.Element {
     return (
         <FormControl>
             <FormLabel>
-                <NodeTip title={"Test case error"} icon={<WarningIcon sx={(theme) => ({ color: theme.custom.colors.warning })} />} />
+                <NodeTip title={"Test case error"} icon={<WarningIcon sx={(theme) => ({ color: theme.palette.warning.main })} />} />
             </FormLabel>
             <div className="node-value">
                 <FormHelperText variant={"largeMessage"} error>

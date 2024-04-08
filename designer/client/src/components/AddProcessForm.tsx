@@ -3,7 +3,7 @@ import React, { useCallback } from "react";
 import { ChangeableValue } from "./ChangeableValue";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
-import { NodeInput, SelectNodeWithFocus } from "./withFocus";
+import { NodeInput, SelectNode } from "./FormElements";
 import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
 import { FormControl, FormGroup, FormHelperText, FormLabel, Link, Typography } from "@mui/material";
 import { Trans, useTranslation } from "react-i18next";
@@ -128,6 +128,7 @@ export function AddProcessForm({
                             type="text"
                             id="newProcessName"
                             value={value.processName}
+                            className={"node-input"}
                             onChange={(e) => onFieldChange("processName", e.target.value)}
                             onBlur={() => {
                                 onBlurChange("processName", true);
@@ -142,8 +143,9 @@ export function AddProcessForm({
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
                         <div className="node-value">
-                            <SelectNodeWithFocus
+                            <SelectNode
                                 id="processCategory"
+                                className={"node-input"}
                                 value={value.processCategory}
                                 onChange={(e) => {
                                     onFieldChange("processCategory", e.target.value);
@@ -160,7 +162,7 @@ export function AddProcessForm({
                                         </option>
                                     ))}
                                 </>
-                            </SelectNodeWithFocus>
+                            </SelectNode>
                             <ValidationLabels
                                 fieldErrors={
                                     touched.processCategory ? getValidationErrorsForField(validationErrors, "processCategory") : []
@@ -187,9 +189,10 @@ export function AddProcessForm({
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
                         <div className="node-value">
-                            <SelectNodeWithFocus
+                            <SelectNode
                                 id="processEngine"
                                 value={value.processEngine}
+                                className={"node-input"}
                                 onChange={(e) => {
                                     onFieldChange("processEngine", e.target.value);
                                 }}
@@ -205,7 +208,7 @@ export function AddProcessForm({
                                         </option>
                                     ))}
                                 </>
-                            </SelectNodeWithFocus>
+                            </SelectNode>
                             {touched.processEngine
                                 ? getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
                                       <FormHelperText key={index} error>

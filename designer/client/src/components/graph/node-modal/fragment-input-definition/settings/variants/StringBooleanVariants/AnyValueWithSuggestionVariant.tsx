@@ -1,7 +1,7 @@
 import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
-import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
+import { TextAreaNode } from "../../../../../../FormElements";
 import { AnyValueWithSuggestionsParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 import { useTranslation } from "react-i18next";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
@@ -66,7 +66,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
             />
             <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <TextAreaNodeWithFocus
+                <TextAreaNode
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}

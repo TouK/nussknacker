@@ -1,6 +1,6 @@
 import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { InputWithFocusProps, NodeInput } from "../../../../withFocus";
+import { InputWithFocusProps, NodeInput } from "../../../../FormElements";
 import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";

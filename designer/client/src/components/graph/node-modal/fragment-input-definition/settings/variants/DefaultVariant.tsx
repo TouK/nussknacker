@@ -4,7 +4,7 @@ import { FormControl, FormControlLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { DefaultParameterVariant, onChangeType } from "../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../types";
-import { TextAreaNodeWithFocus } from "../../../../../withFocus";
+import { TextAreaNode } from "../../../../../FormElements";
 import InitialValue from "./fields/InitialValue";
 import { ValidationsFields } from "./fields/validation";
 import { getValidationErrorsForField } from "../../../editors/Validators";
@@ -48,7 +48,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
             />
             <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <TextAreaNodeWithFocus
+                <TextAreaNode
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}

@@ -25,7 +25,7 @@ export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, onExpand, onCollapse, color = theme.custom.colors.primaryBackground } = props;
+    const { title, children, id, onClose, onExpand, onCollapse, color = theme.palette.background.paper } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();
@@ -63,7 +63,12 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
             width={sidebarWidth}
             data-testid={id}
         >
-            <PanelHeader {...handlerProps} onClick={() => toggleCollapsed()} onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}>
+            <PanelHeader
+                {...handlerProps}
+                color={color}
+                onClick={() => toggleCollapsed()}
+                onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}
+            >
                 <Typography textTransform={"uppercase"} variant={"overline"}>
                     {title}
                 </Typography>

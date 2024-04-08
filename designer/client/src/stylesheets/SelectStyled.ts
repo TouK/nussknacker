@@ -1,38 +1,36 @@
-import { css, darken, Theme } from "@mui/material";
+import { alpha, css, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
-import { alpha } from "../containers/theme/helpers";
+import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
         width: 100%;
         padding: 0 ${padding};
         border: none;
-        background-color: ${theme.custom.colors.secondaryBackground};
-        color: ${theme.custom.colors.secondaryColor};
+        background-color: ${theme.palette.background.paper};
+        color: ${theme.palette.text.secondary};
         font-weight: 400;
         font-size: 14px;
-        outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
+        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.05)};
     `;
 
     const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`
         ${base};
-        background-color: ${theme.custom.colors.secondaryBackground};
+        background-color: ${theme.palette.background.paper};
         max-height: 35px;
         min-height: 35px;
-        border: 0;
+        border: none;
         border-radius: 0;
-        color: ${theme.custom.colors.secondaryColor};
         box-shadow: 0;
-
+        outline: 1px solid ${getBorderColor(theme)} !important;
         ${isFocused &&
         css`
-            outline: 2px solid ${theme.custom.colors.cobalt} !important;
-            outline-offset: -1px !important;
+            outline: 1px solid ${theme.palette.primary.main} !important;
         `}
         ${isDisabled &&
         css`
-            background-color: ${theme.custom.colors.charcoal} !important;
+            opacity: 20% !important;
         `}
     `;
 
@@ -46,15 +44,15 @@ export const selectStyled = (theme: Theme) => {
 
         ${isSelected &&
         css`
-            background-color: ${theme.custom.colors.cobalt};
+            background-color: ${blendDarken(theme.palette.primary.main, 0.5)};
         `}
 
         ${isFocused &&
         css`
-            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
+            background-color: ${blendDarken(theme.palette.primary.main, 0.75)};
         `}
     &:hover {
-            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
+            background-color: ${blendDarken(theme.palette.action.hover, 0.15)};
         }
     `;
 
@@ -64,15 +62,11 @@ export const selectStyled = (theme: Theme) => {
         outline: none;
     `;
 
-    const singleValue = (base: CSSObjectWithLabel, isDisabled: boolean) => css`
+    const singleValue = (base: CSSObjectWithLabel) => css`
         ${base};
         ${commonNodeInput("0")}; //TODO input hides partially due to padding...
         position: absolute;
         outline: none;
-        ${isDisabled &&
-        css`
-            background-color: ${theme.custom.colors.charcoal} !important;
-        `}
     `;
 
     const menuList = (base: CSSObjectWithLabel) => css`
@@ -86,15 +80,15 @@ export const selectStyled = (theme: Theme) => {
         }
 
         ::-webkit-scrollbar-track {
-            background: ${theme.custom.colors.doveGray};
+            background: ${blendLighten(theme.palette.background.paper, 0.5)};
         }
 
         ::-webkit-scrollbar-thumb {
-            background: ${theme.custom.colors.gray};
+            background: ${alpha(theme.palette.background.paper, 0.85)};
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: ${theme.custom.colors.emperor};
+            background: ${theme.palette.action.hover};
         }
     `;
 
@@ -113,8 +107,7 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         ${hasValue &&
         css`
-            background-color: ${theme.custom.colors.secondaryBackground}
-            color: ${theme.custom.colors.secondaryColor}
+            background-color: ${theme.palette.background.paper};
         `}
     `;
 

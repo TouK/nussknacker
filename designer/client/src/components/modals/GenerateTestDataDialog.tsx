@@ -15,7 +15,7 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { NodeInput } from "../withFocus";
+import { NodeInput } from "../FormElements";
 import ValidationLabels from "./ValidationLabels";
 import { isEmpty } from "lodash";
 import { Typography } from "@mui/material";

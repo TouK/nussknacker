@@ -1,11 +1,9 @@
-import { css } from "@mui/material";
+import { css, Theme } from "@mui/material";
 
-//TODO: Pass theme here and use colors from MUI theme
-export const exportStyled = css`
+export const exportStyled = (theme: Theme) => css`
     .graph-export {
-        color: white;
+        color: ${theme.palette.common.white};
     }
-
     .graph-export .link-tools {
         display: none;
     }
@@ -17,11 +15,11 @@ export const exportStyled = css`
     }
 
     .graph-export .arrow-marker path {
-        fill: #b3b3b3;
+        fill: ${theme.palette.text.secondary};
     }
 
     .graph-export .joint-theme-default .connection {
-        stroke: #b3b3b3;
+        stroke: ${theme.palette.text.secondary};
         fill: none;
     }
 
@@ -33,6 +31,6 @@ export const exportStyled = css`
 
     .graph-export .joint-theme-default [disabled="true"] {
         opacity: 1;
-        fill: gray;
+        fill: ${theme.palette.text.secondary};
     }
 `;

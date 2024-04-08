@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React, { PropsWithChildren } from "react";
 import { UnknownFunction } from "../../../types/common";
-import { NodeInput } from "../../withFocus";
+import { NodeInput } from "../../FormElements";
 import NodeErrors from "./NodeErrors";
 import { EdgeKind, NodeValidationError } from "../../../types";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";

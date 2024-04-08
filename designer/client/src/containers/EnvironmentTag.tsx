@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 import { getEnvironmentAlert } from "../reducers/selectors/settings";
-import React, { useMemo } from "react";
+import React from "react";
 import { styled, Typography } from "@mui/material";
 
 // TODO: get rid of 'indicator-', maybe rename to "warn", "prod" etc.
@@ -11,38 +11,25 @@ export enum EnvironmentTagColor {
     yellow = "indicator-yellow",
 }
 
-const Tag = styled(Typography)<{ backgroundColor: string }>(({ backgroundColor }) => ({
-    backgroundColor: backgroundColor,
+const Tag = styled(Typography)(({ theme }) => ({
+    backgroundColor: theme.palette.primary.main,
     whiteSpace: "nowrap",
     borderRadius: "3px",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    color: "hsl(0,0%,100%)",
+    color: theme.palette.getContrastText(theme.palette.primary.main),
 }));
 
 export function EnvironmentTag() {
-    const { content, color } = useSelector(getEnvironmentAlert);
-    const background = useMemo(() => {
-        switch (color) {
-            case EnvironmentTagColor.green:
-                return "hsl(120,39%,54%)";
-            case EnvironmentTagColor.blue:
-                return "hsl(194,66%,61%)";
-            case EnvironmentTagColor.red:
-                return "hsl(2,64%,58%)";
-            case EnvironmentTagColor.yellow:
-                return "hsl(35,84%,62%)";
-            default:
-                return color;
-        }
-    }, [color]);
+    //TODO: We don't need a color, since it will be always primary color
+    const { content } = useSelector(getEnvironmentAlert);
 
     if (!content) {
         return null;
     }
 
     return (
-        <Tag variant={"body2"} px={1} py={0.5} backgroundColor={background} title={content}>
+        <Tag variant={"body2"} px={1} py={0.5} title={content}>
             {content}
         </Tag>
     );

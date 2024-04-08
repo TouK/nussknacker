@@ -4,7 +4,7 @@ import { FixedListParameterVariant, FixedValuesType, onChangeType } from "../../
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
-import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
+import { TextAreaNode } from "../../../../../../FormElements";
 import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
@@ -57,7 +57,7 @@ export const FixedListVariant = ({ item, path, onChange, fixedValuesPresets, rea
             />
             <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <TextAreaNodeWithFocus
+                <TextAreaNode
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}

@@ -3,7 +3,7 @@ import React, { CSSProperties, MouseEventHandler, PropsWithChildren, ReactNode, 
 import { createPortal } from "react-dom";
 
 import Select from "react-select";
-import { ButtonProps, ButtonWithFocus } from "../withFocus";
+import { ButtonProps, Button } from "../FormElements";
 import { selectStyled } from "../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 
@@ -47,9 +47,9 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
             onClose={toggleOpen}
             style={wrapperStyle}
             target={
-                <ButtonWithFocus type="button" {...buttonProps} onClick={toggleOpen}>
+                <Button type="button" {...buttonProps} onClick={toggleOpen}>
                     {children}
-                </ButtonWithFocus>
+                </Button>
             }
         >
             <Select
@@ -87,7 +87,7 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                     valueContainer: (base, props) => ({
                         ...valueContainer(base, props.hasValue),
                     }),
-                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                    singleValue: (base) => ({ ...singleValue(base) }),
                     menuList: (base) => ({
                         ...menuList(base),
                     }),

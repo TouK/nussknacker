@@ -2,10 +2,16 @@ import { styled } from "@mui/material";
 import { variables } from "../../../../stylesheets/variables";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 
-export const ComponentIconStyled = styled(ComponentIcon)`
-    width: 18px;
-    height: 24px;
-`;
+export const ComponentIconStyled = styled(ComponentIcon)<{ backgroundColor: string }>(({ backgroundColor, theme }) => ({
+    width: "30px",
+    height: "30px",
+    color: theme.palette.common.white,
+    backgroundColor,
+    "use, path": {
+        transform: "scale(0.8)",
+        transformOrigin: "16px 16px",
+    },
+}));
 
 export const NodeDetailsModalTitle = styled("div")`
     height: ${variables.modalHeaderHeight}px;

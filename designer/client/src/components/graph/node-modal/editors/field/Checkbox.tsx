@@ -1,5 +1,5 @@
 import React from "react";
-import { NodeInput } from "../../../../withFocus";
+import { NodeInput } from "../../../../FormElements";
 import { LabeledInputProps } from "./LabeledInput";
 import { FormControl } from "@mui/material";
 

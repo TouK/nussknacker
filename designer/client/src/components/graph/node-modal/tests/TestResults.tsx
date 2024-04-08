@@ -4,9 +4,10 @@ import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
-import { Box, FormControl, FormLabel } from "@mui/material";
+import { Box, FormControl, FormLabel, Link } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import TestResultsVariables from "./TestResultsVariables";
+import { Download } from "@mui/icons-material";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const { t } = useTranslation();
@@ -17,13 +18,10 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
     }
 
     return (
-        <Box sx={(theme) => ({ border: `1px solid ${theme.custom.colors.ok}`, padding: "5px" })}>
+        <Box sx={(theme) => ({ border: `1px solid ${theme.palette.success.main}`, padding: "5px" })}>
             <FormControl>
                 <FormLabel>
-                    <NodeTip
-                        title={"Variables in test case"}
-                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
-                    />
+                    <NodeTip title={"Variables in test case"} icon={<InfoIcon />} />
                 </FormLabel>
             </FormControl>
             {Object.keys(results.testResultsToShow.context.variables)
@@ -42,15 +40,15 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                   ))
                 : null}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForEveryContext) ? (
-                <span className="testResultDownload">
-                    <a
-                        download={`${nodeId}-all-inputs.log`}
-                        href={downloadableHref(mergedMockedResults(results.testResultsToShow.externalInvocationResultsForEveryContext))}
-                    >
-                        <span className="glyphicon glyphicon-download" />
-                        {t("testResults.resultsForAllInputs", "Results for all inputs")}
-                    </a>
-                </span>
+                <Link
+                    display={"flex"}
+                    alignItems={"center"}
+                    download={`${nodeId}-all-inputs.log`}
+                    href={downloadableHref(mergedMockedResults(results.testResultsToShow.externalInvocationResultsForEveryContext))}
+                >
+                    <Download />
+                    {t("testResults.resultsForAllInputs", "Results for all inputs")}
+                </Link>
             ) : null}
         </Box>
     );

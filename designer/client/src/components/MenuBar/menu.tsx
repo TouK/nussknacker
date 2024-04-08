@@ -11,7 +11,6 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
-import { alpha } from "../../containers/theme/helpers";
 
 const PlainButton = styled("button")({
     background: "unset",
@@ -55,7 +54,7 @@ const Popup = styled(FocusLock)(({ theme }) => ({
     zIndex: 1501,
     position: "absolute",
     inset: "3em 0 auto auto",
-    background: alpha(theme.custom.colors.secondaryBackground, 0.8),
+    background: theme.palette.background.paper,
     backdropFilter: "blur(4px)",
 }));
 
@@ -102,11 +101,11 @@ export function Menu(): JSX.Element {
                 .filter((t) => !!t.title)
                 .map((tab) => (
                     <PlainLink
-                        className={css({
+                        sx={(theme) => ({
                             fontWeight: 400,
                             padding: ".8em 1.2em",
                             "&.active": {
-                                background: "rgba(0, 0, 0, 0.3)",
+                                background: theme.palette.action.active,
                             },
                         })}
                         key={tab.id}
