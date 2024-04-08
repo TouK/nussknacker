@@ -8,18 +8,8 @@ import pl.touk.nussknacker.ui.api.BaseHttpService
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioRequest.CurrentMigrateScenarioRequest
-import pl.touk.nussknacker.ui.migrations.{
-  MigrateScenarioRequest,
-  MigrateScenarioRequestV1,
-  MigrateScenarioRequestV2,
-  MigrationApiAdapterService,
-  MigrationService
-}
-import pl.touk.nussknacker.ui.process.migrate.{
-  MigrationApiAdapterError,
-  MissingScenarioGraphError,
-  RemoteEnvironmentCommunicationError
-}
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrationApiAdapterService, MigrationService}
+import pl.touk.nussknacker.ui.process.migrate.{MigrationApiAdapterError, RemoteEnvironmentCommunicationError}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.util.ApiAdapterServiceError
 
@@ -62,8 +52,8 @@ class MigrationApiHttpService(
               )
             case Right(liftedMigrateScenarioRequest) =>
               liftedMigrateScenarioRequest match {
-                case v2: CurrentMigrateScenarioRequest =>
-                  EitherT(migrationService.migrate(v2))
+                case currentMigrateScenarioRequest: CurrentMigrateScenarioRequest =>
+                  EitherT(migrationService.migrate(currentMigrateScenarioRequest))
                 case _ =>
                   EitherT(
                     Future[Either[NuDesignerError, Unit]](
