@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
 
@@ -74,9 +75,11 @@ class TableAggregationFactory
             List(
               // TODO: this is a different message from other aggregators - choose one and make it consistent for all
               CustomNodeError(
-                s"""Invalid type: "${aggregateByParam.returnType.withoutValue.display}" for selected aggregator.
-                   |"${selectedAggregator.name}" aggregator requires type: "${typeConstraint.display}".
-                   |""".stripMargin,
+                aggregateByTypeMismatchErrorMessage(
+                  aggregateByParam.returnType,
+                  typeConstraint,
+                  selectedAggregator.name
+                ),
                 Some(aggregateByParamName)
               )
             )
@@ -94,6 +97,14 @@ class TableAggregationFactory
         )
       )
   }
+
+  private def aggregateByTypeMismatchErrorMessage(
+      aggregateByType: TypingResult,
+      aggregatorFunctionTypeConstraint: TypingResult,
+      aggregatorName: String,
+  ): String =
+    s"""Invalid type: ${aggregateByType.withoutValue.display}" for selected aggregator.
+      |"$aggregatorName" aggregator requires type: "${aggregatorFunctionTypeConstraint.display}".""".stripMargin
 
   override def implementation(
       params: Params,

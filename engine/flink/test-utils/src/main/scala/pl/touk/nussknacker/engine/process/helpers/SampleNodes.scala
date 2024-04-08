@@ -874,11 +874,12 @@ object SampleNodes {
       import scala.jdk.CollectionConverters._
       val elementsValue = elementsDeclaration.extractValueUnsafe(params).asScala.toList
 
-      new CollectionSource(elementsValue, None, Typed[String])
-        with TestDataGenerator
-        with FlinkSourceTestSupport[String] {
-
-        override val contextInitializer: ContextInitializer[String] = customContextInitializer
+      new CollectionSource(
+        elementsValue,
+        None,
+        Typed[String],
+        customContextInitializer = Some(customContextInitializer)
+      ) with TestDataGenerator with FlinkSourceTestSupport[String] {
 
         override def generateTestData(size: Int): TestData = TestData(
           elementsValue.map(e => TestRecord(Json.fromString(e)))
@@ -888,6 +889,8 @@ object SampleNodes {
           CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
+
+        override def typeInformation: TypeInformation[ProcessingType] = TypeInformation.of(classOf[String])
       }
     }
 
@@ -1033,9 +1036,10 @@ object SampleNodes {
     SourceFactory.noParamUnboundedStreamFactory[SimpleRecord](
       new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord])
         with FlinkSourceTestSupport[SimpleRecord] {
-        override def testRecordParser: TestRecordParser[SimpleRecord] = simpleRecordParser
-
+        override def testRecordParser: TestRecordParser[SimpleRecord]                          = simpleRecordParser
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
+
+        override def typeInformation: TypeInformation[SimpleRecord] = TypeInformation.of(classOf[SimpleRecord])
       }
     )
 
@@ -1048,6 +1052,8 @@ object SampleNodes {
       }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
+
+      override def typeInformation: TypeInformation[SimpleJsonRecord] = TypeInformation.of(classOf[SimpleJsonRecord])
     }
   )
 
@@ -1062,6 +1068,8 @@ object SampleNodes {
       new CollectionSource[TypedMap](List(), None, Typed[TypedMap])
         with FlinkSourceTestSupport[TypedMap]
         with ReturningType {
+
+        override def typeInformation: TypeInformation[TypedMap] = TypeInformation.of(classOf[TypedMap])
 
         override def testRecordParser: TestRecordParser[TypedMap] = (testRecord: TestRecord) => {
           TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
