@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.api
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -19,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
+@silent("deprecated")
 class EvictableStateTest extends AnyFlatSpec with Matchers with BeforeAndAfter with VeryPatientScalaFutures {
 
   var futureResult: Future[_] = _

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerDataFacto
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.process.{ExecutionConfigPreparer, FlinkJobConfig}
 
-object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnvironment] {
+trait BaseFlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnvironment] {
 
   override protected def getExecutionEnvironment: StreamExecutionEnvironment =
     StreamExecutionEnvironment.getExecutionEnvironment
@@ -34,3 +34,5 @@ object FlinkStreamingProcessMain extends FlinkProcessMain[StreamExecutionEnviron
   }
 
 }
+
+object FlinkStreamingProcessMain extends BaseFlinkStreamingProcessMain

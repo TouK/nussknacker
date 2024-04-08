@@ -12,8 +12,14 @@ trait WithBusinessCaseRestAssuredUsersExtensions extends NuRestAssureExtensions 
     def basicAuthAdmin(): RequestSpecification =
       requestSpecification.preemptiveBasicAuth("admin", "admin")
 
+    def basicAuthWriter(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("writer", "writer")
+
     def basicAuthAllPermUser(): RequestSpecification =
       requestSpecification.preemptiveBasicAuth("allpermuser", "allpermuser")
+
+    def basicAuthNoPermUser(): RequestSpecification =
+      requestSpecification.preemptiveBasicAuth("nopermuser", "nopermuser")
 
     def basicAuthUnknownUser(): RequestSpecification =
       requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")

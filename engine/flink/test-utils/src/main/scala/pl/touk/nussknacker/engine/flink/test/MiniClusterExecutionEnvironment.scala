@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
+import org.apache.flink.client.deployment.executors.PipelineExecutorUtils
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
-import org.apache.flink.runtime.jobgraph.JobGraph
+import org.apache.flink.runtime.jobgraph.{JobGraph, SavepointRestoreSettings}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
@@ -16,6 +17,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.enablers.Retrying
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
 
+import java.net.URL
 import scala.jdk.CollectionConverters._
 
 class MiniClusterExecutionEnvironment(
@@ -109,12 +111,16 @@ class MiniClusterExecutionEnvironment(
   }
 
   override def execute(streamGraph: StreamGraph): JobExecutionResult = {
-    val jobGraph: JobGraph = streamGraph.getJobGraph
+    val jobGraph = PipelineExecutorUtils.getJobGraph(streamGraph, userFlinkClusterConfig, getUserClassloader)
+    if (jobGraph.getSavepointRestoreSettings == SavepointRestoreSettings.none) {
+      // similar behaviour to MiniClusterExecutor.execute - PipelineExecutorUtils.getJobGraph overrides a few settings done directly on StreamGraph by settings from configuration
+      jobGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings)
+    }
+
     logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 
     jobGraph.getJobConfiguration.addAll(userFlinkClusterConfig)
 
-    // Is passed classloader is ok?
     val jobId = flinkMiniClusterHolder.submitJob(jobGraph)
 
     new JobExecutionResult(jobId, 0, new java.util.HashMap[String, OptionalFailure[AnyRef]]())

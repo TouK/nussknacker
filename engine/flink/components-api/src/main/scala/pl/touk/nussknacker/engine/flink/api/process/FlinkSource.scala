@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -46,6 +47,7 @@ trait FlinkSourceTestSupport[Raw] extends SourceTestSupport[Raw] { self: Source 
   */
 trait BasicFlinkSource[Raw] extends FlinkSource with FlinkIntermediateRawSource[Raw] {
 
+  @silent("deprecated")
   def flinkSourceFunction: SourceFunction[Raw]
 
   override def sourceStream(

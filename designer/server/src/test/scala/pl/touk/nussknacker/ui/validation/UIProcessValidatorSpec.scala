@@ -16,7 +16,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ParameterValueCompileTimeValidation, ValueInputWithDictEditor, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -42,8 +47,19 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{RenderNotAllowed, SaveAllowed, SaveNotAllowed}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, UIGlobalError, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
+  RenderNotAllowed,
+  SaveAllowed,
+  SaveNotAllowed
+}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  UIGlobalError,
+  ValidationErrors,
+  ValidationResult,
+  ValidationWarnings
+}
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
@@ -508,6 +524,22 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     )
                   ),
                   valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam3_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(
+                        FixedExpressionValue("'someValue'", "someValue"),
+                        FixedExpressionValue("", ""),
+                      ),
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
                 )
               )
             )
@@ -581,6 +613,46 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     )
                   ),
                   valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam3"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam4_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue =
+                    Some(FixedExpressionValue("""{"key":"some string key","label":"some label"}""", "some label")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam5_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = Some(FixedExpressionValue("", "")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
                 )
               )
             )
@@ -615,6 +687,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               "Values in dictionary 'someDictId' are of type 'String @ dictValue:someDictId' and cannot be treated as expected type: 'Boolean'",
               Some("$param.subParam2.$dictId"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            ),
+            NodeValidationError(
+              "EmptyMandatoryField",
+              "This field is mandatory and cannot be empty",
+              _,
+              Some("$param.subParam3.$dictId"),
               NodeValidationErrorType.SaveAllowed,
               None
             )
