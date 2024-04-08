@@ -1,6 +1,6 @@
 import { Expression, ReturnedType } from "../../../../../types";
 
-export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation;
+export type onChangeType = string | number | boolean | FixedValuesOption | FixedValuesOption[] | ValueCompileTimeValidation | ValueEditor;
 
 export interface ValueCompileTimeValidation {
     validationExpression: Expression;
@@ -38,7 +38,7 @@ export interface GenericParameterVariant {
     expression?: Expression;
 }
 
-interface ValueEditor {
+export interface ValueEditor {
     type: FixedValuesType;
     fixedValuesList: FixedValuesOption[] | null;
     allowOtherValue: boolean | null;
