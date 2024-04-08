@@ -38,6 +38,7 @@ describe("Fragment", () => {
         cy.get("[id$='option-1']").click({ force: true });
 
         // Display Add list item errors when blank value
+        cy.get("[data-testid='settings:4']").contains("User defined list").click();
         cy.get("[data-testid='settings:4']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:4']").find("[data-testid='form-helper-text']").should("be.visible");
         cy.get("[data-testid='settings:4']").contains("This field is mandatory and can not be empty");
@@ -78,6 +79,7 @@ describe("Fragment", () => {
         toggleSettings(5);
         cy.get("[data-testid='settings:5']").contains("Any value").click();
         cy.get("[id$='option-0']").click({ force: true });
+        cy.get("[data-testid='settings:5']").contains("User defined list").click();
         cy.get("[data-testid='settings:5']").find("[id='ace-editor']").type("#meta.processName");
         cy.get("[data-testid='settings:5']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:5']").find("[id='ace-editor']").type("{enter}");
@@ -192,26 +194,19 @@ describe("Fragment", () => {
         cy.get('[title="non_boolean_or_string"]').siblings().eq(0).contains("1");
 
         // any value with suggestions preset verification
-        const anyValueWithSuggestionField = cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0);
+        cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).as("anyValueWithSuggestionField");
 
-        anyValueWithSuggestionField.find("input").should("have.value", "Email Marketing 12.2019");
-        cy.get('[title="any_value_with_suggestions_preset"]').siblings().find("input").clear().type("Campaign 2020");
+        cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Email Marketing 12.2019");
+        cy.get("@anyValueWithSuggestionField").clear().type("Campaign 2020");
         cy.get("[id$='option-0']").click({ force: true });
-        cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("input").should("have.value", "Campaign 2020 News");
-        cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find('[title="Switch to expression mode"]').click();
-        cy.get('[title="any_value_with_suggestions_preset"]')
-            .siblings()
-            .eq(0)
-            .contains('{"key":"9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8","label":"Campaign ');
-        cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").type("{selectall}t");
-        cy.get('[title="any_value_with_suggestions_preset"]')
-            .siblings()
-            .eq(0)
+        cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Campaign 2020 News");
+        cy.get("@anyValueWithSuggestionField").find('[title="Switch to expression mode"]').click();
+        cy.get("@anyValueWithSuggestionField").contains('{"key":"9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8","label":"Campaign ');
+        cy.get("@anyValueWithSuggestionField").find("#ace-editor").type("{selectall}t");
+        cy.get("@anyValueWithSuggestionField")
             .find('[title="Expression must be valid JSON to switch to basic mode"]')
             .should("be.disabled");
-        cy.get('[title="any_value_with_suggestions_preset"]')
-            .siblings()
-            .eq(0)
+        cy.get("@anyValueWithSuggestionField")
             .find("#ace-editor")
             .type("{selectall}{backspace}")
             .type('{"key": "9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8", "label": "Campaign 2020 News"}', { parseSpecialCharSequences: false });
