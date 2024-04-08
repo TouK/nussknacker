@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import io.circe.Json
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData

@@ -434,6 +434,70 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/scenarios/{scenarioName}/deployments/{deploymentId}:
+    put:
+      summary: Service allowing to request the deployment of a scenario
+      operationId: putApiScenariosScenarionameDeploymentsDeploymentid
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: deploymentId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - {}
+      - httpAuth: []
   /api/processDefinitionData/{processingType}/dicts/{dictId}/entry:
     get:
       tags:
@@ -1674,6 +1738,8 @@ components:
     DateParameterEditor:
       type: object
     DateTimeParameterEditor:
+      type: object
+    DeploymentRequest:
       type: object
     Dict:
       required:

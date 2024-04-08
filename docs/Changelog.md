@@ -2,11 +2,13 @@
 
 1.15.0 (Not released yet)
 -------------------------
-* [#5760](https://github.com/TouK/nussknacker/pull/5760) Libraries bump:
+* [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) Libraries bump:
+  * Flink: 1.17.2 -> 1.18.1
   * Tapir: 1.7.4 -> 1.9.11
   * openapi-circe-yaml: 0.6.0 -> 0.7.4 
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+* [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
 
 1.14.0 (21 Mar 2024)
 -------------------------

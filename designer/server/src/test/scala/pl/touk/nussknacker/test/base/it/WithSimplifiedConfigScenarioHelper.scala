@@ -12,8 +12,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait WithSimplifiedConfigScenarioHelper {
   this: WithTestDb with WithSimplifiedDesignerConfig =>
 
-  private val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
-  private val usedCategory      = TestCategory.Category1
+  private lazy val rawScenarioHelper = new ScenarioHelper(testDbRef, designerConfig)
+  private val usedCategory           = TestCategory.Category1
 
   def createSavedScenario(scenario: CanonicalProcess): ProcessId = {
     rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = false)

@@ -6,14 +6,17 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.{NoComment, NoPermission, NoScenario}
+import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError.{
+  NoComment,
+  NoPermission,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
-import pl.touk.nussknacker.ui.util.EitherTImplicits
 import sttp.model.MediaType
 
 import java.io.ByteArrayInputStream
@@ -30,7 +33,6 @@ class ScenarioActivityApiHttpService(
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authenticator)
     with LazyLogging {
-  import EitherTImplicits._
 
   private val scenarioActivityApiEndpoints = new ScenarioActivityApiEndpoints(authenticator.authenticationMethod())
 
@@ -41,7 +43,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId       <- getScenarioIdByName(scenarioName)
           _                <- isAuthorized(scenarioId, Permission.Read)
-          scenarioActivity <- scenarioActivityRepository.findActivity(scenarioId).eitherT()
+          scenarioActivity <- EitherT.right(scenarioActivityRepository.findActivity(scenarioId))
         } yield ScenarioActivity(scenarioActivity)
       }
   }
@@ -91,47 +93,50 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId      <- getScenarioIdByName(request.scenarioName)
           _               <- isAuthorized(scenarioId, Permission.Read)
-          maybeAttachment <- attachmentService.readAttachment(request.attachmentId, scenarioId).eitherT()
+          maybeAttachment <- EitherT.right(attachmentService.readAttachment(request.attachmentId, scenarioId))
           response = buildResponse(maybeAttachment)
         } yield response
       }
   }
 
   private def getScenarioIdByName(scenarioName: ProcessName) = {
-    scenarioService
-      .getProcessId(scenarioName)
-      .toRightEitherT(NoScenario(scenarioName))
+    EitherT.fromOptionF(
+      scenarioService.getProcessId(scenarioName),
+      NoScenario(scenarioName)
+    )
   }
 
   private def isAuthorized(scenarioId: ProcessId, permission: Permission)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =
-    scenarioAuthorizer
-      .check(scenarioId, permission, loggedUser)
-      .map[Either[ScenarioActivityError, Unit]] {
-        case true  => Right(())
-        case false => Left(NoPermission)
-      }
-      .eitherT()
+    EitherT(
+      scenarioAuthorizer
+        .check(scenarioId, permission, loggedUser)
+        .map[Either[ScenarioActivityError, Unit]] {
+          case true  => Right(())
+          case false => Left(NoPermission)
+        }
+    )
 
   private def addNewComment(request: AddCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =
-    scenarioActivityRepository
-      .addComment(scenarioId, request.versionId, UserComment(request.commentContent))
-      .eitherT[ScenarioActivityError]()
+    EitherT.right(
+      scenarioActivityRepository.addComment(scenarioId, request.versionId, UserComment(request.commentContent))
+    )
 
   private def deleteComment(request: DeleteCommentRequest): EitherT[Future, ScenarioActivityError, Unit] =
-    scenarioActivityRepository
-      .deleteComment(request.commentId)
-      .eitherTMapE[ScenarioActivityError](_ => NoComment(request.commentId))
+    EitherT(
+      scenarioActivityRepository.deleteComment(request.commentId)
+    ).leftMap(_ => NoComment(request.commentId))
 
   private def saveAttachment(request: AddAttachmentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
-  ): EitherT[Future, ScenarioActivityError, Unit] =
-    attachmentService
-      .saveAttachment(scenarioId, request.versionId, request.fileName.value, request.body)
-      .eitherT()
+  ): EitherT[Future, ScenarioActivityError, Unit] = {
+    EitherT.right(
+      attachmentService.saveAttachment(scenarioId, request.versionId, request.fileName.value, request.body)
+    )
+  }
 
   private def buildResponse(maybeAttachment: Option[(String, Array[Byte])]): GetAttachmentResponse =
     maybeAttachment match {

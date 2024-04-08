@@ -287,19 +287,20 @@ lazy val commonSettings =
 // Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
 // by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
 // You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
-val flinkV             = "1.17.2"
-val flinkCommonsLang3V = "3.12.0"
-val flinkCommonsTextV  = "1.10.0"
-val flinkCommonsIOV    = "2.11.0"
-val avroV              = "1.11.3"
+val flinkV               = "1.18.1"
+val flinkConnectorKafkaV = "3.1.0-1.18"
+val flinkCommonsLang3V   = "3.12.0"
+val flinkCommonsTextV    = "1.10.0"
+val flinkCommonsIOV      = "2.11.0"
+val avroV                = "1.11.3"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV             = "3.6.1"
+val kafkaV               = "3.6.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV            = "5.2.23.RELEASE"
-val scalaTestV         = "3.2.17"
-val scalaCheckV        = "1.17.0"
-val scalaCheckVshort   = scalaCheckV.take(4).replace(".", "-")
-val scalaTestPlusV     =
+val springV              = "5.2.23.RELEASE"
+val scalaTestV           = "3.2.17"
+val scalaCheckV          = "1.17.0"
+val scalaCheckVshort     = scalaCheckV.take(4).replace(".", "-")
+val scalaTestPlusV       =
   "3.2.17.0" // has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 // note: Logback 1.3 requires Slf4j 2.x, but Flink has Slf4j 1.7 on its classpath
 val logbackV                = "1.2.12"
@@ -584,6 +585,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / Keys.test                     := (IntegrationTest / Keys.test)
       .dependsOn(
         flinkExecutor / Compile / assembly,
+        flinkExecutor / prepareItLibs,
         flinkDevModel / Compile / assembly,
         flinkDevModelJava / Compile / assembly,
         experimentalFlinkTableApiComponents / Compile / assembly,
@@ -596,19 +598,17 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     IntegrationTest / parallelExecution             := false,
     libraryDependencies ++= {
       Seq(
-        "org.typelevel"          %% "cats-core"                      % catsV                % Provided,
-        "org.apache.flink"        % "flink-streaming-java"           % flinkV               % flinkScope
+        "org.typelevel"          %% "cats-core"                  % catsV          % Provided,
+        "org.apache.flink"        % "flink-streaming-java"       % flinkV         % flinkScope
           excludeAll (
             ExclusionRule("log4j", "log4j"),
             ExclusionRule("org.slf4j", "slf4j-log4j12"),
             ExclusionRule("com.esotericsoftware", "kryo-shaded"),
           ),
-        "org.apache.flink"        % "flink-statebackend-rocksdb"     % flinkV               % flinkScope,
-        "com.softwaremill.retry" %% "retry"                          % "0.3.6",
-        "com.dimafeng"           %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
-        "com.dimafeng"           %% "testcontainers-scala-kafka"     % testContainersScalaV % "it,test",
-        "com.github.tomakehurst"  % "wiremock-jre8"                  % wireMockV            % Test,
-        "org.scalatestplus"      %% "mockito-4-11"                   % scalaTestPlusV       % Test,
+        "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
+        "com.softwaremill.retry" %% "retry"                      % "0.3.6",
+        "com.github.tomakehurst"  % "wiremock-jre8"              % wireMockV      % Test,
+        "org.scalatestplus"      %% "mockito-4-11"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
     // override scala-collection-compat from com.softwaremill.retry:retry
@@ -620,6 +620,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
     componentsApi        % Provided,
     httpUtils            % Provided,
     flinkScalaUtils      % Provided,
+    flinkTestUtils       % IntegrationTest,
     kafkaTestUtils       % "it,test"
   )
 
@@ -668,12 +669,15 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     }
   )
   .dependsOn(
+    extensionsApi,
     commonComponents,
     flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     // We use some components for testing with embedded engine, because of that we need dependency to this api
+    // It has to be in the default, Compile scope because all components are eagerly loaded so it will be loaded also
+    // on the Flink side where this library is missing
     liteComponentsApi,
-    componentsUtils,
+    componentsUtils      % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter          % Provided,
     flinkExecutor        % Test,
@@ -693,7 +697,10 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
       )
     }
   )
-  .dependsOn(flinkComponentsUtils % Provided, componentsUtils)
+  .dependsOn(
+    extensionsApi,
+    flinkComponentsUtils % Provided
+  )
 
 lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm"))
   .settings(commonSettings)
@@ -713,6 +720,7 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
+        "org.apache.flink" % "flink-connector-base"       % flinkV % Provided,
         "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided
       )
@@ -799,7 +807,7 @@ lazy val interpreter = (project in file("interpreter"))
       )
     }
   )
-  .dependsOn(utilsInternal, mathUtils, testUtils % Test, componentsUtils % Test)
+  .dependsOn(componentsUtils, utilsInternal, mathUtils, testUtils % Test)
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(commonSettings)
@@ -864,7 +872,7 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils"))
       )
     }
   )
-  .dependsOn(kafkaUtils, componentsUtils % Provided, componentsApi % Provided, testUtils % "it, test")
+  .dependsOn(kafkaUtils, componentsUtils % Provided, testUtils % "it, test")
 
 lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-components-utils"))
   .configs(ExternalDepsTests)
@@ -915,10 +923,10 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     name := "nussknacker-flink-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"   % flinkV     % Provided,
+        "org.apache.flink" % "flink-streaming-java"   % flinkV               % Provided,
         "org.apache.flink" % "flink-avro"             % flinkV,
-        "org.apache.flink" % s"flink-connector-kafka" % flinkV     % Test,
-        "org.scalatest"   %% "scalatest"              % scalaTestV % Test
+        "org.apache.flink" % s"flink-connector-kafka" % flinkConnectorKafkaV % Test,
+        "org.scalatest"   %% "scalatest"              % scalaTestV           % Test
       )
     }
   )
@@ -939,7 +947,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     name := "nussknacker-flink-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-kafka" % flinkV,
+        "org.apache.flink" % "flink-connector-kafka" % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-streaming-java"  % flinkV     % Provided,
         "org.scalatest"   %% "scalatest"             % scalaTestV % Test
       )
@@ -949,6 +957,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     componentsApi        % Provided,
     kafkaComponentsUtils,
     flinkComponentsUtils % Provided,
+    flinkExtensionsApi   % Provided,
     componentsUtils      % Provided,
     flinkExecutor        % Test,
     kafkaTestUtils       % Test,
@@ -971,12 +980,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
   )
   .dependsOn(testUtils, kafkaUtils, commonUtils % Provided)
 
-// This module:
-// - should not be a dependant of runtime (interpreter, flinkExecutor, *Runtime modules) production code
-// - should not be a dependant of designer production code
-// - can be a provided dependant of component extensions
-// - should be a compile/runtime dependant of defaultModel module
-// Thanks to that, it will be provided in one place, and will be visible in compilation which classes are part of root API and which of utils
+// This module should be provided by one module - interpreter, because it is is the common module shared between designer and runtime
 lazy val componentsUtils = (project in utils("components-utils"))
   .settings(commonSettings)
   .settings(
@@ -1058,6 +1062,7 @@ lazy val utilsInternal = (project in utils("utils-internal"))
   )
   .dependsOn(commonUtils, extensionsApi, testUtils % Test)
 
+// This module should be provided by one module - interpreter
 lazy val mathUtils = (project in utils("math-utils"))
   .settings(commonSettings)
   .settings(
@@ -1119,9 +1124,9 @@ lazy val jsonUtils = (project in utils("json-utils"))
       "com.github.erosb"     % "everit-json-schema" % everitSchemaV exclude ("commons-logging", "commons-logging"),
     )
   )
-  .dependsOn(componentsUtils, testUtils % Test)
+  .dependsOn(componentsUtils % Provided, testUtils % Test)
 
-// Similar to components-utils, this module should be provided in one place - by flinkExecutor
+// Similar to components-utils, this module should be provided by one module - flinkExecutor
 lazy val flinkComponentsUtils = (project in flink("components-utils"))
   .settings(commonSettings)
   .settings(
@@ -1135,11 +1140,11 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
   )
   .dependsOn(
     flinkComponentsApi,
-    flinkExtensionsApi,
-    mathUtils,
+    flinkExtensionsApi % Provided,
+    mathUtils          % Provided,
     flinkScalaUtils,
-    componentsUtils % Provided,
-    testUtils       % Test
+    componentsUtils    % Provided,
+    testUtils          % Test
   )
 
 lazy val flinkScalaUtils = (project in flink("scala-utils"))
@@ -1155,6 +1160,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils"))
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some("provided"))
     }
   )
+  .dependsOn(testUtils % Test)
 
 lazy val flinkTestUtils = (project in flink("test-utils"))
   .settings(commonSettings)
@@ -1162,19 +1168,21 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java"           % flinkV % Provided,
         // intellij has some problems with provided...
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV,
-        "org.apache.flink" % "flink-test-utils"           % flinkV excludeAll (
+        "org.apache.flink" % "flink-statebackend-rocksdb"     % flinkV,
+        "org.apache.flink" % "flink-test-utils"               % flinkV excludeAll (
           // we use logback in NK
           ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl")
         ),
-        "org.apache.flink" % "flink-runtime"              % flinkV % Compile classifier "tests",
-        "org.apache.flink" % "flink-metrics-dropwizard"   % flinkV
+        "org.apache.flink" % "flink-runtime"                  % flinkV % Compile classifier "tests",
+        "org.apache.flink" % "flink-metrics-dropwizard"       % flinkV,
+        "com.dimafeng"    %% "testcontainers-scala-scalatest" % testContainersScalaV,
+        "com.dimafeng"    %% "testcontainers-scala-kafka"     % testContainersScalaV,
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
-  .dependsOn(testUtils, flinkComponentsUtils, componentsUtils, interpreter)
+  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, componentsUtils, interpreter)
 
 lazy val requestResponseComponentsUtils = (project in lite("request-response/components-utils"))
   .settings(commonSettings)
@@ -1240,7 +1248,7 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
       )
     },
   )
-  .dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsTestkit % Test)
+  .dependsOn(liteEngineKafkaComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response"))
   .settings(commonSettings)
@@ -1268,7 +1276,7 @@ lazy val liteRequestResponseComponentsTests: Project = (project in lite("compone
       )
     },
   )
-  .dependsOn(requestResponseComponentsApi % Provided, liteComponentsTestkit % Test)
+  .dependsOn(requestResponseComponentsApi % Test, componentsUtils % Test, liteComponentsTestkit % Test)
 
 lazy val liteEngineRuntime = (project in lite("runtime"))
   .settings(commonSettings)
@@ -1646,7 +1654,7 @@ lazy val openapiComponents = (project in component("openapi"))
     ),
   )
   .dependsOn(
-    componentsApi                  % Provided,
+    componentsUtils                % Provided,
     jsonUtils                      % Provided,
     httpUtils,
     requestResponseComponentsUtils % "it,test",
@@ -1727,7 +1735,8 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
   .dependsOn(
     commonComponents,
     flinkComponentsUtils % Provided,
-    componentsUtils      % Provided
+    componentsUtils      % Provided,
+    mathUtils            % Provided
   )
 
 lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
@@ -1748,9 +1757,8 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     name := "nussknacker-flink-kafka-components",
   )
   .dependsOn(
-    flinkComponentsApi % Provided,
-    flinkKafkaComponentsUtils,
     flinkSchemedKafkaComponentsUtils,
+    flinkComponentsApi % Provided,
     commonUtils        % Provided,
     componentsUtils    % Provided
   )
@@ -1769,7 +1777,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
-        "org.apache.flink" % "flink-connector-kafka"       % flinkV,
+        "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-json"                  % flinkV,
         "org.scalatest"   %% "scalatest"                   % scalaTestV % Test
       )
@@ -1863,8 +1871,11 @@ lazy val designer = (project in file("designer/server"))
       .value,
     Test / test                      := (Test / test)
       .dependsOn(
+        defaultModel / Compile / assembly,
+        experimentalFlinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
-        flinkExecutor / Compile / assembly
+        flinkExecutor / Compile / assembly,
+        flinkExecutor / prepareItLibs
       )
       .value,
     /*
@@ -1943,6 +1954,7 @@ lazy val designer = (project in file("designer/server"))
     restmodel,
     listenerApi,
     testUtils                         % Test,
+    flinkTestUtils                    % Test,
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes

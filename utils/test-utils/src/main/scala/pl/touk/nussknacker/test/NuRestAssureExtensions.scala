@@ -10,15 +10,6 @@ import java.nio.charset.StandardCharsets
 
 trait NuRestAssureExtensions {
 
-  implicit class Mocking[T <: RequestSpecification](requestSpecification: T) {
-
-    def assume(f: => Unit): T = {
-      val _ = f
-      requestSpecification
-    }
-
-  }
-
   implicit class AppConfiguration[T <: RequestSpecification](requestSpecification: T) {
 
     def applicationState(f: => Unit): T = {
@@ -83,6 +74,20 @@ trait NuRestAssureExtensions {
           "Content-Disposition",
           s"attachment; filename=${doubleQuote}${fileName}${doubleQuote}"
         )
+    }
+
+  }
+
+  implicit class VerifyState(validatableResponse: ValidatableResponse) {
+
+    def verifyApplicationState(f: => Unit): ValidatableResponse = {
+      val _ = f
+      validatableResponse
+    }
+
+    def verifyExternalState(f: => Unit): ValidatableResponse = {
+      val _ = f
+      validatableResponse
     }
 
   }
