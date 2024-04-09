@@ -14,7 +14,7 @@ class MigrationApiEndpointsSpec extends AnyFreeSpecLike with Matchers {
         classOf[MigrateScenarioRequestDto],
         "pl.touk.nussknacker.ui.api.description"
       )
-      val actual   = allSubclassesContainVersionField(subClasses)
+      val actual   = allSubclassesContainVersionField[MigrateScenarioRequestDto](subClasses)
       val expected = subClasses.map(clazz => (clazz.getName, true))
 
       actual shouldBe expected

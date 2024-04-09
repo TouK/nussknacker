@@ -13,7 +13,7 @@ class MigrateScenarioRequestSpec extends AnyFreeSpecLike with Matchers {
         classOf[MigrateScenarioRequest],
         "pl.touk.nussknacker.ui.migrations"
       )
-      val actual   = allSubclassesContainVersionField(subClasses)
+      val actual   = allSubclassesContainVersionField[MigrateScenarioRequest](subClasses)
       val expected = subClasses.map(clazz => (clazz.getName, true))
 
       actual shouldBe expected
