@@ -14,8 +14,11 @@ object MigrationUtils {
       val classSymbol  = mirror.classSymbol(clazz)
       val versionField = classSymbol.typeSignature.decls.find(_.name.toString == "version")
       versionField match {
-        case Some(_) => (clazz.getName, true)
-        case None    => (clazz.getName, false)
+        case Some(symbol) =>
+          val versionType = symbol.typeSignature.finalResultType
+          val isIntField  = versionType == typeOf[Int]
+          (clazz.getName, isIntField)
+        case None => (clazz.getName, false)
       }
     }
   }
