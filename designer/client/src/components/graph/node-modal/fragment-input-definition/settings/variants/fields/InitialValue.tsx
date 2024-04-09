@@ -1,14 +1,15 @@
 import React from "react";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useTranslation } from "react-i18next";
-import { onChangeType, FragmentInputParameter, FixedValuesOption } from "../../../item";
+import { FixedValuesOption, FixedValuesType, FragmentInputParameter, onChangeType } from "../../../item";
 import { Option, TypeSelect } from "../../../TypeSelect";
 import { ExpressionLang } from "../../../../editors/expression/types";
-import { EditableEditor } from "../../../../editors/EditableEditor";
 import { VariableTypes } from "../../../../../../../types";
 import { FieldError } from "../../../../editors/Validators";
-import { EditorType } from "../../../../editors/expression/Editor";
 import { FormControl } from "@mui/material";
+import { DictParameterEditor } from "../../../../editors/expression/DictParameterEditor";
+import { EditorType } from "../../../../editors/expression/Editor";
+import { EditableEditor } from "../../../../editors/EditableEditor";
 
 interface InitialValue {
     item: FragmentInputParameter;
@@ -29,7 +30,7 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
     return (
         <FormControl>
             <SettingLabelStyled>{t("fragment.initialValue", "Initial value:")}</SettingLabelStyled>
-            {options ? (
+            {item?.valueEditor?.type === FixedValuesType.ValueInputWithFixedValuesProvided ? (
                 <TypeSelect
                     onChange={(value) => {
                         const selectedOption = options.find((option) => option.label === value);
@@ -40,6 +41,16 @@ export default function InitialValue({ onChange, item, path, options, readOnly, 
                     readOnly={readOnly}
                     placeholder={""}
                     fieldErrors={fieldErrors}
+                />
+            ) : item?.valueEditor?.type === FixedValuesType.ValueInputWithDictEditor ? (
+                <DictParameterEditor
+                    key={item.valueEditor.dictId}
+                    fieldErrors={fieldErrors}
+                    showValidation
+                    expressionObj={{ language: ExpressionLang.SpEL, expression: item?.initialValue?.expression }}
+                    onValueChange={(value) => onChange(`${path}.initialValue`, { label: item.valueEditor.dictId, expression: value })}
+                    param={{ editor: { dictId: item.valueEditor.dictId } }}
+                    readOnly={!item.valueEditor.dictId}
                 />
             ) : (
                 <EditableEditor
