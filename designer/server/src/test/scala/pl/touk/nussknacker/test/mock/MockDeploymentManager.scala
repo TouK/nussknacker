@@ -90,7 +90,7 @@ class MockDeploymentManager(
     }
   }
 
-  override protected def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+  override protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
     logger.debug(s"Adding deploy for ${processVersion.processName}")
     deploys.add(processVersion.processName)
@@ -251,7 +251,7 @@ class MockDeploymentManager(
     )
   }
 
-  override protected def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] =
+  override protected def processCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] =
     command.actionName.value match {
       case "hello" | "invalid-status" => Future.successful(CustomActionResult("Hi"))
       case _                          => Future.failed(new NotImplementedError())
@@ -259,9 +259,9 @@ class MockDeploymentManager(
 
   override def close(): Unit = {}
 
-  override def cancelDeployment(command: CancelDeploymentCommand): Future[Unit] = Future.successful(())
+  override def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = Future.successful(())
 
-  override def cancelScenario(command: CancelScenarioCommand): Future[Unit] = cancelResult
+  override def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = cancelResult
 
   override protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
 

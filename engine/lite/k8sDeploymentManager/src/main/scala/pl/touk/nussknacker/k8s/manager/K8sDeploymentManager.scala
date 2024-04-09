@@ -107,18 +107,18 @@ class K8sDeploymentManager(
     .map(path => Using.resource(Source.fromFile(path))(_.mkString))
     .getOrElse(defaultLogbackConfig)
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case command: ValidateScenarioCommand => validate(command)
-      case command: RunDeploymentCommand    => runDeployment(command)
-      case command: CancelScenarioCommand   => cancelScenario(command)
-      case command: TestScenarioCommand     => processTestActionCommand(command)
-      case _: CancelDeploymentCommand | _: StopDeploymentCommand | _: StopScenarioCommand |
-          _: MakeScenarioSavepointCommand | _: CustomActionCommand =>
+      case command: DMValidateScenarioCommand => validate(command)
+      case command: DMRunDeploymentCommand    => runDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case command: DMTestScenarioCommand     => processTestActionCommand(command)
+      case _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand | _: DMStopScenarioCommand |
+          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
         notImplemented
     }
 
-  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+  private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
     import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     val deploymentStrategy = deploymentPreparer
@@ -150,7 +150,7 @@ class K8sDeploymentManager(
     } yield ()
   }
 
-  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     logger.debug(s"Deploying $processVersion")
@@ -280,7 +280,7 @@ class K8sDeploymentManager(
     }
   }
 
-  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+  private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
     import command._
     // TODO: move to requirementForId when cancel changes the API...
     val selector: LabelSelector = requirementForName(scenarioName)

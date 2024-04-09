@@ -9,18 +9,14 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
   CustomActionResult,
   DeploymentData,
-  DeploymentId,
-  ExternalDeploymentId,
-  User
+  ExternalDeploymentId
 }
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 
 import scala.concurrent.Future
@@ -95,31 +91,31 @@ abstract class FlinkDeploymentManager(
     }
   }
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case command: ValidateScenarioCommand => validate(command)
-      case command: RunDeploymentCommand    => runDeployment(command)
-      case command: CancelDeploymentCommand => cancelDeployment(command)
-      case command: CancelScenarioCommand   => cancelScenario(command)
-      case StopDeploymentCommand(processName, deploymentId, savepointDir, _) =>
+      case command: DMValidateScenarioCommand => validate(command)
+      case command: DMRunDeploymentCommand    => runDeployment(command)
+      case command: DMCancelDeploymentCommand => cancelDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case DMStopDeploymentCommand(processName, deploymentId, savepointDir, _) =>
         requireSingleRunningJob(processName, _.deploymentId.contains(deploymentId)) {
           stop(_, savepointDir)
         }
-      case StopScenarioCommand(processName, savepointDir, _) =>
+      case DMStopScenarioCommand(processName, savepointDir, _) =>
         requireSingleRunningJob(processName, _ => true) {
           stop(_, savepointDir)
         }
-      case MakeScenarioSavepointCommand(processName, savepointDir) =>
+      case DMMakeScenarioSavepointCommand(processName, savepointDir) =>
         // TODO: savepoint for given deployment id
         requireSingleRunningJob(processName, _ => true) {
           makeSavepoint(_, savepointDir)
         }
-      case TestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
+      case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
         testRunner.test(canonicalProcess, scenarioTestData)
-      case command: CustomActionCommand => processCustomAction(command)
+      case command: DMCustomActionCommand => processCustomAction(command)
     }
 
-  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+  private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
     import command._
     for {
       oldJob <- oldJobsToStop(processVersion)
@@ -127,7 +123,7 @@ abstract class FlinkDeploymentManager(
     } yield ()
   }
 
-  protected def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+  protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
     val processName = processVersion.processName
 
@@ -220,11 +216,11 @@ abstract class FlinkDeploymentManager(
     } yield savepointPath
   }
 
-  protected def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = notImplemented
+  protected def processCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] = notImplemented
 
-  protected def cancelScenario(command: CancelScenarioCommand): Future[Unit]
+  protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit]
 
-  protected def cancelDeployment(command: CancelDeploymentCommand): Future[Unit]
+  protected def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit]
 
   protected def cancelFlinkJob(deploymentId: ExternalDeploymentId): Future[Unit]
 

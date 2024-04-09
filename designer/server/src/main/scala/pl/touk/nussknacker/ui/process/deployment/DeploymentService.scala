@@ -63,10 +63,19 @@ class DeploymentService(
     with ProcessStateProvider
     with LazyLogging {
 
-  def cancelProcess(
-      processId: ProcessIdWithName,
-      comment: Option[String]
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
+  // For some reasons, import system.dispatcher wasn't enough and we need to declare private variable with explicit type
+  private implicit val ec: ExecutionContext = system.dispatcher
+
+  def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
+    command match {
+      case command: RunDeploymentCommand  => runDeployment(command)
+      case command: CancelScenarioCommand => cancelScenario(command)
+      case command: CustomActionCommand   => processCustomAction(command)
+    }
+  }
+
+  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+    import command._
     val actionName = ScenarioActionName.Cancel
 
     for {
@@ -85,7 +94,7 @@ class DeploymentService(
       )
       // 2. command specific section
       deploymentComment = comment.map(DeploymentComment.unsafe)
-      command           = CancelScenarioCommand(processId.name, user.toManagerUser)
+      dmCommand         = DMCancelScenarioCommand(processId.name, user.toManagerUser)
       // 3. common for all commands/actions
       _ = runActionAndHandleResults(
         actionName,
@@ -94,20 +103,13 @@ class DeploymentService(
       ) {
         dispatcher
           .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-          .processCommand(command)
+          .processCommand(dmCommand)
       }.map(_ => ())
     } yield ()
   }
 
-  // Inner Future in result allows to wait for deployment finish, while outer handles validation
-  // We split deploy process that way because we want to be able to split FE logic into two phases:
-  // - validations - it is quick part, the result will be displayed on deploy modal
-  // - deployment on engine side - it is longer part, the result will be shown as a notification
-  def deployProcessAsync(
-      processId: ProcessIdWithName,
-      savepointPath: Option[String],
-      comment: Option[String]
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] = {
+  private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
+    import command._
     val actionName = ScenarioActionName.Deploy
 
     for {
@@ -121,7 +123,7 @@ class DeploymentService(
       )
       // 2. command specific section
       deployedScenarioData <- prepareDeployedScenarioData(ctx.latestScenarioDetails, ctx.actionId)
-      command = RunDeploymentCommand(
+      dmCommand = DMRunDeploymentCommand(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
         deployedScenarioData.resolvedScenario,
@@ -140,7 +142,7 @@ class DeploymentService(
           ) {
             dispatcher
               .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-              .processCommand(command)
+              .processCommand(dmCommand)
           }
           Future.successful(deploymentFuture)
       }
@@ -156,7 +158,7 @@ class DeploymentService(
       actionName: ScenarioActionName,
       getVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => Option[VersionId],
       getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[CommandContext[PS]] = {
+  )(implicit user: LoggedUser): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     dbioRunner.runInTransaction(
       for {
@@ -205,7 +207,7 @@ class DeploymentService(
   protected def validateBeforeDeploy(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       deployedScenarioData: DeployedScenarioData
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
+  )(implicit user: LoggedUser): Future[Unit] = {
     for {
       // 1. check scenario has no errors
       _ <- Future {
@@ -222,7 +224,7 @@ class DeploymentService(
       _ <- dispatcher
         .deploymentManagerUnsafe(processDetails.processingType)
         .processCommand(
-          ValidateScenarioCommand(
+          DMValidateScenarioCommand(
             processDetails.toEngineProcessVersion,
             deployedScenarioData.deploymentData,
             deployedScenarioData.resolvedScenario
@@ -273,7 +275,7 @@ class DeploymentService(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
       additionalDeploymentData: Map[String, String] = Map.empty
-  )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
+  )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
     for {
       resolvedCanonicalProcess <- Future.fromTry(
         scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
@@ -298,7 +300,7 @@ class DeploymentService(
       actionName: ScenarioActionName,
       deploymentComment: Option[DeploymentComment],
       ctx: CommandContext[PS]
-  )(runAction: => Future[T])(implicit user: LoggedUser, ec: ExecutionContext): Future[T] = {
+  )(runAction: => Future[T])(implicit user: LoggedUser): Future[T] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionFuture                        = runAction
     val actionString =
@@ -370,7 +372,7 @@ class DeploymentService(
   // TODO: check deployment id to be sure that returned status is for given deployment
   override def getProcessState(
       processIdWithName: ProcessIdWithName
-  )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       processDetailsOpt     <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails        <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
@@ -381,7 +383,7 @@ class DeploymentService(
 
   override def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
       result                <- getProcessState(processDetails, inProgressActionNames)
@@ -390,7 +392,6 @@ class DeploymentService(
 
   override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
-      ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]] = {
     dbioRunner.run(
@@ -414,7 +415,7 @@ class DeploymentService(
   // we do one call for all in progress action types for all scenarios
   private def getInProgressActionTypesForProcessTraverse[F[_]: Traverse](
       processTraverse: F[ScenarioWithDetails]
-  )(implicit ec: ExecutionContext): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
+  ): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
     processTraverse.toList match {
       case Nil => DBIO.successful(Map.empty)
       case head :: Nil =>
@@ -430,7 +431,7 @@ class DeploymentService(
   private def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_],
       inProgressActionNames: Set[ScenarioActionName]
-  )(implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
+  )(implicit freshnessPolicy: DataFreshnessPolicy, user: LoggedUser): DB[ProcessState] = {
     dispatcher
       .deploymentManager(processDetails.processingType)
       .map { manager =>
@@ -513,8 +514,7 @@ class DeploymentService(
       processIdWithName: ProcessIdWithName,
       lastStateAction: Option[ProcessAction]
   )(
-      implicit ec: ExecutionContext,
-      freshnessPolicy: DataFreshnessPolicy
+      implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[ProcessState]] = {
 
     val state = deploymentManager.getProcessState(processIdWithName, lastStateAction).recover { case NonFatal(e) =>
@@ -536,8 +536,9 @@ class DeploymentService(
       .getOrElse(state)
   }
 
-  override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
-      implicit ec: ExecutionContext
+  override def markActionExecutionFinished(
+      processingType: ProcessingType,
+      actionId: ProcessActionId
   ): Future[Boolean] = {
     implicit val user: AdminUser            = NussknackerInternalUser.instance
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
@@ -552,17 +553,16 @@ class DeploymentService(
     })
   }
 
-  private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType)(
-      implicit ec: ExecutionContext
-  ) = {
+  private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType) = {
     for {
       _            <- validateExpectedProcessingType(expectedProcessingType, action.processId)
       updateResult <- actionRepository.markFinishedActionAsExecutionFinished(action.id)
     } yield updateResult
   }
 
-  override def getLastStateAction(expectedProcessingType: ProcessingType, processId: ProcessId)(
-      implicit ec: ExecutionContext
+  override def getLastStateAction(
+      expectedProcessingType: ProcessingType,
+      processId: ProcessId
   ): Future[Option[ProcessAction]] = {
     dbioRunner.run {
       for {
@@ -575,9 +575,7 @@ class DeploymentService(
     }
   }
 
-  private def validateExpectedProcessingType(expectedProcessingType: ProcessingType, processId: ProcessId)(
-      implicit ec: ExecutionContext
-  ): DB[Unit] = {
+  private def validateExpectedProcessingType(expectedProcessingType: ProcessingType, processId: ProcessId): DB[Unit] = {
     implicit val user: AdminUser = NussknackerInternalUser.instance
     // TODO: We should fetch ProcessName for a given ProcessId to avoid returning synthetic id in rest responses
     val fakeProcessNameForErrorsPurpose = ProcessName(processId.value.toString)
@@ -615,14 +613,8 @@ class DeploymentService(
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
   //       - see those actions in the actions table
   //       - send notifications about finished/failed custom actions
-  def invokeCustomAction(
-      actionName: ScenarioActionName,
-      processIdWithName: ProcessIdWithName,
-      params: Map[String, String]
-  )(
-      implicit loggedUser: LoggedUser,
-      ec: ExecutionContext
-  ): Future[CustomActionResult] = {
+  private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+    import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     dbioRunner.run(
       for {
@@ -635,11 +627,11 @@ class DeploymentService(
         processState <- DBIOAction.from(getProcessState(processDetails))
         manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
         // Fetch and validate custom action details
-        actionCommand = CustomActionCommand(
+        actionCommand = DMCustomActionCommand(
           actionName,
           processDetails.toEngineProcessVersion,
           processDetails.json,
-          loggedUser.toManagerUser,
+          user.toManagerUser,
           params
         )
         customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)

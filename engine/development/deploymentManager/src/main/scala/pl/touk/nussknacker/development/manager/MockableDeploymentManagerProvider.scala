@@ -112,9 +112,9 @@ object MockableDeploymentManagerProvider {
       Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
     }
 
-    override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
+    override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
       command match {
-        case TestScenarioCommand(scenarioName, _, _) =>
+        case DMTestScenarioCommand(scenarioName, _, _) =>
           Future.successful {
             testResults
               .get()

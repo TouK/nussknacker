@@ -150,7 +150,7 @@ class FlinkRestManager(
     }
   }
 
-  override protected def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+  override protected def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
     import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getProcessStates(scenarioName).map(_.value).flatMap { statuses =>
@@ -158,7 +158,7 @@ class FlinkRestManager(
     }
   }
 
-  override protected def cancelDeployment(command: CancelDeploymentCommand): Future[Unit] = {
+  override protected def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = {
     import command._
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     getProcessStates(scenarioName).map(_.value).flatMap { statuses =>

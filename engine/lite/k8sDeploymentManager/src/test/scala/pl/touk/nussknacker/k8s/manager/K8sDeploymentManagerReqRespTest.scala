@@ -11,7 +11,11 @@ import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, RunDeploymentCommand, ValidateScenarioCommand}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DMRunDeploymentCommand,
+  DMValidateScenarioCommand,
+  DataFreshnessPolicy
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -161,7 +165,7 @@ class K8sDeploymentManagerReqRespTest
         // It can take a while on CI :/
         f.manager
           .processCommand(
-            RunDeploymentCommand(
+            DMRunDeploymentCommand(
               secondVersionInfo,
               DeploymentData.empty,
               preparePingPongScenario(givenScenarioName, secondVersion),
@@ -189,7 +193,7 @@ class K8sDeploymentManagerReqRespTest
       // ends without errors, we only change version
       f.manager
         .processCommand(
-          ValidateScenarioCommand(f.version.copy(versionId = VersionId(2)), DeploymentData.empty, f.scenario)
+          DMValidateScenarioCommand(f.version.copy(versionId = VersionId(2)), DeploymentData.empty, f.scenario)
         )
         .futureValue
 
@@ -203,7 +207,10 @@ class K8sDeploymentManagerReqRespTest
       val scenario = preparePingPongScenario(newName, 2, Some(slug))
 
       val failure =
-        f.manager.processCommand(ValidateScenarioCommand(newVersion, DeploymentData.empty, scenario)).failed.futureValue
+        f.manager
+          .processCommand(DMValidateScenarioCommand(newVersion, DeploymentData.empty, scenario))
+          .failed
+          .futureValue
       failure.getMessage shouldBe s"Slug is not unique, scenario $givenScenarioName is using it"
     }
 
@@ -218,7 +225,7 @@ class K8sDeploymentManagerReqRespTest
       val otherSlug   = "otherSlug"
       val changedSlug = preparePingPongScenario(givenScenarioName, 1, Some(otherSlug))
       val newVersion  = f.version.copy(versionId = VersionId(Random.nextInt(1000)))
-      f.manager.processCommand(RunDeploymentCommand(newVersion, DeploymentData.empty, changedSlug, None)).futureValue
+      f.manager.processCommand(DMRunDeploymentCommand(newVersion, DeploymentData.empty, changedSlug, None)).futureValue
       f.waitForRunning(newVersion)
       val servicesForScenario = k8s
         .listSelected[ListResource[Service]](LabelSelector(requirementForName(newVersion.processName)))

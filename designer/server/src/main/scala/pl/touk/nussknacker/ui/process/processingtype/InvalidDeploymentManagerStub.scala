@@ -35,9 +35,9 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
-    case _: ValidateScenarioCommand => Future.unit
-    case _                          => stubbedActionResponse
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
+    case _: DMValidateScenarioCommand => Future.unit
+    case _                            => stubbedActionResponse
 
   }
 

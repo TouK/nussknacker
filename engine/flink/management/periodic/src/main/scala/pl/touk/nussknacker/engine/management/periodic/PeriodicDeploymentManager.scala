@@ -98,28 +98,28 @@ class PeriodicDeploymentManager private[periodic] (
     extends DeploymentManager
     with LazyLogging {
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case command: ValidateScenarioCommand => validate(command)
-      case command: RunDeploymentCommand    => runDeployment(command)
-      case command: CancelScenarioCommand   => cancelScenario(command)
-      case command: StopScenarioCommand     => stopScenario(command)
-      case command: CustomActionCommand     => customActionsProvider.invokeCustomAction(command)
-      case _: TestScenarioCommand | _: CancelDeploymentCommand | _: StopDeploymentCommand |
-          _: MakeScenarioSavepointCommand | _: CustomActionCommand =>
+      case command: DMValidateScenarioCommand => validate(command)
+      case command: DMRunDeploymentCommand    => runDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case command: DMStopScenarioCommand     => stopScenario(command)
+      case command: DMCustomActionCommand     => customActionsProvider.invokeCustomAction(command)
+      case _: DMTestScenarioCommand | _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand |
+          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
         delegate.processCommand(command)
     }
 
-  private def validate(command: ValidateScenarioCommand): Future[Unit] = {
+  private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
     import command._
     for {
       scheduledProperty <- extractScheduleProperty(canonicalProcess)
       _                 <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
-      _ <- delegate.processCommand(ValidateScenarioCommand(processVersion, deploymentData, canonicalProcess))
+      _ <- delegate.processCommand(DMValidateScenarioCommand(processVersion, deploymentData, canonicalProcess))
     } yield ()
   }
 
-  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
     extractScheduleProperty(canonicalProcess).flatMap { scheduleProperty =>
       logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
@@ -133,7 +133,7 @@ class PeriodicDeploymentManager private[periodic] (
           deploymentData.deploymentId.toActionIdOpt.getOrElse(
             throw new IllegalArgumentException(s"deploymentData.deploymentId should be valid ProcessActionId")
           ),
-          cancelScenario(CancelScenarioCommand(processVersion.processName, deploymentData.user))
+          cancelScenario(DMCancelScenarioCommand(processVersion.processName, deploymentData.user))
         )
         .map(_ => None)
     }
@@ -148,7 +148,7 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
-  private def stopScenario(command: StopScenarioCommand): Future[SavepointResult] = {
+  private def stopScenario(command: DMStopScenarioCommand): Future[SavepointResult] = {
     import command._
     service.deactivate(scenarioName).flatMap { deploymentIdsToStop =>
       // TODO: should return List of SavepointResult
@@ -156,7 +156,7 @@ class PeriodicDeploymentManager private[periodic] (
         .sequence(
           deploymentIdsToStop
             .map(deploymentId =>
-              delegate.processCommand(StopDeploymentCommand(scenarioName, deploymentId, savepointDir, user))
+              delegate.processCommand(DMStopDeploymentCommand(scenarioName, deploymentId, savepointDir, user))
             )
         )
         .map(_.headOption.getOrElse {
@@ -165,13 +165,13 @@ class PeriodicDeploymentManager private[periodic] (
     }
   }
 
-  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+  private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
     import command._
     service.deactivate(scenarioName).flatMap { deploymentIdsToCancel =>
       Future
         .sequence(
           deploymentIdsToCancel
-            .map(deploymentId => delegate.processCommand(CancelDeploymentCommand(scenarioName, deploymentId, user)))
+            .map(deploymentId => delegate.processCommand(DMCancelDeploymentCommand(scenarioName, deploymentId, user)))
         )
         .map(_ => ())
     }
