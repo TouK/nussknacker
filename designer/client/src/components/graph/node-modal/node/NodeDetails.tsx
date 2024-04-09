@@ -47,11 +47,15 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
-        mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-
-        props.close();
-        await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+        try {
+            //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+            props.close();
+        } catch (e) {
+            //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
+            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
+        }
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
