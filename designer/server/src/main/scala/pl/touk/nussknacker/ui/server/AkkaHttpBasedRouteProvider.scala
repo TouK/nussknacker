@@ -393,12 +393,16 @@ class AkkaHttpBasedRouteProvider(
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType)
       )
 
+      val statisticsApiHttpService = new StatisticsApiHttpService(
+        authenticationResources,
+        usageStatisticsReportsSettingsDeterminer
+      )
+
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
         authenticationResources.name,
-        analyticsConfig,
-        () => usageStatisticsReportsSettingsDeterminer.determineStatisticsUrl()
+        analyticsConfig
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
@@ -416,7 +420,8 @@ class AkkaHttpBasedRouteProvider(
           migrationApiHttpService,
           nodesApiHttpService,
           dictApiHttpService,
-          deploymentHttpService
+          deploymentHttpService,
+          statisticsApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

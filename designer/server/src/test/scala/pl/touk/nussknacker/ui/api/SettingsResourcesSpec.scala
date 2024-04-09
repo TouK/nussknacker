@@ -12,8 +12,6 @@ import pl.touk.nussknacker.test.utils.domain.TestFactory.withoutPermissions
 import pl.touk.nussknacker.ui.config.AnalyticsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 
-import scala.concurrent.Future
-
 class SettingsResourcesSpec
     extends AnyFunSpec
     with ScalatestRouteTest
@@ -31,8 +29,7 @@ class SettingsResourcesSpec
   private val settingsRoute = new SettingsResources(
     featureTogglesConfig,
     authenticationConfig.name,
-    analyticsConfig,
-    determineStatisticsUrl = () => Future.successful(None)
+    analyticsConfig
   )
 
   // Values are exists at test/resources/application.conf

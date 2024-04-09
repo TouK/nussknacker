@@ -1733,6 +1733,25 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/statistic/url:
+    get:
+      tags:
+      - Statistics
+      summary: Statistics URL service
+      operationId: getApiStatisticUrl
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticUrlResponseDto'
+              examples:
+                Example:
+                  summary: List of statistics URLs
+                  value:
+                    urls:
+                    - https://stats.nussknacker.io/?fingerprint=development&s_a=0&s_dm_c=0&s_dm_e=0&s_dm_f=1&s_dm_l=0&s_f=0&s_pm_b=0&s_pm_rr=0&s_pm_s=1&s_s=1&source=sources&version=1.15.0-SNAPSHOT
   /api/user:
     get:
       tags:
@@ -3212,6 +3231,13 @@ components:
       type: object
     SqlParameterEditor:
       type: object
+    StatisticUrlResponseDto:
+      type: object
+      properties:
+        urls:
+          type: array
+          items:
+            type: string
     Status:
       type: string
       enum:
