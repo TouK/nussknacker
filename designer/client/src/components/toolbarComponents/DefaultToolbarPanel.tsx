@@ -1,21 +1,29 @@
-import React, { PropsWithChildren } from "react";
+import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ToolbarWrapper, ToolbarWrapperProps } from "./toolbarWrapper/ToolbarWrapper";
-import { ButtonsVariant, ToolbarButtons } from "./toolbarButtons";
+import { splitUrl } from "../../containers/ExternalLib";
+import { RemoteComponent } from "../../containers/ExternalLib/RemoteComponent";
+import { ToolbarButtons } from "./toolbarButtons";
+import { ToolbarConfig } from "../toolbarSettings/types";
+import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
 
-export type ToolbarPanelProps = PropsWithChildren<{
-    id: string;
-    title?: string;
-    buttonsVariant?: ButtonsVariant;
-}>;
+export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons">>;
 
-export function DefaultToolbarPanel(props: ToolbarPanelProps & ToolbarWrapperProps): JSX.Element {
+export function DefaultToolbarPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
-    const { children, title, id, buttonsVariant, ...passProps } = props;
+    const { children, title, id, buttonsVariant, componentUrl, ...passProps } = props;
+
+    const label = title ?? id;
+    const buttons = <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>;
     return (
-        /* i18next-extract-disable-line */
-        <ToolbarWrapper id={id} title={t(`panels.${id}.title`, title || id)} {...passProps}>
-            <ToolbarButtons variant={buttonsVariant}>{children}</ToolbarButtons>
+        <ToolbarWrapper id={id} title={label && t(`panels.${id}.title`, label)} {...passProps}>
+            {componentUrl ? <RemoteToolbarContent {...props}>{buttons}</RemoteToolbarContent> : buttons}
         </ToolbarWrapper>
     );
+}
+
+function RemoteToolbarContent(props: ToolbarPanelProps): ReactElement {
+    const { componentUrl, ...passProps } = props;
+    const [url, scope] = useMemo(() => splitUrl(componentUrl), [componentUrl]);
+
+    return <RemoteComponent url={url} scope={scope} {...passProps} />;
 }

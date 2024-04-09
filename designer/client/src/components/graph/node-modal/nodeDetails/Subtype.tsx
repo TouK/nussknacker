@@ -1,12 +1,11 @@
-import React from "react";
 import { styled, Typography } from "@mui/material";
-import { PropsWithChildren } from "react";
-import { variables } from "../../../../stylesheets/variables";
+import React, { PropsWithChildren } from "react";
+import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
 
 import { blendLighten } from "../../../../containers/theme/helpers";
 
 const SubtypeStyled = styled("div")(({ theme }) => ({
-    height: `${variables.modalHeaderHeight}px`,
+    height: `${MODAL_HEADER_HEIGHT}px`,
     backgroundColor: blendLighten(theme.palette.background.paper, 0.1),
     display: "flex",
     alignItems: "center",

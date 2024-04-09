@@ -6,15 +6,16 @@ import { v4 as uuid4 } from "uuid";
 import ProcessUtils from "../../common/ProcessUtils";
 import { getScenario, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
+import { NodeType } from "../../types";
 import { useWindows } from "../../windowManager";
+import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import Errors from "./error/Errors";
+import { TipPanelStyled } from "./Styled";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";
-import { TipPanelStyled } from "./Styled";
-import { NodeType } from "../../types";
 
-export default function Tips(): JSX.Element {
+export default function Tips(props: ToolbarPanelProps): JSX.Element {
     const { openNodeWindow } = useWindows();
     const scenario = useSelector(getScenario);
 
@@ -31,7 +32,7 @@ export default function Tips(): JSX.Element {
     const { errors, warnings } = ProcessUtils.getValidationResult(scenario);
 
     return (
-        <ToolbarWrapper title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
+        <ToolbarWrapper {...props} title={i18next.t("panels.tips.title", "Tips")}>
             <TipPanelStyled id="tipsPanel" isHighlighted={isHighlighted}>
                 <Scrollbars
                     style={{ borderRadius: 3, position: "relative" }}

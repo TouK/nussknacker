@@ -1,11 +1,11 @@
-import React, { PropsWithChildren } from "react";
 import { styled, Typography } from "@mui/material";
+import React, { PropsWithChildren } from "react";
 import Icon from "../../../../assets/img/documentation.svg";
-import { variables } from "../../../../stylesheets/variables";
+import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
 
 const DocsLinkStyled = styled("a")(({ theme }) => ({
     color: `${theme.palette.text.secondary} !important`,
-    height: `${variables.modalHeaderHeight}px`,
+    height: `${MODAL_HEADER_HEIGHT}px`,
     display: "inline-block",
     textDecoration: "none !important",
     svg: {

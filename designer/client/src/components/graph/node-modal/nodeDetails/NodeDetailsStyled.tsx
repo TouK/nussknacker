@@ -1,5 +1,5 @@
 import { styled } from "@mui/material";
-import { variables } from "../../../../stylesheets/variables";
+import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
 import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 
 export const ComponentIconStyled = styled(ComponentIcon)<{ backgroundColor: string }>(({ backgroundColor, theme }) => ({
@@ -14,7 +14,7 @@ export const ComponentIconStyled = styled(ComponentIcon)<{ backgroundColor: stri
 }));
 
 export const NodeDetailsModalTitle = styled("div")`
-    height: ${variables.modalHeaderHeight}px;
+    height: ${MODAL_HEADER_HEIGHT}px;
     display: flex;
     padding-left: 7px;
     padding-right: 10px;
@@ -29,11 +29,11 @@ export const ModalHeader = styled("div")`
     text-transform: lowercase;
     font-size: 14px !important;
     font-weight: 600;
-    height: ${variables.modalHeaderHeight}px;
+    height: ${MODAL_HEADER_HEIGHT}px;
 `;
 
 export const ModalTitleContainer = styled("div")`
-    height: ${variables.modalHeaderHeight}px;
+    height: ${MODAL_HEADER_HEIGHT}px;
     float: left;
     &:hover {
         cursor: grab;

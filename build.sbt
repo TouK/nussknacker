@@ -15,7 +15,6 @@ import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
-// Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
 val scala213 = "2.13.12"
 
@@ -165,8 +164,8 @@ lazy val commonSettings =
   publishSettings ++
     Seq(
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-      crossScalaVersions         := supportedScalaVersions,
-      scalaVersion               := defaultScalaV,
+      crossScalaVersions := supportedScalaVersions,
+      scalaVersion       := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
       ),
@@ -185,7 +184,7 @@ lazy val commonSettings =
         Seq(),
         (2, 12) -> Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
       ),
-      scalacOptions              := Seq(
+      scalacOptions      := Seq(
         "-unchecked",
         "-deprecation",
         "-encoding",
@@ -210,7 +209,7 @@ lazy val commonSettings =
           "-Ymacro-annotations"
         )
       ),
-      javacOptions               := Seq(
+      javacOptions       := Seq(
         "-Xlint:deprecation",
         "-Xlint:unchecked",
         // Using --release flag (available only on jdk >= 9) instead of -source -target to avoid usage of api from newer java version
@@ -219,9 +218,6 @@ lazy val commonSettings =
         // we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
-      coverageMinimumStmtTotal   := 60,
-      coverageMinimumBranchTotal := 60,
-      coverageFailOnMinimum      := false,
       // problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       libraryDependencies ++= Seq(
