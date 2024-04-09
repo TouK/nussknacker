@@ -33,7 +33,8 @@ object ScenarioParametersDeterminer {
           case Nil =>
             val componentsWithDefinedAllowedProcessingModes = componentsToProcessingMode.flatMap {
               case (id, AllowedProcessingModes.SetOf(modes)) => id -> modes :: Nil
-              case (_, AllowedProcessingModes.All)           => Nil
+              case (_, AllowedProcessingModes.All) =>
+                Nil // Components allowed in all modes don't "collide" with any component
             }
             throw new IllegalStateException(
               s"Detected collision of allowed processing modes for processing type: $processingType among components: $componentsWithDefinedAllowedProcessingModes"
