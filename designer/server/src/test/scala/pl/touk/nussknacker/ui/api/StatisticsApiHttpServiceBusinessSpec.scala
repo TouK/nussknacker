@@ -36,7 +36,7 @@ class StatisticsApiHttpServiceBusinessSpec
           matchJsonWithRegexValues(
             s"""
                |{
-               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=\\\\w+?&source=sources&version=$nuVersion"]
+               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=[\\\\w-]+?&source=sources&version=$nuVersion"]
                |}
                |""".stripMargin
           )
@@ -56,7 +56,7 @@ class StatisticsApiHttpServiceBusinessSpec
           matchJsonWithRegexValues(
             s"""
                |{
-               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=\\\\w+?&s_a=0&s_dm_c=0&s_dm_e=0&s_dm_f=1&
+               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=[\\\\w-]+?&s_a=0&s_dm_c=0&s_dm_e=0&s_dm_f=1&
                |s_dm_l=0&s_f=0&s_pm_b=0&s_pm_rr=0&s_pm_s=1&s_s=1&source=sources&version=$nuVersion"]
                |}
                |""".stripMargin.replace("\n", "")

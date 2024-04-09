@@ -29,7 +29,7 @@ class StatisticsApiHttpServiceSecuritySpec
           matchJsonWithRegexValues(
             s"""
                |{
-               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=\\\\w+?&source=sources&version=$nuVersion"]
+               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=[\\\\w-]+?&source=sources&version=$nuVersion"]
                |}
                |""".stripMargin
           )
