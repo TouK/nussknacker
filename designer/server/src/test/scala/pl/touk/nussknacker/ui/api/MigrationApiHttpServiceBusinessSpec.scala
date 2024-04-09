@@ -14,7 +14,9 @@ import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.T
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrationApiAdapters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
+import pl.touk.nussknacker.ui.util.ApiAdapter
 
 class MigrationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -27,6 +29,8 @@ class MigrationApiHttpServiceBusinessSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
 
+  val adapters: Map[Int, ApiAdapter[MigrateScenarioRequest]] = MigrationApiAdapters.adapters
+
   "The endpoint for migration api version should" - {
     "return current api version" in {
       given()
@@ -35,7 +39,7 @@ class MigrationApiHttpServiceBusinessSpec
         .get(s"$nuDesignerHttpAddress/api/migrate/apiVersion")
         .Then()
         .statusCode(200)
-        .equalsPlainBody("2")
+        .equalsPlainBody(s"${adapters.keySet.size + 1}")
     }
   }
 
