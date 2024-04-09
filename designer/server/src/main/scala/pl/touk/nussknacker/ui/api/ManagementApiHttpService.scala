@@ -11,22 +11,20 @@ import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
-import pl.touk.nussknacker.ui.api.{CustomActionValidationDto, ManagementApiEndpoints}
+import pl.touk.nussknacker.ui.api.{BaseHttpService, CustomActionValidationDto, ManagementApiEndpoints}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.util.EitherTImplicits._
 import pl.touk.nussknacker.ui.validation.CustomActionValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ManagementApiHttpService(
-    config: Config,
     authenticator: AuthenticationResources,
     dispatcher: DeploymentManagerDispatcher,
     processService: ProcessService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(config, authenticator)
+    extends BaseHttpService(authenticator)
     with LazyLogging {
 
   private val managementApiEndpoints = new ManagementApiEndpoints(authenticator.authenticationMethod())
@@ -47,22 +45,23 @@ class ManagementApiHttpService(
       }
   }
 
-  private def getScenarioIdByName(
-      scenarioName: ProcessName
-  ): EitherT[Future, NoScenario, ProcessId] = {
-    processService
-      .getProcessId(scenarioName)
-      .toRightEitherT(NoScenario(scenarioName))
+  private def getScenarioIdByName(scenarioName: ProcessName): EitherT[Future, NoScenario, ProcessId] = {
+    EitherT.fromOptionF(
+      processService.getProcessId(scenarioName),
+      NoScenario(scenarioName)
+    )
   }
 
   private def getActionDefinition(
       processIdWithName: ProcessIdWithName,
       actionName: ScenarioActionName
   )(implicit loggedUser: LoggedUser): EitherT[Future, NoActionDefinition, CustomActionDefinition] = {
-    dispatcher
-      .deploymentManagerUnsafe(processIdWithName)
-      .map(_.customActionsDefinitions.collectFirst { case a @ CustomActionDefinition(`actionName`, _, _, _) => a })
-      .toRightEitherT(NoActionDefinition(processIdWithName.name, actionName))
+    EitherT.fromOptionF(
+      dispatcher
+        .deploymentManagerUnsafe(processIdWithName)
+        .map(_.customActionsDefinitions.collectFirst { case a @ CustomActionDefinition(`actionName`, _, _, _) => a }),
+      NoActionDefinition(processIdWithName.name, actionName)
+    )
   }
 
   private def getValidationResultsDto(

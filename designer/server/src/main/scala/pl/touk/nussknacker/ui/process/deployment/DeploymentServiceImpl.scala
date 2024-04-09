@@ -25,7 +25,11 @@ import pl.touk.nussknacker.engine.deployment.{
 }
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionFailed, OnDeployActionSuccess}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
+  OnActionExecutionFinished,
+  OnDeployActionFailed,
+  OnDeployActionSuccess
+}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -652,7 +656,7 @@ class DeploymentServiceImpl(
           )
         )
         _ <- validateActionCommand(actionCommand, customAction)
-        _ = checkIfCanPerformActionInState(actionName, processDetails, processState, manager)
+        _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
@@ -665,21 +669,6 @@ class DeploymentServiceImpl(
     validationFlag match {
       case Validated.Valid(_) => DBIOAction.successful(())
       case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionCommand.actionName}"))
-    }
-  }
-
-  private def checkIfCanPerformCustomActionInState[PS: ScenarioShapeFetchStrategy](
-      actionName: ScenarioActionName,
-      processDetails: ScenarioWithDetailsEntity[PS],
-      ps: ProcessState,
-      manager: DeploymentManager
-  ): Unit = {
-    val allowedActionsForStatus = manager.customActionsDefinitions.collect {
-      case a if a.allowedStateStatusNames.contains(ps.status.name) => a.name
-    }.distinct
-    if (!allowedActionsForStatus.contains(actionName)) {
-      logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionName, processDetails.name, ps.status.name, allowedActionsForStatus)
     }
   }
 

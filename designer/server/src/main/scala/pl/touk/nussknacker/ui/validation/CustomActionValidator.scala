@@ -18,7 +18,7 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
       request: CustomActionRequest
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
 
-    implicit val nodeId: NodeId = NodeId(allowedAction.name.value)
+    implicit val nodeId: NodeId = NodeId(allowedAction.actionName.value)
     val customActionParams      = allowedAction.parameters
 
     val missingParams = checkForMissingParams(request.params, customActionParams)

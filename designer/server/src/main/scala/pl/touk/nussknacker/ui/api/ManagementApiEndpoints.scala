@@ -12,7 +12,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
-import pl.touk.nussknacker.ui.services.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import sttp.model.StatusCode
 import sttp.model.StatusCode.Ok
 import sttp.tapir.derevo.schema

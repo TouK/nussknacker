@@ -80,15 +80,15 @@ object MockableDeploymentManagerProvider {
       import SimpleStateStatus._
       List(
         deployment.CustomActionDefinition(
-          name = ScenarioActionName("hello"),
+          actionName = ScenarioActionName("hello"),
           allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
         ),
         deployment.CustomActionDefinition(
-          name = ScenarioActionName("not-implemented"),
+          actionName = ScenarioActionName("not-implemented"),
           allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
         ),
         deployment.CustomActionDefinition(
-          name = ScenarioActionName("some-params-action"),
+          actionName = ScenarioActionName("some-params-action"),
           allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name),
           parameters = List(
             CustomActionParameter(
@@ -98,7 +98,10 @@ object MockableDeploymentManagerProvider {
             )
           )
         ),
-        deployment.CustomActionDefinition(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
+        deployment.CustomActionDefinition(
+          actionName = ScenarioActionName("invalid-status"),
+          allowedStateStatusNames = Nil
+        )
       )
     }
 
