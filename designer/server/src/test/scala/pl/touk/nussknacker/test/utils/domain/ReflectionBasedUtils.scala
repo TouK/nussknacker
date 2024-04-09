@@ -10,7 +10,7 @@ object ReflectionBasedUtils {
   def findSubclassesOf[T](clazz: Class[T], packageName: String): List[Class[_ <: T]] = {
     val baseClass = clazz
     val reflections = new Reflections(
-      new ConfigurationBuilder().forPackages(baseClass.getPackageName, "pl.touk.nussknacker.ui.api.description")
+      new ConfigurationBuilder().forPackages(baseClass.getPackageName, packageName)
     )
 
     reflections
