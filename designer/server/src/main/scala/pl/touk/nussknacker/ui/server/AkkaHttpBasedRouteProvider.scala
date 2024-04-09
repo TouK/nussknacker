@@ -413,6 +413,11 @@ class AkkaHttpBasedRouteProvider(
         usageStatisticsReportsSettingsDeterminer
       )
 
+      val statisticsApiHttpService = new StatisticsApiHttpService(
+        authenticationResources,
+        usageStatisticsReportsSettingsDeterminer
+      )
+
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
