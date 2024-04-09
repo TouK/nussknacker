@@ -213,7 +213,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
 
     val f: EitherT[Future, NuDesignerError, Unit] = for {
-      remoteApiVersion <- EitherT(fetchRemoteNuVersion.map[Either[NuDesignerError, Int]](Right(_)))
+      remoteApiVersion <- fetchRemoteMigrationApiVersion
 
       localApiVersion = migrationApiAdapterService.getCurrentApiVersion
 
@@ -237,33 +237,43 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         else
           Right(migrateScenarioRequest)
 
-      _ <- transformedMigrateScenarioRequestE match {
-        case Left(apiAdapterServiceError) =>
-          EitherT(
-            Future[Either[NuDesignerError, Unit]](
-              Left(
-                MigrationApiAdapterError(apiAdapterServiceError)
-              )
-            )
-          )
-        case Right(transformedMigrateScenarioRequest) =>
-          val dto = MigrateScenarioRequest.fromDomain(transformedMigrateScenarioRequest)
-          EitherT(
-            invokeForSuccess(
-              HttpMethods.POST,
-              List("migrate"),
-              Query.Empty,
-              HttpEntity(dto.asJson.noSpaces),
-              List()
-            )
-          )
-      }
+      _ <- handleTransformedMigrateScenarioRequest(transformedMigrateScenarioRequestE)
     } yield ()
 
     f.value
   }
 
-  private def fetchRemoteNuVersion(implicit ec: ExecutionContext): Future[Int] = {
+  private def handleTransformedMigrateScenarioRequest(
+      transformedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioRequest]
+  )(implicit ec: ExecutionContext) = {
+    transformedMigrateScenarioRequestE match {
+      case Left(apiAdapterServiceError) =>
+        EitherT(
+          Future[Either[NuDesignerError, Unit]](
+            Left(
+              MigrationApiAdapterError(apiAdapterServiceError)
+            )
+          )
+        )
+      case Right(transformedMigrateScenarioRequest) =>
+        val dto = MigrateScenarioRequest.fromDomain(transformedMigrateScenarioRequest)
+        EitherT(
+          invokeForSuccess(
+            HttpMethods.POST,
+            List("migrate"),
+            Query.Empty,
+            HttpEntity(dto.asJson.noSpaces),
+            List()
+          )
+        )
+    }
+  }
+
+  private def fetchRemoteMigrationApiVersion(implicit ec: ExecutionContext) = {
+    EitherT(fetchRemoteMigrationApiVersionAux.map[Either[NuDesignerError, Int]](Right(_)))
+  }
+
+  private def fetchRemoteMigrationApiVersionAux(implicit ec: ExecutionContext): Future[Int] = {
     invoke[Int](
       HttpMethods.GET,
       List("migrate", "apiVersion"),

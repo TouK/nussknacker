@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.migrations
 
 import cats.data.{EitherT, Validated}
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
@@ -74,97 +75,150 @@ class MigrationService(
       processingType <- EitherT(Future.successful(processingTypeValidated.toEither))
 
       validationResult <-
-        EitherT[Future, NuDesignerError, ValidationResults.ValidationResult](
-          processResolver
-            .forTypeE(processingType) match {
-            case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
-            case Right(uiProcessResolverO) =>
-              uiProcessResolverO match {
-                case Some(uiProcessResolver) =>
-                  Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](
-                    FatalValidationError.renderNotAllowedAsError(
-                      uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
-                    )
-                  )
-                case None =>
-                  Future.failed(
-                    new IllegalStateException(
-                      s"Error while providing process resolver for processing type $processingType requested by user ${loggedUser.username}"
-                    )
-                  )
-              }
-          }
-        )
+        validateProcessingTypeAndUIProcessResolver(scenarioGraph, processName, isFragment, processingType)
 
-      _ <- EitherT(
-        if (validationResult.errors != ValidationErrors.success) {
-          Future.successful(Left(MigrationValidationError(validationResult.errors)))
-        } else {
-          Future.successful(Right(()))
-        }
+      _ <- checkForValidationErrors(validationResult)
+
+      _ <- checkOrCreateAndCheckArchivedProcess(
+        processName,
+        targetEnvironmentId,
+        parameters,
+        isFragment,
+        forwardedUsername
       )
 
-      _ <- EitherT[Future, NuDesignerError, Unit](
-        processService.getProcessId(processName).flatMap[Either[NuDesignerError, Unit]] {
-          case Some(pid) =>
-            val processIdWithName = ProcessIdWithName(pid, processName)
-            processService
-              .getLatestProcessWithDetails(
-                processIdWithName,
-                GetScenarioWithDetailsOptions(
-                  FetchScenarioGraph(FetchScenarioGraph.DontValidate),
-                  fetchState = true
-                )
-              )
-              .transformWith[Either[NuDesignerError, Unit]] {
-                case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
-                  Future
-                    .successful(Left(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId)))
-                case Success(_)                  => Future.successful(Right(()))
-                case Failure(e: NuDesignerError) => Future.successful(Left(e))
-                case Failure(e)                  => Future.failed(e)
-              }
+      processId <- getProcessId(processName)
 
-          case None =>
-            createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
-        }
-      )
-
-      processId <- EitherT[Future, NuDesignerError, ProcessId](
-        processService.getProcessIdUnsafe(processName).map(Right[NuDesignerError, ProcessId])
-      )
       processIdWithName = ProcessIdWithName(processId, processName)
 
-      canWrite <- EitherT[Future, NuDesignerError, Boolean](
-        processAuthorizer.check(processId, Permission.Write, loggedUser).map(Right[NuDesignerError, Boolean])
-      )
-      _ <- EitherT[Future, NuDesignerError, Unit](
-        if (canWrite) Future.successful(Right(())) else Future.successful(Left(new UnauthorizedError(loggedUser)))
-      )
+      _ <- checkLoggedUserCanWriteToProcess(processId)
 
-      canOverrideUsername <- EitherT[Future, NuDesignerError, Boolean](
-        processAuthorizer
-          .check(processId, Permission.OverrideUsername, loggedUser)
-          .map(_ || forwardedUsername.isEmpty)
-          .map(Right[NuDesignerError, Boolean])
-      )
-      _ <- EitherT[Future, NuDesignerError, Unit](
-        if (canOverrideUsername) Future.successful(Right(()))
-        else Future.successful(Left(new UnauthorizedError(loggedUser)))
-      )
+      _ <- checkLoggedUserCanOverwrieProcess(processId, forwardedUsername)
 
-      _ <- EitherT[Future, NuDesignerError, ValidationResults.ValidationResult](
-        processService
-          .updateProcess(processIdWithName, updateScenarioCommand)
-          .withSideEffect(response =>
-            response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
-          )
-          .map(_.validationResult)
-          .map(Right[NuDesignerError, ValidationResults.ValidationResult])
-      )
+      _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
     } yield ()
 
     future.value
+  }
+
+  private def checkLoggedUserCanWriteToProcess(processId: ProcessId)(implicit loggedUser: LoggedUser) = {
+    EitherT[Future, NuDesignerError, Boolean](
+      processAuthorizer.check(processId, Permission.Write, loggedUser).map(Right[NuDesignerError, Boolean])
+    ).flatMap { canWrite =>
+      EitherT[Future, NuDesignerError, Unit](
+        if (canWrite) Future.successful(Right(())) else Future.successful(Left(new UnauthorizedError(loggedUser)))
+      )
+    }
+  }
+
+  private def updateProcessAndNotifyListeners(
+      updateScenarioCommand: UpdateScenarioCommand,
+      processIdWithName: ProcessIdWithName
+  )(implicit loggedUser: LoggedUser) = {
+    EitherT[Future, NuDesignerError, ValidationResults.ValidationResult](
+      processService
+        .updateProcess(processIdWithName, updateScenarioCommand)
+        .withSideEffect(response =>
+          response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+        )
+        .map(_.validationResult)
+        .map(Right[NuDesignerError, ValidationResults.ValidationResult])
+    )
+  }
+
+  private def checkLoggedUserCanOverwrieProcess(processId: ProcessId, forwardedUsername: Option[RemoteUserName])(
+      implicit loggedUser: LoggedUser
+  ) = {
+    EitherT[Future, NuDesignerError, Boolean](
+      processAuthorizer
+        .check(processId, Permission.OverrideUsername, loggedUser)
+        .map(_ || forwardedUsername.isEmpty)
+        .map(Right[NuDesignerError, Boolean])
+    ).flatMap(canOverrideUserName =>
+      EitherT[Future, NuDesignerError, Unit](
+        if (canOverrideUserName) Future.successful(Right(()))
+        else Future.successful(Left(new UnauthorizedError(loggedUser)))
+      )
+    )
+  }
+
+  private def getProcessId(processName: ProcessName) = {
+    EitherT[Future, NuDesignerError, ProcessId](
+      processService.getProcessIdUnsafe(processName).map(Right[NuDesignerError, ProcessId])
+    )
+  }
+
+  private def checkOrCreateAndCheckArchivedProcess(
+      processName: ProcessName,
+      targetEnvironmentId: String,
+      parameters: ScenarioParameters,
+      isFragment: Boolean,
+      forwardedUsername: Option[RemoteUserName]
+  )(implicit loggedUser: LoggedUser) = {
+    EitherT[Future, NuDesignerError, Unit](
+      processService.getProcessId(processName).flatMap[Either[NuDesignerError, Unit]] {
+        case Some(pid) =>
+          val processIdWithName = ProcessIdWithName(pid, processName)
+          processService
+            .getLatestProcessWithDetails(
+              processIdWithName,
+              GetScenarioWithDetailsOptions(
+                FetchScenarioGraph(FetchScenarioGraph.DontValidate),
+                fetchState = true
+              )
+            )
+            .transformWith[Either[NuDesignerError, Unit]] {
+              case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
+                Future
+                  .successful(Left(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId)))
+              case Success(_)                  => Future.successful(Right(()))
+              case Failure(e: NuDesignerError) => Future.successful(Left(e))
+              case Failure(e)                  => Future.failed(e)
+            }
+
+        case None =>
+          createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+      }
+    )
+  }
+
+  private def checkForValidationErrors(validationResult: ValidationResults.ValidationResult) = {
+    EitherT(
+      if (validationResult.errors != ValidationErrors.success) {
+        Future.successful(Left(MigrationValidationError(validationResult.errors)))
+      } else {
+        Future.successful(Right(()))
+      }
+    )
+  }
+
+  private def validateProcessingTypeAndUIProcessResolver(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      processingType: ProcessingType
+  )(implicit loggedUser: LoggedUser) = {
+    EitherT[Future, NuDesignerError, ValidationResults.ValidationResult](
+      processResolver
+        .forTypeE(processingType) match {
+        case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
+        case Right(uiProcessResolverO) =>
+          uiProcessResolverO match {
+            case Some(uiProcessResolver) =>
+              Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](
+                FatalValidationError.renderNotAllowedAsError(
+                  uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+                )
+              )
+            case None =>
+              Future.failed(
+                new IllegalStateException(
+                  s"Error while providing process resolver for processing type $processingType requested by user ${loggedUser.username}"
+                )
+              )
+          }
+      }
+    )
   }
 
   private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
