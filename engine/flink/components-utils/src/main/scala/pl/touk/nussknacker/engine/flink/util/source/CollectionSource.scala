@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 import scala.jdk.CollectionConverters._
 
-// TODO: remove returnType?
 case class CollectionSource[T: TypeInformation](
     list: List[T],
     timestampAssigner: Option[TimestampWatermarkHandler[T]],
