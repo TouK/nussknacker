@@ -349,6 +349,7 @@ val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.18.0"
 val wireMockV                 = "2.35.0"
 val findBugsV                 = "3.0.2"
+val enumeratumV               = "1.7.3"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(
@@ -1483,6 +1484,7 @@ lazy val componentsApi = (project in file("components-api"))
       Seq(
         "org.apache.commons"             % "commons-text"                     % flinkCommonsTextV,
         "org.typelevel"                 %% "cats-core"                        % catsV,
+        "com.beachape"                  %% "enumeratum"                       % enumeratumV,
         "com.typesafe.scala-logging"    %% "scala-logging"                    % scalaLoggingV,
         "com.typesafe"                   % "config"                           % configV,
         "com.vdurmont"                   % "semver4j"                         % "3.1.0",
@@ -1915,7 +1917,7 @@ lazy val designer = (project in file("designer/server"))
         "org.postgresql"                 % "postgresql"                      % postgresV,
         "org.flywaydb"                   % "flyway-core"                     % flywayV,
         "org.apache.xmlgraphics"         % "fop"                             % "2.8" exclude ("commons-logging", "commons-logging"),
-        "com.beachape"                  %% "enumeratum-circe"                % "1.7.3",
+        "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % "0.7.4",
         "com.softwaremill.sttp.tapir"   %% "tapir-akka-http-server"          % tapirV,

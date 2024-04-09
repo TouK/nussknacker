@@ -207,7 +207,7 @@ class DbProcessActionRepository(
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionEntityData] = {
     val actionId         = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
-    val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forType).map(BuildInfo.writeAsJson)
+    val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forProcessingType).map(BuildInfo.writeAsJson)
     val processActionData = ProcessActionEntityData(
       id = actionId,
       processId = processId,

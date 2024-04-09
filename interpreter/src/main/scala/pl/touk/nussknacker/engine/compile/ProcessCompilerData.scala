@@ -76,7 +76,7 @@ object ProcessCompilerData {
       expressionEvaluator,
       interpreter,
       listeners,
-      servicesDefs.map(service => service.name -> service.implementation.asInstanceOf[Lifecycle]).toMap
+      servicesDefs.map(service => service.name -> service.component.asInstanceOf[Lifecycle]).toMap
     )
 
   }

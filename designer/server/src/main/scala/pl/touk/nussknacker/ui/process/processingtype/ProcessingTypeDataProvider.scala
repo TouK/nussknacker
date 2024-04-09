@@ -31,20 +31,21 @@ import java.util.concurrent.atomic.AtomicReference
 trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: replace with proper forType handling
-  final def forTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data = forType(processingType)
-    .getOrElse(
-      throw new IllegalArgumentException(
-        s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
+  final def forProcessingTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data =
+    forProcessingType(processingType)
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
+        )
       )
-    )
 
-  final def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
+  final def forProcessingType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
     allAuthorized
       .get(processingType)
       .map(_.getOrElse(throw new UnauthorizedError(user)))
   }
 
-  final def forTypeE(
+  final def forProcessingTypeE(
       processingType: ProcessingType
   )(implicit user: LoggedUser): Either[UnauthorizedError, Option[Data]] = {
     allAuthorized

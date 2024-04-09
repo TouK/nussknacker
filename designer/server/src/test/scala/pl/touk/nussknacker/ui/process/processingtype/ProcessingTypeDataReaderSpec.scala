@@ -53,16 +53,16 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
     val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
 
-    provider.forType("foo")(fooCategoryUser)
+    provider.forProcessingType("foo")(fooCategoryUser)
     an[UnauthorizedError] shouldBe thrownBy {
-      provider.forType("bar")(fooCategoryUser)
+      provider.forProcessingType("bar")(fooCategoryUser)
     }
     provider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
 
     val mappedProvider = provider.mapValues(_ => ())
-    mappedProvider.forType("foo")(fooCategoryUser)
+    mappedProvider.forProcessingType("foo")(fooCategoryUser)
     an[UnauthorizedError] shouldBe thrownBy {
-      mappedProvider.forType("bar")(fooCategoryUser)
+      mappedProvider.forProcessingType("bar")(fooCategoryUser)
     }
     mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
   }
@@ -93,7 +93,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         )
     )
     val fooCategoryUser    = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
-    val processingTypeData = provider.forTypeUnsafe("foo")(fooCategoryUser)
+    val processingTypeData = provider.forProcessingTypeUnsafe("foo")(fooCategoryUser)
     processingTypeData.deploymentData.engineSetupName shouldEqual EngineSetupName("Overriden Engine Setup")
   }
 

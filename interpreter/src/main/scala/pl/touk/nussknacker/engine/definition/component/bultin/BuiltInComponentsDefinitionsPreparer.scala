@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.component.bultin
 
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component.BuiltInComponentId
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultComponentConfigDeterminer
 import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.{
@@ -32,7 +33,8 @@ class BuiltInComponentsDefinitionsPreparer(componentsUiConfig: ComponentsUiConfi
             BuiltInComponentSpecificData,
             ComponentStaticDefinition(List.empty, None),
             uiDefinition,
-            allowedProcessingModes = None // built-in components are available in every processing mode
+            allowedProcessingModes =
+              AllowedProcessingModes.All // built-in components are available in every processing mode
           )
         }
     }

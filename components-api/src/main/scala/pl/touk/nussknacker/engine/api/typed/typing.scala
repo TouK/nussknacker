@@ -23,7 +23,7 @@ object typing {
     implicit val encoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder
   }
 
-  // TODO: Rename to Typed
+  // TODO: Rename to Typed, maybe NuType?
   sealed trait TypingResult {
 
     // TODO: We should split this method into two or three methods:

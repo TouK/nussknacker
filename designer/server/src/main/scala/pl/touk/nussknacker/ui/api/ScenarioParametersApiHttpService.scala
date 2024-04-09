@@ -26,7 +26,7 @@ class ScenarioParametersApiHttpService(
           val parametersCombination =
             service.scenarioParametersCombinationsWithWritePermission
               .sortBy(parameters =>
-                (parameters.processingMode.value, parameters.category, parameters.engineSetupName.value)
+                (parameters.processingMode.toJsonString, parameters.category, parameters.engineSetupName.value)
               )
           val engineSetupErrors = service.engineSetupErrorsWithWritePermission.filterNot(_._2.isEmpty)
           ScenarioParametersCombinationWithEngineErrors(

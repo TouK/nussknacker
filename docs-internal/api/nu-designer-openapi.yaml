@@ -126,6 +126,8 @@ paths:
                       icon: /assets/icons/documentation.svg
                       url: https://nussknacker.io/documentation/docs/scenarios_authoring/RRDataSourcesAndSinks/#collect
                     usageCount: 2
+                    allowedProcessingModes:
+                    - Request-Response
         '401':
           description: ''
           content:
@@ -2003,6 +2005,7 @@ components:
       - componentType
       - componentGroupName
       - usageCount
+      - allowedProcessingModes
       type: object
       properties:
         id:
@@ -2026,6 +2029,10 @@ components:
         usageCount:
           type: integer
           format: int64
+        allowedProcessingModes:
+          type: array
+          items:
+            type: string
     ComponentType:
       type: string
       enum:
