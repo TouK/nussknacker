@@ -9,8 +9,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.FromElementsFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ContextInitializer
+import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomContextInitializerSource,
   FlinkCustomNodeContext,
   FlinkIntermediateRawSourceUtils,
   FlinkSource
@@ -27,7 +29,9 @@ case class CollectionSource[T: TypeInformation](
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
     customContextInitializer: Option[ContextInitializer[T]] = None,
     flinkRuntimeMode: Option[RuntimeExecutionMode] = None
-) extends FlinkSource {
+) extends FlinkSource
+    with ReturningType
+    with CustomContextInitializerSource[T] {
 
   @silent("deprecated")
   override def sourceStream(
@@ -48,4 +52,6 @@ case class CollectionSource[T: TypeInformation](
     FlinkIntermediateRawSourceUtils.prepareSource(source, flinkNodeContext, timestampAssigner, customContextInitializer)
   }
 
+  override def contextInitializer: ContextInitializer[T] =
+    customContextInitializer.getOrElse(FlinkIntermediateRawSourceUtils.defaultContextInitializer)
 }
