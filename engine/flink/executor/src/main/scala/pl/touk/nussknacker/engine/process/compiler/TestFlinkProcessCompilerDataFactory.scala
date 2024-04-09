@@ -10,7 +10,12 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomContextInitializerSource,
+  FlinkIntermediateRawSource,
+  FlinkSource,
+  FlinkSourceTestSupport
+}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -101,7 +106,7 @@ class StubbedSourcePreparer(
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
     originalSource match {
-      case sourceWithContextInitializer: FlinkIntermediateRawSource[Object @unchecked] =>
+      case sourceWithContextInitializer: CustomContextInitializerSource[Object @unchecked] =>
         new CollectionSource[Object](
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
