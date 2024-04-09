@@ -7,11 +7,11 @@ import pl.touk.nussknacker.test.utils.domain.migration.MigrationUtils.allSubclas
 
 class MigrateScenarioRequestSpec extends AnyFreeSpecLike with Matchers {
 
-  "all subclasses of MigrateScenarioRequestDto" - {
+  "all subclasses of MigrateScenarioRequest" - {
     "contain version field" in {
       val subClasses = findSubclassesOf[MigrateScenarioRequest](
         classOf[MigrateScenarioRequest],
-        "pl.touk.nussknacker.ui.api.description"
+        "pl.touk.nussknacker.ui.migrations"
       )
       val actual   = allSubclassesContainVersionField(subClasses)
       val expected = subClasses.map(clazz => (clazz.getName, true))
