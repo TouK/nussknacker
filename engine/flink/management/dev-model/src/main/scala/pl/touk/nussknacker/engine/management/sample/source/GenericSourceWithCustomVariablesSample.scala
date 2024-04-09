@@ -89,9 +89,12 @@ object GenericSourceWithCustomVariablesSample
     new CollectionSource(
       list = elementsValue,
       timestampAssigner = None,
-      returnType = Typed[String],
+      returnType = Typed[ProcessingType],
       customContextInitializer = Some(customContextInitializer)
-    )(TypeInformation.of(classOf[String])) with TestDataGenerator with FlinkSourceTestSupport[String] {
+    )(TypeInformation.of(classOf[ProcessingType]))
+      with TestDataGenerator
+      with FlinkSourceTestSupport[ProcessingType]
+      with CustomContextInitializerSource[ProcessingType] {
 
       override def generateTestData(size: Int): TestData = TestData(
         elementsValue.map(el => TestRecord(Json.fromString(el)))
@@ -103,6 +106,9 @@ object GenericSourceWithCustomVariablesSample
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
 
       override def typeInformation: TypeInformation[ProcessingType] = TypeInformation.of(classOf[String])
+
+      // TODO: get rid of get
+      override def contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer.get
     }
   }
 
