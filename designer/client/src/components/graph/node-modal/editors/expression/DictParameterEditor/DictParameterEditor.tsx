@@ -4,7 +4,7 @@ import HttpService, { ProcessDefinitionDataDictOption } from "../../../../../../
 import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
-import { SimpleEditor } from "../Editor";
+import { ExtendedEditor } from "../Editor";
 import { ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { ParamType } from "../../types";
@@ -14,6 +14,7 @@ import i18next from "i18next";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { cx } from "@emotion/css";
 import { isEmpty } from "lodash";
+import { tryParseOrNull } from "../../../../../../common/JsonUtils";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -24,7 +25,7 @@ interface Props {
     readOnly: boolean;
 }
 
-export const DictParameterEditor: SimpleEditor<Props> = ({
+export const DictParameterEditor: ExtendedEditor<Props> = ({
     fieldErrors,
     expressionObj,
     param,
@@ -47,16 +48,18 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
 
+    const dictId = param.editor.dictId || param.editor?.simpleEditor?.dictId;
+
     const fetchProcessDefinitionDataDict = useCallback(
         async (inputValue: string) => {
             setIsFetching(true);
-            const { data } = await HttpService.fetchProcessDefinitionDataDict(scenario.processingType, param.editor.dictId, inputValue);
+            const { data } = await HttpService.fetchProcessDefinitionDataDict(scenario.processingType, dictId, inputValue);
 
             setIsFetching(false);
 
             return data;
         },
-        [param.editor.dictId, scenario.processingType],
+        [dictId, scenario.processingType],
     );
 
     const debouncedUpdateOptions = useMemo(() => {
@@ -71,6 +74,7 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
     return (
         <Box className={"node-value"}>
             <Autocomplete
+                disabled={readOnly}
                 renderInput={({ inputProps, InputProps }) => (
                     <div ref={InputProps.ref}>
                         <NodeInput
@@ -86,7 +90,7 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
                 options={options}
                 filterOptions={(x) => x}
                 onChange={(_, value) => {
-                    onValueChange(JSON.stringify(value) || "");
+                    onValueChange(value ? JSON.stringify(value) : "");
                     setValue(value);
                     setOpen(false);
                 }}
@@ -121,3 +125,12 @@ export const DictParameterEditor: SimpleEditor<Props> = ({
         </Box>
     );
 };
+
+const isParseable = (expression: ExpressionObj): boolean => {
+    return tryParseOrNull(expression.expression);
+};
+
+DictParameterEditor.switchableToHint = () => i18next.t("editors.dictParameter.switchableToHint", "Switch to basic mode");
+DictParameterEditor.notSwitchableToHint = () =>
+    i18next.t("editors.dictParameter.notSwitchableToHint", "Expression must be valid JSON to switch to basic mode");
+DictParameterEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);

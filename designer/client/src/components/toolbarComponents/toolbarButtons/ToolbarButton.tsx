@@ -1,13 +1,11 @@
+import { css, cx } from "@emotion/css";
+import { Typography, useTheme } from "@mui/material";
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
+import { PANEL_BUTTON_FONT_SIZE, PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
 import { NodeInput } from "../../withFocus";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
-import { css, cx } from "@emotion/css";
-import { variables } from "../../../stylesheets/variables";
 import { Icon } from "./ToolbarButtonStyled";
-import { Typography, useTheme } from "@mui/material";
-
-const { buttonSize, rightPanelButtonFontSize, buttonSmallSize } = variables;
 
 export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
     { onDrop, title, className, disabled, name, icon, hasError, isActive, ...props },
@@ -19,7 +17,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
     } = useTheme();
 
     const margin = 2;
-    const width = parseFloat(variant === ButtonsVariant.small ? buttonSmallSize : buttonSize) - 2 * margin;
+    const width = (variant === ButtonsVariant.small ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE) - 2 * margin;
     const styles = css({
         margin,
         padding: variant === ButtonsVariant.small ? 0 : "4px 0",
@@ -32,7 +30,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         userSelect: "none",
         opacity: disabled ? 0.3 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
-        fontSize: rightPanelButtonFontSize,
+        fontSize: PANEL_BUTTON_FONT_SIZE,
         width,
         height: width,
         outline: "none",

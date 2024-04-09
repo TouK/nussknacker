@@ -1,10 +1,10 @@
+import { styled } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
-import { styled } from "@mui/material";
+import { PANEL_WIDTH } from "../stylesheets/variables";
 import { PanelSide } from "./sidePanels/SidePanel";
-import { PANEL_WIDTH } from "./sidePanels/SidePanelStyled";
 
 interface IconWrapper {
     type: PanelSide;

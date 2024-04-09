@@ -1,9 +1,6 @@
 import { styled } from "@mui/material";
+import { PANEL_WIDTH } from "../../stylesheets/variables";
 import { PanelSide } from "./SidePanel";
-
-const SCROLL_THUMB_SIZE = 8;
-export const SIDEBAR_WIDTH = 290;
-export const PANEL_WIDTH = SIDEBAR_WIDTH + SCROLL_THUMB_SIZE;
 
 type ScrollToggle = {
     side: PanelSide;
