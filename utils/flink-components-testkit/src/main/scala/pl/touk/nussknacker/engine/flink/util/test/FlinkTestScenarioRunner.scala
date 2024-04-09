@@ -95,8 +95,8 @@ class FlinkTestScenarioRunner(
   def runWithData[I: ClassTag, R](
       scenario: CanonicalProcess,
       data: List[I],
-      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      flinkExecutionMode: RuntimeExecutionMode = RuntimeExecutionMode.AUTOMATIC
+      boundedness: Boundedness,
+      flinkExecutionMode: RuntimeExecutionMode
   ): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] =
       TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
