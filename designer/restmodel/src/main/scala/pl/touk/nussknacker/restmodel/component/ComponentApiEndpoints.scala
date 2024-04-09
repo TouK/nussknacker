@@ -1,6 +1,12 @@
 package pl.touk.nussknacker.restmodel.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
+  ComponentType,
+  DesignerWideComponentId,
+  ProcessingMode
+}
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessAction,
   ProcessActionId,
@@ -58,7 +64,8 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
                         )
                       )
                     ),
-                    usageCount = 2
+                    usageCount = 2,
+                    allowedProcessingModes = AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
                   )
                 )
               )

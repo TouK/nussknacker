@@ -1,17 +1,21 @@
 package pl.touk.nussknacker.ui.definition
 
+import cats.data.NonEmptySet
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.ComponentType
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
+import pl.touk.nussknacker.ui.process.processingtype.DesignerModelData
 
 class AlignedComponentsDefinitionProvider(
     builtInComponentsDefinitionsPreparer: BuiltInComponentsDefinitionsPreparer,
     fragmentComponentDefinitionExtractor: FragmentComponentDefinitionExtractor,
-    modelDefinition: ModelDefinition
+    modelDefinition: ModelDefinition,
+    processingMode: ProcessingMode
 ) {
 
   def getAlignedComponentsWithBuiltInComponentsAndFragments(
@@ -42,23 +46,26 @@ class AlignedComponentsDefinitionProvider(
       fragmentsScenarios: List[CanonicalProcess],
   ): List[ComponentDefinitionWithImplementation] =
     for {
-      scenario   <- fragmentsScenarios
-      definition <- fragmentComponentDefinitionExtractor.extractFragmentComponentDefinition(scenario).toOption
+      scenario <- fragmentsScenarios
+      definition <- fragmentComponentDefinitionExtractor
+        .extractFragmentComponentDefinition(scenario, AllowedProcessingModes.SetOf(processingMode))
+        .toOption
     } yield definition
 
 }
 
 object AlignedComponentsDefinitionProvider {
 
-  def apply(modelData: ModelData): AlignedComponentsDefinitionProvider = {
+  def apply(designerModelData: DesignerModelData): AlignedComponentsDefinitionProvider = {
     new AlignedComponentsDefinitionProvider(
-      new BuiltInComponentsDefinitionsPreparer(modelData.componentsUiConfig),
+      new BuiltInComponentsDefinitionsPreparer(designerModelData.modelData.componentsUiConfig),
       new FragmentComponentDefinitionExtractor(
-        modelData.modelClassLoader.classLoader,
-        modelData.componentsUiConfig.groupName,
-        modelData.determineDesignerWideId
+        designerModelData.modelData.modelClassLoader.classLoader,
+        designerModelData.modelData.componentsUiConfig.groupName,
+        designerModelData.modelData.determineDesignerWideId
       ),
-      modelData.modelDefinition
+      designerModelData.modelData.modelDefinition,
+      designerModelData.processingMode
     )
   }
 
