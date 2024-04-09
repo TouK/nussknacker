@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.languageFeature.higherKinds
+import scala.language.higherKinds
 
 trait ProcessStateProvider {
 
