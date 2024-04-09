@@ -8,7 +8,7 @@ final case class DesignerModelData(
     modelData: ModelData,
     // We hold this map as a cache - computing it is a quite costly operation (it invokes external services)
     staticDefinitionForDynamicComponents: Map[ComponentId, ComponentStaticDefinition],
-    singleProcessingMode: ProcessingMode
+    processingMode: ProcessingMode
 ) {
 
   def close(): Unit = {

@@ -8,7 +8,7 @@ import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
-import { FormControl } from "@mui/material";
+import { FormControl, FormLabel } from "@mui/material";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 
 interface Props {
@@ -69,7 +69,7 @@ function EditableEditorRow({
     return (
         <FormControl className={cx(rowClassName && rowClassName)} style={{ width: "100%", margin: rowClassName && 0 }}>
             <>
-                {fieldLabel && renderFieldLabel?.(fieldLabel)}
+                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
                 <EditableEditor {...props} />
             </>
         </FormControl>

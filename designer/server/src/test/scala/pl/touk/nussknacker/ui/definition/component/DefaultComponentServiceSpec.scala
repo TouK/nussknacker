@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.definition.component
 
+import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
@@ -7,6 +8,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -233,6 +235,7 @@ class DefaultComponentServiceSpec
         ComponentId(Source, SharedSourceName),
         SourceIcon,
         SourcesGroupName,
+        nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
       ),
       sharedComponent(
         ComponentId(Sink, SharedSinkName),
@@ -253,7 +256,8 @@ class DefaultComponentServiceSpec
         ComponentId(Source, SourceSinkSameNameComponentName),
         SourceIcon,
         SourcesGroupName,
-        designerWideComponentId = Some(overrideSourceComponentId)
+        designerWideComponentId = Some(overrideSourceComponentId),
+        nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
       ),
       sharedComponent(
         ComponentId(Sink, SourceSinkSameNameComponentName),
@@ -287,8 +291,18 @@ class DefaultComponentServiceSpec
       CustomComponentIcon,
       OptionalEndingCustomGroupName
     ),
-    marketingComponent(ComponentId(Source, SuperMarketingSourceName), SourceIcon, SourcesGroupName),
-    marketingComponent(ComponentId(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
+    marketingComponent(
+      ComponentId(Source, SuperMarketingSourceName),
+      SourceIcon,
+      SourcesGroupName,
+      nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
+    ),
+    marketingComponent(
+      ComponentId(Source, NotSharedSourceName),
+      SourceIcon,
+      SourcesGroupName,
+      nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
+    ),
     marketingComponent(
       ComponentId(Service, SingleProvidedComponentName),
       ServiceIcon,
@@ -307,7 +321,12 @@ class DefaultComponentServiceSpec
     ),
     fraudComponent(ComponentId(Sink, SecondMonitorName), SinkIcon, executionGroupName),
     fraudComponent(ComponentId(Service, SingleProvidedComponentName), ServiceIcon, executionGroupName),
-    fraudComponent(ComponentId(Source, NotSharedSourceName), SourceIcon, SourcesGroupName),
+    fraudComponent(
+      ComponentId(Source, NotSharedSourceName),
+      SourceIcon,
+      SourcesGroupName,
+      nonDefaultAllowedProcessingModes = Some(AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream))
+    ),
     fraudComponent(ComponentId(Sink, FraudSinkName), SinkIcon, executionGroupName),
   )
 
@@ -315,7 +334,8 @@ class DefaultComponentServiceSpec
       componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) = {
     val id         = designerWideComponentId.getOrElse(DesignerWideComponentId(componentId.name))
     val links      = createLinks(id, componentId)
@@ -331,7 +351,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       availableCategories,
       links,
-      usageCount
+      usageCount,
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
     )
   }
 
@@ -341,7 +362,19 @@ class DefaultComponentServiceSpec
     val designerWideComponentId = cid(ProcessingTypeStreaming, componentId)
     val icon                    = DefaultsComponentIcon.fromComponentId(componentId, None)
     val links                   = createLinks(designerWideComponentId, componentId)
-    List(ComponentListElement(designerWideComponentId, cat, icon, Fragment, FragmentsGroupName, List(cat), links, 0))
+    List(
+      ComponentListElement(
+        designerWideComponentId,
+        cat,
+        icon,
+        Fragment,
+        FragmentsGroupName,
+        List(cat),
+        links,
+        0,
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
+      )
+    )
   }
 
   private val fragmentFraudComponents: List[ComponentListElement] = {
@@ -358,11 +391,13 @@ class DefaultComponentServiceSpec
         FragmentsGroupName,
         List(cat),
         links,
-        0
+        0,
+        AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
       )
     )
   }
 
+  // It would be good to rewrite these tests to make expected component list static which would also make expected values more readable
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ fragmentMarketingComponents ++ fragmentFraudComponents
 
@@ -370,7 +405,8 @@ class DefaultComponentServiceSpec
       componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) =
     createComponent(
       ProcessingTypeStreaming,
@@ -378,14 +414,16 @@ class DefaultComponentServiceSpec
       icon,
       componentGroupName,
       List(CategoryMarketing),
-      designerWideComponentId
+      designerWideComponentId,
+      nonDefaultAllowedProcessingModes
     )
 
   private def fraudComponent(
       componentId: ComponentId,
       icon: String,
       componentGroupName: ComponentGroupName,
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) =
     createComponent(
       ProcessingTypeFraud,
@@ -393,7 +431,8 @@ class DefaultComponentServiceSpec
       icon,
       componentGroupName,
       List(CategoryFraud),
-      designerWideComponentId
+      designerWideComponentId,
+      nonDefaultAllowedProcessingModes
     )
 
   private def createComponent(
@@ -402,7 +441,8 @@ class DefaultComponentServiceSpec
       icon: String,
       componentGroupName: ComponentGroupName,
       categories: List[String],
-      designerWideComponentId: Option[DesignerWideComponentId] = None
+      designerWideComponentId: Option[DesignerWideComponentId] = None,
+      nonDefaultAllowedProcessingModes: Option[AllowedProcessingModes] = None
   )(implicit user: LoggedUser) = {
     val compId     = designerWideComponentId.getOrElse(cid(processingType, componentId))
     val links      = createLinks(compId, componentId)
@@ -415,7 +455,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       categories,
       links,
-      usageCount
+      usageCount,
+      nonDefaultAllowedProcessingModes.getOrElse(AllowedProcessingModes.All)
     )
   }
 
@@ -436,7 +477,8 @@ class DefaultComponentServiceSpec
       componentGroupName,
       categories,
       links,
-      0
+      0,
+      AllowedProcessingModes.All
     )
   }
 
@@ -776,7 +818,7 @@ class DefaultComponentServiceSpec
       ScenarioParametersService.createUnsafe(processingTypeDataMap.mapValuesNow(_.scenarioParameters))
     ).mapValues { processingTypeData =>
       val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(
-        processingTypeData.designerModelData.modelData
+        processingTypeData.designerModelData
       )
       ComponentServiceProcessingTypeData(modelDefinitionEnricher, processingTypeData.category)
     }

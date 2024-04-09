@@ -9,10 +9,7 @@ export const getDefaultFields = (refClazzName: string): FragmentInputParameter =
         required: false,
         hintText: "",
         initialValue: null,
-        // fixedValuesType: FixedValuesType.UserDefinedList,
         valueEditor: null,
-        // fixedValuesListPresetId: "",
-        // presetSelection: "",
         valueCompileTimeValidation: null,
         typ: { refClazzName } as ReturnedType,
     };

@@ -2,10 +2,10 @@ import React from "react";
 import { Option } from "../../../FieldsSelect";
 import { TypeSelect } from "../../../TypeSelect";
 import { useTranslation } from "react-i18next";
-import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant } from "../../../item";
+import { FixedValuesType, InputMode, onChangeType, StringOrBooleanParameterVariant, ValueEditor } from "../../../item";
 import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { useSettings } from "../../SettingsProvider";
-import { FixedValuesPresets, NodeValidationError } from "../../../../../../../types";
+import { NodeValidationError } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 
@@ -15,12 +15,11 @@ interface Props {
     path: string;
     inputModeOptions: Option[];
     readOnly: boolean;
-    fixedValuesPresets: FixedValuesPresets;
     errors: NodeValidationError[];
 }
 
 export default function InputModeSelect(props: Props) {
-    const { onChange, path, item, inputModeOptions, fixedValuesPresets, errors } = props;
+    const { onChange, path, item, inputModeOptions, errors } = props;
     const { t } = useTranslation();
     const { temporaryUserDefinedList } = useSettings();
 
@@ -40,47 +39,46 @@ export default function InputModeSelect(props: Props) {
                         const fixedValuesList =
                             item.valueEditor?.fixedValuesList?.length > 0 ? item.valueEditor.fixedValuesList : temporaryUserDefinedList;
 
-                        const setInitialValue = () => {
+                        const setFixedValuesTypeInitialValue = () => {
                             if (item?.valueEditor?.type === FixedValuesType.ValueInputWithFixedValuesProvided) {
                                 return onChange(
                                     `${path}.initialValue`,
-                                    fixedValuesList.find((fixedValuesList) => fixedValuesList.label === item.initialValue.label)
+                                    fixedValuesList.find((fixedValuesList) => fixedValuesList.label === item?.initialValue?.label)
                                         ? item.initialValue
                                         : null,
                                 );
                             }
 
-                            if (item?.valueEditor?.type === FixedValuesType.ValueInputWithFixedValuesPreset) {
-                                const presetListOptions: Option[] = Object.keys(fixedValuesPresets ?? {}).map((key) => ({
-                                    label: key,
-                                    value: key,
-                                }));
-
-                                return onChange(
-                                    `${path}.initialValue`,
-                                    presetListOptions.find((presetListOption) => presetListOption.label === item.initialValue.label)
-                                        ? item.initialValue
-                                        : null,
-                                );
+                            if (item?.valueEditor?.type === FixedValuesType.ValueInputWithDictEditor) {
+                                return onChange(`${path}.initialValue`, item.initialValue);
                             }
-
-                            return onChange(`${path}.initialValue`, null);
                         };
 
-                        if (value === InputMode.AnyValue) {
-                            onChange(`${path}.valueEditor`, null);
-                        } else if (value === InputMode.AnyValueWithSuggestions) {
-                            onChange(`${path}.valueEditor.allowOtherValue`, true);
-                            onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
-                            onChange(`${path}.valueEditor.fixedValuesPresetId`, null);
-                            onChange(`${path}.valueEditor.type`, FixedValuesType.ValueInputWithFixedValuesProvided);
-                            setInitialValue();
-                        } else {
-                            onChange(`${path}.valueEditor.allowOtherValue`, false);
-                            onChange(`${path}.valueEditor.fixedValuesList`, fixedValuesList);
-                            onChange(`${path}.valueEditor.fixedValuesPresetId`, null);
-                            onChange(`${path}.valueEditor.type`, FixedValuesType.ValueInputWithFixedValuesProvided);
-                            setInitialValue();
+                        const setValueEditor = ({ allowOtherValue }: { allowOtherValue: boolean }): ValueEditor => {
+                            return {
+                                allowOtherValue,
+                                fixedValuesList,
+                                dictId: item?.valueEditor?.dictId || "",
+                                type: item?.valueEditor?.type || FixedValuesType.ValueInputWithDictEditor,
+                            };
+                        };
+
+                        switch (value) {
+                            case InputMode.AnyValue: {
+                                onChange(`${path}.valueEditor`, null);
+                                onChange(`${path}.initialValue`, null);
+                                break;
+                            }
+                            case InputMode.AnyValueWithSuggestions: {
+                                onChange(`${path}.valueEditor`, setValueEditor({ allowOtherValue: true }));
+                                setFixedValuesTypeInitialValue();
+                                break;
+                            }
+
+                            case InputMode.FixedList: {
+                                onChange(`${path}.valueEditor`, setValueEditor({ allowOtherValue: false }));
+                                setFixedValuesTypeInitialValue();
+                            }
                         }
                     }}
                     value={inputModeOptions.find((inputModeOption) => inputModeOption.value === value)}

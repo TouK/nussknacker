@@ -1,15 +1,25 @@
 package pl.touk.nussknacker.restmodel
 
+import cats.data.NonEmptySet
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, DecodingFailure, Encoder}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
+  ComponentId,
+  DesignerWideComponentId,
+  ProcessingMode
+}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import sttp.tapir.Schema
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import sttp.tapir.{Codec, CodecFormat, Schema, SchemaType}
 
 import java.net.URI
 import java.time.Instant
+import scala.collection.immutable.SortedSet
 
 package object component {
 
@@ -45,6 +55,30 @@ package object component {
     def sortMethod(component: ComponentListElement): (String, String) = (component.name, component.id.value)
   }
 
+  implicit val allowedProcessingModesEncoder: Encoder[AllowedProcessingModes] = Encoder.instance {
+    case AllowedProcessingModes.All                           => ProcessingMode.values.asJson
+    case AllowedProcessingModes.SetOf(allowedProcessingModes) => allowedProcessingModes.asJson
+  }
+
+  implicit val allowedProcessingModesDecoder: Decoder[AllowedProcessingModes] = Decoder.instance { c =>
+    import ProcessingMode.processingModeOrdering
+    c.as[SortedSet[ProcessingMode]]
+      .map(NonEmptySet.fromSet)
+      .flatMap {
+        case None => Left(DecodingFailure("Set of allowed ProcessingModes cannot be empty", Nil))
+        case Some(nonEmptySetOfAllowedProcessingModes) =>
+          if (nonEmptySetOfAllowedProcessingModes.toSortedSet == ProcessingMode.values.toSet) {
+            Right(AllowedProcessingModes.All)
+          } else {
+            Right(AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes))
+          }
+      }
+  }
+
+  implicit val allowedProcessingModesSchema: Schema[AllowedProcessingModes] = Schema(
+    SchemaType.SArray(Schema.schemaForString)(_.toProcessingModes.map(_.toJsonString))
+  )
+
   @JsonCodec
   final case class ComponentListElement(
       id: DesignerWideComponentId,
@@ -54,7 +88,8 @@ package object component {
       componentGroupName: ComponentGroupName,
       categories: List[String],
       links: List[ComponentLink],
-      usageCount: Long
+      usageCount: Long,
+      allowedProcessingModes: AllowedProcessingModes
   ) {
     def componentId: ComponentId = ComponentId(componentType, name)
   }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -15,7 +16,7 @@ object ScenarioParametersDeterminer {
       processingType: ProcessingType,
   ): ProcessingMode = {
     val componentsToProcessingMode = components.map { component =>
-      val allowedProcessingModes = component.implementation.allowedProcessingModes
+      val allowedProcessingModes = component.allowedProcessingModes
       component.id -> allowedProcessingModes
     }.toMap
 
@@ -23,16 +24,17 @@ object ScenarioParametersDeterminer {
       // FIXME: some proper errors and tests for that
       case Nil => throw new IllegalStateException(s"Empty list of components for processing type: $processingType")
       case nonEmptyList =>
-        val intersection = nonEmptyList.foldLeft(ProcessingMode.all) {
-          case (acc, Some(componentProcessingModes)) => acc.intersect(componentProcessingModes)
-          case (acc, None)                           => acc
+        val intersection = nonEmptyList.foldLeft(ProcessingMode.values.toSet) { case (acc, allowedProcessingModes) =>
+          acc.intersect(allowedProcessingModes.toProcessingModes)
         }
         intersection.toList match {
           case oneMode :: Nil => oneMode
           // FIXME: some proper errors and tests for that
           case Nil =>
-            val componentsWithDefinedAllowedProcessingModes = componentsToProcessingMode.collect {
-              case (id, Some(modes)) => id -> modes
+            val componentsWithDefinedAllowedProcessingModes = componentsToProcessingMode.flatMap {
+              case (id, AllowedProcessingModes.SetOf(modes)) => id -> modes :: Nil
+              case (_, AllowedProcessingModes.All) =>
+                Nil // Components allowed in all modes don't "collide" with any component
             }
             throw new IllegalStateException(
               s"Detected collision of allowed processing modes for processing type: $processingType among components: $componentsWithDefinedAllowedProcessingModes"

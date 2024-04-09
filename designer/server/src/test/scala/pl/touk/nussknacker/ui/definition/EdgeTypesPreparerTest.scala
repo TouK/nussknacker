@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   BuiltInComponentId,
   ComponentId,
@@ -24,7 +25,7 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
       Some(_),
       DesignerWideComponentId.default(Streaming.stringify, _)
     )
-      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
+      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment, AllowedProcessingModes.All)
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()

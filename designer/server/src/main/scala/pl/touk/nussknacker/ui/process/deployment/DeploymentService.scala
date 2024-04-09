@@ -215,7 +215,7 @@ class DeploymentService(
       // 1. check scenario has no errors
       _ <- Future {
         processValidator
-          .forTypeUnsafe(processDetails.processingType)
+          .forProcessingTypeUnsafe(processDetails.processingType)
           .validateCanonicalProcess(processDetails.json, processDetails.isFragment)
       }.flatMap {
         case validationResult if validationResult.hasErrors =>
@@ -281,7 +281,7 @@ class DeploymentService(
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
     for {
       resolvedCanonicalProcess <- Future.fromTry(
-        scenarioResolver.forTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
+        scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
       )
       deploymentData = prepareDeploymentData(
         user.toManagerUser,

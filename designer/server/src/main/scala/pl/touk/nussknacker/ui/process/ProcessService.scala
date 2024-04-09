@@ -295,7 +295,7 @@ class DBProcessService(
       scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(entity.processingType)
     ScenarioWithDetailsConversions.fromEntity(
       entity.mapScenario { canonical: CanonicalProcess =>
-        val processResolver = processResolverByProcessingType.forTypeUnsafe(entity.processingType)
+        val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(entity.processingType)
         processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
       },
       parameters
@@ -356,7 +356,7 @@ class DBProcessService(
     scenarioParametersService
       .queryProcessingTypeWithWritePermission(command.category, command.processingMode, command.engineSetupName)
       .map { processingType =>
-        val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
+        val newProcessPreparer = newProcessPreparers.forProcessingTypeUnsafe(processingType)
         val emptyCanonicalProcess =
           newProcessPreparer.prepareEmptyProcess(command.name, command.isFragment)
         val action = CreateProcessAction(
@@ -391,7 +391,7 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
-      val processResolver = processResolverByProcessingType.forTypeUnsafe(details.processingType)
+      val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
       val validation =
         FatalValidationError.saveNotAllowedAsError(
           processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
@@ -427,7 +427,7 @@ class DBProcessService(
       val canonical     = jsonCanonicalProcess.withProcessName(processId.name)
       val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(canonical)
       val validationResult = processResolverByProcessingType
-        .forTypeUnsafe(process.processingType)
+        .forProcessingTypeUnsafe(process.processingType)
         .validateBeforeUiReverseResolving(canonical, process.isFragment)
       Future.successful(ScenarioGraphWithValidationResult(scenarioGraph, validationResult))
     }
@@ -440,7 +440,7 @@ class DBProcessService(
   )(implicit user: LoggedUser) = {
     val validationResult =
       processResolverByProcessingType
-        .forTypeUnsafe(processingType)
+        .forProcessingTypeUnsafe(processingType)
         .validateBeforeUiReverseResolving(canonicalProcess, isFragment)
     validationResult.errors.processPropertiesErrors
   }
