@@ -11,31 +11,31 @@ trait ApiAdapterService[D <: VersionedData] {
   def getAdapters: Map[Int, ApiAdapter[D]]
   def getCurrentApiVersion: Int = getAdapters.keySet.size + 1
 
-  def adaptDown(data: D, noOfVersions: Int): Either[ApiAdapterServiceError, D] =
-    adaptN(data, -noOfVersions)
+  def adaptDown(data: D, noOfVersionsToApply: Int): Either[ApiAdapterServiceError, D] =
+    adaptN(data, -noOfVersionsToApply)
 
-  def adaptUp(data: D, noOfVersions: Int): Either[ApiAdapterServiceError, D] =
-    adaptN(data, noOfVersions)
+  def adaptUp(data: D, noOfVersionsToApply: Int): Either[ApiAdapterServiceError, D] =
+    adaptN(data, noOfVersionsToApply)
 
   @tailrec
-  private def adaptN(data: D, signedNoOfVersions: Int): Either[ApiAdapterServiceError, D] = {
+  private def adaptN(data: D, signedNoOfVersionsToApply: Int): Either[ApiAdapterServiceError, D] = {
     val currentVersion = data.currentVersion()
     val adapters       = getAdapters
 
-    signedNoOfVersions match {
+    signedNoOfVersionsToApply match {
       case 0 => Right(data)
       case n if n > 0 =>
         val adapterO = adapters.get(currentVersion)
         adapterO match {
           case Some(adapter) =>
-            adaptN(adapter.liftVersion(data), signedNoOfVersions - 1)
+            adaptN(adapter.liftVersion(data), signedNoOfVersionsToApply - 1)
           case None => Left(OutOfRangeAdapterRequestError(currentVersion, n))
         }
       case n if n < 0 =>
         val adapterO = adapters.get(currentVersion - 1)
         adapterO match {
           case Some(adapter) =>
-            adaptN(adapter.downgradeVersion(data), signedNoOfVersions + 1)
+            adaptN(adapter.downgradeVersion(data), signedNoOfVersionsToApply + 1)
           case None => Left(OutOfRangeAdapterRequestError(currentVersion, n))
         }
     }
