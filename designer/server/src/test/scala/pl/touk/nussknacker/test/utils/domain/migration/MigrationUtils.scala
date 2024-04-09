@@ -16,7 +16,7 @@ object MigrationUtils {
       versionField match {
         case Some(symbol) =>
           val versionType = symbol.typeSignature.finalResultType
-          val isIntField  = versionType == typeOf[Int]
+          val isIntField  = versionType =:= typeOf[Int]
           (clazz.getName, isIntField)
         case None => (clazz.getName, false)
       }
