@@ -82,7 +82,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                                 readOnly={false}
                                 key={fieldName}
                                 showSwitch={false}
-                                showValidation={false}
+                                showValidation={true}
                                 variableTypes={{}}
                             />
                         </ErrorBoundary>
