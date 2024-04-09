@@ -3,7 +3,7 @@ import { ToolbarPosition } from "../../actions/nk/toolbars";
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME } from "./ToolbarsContainer";
-import { SIDEBAR_WIDTH } from "../sidePanels/SidePanelStyled";
+import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
 
 type Props = PropsWithChildren<{
     onMove: (from: ToolbarPosition, to: ToolbarPosition) => void;
