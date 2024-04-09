@@ -197,6 +197,20 @@ trait GraphBuilder[R] {
     new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, toNodeParameters(params), branchParameters), _))
   }
 
+  def decisionTable(
+      decisionTableParamValue: Expression,
+      filterExpressionParamValue: Expression,
+      output: String,
+  ): GraphBuilder[R] = {
+    enricher(
+      id = "decision-table",
+      output,
+      svcId = "decision-table",
+      "Decision Table"       -> decisionTableParamValue,
+      "Filtering expression" -> filterExpressionParamValue,
+    )
+  }
+
   private def toNodeParameters(params: Iterable[(String, Expression)]) = {
     params.map { case (name, expr) => NodeParameter(ParameterName(name), expr) }.toList
   }
