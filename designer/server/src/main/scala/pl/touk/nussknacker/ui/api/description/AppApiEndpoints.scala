@@ -138,14 +138,6 @@ class AppApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpoint
         )
       )
 
-  lazy val nuVersionEndpoint: PublicEndpoint[Unit, Unit, NuVersionDto, Any] =
-    baseNuApiEndpoint
-      .summary("Application version")
-      .tag("App")
-      .get
-      .in("app" / "version")
-      .out(statusCode(Ok).and(jsonBody[NuVersionDto]))
-
   lazy val serverConfigEndpoint: SecuredEndpoint[Unit, Unit, ServerConfigInfoDto, Any] =
     baseNuApiEndpoint
       .summary("Server configuration viewer service")
@@ -271,9 +263,6 @@ object AppApiEndpoints {
       def apply(message: Option[String], processes: Option[Set[String]]) =
         new HealthCheckProcessErrorResponseDto(status = Status.Error, message, processes)
     }
-
-    @derive(encoder, decoder, schema)
-    final case class NuVersionDto(value: String)
 
     @derive(schema)
     final case class BuildInfoDto(

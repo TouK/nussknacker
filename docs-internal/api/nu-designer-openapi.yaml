@@ -194,19 +194,6 @@ paths:
                         process-version: '0.1'
                         engine-version: '0.2'
                         generation-time: '2023-09-25T09:26:30.402299'
-  /api/app/version:
-    get:
-      tags:
-      - App
-      summary: Application version
-      operationId: getApiAppVersion
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NuVersionDto'
   /api/app/healthCheck/process/deployment:
     get:
       tags:
@@ -2966,13 +2953,6 @@ components:
       - info
       - success
       - error
-    NuVersionDto:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: string
     Parameter:
       required:
       - name
