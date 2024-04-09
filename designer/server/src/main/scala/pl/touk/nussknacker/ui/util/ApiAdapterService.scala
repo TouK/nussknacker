@@ -18,24 +18,24 @@ trait ApiAdapterService[D <: VersionedData] {
     adaptN(data, noOfVersions)
 
   @tailrec
-  private def adaptN(data: D, noOfVersions: Int): Either[ApiAdapterServiceError, D] = {
+  private def adaptN(data: D, signedNoOfVersions: Int): Either[ApiAdapterServiceError, D] = {
     val currentVersion = data.currentVersion()
     val adapters       = getAdapters
 
-    noOfVersions match {
+    signedNoOfVersions match {
       case 0 => Right(data)
       case n if n > 0 =>
         val adapterO = adapters.get(currentVersion)
         adapterO match {
           case Some(adapter) =>
-            adaptN(adapter.liftVersion(data), noOfVersions - 1)
+            adaptN(adapter.liftVersion(data), signedNoOfVersions - 1)
           case None => Left(OutOfRangeAdapterRequestError(currentVersion, n))
         }
       case n if n < 0 =>
         val adapterO = adapters.get(currentVersion - 1)
         adapterO match {
           case Some(adapter) =>
-            adaptN(adapter.downgradeVersion(data), noOfVersions + 1)
+            adaptN(adapter.downgradeVersion(data), signedNoOfVersions + 1)
           case None => Left(OutOfRangeAdapterRequestError(currentVersion, n))
         }
     }
