@@ -10,7 +10,7 @@ import {
     onChangeType,
     StringOrBooleanParameterVariant,
 } from "../../item";
-import { FixedValuesPresets, NodeValidationError, VariableTypes } from "../../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { AnyValueVariant, AnyValueWithSuggestionVariant, FixedListVariant } from "./StringBooleanVariants";
 
@@ -19,12 +19,11 @@ interface Props {
     onChange: (path: string, value: onChangeType) => void;
     path: string;
     variableTypes: VariableTypes;
-    fixedValuesPresets: FixedValuesPresets;
     readOnly: boolean;
     errors: NodeValidationError[];
 }
 
-export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixedValuesPresets, readOnly, errors, ...props }: Props) => {
+export const StringBooleanVariant = ({ item, path, variableTypes, onChange, readOnly, errors, ...props }: Props) => {
     const inputModeOptions = [
         { label: "Fixed list", value: InputMode.FixedList },
         { label: "Any value with suggestions", value: InputMode.AnyValueWithSuggestions },
@@ -54,7 +53,6 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                 item={item}
                 inputModeOptions={inputModeOptions}
                 readOnly={readOnly}
-                fixedValuesPresets={fixedValuesPresets}
                 errors={errors}
             />
             {isAnyValueParameter(item) && (
@@ -72,7 +70,6 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     item={item}
                     onChange={onChange}
                     path={path}
-                    fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
                     variableTypes={variableTypes}
                     errors={errors}
@@ -84,7 +81,6 @@ export const StringBooleanVariant = ({ item, path, variableTypes, onChange, fixe
                     onChange={onChange}
                     path={path}
                     variableTypes={variableTypes}
-                    fixedValuesPresets={fixedValuesPresets}
                     readOnly={readOnly}
                     errors={errors}
                 />

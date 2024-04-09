@@ -1100,6 +1100,10 @@ lazy val testUtils = (project in utils("test-utils"))
         "io.circe"                      %% "circe-parser"            % circeV,
         "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
         "com.lihaoyi"                   %% "ujson"                   % "3.1.2",
+        "com.github.erosb"               % "everit-json-schema"      % everitSchemaV exclude ("commons-logging", "commons-logging"),
+        "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
+        "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % "0.7.4",
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
@@ -1935,6 +1939,8 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5"         % "metrics-core"                    % dropWizardV,
         "io.dropwizard.metrics5"         % "metrics-jmx"                     % dropWizardV,
         "fr.davit"                      %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
+        "org.scalacheck"                %% "scalacheck"                      % scalaCheckV          % Test,
+        "com.github.erosb"               % "everit-json-schema"              % everitSchemaV exclude ("commons-logging", "commons-logging"),
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
         "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
       ) ++ forScalaVersion(
@@ -1956,6 +1962,7 @@ lazy val designer = (project in file("designer/server"))
     listenerApi,
     testUtils                         % Test,
     flinkTestUtils                    % Test,
+    componentsApi                     % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes

@@ -40,7 +40,6 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
 
     const readOnly = !isEditMode;
     const { orderedTypeOptions, defaultTypeOption } = useTypeOptions();
-    const definitionData = useSelector(getProcessDefinitionData);
 
     const addField = useCallback(() => {
         addElement("parameters", getDefaultFields(defaultTypeOption.value));
@@ -61,7 +60,6 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
                 showValidation={showValidation}
                 readOnly={readOnly}
                 variableTypes={variableTypes}
-                fixedValuesPresets={definitionData.fixedValuesPresets}
                 errors={passProps.errors}
             />
         </NodeCommonDetailsDefinition>
