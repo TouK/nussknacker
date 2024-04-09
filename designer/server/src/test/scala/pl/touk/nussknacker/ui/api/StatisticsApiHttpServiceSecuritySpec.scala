@@ -1,18 +1,19 @@
 package pl.touk.nussknacker.ui.api
 
-import io.restassured.RestAssured.{`given`, when}
+import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.NuRestAssureExtensions
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers}
 
 class StatisticsApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
     with WithSimplifiedDesignerConfig
-    with NuRestAssureExtensions {
+    with NuRestAssureExtensions
+    with NuRestAssureMatchers {
 
   private val nuVersion = BuildInfo.version
 
@@ -24,12 +25,14 @@ class StatisticsApiHttpServiceSecuritySpec
         .get(s"$nuDesignerHttpAddress/api/statistic/url")
         .Then()
         .statusCode(200)
-        .equalsJsonBody(
-          s"""
-             |{
-             |  "urls": ["https://stats.nussknacker.io/?fingerprint=development&source=sources&version=$nuVersion"]
-             |}
-             |""".stripMargin
+        .body(
+          matchJsonWithRegexValues(
+            s"""
+               |{
+               |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=\\\\w+?&source=sources&version=$nuVersion"]
+               |}
+               |""".stripMargin
+          )
         )
     }
   }
