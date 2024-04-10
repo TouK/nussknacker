@@ -54,6 +54,8 @@ trait BasicFlinkSource[Raw]
   @silent("deprecated")
   def flinkSourceFunction: SourceFunction[Raw]
 
+  override def contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
+
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
@@ -101,7 +103,7 @@ trait StandardFlinkSource[Raw]
 }
 
 trait CustomizableContextInitializerSource[Raw] { self: Source =>
-  def contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
+  def contextInitializer: ContextInitializer[Raw]
 }
 
 trait CustomizableTimestampWatermarkHandlerSource[Raw] { self: Source =>
