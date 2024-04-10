@@ -665,8 +665,7 @@ class DeploymentServiceImpl(
   private def validateActionCommand(actionCommand: CustomActionCommand, customAction: CustomActionDefinition) = {
     val validator        = new CustomActionValidator(customAction)
     val validationResult = validator.validateCustomActionParams(actionCommand)
-    val validationFlag   = validationResult
-    validationFlag match {
+    validationResult match {
       case Validated.Valid(_) => DBIOAction.successful(())
       case _ => DBIOAction.failed(new IllegalStateException(s"Validation failed for: ${actionCommand.actionName}"))
     }

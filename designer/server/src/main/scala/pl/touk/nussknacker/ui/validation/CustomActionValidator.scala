@@ -63,7 +63,7 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
 
     paramsMap.toList.map { case (name, expression) =>
       customActionParams.find(_.name == name) match {
-        case Some(param) => toValidatedNel(param, expression, name)
+        case Some(param) => validate(param, expression, name)
         case None =>
           MismatchParameter(
             s"Couldn't find a matching parameter in action definition for this param: $name",
@@ -75,7 +75,7 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
     }.sequence_
   }
 
-  private def toValidatedNel(param: CustomActionParameter, expressionValue: String, parameterName: String)(
+  private def validate(param: CustomActionParameter, expressionValue: String, parameterName: String)(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     param.validators
