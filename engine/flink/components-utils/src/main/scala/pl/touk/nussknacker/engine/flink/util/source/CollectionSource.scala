@@ -50,4 +50,6 @@ case class CollectionSource[T: TypeInformation](
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
+
+  override def contextInitializer: ContextInitializer[T] = new BasicContextInitializer[T](Unknown)
 }
