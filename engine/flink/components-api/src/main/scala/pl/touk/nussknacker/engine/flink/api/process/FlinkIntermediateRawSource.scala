@@ -8,20 +8,12 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.process.{
-  BasicContextInitializer,
-  ContextInitializer,
-  ContextInitializingFunction,
-  Source
-}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ContextInitializingFunction}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 object FlinkStandardSourceUtils extends ExplicitUidInOperatorsSupport {
-
-  def defaultContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
   @silent("deprecated")
   def createSource[Raw](
@@ -35,8 +27,8 @@ object FlinkStandardSourceUtils extends ExplicitUidInOperatorsSupport {
   def prepareSource[Raw](
       source: DataStreamSource[Raw],
       flinkNodeContext: FlinkCustomNodeContext,
-      timestampAssigner: Option[TimestampWatermarkHandler[Raw]] = None,
-      customContextInitializer: Option[ContextInitializer[Raw]] = None,
+      timestampAssigner: Option[TimestampWatermarkHandler[Raw]],
+      contextInitializer: ContextInitializer[Raw],
   ): DataStream[Context] = {
 
     // 1. set UID and override source name
@@ -55,7 +47,7 @@ object FlinkStandardSourceUtils extends ExplicitUidInOperatorsSupport {
     rawSourceWithUidAndTimestamp
       .map(
         new FlinkContextInitializingFunction(
-          customContextInitializer.getOrElse(defaultContextInitializer),
+          contextInitializer,
           flinkNodeContext.nodeId,
           flinkNodeContext.convertToEngineRuntimeContext
         ),
