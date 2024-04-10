@@ -5,6 +5,7 @@ import { selectStyled } from "../../../../stylesheets/SelectStyled";
 import { useTheme } from "@mui/material";
 import ValidationLabels from "../../../modals/ValidationLabels";
 import { FieldError } from "../editors/Validators";
+import { cx } from "@emotion/css";
 
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);
@@ -28,7 +29,10 @@ export interface Option {
 }
 
 interface RowSelectProps {
+    id?: string;
+    className?: string;
     onChange: (value: string) => void;
+    onBlur?: (value: string) => void;
     options: Option[];
     readOnly?: boolean;
     isMarked?: boolean;
@@ -37,7 +41,18 @@ interface RowSelectProps {
     fieldErrors: FieldError[];
 }
 
-export function TypeSelect({ isMarked, options, readOnly, value, onChange, placeholder, fieldErrors }: RowSelectProps): JSX.Element {
+export function TypeSelect({
+    id,
+    className,
+    isMarked,
+    options,
+    readOnly,
+    value,
+    onChange,
+    onBlur,
+    placeholder,
+    fieldErrors,
+}: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
@@ -46,8 +61,9 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange, place
     return (
         <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
             <Select
+                id={id}
                 aria-label={"type-select"}
-                className="node-value node-value-select node-value-type-select"
+                className={cx("node-value node-value-select node-value-type-select", className)}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
@@ -55,6 +71,7 @@ export function TypeSelect({ isMarked, options, readOnly, value, onChange, place
                 options={options}
                 value={value || ""}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
+                onBlur={(e) => onBlur(e.target.value)}
                 menuPortalTarget={document.body}
                 placeholder={placeholder}
                 styles={{

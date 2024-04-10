@@ -5,7 +5,7 @@ import { getLuminance } from "@mui/system/colorManipulator";
 export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) => ({
     display: "flex",
     background: getLuminance(color) > 0.5 ? blendDarken(color, 0.08) : blendLighten(color, 0.08),
-    color: theme.typography.overline.color,
+    color: theme.palette.getContrastText(color),
     justifyContent: "space-between",
     padding: theme.spacing(0.25, 0.5),
     flexGrow: 0,

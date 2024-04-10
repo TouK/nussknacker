@@ -5,7 +5,7 @@ import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
 import { NodeInput, SelectNode } from "./FormElements";
 import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
-import { FormControl, FormGroup, FormHelperText, FormLabel, Link, Typography } from "@mui/material";
+import { Box, FormControl, FormGroup, FormHelperText, FormLabel, Link, Typography } from "@mui/material";
 import { Trans, useTranslation } from "react-i18next";
 import StreamingIcon from "../assets/img/streaming.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
@@ -14,6 +14,7 @@ import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
 import { isEmpty } from "lodash";
+import { Option, TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
@@ -52,6 +53,13 @@ export function AddProcessForm({
         (field: keyof TouchedValue, next: boolean) => handleSetTouched({ ...touched, [field]: next }),
         [handleSetTouched, touched],
     );
+
+    const categoryOptions: Option[] = [
+        { value: "", label: "" },
+        ...categories.map((category) => ({ value: category.value, label: category.value })),
+    ];
+
+    const engineOptions: Option[] = [{ value: "", label: "" }, ...engines.map((engine) => ({ value: engine, label: engine }))];
 
     return (
         <div
@@ -142,33 +150,21 @@ export function AddProcessForm({
                 {!isEmpty(categories) && (
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.category", "Category")}</FormLabel>
-                        <div className="node-value">
-                            <SelectNode
+                        <Box flex={1} width="100%">
+                            <TypeSelect
                                 id="processCategory"
-                                className={"node-input"}
-                                value={value.processCategory}
-                                onChange={(e) => {
-                                    onFieldChange("processCategory", e.target.value);
+                                onChange={(value) => {
+                                    onFieldChange("processCategory", value);
                                 }}
                                 onBlur={() => {
                                     onBlurChange("processCategory", true);
                                 }}
-                            >
-                                <>
-                                    <option value={""}></option>
-                                    {categories.map(({ value, disabled }, index) => (
-                                        <option key={index} value={value} disabled={disabled}>
-                                            {value}
-                                        </option>
-                                    ))}
-                                </>
-                            </SelectNode>
-                            <ValidationLabels
+                                value={categoryOptions.find((option) => option.value === value.processCategory)}
+                                options={categoryOptions}
                                 fieldErrors={
                                     touched.processCategory ? getValidationErrorsForField(validationErrors, "processCategory") : []
                                 }
                             />
-
                             <Typography component={"div"} variant={"overline"} mt={1}>
                                 <Trans i18nKey={"addProcessForm.helperText.category"}>
                                     To read more about categories,
@@ -182,40 +178,25 @@ export function AddProcessForm({
                                     </Link>
                                 </Trans>
                             </Typography>
-                        </div>
+                        </Box>
                     </FormControl>
                 )}
                 {!isEmpty(engines) && (
                     <FormControl>
                         <FormLabel required>{t("addProcessForm.label.engine", "Engine")}</FormLabel>
-                        <div className="node-value">
-                            <SelectNode
+                        <Box flex={1} width="100%">
+                            <TypeSelect
                                 id="processEngine"
-                                value={value.processEngine}
-                                className={"node-input"}
-                                onChange={(e) => {
-                                    onFieldChange("processEngine", e.target.value);
+                                onChange={(value) => {
+                                    onFieldChange("processEngine", value);
                                 }}
                                 onBlur={() => {
                                     onBlurChange("processEngine", true);
                                 }}
-                            >
-                                <>
-                                    <option value={""}></option>
-                                    {engines.map((engine, index) => (
-                                        <option key={index} value={engine}>
-                                            {engine}
-                                        </option>
-                                    ))}
-                                </>
-                            </SelectNode>
-                            {touched.processEngine
-                                ? getValidationErrorsForField(validationErrors, "processEngine").map((engineError, index) => (
-                                      <FormHelperText key={index} error>
-                                          {engineError.message}
-                                      </FormHelperText>
-                                  ))
-                                : []}
+                                value={engineOptions.find((option) => option.value === value.processEngine)}
+                                options={engineOptions}
+                                fieldErrors={touched.processEngine ? getValidationErrorsForField(validationErrors, "processEngine") : []}
+                            />
                             <Typography component={"div"} variant={"overline"} mt={1}>
                                 <Trans i18nKey={"addProcessForm.helperText.engine"}>
                                     To read more about engines,
@@ -229,7 +210,7 @@ export function AddProcessForm({
                                     </Link>
                                 </Trans>
                             </Typography>
-                        </div>
+                        </Box>
                     </FormControl>
                 )}
             </NodeTable>

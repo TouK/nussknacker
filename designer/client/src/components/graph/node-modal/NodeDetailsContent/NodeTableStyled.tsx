@@ -26,6 +26,7 @@ export const NodeTableStyled = styled("div")(
             flex: 1;
             flex-basis: 60%;
             display: inline-block;
+            width: 100%;
             textarea {
                 overflow: hidden;
                 height: auto;

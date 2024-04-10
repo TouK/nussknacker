@@ -56,6 +56,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 getActions: ({ row }) =>
                     row.links.map((link, i) => (
                         <GridActionsCellItem
+                            color={"inherit"}
                             component={ExternalLink}
                             key={link.id}
                             icon={<NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />}

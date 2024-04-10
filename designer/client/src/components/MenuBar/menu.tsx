@@ -19,12 +19,15 @@ const PlainButton = styled("button")({
     margin: "unset",
 });
 
-export const PlainLink = styled(TabElement)({
+export const PlainLink = styled(TabElement)(({ theme }) => ({
     "&, &:hover, &:focus": {
         color: "inherit",
         textDecoration: "none",
     },
-});
+    "&:hover": {
+        background: theme.palette.action.hover,
+    },
+}));
 
 const List = styled(TruncatedList)({
     flex: 1,

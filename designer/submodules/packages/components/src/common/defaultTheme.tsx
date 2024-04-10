@@ -1,6 +1,7 @@
 import { cyan, deepOrange, lime } from "@mui/material/colors";
 import { alpha, createTheme, Theme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
+import { getBorderColor } from "nussknackerUi/themeHelpers";
 
 const darkBase = createTheme({
     palette: {
@@ -56,6 +57,9 @@ export const useDefaultTheme = (parent = {}): Theme => {
                 components: {
                     MuiDataGrid: {
                         styleOverrides: {
+                            withBorderColor: ({ theme }) => ({
+                                borderColor: getBorderColor(theme),
+                            }),
                             root: {
                                 border: 0,
                             },
@@ -93,6 +97,15 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                     alignItems: "stretch",
                                 },
                             },
+                            sortIcon: ({ theme }) => ({
+                                color: theme.palette.text.secondary,
+                            }),
+                            menuIconButton: {
+                                color: "currentColor",
+                            },
+                            columnSeparator: {
+                                color: "currentColor",
+                            },
                         },
                     },
                     MuiOutlinedInput: {
@@ -122,6 +135,20 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                 "&.MuiLink-root": {
                                     cursor: "pointer",
                                 },
+                            },
+                        },
+                    },
+                    MuiListItemButton: {
+                        styleOverrides: {
+                            divider: ({ theme }) => ({
+                                borderColor: getBorderColor(theme),
+                            }),
+                        },
+                    },
+                    MuiListItemIcon: {
+                        styleOverrides: {
+                            root: {
+                                color: "currentColor",
                             },
                         },
                     },

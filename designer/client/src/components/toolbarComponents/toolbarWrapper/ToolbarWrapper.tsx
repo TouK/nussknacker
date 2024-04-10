@@ -89,7 +89,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                     )}
                     {onClose && (
                         <IconWrapper as="button" onClick={onClose}>
-                            <StyledCloseIcon />
+                            <StyledCloseIcon color={"error"} />
                         </IconWrapper>
                     )}
                 </PanelHeader>
