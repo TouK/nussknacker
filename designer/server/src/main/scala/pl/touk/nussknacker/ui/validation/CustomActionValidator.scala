@@ -48,20 +48,7 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
       customActionParams: List[CustomActionParameter]
   )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
 
-    requestParamsMap match {
-      case paramsMap if paramsMap.nonEmpty =>
-        handleNonEmptyParamsRequest(paramsMap, customActionParams)
-      case emptyMap if emptyMap.isEmpty =>
-        handleEmptyParamsRequest(customActionParams)
-    }
-  }
-
-  private def handleNonEmptyParamsRequest(
-      paramsMap: Map[String, String],
-      customActionParams: List[CustomActionParameter]
-  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-
-    paramsMap.toList.map { case (name, expression) =>
+    requestParamsMap.toList.map { case (name, expression) =>
       customActionParams.find(_.name == name) match {
         case Some(param) => validate(param, expression, name)
         case None =>
@@ -86,26 +73,6 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
           value = Some(expressionValue),
           label = None
         )
-      }
-      .traverse(_.toValidatedNel)
-      .map(_ => ())
-  }
-
-  private def handleEmptyParamsRequest(
-      customActionParams: List[CustomActionParameter]
-  )(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-
-    customActionParams
-      .collect { case param if param.validators.nonEmpty => (param.name, param.validators) }
-      .flatMap { case (name, validators) =>
-        validators.collect { case validator => validator }.map {
-          _.isValid(
-            paramName = ParameterName(name),
-            expression = Expression.spel("None"),
-            value = None,
-            label = None
-          )
-        }
       }
       .traverse(_.toValidatedNel)
       .map(_ => ())

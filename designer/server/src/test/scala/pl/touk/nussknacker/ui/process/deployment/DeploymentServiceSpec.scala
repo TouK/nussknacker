@@ -185,19 +185,6 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should return error when trying to cancel without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
-
-    val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
-
-    deploymentManager.withWaitForCancelFinish {
-      val result = deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
-      result shouldBe a[CustomActionValidationError]
-      result.getMessage.trim shouldBe "Comment is required."
-    }
-  }
-
   test("should not cancel a deployed process without cancel comment when comment is required") {
     val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
 
@@ -845,6 +832,19 @@ class DeploymentServiceSpec
     assertThrowsWithParent[FragmentStateException] {
       deploymentService.getProcessState(id).futureValue
     }
+  }
+
+  test("should fail invoking custom action when action validation fails") {
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+    val actionName               = ScenarioActionName("has-params")
+    val wrongParams              = Map("testParam" -> "")
+
+    val result = deploymentService.invokeCustomAction(actionName, id, wrongParams).failed.futureValue
+
+    result shouldBe a[CustomActionValidationError]
+    result.getMessage.trim shouldBe s"Validation failed for: ${actionName}"
   }
 
   override def beforeEach(): Unit = {
