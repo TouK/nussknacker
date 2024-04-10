@@ -101,8 +101,6 @@ object GenericSourceWithCustomVariablesSample
         CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
-
-      override def typeInformation: TypeInformation[ProcessingType] = TypeInformation.of(classOf[String])
     }
   }
 

@@ -890,8 +890,6 @@ object SampleNodes {
           CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
-
-        override def typeInformation: TypeInformation[ProcessingType] = TypeInformation.of(classOf[String])
       }
     }
 
@@ -1039,8 +1037,6 @@ object SampleNodes {
         with FlinkSourceTestSupport[SimpleRecord] {
         override def testRecordParser: TestRecordParser[SimpleRecord]                          = simpleRecordParser
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
-
-        override def typeInformation: TypeInformation[SimpleRecord] = TypeInformation.of(classOf[SimpleRecord])
       }
     )
 
@@ -1053,8 +1049,6 @@ object SampleNodes {
       }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
-
-      override def typeInformation: TypeInformation[SimpleJsonRecord] = TypeInformation.of(classOf[SimpleJsonRecord])
     }
   )
 
@@ -1069,8 +1063,6 @@ object SampleNodes {
       new CollectionSource[TypedMap](List(), None, Typed[TypedMap])
         with FlinkSourceTestSupport[TypedMap]
         with ReturningType {
-
-        override def typeInformation: TypeInformation[TypedMap] = TypeInformation.of(classOf[TypedMap])
 
         override def testRecordParser: TestRecordParser[TypedMap] = (testRecord: TestRecord) => {
           TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
