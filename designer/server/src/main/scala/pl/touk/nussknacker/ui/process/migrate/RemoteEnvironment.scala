@@ -74,12 +74,12 @@ trait RemoteEnvironment {
 final case class MigrationApiAdapterError(apiAdapterError: ApiAdapterServiceError)
     extends FatalError(
       apiAdapterError match {
-        case OutOfRangeAdapterRequestError(currentVersion, noOfVersions) =>
-          noOfVersions match {
+        case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+          signedNoOfVersionsLeftToApply match {
             case n if n >= 0 =>
-              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $noOfVersions version(s) up"
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
             case _ =>
-              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-noOfVersions} version(s) down"
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
           }
       }
     )
