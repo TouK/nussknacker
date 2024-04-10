@@ -2,11 +2,13 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
 import cats.Traverse
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -14,6 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
+  CustomActionDefinition,
   CustomActionResult,
   DeploymentData,
   DeploymentId,
@@ -36,7 +39,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.util.FutureUtils._
-import pl.touk.nussknacker.ui.validation.UIProcessValidator
+import pl.touk.nussknacker.ui.validation.{CustomActionValidator, UIProcessValidator}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 import slick.dbio.{DBIO, DBIOAction}
 
@@ -202,7 +205,7 @@ class DeploymentServiceImpl(
   private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
     DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
       case Valid(deploymentComment) => Future.successful(deploymentComment)
-      case Invalid(exc)             => Future.failed(ValidationError(exc.getMessage))
+      case Invalid(exc)             => Future.failed(CustomActionValidationError(exc.message))
     }
 
   protected def validateBeforeDeploy(
@@ -646,17 +649,32 @@ class DeploymentServiceImpl(
           params
         )
         customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
-        _ <- existsOrFail(customActionOpt, CustomActionNonExisting(actionName))
+        customAction <- existsOrFail(
+          customActionOpt,
+          CustomActionNonExistingError(
+            s"Couldn't find definition of action ${actionName.value} for scenario ${processIdWithName.name} when trying to validate"
+          )
+        )
+        _ <- validateActionCommand(actionCommand, customAction)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
         invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
       } yield invokeActionResult
     )
   }
 
+  private def validateActionCommand(actionCommand: CustomActionCommand, customAction: CustomActionDefinition) = {
+    val validator        = new CustomActionValidator(customAction)
+    val validationResult = validator.validateCustomActionParams(actionCommand)
+    validationResult match {
+      case Validated.Valid(_) => DBIOAction.successful(())
+      case _ => DBIOAction.failed(CustomActionValidationError(s"Validation failed for: ${actionCommand.actionName}"))
+    }
+  }
+
 }
 
 private class FragmentStateException extends BadRequestError("Fragment doesn't have state.")
 
-private case class CustomActionNonExisting(actionName: ScenarioActionName)
-    extends NotFoundError(s"$actionName is not existing")
-case class ValidationError(message: String) extends BadRequestError(message)
+//TODO: get rid of these exceptions when rewriting ManagementResources to tapir. They are currently here cause it's the only place that uses them.
+case class CustomActionValidationError(message: String)  extends BadRequestError(message)
+case class CustomActionNonExistingError(message: String) extends NotFoundError(message)

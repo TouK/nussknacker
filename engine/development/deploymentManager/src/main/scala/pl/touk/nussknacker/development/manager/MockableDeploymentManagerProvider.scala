@@ -5,10 +5,11 @@ import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import io.circe.Json
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
@@ -16,7 +17,8 @@ import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
   DeploymentManagerProvider,
-  MetaDataInitializer
+  MetaDataInitializer,
+  deployment
 }
 
 import java.util.concurrent.atomic.AtomicReference
@@ -74,7 +76,34 @@ object MockableDeploymentManagerProvider {
     override def processStateDefinitionManager: ProcessStateDefinitionManager =
       SimpleProcessStateDefinitionManager
 
-    override def customActionsDefinitions: List[CustomActionDefinition] = Nil
+    override def customActionsDefinitions: List[CustomActionDefinition] = {
+      import SimpleStateStatus._
+      List(
+        deployment.CustomActionDefinition(
+          actionName = ScenarioActionName("hello"),
+          allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
+        ),
+        deployment.CustomActionDefinition(
+          actionName = ScenarioActionName("not-implemented"),
+          allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
+        ),
+        deployment.CustomActionDefinition(
+          actionName = ScenarioActionName("some-params-action"),
+          allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name),
+          parameters = List(
+            CustomActionParameter(
+              "param1",
+              StringParameterEditor,
+              NotBlankParameterValidator :: Nil
+            )
+          )
+        ),
+        deployment.CustomActionDefinition(
+          actionName = ScenarioActionName("invalid-status"),
+          allowedStateStatusNames = Nil
+        )
+      )
+    }
 
     override def getProcessStates(name: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy

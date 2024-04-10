@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
-import HttpService from "../../http/HttpService";
-import { CustomAction } from "../../types";
+import HttpService, { CustomActionValidationRequest } from "../../http/HttpService";
+import { CustomAction, NodeValidationError, ValidationErrors } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
@@ -16,6 +16,8 @@ import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { debounce } from "lodash";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -38,6 +40,27 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
     useEffect(() => onChange(state), [onChange, state]);
 
+    const [errors, setErrors] = useState<NodeValidationError[]>([]);
+
+    const processName = useSelector(getProcessName);
+    const validationRequest: CustomActionValidationRequest = useMemo(() => {
+        return {
+            actionName: action.name,
+            params: state,
+        };
+    }, [action, state]);
+
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            const data = await HttpService.validateCustomAction(processName, validationRequest);
+            setErrors(data.validationErrors);
+        }, 400);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [processName, validationRequest]);
+
     return (
         <NodeTable>
             {(action?.parameters || []).map((param) => {
@@ -51,7 +74,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                             <Editor
                                 editorConfig={param?.editor}
                                 className={"node-value"}
-                                fieldErrors={undefined}
+                                fieldErrors={getValidationErrorsForField(errors, param.name)}
                                 formatter={null}
                                 expressionInfo={null}
                                 onValueChange={setParam(fieldName)}
@@ -59,7 +82,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                                 readOnly={false}
                                 key={fieldName}
                                 showSwitch={false}
-                                showValidation={false}
+                                showValidation={true}
                                 variableTypes={{}}
                             />
                         </ErrorBoundary>
