@@ -69,27 +69,6 @@ class SettingsResources(
 
 @JsonCodec final case class SurveySettings(key: String, text: String, link: URL)
 
-object DeploymentCommentSettings {
-
-  def create(
-      validationPattern: String,
-      exampleComment: Option[String]
-  ): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
-    Validated.cond(
-      validationPattern.nonEmpty,
-      new DeploymentCommentSettings(validationPattern, exampleComment),
-      EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty.")
-    )
-  }
-
-  def unsafe(validationPattern: String, exampleComment: Option[String]): DeploymentCommentSettings = {
-    new DeploymentCommentSettings(validationPattern, exampleComment)
-  }
-
-}
-
-final case class EmptyDeploymentCommentSettingsError(message: String) extends Exception(message)
-
 @JsonCodec final case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
 @JsonCodec final case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
