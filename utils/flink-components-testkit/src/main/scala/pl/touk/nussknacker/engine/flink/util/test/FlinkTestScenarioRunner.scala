@@ -55,7 +55,6 @@ private object testComponents {
           timestampAssigner = timestampAssigner,
           returnType = Typed.apply[T],
           boundedness = boundedness,
-          customContextInitializer = None,
           flinkRuntimeMode = Some(flinkExecutionMode)
         )
       )

@@ -110,7 +110,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _, _, _) :: Nil =>
+    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _, _) :: Nil =>
     }
   }
 
@@ -131,9 +131,9 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.node.id -> source.obj
     }.toMap
-    sources("left-source") should matchPattern { case CollectionSource(List(11, 12, 13), _, _, _, _, _) =>
+    sources("left-source") should matchPattern { case CollectionSource(List(11, 12, 13), _, _, _, _) =>
     }
-    sources("right-source") should matchPattern { case CollectionSource(List(21, 22, 23), _, _, _, _, _) =>
+    sources("right-source") should matchPattern { case CollectionSource(List(21, 22, 23), _, _, _, _) =>
     }
     sources("source-no-test-support") should matchPattern { case EmptySource(_) =>
     }
@@ -152,7 +152,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _, _, _) :: Nil =>
+    sources should matchPattern { case CollectionSource(List(1, 2, 3), _, _, _, _) :: Nil =>
     }
   }
 
