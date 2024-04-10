@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActi
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 
+//TODO: consider unifying this with ScenarioPropertiesValidator as the logic is very similar (possibly identical)
 class CustomActionValidator(allowedAction: CustomActionDefinition) {
 
   def validateCustomActionParams(
