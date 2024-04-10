@@ -15,10 +15,10 @@ import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
 
 import java.io.File
-import java.net.URLEncoder
+import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Random, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 object UsageStatisticsReportsSettingsDeterminer {
 
@@ -109,12 +109,12 @@ class UsageStatisticsReportsSettingsDeterminer(
     fetchNonArchivedScenariosInputData: () => Future[List[ScenarioStatisticsInputData]]
 )(implicit ec: ExecutionContext) {
 
-  def determineStatisticsUrl(): Future[Option[String]] = {
+  def determineStatisticsUrl(): Future[Option[URL]] = {
     if (config.enabled) {
       determineQueryParams()
-        .map { queryParams =>
+        .flatMap { queryParams =>
           val url = prepareUrl(queryParams)
-          Some(url)
+          toURL(url)
         }
     } else {
       Future.successful(None)
@@ -151,6 +151,12 @@ class UsageStatisticsReportsSettingsDeterminer(
   }
 
   private def randomFingerprint = s"gen-${Random.alphanumeric.take(10).mkString}"
+
+  private def toURL(urlString: String): Future[Option[URL]] =
+    Try(new URI(urlString).toURL) match {
+      case Failure(ex)    => Future.failed(new IllegalStateException("Invalid URL generated", ex))
+      case Success(value) => Future.successful(Some(value))
+    }
 
 }
 
