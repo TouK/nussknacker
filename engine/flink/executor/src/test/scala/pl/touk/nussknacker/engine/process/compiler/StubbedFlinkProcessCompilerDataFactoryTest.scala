@@ -184,8 +184,6 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
 
     override def parametersToTestData(params: Map[ParameterName, AnyRef]): Int =
       params(ParameterName("input")).asInstanceOf[Int]
-
-    override def typeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
   }
 
   object SampleTestSupportSource
@@ -194,7 +192,6 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
     override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
       CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
-    override def typeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
   }
 
 }
