@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{
-  CustomContextInitializerSource,
+  CustomizableContextInitializerSource,
   FlinkIntermediateRawSource,
   FlinkSource,
   FlinkSourceTestSupport
@@ -106,7 +106,7 @@ class StubbedSourcePreparer(
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
     originalSource match {
-      case sourceWithContextInitializer: CustomContextInitializerSource[Object @unchecked] =>
+      case sourceWithContextInitializer: CustomizableContextInitializerSource[Object @unchecked] =>
         new CollectionSource[Object](
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
