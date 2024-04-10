@@ -16,8 +16,8 @@ describe("Node window", () => {
     it("should display periodic source", () => {
         cy.visitNewProcess(NAME).as("processName");
         cy.contains(/^sources$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         cy.get("[data-testid='component:periodic']")
             .should("be.visible")
             .drag("#nk-graph-main", {
@@ -39,7 +39,7 @@ describe("Node window", () => {
         cy.get("[data-testid=window]").matchImage();
     });
 
-    describe.skip("with query params", () => {
+    describe("with query params", () => {
         beforeEach(() => {
             cy.visit("/components");
         });
@@ -98,14 +98,15 @@ describe("Node window", () => {
             cy.visitNewProcess(`${NAME}_yyy`, "testProcess");
 
             // TODO: simplify, don't want to test dnd/save here
-            cy.get("#toolbox").contains("fragments").should("be.visible").click();
+            cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
+            cy.layoutScenario();
             cy.contains(`${NAME}_xxx`)
                 .last()
                 .should("be.visible")
                 .drag("#nk-graph-main", {
                     target: {
-                        x: 850,
-                        y: 600,
+                        x: 880,
+                        y: 550,
                     },
                     force: true,
                 });

@@ -25,8 +25,8 @@ describe("Compare versions", () => {
 
         // Add fragment to the scenario
         cy.contains(/^fragments$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         cy.contains("fragment_xxx-test-process")
             .last()
             .should("be.visible")

@@ -18,22 +18,16 @@ describe("Creator toolbar", () => {
         cy.contains(/^Creator panel.*sources/i).as("toolbar");
     });
 
-    it("should allow filtering", () => {
-        cy.get("@toolbar")
-            .should("be.visible")
-            .then((el) => {
-                cy.matchImage({
-                    // manual clip to fix wrong clipping of big invisible part
-                    screenshotConfig: {
-                        clip: {
-                            x: el.offset().left,
-                            y: el.offset().top,
-                            width: el.width(),
-                            height: Math.min(height, el.height()) - el.offset().top,
-                        },
-                    },
-                });
-            });
+    it("should allow collapse (persist) and filtering", () => {
+        cy.contains(/^sources$/i).click();
+        cy.contains(/^base$/i).click();
+        cy.contains(/^custom$/i).click();
+        cy.contains(/^enrichers$/i).click();
+        cy.contains(/^types$/i).click();
+        cy.contains(/^services$/i).click();
+        cy.contains(/^sinks$/i).click();
+        cy.reload();
+        cy.get("@toolbar").matchImage();
         cy.get("@toolbar").find("input").type("var");
         cy.get("@toolbar").matchImage();
     });
