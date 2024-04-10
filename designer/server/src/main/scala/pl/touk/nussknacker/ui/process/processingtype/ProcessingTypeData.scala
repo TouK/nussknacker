@@ -12,7 +12,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
-    processingType: ProcessingType,
+    name: ProcessingType,
     designerModelData: DesignerModelData,
     deploymentData: DeploymentData,
     category: String,
@@ -24,7 +24,7 @@ final case class ProcessingTypeData private (
   def scenarioParameters: ScenarioParametersWithEngineSetupErrors =
     ScenarioParametersWithEngineSetupErrors(
       ScenarioParameters(
-        designerModelData.singleProcessingMode,
+        designerModelData.processingMode,
         category,
         deploymentData.engineSetupName
       ),
@@ -44,7 +44,7 @@ object ProcessingTypeData {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def createProcessingTypeData(
-      processingType: ProcessingType,
+      name: ProcessingType,
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
@@ -64,9 +64,9 @@ object ProcessingTypeData {
           metaDataInitializer
         )
 
-      val designerModelData = createDesignerModelData(modelData, metaDataInitializer, processingType)
+      val designerModelData = createDesignerModelData(modelData, metaDataInitializer, name)
       ProcessingTypeData(
-        processingType,
+        name,
         designerModelData,
         deploymentData,
         category
@@ -74,7 +74,7 @@ object ProcessingTypeData {
     } catch {
       case NonFatal(ex) =>
         throw new IllegalArgumentException(
-          s"Error during creation of processing type data for processing type [$processingType]",
+          s"Error during creation of processing type data for processing type [$name]",
           ex
         )
     }

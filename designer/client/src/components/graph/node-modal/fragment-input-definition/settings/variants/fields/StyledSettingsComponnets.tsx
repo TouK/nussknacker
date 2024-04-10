@@ -65,11 +65,6 @@ export const CustomSwitch = styled(Switch)`
     }
 `;
 
-export const StyledFormControlLabel = styled(FormLabel)`
-    font-size: 12px;
-    font-weight: 400;
-`;
-
 export const fieldLabel = ({ label, required = false, hintText }: { label: string; required?: boolean; hintText?: string }) => (
     <SettingLabelStyled required={required}>
         {label}

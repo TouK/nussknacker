@@ -47,7 +47,7 @@ class TestModelMigrations(
     processInParallel(migratedFragments ++ migratedProcesses, batchingExecutionContext) { migrationDetails =>
       val validationResult =
         validator
-          .forTypeUnsafe(migrationDetails.processingType)
+          .forProcessingTypeUnsafe(migrationDetails.processingType)
           .validate(migrationDetails.newScenarioGraph, migrationDetails.processName, migrationDetails.isFragment)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(
@@ -61,7 +61,7 @@ class TestModelMigrations(
       scenarioWithDetails: ScenarioWithDetailsForMigrations
   )(implicit user: LoggedUser): Option[MigratedProcessDetails] = {
     for {
-      migrator <- migrators.forType(scenarioWithDetails.processingType)
+      migrator <- migrators.forProcessingType(scenarioWithDetails.processingType)
 
       MigrationResult(newProcess, _) <- migrator.migrateProcess(
         scenarioWithDetails.name,

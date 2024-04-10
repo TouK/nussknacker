@@ -62,9 +62,9 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateMapSchema(typingResult, schema, path)
       case (tc @ TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateArraySchema(tc, schema, path)
-      case (_ @TypedNull, _) if !schema.isNullable =>
+      case (TypedNull, _) if !schema.isNullable =>
         invalid(typingResult, schema, path)
-      case (_ @TypedNull, _) if schema.isNullable =>
+      case (TypedNull, _) if schema.isNullable =>
         valid
       case (typingResult, Type.ENUM) =>
         validateEnum(typingResult, schema, path)

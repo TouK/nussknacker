@@ -72,7 +72,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
     definition
       .asInstanceOf[DynamicComponentDefinitionWithImplementation]
-      .implementation
+      .component
       .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
       .returnType shouldBe Typed[String]
   }

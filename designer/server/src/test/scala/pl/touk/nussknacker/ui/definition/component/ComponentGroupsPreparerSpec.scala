@@ -193,6 +193,7 @@ class ComponentGroupsPreparerSpec
         DesignerWideComponentId.default("Streaming", _)
       ),
       modelDefinition,
+      ProcessingMode.UnboundedStream
     )
 
     withStaticDefinition(

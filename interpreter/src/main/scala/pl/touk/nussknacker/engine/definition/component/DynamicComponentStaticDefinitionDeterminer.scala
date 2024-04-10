@@ -35,7 +35,7 @@ class DynamicComponentStaticDefinitionDeterminer(
     val parameters = determineInitialParameters(dynamic)
     ComponentStaticDefinition(
       parameters,
-      staticReturnType(dynamic.implementation)
+      staticReturnType(dynamic.component)
     )
   }
 
@@ -51,7 +51,7 @@ class DynamicComponentStaticDefinitionDeterminer(
           transformer,
           Nil,
           Nil,
-          if (dynamic.implementation.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
+          if (dynamic.component.nodeDependencies.contains(OutputVariableNameDependency)) Some("fakeOutputVariable")
           else None,
           dynamic.parametersConfig
         )(inputContext)
@@ -66,7 +66,7 @@ class DynamicComponentStaticDefinitionDeterminer(
         }
     }
 
-    dynamic.implementation match {
+    dynamic.component match {
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, dynamic.parametersConfig)
       case single: SingleInputDynamicComponent[_] =>

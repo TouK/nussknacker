@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -43,6 +44,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       docsUrl = None,
       translateGroupName = Some(_),
       designerWideId = DesignerWideComponentId("dumpId"),
+      allowedProcessingModes = AllowedProcessingModes.All
     )
   }
 

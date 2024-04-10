@@ -18,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -150,6 +150,7 @@ export interface ScenarioParametersCombinations {
 }
 
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
+type DictOption = { id: string; label: string };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -709,6 +710,23 @@ class HttpService {
                 Promise.reject(
                     this.#addError(
                         i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"),
+                        error,
+                    ),
+                ),
+            );
+    }
+
+    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, { refClazzName }: ReturnedType) {
+        return api
+            .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
+                expectedType: {
+                    value: { type: "TypedClass", refClazzName, params: [] },
+                },
+            })
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch presets"),
                         error,
                     ),
                 ),

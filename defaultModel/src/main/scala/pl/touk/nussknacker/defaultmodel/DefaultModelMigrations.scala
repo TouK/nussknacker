@@ -1,10 +1,6 @@
 package pl.touk.nussknacker.defaultmodel
 
-import pl.touk.nussknacker.defaultmodel.migrations.{
-  GroupByMigration,
-  RequestResponseSinkValidationModeMigration,
-  SinkExpressionMigration
-}
+import pl.touk.nussknacker.defaultmodel.migrations._
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
 
 class DefaultModelMigrations extends ProcessMigrations {
@@ -13,7 +9,8 @@ class DefaultModelMigrations extends ProcessMigrations {
     .listOf(
       GroupByMigration,
       SinkExpressionMigration,
-      RequestResponseSinkValidationModeMigration
+      RequestResponseSinkValidationModeMigration,
+      DecisionTableParameterNamesMigration
     )
     .processMigrations
 

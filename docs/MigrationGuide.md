@@ -27,6 +27,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * in `ProcessAction` attribute `actionType` renamed to `actionName`
     * in table `process_actions` column `action_type` is renamed to `action_name`
 * [#5762](https://github.com/TouK/nussknacker/pull/5762) for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
+* [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
+  * `AllowedProcessingModes.All` in case of all processing modes allowed
+  * `AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes)` in case only set of processing modes is allowed
 
 ### Configuration changes
 
@@ -48,6 +51,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
   * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
   * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
+* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
+  * "Basic Decision Table" -> "Decision Table"
+  * "Expression" -> "Filtering expression"
 
 ## In version 1.14.0
 
