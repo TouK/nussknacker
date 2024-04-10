@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.api.process.ContextInitializer
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
-  CustomContextInitializerSource,
+  CustomizableContextInitializerSource,
   FlinkCustomNodeContext,
-  FlinkIntermediateRawSourceUtils,
-  FlinkSource
+  FlinkSource,
+  FlinkStandardSourceUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -30,7 +30,7 @@ case class CollectionSource[T: TypeInformation](
     flinkRuntimeMode: Option[RuntimeExecutionMode] = None
 ) extends FlinkSource
     with ReturningType
-    with CustomContextInitializerSource[T] {
+    with CustomizableContextInitializerSource[T] {
 
   @silent("deprecated")
   override def sourceStream(
@@ -41,16 +41,16 @@ case class CollectionSource[T: TypeInformation](
       case Boundedness.BOUNDED =>
         env.fromCollection(list.asJava)
       case Boundedness.CONTINUOUS_UNBOUNDED =>
-        FlinkIntermediateRawSourceUtils.createSource(
+        FlinkStandardSourceUtils.createSource(
           env = env,
           sourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava),
           typeInformation = implicitly[TypeInformation[T]]
         )
     }
     flinkRuntimeMode.foreach(env.setRuntimeMode)
-    FlinkIntermediateRawSourceUtils.prepareSource(source, flinkNodeContext, timestampAssigner, customContextInitializer)
+    FlinkStandardSourceUtils.prepareSource(source, flinkNodeContext, timestampAssigner, customContextInitializer)
   }
 
   override def contextInitializer: ContextInitializer[T] =
-    customContextInitializer.getOrElse(FlinkIntermediateRawSourceUtils.defaultContextInitializer)
+    customContextInitializer.getOrElse(FlinkStandardSourceUtils.defaultContextInitializer)
 }
