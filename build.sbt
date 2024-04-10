@@ -743,7 +743,12 @@ lazy val defaultModel = (project in (file("defaultModel")))
   .settings(assemblyNoScala("defaultModel.jar"): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
-    name := "nussknacker-default-model"
+    name := "nussknacker-default-model",
+    libraryDependencies ++= {
+      Seq(
+        "org.scalatest" %% "scalatest" % scalaTestV % Test
+      )
+    }
   )
   .dependsOn(defaultHelpers, extensionsApi % Provided)
 
