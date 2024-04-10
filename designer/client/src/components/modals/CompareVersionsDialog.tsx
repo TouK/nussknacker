@@ -19,6 +19,9 @@ import { NodeType } from "../../types";
 import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 import { FormControl, FormLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { Option, TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
+import { diff } from "react-ace";
+import { NodeValue } from "../graph/node-modal/node";
 
 interface State {
     currentDiffId: string;
@@ -79,13 +82,13 @@ const VersionsForm = () => {
         return isRemote(versionId) ? `${versionToPass(versionId)} on ${otherEnvironment}` : versionId;
     };
 
+    const createVersionId = (version: ProcessVersionType, versionPrefix = "") => {
+        return versionPrefix + version.processVersionId;
+    };
+
     const createVersionElement = (version: ProcessVersionType, versionPrefix = "") => {
-        const versionId = versionPrefix + version.processVersionId;
-        return (
-            <option key={versionId} value={versionId}>
-                {versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}
-            </option>
-        );
+        const versionId = createVersionId(version, versionPrefix);
+        return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}`;
     };
 
     const printDiff = (diffId: string) => {
@@ -159,44 +162,46 @@ const VersionsForm = () => {
         return property ? <NodeDetailsContent node={property} /> : <div className="notPresent">Properties not present</div>;
     };
 
+    const versionOptions: Option[] = [
+        { label: "", value: "" },
+        ...versions
+            .filter((currentVersion) => version !== currentVersion.processVersionId)
+            .map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
+        ...(state?.remoteVersions ?? []).map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
+    ];
+
+    const differenceOptions: Option[] = [
+        { label: "", value: "" },
+        ...keys(state?.difference ?? []).map((diffId) => ({
+            label: `${diffId} ${isLayoutChangeOnly(diffId) ? "(position only)" : ""}`,
+            value: diffId,
+        })),
+    ];
+
     return (
         <>
             <FormControl>
                 <FormLabel>Version to compare</FormLabel>
-                <SelectNode
+                <TypeSelect
                     autoFocus={true}
                     id="otherVersion"
-                    className="selectNode"
-                    value={state.otherVersion || ""}
-                    onChange={(e) => loadVersion(e.target.value)}
-                >
-                    <option key="" value="" />
-                    {versions
-                        .filter((currentVersion) => version !== currentVersion.processVersionId)
-                        .map((version) => createVersionElement(version))}
-                    {state.remoteVersions.map((version) => createVersionElement(version, remotePrefix))}
-                </SelectNode>
+                    onChange={(value) => loadVersion(value)}
+                    value={versionOptions.find((option) => option.value === state.otherVersion)}
+                    options={versionOptions}
+                    fieldErrors={[]}
+                />
             </FormControl>
             {state.otherVersion ? (
                 <div>
                     <FormControl>
                         <FormLabel>Difference to pick</FormLabel>
-                        <SelectNode
+                        <TypeSelect
                             id="differentVersion"
-                            className="selectNode"
-                            value={state.currentDiffId || ""}
-                            onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
-                        >
-                            <option key="" value="" />
-                            {keys(state.difference).map((diffId) => {
-                                const isLayoutOnly = isLayoutChangeOnly(diffId);
-                                return (
-                                    <option key={diffId} value={diffId} disabled={isLayoutOnly}>
-                                        {diffId} {isLayoutOnly && "(position only)"}
-                                    </option>
-                                );
-                            })}
-                        </SelectNode>
+                            onChange={(value) => setState({ ...state, currentDiffId: value })}
+                            value={differenceOptions.find((option) => option.value === state.currentDiffId)}
+                            options={differenceOptions}
+                            fieldErrors={[]}
+                        />
                     </FormControl>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
                 </div>

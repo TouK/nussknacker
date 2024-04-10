@@ -1,11 +1,13 @@
-import React, { useCallback, useState } from "react";
+import React, { HTMLProps, useCallback, useState } from "react";
 import Select from "react-select";
 import { NodeValue } from "../node";
 import { selectStyled } from "../../../../stylesheets/SelectStyled";
-import { useTheme } from "@mui/material";
+import { styled, useTheme } from "@mui/material";
 import ValidationLabels from "../../../modals/ValidationLabels";
 import { FieldError } from "../editors/Validators";
 import { cx } from "@emotion/css";
+
+const StyledNodeValue = styled(NodeValue)({ width: "100%" });
 
 function useCaptureEsc() {
     const [captureEsc, setCaptureEsc] = useState(false);
@@ -28,9 +30,7 @@ export interface Option {
     label: string;
 }
 
-interface RowSelectProps {
-    id?: string;
-    className?: string;
+interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
     onChange: (value: string) => void;
     onBlur?: (value: string) => void;
     options: Option[];
@@ -42,8 +42,6 @@ interface RowSelectProps {
 }
 
 export function TypeSelect({
-    id,
-    className,
     isMarked,
     options,
     readOnly,
@@ -52,6 +50,7 @@ export function TypeSelect({
     onBlur,
     placeholder,
     fieldErrors,
+    ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
@@ -59,11 +58,11 @@ export function TypeSelect({
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
 
     return (
-        <NodeValue className="field" marked={isMarked} onKeyDown={preventEsc}>
+        <StyledNodeValue marked={isMarked} onKeyDown={preventEsc}>
             <Select
-                id={id}
+                id={props.id}
                 aria-label={"type-select"}
-                className={cx("node-value node-value-select node-value-type-select", className)}
+                className={cx("node-value node-value-select node-value-type-select", props.className)}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}
@@ -71,7 +70,7 @@ export function TypeSelect({
                 options={options}
                 value={value || ""}
                 onChange={(option) => onChange(typeof option === "string" ? "" : option.value)}
-                onBlur={(e) => onBlur(e.target.value)}
+                onBlur={(e) => onBlur?.(e.target.value)}
                 menuPortalTarget={document.body}
                 placeholder={placeholder}
                 styles={{
@@ -92,12 +91,12 @@ export function TypeSelect({
                         ...menuOption(base, props.isSelected, props.isFocused),
                     }),
                     valueContainer: (base, props) => ({
-                        ...valueContainer(base, props.hasValue),
+                        ...valueContainer(base),
                     }),
-                    singleValue: (base) => ({ ...singleValue(base) }),
+                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
                 }}
             />
             <ValidationLabels fieldErrors={fieldErrors} />
-        </NodeValue>
+        </StyledNodeValue>
     );
 }

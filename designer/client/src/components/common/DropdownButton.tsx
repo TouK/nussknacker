@@ -85,9 +85,9 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                     menu: ({ position, ...base }) => ({ ...menu(base) }),
                     input: (base) => ({ ...input(base) }),
                     valueContainer: (base, props) => ({
-                        ...valueContainer(base, props.hasValue),
+                        ...valueContainer(base),
                     }),
-                    singleValue: (base) => ({ ...singleValue(base) }),
+                    singleValue: (base) => ({ ...singleValue(base, props.disabled) }),
                     menuList: (base) => ({
                         ...menuList(base),
                     }),

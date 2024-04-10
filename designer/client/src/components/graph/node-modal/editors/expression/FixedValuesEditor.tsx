@@ -81,9 +81,9 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                         ...menuOption(base, props.isSelected, props.isFocused),
                     }),
                     valueContainer: (base, props) => ({
-                        ...valueContainer(base, props.hasValue),
+                        ...valueContainer(base),
                     }),
-                    singleValue: (base) => ({ ...singleValue(base) }),
+                    singleValue: (base) => ({ ...singleValue(base, props.readOnly) }),
                 }}
             />
 

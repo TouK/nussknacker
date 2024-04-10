@@ -17,21 +17,14 @@ export const selectStyled = (theme: Theme) => {
 
     const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`
         ${base};
-        background-color: ${theme.palette.background.paper};
+        background-color: ${isDisabled ? theme.palette.action.disabledBackground : theme.palette.background.paper};
+        color: ${theme.palette.action.disabled} !important;
         max-height: 35px;
         min-height: 35px;
         border: none;
         border-radius: 0;
         box-shadow: 0;
-        outline: 1px solid ${getBorderColor(theme)} !important;
-        ${isFocused &&
-        css`
-            outline: 1px solid ${theme.palette.primary.main} !important;
-        `}
-        ${isDisabled &&
-        css`
-            opacity: 20% !important;
-        `}
+        outline: 1px solid ${isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
     `;
 
     const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isFocused: boolean) => css`
@@ -62,9 +55,10 @@ export const selectStyled = (theme: Theme) => {
         outline: none;
     `;
 
-    const singleValue = (base: CSSObjectWithLabel) => css`
+    const singleValue = (base: CSSObjectWithLabel, isDisabled: boolean) => css`
         ${base};
         ${commonNodeInput("0")}; //TODO input hides partially due to padding...
+        background-color: ${isDisabled ? "inherit" : theme.palette.background.paper};
         position: absolute;
         outline: none;
     `;
@@ -103,12 +97,8 @@ export const selectStyled = (theme: Theme) => {
         border-radius: 0;
     `;
 
-    const valueContainer = (base: CSSObjectWithLabel, hasValue: boolean) => css`
+    const valueContainer = (base: CSSObjectWithLabel) => css`
         ${base};
-        ${hasValue &&
-        css`
-            background-color: ${theme.palette.background.paper};
-        `}
     `;
 
     return {

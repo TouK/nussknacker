@@ -239,7 +239,7 @@ export const globalStyles = (theme: Theme) => ({
             backgroundColor: theme.palette.action.hover,
         },
     },
-    "input[readonly], select[readonly], textarea[readonly], input[type='checkbox'][readonly]:after, input[type='radio'][readonly]:after, .row-ace-editor[readonly]":
+    "input[readonly], select[readonly], textarea[readonly], input[type='checkbox'][readonly]:after, input[type='radio'][readonly]:after, .row-ace-editor.read-only, .row-ace-editor .read-only .ace_scroller":
         {
             backgroundColor: `${theme.palette.action.disabledBackground} !important`,
             color: `${theme.palette.action.disabled} !important`,

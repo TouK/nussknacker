@@ -21,11 +21,10 @@ declare module "@mui/material/styles" {
         custom?: (typeof darkModePalette)["custom"];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
     interface Theme {
         custom: typeof custom;
     }
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+
     interface ThemeOptions {
         custom?: typeof custom;
     }
@@ -76,7 +75,7 @@ const lightModePalette = {
                 fill: "#509D6E",
             },
             FragmentInputDefinition: {
-                fill: "#DB4646",
+                fill: "#509D6E",
             },
             Sink: {
                 fill: "#DB4646",
@@ -169,7 +168,7 @@ const darkModePalette = {
                 fill: "#509D6E",
             },
             FragmentInputDefinition: {
-                fill: "#DB4646",
+                fill: "#509D6E",
             },
             Sink: {
                 fill: "#DB4646",

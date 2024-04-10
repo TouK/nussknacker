@@ -12,8 +12,8 @@ import { uniq } from "lodash";
 import { ExpressionLang } from "./editors/expression/types";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
-import { SelectNode } from "../../FormElements";
 import { FieldError } from "./editors/Validators";
+import { TypeSelect } from "./fragment-input-definition/TypeSelect";
 
 interface Props {
     index: number;
@@ -60,7 +60,16 @@ export function EdgeFields(props: Props): JSX.Element {
         });
     }, [availableNodes, edge.from, edges, otherEdges, processDefinitionData]);
 
-    const freeInputs = useMemo(() => uniq(freeNodes.concat(targetNodes).map((n) => n.id)), [freeNodes, targetNodes]);
+    const freeInputs = useMemo(
+        () => [
+            { label: "⇢", value: "" },
+            ...uniq(freeNodes.concat(targetNodes).map((n) => n.id)).map((freeInput) => ({
+                label: `➝ ${freeInput}`,
+                value: freeInput,
+            })),
+        ],
+        [freeNodes, targetNodes],
+    );
 
     const onValueChange = useCallback(
         (expression) =>
@@ -131,29 +140,20 @@ export function EdgeFields(props: Props): JSX.Element {
                 </NodeValue>
             ) : null}
             <NodeValue className={css({ gridArea: !showType && "field" })}>
-                <SelectNode
+                <TypeSelect
                     title={
                         freeInputs.length
                             ? t("node.fields.edge.target", "Edge target node")
                             : t("node.fields.edge.target.empty", "No free target nodes")
                     }
-                    value={edge.to}
-                    onChange={(event) => setEdge((edge) => ({ ...edge, to: event.target.value }))}
-                    disabled={readOnly || !freeInputs.length}
-                >
-                    {readOnly ? (
-                        <option value={edge.to}>{edge.to}</option>
-                    ) : (
-                        <>
-                            <option value={""}>⇢</option>
-                            {freeInputs.map((node) => (
-                                <option key={node} value={node}>
-                                    ➝ {node}
-                                </option>
-                            ))}
-                        </>
-                    )}
-                </SelectNode>
+                    onChange={(value) => {
+                        setEdge((edge) => ({ ...edge, to: value }));
+                    }}
+                    value={readOnly ? { value: edge.to, label: edge.to } : freeInputs.find((option) => option.value === edge.to)}
+                    options={freeInputs}
+                    fieldErrors={[]}
+                    readOnly={readOnly || freeInputs.length <= 1}
+                />
             </NodeValue>
             {getValueEditor()}
         </FieldsRow>

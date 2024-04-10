@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { SettingLabelStyled, StyledFormControlLabel } from "./StyledSettingsComponnets";
+import { SettingLabelStyled } from "./StyledSettingsComponnets";
 import { FormControl, FormControlLabel, Radio, RadioGroup, Typography, useTheme } from "@mui/material";
 import { AnyValueWithSuggestionsParameterVariant, FixedListParameterVariant, FixedValuesType, onChangeType } from "../../../item";
 
@@ -34,12 +34,12 @@ export function FixedValuesGroup({ item, onChange, path, fixedValuesType, readOn
                 <FormControlLabel
                     value={FixedValuesType.ValueInputWithDictEditor}
                     control={<Radio />}
-                    label={<StyledFormControlLabel>{t("fragment.settings.preset", "Preset")}</StyledFormControlLabel>}
+                    label={<Typography variant={"caption"}>{t("fragment.settings.preset", "Preset")}</Typography>}
                 />
                 <FormControlLabel
                     value={FixedValuesType.ValueInputWithFixedValuesProvided}
                     control={<Radio />}
-                    label={<StyledFormControlLabel>{t("fragment.settings.userDefinedList", "User defined list")}</StyledFormControlLabel>}
+                    label={<Typography variant={"caption"}>{t("fragment.settings.userDefinedList", "User defined list")}</Typography>}
                     disabled={readOnly}
                 />
             </RadioGroup>
