@@ -6,19 +6,18 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
-import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos
 import sttp.model.StatusCode.{InternalServerError, Ok}
 import sttp.tapir.EndpointIO.Example
+import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
-import sttp.tapir._
 
 import java.net.{URI, URL}
 
 class StatisticsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import StatisticsApiEndpoints.Dtos._
   import StatisticsApiEndpoints.Dtos.StatisticError._
+  import StatisticsApiEndpoints.Dtos._
 
   lazy val statisticUsageEndpoint: SecuredEndpoint[Unit, StatisticError, StatisticUrlResponseDto, Any] =
     baseNuApiEndpoint
@@ -76,6 +75,7 @@ object StatisticsApiEndpoints {
 
     object StatisticError {
       final case object InvalidURL extends StatisticError
+      final case object DbError    extends StatisticError
 
       private def deserializationException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
