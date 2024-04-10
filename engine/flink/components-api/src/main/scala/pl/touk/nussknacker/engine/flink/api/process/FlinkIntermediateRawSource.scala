@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
   Source
 }
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -33,6 +34,8 @@ trait FlinkIntermediateRawSource[Raw]
     extends CustomizableContextInitializerSource[Raw]
     with CustomizableTimestampWatermarkHandlerSource[Raw]
     with ExplicitTypeInformationSource[Raw] { self: Source =>
+
+  override def contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
   @silent("deprecated")
   def prepareSourceStream(
