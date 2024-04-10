@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, Source, SourceTestSupport}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
 /**
   * Source with methods specific for Flink
@@ -60,10 +60,8 @@ trait BasicFlinkSource[Raw]
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
     val source = FlinkStandardSourceUtils.createSource(env, flinkSourceFunction, typeInformation)
-    FlinkStandardSourceUtils.prepareSource(source, flinkNodeContext, timestampAssigner, Some(contextInitializer))
+    FlinkStandardSourceUtils.prepareSource(source, flinkNodeContext, timestampAssigner, contextInitializer)
   }
-
-  override def contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 
 }
 
@@ -84,19 +82,22 @@ trait StandardFlinkSource[Raw]
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[Raw]
 
-  override def contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
-
   override final def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
-    FlinkStandardSourceUtils.prepareSource(initialSourceStream(env, flinkNodeContext), flinkNodeContext)
+    FlinkStandardSourceUtils.prepareSource(
+      source = initialSourceStream(env, flinkNodeContext),
+      flinkNodeContext = flinkNodeContext,
+      timestampAssigner = timestampAssigner,
+      contextInitializer = contextInitializer
+    )
   }
 
 }
 
 trait CustomizableContextInitializerSource[T] { self: Source =>
-  def contextInitializer: ContextInitializer[T]
+  def contextInitializer: ContextInitializer[T] = new BasicContextInitializer[T](Unknown)
 }
 
 trait CustomizableTimestampWatermarkHandlerSource[T] { self: Source =>
