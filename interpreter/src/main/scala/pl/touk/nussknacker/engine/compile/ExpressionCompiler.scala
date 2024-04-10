@@ -204,29 +204,41 @@ class ExpressionCompiler(expressionParsers: Map[Language, ExpressionParser], dic
       paramName: ParameterName
   )(
       implicit nodeId: NodeId
-  ) =
-    editor match {
-      case Some(DictParameterEditor(dictId)) =>
-        DictKeyWithLabelExpressionParser
-          .parseDictKeyWithLabelExpression(expression.expression)
-          .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, paramName)))
-          .andThen(expr =>
-            dictRegistry match {
-              case _: EngineDictRegistry =>
-                // no need to validate and resolve label it on Engine side, this allows EngineDictRegistry to be lighter (not having to contain dictionaries only used by DictParameterEditor)
-                Valid(expression)
-              case _ =>
-                dictRegistry
-                  .labelByKey(dictId, expr.key)
-                  .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, paramName)))
-                  .andThen {
-                    case Some(label) => Valid(Expression.dictKeyWithLabel(expr.key, Some(label)))
-                    case None => invalidNel(DictLabelByKeyResolutionFailed(dictId, expr.key, nodeId.id, paramName))
-                  }
-            }
-          )
-      case _ => Valid(expression)
+  ) = {
+    def substitute(dictId: String) = {
+      DictKeyWithLabelExpressionParser
+        .parseDictKeyWithLabelExpression(expression.expression)
+        .leftMap(errs => errs.map(_.toProcessCompilationError(nodeId.id, paramName)))
+        .andThen(expr =>
+          dictRegistry match {
+            case _: EngineDictRegistry =>
+              // no need to validate and resolve label it on Engine side, this allows EngineDictRegistry to be lighter (not having to contain dictionaries only used by DictParameterEditor)
+              Valid(expression)
+            case _ =>
+              dictRegistry
+                .labelByKey(dictId, expr.key)
+                .leftMap(e => NonEmptyList.of(e.toPartSubGraphCompilationError(nodeId.id, paramName)))
+                .andThen {
+                  case Some(label) => Valid(Expression.dictKeyWithLabel(expr.key, Some(label)))
+                  case None        => invalidNel(DictLabelByKeyResolutionFailed(dictId, expr.key, nodeId.id, paramName))
+                }
+          }
+        )
     }
+
+    if (expression.language == Language.DictKeyWithLabel && !expression.expression.isBlank)
+      editor match {
+        case Some(DictParameterEditor(dictId)) => substitute(dictId)
+        case Some(DualParameterEditor(DictParameterEditor(dictId), _)) =>
+          substitute(dictId) // in `RAW` mode, expression.language is SpEL, and no substitution/validation is done
+        case editor =>
+          throw new IllegalStateException(
+            s"DictKeyWithLabel expression can only be used with DictParameterEditor, got $editor"
+          )
+      }
+    else
+      Valid(expression)
+  }
 
   def compileValidator(
       validator: Validator,

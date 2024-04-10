@@ -31,17 +31,32 @@ import java.util.concurrent.atomic.AtomicReference
 trait ProcessingTypeDataProvider[+Data, +CombinedData] {
 
   // TODO: replace with proper forType handling
-  final def forTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data = forType(processingType)
-    .getOrElse(
-      throw new IllegalArgumentException(
-        s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
+  final def forProcessingTypeUnsafe(processingType: ProcessingType)(implicit user: LoggedUser): Data =
+    forProcessingType(processingType)
+      .getOrElse(
+        throw new IllegalArgumentException(
+          s"Unknown ProcessingType: $processingType, known ProcessingTypes are: ${all.keys.mkString(", ")}"
+        )
       )
-    )
 
-  final def forType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
+  final def forProcessingType(processingType: ProcessingType)(implicit user: LoggedUser): Option[Data] = {
     allAuthorized
       .get(processingType)
       .map(_.getOrElse(throw new UnauthorizedError(user)))
+  }
+
+  final def forProcessingTypeE(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): Either[UnauthorizedError, Option[Data]] = {
+    allAuthorized
+      .get(processingType) match {
+      case Some(dataO) =>
+        dataO match {
+          case Some(data) => Right(Some(data))
+          case None       => Left(new UnauthorizedError(user))
+        }
+      case None => Right(None)
+    }
   }
 
   final def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>

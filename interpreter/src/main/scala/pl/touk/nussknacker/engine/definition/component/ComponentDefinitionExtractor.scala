@@ -103,7 +103,7 @@ object ComponentDefinitionExtractor {
               DynamicComponentDefinitionWithImplementation(
                 name = componentName,
                 implementationInvoker = invoker,
-                implementation = e,
+                component = e,
                 componentTypeSpecificData = componentTypeSpecificData,
                 uiDefinition = uiDefinition,
                 parametersConfig = parametersConfig
@@ -135,7 +135,7 @@ object ComponentDefinitionExtractor {
               MethodBasedComponentDefinitionWithImplementation(
                 name = componentName,
                 implementationInvoker = invoker,
-                implementation = component,
+                component = component,
                 componentTypeSpecificData = componentTypeSpecificData,
                 staticDefinition = staticDefinition,
                 uiDefinition = uiDefinition

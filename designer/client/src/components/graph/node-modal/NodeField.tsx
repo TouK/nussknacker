@@ -3,7 +3,7 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError, UINodeType } from "../../../types";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
@@ -12,9 +12,9 @@ type NodeFieldProps<N extends string, V> = {
     fieldName: N;
     fieldType: FieldType;
     isEditMode?: boolean;
-    node: NodeType;
+    node: UINodeType;
     readonly?: boolean;
-    renderFieldLabel: (paramName: string) => JSX.Element;
+    renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
     errors: NodeValidationError[];

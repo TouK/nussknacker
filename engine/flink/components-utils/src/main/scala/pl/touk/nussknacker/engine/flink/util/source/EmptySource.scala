@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
+import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.typed.ReturningType
@@ -9,6 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 case class EmptySource[T: TypeInformation](returnType: TypingResult) extends BasicFlinkSource[T] with ReturningType {
 
+  @silent("deprecated")
   override def flinkSourceFunction: SourceFunction[T] = new EmptySourceFunction[T]
 
   override val typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
@@ -17,6 +19,7 @@ case class EmptySource[T: TypeInformation](returnType: TypingResult) extends Bas
 
 }
 
+@silent("deprecated")
 class EmptySourceFunction[T] extends SourceFunction[T] {
 
   override def cancel(): Unit = {}

@@ -2,20 +2,21 @@ package pl.touk.nussknacker.test.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import enumeratum.{Enum, EnumEntry}
-import io.restassured.specification.RequestSpecification
-import org.scalatest.Suite
+import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.test.NuRestAssureExtensions
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.DesignerTestConfigValidator
 
-trait WithSimplifiedDesignerConfig extends WithDesignerConfig {
+trait WithSimplifiedDesignerConfig extends WithDesignerConfig with BeforeAndAfterAll {
   this: Suite =>
 
-  validateConsistency()
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    validateConsistency()
+  }
 
   override def designerConfig: Config = ScalaMajorVersionConfig.configWithScalaMajorVersion(
-    ConfigFactory.parseResources("config/simple/simple-streaming-use-case-designer.conf")
+    ConfigFactory.parseResources("config/business-cases/simple-streaming-use-case-designer.conf")
   )
 
   private def validateConsistency(): Unit = {
@@ -77,23 +78,6 @@ object WithSimplifiedDesignerConfig {
         (processingType, TestProcessingType.categoryBy(processingType))
       }.toMap
 
-  }
-
-}
-
-trait WithSimplifiedConfigRestAssuredUsersExtensions extends NuRestAssureExtensions {
-  this: WithSimplifiedDesignerConfig =>
-
-  implicit class UsersBasicAuth[T <: RequestSpecification](requestSpecification: T) {
-
-    def basicAuthAdmin(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("admin", "admin")
-
-    def basicAuthAllPermUser(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("allpermuser", "allpermuser")
-
-    def basicAuthUnknownUser(): RequestSpecification =
-      requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
   }
 
 }

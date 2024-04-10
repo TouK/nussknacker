@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{LazyParameterCreation
 import pl.touk.nussknacker.engine.definition.fragment.FragmentParametersDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
 

@@ -24,16 +24,20 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it._
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.config.{WithMockableDeploymentManager, WithRichDesignerConfig}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.{
+  Streaming1,
+  Streaming2
+}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
+import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarPanelTypeConfig.{
   CreatorPanel,
   ProcessActionsPanel,
+  SearchPanel,
   TipsPanel
 }
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateScenarioCommand, UpdateScenarioCommand}
@@ -54,8 +58,8 @@ import scala.concurrent.Future
 class ProcessesResourcesSpec
     extends AnyFunSuite
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
+    with WithAccessControlCheckingDesignerConfig
+    with WithAccessControlCheckingConfigScenarioHelper
     with WithMockableDeploymentManager
     with ScalatestRouteTest
     with Matchers
@@ -734,7 +738,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
 
       forScenarioReturned(processName) { process =>
-        process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
+        process.lastActionType shouldBe Some(ScenarioActionName.Archive.toString)
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe true
       }
@@ -748,7 +752,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
 
       forScenarioReturned(processName) { process =>
-        process.lastActionType shouldBe Some(ProcessActionType.UnArchive.toString)
+        process.lastActionType shouldBe Some(ScenarioActionName.UnArchive.toString)
         process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe false
       }
@@ -947,6 +951,7 @@ class ProcessesResourcesSpec
       toolbar shouldBe ScenarioToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
         List(
+          ToolbarPanel(SearchPanel, None, None, None),
           ToolbarPanel(TipsPanel, None, None, None),
           ToolbarPanel(CreatorPanel, None, None, None)
         ),

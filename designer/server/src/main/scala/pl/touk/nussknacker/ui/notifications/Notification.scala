@@ -3,8 +3,7 @@ package pl.touk.nussknacker.ui.notifications
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
 import sttp.tapir.Schema
@@ -27,14 +26,14 @@ object Notification {
 
   def actionFailedNotification(
       id: String,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       name: ProcessName,
       failureMessageOpt: Option[String]
   ): Notification = {
     Notification(
       id,
       Some(name),
-      s"${displayableActionName(actionType)} of $name failed" + failureMessageOpt
+      s"${displayableActionName(actionName)} of $name failed" + failureMessageOpt
         .map(" with reason: " + _)
         .getOrElse(""),
       Some(NotificationType.error),
@@ -42,12 +41,12 @@ object Notification {
     )
   }
 
-  def actionFinishedNotification(id: String, actionType: ProcessActionType, name: ProcessName): Notification = {
+  def actionFinishedNotification(id: String, actionName: ScenarioActionName, name: ProcessName): Notification = {
     // We don't want to display this notification, because user already see that status icon was changed
     Notification(
       id,
       Some(name),
-      s"${displayableActionName(actionType)} finished",
+      s"${displayableActionName(actionName)} finished",
       None,
       List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
     )
@@ -55,7 +54,7 @@ object Notification {
 
   def actionExecutionFinishedNotification(
       id: String,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       name: ProcessName
   ): Notification = {
     // We don't want to display this notification, because user already see that status icon was changed
@@ -63,16 +62,17 @@ object Notification {
     Notification(
       id + "-" + ProcessActionState.ExecutionFinished,
       Some(name),
-      s"${displayableActionName(actionType)} execution finished",
+      s"${displayableActionName(actionName)} execution finished",
       None,
       List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
     )
   }
 
-  private def displayableActionName(actionType: ProcessActionType): String =
-    actionType match {
-      case ProcessActionType.Deploy => "Deployment"
-      case ProcessActionType.Cancel => "Cancel"
+  private def displayableActionName(actionName: ScenarioActionName): String =
+    actionName match {
+      case ScenarioActionName.Deploy => "Deployment"
+      case ScenarioActionName.Cancel => "Cancel"
+      case _                         => throw new AssertionError(s"Not supported deployment action: $actionName")
     }
 
 }

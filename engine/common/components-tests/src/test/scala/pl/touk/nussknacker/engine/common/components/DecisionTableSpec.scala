@@ -39,51 +39,47 @@ trait DecisionTableSpec
 
   "Decision Table component should" - {
     "filter and return decision table's rows filtered by the expression" in {
-      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
-        val result = execute[TestMessage, SCENARIO_RESULT](
-          scenario = decisionTableExampleScenario(
-            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
-          ),
-          withData = List(
-            TestMessage(id = "1", minAge = 30),
-            TestMessage(id = "2", minAge = 18)
-          )
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
         )
+      )
 
-        inside(result) { case Validated.Valid(r) =>
-          r.errors should be(List.empty)
-          r.successes should be(
-            List(
-              rows(
-                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-              ),
-              rows(
-                rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
-                rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
-              )
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(
+          List(
+            rows(
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
+            ),
+            rows(
+              rowData(name = "Lisa", age = 21, dob = LocalDate.parse("2003-01-13")),
+              rowData(name = "Mark", age = 54, dob = LocalDate.parse("1970-12-30"))
             )
           )
-        }
+        )
       }
     }
 
     "return proper typingResult as java list which allows to run method on" in {
-      eventually { // this is temp workaround for the bug described in https://touk-jira.atlassian.net/browse/NU-1500
-        val result = execute[TestMessage, SCENARIO_RESULT](
-          scenario = decisionTableExampleScenario(
-            expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
-            sinkValueExpression = "#dtResult.size"
-          ),
-          withData = List(
-            TestMessage(id = "1", minAge = 30),
-            TestMessage(id = "2", minAge = 18)
-          )
+      val result = execute[TestMessage, SCENARIO_RESULT](
+        scenario = decisionTableExampleScenario(
+          expression = "#ROW['age'] > #input.minAge && #ROW['DoB'] != null",
+          sinkValueExpression = "#dtResult.size"
+        ),
+        withData = List(
+          TestMessage(id = "1", minAge = 30),
+          TestMessage(id = "2", minAge = 18)
         )
+      )
 
-        inside(result) { case Validated.Valid(r) =>
-          r.errors should be(List.empty)
-          r.successes should be(List(1, 2))
-        }
+      inside(result) { case Validated.Valid(r) =>
+        r.errors should be(List.empty)
+        r.successes should be(List(1, 2))
       }
     }
 
@@ -104,7 +100,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Expression")),
+                paramName = Some(ParameterName("Filtering expression")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -128,7 +124,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Expression")),
+                paramName = Some(ParameterName("Filtering expression")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -155,7 +151,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Basic Decision Table")),
+                paramName = Some(ParameterName("Decision Table")),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
                 details = Some(
                   TabularDataDefinitionParserErrorDetails(
@@ -226,12 +222,10 @@ trait DecisionTableSpec
     ScenarioBuilder
       .requestResponse("test scenario")
       .source("request", TestScenarioRunner.testDataSource)
-      .enricher(
-        "decision-table",
-        "dtResult",
-        "decision-table",
-        "Basic Decision Table" -> basicDecisionTableDefinition,
-        "Expression"           -> expression,
+      .decisionTable(
+        decisionTableParamValue = basicDecisionTableDefinition,
+        filterExpressionParamValue = expression,
+        output = "dtResult",
       )
       .end("end", "value" -> sinkValueExpression)
   }
@@ -278,7 +272,7 @@ class FlinkEngineRunDecisionTableSpec extends DecisionTableSpec with FlinkSpec {
   override protected def addEndNode(
       builder: GraphBuilder[CanonicalProcess]
   )(id: String, params: Seq[(String, Expression)]): CanonicalProcess = {
-    builder.processorEnd(id, TestScenarioRunner.testResultService, params: _*)
+    builder.emptySink(id, TestScenarioRunner.testResultSink, params: _*)
   }
 
 }

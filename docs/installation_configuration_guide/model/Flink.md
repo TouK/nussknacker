@@ -25,7 +25,9 @@ description: Flink specific model configuration
 | globalParameters.useTypingResultTypeInformation             | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                  |
 | globalParameters.forceSyncInterpretationForSyncScenarioPart | Low        | boolean  | true                   | Forces synchronous interpretation for scenario parts that does not contain any services (enrichers, processors). Applies for scenarios with async enabled                   |
 
-TODO: KAFKA
+<!-- TODO 
+### KAFKA
+-->
 
 ## Configuring exception handling 
 

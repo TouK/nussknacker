@@ -3,7 +3,7 @@ import { isEqual } from "lodash";
 import { TypeSelect } from "../TypeSelect";
 import { getValidationErrorsForField } from "../../editors/Validators";
 import { Option } from "../FieldsSelect";
-import { FixedValuesPresets, NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
+import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../types";
 import SettingsButton from "../buttons/SettingsButton";
 import { FieldsRow } from "../FieldsRow";
 import { Settings } from "../settings/Settings";
@@ -23,12 +23,11 @@ interface ItemProps {
     variableTypes: VariableTypes;
     onChange: (path: string, value: onChangeType) => void;
     options: Option[];
-    fixedValuesPresets: FixedValuesPresets;
     errors: NodeValidationError[];
 }
 
 export function Item(props: ItemProps): JSX.Element {
-    const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, fixedValuesPresets, errors } = props;
+    const { index, item, namespace, variableTypes, readOnly, showValidation, onChange, options, errors } = props;
     const { getIsOpen, toggleIsOpen } = useFieldsContext();
 
     const isOpen = getIsOpen(item.uuid);
@@ -85,7 +84,6 @@ export function Item(props: ItemProps): JSX.Element {
                         item={item}
                         onChange={onChange}
                         variableTypes={variableTypes}
-                        fixedValuesPresets={fixedValuesPresets}
                         readOnly={readOnly}
                         errors={errors}
                         data-testid={`settings:${index}`}

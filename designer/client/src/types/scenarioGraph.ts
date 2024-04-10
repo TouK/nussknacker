@@ -56,8 +56,6 @@ export interface ComponentDefinition {
     outputParameters?: string[] | null;
 }
 
-export type FixedValuesPresets = Record<string, FixedValuesOption[]>;
-
 export interface ProcessDefinitionData {
     components?: Record<string, ComponentDefinition>;
     classes?: TypingResult[];
@@ -65,7 +63,6 @@ export interface ProcessDefinitionData {
     scenarioPropertiesConfig?: ScenarioPropertiesConfig;
     edgesForNodes?: EdgesForNode[];
     customActions?: Array<CustomAction>;
-    fixedValuesPresets?: FixedValuesPresets;
 }
 
 export type EdgesForNode = {

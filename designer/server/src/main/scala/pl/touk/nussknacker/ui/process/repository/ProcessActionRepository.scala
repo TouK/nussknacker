@@ -3,8 +3,12 @@ package pl.touk.nussknacker.ui.process.repository
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{
+  ProcessAction,
+  ProcessActionId,
+  ProcessActionState,
+  ScenarioActionName
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
@@ -26,13 +30,13 @@ trait ProcessActionRepository {
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): DB[_]
   def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): DB[Option[ProcessAction]]
 
-  def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(
+  def getFinishedProcessActions(processId: ProcessId, actionNamesOpt: Option[Set[ScenarioActionName]])(
       implicit ec: ExecutionContext
   ): DB[List[ProcessAction]]
 
   def getLastActionPerProcess(
       actionState: Set[ProcessActionState],
-      actionTypesOpt: Option[Set[ProcessActionType]]
+      actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]]
 
 }
@@ -51,7 +55,7 @@ class DbProcessActionRepository(
 
   def addInProgressAction(
       processId: ProcessId,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       processVersion: Option[VersionId],
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionId] = {
@@ -61,7 +65,7 @@ class DbProcessActionRepository(
         None,
         processId,
         processVersion = processVersion,
-        actionType = actionType,
+        actionName = actionName,
         state = ProcessActionState.InProgress,
         createdAt = now,
         performedAt = None,
@@ -77,7 +81,7 @@ class DbProcessActionRepository(
   def markActionAsFinished(
       actionId: ProcessActionId,
       processId: ProcessId,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       processVersion: VersionId,
       performedAt: Instant,
       comment: Option[Comment],
@@ -95,7 +99,7 @@ class DbProcessActionRepository(
             Some(actionId),
             processId,
             Some(processVersion),
-            actionType,
+            actionName,
             ProcessActionState.Finished,
             performedAt,
             Some(performedAt),
@@ -111,7 +115,7 @@ class DbProcessActionRepository(
   def markActionAsFailed(
       actionId: ProcessActionId,
       processId: ProcessId,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       processVersion: Option[VersionId],
       performedAt: Instant,
       failureMessage: String,
@@ -129,7 +133,7 @@ class DbProcessActionRepository(
             Some(actionId),
             processId,
             processVersion,
-            actionType,
+            actionName,
             ProcessActionState.Failed,
             performedAt,
             Some(performedAt),
@@ -158,17 +162,17 @@ class DbProcessActionRepository(
   override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(
       implicit user: LoggedUser
   ): DB[ProcessAction] =
-    addInstantAction(processId, processVersion, ProcessActionType.Archive, None, None)
+    addInstantAction(processId, processVersion, ScenarioActionName.Archive, None, None)
 
   override def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(
       implicit user: LoggedUser
   ): DB[ProcessAction] =
-    addInstantAction(processId, processVersion, ProcessActionType.UnArchive, None, None)
+    addInstantAction(processId, processVersion, ScenarioActionName.UnArchive, None, None)
 
   def addInstantAction(
       processId: ProcessId,
       processVersion: VersionId,
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       comment: Option[Comment],
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessAction] = {
@@ -179,7 +183,7 @@ class DbProcessActionRepository(
         None,
         processId,
         Some(processVersion),
-        actionType,
+        actionName,
         ProcessActionState.Finished,
         now,
         Some(now),
@@ -194,7 +198,7 @@ class DbProcessActionRepository(
       actionIdOpt: Option[ProcessActionId],
       processId: ProcessId,
       processVersion: Option[VersionId],
-      actionType: ProcessActionType,
+      actionName: ScenarioActionName,
       state: ProcessActionState,
       createdAt: Instant,
       performedAt: Option[Instant],
@@ -203,7 +207,7 @@ class DbProcessActionRepository(
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[ProcessActionEntityData] = {
     val actionId         = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
-    val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forType).map(BuildInfo.writeAsJson)
+    val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forProcessingType).map(BuildInfo.writeAsJson)
     val processActionData = ProcessActionEntityData(
       id = actionId,
       processId = processId,
@@ -211,7 +215,7 @@ class DbProcessActionRepository(
       user = user.username, // TODO: it should be user.id not name
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
-      actionType = actionType,
+      actionName = actionName,
       state = state,
       failureMessage = failure,
       commentId = commentId,
@@ -244,24 +248,24 @@ class DbProcessActionRepository(
     run(processActionsTable.filter(_ => false).forUpdate.result.map(_ => ()))
   }
 
-  def getInProgressActionTypes(processId: ProcessId): DB[Set[ProcessActionType]] = {
+  def getInProgressActionNames(processId: ProcessId): DB[Set[ScenarioActionName]] = {
     val query = processActionsTable
       .filter(action => action.processId === processId && action.state === ProcessActionState.InProgress)
-      .map(_.actionType)
+      .map(_.actionName)
       .distinct
     run(query.result.map(_.toSet))
   }
 
-  def getInProgressActionTypes(
-      allowedActionTypes: Set[ProcessActionType]
-  ): DB[Map[ProcessId, Set[ProcessActionType]]] = {
+  def getInProgressActionNames(
+      allowedActionNames: Set[ScenarioActionName]
+  ): DB[Map[ProcessId, Set[ScenarioActionName]]] = {
     val query = processActionsTable
       .filter(action =>
         action.state === ProcessActionState.InProgress &&
-          action.actionType
-            .inSet(allowedActionTypes)
+          action.actionName
+            .inSet(allowedActionNames)
       )
-      .map(pa => (pa.processId, pa.actionType))
+      .map(pa => (pa.processId, pa.actionName))
     run(
       query.result
         .map(_.groupBy { case (process_id, _) => process_id }
@@ -271,15 +275,15 @@ class DbProcessActionRepository(
 
   def getUserActionsAfter(
       user: LoggedUser,
-      possibleActionTypes: Set[ProcessActionType],
+      possibleActionNames: Set[ScenarioActionName],
       possibleStates: Set[ProcessActionState],
       limit: Instant
   ): DB[Seq[(ProcessActionEntityData, ProcessName)]] = {
     run(
       processActionsTable
         .filter(a =>
-          a.user === user.username && a.state.inSet(possibleStates) && a.actionType.inSet(
-            possibleActionTypes
+          a.user === user.username && a.state.inSet(possibleStates) && a.actionName.inSet(
+            possibleActionNames
           ) && a.performedAt > Timestamp.from(limit)
         )
         .join(processesTable)
@@ -298,7 +302,7 @@ class DbProcessActionRepository(
 
   override def getLastActionPerProcess(
       actionState: Set[ProcessActionState],
-      actionTypesOpt: Option[Set[ProcessActionType]]
+      actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
       .filter(_.state.inSet(actionState))
@@ -314,8 +318,8 @@ class DbProcessActionRepository(
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
     run(
-      actionTypesOpt
-        .map(actionTypes => query.filter { case (_, (entity, _)) => entity.actionType.inSet(actionTypes) })
+      actionNamesOpt
+        .map(actionNames => query.filter { case (_, (entity, _)) => entity.actionName.inSet(actionNames) })
         .getOrElse(query)
         .result
         .map(_.toMap.mapValuesNow(toFinishedProcessAction))
@@ -335,7 +339,7 @@ class DbProcessActionRepository(
         .map(_.map(toFinishedProcessAction))
     )
 
-  override def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(
+  override def getFinishedProcessActions(processId: ProcessId, actionNamesOpt: Option[Set[ScenarioActionName]])(
       implicit ec: ExecutionContext
   ): DB[List[ProcessAction]] = {
     val query = processActionsTable
@@ -344,8 +348,8 @@ class DbProcessActionRepository(
       .on { case (action, comment) => action.commentId === comment.id }
       .sortBy(_._1.performedAt.desc)
     run(
-      actionTypesOpt
-        .map(actionTypes => query.filter { case (entity, _) => entity.actionType.inSet(actionTypes) })
+      actionNamesOpt
+        .map(actionNames => query.filter { case (entity, _) => entity.actionName.inSet(actionNames) })
         .getOrElse(query)
         .result
         .map(_.toList.map(toFinishedProcessAction))
@@ -362,7 +366,7 @@ class DbProcessActionRepository(
       performedAt = actionData._1.performedAtTime
         .getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: ${actionData._1}")),
       user = actionData._1.user,
-      actionType = actionData._1.actionType,
+      actionName = actionData._1.actionName,
       state = actionData._1.state,
       failureMessage = actionData._1.failureMessage,
       commentId = actionData._2.map(_.id),

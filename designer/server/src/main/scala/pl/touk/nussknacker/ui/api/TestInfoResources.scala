@@ -33,7 +33,7 @@ class TestInfoResources(
       (post & processDetailsForName(processName)) { processDetails =>
         entity(as[ScenarioGraph]) { scenarioGraph =>
           canDeploy(processDetails.idWithNameUnsafe) {
-            val scenarioTestService = scenarioTestServices.forTypeUnsafe(processDetails.processingType)
+            val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(processDetails.processingType)
             path("capabilities") {
               complete {
                 scenarioTestService.getTestingCapabilities(scenarioGraph, processName, processDetails.isFragment)

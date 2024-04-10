@@ -9,6 +9,7 @@ import { FormControl, FormGroup, FormHelperText, FormLabel, Link, Typography } f
 import { Trans, useTranslation } from "react-i18next";
 import StreamingIcon from "../assets/img/streaming.svg";
 import RequestResponseIcon from "../assets/img/request-response.svg";
+import BatchIcon from "../assets/img/batch.svg";
 import { CustomRadio } from "./customRadio/CustomRadio";
 import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
@@ -25,6 +26,7 @@ interface AddProcessFormProps extends ChangeableValue<FormValue> {
     engines: string[];
     handleSetTouched: (touched: TouchedValue) => void;
     touched: TouchedValue;
+    isProcessingModeBatchAvailable?: boolean;
 }
 
 export function AddProcessForm({
@@ -36,6 +38,7 @@ export function AddProcessForm({
     categories,
     engines,
     processingModes,
+    isProcessingModeBatchAvailable,
 }: AddProcessFormProps): JSX.Element {
     const { t } = useTranslation();
     const onFieldChange = useCallback(
@@ -89,14 +92,16 @@ export function AddProcessForm({
                                 Icon={RequestResponseIcon}
                                 active={value.processingMode === ProcessingMode.requestResponse}
                             />
-                            {/*TODO: Uncomment it when batch processing mode ready*/}
-                            {/*<CustomRadio*/}
-                            {/*    disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}*/}
-                            {/*    label={t("addProcessForm.label.batch", "Batch")}*/}
-                            {/*    value={ProcessingMode.batch}*/}
-                            {/*    Icon={BatchIcon}*/}
-                            {/*    active={value.processingMode === ProcessingMode.batch}*/}
-                            {/*/>*/}
+                            {/*TODO: Remove condition when batch processing mode ready */}
+                            {isProcessingModeBatchAvailable && (
+                                <CustomRadio
+                                    disabled={processingModes.every((processingMode) => processingMode !== ProcessingMode.batch)}
+                                    label={t("addProcessForm.label.batch", "Batch")}
+                                    value={ProcessingMode.batch}
+                                    Icon={BatchIcon}
+                                    active={value.processingMode === ProcessingMode.batch}
+                                />
+                            )}
                         </FormGroup>
                         <ValidationLabels
                             fieldErrors={touched.processingMode ? getValidationErrorsForField(validationErrors, "processingMode") : []}

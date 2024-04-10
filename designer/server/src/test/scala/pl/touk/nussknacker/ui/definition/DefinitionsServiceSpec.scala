@@ -273,7 +273,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         Some(_),
         DesignerWideComponentId.default(processingType.stringify, _)
       ),
-      model.modelDefinition
+      model.modelDefinition,
+      ProcessingMode.UnboundedStream
     )
 
     new DefinitionsService(

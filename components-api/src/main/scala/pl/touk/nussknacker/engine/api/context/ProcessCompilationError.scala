@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleN
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 sealed trait ProcessCompilationError {
@@ -317,6 +318,9 @@ object ProcessCompilationError {
   final case class UnsupportedFixedValuesType(paramName: ParameterName, typ: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
+  final case class UnsupportedDictParameterEditorType(paramName: ParameterName, typ: String, nodeIds: Set[String])
+      extends PartSubGraphCompilationError
+
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   final case class DisablingManyOutputsFragment(fragmentNodeId: String)
@@ -347,8 +351,21 @@ object ProcessCompilationError {
       extends DuplicateFragmentOutputNames
       with ScenarioGraphLevelError
 
+  final case class EmptyMandatoryField(nodeId: String, qualifiedFieldName: ParameterName)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
   final case class DictNotDeclared(dictId: String, nodeId: String, paramName: ParameterName)
       extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictIsOfInvalidType(
+      dictId: String,
+      actualType: TypingResult,
+      expectedType: TypingResult,
+      nodeId: String,
+      paramName: ParameterName
+  ) extends PartSubGraphCompilationError
       with InASingleNode
 
   final case class DictEntryWithLabelNotExists(

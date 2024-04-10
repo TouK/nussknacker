@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -79,6 +79,7 @@ class NotificationServiceTest
         deploymentManager.processCommand(any[RunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
+      when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, global).flatten.futureValue
     }
 
@@ -122,6 +123,7 @@ class NotificationServiceTest
         Future.fromTry(givenDeployResult)
       }
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
+      when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, global).flatten.futureValue
     }
 
@@ -167,12 +169,18 @@ class NotificationServiceTest
     ) {
       override protected def validateBeforeDeploy(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-          actionId: ProcessActionId
+          deployedScenarioData: DeployedScenarioData
+      )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = Future.successful(())
+
+      override protected def prepareDeployedScenarioData(
+          processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
+          actionId: ProcessActionId,
+          additionalDeploymentData: Map[String, String] = Map.empty
       )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
         Future.successful(
           DeployedScenarioData(
             processDetails.toEngineProcessVersion,
-            prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId)),
+            prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId), additionalDeploymentData),
             processDetails.json
           )
         )

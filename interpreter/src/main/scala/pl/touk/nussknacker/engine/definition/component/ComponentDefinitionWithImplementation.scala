@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.component
 
+import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
@@ -18,7 +19,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   // For purpose of transforming (e.g.) stubbing of the implementation
   def withImplementationInvoker(invoker: ComponentImplementationInvoker): ComponentDefinitionWithImplementation
 
-  def implementation: Component
+  def component: Component
 
   def componentTypeSpecificData: ComponentTypeSpecificData
 
@@ -44,7 +45,7 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   final def docsUrl: Option[String] = uiDefinition.docsUrl
 
   override final def definedTypes: List[TypingResult] = {
-    val fromExplicitTypes = implementation match {
+    val fromExplicitTypes = component match {
       case explicit: WithExplicitTypesToExtract => explicit.typesToExtract
       case _                                    => Nil
     }
@@ -52,6 +53,8 @@ trait ComponentDefinitionWithImplementation extends ObjectOperatingOnTypes {
   }
 
   protected def typesFromStaticDefinition: List[TypingResult]
+
+  def allowedProcessingModes: AllowedProcessingModes = component.allowedProcessingModes
 
 }
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.implicits._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentType
@@ -163,21 +163,7 @@ class NodeCompiler(
           )
       }
 
-      val fixedValuesErrors = frag.parameters
-        .map { param =>
-          FragmentParameterValidator.validateFixedExpressionValues(
-            param,
-            validationContext,
-            expressionCompiler
-          )
-        }
-        .sequence
-        .map(_ => ())
-
       val parameterNameValidation = validateParameterNames(parameterDefinitions.value)
-
-      val parameterExtractionValidation =
-        NonEmptyList.fromList(parameterDefinitions.written).map(errors => invalid(errors)).getOrElse(valid(()))
 
       // by relying on name for the field names used on FE, we display the same errors under all fields with the
       // duplicated name
@@ -187,12 +173,43 @@ class NodeCompiler(
         _ => true
       )
 
-      val displayableErrors =
+      val displayableErrors = parameterNameValidation |+| {
         if (displayUniqueNameReliantErrors)
-          parameterNameValidation |+| parameterExtractionValidation |+| fixedValuesErrors
-        else parameterNameValidation
+          uniqueNameReliantErrors(frag, parameterDefinitions, validationContext)
+        else
+          Valid(())
+      }
 
       compilationResult.copy(compiledObject = displayableErrors.andThen(_ => compilationResult.compiledObject))
+  }
+
+  private def uniqueNameReliantErrors(
+      fragmentInputDefinition: FragmentInputDefinition,
+      parameterDefinitions: Writer[List[PartSubGraphCompilationError], List[Parameter]],
+      validationContext: ValidationContext
+  )(implicit nodeId: NodeId) = {
+    val parameterExtractionValidation =
+      NonEmptyList.fromList(parameterDefinitions.written).map(errors => invalid(errors)).getOrElse(valid(()))
+
+    val fixedValuesErrors = fragmentInputDefinition.parameters
+      .map { param =>
+        FragmentParameterValidator.validateFixedExpressionValues(
+          param,
+          validationContext,
+          expressionCompiler
+        )
+      }
+      .sequence
+      .map(_ => ())
+
+    val dictValueEditorErrors = fragmentInputDefinition.parameters
+      .map { param =>
+        FragmentParameterValidator.validateValueInputWithDictEditor(param, expressionConfig.dictionaries, classLoader)
+      }
+      .sequence
+      .map(_ => ())
+
+    parameterExtractionValidation |+| fixedValuesErrors |+| dictValueEditorErrors
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)(
@@ -335,7 +352,7 @@ class NodeCompiler(
   ): NodeCompilationResult[compiledgraph.service.ServiceRef] = {
 
     definitions.getComponent(ComponentType.Service, n.id) match {
-      case Some(componentDefinition) if componentDefinition.implementation.isInstanceOf[EagerService] =>
+      case Some(componentDefinition) if componentDefinition.component.isInstanceOf[EagerService] =>
         compileEagerService(n, componentDefinition, validationContext, outputVar)
       case Some(static: MethodBasedComponentDefinitionWithImplementation) =>
         ServiceCompiler.compile(n, outputVar, static, validationContext)
@@ -600,7 +617,7 @@ class NodeCompiler(
       outputVar: Option[String],
       dynamicDefinition: DynamicComponentDefinitionWithImplementation
   )(implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
-    (dynamicDefinition.implementation, eitherSingleOrJoin) match {
+    (dynamicDefinition.component, eitherSingleOrJoin) match {
       case (single: SingleInputDynamicComponent[_], Left(singleCtx)) =>
         dynamicNodeValidator.validateNode(
           single,

@@ -1,10 +1,9 @@
-import React from "react";
 import { styled, Typography } from "@mui/material";
-import { PropsWithChildren } from "react";
-import { variables } from "../../../../stylesheets/variables";
+import React, { PropsWithChildren } from "react";
+import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
 
 const SubtypeStyled = styled("div")`
-    height: ${variables.modalHeaderHeight}px;
+    height: ${MODAL_HEADER_HEIGHT}px;
     background: #3a3a3a;
     display: flex;
     align-items: center;

@@ -8,13 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessAction,
-  ProcessActionType,
-  ScenarioActionName
-}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -302,7 +296,7 @@ class DBProcessService(
       scenarioParametersServiceProvider.combined.getParametersWithReadPermissionUnsafe(entity.processingType)
     ScenarioWithDetailsConversions.fromEntity(
       entity.mapScenario { canonical: CanonicalProcess =>
-        val processResolver = processResolverByProcessingType.forTypeUnsafe(entity.processingType)
+        val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(entity.processingType)
         processResolver.validateAndReverseResolve(canonical, entity.name, entity.isFragment)
       },
       parameters
@@ -310,13 +304,13 @@ class DBProcessService(
   }
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Unit] =
-    withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
+    actionOnNotArchivedProcess(processIdWithName, ScenarioActionName.Archive) { process =>
       if (process.isFragment) {
         doArchive(process)
       } else {
         // FIXME: This doesn't work correctly because concurrent request can change a state and double archive actions will be done.
         //        See ManagementResourcesConcurrentSpec and how DeploymentService handles it correctly for deploy and cancel
-        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive(process))
+        doOnProcessStateVerification(process, ScenarioActionName.Archive)(doArchive(process))
       }
     }
 
@@ -327,7 +321,7 @@ class DBProcessService(
       if (process.isFragment) {
         doRename(processIdWithName, name)
       } else {
-        doOnProcessStateVerification(process, ProcessActionType.Rename)(doRename(processIdWithName, name))
+        doOnProcessStateVerification(process, ScenarioActionName.Rename)(doRename(processIdWithName, name))
       }
     }
 
@@ -363,7 +357,7 @@ class DBProcessService(
     scenarioParametersService
       .queryProcessingTypeWithWritePermission(command.category, command.processingMode, command.engineSetupName)
       .map { processingType =>
-        val newProcessPreparer = newProcessPreparers.forTypeUnsafe(processingType)
+        val newProcessPreparer = newProcessPreparers.forProcessingTypeUnsafe(processingType)
         val emptyCanonicalProcess =
           newProcessPreparer.prepareEmptyProcess(command.name, command.isFragment)
         val action = CreateProcessAction(
@@ -398,7 +392,7 @@ class DBProcessService(
       implicit user: LoggedUser
   ): Future[UpdateProcessResponse] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { details =>
-      val processResolver = processResolverByProcessingType.forTypeUnsafe(details.processingType)
+      val processResolver = processResolverByProcessingType.forProcessingTypeUnsafe(details.processingType)
       val validation =
         FatalValidationError.saveNotAllowedAsError(
           processResolver.validateBeforeUiResolving(action.scenarioGraph, details.name, details.isFragment)
@@ -434,7 +428,7 @@ class DBProcessService(
       val canonical     = jsonCanonicalProcess.withProcessName(processId.name)
       val scenarioGraph = CanonicalProcessConverter.toScenarioGraph(canonical)
       val validationResult = processResolverByProcessingType
-        .forTypeUnsafe(process.processingType)
+        .forProcessingTypeUnsafe(process.processingType)
         .validateBeforeUiReverseResolving(canonical, process.isFragment)
       Future.successful(ScenarioGraphWithValidationResult(scenarioGraph, validationResult))
     }
@@ -447,12 +441,12 @@ class DBProcessService(
   )(implicit user: LoggedUser) = {
     val validationResult =
       processResolverByProcessingType
-        .forTypeUnsafe(processingType)
+        .forProcessingTypeUnsafe(processingType)
         .validateBeforeUiReverseResolving(canonicalProcess, isFragment)
     validationResult.errors.processPropertiesErrors
   }
 
-  private def doOnProcessStateVerification[T](process: ScenarioWithDetails, actionToCheck: ProcessActionType)(
+  private def doOnProcessStateVerification[T](process: ScenarioWithDetails, actionToCheck: ScenarioActionName)(
       callback: => Future[T]
   )(implicit user: LoggedUser): Future[T] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -462,7 +456,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          throw ProcessIllegalAction(ScenarioActionName(actionToCheck), process.name, state)
+          throw ProcessIllegalAction(actionToCheck, process.name, state)
         }
       })
   }
@@ -515,12 +509,12 @@ class DBProcessService(
     }
   }
 
-  private def withNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ProcessActionType)(
+  private def actionOnNotArchivedProcess[T](processIdWithName: ProcessIdWithName, action: ScenarioActionName)(
       callback: ScenarioWithDetails => Future[T]
   )(implicit user: LoggedUser): Future[T] =
     getLatestProcessWithDetails(processIdWithName, GetScenarioWithDetailsOptions.detailsOnly).flatMap { process =>
       if (process.isArchived) {
-        throw ProcessIllegalAction.archived(ScenarioActionName(action), process.name)
+        throw ProcessIllegalAction.archived(action, process.name)
       } else {
         callback(process)
       }

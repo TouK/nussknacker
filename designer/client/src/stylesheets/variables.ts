@@ -1,7 +1,9 @@
-export const variables = {
-    buttonSize: "72",
-    rightPanelButtonFontSize: "11px",
-    buttonSmallSize: "48",
-    sidebarWidth: 290,
-    modalHeaderHeight: 30,
-};
+const SCROLL_THUMB_SIZE = 8;
+
+export const SIDEBAR_WIDTH = 288;
+export const PANEL_WIDTH = SIDEBAR_WIDTH + SCROLL_THUMB_SIZE;
+export const PANEL_BUTTON_SIZE = SIDEBAR_WIDTH / 4;
+export const PANEL_BUTTON_FONT_SIZE = "11px";
+export const PANEL_BUTTON_SMALL_SIZE = SIDEBAR_WIDTH / 6;
+
+export const MODAL_HEADER_HEIGHT = 30;

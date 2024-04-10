@@ -5,7 +5,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{
+  ProcessAction,
+  ProcessActionId,
+  ProcessActionState,
+  ScenarioActionName
+}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -72,7 +77,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         user = "user",
         createdAt = Instant.now(),
         performedAt = Instant.now(),
-        actionType = ProcessActionType.Deploy,
+        actionName = ScenarioActionName.Deploy,
         state = ProcessActionState.Finished,
         failureMessage = Option.empty,
         commentId = Option.empty,
@@ -172,7 +177,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     val alignedComponentsDefinitionProvider = new AlignedComponentsDefinitionProvider(
       new BuiltInComponentsDefinitionsPreparer(new ComponentsUiConfig(Map.empty, Map.empty)),
       new FragmentComponentDefinitionExtractor(getClass.getClassLoader, Some(_), determineDesignerWideId),
-      modelDefinition
+      modelDefinition,
+      ProcessingMode.UnboundedStream
     )
 
     alignedComponentsDefinitionProvider
