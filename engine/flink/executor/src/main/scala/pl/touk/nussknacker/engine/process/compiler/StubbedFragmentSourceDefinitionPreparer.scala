@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentParametersDefinitionExtractor
 }
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
@@ -50,7 +50,7 @@ class StubbedFragmentSourceDefinitionPreparer(
 
   private def buildSource(inputParameters: List[Parameter]): Source = {
     new Source
-      with FlinkIntermediateRawSource[Map[String, Any]]
+      with CustomizableContextInitializerSource[Map[String, Any]]
       with FlinkSourceTestSupport[Map[String, Any]]
       with TestWithParametersSupport[Map[String, Any]] {
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Map[String, Any]]] = None
@@ -59,8 +59,6 @@ class StubbedFragmentSourceDefinitionPreparer(
         TypeInformation.of(classOf[Map[String, Any]])
 
       override def testRecordParser: TestRecordParser[Map[String, Any]] = ???
-
-      override def timestampAssigner: Option[TimestampWatermarkHandler[Map[String, Any]]] = None
 
       override def testParametersDefinition: List[Parameter] = inputParameters
 

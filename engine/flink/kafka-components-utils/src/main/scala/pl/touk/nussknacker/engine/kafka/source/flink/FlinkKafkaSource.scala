@@ -5,25 +5,25 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
-  FlinkIntermediateRawSource,
-  FlinkSource,
-  FlinkSourceTestSupport
+  FlinkSourceTestSupport,
+  FlinkStandardSourceUtils,
+  StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -52,8 +52,7 @@ class FlinkKafkaSource[T](
     testParametersInfo: KafkaTestParametersInfo,
     overriddenConsumerGroup: Option[String] = None,
     namingStrategy: NamingStrategy
-) extends FlinkSource
-    with FlinkIntermediateRawSource[T]
+) extends StandardFlinkSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
@@ -62,14 +61,13 @@ class FlinkKafkaSource[T](
 
   protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
-  override def sourceStream(
+  override def initialSourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Context] = {
+  ): DataStreamSource[T] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
-
-    prepareSourceStream(env, flinkNodeContext, sourceFunction)
+    FlinkStandardSourceUtils.createSource(env, sourceFunction, typeInformation)
   }
 
   override val typeInformation: TypeInformation[T] = {

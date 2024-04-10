@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{
   CustomizableContextInitializerSource,
-  FlinkIntermediateRawSource,
   FlinkSource,
   FlinkSourceTestSupport
 }
