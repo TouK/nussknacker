@@ -876,9 +876,9 @@ object SampleNodes {
       val elementsValue = elementsDeclaration.extractValueUnsafe(params).asScala.toList
 
       new CollectionSource(
-        elementsValue,
-        None,
-        Typed[String],
+        list = elementsValue,
+        timestampAssigner = None,
+        returnType = Typed[String],
       ) with TestDataGenerator with FlinkSourceTestSupport[String] {
         override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
