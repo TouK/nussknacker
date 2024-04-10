@@ -1733,12 +1733,12 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/statistic/url:
+  /api/statistic/usage:
     get:
       tags:
       - Statistics
       summary: Statistics URL service
-      operationId: getApiStatisticUrl
+      operationId: getApiStatisticUsage
       responses:
         '200':
           description: ''
@@ -1752,6 +1752,40 @@ paths:
                   value:
                     urls:
                     - https://stats.nussknacker.io/?fingerprint=development&s_a=0&s_dm_c=0&s_dm_e=0&s_dm_f=1&s_dm_l=0&s_f=0&s_pm_b=0&s_pm_rr=0&s_pm_s=1&s_s=1&source=sources&version=1.15.0-SNAPSHOT
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Constructed URL is invalid.
+                  value: Constructed URL is invalid.
+      security:
+      - {}
+      - httpAuth: []
   /api/user:
     get:
       tags:

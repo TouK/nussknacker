@@ -1,22 +1,27 @@
 package pl.touk.nussknacker.ui.api
 
-import io.restassured.RestAssured.{`given`, when}
+import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.{
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig
+}
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers}
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 
 import java.util.UUID
 
 class StatisticsApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithSimplifiedDesignerConfig
     with NuRestAssureExtensions
-    with WithSimplifiedConfigScenarioHelper
+    with WithAccessControlCheckingConfigScenarioHelper
+    with WithAccessControlCheckingDesignerConfig
+    with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers {
 
   private val nuVersion = BuildInfo.version
@@ -28,8 +33,10 @@ class StatisticsApiHttpServiceBusinessSpec
 
   "The statistic URL endpoint when" - {
     "return single, bare URL without any scenarios details" in {
-      when()
-        .get(s"$nuDesignerHttpAddress/api/statistic/url")
+      given()
+        .basicAuthReader()
+        .when()
+        .get(s"$nuDesignerHttpAddress/api/statistic/usage")
         .Then()
         .statusCode(200)
         .body(
@@ -46,10 +53,11 @@ class StatisticsApiHttpServiceBusinessSpec
     "return single URL without with scenarios details" in {
       given()
         .applicationState {
-          createSavedScenario(exampleScenario)
+          createSavedScenario(exampleScenario, category = Category1)
         }
+        .basicAuthReader()
         .when()
-        .get(s"$nuDesignerHttpAddress/api/statistic/url")
+        .get(s"$nuDesignerHttpAddress/api/statistic/usage")
         .Then()
         .statusCode(200)
         .body(
