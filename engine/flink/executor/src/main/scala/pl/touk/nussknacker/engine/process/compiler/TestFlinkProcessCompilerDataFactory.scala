@@ -110,12 +110,17 @@ class StubbedSourcePreparer(
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
           returnType = typingResult,
-          customContextInitializer = Some(sourceWithContextInitializer.contextInitializer)
         )(
           originalSource.typeInformation
-        )
+        ) {
+          override val contextInitializer: ContextInitializer[Object] = sourceWithContextInitializer.contextInitializer
+        }
       case _ =>
-        new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
+        new CollectionSource[Object](
+          list = samples,
+          timestampAssigner = originalSource.timestampAssignerForTest,
+          returnType = typingResult
+        )(
           originalSource.typeInformation
         )
     }

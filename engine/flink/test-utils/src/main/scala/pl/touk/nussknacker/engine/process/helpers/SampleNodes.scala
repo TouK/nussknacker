@@ -39,6 +39,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
+import pl.touk.nussknacker.engine.process.helpers.SampleNodes.GenericSourceWithCustomVariables.customContextInitializer
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 
@@ -878,8 +879,8 @@ object SampleNodes {
         elementsValue,
         None,
         Typed[String],
-        customContextInitializer = Some(customContextInitializer)
       ) with TestDataGenerator with FlinkSourceTestSupport[String] {
+        override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
         override def generateTestData(size: Int): TestData = TestData(
           elementsValue.map(e => TestRecord(Json.fromString(e)))
