@@ -115,11 +115,16 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
         state = None
       )
     case TransformationStep((name, FailedToDefineParameter) :: Nil, _) if name == BasicDecisionTableParameter.name =>
-      FinalResults(
-        finalContext = context,
-        errors = CustomParameterValidationError("ERROR!!!", "error desc", name, nodeId.id) :: Nil,
+      NextParameters(
+        parameters = FilterDecisionTableExpressionParameter.declaration.createParameter(TabularTypedData.empty) :: Nil,
+        errors = List.empty,
         state = None
       )
+//      FinalResults(
+//        finalContext = context,
+//        errors = CustomParameterValidationError("ERROR!!!", "error desc", name, nodeId.id) :: Nil,
+//        state = None
+//      )
   }
 
   private def allParametersReady(context: ValidationContext, dependencies: List[NodeDependencyValue])(
