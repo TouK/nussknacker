@@ -52,25 +52,6 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
   }
 
   private def runTests(useIOMonadInInterpreter: Boolean): Unit = {
-    "handle custom variables in source" in {
-      val process = ScenarioBuilder
-        .streaming(scenarioName)
-        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
-        .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo")
-      val testData = ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
-
-      val results = runFlinkTest(process, testData, useIOMonadInInterpreter)
-
-      results.nodeResults(sourceNodeId) should have size 1
-      results.externalInvocationResults("out") shouldBe
-        List(
-          ExternalInvocationResult(
-            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
-            "valueMonitor",
-            variable("transformed:abc|3")
-          )
-        )
-    }
     "be able to return test results" in {
       val process =
         ScenarioBuilder
@@ -389,6 +370,26 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2",
             "valueMonitor",
             variable(SimpleJsonRecord("3", "33"))
+          )
+        )
+    }
+
+    "handle custom variables in source" in {
+      val process = ScenarioBuilder
+        .streaming(scenarioName)
+        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
+        .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo")
+      val testData = ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
+
+      val results = runFlinkTest(process, testData, useIOMonadInInterpreter)
+
+      results.nodeResults(sourceNodeId) should have size 1
+      results.externalInvocationResults("out") shouldBe
+        List(
+          ExternalInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            "valueMonitor",
+            variable("transformed:abc|3")
           )
         )
     }

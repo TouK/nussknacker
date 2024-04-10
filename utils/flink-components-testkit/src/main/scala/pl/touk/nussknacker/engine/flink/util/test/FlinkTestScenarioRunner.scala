@@ -4,22 +4,15 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.connector.source.Boundedness
-import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ComponentUseCase, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkContextInitializingFunction,
-  FlinkCustomNodeContext,
-  FlinkSource
-}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
@@ -37,7 +30,6 @@ import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
 import scala.util.Using
-import scala.jdk.CollectionConverters._
 
 private object testComponents {
 
@@ -86,8 +78,7 @@ class FlinkTestScenarioRunner(
 ) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] =
-      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
     runWithTestSourceComponent(scenario, testDataSourceComponent(data, None))
   }
 
@@ -97,8 +88,7 @@ class FlinkTestScenarioRunner(
       boundedness: Boundedness,
       flinkExecutionMode: RuntimeExecutionMode
   ): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] =
-      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
     runWithTestSourceComponent(scenario, testDataSourceComponent(data, None, boundedness, flinkExecutionMode))
   }
 
@@ -110,8 +100,7 @@ class FlinkTestScenarioRunner(
       data: List[I],
       timestampAssigner: TimestampWatermarkHandler[I]
   ): RunnerListResult[R] = {
-    implicit val typeInf: TypeInformation[I] =
-      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
+    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
     runWithTestSourceComponent(scenario, testDataSourceComponent(data, Some(timestampAssigner)))
   }
 
@@ -145,9 +134,8 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink based sinks.
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResultUnit = {
-    implicit val typeInf: TypeInformation[I] =
-      TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
+    implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
+    val testComponents                       = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components ++ testComponents, List.empty, globalVariables)
     ) { testComponentHolder =>
@@ -234,6 +222,10 @@ class FlinkTestScenarioRunner(
       case _ =>
         List.empty
     }.toList
+  }
+
+  private def getTypeInformation[I: ClassTag]: TypeInformation[I] = {
+    TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
   }
 
 }
