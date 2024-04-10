@@ -648,7 +648,7 @@ class DeploymentService(
     )
   }
 
-  private def validateActionCommand(actionCommand: CustomActionCommand, customAction: CustomActionDefinition) = {
+  private def validateActionCommand(actionCommand: DMCustomActionCommand, customAction: CustomActionDefinition) = {
     val validator        = new CustomActionValidator(customAction)
     val validationResult = validator.validateCustomActionParams(actionCommand)
     validationResult match {

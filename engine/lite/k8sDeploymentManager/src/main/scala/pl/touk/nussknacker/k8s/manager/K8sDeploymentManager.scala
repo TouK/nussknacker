@@ -109,16 +109,16 @@ class K8sDeploymentManager(
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case command: DMValidateScenarioCommand => validate(command)
+      case command: DMValidateScenarioCommand => validateScenario(command)
       case command: DMRunDeploymentCommand    => runDeployment(command)
       case command: DMCancelScenarioCommand   => cancelScenario(command)
-      case command: DMTestScenarioCommand     => processTestActionCommand(command)
+      case command: DMTestScenarioCommand     => testScenario(command)
       case _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand | _: DMStopScenarioCommand |
           _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
         notImplemented
     }
 
-  private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
+  private def validateScenario(command: DMValidateScenarioCommand): Future[Unit] = {
     import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     val deploymentStrategy = deploymentPreparer
