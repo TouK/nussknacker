@@ -90,8 +90,8 @@ object GenericSourceWithCustomVariablesSample
       list = elementsValue,
       timestampAssigner = None,
       returnType = Typed[ProcessingType],
-      customContextInitializer = Some(customContextInitializer)
     )(TypeInformation.of(classOf[ProcessingType])) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] {
+      override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def generateTestData(size: Int): TestData = TestData(
         elementsValue.map(el => TestRecord(Json.fromString(el)))
