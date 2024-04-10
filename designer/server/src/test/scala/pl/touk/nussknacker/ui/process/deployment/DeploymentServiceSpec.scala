@@ -124,7 +124,7 @@ class DeploymentServiceSpec
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
   private def createDeploymentServiceWithCommentSettings = {
-    val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
+    val commentSettings = DeploymentCommentSettings(".+", Option("sampleComment"))
     val deploymentServiceWithCommentSettings =
       createDeploymentService(deploymentCommentSettings = Some(commentSettings))
     deploymentServiceWithCommentSettings
