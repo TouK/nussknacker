@@ -56,6 +56,16 @@ class StatisticsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                   value = StatisticError.InvalidURL
                 )
               )
+          ),
+          oneOfVariantFromMatchType(
+            InternalServerError,
+            plainBody[DbError.type]
+              .example(
+                Example.of(
+                  summary = Some("Database failed."),
+                  value = DbError
+                )
+              )
           )
         )
       )
@@ -83,6 +93,12 @@ object StatisticsApiEndpoints {
       implicit val errorCodec: Codec[String, StatisticError, CodecFormat.TextPlain] = {
         Codec.string.map(
           Mapping.from[String, StatisticError](deserializationException)(_ => "Statistics generation failed.")
+        )
+      }
+
+      implicit val dbErrorCodec: Codec[String, DbError.type, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, DbError.type](deserializationException)(e => "Database failed.")
         )
       }
 

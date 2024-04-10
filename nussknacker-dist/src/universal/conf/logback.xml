@@ -51,7 +51,7 @@
         <appender-ref ref="ERROR-FILE"/>
     </root>
 
-    <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-INFO}"/>
+    <logger name="pl.touk.nussknacker" level="${NUSSKNACKER_LOG_LEVEL:-DEBUG}"/>
     <logger name="ch.qos.logback" level="WARN"/>
     <logger name="org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService" level="WARN"/>
     <logger name="org.apache.flink.api.java.typeutils.TypeExtractor" level="WARN" />
