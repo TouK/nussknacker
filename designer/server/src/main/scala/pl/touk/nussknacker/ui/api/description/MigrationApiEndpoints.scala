@@ -52,7 +52,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 
   lazy val apiVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, Int, Any] =
     baseNuApiEndpoint
-      .summary("X")
+      .summary("current version of the migrations between environments API")
       .tag("Migrations")
       .get
       .in("migrate" / "apiVersion")
