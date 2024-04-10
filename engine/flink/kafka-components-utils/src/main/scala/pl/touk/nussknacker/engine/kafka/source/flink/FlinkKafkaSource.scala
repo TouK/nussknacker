@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParam
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -57,7 +56,6 @@ class FlinkKafkaSource[T](
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
-    with ExplicitUidInOperatorsSupport
     with TestWithParametersSupport[T] {
 
   protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
