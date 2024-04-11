@@ -111,11 +111,11 @@ class StandardRemoteEnvironmentSpec
 
   }
 
-  it should "request to migrate valid scenario when remote Nu version is lower than local Nu version" in {
-    val localApiVersion  = migrationApiAdapterService.getCurrentApiVersion
-    val remoteApiVersion = localApiVersion - 1
+  it should "request to migrate valid scenario when remote scenario description version is lower than local scenario description version" in {
+    val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
+    val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion - 1
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
-      remoteEnvironmentMock(apiVersion = remoteApiVersion)
+      remoteEnvironmentMock(scenarioDescriptionVersion = remoteScenarioDescriptionVersion)
 
     whenReady(
       remoteEnvironment.migrate(
@@ -130,40 +130,16 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest.currentVersion() shouldBe remoteApiVersion
+          migrateScenarioRequest.currentVersion() shouldBe remoteScenarioDescriptionVersion
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
   }
 
-  it should "request to migrate valid scenario when remote Nu version is the same as local Nu version" in {
-    val localApiVersion = migrationApiAdapterService.getCurrentApiVersion
+  it should "request to migrate valid scenario when remote scenario description version is the same as local scenario description version" in {
+    val localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
-      remoteEnvironmentMock(apiVersion = localApiVersion)
-
-    whenReady(
-      remoteEnvironment.migrate(
-        ProcessTestData.sampleScenarioParameters.processingMode,
-        ProcessTestData.sampleScenarioParameters.engineSetupName,
-        ProcessTestData.sampleScenarioParameters.category,
-        ProcessTestData.validScenarioGraph,
-        ProcessTestData.sampleProcessName,
-        false
-      )
-    ) { res =>
-      res shouldBe Right(())
-      remoteEnvironment.lastlySentMigrateScenarioRequest match {
-        case Some(migrateScenarioRequest) => migrateScenarioRequest.currentVersion() shouldBe localApiVersion
-        case _                            => fail("lastly sent migrate scenario request should be non empty")
-      }
-    }
-  }
-
-  it should "request to migrate valid scenario when remote Nu version is higher than local Nu version" in {
-    val localApiVersion  = migrationApiAdapterService.getCurrentApiVersion
-    val remoteApiVersion = localApiVersion + 1
-    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
-      remoteEnvironmentMock(apiVersion = remoteApiVersion)
+      remoteEnvironmentMock(scenarioDescriptionVersion = localScenarioDescriptionVersion)
 
     whenReady(
       remoteEnvironment.migrate(
@@ -178,7 +154,32 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest.currentVersion() shouldBe localApiVersion
+          migrateScenarioRequest.currentVersion() shouldBe localScenarioDescriptionVersion
+        case _ => fail("lastly sent migrate scenario request should be non empty")
+      }
+    }
+  }
+
+  it should "request to migrate valid scenario when remote scenario description version is higher than local scenario description version" in {
+    val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
+    val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion + 1
+    val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
+      remoteEnvironmentMock(scenarioDescriptionVersion = remoteScenarioDescriptionVersion)
+
+    whenReady(
+      remoteEnvironment.migrate(
+        ProcessTestData.sampleScenarioParameters.processingMode,
+        ProcessTestData.sampleScenarioParameters.engineSetupName,
+        ProcessTestData.sampleScenarioParameters.category,
+        ProcessTestData.validScenarioGraph,
+        ProcessTestData.sampleProcessName,
+        false
+      )
+    ) { res =>
+      res shouldBe Right(())
+      remoteEnvironment.lastlySentMigrateScenarioRequest match {
+        case Some(migrateScenarioRequest) =>
+          migrateScenarioRequest.currentVersion() shouldBe localScenarioDescriptionVersion
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -235,7 +236,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   private def remoteEnvironmentMock(
-      apiVersion: Int
+      scenarioDescriptionVersion: Int
   ) = new MockRemoteEnvironment with LastSentMigrateScenarioRequest {
 
     override protected def request(
@@ -252,7 +253,7 @@ class StandardRemoteEnvironmentSpec
       }
 
       object GetMigrateApiVersion {
-        def unapply(arg: (String, HttpMethod)): Boolean = is("/migrate/apiVersion", GET)
+        def unapply(arg: (String, HttpMethod)): Boolean = is("/migrate/scenario/description/version", GET)
       }
 
       object Migrate {
@@ -262,7 +263,7 @@ class StandardRemoteEnvironmentSpec
 
       (uri.toString(), method) match {
         case GetMigrateApiVersion() =>
-          Marshal(apiVersion).to[RequestEntity].map { entity =>
+          Marshal(scenarioDescriptionVersion).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>

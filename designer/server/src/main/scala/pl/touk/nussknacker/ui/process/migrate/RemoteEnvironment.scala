@@ -212,11 +212,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
 
-    val f: EitherT[Future, NuDesignerError, Unit] = for {
+    val result: EitherT[Future, NuDesignerError, Unit] = for {
       remoteApiVersion <- fetchRemoteMigrationApiVersion
-
       localApiVersion = migrationApiAdapterService.getCurrentApiVersion
-
       migrateScenarioRequest: MigrateScenarioData =
         MigrateScenarioDataV2(
           environmentId,
@@ -227,19 +225,16 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           processName,
           isFragment
         )
-
       versionsDifference = localApiVersion - remoteApiVersion
-
       transformedMigrateScenarioRequestE =
         if (versionsDifference > 0)
           migrationApiAdapterService.adaptDown(migrateScenarioRequest, versionsDifference)
         else
           Right(migrateScenarioRequest)
-
       _ <- handleTransformedMigrateScenarioRequest(transformedMigrateScenarioRequestE)
     } yield ()
 
-    f.value
+    result.value
   }
 
   private def handleTransformedMigrateScenarioRequest(
@@ -275,7 +270,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   private def fetchRemoteMigrationApiVersionAux(implicit ec: ExecutionContext): Future[Int] = {
     invoke[Int](
       HttpMethods.GET,
-      List("migrate", "apiVersion"),
+      List("migrate", "scenario", "description", "version"),
       Query.Empty,
       requestEntity = HttpEntity.Empty,
       headers = Seq.empty
