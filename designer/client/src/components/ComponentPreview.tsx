@@ -41,9 +41,11 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     });
 
     const imageStyles = css({
-        padding: iconSize / 2,
-        borderBottomLeftRadius: BORDER_RADIUS - 2,
-        borderTopLeftRadius: BORDER_RADIUS - 2,
+        padding: iconSize / 2 - CONTENT_PADDING / 2,
+        margin: CONTENT_PADDING / 2,
+        borderRadius: BORDER_RADIUS,
+        width: iconBackgroundSize / 2,
+        height: iconBackgroundSize / 2,
         "> svg": {
             height: iconSize,
             width: iconSize,
