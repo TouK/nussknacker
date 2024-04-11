@@ -9,7 +9,6 @@ object MigrationApiAdapters {
     override def liftVersion: MigrateScenarioData => MigrateScenarioData = {
       case v1: MigrateScenarioDataV1 =>
         MigrateScenarioDataV2(
-          version = v1.version + 1,
           sourceEnvironmentId = v1.sourceEnvironmentId,
           processingMode = v1.processingMode,
           engineSetupName = v1.engineSetupName,
@@ -24,7 +23,6 @@ object MigrationApiAdapters {
     override def downgradeVersion: MigrateScenarioData => MigrateScenarioData = {
       case v2: MigrateScenarioDataV2 =>
         MigrateScenarioDataV1(
-          version = v2.version - 1,
           sourceEnvironmentId = v2.sourceEnvironmentId,
           processingMode = v2.processingMode,
           engineSetupName = v2.engineSetupName,

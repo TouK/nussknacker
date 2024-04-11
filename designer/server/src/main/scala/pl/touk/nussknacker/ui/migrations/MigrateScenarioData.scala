@@ -20,7 +20,7 @@ object MigrateScenarioData {
   def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): MigrateScenarioData =
     migrateScenarioRequestDto match {
       case MigrateScenarioRequestDtoV1(
-            version,
+            1,
             sourceEnvironmentId,
             processingMode,
             engineSetupName,
@@ -30,7 +30,6 @@ object MigrateScenarioData {
             isFragment
           ) =>
         MigrateScenarioDataV1(
-          version,
           sourceEnvironmentId,
           processingMode,
           engineSetupName,
@@ -40,7 +39,7 @@ object MigrateScenarioData {
           isFragment
         )
       case MigrateScenarioRequestDtoV2(
-            version,
+            2,
             sourceEnvironmentId,
             processingMode,
             engineSetupName,
@@ -50,7 +49,6 @@ object MigrateScenarioData {
             isFragment
           ) =>
         MigrateScenarioDataV2(
-          version,
           sourceEnvironmentId,
           processingMode,
           engineSetupName,
@@ -59,12 +57,12 @@ object MigrateScenarioData {
           processName,
           isFragment
         )
+      case e => throw new IllegalStateException(s"Unexpected version number in DTO, got: $e")
     }
 
   def fromDomain(migrateScenarioRequest: MigrateScenarioData): MigrateScenarioRequestDto =
     migrateScenarioRequest match {
-      case MigrateScenarioDataV1(
-            version,
+      case dataV1 @ MigrateScenarioDataV1(
             sourceEnvironmentId,
             processingMode,
             engineSetupName,
@@ -74,7 +72,7 @@ object MigrateScenarioData {
             isFragment
           ) =>
         MigrateScenarioRequestDtoV1(
-          version,
+          version = dataV1.currentVersion(),
           sourceEnvironmentId,
           processingMode,
           engineSetupName,
@@ -83,8 +81,7 @@ object MigrateScenarioData {
           processName,
           isFragment
         )
-      case MigrateScenarioDataV2(
-            version,
+      case dataV2 @ MigrateScenarioDataV2(
             sourceEnvironmentId,
             processingMode,
             engineSetupName,
@@ -94,7 +91,7 @@ object MigrateScenarioData {
             isFragment
           ) =>
         MigrateScenarioRequestDtoV2(
-          version,
+          version = dataV2.currentVersion(),
           sourceEnvironmentId,
           processingMode,
           engineSetupName,
@@ -108,7 +105,6 @@ object MigrateScenarioData {
 }
 
 final case class MigrateScenarioDataV1(
-    version: Int,
     sourceEnvironmentId: String,
     processingMode: ProcessingMode,
     engineSetupName: EngineSetupName,
@@ -117,11 +113,10 @@ final case class MigrateScenarioDataV1(
     processName: ProcessName,
     isFragment: Boolean,
 ) extends MigrateScenarioData {
-  override def currentVersion(): Int = version
+  override def currentVersion(): Int = 1
 }
 
 final case class MigrateScenarioDataV2(
-    version: Int,
     sourceEnvironmentId: String,
     processingMode: ProcessingMode,
     engineSetupName: EngineSetupName,
@@ -130,5 +125,5 @@ final case class MigrateScenarioDataV2(
     processName: ProcessName,
     isFragment: Boolean,
 ) extends MigrateScenarioData {
-  override def currentVersion(): Int = version
+  override def currentVersion(): Int = 2
 }

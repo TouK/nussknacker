@@ -219,7 +219,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
       migrateScenarioRequest: MigrateScenarioData =
         MigrateScenarioDataV2(
-          localApiVersion,
           environmentId,
           processingMode,
           engineSetupName,
