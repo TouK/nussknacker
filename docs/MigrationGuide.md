@@ -52,6 +52,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
   * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
   * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
+* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
+  * "Basic Decision Table" -> "Decision Table"
+  * "Expression" -> "Filtering expression"
 
 ## In version 1.14.0
 

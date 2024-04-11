@@ -26,7 +26,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private type Output = java.util.List[java.util.Map[String, Any]]
 
   private object BasicDecisionTableParameter {
-    val name: ParameterName = ParameterName("Basic Decision Table")
+    val name: ParameterName = ParameterName("Decision Table")
 
     val declaration: ParameterExtractor[TabularTypedData] with ParameterCreatorWithNoDependency =
       ParameterDeclaration
@@ -36,7 +36,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   }
 
   private object FilterDecisionTableExpressionParameter {
-    val name: ParameterName = ParameterName("Expression")
+    val name: ParameterName = ParameterName("Filtering expression")
 
     val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
@@ -70,9 +70,9 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
   ): ServiceInvoker = {
-    val tabularTypedData = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
-    val filterExpression = FilterDecisionTableExpressionParameter.declaration.extractValueUnsafe(params)
-    new DecisionTableImplementation(tabularTypedData, filterExpression)
+    val tabularTypedData    = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
+    val filteringExpression = FilterDecisionTableExpressionParameter.declaration.extractValueUnsafe(params)
+    new DecisionTableImplementation(tabularTypedData, filteringExpression)
   }
 
   private lazy val prepare: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>

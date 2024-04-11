@@ -100,7 +100,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Expression")),
+                paramName = Some(ParameterName("Filtering expression")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -124,7 +124,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Expression")),
+                paramName = Some(ParameterName("Filtering expression")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -151,7 +151,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Basic Decision Table")),
+                paramName = Some(ParameterName("Decision Table")),
                 originalExpr = invalidColumnTypeDecisionTableJson.expression,
                 details = Some(
                   TabularDataDefinitionParserErrorDetails(
@@ -222,12 +222,10 @@ trait DecisionTableSpec
     ScenarioBuilder
       .requestResponse("test scenario")
       .source("request", TestScenarioRunner.testDataSource)
-      .enricher(
-        "decision-table",
-        "dtResult",
-        "decision-table",
-        "Basic Decision Table" -> basicDecisionTableDefinition,
-        "Expression"           -> expression,
+      .decisionTable(
+        decisionTableParamValue = basicDecisionTableDefinition,
+        filterExpressionParamValue = expression,
+        output = "dtResult",
       )
       .end("end", "value" -> sinkValueExpression)
   }

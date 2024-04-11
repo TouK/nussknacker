@@ -111,7 +111,7 @@ describe("Components list", () => {
         cy.matchQuery("?STATUS=RUNNING&STATUS=NOT_DEPLOYED");
         cy.get("body").click();
         cy.contains("components-test").click();
-        cy.contains("import test data").should("be.visible");
+        cy.contains("import test data").should("exist");
     });
 
     it("should apply filters from query", () => {
@@ -183,7 +183,8 @@ describe("Components list", () => {
     it("should filter usage types", () => {
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
-        cy.get("#toolbox").contains("fragments").should("be.visible").click();
+        cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
+        cy.layoutScenario();
         cy.contains(`${seed}_xxx`)
             .last()
             .should("be.visible")
@@ -207,9 +208,7 @@ describe("Components list", () => {
             .contains(/\sdirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
             .contains(/\sdirect/i)
@@ -218,9 +217,7 @@ describe("Components list", () => {
             .contains(/indirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
             .contains(/indirect/i)
@@ -230,9 +227,7 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.get("#app-container>main").matchImage();
     });
 
     function filterByDefaultCategory() {

@@ -18,8 +18,8 @@ describe("Undo/Redo", () => {
     beforeEach(() => {
         cy.visitNewProcess(seed, "testProcess");
         cy.contains(/^custom$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         cy.layoutScenario();
         cy.get("[data-testid=graphPage]", { timeout: 20000 }).as("graph");
         cy.contains(/^undo$/i)

@@ -126,6 +126,11 @@ export interface PropertiesValidationRequest {
     additionalFields: ProcessAdditionalFields;
 }
 
+export interface CustomActionValidationRequest {
+    actionName: string;
+    params: Record<string, string>;
+}
+
 export interface ExpressionSuggestionRequest {
     expression: Expression;
     caretPosition2d: CaretPosition2d;
@@ -476,6 +481,20 @@ class HttpService {
             .catch((error) => {
                 this.#addError(
                     i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
+                    error,
+                    true,
+                );
+                return;
+            });
+    }
+
+    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
+        return api
+            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
                     error,
                     true,
                 );

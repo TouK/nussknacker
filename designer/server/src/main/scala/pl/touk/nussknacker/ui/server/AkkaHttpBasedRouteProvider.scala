@@ -57,7 +57,11 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.services.{MigrationApiHttpService, NuDesignerExposedApiHttpService}
+import pl.touk.nussknacker.ui.services.{
+  ManagementApiHttpService,
+  MigrationApiHttpService,
+  NuDesignerExposedApiHttpService
+}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -269,6 +273,13 @@ class AkkaHttpBasedRouteProvider(
         authenticator = authenticationResources,
         categories = processingTypeDataProvider.mapValues(_.category)
       )
+
+      val managementApiHttpService = new ManagementApiHttpService(
+        authenticator = authenticationResources,
+        dispatcher = dmDispatcher,
+        processService = processService
+      )
+
       val notificationApiHttpService = new NotificationApiHttpService(
         authenticator = authenticationResources,
         notificationService = notificationService
@@ -410,14 +421,15 @@ class AkkaHttpBasedRouteProvider(
         new NuDesignerExposedApiHttpService(
           appApiHttpService,
           componentsApiHttpService,
-          userApiHttpService,
+          dictApiHttpService,
+          deploymentHttpService,
+          managementApiHttpService,
+          migrationApiHttpService,
+          nodesApiHttpService,
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          migrationApiHttpService,
-          nodesApiHttpService,
-          dictApiHttpService,
-          deploymentHttpService
+          userApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

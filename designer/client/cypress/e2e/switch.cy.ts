@@ -16,8 +16,8 @@ describe("Process", () => {
         it("should allow editing choice edge expression", () => {
             cy.layoutScenario();
             cy.contains(/^base$/)
-                .should("be.visible")
-                .click();
+                .should("exist")
+                .scrollIntoView();
             cy.contains(/^choice$/)
                 .should("be.visible")
                 .drag("#nk-graph-main", {
