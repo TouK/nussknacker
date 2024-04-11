@@ -2,7 +2,8 @@ import React from "react";
 import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../../../../common/TestResultUtils";
 import { SelectNode } from "../../../FormElements";
 import { css, cx } from "@emotion/css";
-import { FormControl, FormLabel, useTheme } from "@mui/material";
+import { Box, FormControl, FormLabel, useTheme } from "@mui/material";
+import { Option, TypeSelect } from "../fragment-input-definition/TypeSelect";
 
 export interface TestResultsSelectProps {
     results: NodeTestResults;
@@ -19,6 +20,11 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
         return null;
     }
 
+    const availableContexts: Option[] = TestResultUtils.availableContexts(results).map(({ id, display }) => ({
+        label: `${id} ${display}`,
+        value: id,
+    }));
+
     return (
         <FormControl>
             <FormLabel
@@ -32,19 +38,13 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
             >
                 Test case:
             </FormLabel>
-            <div className="node-value">
-                <SelectNode
-                    className="node-input selectResults"
-                    onChange={(e) => onChange(TestResultUtils.stateForSelectTestResults(results, e.target.value))}
-                    value={value}
-                >
-                    {TestResultUtils.availableContexts(results).map(({ display, id }) => (
-                        <option key={id} value={id}>
-                            {id} ({display})
-                        </option>
-                    ))}
-                </SelectNode>
-            </div>
+            <TypeSelect
+                className="selectResults"
+                onChange={(value) => onChange(TestResultUtils.stateForSelectTestResults(results, value))}
+                options={availableContexts}
+                value={availableContexts.find((availableContext) => availableContext.value === value)}
+                fieldErrors={[]}
+            />
         </FormControl>
     );
 }
