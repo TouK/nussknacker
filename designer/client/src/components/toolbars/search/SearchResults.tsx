@@ -46,7 +46,7 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
         }
 
         const nodeIds = nodes.map((n) => n.node.id);
-        graph.panToNodes(nodeIds);
+        graph.fitToNodes(nodeIds);
 
         nodes.forEach(({ node, edges }) => {
             graph.highlightNode(node.id, nodeFound);

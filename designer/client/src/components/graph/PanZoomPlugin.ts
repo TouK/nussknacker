@@ -1,240 +1,193 @@
-import { css } from "@emotion/css";
+/* @refresh reset */
 import { dia, g } from "jointjs";
-import { debounce, throttle } from "lodash";
-import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
-import svgPanZoom from "svg-pan-zoom";
+import { throttle } from "lodash";
 import { GlobalCursor } from "./GlobalCursor";
-import { Events } from "./types";
-import Hammer from "hammerjs";
+import { select, Selection } from "d3-selection";
+import { D3ZoomEvent, zoom, ZoomBehavior, ZoomedElementBaseType, zoomIdentity, ZoomTransform } from "d3-zoom";
+import { rafThrottle } from "./rafThrottle";
 
-const getAnimationClass = (disabled?: boolean) =>
-    css({
-        ".svg-pan-zoom_viewport": {
-            transition: disabled ? "none" : `transform .5s cubic-bezier(0.86, 0, 0.07, 1)`,
-        },
-    });
+function isModified(event: MouseEvent | TouchEvent) {
+    return event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
+}
+
+function clamp(number: number, max: number) {
+    return Math.round(Math.min(max, Math.max(-max, number)));
+}
+
+function adjust(number: number, multi = 1, pow = 1) {
+    return Math.round((number >= 0 ? Math.pow(number, pow) : -Math.pow(-number, pow)) * multi);
+}
+
+function transformToCSSMatrix({ x, y, k }: ZoomTransform): string {
+    const matrix = [
+        [k.toFixed(4), 0, x.toFixed(4)],
+        [0, k.toFixed(4), y.toFixed(4)],
+        [0, 0, 1],
+    ];
+    return `matrix(${matrix[0][0]}, ${matrix[1][0]}, ${matrix[0][1]}, ${matrix[1][1]}, ${matrix[0][2]}, ${matrix[1][2]})`;
+}
+
+export type Viewport = g.Rect;
 
 export class PanZoomPlugin {
+    private zoomBehavior: ZoomBehavior<ZoomedElementBaseType, unknown>;
+    private paperSelection: Selection<SVGElement, unknown, null, undefined>;
+    private panBy = rafThrottle(({ x, y }: { x: number; y: number }) => {
+        this.paperSelection.interrupt("pan").transition("pan").duration(25).call(this.zoomBehavior.translateBy, x, y);
+    });
     private globalCursor: GlobalCursor;
-    private instance: SvgPanZoom.Instance;
-    private pinchEventActive = false;
-    private animationClassHolder: HTMLElement;
-    private panStart: {
-        x: number;
-        y: number;
-        touched?: boolean;
-    };
+    private zoomTo = throttle((scale: number): void => {
+        this.paperSelection.transition().duration(750).call(this.zoomBehavior.scaleTo, scale);
+    }, 250);
+    private _enabled = true;
 
-    private panEnabled = false;
-
-    constructor(private paper: dia.Paper) {
+    constructor(private paper: dia.Paper, viewport: Viewport) {
+        this.viewport = viewport;
         this.globalCursor = new GlobalCursor();
-        this.instance = svgPanZoom(paper.svg, {
-            fit: false,
-            contain: false,
-            zoomScaleSensitivity: 0.4,
-            controlIconsEnabled: false,
-            panEnabled: false,
-            dblClickZoomEnabled: false,
-            minZoom: 0.005,
-            maxZoom: 500,
-        });
+        this.paperSelection = select(this.paper.svg);
 
-        //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
-        this.instance.zoom(0.001);
+        this.zoomBehavior = zoom()
+            .scaleExtent([0.05, 6])
+            .filter(this.filterEvents.bind(this))
+            .on("start", this.initMove.bind(this))
+            .on("zoom", rafThrottle(this.applyTransform.bind(this)))
+            .on("end", this.cleanup.bind(this));
 
-        if (isTouchDevice()) {
-            this.initPinchZooming(this.paper);
-        }
+        const initialScale = 0.01;
+        const center = this.paper.getContentArea().center();
+        const initialTranslate = this.getTranslatedCenter(center, this.viewport, initialScale);
+        const zoomTransform = zoomIdentity.translate(initialTranslate.x, initialTranslate.y).scale(initialScale);
 
-        this.animationClassHolder = paper.el;
-        this.animationClassHolder.addEventListener(
-            "transitionend",
-            debounce(() => {
-                this.setAnimationClass({ enabled: false });
-            }, 500),
-        );
-
-        paper.on(Events.BLANK_POINTERDOWN, this.handleBlankPointerDown);
-
-        this.initPanMove(paper);
+        this.paperSelection.call(this.zoomBehavior.transform, zoomTransform);
+        this.enable();
     }
 
-    private handleBlankPointerDown = (event: dia.Event) => {
-        if (isTouchEvent(event)) {
-            const pressTimer = setTimeout(() => {
-                this.panEnabled = false;
-            }, LONG_PRESS_TIME);
-            this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
-            this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
-        }
-    };
-
-    private initMove(event: MouseEvent): void {
-        const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-        if (!isModified) {
-            if (!isTouchEvent(event)) {
-                this.globalCursor.enable("move");
-            }
-            this.panStart = {
-                x: event.clientX,
-                y: event.clientY,
-            };
-        }
-    }
-
-    private setAnimationClass({ enabled }: { enabled: boolean }) {
-        if (window["Cypress"]) {
-            return;
-        }
-        this.animationClassHolder.classList.remove(getAnimationClass(enabled));
-        this.animationClassHolder.classList.add(getAnimationClass(!enabled));
-    }
+    private _zoom = 1;
 
     get zoom(): number {
-        return this.instance.getZoom();
+        return this._zoom;
+    }
+
+    private _viewport: Viewport;
+
+    private get viewport(): Viewport {
+        return this._viewport || new g.Rect(this.paper.el.getBoundingClientRect());
+    }
+
+    private set viewport(value: Viewport) {
+        this._viewport = value || this._viewport;
+    }
+
+    private get layers() {
+        return select(this.paper.viewport.parentElement);
+    }
+
+    toggle(enabled: boolean) {
+        if (enabled === this._enabled) return;
+
+        enabled ? this.enable() : this.disable();
+        this._enabled = enabled;
+    }
+
+    fitContent(content: g.Rect, updatedViewport?: Viewport): void {
+        this.viewport = updatedViewport;
+
+        const transitionName = "fit";
+        const scale = Math.min(2, 0.8 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
+        const center = content.center();
+        const translate = this.getTranslatedCenter(center, this.viewport, scale);
+
+        const zoomTransform = zoomIdentity.translate(translate.x, translate.y).scale(scale);
+
+        this.paperSelection
+            .interrupt(transitionName)
+            .transition(transitionName)
+            .duration(750)
+            .call(this.zoomBehavior.transform, zoomTransform);
+    }
+
+    zoomIn(): void {
+        this.zoomTo(this.zoom * 2);
+    }
+
+    zoomOut(): void {
+        this.zoomTo(this.zoom * 0.5);
+    }
+
+    panToOverflow(cells: dia.Cell[], updatedViewport?: Viewport) {
+        this.viewport = updatedViewport;
+
+        const border = Math.min(100, adjust(this.viewport.width, 0.05), adjust(this.viewport.height, 0.05));
+        const adjustedViewport = this.viewport.inflate(-border, -border).round();
+
+        const cellsBBox = this.paper.localToClientRect(this.paper.model.getCellsBBox(cells)).round();
+
+        if (adjustedViewport.containsRect(cellsBBox)) {
+            return;
+        }
+
+        const top = Math.min(0, adjustedViewport.topLine().pointOffset(cellsBBox.topMiddle()));
+        const bottom = Math.max(0, adjustedViewport.bottomLine().pointOffset(cellsBBox.bottomMiddle()));
+        const left = Math.min(0, -adjustedViewport.leftLine().pointOffset(cellsBBox.leftMiddle()));
+        const right = Math.max(0, -adjustedViewport.rightLine().pointOffset(cellsBBox.rightMiddle()));
+
+        const x = -Math.round(left + right);
+        const y = -Math.round(top + bottom);
+        this.panBy({
+            x: clamp(adjust(x, 0.2, 1.5), 60),
+            y: clamp(adjust(y, 0.2, 1.5), 60),
+        });
+    }
+
+    private getTranslatedCenter = (center: g.Point, viewport: Viewport, scale: number) => {
+        const viewportRelativeCenter = viewport.translate(0, -viewport.y).center();
+        return viewportRelativeCenter.translate(center.scale(-scale, -scale));
+    };
+
+    private enable() {
+        this.paperSelection.call(this.zoomBehavior).on("dblclick.zoom", null);
+    }
+
+    private disable() {
+        this.paperSelection.on(".zoom", null);
+    }
+
+    private filterEvents(event: MouseEvent | TouchEvent): boolean {
+        if (!this._enabled) {
+            return false;
+        }
+
+        if (isModified(event)) {
+            return false;
+        }
+
+        if ("button" in event && event.button === 1) {
+            return false;
+        }
+
+        if (event.type === "wheel") {
+            return true;
+        }
+
+        if ("touches" in event && event.touches.length > 1) {
+            return true;
+        }
+
+        return event.target === this.paper.svg;
+    }
+
+    private applyTransform<E extends ZoomedElementBaseType, D>(e: D3ZoomEvent<E, D>) {
+        if (this._enabled) {
+            this._zoom = e.transform.k;
+            this.layers.attr("transform", transformToCSSMatrix(e.transform)).style("transform", transformToCSSMatrix(e.transform));
+        }
+    }
+
+    private initMove(): void {
+        this.globalCursor.enable("move");
     }
 
     private cleanup() {
-        this.panStart = null;
         this.globalCursor.disable();
     }
-
-    fitSmallAndLargeGraphs = debounce((): void => {
-        this.setAnimationClass({ enabled: true });
-        this.instance.zoom(1);
-        this.instance.resize();
-        this.instance.updateBBox();
-        this.instance.fit();
-        const { realZoom } = this.instance.getSizes();
-        const toZoomBy = realZoom > 1.2 ? 1 / realZoom : 0.78; //the bigger zoom, the further we get
-        this.instance.zoomBy(toZoomBy);
-        this.instance.center();
-    }, 100);
-
-    zoomIn = throttle((): void => {
-        this.setAnimationClass({ enabled: true });
-        this.instance.zoomIn();
-    }, 500);
-
-    zoomOut = throttle((): void => {
-        this.setAnimationClass({ enabled: true });
-        this.instance.zoomOut();
-    }, 500);
-
-    private pan = throttle((point: { x: number; y: number }) => {
-        requestAnimationFrame(() => {
-            this.instance.panBy(point);
-        });
-    }, 16 /*~60 pleasant fps*/);
-
-    panToCells = (cells: dia.Cell[], viewport: g.Rect = new g.Rect(this.paper.el.getBoundingClientRect())) => {
-        const localViewport = this.paper.clientToLocalRect(viewport);
-        const cellsBBox = this.paper.model.getCellsBBox(cells).inflate(10, 50);
-
-        if (localViewport.containsRect(cellsBBox)) {
-            return;
-        }
-
-        const [top, right, bottom, left] = [
-            -localViewport.topLine().pointOffset(cellsBBox.topMiddle()),
-            -localViewport.rightLine().pointOffset(cellsBBox.rightMiddle()),
-            localViewport.bottomLine().pointOffset(cellsBBox.bottomMiddle()),
-            localViewport.leftLine().pointOffset(cellsBBox.leftMiddle()),
-        ].map((offset) => Math.min(20, Math.max(0, offset) / 20));
-
-        const panOffset = {
-            y: Math.round(top - bottom),
-            x: Math.round(left - right),
-        };
-
-        this.pan(panOffset);
-        requestAnimationFrame(() => {
-            this.panToCells(cells, viewport);
-        });
-    };
-
-    private initPinchZooming(paper: dia.Paper) {
-        let lastScale = 1;
-
-        const hammer = new Hammer(paper.el);
-        hammer.get("pinch").set({ enable: true });
-
-        hammer.on("pinchstart", () => {
-            this.pinchEventActive = true;
-            this.instance.setZoomScaleSensitivity(0.015);
-        });
-
-        hammer.on("pinchend", () => {
-            this.pinchEventActive = false;
-            this.instance.setZoomScaleSensitivity(0.4);
-        });
-
-        hammer.on("pinchin pinchout", (e) => {
-            if (e.scale < lastScale) {
-                this.instance.zoomOut();
-            } else if (e.scale > lastScale) {
-                this.instance.zoomIn();
-            }
-
-            lastScale = e.scale;
-        });
-
-        document.addEventListener("touchmove", (event) => {
-            if (this.pinchEventActive) {
-                event.stopImmediatePropagation();
-            }
-        });
-    }
-
-    private initPanMove = (paper: dia.Paper) => {
-        const hammer = new Hammer(paper.el);
-        hammer.get("pan").set({
-            threshold: 2,
-            direction: Hammer.DIRECTION_ALL,
-            enable: (recognizer, input) => {
-                const isInitialPanTouch = input?.isFirst;
-
-                if (isInitialPanTouch) {
-                    const diagramBoardIds = ["nk-graph-main", "nk-graph-fragment"];
-                    this.panEnabled = diagramBoardIds.some((diagramBoardId) => diagramBoardId === input?.target.parentElement.id);
-                }
-
-                return this.panEnabled;
-            },
-        });
-
-        hammer.on("panstart", (event) => {
-            this.initMove(event.pointers[0]);
-        });
-
-        hammer.on("panmove", (event) => {
-            const isModified = event.srcEvent.shiftKey || event.srcEvent.ctrlKey || event.srcEvent.altKey || event.srcEvent.metaKey;
-
-            if (!isModified && this.panStart) {
-                const panStart = this.panStart;
-                this.instance.panBy({
-                    x: event.pointers[0].clientX - panStart.x,
-                    y: event.pointers[0].clientY - panStart.y,
-                });
-
-                this.panStart = {
-                    x: event.pointers[0].clientX,
-                    y: event.pointers[0].clientY,
-                    touched: true,
-                };
-            }
-        });
-
-        hammer.on("panend", (event) => {
-            if (this.panStart?.touched) {
-                event.pointers[0].stopImmediatePropagation();
-            }
-            this.cleanup();
-        });
-    };
-
-    getPinchEventActive = () => {
-        return this.pinchEventActive;
-    };
 }
