@@ -1,6 +1,6 @@
 import NodeUtils from "../NodeUtils";
 import { cloneDeep, isEqual, map, reject } from "lodash";
-import { Edge, NodeId, NodeType, ScenarioGraph, ProcessDefinitionData } from "../../../types";
+import { Edge, NodeId, NodeType, ProcessDefinitionData, ScenarioGraph } from "../../../types";
 import {
     adjustBranchParametersAfterDisconnect,
     enrichNodeWithProcessDependentData,
@@ -128,5 +128,7 @@ export const handleGraphEvent =
         touchEvent: ((view: T, event: dia.Event) => void) | null,
         mouseEvent: ((view: T, event: dia.Event) => void) | null,
     ) =>
-    (view: T, event: dia.Event) =>
-        isTouchEvent(event) ? touchEvent?.(view, event) : mouseEvent?.(view, event);
+    (view: T, event: dia.Event) => {
+        event.preventDefault();
+        return isTouchEvent(event) ? touchEvent?.(view, event) : mouseEvent?.(view, event);
+    };
