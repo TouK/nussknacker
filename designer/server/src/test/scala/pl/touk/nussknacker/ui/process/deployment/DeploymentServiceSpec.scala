@@ -9,6 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -131,7 +132,10 @@ class DeploymentServiceSpec
     val id                       = prepareProcess(processName).dbioActionValues
 
     val result =
-      deploymentServiceWithCommentSettings.processCommand(RunDeploymentCommand(id, None, None, user)).failed.futureValue
+      deploymentServiceWithCommentSettings
+        .processCommand(RunDeploymentCommand(id, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user))
+        .failed
+        .futureValue
 
     result shouldBe a[CustomActionValidationError]
     result.getMessage.trim shouldBe "Comment is required."
@@ -148,7 +152,9 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
 
-    deploymentServiceWithCommentSettings.processCommand(RunDeploymentCommand(id, None, None, user))
+    deploymentServiceWithCommentSettings.processCommand(
+      RunDeploymentCommand(id, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+    )
 
     eventually {
       val status = deploymentServiceWithCommentSettings
@@ -173,7 +179,9 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
 
-    deploymentServiceWithCommentSettings.processCommand(RunDeploymentCommand(id, None, Some("samplePattern"), user))
+    deploymentServiceWithCommentSettings.processCommand(
+      RunDeploymentCommand(id, None, Some("samplePattern"), NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+    )
 
     eventually {
       deploymentServiceWithCommentSettings
@@ -218,7 +226,11 @@ class DeploymentServiceSpec
     val processId                = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForDeployFinish(processName) {
-      deploymentService.processCommand(RunDeploymentCommand(processId, None, None, user)).futureValue
+      deploymentService
+        .processCommand(
+          RunDeploymentCommand(processId, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+        )
+        .futureValue
       deploymentService
         .getProcessState(processId)
         .futureValue
@@ -334,7 +346,11 @@ class DeploymentServiceSpec
 
       checkStatusAction(SimpleStateStatus.NotDeployed, None)
       deploymentManager.withWaitForDeployFinish(processName) {
-        deploymentService.processCommand(RunDeploymentCommand(processId, None, None, user)).futureValue
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(processId, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+          )
+          .futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
         listener.events shouldBe Symbol("empty")
       }
@@ -352,7 +368,12 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       val result =
-        deploymentService.processCommand(RunDeploymentCommand(processId, None, None, user)).failed.futureValue
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(processId, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+          )
+          .failed
+          .futureValue
       result.getMessage shouldBe "Parallelism too large"
       deploymentManager.deploys should not contain processName
       fetchingProcessRepository
@@ -798,7 +819,11 @@ class DeploymentServiceSpec
       val initialStatus = SimpleStateStatus.NotDeployed
       deploymentService.getProcessState(id).futureValue.status shouldBe initialStatus
       deploymentManager.withWaitForDeployFinish(processName) {
-        deploymentService.processCommand(RunDeploymentCommand(id, None, None, user)).futureValue
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(id, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+          )
+          .futureValue
         deploymentService
           .getProcessState(id)
           .futureValue
@@ -843,7 +868,8 @@ class DeploymentServiceSpec
     val actionName               = ScenarioActionName("has-params")
     val wrongParams              = Map("testParam" -> "")
 
-    val result = deploymentService.processCommand(CustomActionCommand(actionName, id, wrongParams, user)).failed.futureValue
+    val result =
+      deploymentService.processCommand(CustomActionCommand(actionName, id, wrongParams, user)).failed.futureValue
 
     result shouldBe a[CustomActionValidationError]
     result.getMessage.trim shouldBe s"Validation failed for: ${actionName}"

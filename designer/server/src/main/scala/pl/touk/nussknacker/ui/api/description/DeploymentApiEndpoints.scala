@@ -2,6 +2,8 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.{NodeEventsFilteringRules, NodesEventsFilteringRules}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -14,7 +16,6 @@ import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{
   DeploymentRequest,
   RequestedDeploymentId
 }
-import pl.touk.nussknacker.ui.process.deployment.SourcesEventsFilteringRules
 import sttp.model.StatusCode.{NotFound, Ok}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.Example
@@ -60,8 +61,22 @@ object DeploymentApiEndpoints {
     //  - scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
     final case class DeploymentRequest(
-        sourcesEventsFilteringRules: SourcesEventsFilteringRules
+        sourcesEventsFilteringRules: NodesEventsFilteringRules
     )
+
+    implicit val nodeEventsFilteringRulesCodec: Schema[NodeEventsFilteringRules] = Schema
+      .schemaForMap[String, String](identity)
+      .map[NodeEventsFilteringRules]((map: Map[String, String]) =>
+        Some(NodeEventsFilteringRules.convertMapToNodeRules(map))
+      )(
+        NodeEventsFilteringRules.convertNodeRulesToMap
+      )
+
+    implicit val nodesEventsFilteringRulesCodec: Schema[NodesEventsFilteringRules] = Schema
+      .schemaForMap[NodeId, NodeEventsFilteringRules](_.id)
+      .map[NodesEventsFilteringRules]((map: Map[NodeId, NodeEventsFilteringRules]) =>
+        Some(NodesEventsFilteringRules(map))
+      )(_.rulesByNodeId)
 
     sealed trait DeploymentError
 

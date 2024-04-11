@@ -63,7 +63,6 @@ class DeploymentApiHttpServiceBusinessSpec
     )
 
   override protected def taskManagerExtraFSBinds: List[FileSystemBind] = {
-
     List(
       // table definitions must be also on the TM side. This is necessary because we create full model definition for the purpose of
       // interpreter used in scenario parts using built-in components - TODO: it shouldn't be needed

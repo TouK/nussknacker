@@ -7,6 +7,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -86,7 +87,15 @@ class NotificationServiceTest
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
-        .processCommand(RunDeploymentCommand(processIdWithName, savepointPath = None, comment = None, user))
+        .processCommand(
+          RunDeploymentCommand(
+            processIdWithName,
+            savepointPath = None,
+            comment = None,
+            NodesEventsFilteringRules.PassAllEventsForEveryNode,
+            user
+          )
+        )
         .flatten
         .futureValue
     }
@@ -133,7 +142,15 @@ class NotificationServiceTest
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
-        .processCommand(RunDeploymentCommand(processIdWithName, savepointPath = None, comment = None, user))
+        .processCommand(
+          RunDeploymentCommand(
+            processIdWithName,
+            savepointPath = None,
+            comment = None,
+            NodesEventsFilteringRules.PassAllEventsForEveryNode,
+            user
+          )
+        )
         .flatten
         .futureValue
     }
@@ -186,12 +203,18 @@ class NotificationServiceTest
       override protected def prepareDeployedScenarioData(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           actionId: ProcessActionId,
+          nodesEventsFilteringRules: NodesEventsFilteringRules,
           additionalDeploymentData: Map[String, String] = Map.empty
       )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
         Future.successful(
           DeployedScenarioData(
             processDetails.toEngineProcessVersion,
-            prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId), additionalDeploymentData),
+            prepareDeploymentData(
+              user.toManagerUser,
+              DeploymentId.fromActionId(actionId),
+              nodesEventsFilteringRules,
+              additionalDeploymentData
+            ),
             processDetails.json
           )
         )

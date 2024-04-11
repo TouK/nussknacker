@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -366,7 +367,9 @@ class PeriodicProcessService(
     val deploymentData = DeploymentData(
       DeploymentId(id.toString),
       DeploymentData.systemUser,
-      additionalDeploymentDataProvider.prepareAdditionalData(deployment)
+      additionalDeploymentDataProvider.prepareAdditionalData(deployment),
+      // TODO: in the future we could allow users to specify filtering rules during schedule requesting
+      NodesEventsFilteringRules.PassAllEventsForEveryNode
     )
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {

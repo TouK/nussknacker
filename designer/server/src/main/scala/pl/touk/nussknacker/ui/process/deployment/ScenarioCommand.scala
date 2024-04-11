@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
 import pl.touk.nussknacker.engine.api.deployment.{DMScenarioCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
@@ -21,6 +22,7 @@ case class RunDeploymentCommand(
     processId: ProcessIdWithName,
     savepointPath: Option[String],
     comment: Option[String],
+    nodesEventsFilteringRules: NodesEventsFilteringRules,
     user: LoggedUser
 ) extends ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 

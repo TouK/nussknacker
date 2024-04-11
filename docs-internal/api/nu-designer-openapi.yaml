@@ -2175,7 +2175,7 @@ components:
       type: object
       properties:
         sourcesEventsFilteringRules:
-          $ref: '#/components/schemas/Map_NodeId_SourceEventsFilteringRules'
+          $ref: '#/components/schemas/Map_NodeId_NodeEventsFilteringRules'
     Dict:
       required:
       - id
@@ -2531,7 +2531,7 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_SourceEventsFilteringRules:
+    Map_NodeId_NodeEventsFilteringRules:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'

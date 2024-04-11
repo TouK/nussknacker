@@ -8,6 +8,7 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -122,7 +123,11 @@ class DeploymentService(
         p => Some(p.processingType)
       )
       // 2. command specific section
-      deployedScenarioData <- prepareDeployedScenarioData(ctx.latestScenarioDetails, ctx.actionId)
+      deployedScenarioData <- prepareDeployedScenarioData(
+        ctx.latestScenarioDetails,
+        ctx.actionId,
+        command.nodesEventsFilteringRules
+      )
       dmCommand = DMRunDeploymentCommand(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
@@ -274,6 +279,7 @@ class DeploymentService(
   protected def prepareDeployedScenarioData(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
+      nodesEventsFilteringRules: NodesEventsFilteringRules,
       additionalDeploymentData: Map[String, String] = Map.empty
   )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
     for {
@@ -283,6 +289,7 @@ class DeploymentService(
       deploymentData = prepareDeploymentData(
         user.toManagerUser,
         DeploymentId.fromActionId(actionId),
+        nodesEventsFilteringRules,
         additionalDeploymentData
       )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
@@ -291,9 +298,10 @@ class DeploymentService(
   protected def prepareDeploymentData(
       user: User,
       deploymentId: DeploymentId,
+      nodesEventsFilteringRules: NodesEventsFilteringRules,
       additionalDeploymentData: Map[String, String]
   ): DeploymentData = {
-    DeploymentData(deploymentId, user, additionalDeploymentData)
+    DeploymentData(deploymentId, user, additionalDeploymentData, nodesEventsFilteringRules)
   }
 
   private def runActionAndHandleResults[T, PS: ScenarioShapeFetchStrategy](

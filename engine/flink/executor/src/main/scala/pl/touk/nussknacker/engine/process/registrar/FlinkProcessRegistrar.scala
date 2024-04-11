@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.component.{NodeComponentInfo, NodeEventsFilteringRules}
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -84,7 +84,15 @@ class FlinkProcessRegistrar(
 
       val compilerDataForProcessPart =
         FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
-      register(env, compilerDataForProcessPart, compilerData, process, resultCollector, typeInformationDetection)
+      register(
+        env,
+        compilerDataForProcessPart,
+        compilerData,
+        process,
+        resultCollector,
+        typeInformationDetection,
+        deploymentData
+      )
       streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
   }
@@ -119,7 +127,8 @@ class FlinkProcessRegistrar(
       compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
-      typeInformationDetection: TypeInformationDetection
+      typeInformationDetection: TypeInformationDetection,
+      deploymentData: DeploymentData
   ): Unit = {
 
     val metaData         = compilerData.metaData
@@ -146,7 +155,11 @@ class FlinkProcessRegistrar(
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        compilerData.componentUseCase
+        compilerData.componentUseCase,
+        // TODO: we should verify if component supports filtering. If not, we should throw some error instead
+        //       of silently skip filtering logic
+        deploymentData.nodesEventsFilteringRules.rulesByNodeId
+          .getOrElse(NodeId(nodeComponentId.nodeId), NodeEventsFilteringRules.PassAllEvents)
       )
     }
 

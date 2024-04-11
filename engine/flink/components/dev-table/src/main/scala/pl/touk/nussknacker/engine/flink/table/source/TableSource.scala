@@ -8,6 +8,7 @@ import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.component.IsEqualToFieldRule
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -27,12 +28,17 @@ class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlState
 
     sqlStatements.foreach(tableEnv.executeSql)
 
-    val table = tableEnv
-      .from(tableDefinition.tableName)
-      // FIXME: use passed parameters
-      .filter($("date").isEqual("2024-01-01"))
+    val selectQuery = tableEnv.from(tableDefinition.tableName)
 
-    val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
+    val finalQuery = flinkNodeContext.nodeEventsFilteringRules.fieldRules.toList
+      .map { case (fieldName, IsEqualToFieldRule(expectedValue)) =>
+        $(fieldName.value).isEqual(expectedValue)
+      }
+      .reduceOption { (expr1, expr2) => expr1.and(expr2) }
+      .map(selectQuery.filter)
+      .getOrElse(selectQuery)
+
+    val streamOfRows: DataStream[Row] = tableEnv.toDataStream(finalQuery)
 
     val streamOfMaps = streamOfRows
       .map(RowConversions.rowToMap)
