@@ -4,11 +4,11 @@ import pl.touk.nussknacker.ui.util.ApiAdapter
 
 object MigrationApiAdapters {
 
-  case object MigrationApiAdapterV1ToV2 extends ApiAdapter[MigrateScenarioRequest] {
+  case object MigrationApiAdapterV1ToV2 extends ApiAdapter[MigrateScenarioData] {
 
-    override def liftVersion: MigrateScenarioRequest => MigrateScenarioRequest = {
-      case v1: MigrateScenarioRequestV1 =>
-        MigrateScenarioRequestV2(
+    override def liftVersion: MigrateScenarioData => MigrateScenarioData = {
+      case v1: MigrateScenarioDataV1 =>
+        MigrateScenarioDataV2(
           version = v1.version + 1,
           sourceEnvironmentId = v1.sourceEnvironmentId,
           processingMode = v1.processingMode,
@@ -21,9 +21,9 @@ object MigrationApiAdapters {
       case _ => throw new IllegalStateException("Expecting another value object")
     }
 
-    override def downgradeVersion: MigrateScenarioRequest => MigrateScenarioRequest = {
-      case v2: MigrateScenarioRequestV2 =>
-        MigrateScenarioRequestV1(
+    override def downgradeVersion: MigrateScenarioData => MigrateScenarioData = {
+      case v2: MigrateScenarioDataV2 =>
+        MigrateScenarioDataV1(
           version = v2.version - 1,
           sourceEnvironmentId = v2.sourceEnvironmentId,
           processingMode = v2.processingMode,
@@ -38,6 +38,6 @@ object MigrationApiAdapters {
 
   }
 
-  val adapters: Map[Int, ApiAdapter[MigrateScenarioRequest]] = Map(1 -> MigrationApiAdapterV1ToV2)
+  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map(1 -> MigrationApiAdapterV1ToV2)
 
 }

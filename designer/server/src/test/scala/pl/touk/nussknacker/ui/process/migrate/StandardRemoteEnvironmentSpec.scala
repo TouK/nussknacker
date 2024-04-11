@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV1,
   MigrateScenarioRequestDtoV2
 }
-import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrationApiAdapterService}
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -231,7 +231,7 @@ class StandardRemoteEnvironmentSpec
   }
 
   private trait LastSentMigrateScenarioRequest {
-    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioRequest] = None
+    var lastlySentMigrateScenarioRequest: Option[MigrateScenarioData] = None
   }
 
   private def remoteEnvironmentMock(
@@ -268,11 +268,11 @@ class StandardRemoteEnvironmentSpec
         case Migrate() =>
           parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
             case Right(migrateScenarioRequestDtoV2) =>
-              lastlySentMigrateScenarioRequest = Some(MigrateScenarioRequest.toDomain(migrateScenarioRequestDtoV2))
+              lastlySentMigrateScenarioRequest = Some(MigrateScenarioData.toDomain(migrateScenarioRequestDtoV2))
             case Left(_) =>
               parseBodyToJson(request).as[MigrateScenarioRequestDtoV1] match {
                 case Right(migrateScenarioRequestDtoV1) =>
-                  lastlySentMigrateScenarioRequest = Some(MigrateScenarioRequest.toDomain(migrateScenarioRequestDtoV1))
+                  lastlySentMigrateScenarioRequest = Some(MigrateScenarioData.toDomain(migrateScenarioRequestDtoV1))
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
           }

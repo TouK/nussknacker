@@ -21,7 +21,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
-import pl.touk.nussknacker.ui.migrations.{MigrateScenarioRequest, MigrateScenarioRequestV2, MigrationApiAdapterService}
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
@@ -217,8 +217,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
       localApiVersion = migrationApiAdapterService.getCurrentApiVersion
 
-      migrateScenarioRequest: MigrateScenarioRequest =
-        MigrateScenarioRequestV2(
+      migrateScenarioRequest: MigrateScenarioData =
+        MigrateScenarioDataV2(
           localApiVersion,
           environmentId,
           processingMode,
@@ -244,7 +244,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def handleTransformedMigrateScenarioRequest(
-      transformedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioRequest]
+      transformedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData]
   )(implicit ec: ExecutionContext) = {
     transformedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
@@ -256,7 +256,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           )
         )
       case Right(transformedMigrateScenarioRequest) =>
-        val dto = MigrateScenarioRequest.fromDomain(transformedMigrateScenarioRequest)
+        val dto = MigrateScenarioData.fromDomain(transformedMigrateScenarioRequest)
         EitherT(
           invokeForSuccess(
             HttpMethods.POST,

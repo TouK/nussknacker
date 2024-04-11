@@ -11,13 +11,13 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
 }
 import pl.touk.nussknacker.ui.util.VersionedData
 
-sealed trait MigrateScenarioRequest extends VersionedData
+sealed trait MigrateScenarioData extends VersionedData
 
-object MigrateScenarioRequest {
+object MigrateScenarioData {
 
-  type CurrentMigrateScenarioRequest = MigrateScenarioRequestV2
+  type CurrentMigrateScenarioRequest = MigrateScenarioDataV2
 
-  def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): MigrateScenarioRequest =
+  def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): MigrateScenarioData =
     migrateScenarioRequestDto match {
       case MigrateScenarioRequestDtoV1(
             version,
@@ -29,7 +29,7 @@ object MigrateScenarioRequest {
             processName,
             isFragment
           ) =>
-        MigrateScenarioRequestV1(
+        MigrateScenarioDataV1(
           version,
           sourceEnvironmentId,
           processingMode,
@@ -49,7 +49,7 @@ object MigrateScenarioRequest {
             processName,
             isFragment
           ) =>
-        MigrateScenarioRequestV2(
+        MigrateScenarioDataV2(
           version,
           sourceEnvironmentId,
           processingMode,
@@ -61,9 +61,9 @@ object MigrateScenarioRequest {
         )
     }
 
-  def fromDomain(migrateScenarioRequest: MigrateScenarioRequest): MigrateScenarioRequestDto =
+  def fromDomain(migrateScenarioRequest: MigrateScenarioData): MigrateScenarioRequestDto =
     migrateScenarioRequest match {
-      case MigrateScenarioRequestV1(
+      case MigrateScenarioDataV1(
             version,
             sourceEnvironmentId,
             processingMode,
@@ -83,7 +83,7 @@ object MigrateScenarioRequest {
           processName,
           isFragment
         )
-      case MigrateScenarioRequestV2(
+      case MigrateScenarioDataV2(
             version,
             sourceEnvironmentId,
             processingMode,
@@ -107,7 +107,7 @@ object MigrateScenarioRequest {
 
 }
 
-final case class MigrateScenarioRequestV1(
+final case class MigrateScenarioDataV1(
     version: Int,
     sourceEnvironmentId: String,
     processingMode: ProcessingMode,
@@ -116,11 +116,11 @@ final case class MigrateScenarioRequestV1(
     scenarioGraph: ScenarioGraph,
     processName: ProcessName,
     isFragment: Boolean,
-) extends MigrateScenarioRequest {
+) extends MigrateScenarioData {
   override def currentVersion(): Int = version
 }
 
-final case class MigrateScenarioRequestV2(
+final case class MigrateScenarioDataV2(
     version: Int,
     sourceEnvironmentId: String,
     processingMode: ProcessingMode,
@@ -129,6 +129,6 @@ final case class MigrateScenarioRequestV2(
     scenarioGraph: ScenarioGraph,
     processName: ProcessName,
     isFragment: Boolean,
-) extends MigrateScenarioRequest {
+) extends MigrateScenarioData {
   override def currentVersion(): Int = version
 }
