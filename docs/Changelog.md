@@ -12,6 +12,7 @@
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Added information about component's allowed processing modes to Component API
 * [#5831](https://github.com/TouK/nussknacker/pull/5831) Fragment input parameters presets support
 * [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
+* [#5848](https://github.com/TouK/nussknacker/pull/5848) Change colors across an entire user interface
 
 1.14.0 (21 Mar 2024)
 -------------------------
