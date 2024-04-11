@@ -125,13 +125,13 @@ const nodeStyles = (theme: Theme) => {
         .${nodeFoundHover}.${nodeFound} {
             ${nodeHighlight(
                 theme.palette.success.dark,
-                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.7),
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.2),
             )}
         }
         .${nodeFocused}.${nodeFoundHover}.${nodeFound} {
             ${nodeHighlight(
                 theme.palette.secondary.light,
-                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.7),
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.2),
             )}
         }
     `;
