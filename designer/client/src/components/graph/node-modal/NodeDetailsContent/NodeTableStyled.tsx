@@ -2,6 +2,11 @@ import { css, styled } from "@mui/material";
 import { customCheckbox } from "./CustomCheckbox";
 
 export const HIDDEN_TEXTAREA_PIXEL_HEIGHT = 100;
+export const nodeInput = "node-input";
+export const nodeValue = "node-value";
+export const nodeInputWithError = "node-input-with-error";
+export const rowAceEditor = "row-ace-editor";
+
 export const NodeTableStyled = styled("div")(
     ({ theme }) => css`
         font-size: 11px;
@@ -22,7 +27,7 @@ export const NodeTableStyled = styled("div")(
                 padding: 5px;
             }
         }
-        .node-value {
+        .${nodeValue} {
             flex: 1;
             flex-basis: 60%;
             display: inline-block;
@@ -41,7 +46,7 @@ export const NodeTableStyled = styled("div")(
                     height: ${HIDDEN_TEXTAREA_PIXEL_HEIGHT}px !important;
                 }
             }
-            &.node-value-type-select {
+            &.${nodeInputWithError} {
                 width: 100%;
                 max-height: 35;
                 &.switchable {
@@ -71,7 +76,7 @@ export const NodeTableStyled = styled("div")(
                 pointer-events: none;
             }
         }
-        .node-input {
+        .${nodeInput} {
             height: 35px;
             width: 100%;
             padding: 0 10px;
@@ -80,28 +85,23 @@ export const NodeTableStyled = styled("div")(
             font-size: 14px;
         }
 
-        .row-ace-editor {
+        .${rowAceEditor} {
             padding: ${theme.spacing(1, 0.625)};
             min-height: 35px;
             .ace-nussknacker {
                 outline: none;
             }
         }
-        .node-group {
-            padding-top: 15px;
-            width: 100%;
-            padding-left: 50px;
-        }
-        textarea.node-input {
+        textarea.${nodeInput} {
             resize: vertical;
             line-height: 1.5;
             padding-top: 7px;
             padding-bottom: 7px;
         }
-        input[type="checkbox"].node-input {
+        input[type="checkbox"].${nodeInput} {
             height: 20px;
         }
-        .node-input-with-error {
+        .${nodeInputWithError} {
             outline: 1px solid ${theme.palette.error.main} !important;
             outline-offset: initial !important;
             border-radius: 2px;

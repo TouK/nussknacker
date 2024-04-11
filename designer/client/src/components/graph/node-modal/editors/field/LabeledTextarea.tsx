@@ -4,6 +4,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import { TextArea, TextAreaWithFocusProps } from "../../../../FormElements";
 import { LabeledInputProps } from "./LabeledInput";
 import { FormControl } from "@mui/material";
+import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
 
 export interface LabeledTextareaProps
     extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "fieldErrors">,
@@ -17,7 +18,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
     return (
         <FormControl>
             {children}
-            <div className={`node-value${isMarked ? " marked" : ""}`}>
+            <div className={`${nodeValue}${isMarked ? " marked" : ""}`}>
                 <TextArea
                     {...passProps}
                     rows={!isEmpty(value) ? value.split(lineEndPattern).length : rows}

@@ -8,6 +8,7 @@ import { TextAreaNode } from "../../../../../FormElements";
 import InitialValue from "./fields/InitialValue";
 import { ValidationsFields } from "./fields/validation";
 import { getValidationErrorsForField } from "../../../editors/Validators";
+import { nodeInput } from "../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     item: DefaultParameterVariant;
@@ -53,7 +54,7 @@ export const DefaultVariant = ({ item, onChange, path, variableTypes, readOnly, 
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
                     disabled={readOnly}
-                    className={"node-input"}
+                    className={nodeInput}
                 />
             </FormControl>
         </SettingsWrapper>

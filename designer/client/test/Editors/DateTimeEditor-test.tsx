@@ -5,6 +5,7 @@ import { jest } from "@jest/globals";
 import { DateTimeEditor } from "../../src/components/graph/node-modal/editors/expression/DateTimeEditor";
 import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -32,7 +33,7 @@ describe(DateTimeEditor.name, () => {
             </NuThemeProvider>,
         );
 
-        expect(screen.getByRole("textbox")).toHaveClass("node-input-with-error");
+        expect(screen.getByRole("textbox")).toHaveClass(nodeInputWithError);
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });
 });

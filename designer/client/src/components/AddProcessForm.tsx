@@ -15,6 +15,7 @@ import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
 import { isEmpty } from "lodash";
 import { Option, TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
+import { nodeInput, nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
@@ -73,7 +74,7 @@ export function AddProcessForm({
             <NodeTable>
                 <FormControl>
                     <FormLabel required>{t("addProcessForm.label.processingMode", "Processing mode")}</FormLabel>
-                    <span className="node-value">
+                    <span className={nodeValue}>
                         <FormGroup
                             row
                             sx={(theme) => ({ flexWrap: "nowrap", gap: theme.spacing(1.5) })}
@@ -131,12 +132,12 @@ export function AddProcessForm({
                 </FormControl>
                 <FormControl>
                     <FormLabel required>{t("addProcessForm.label.name", "Name")}</FormLabel>
-                    <div className="node-value">
+                    <div className={nodeValue}>
                         <NodeInput
                             type="text"
                             id="newProcessName"
                             value={value.processName}
-                            className={"node-input"}
+                            className={nodeInput}
                             onChange={(e) => onFieldChange("processName", e.target.value)}
                             onBlur={() => {
                                 onBlurChange("processName", true);

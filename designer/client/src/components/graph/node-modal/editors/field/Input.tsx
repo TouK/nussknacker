@@ -4,6 +4,7 @@ import { InputWithFocusProps, NodeInput } from "../../../../FormElements";
 import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";
+import { nodeInput, nodeInputWithError } from "../../NodeDetailsContent/NodeTableStyled";
 
 export interface InputProps
     extends Pick<
@@ -45,7 +46,7 @@ export default function Input(props: InputProps): JSX.Element {
                         onFocus={onFocus}
                         type={type}
                         className={cx([
-                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
+                            !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`,
                             inputClassName,
                         ])}
                         value={value || ""}

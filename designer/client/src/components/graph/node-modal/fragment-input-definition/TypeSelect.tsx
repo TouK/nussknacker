@@ -6,6 +6,7 @@ import { styled, useTheme } from "@mui/material";
 import ValidationLabels from "../../../modals/ValidationLabels";
 import { FieldError } from "../editors/Validators";
 import { cx } from "@emotion/css";
+import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 const StyledNodeValue = styled(NodeValue)({ width: "100%" });
 
@@ -62,7 +63,7 @@ export function TypeSelect({
             <Select
                 id={props.id}
                 aria-label={"type-select"}
-                className={cx("node-value node-value-select node-value-type-select", props.className)}
+                className={cx(`${nodeValue}`, props.className)}
                 isDisabled={readOnly}
                 maxMenuHeight={190}
                 onMenuOpen={() => setCaptureEsc(true)}

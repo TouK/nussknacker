@@ -2,6 +2,7 @@ import React from "react";
 import { NodeInput } from "../../../../FormElements";
 import { LabeledInputProps } from "./LabeledInput";
 import { FormControl } from "@mui/material";
+import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
 
 export interface CheckboxProps extends Pick<LabeledInputProps, "children" | "autoFocus" | "isMarked" | "onChange" | "readOnly"> {
     value?: boolean;
@@ -14,7 +15,7 @@ export default function Checkbox(props: CheckboxProps): JSX.Element {
     return (
         <FormControl>
             {children}
-            <div className={`node-value${isMarked ? " marked" : ""}${readOnly ? " read-only " : ""}`}>
+            <div className={`${nodeValue}${isMarked ? " marked" : ""}${readOnly ? " read-only " : ""}`}>
                 <NodeInput autoFocus={autoFocus} type="checkbox" checked={!!value} onChange={onChange} disabled={readOnly} />
             </div>
         </FormControl>

@@ -4,6 +4,7 @@ import React, { ChangeEvent } from "react";
 import { TextArea } from "../../../../FormElements";
 import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";
+import { nodeInput, nodeInputWithError } from "../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     isMarked: boolean;
@@ -32,7 +33,7 @@ export function Textarea(props: Props) {
                     readOnly={readOnly}
                     placeholder={placeholder}
                     className={cx([
-                        !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
+                        !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`,
                         inputClassName,
                     ])}
                     value={value || ""}

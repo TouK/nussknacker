@@ -10,6 +10,7 @@ import { ValidationsFields } from "../fields/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     item: AnyValueWithSuggestionsParameterVariant;
@@ -68,7 +69,7 @@ export const AnyValueWithSuggestionVariant = ({ item, path, onChange, variableTy
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
                     disabled={readOnly}
-                    className={"node-input"}
+                    className={nodeInput}
                 />
             </FormControl>
         </>

@@ -14,6 +14,7 @@ import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "./editors/Validators";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
+import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     index: number;
@@ -90,7 +91,7 @@ export function EdgeFields(props: Props): JSX.Element {
         if (edge.edgeType.type === EdgeKind.switchNext) {
             return (
                 <EditableEditor
-                    valueClassName={cx("node-value", css({ gridArea: "expr" }))}
+                    valueClassName={cx(nodeValue, css({ gridArea: "expr" }))}
                     variableTypes={variableTypes}
                     fieldLabel={t("node.fields.edge.expression", "Expression")}
                     expressionObj={{

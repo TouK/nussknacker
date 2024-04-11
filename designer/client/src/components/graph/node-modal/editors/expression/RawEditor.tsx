@@ -6,6 +6,7 @@ import { EditorMode, ExpressionObj } from "./types";
 import { nodeInputCss } from "../../../../NodeInput";
 import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
+import { nodeInput } from "../../NodeDetailsContent/NodeTableStyled";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -45,7 +46,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         () => ({
             rows: rows,
             cols: cols,
-            className: cx("node-input"),
+            className: cx(nodeInput),
             style: nodeInputCss,
             value: value,
             language: language,

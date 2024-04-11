@@ -1,6 +1,7 @@
 import { Theme } from "@mui/material";
 import "react-datetime/css/react-datetime.css";
 import { blendDarken, blendLighten, getBorderColor } from "./helpers";
+import { rowAceEditor } from "../../components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 const aceEditorStyles = (theme: Theme) => ({
     ".ace-nussknacker .ace_gutter": {
@@ -218,7 +219,7 @@ export const globalStyles = (theme: Theme) => ({
         lineHeight: 1.428571429,
         fontFamily,
     },
-    "input, button, select, textarea, .row-ace-editor": {
+    [`input, button, select, textarea, .${rowAceEditor}`]: {
         fontFamily: "inherit",
         fontSize: "inherit",
         lineHeight: "inherit",
@@ -239,12 +240,12 @@ export const globalStyles = (theme: Theme) => ({
             backgroundColor: theme.palette.action.hover,
         },
     },
-    "input[readonly], select[readonly], textarea[readonly], input[type='checkbox'][readonly]:after, input[type='radio'][readonly]:after, .row-ace-editor.read-only, .row-ace-editor .read-only .ace_scroller":
+    [`input[readonly], select[readonly], textarea[readonly], input[type='checkbox'][readonly]:after, input[type='radio'][readonly]:after, .${rowAceEditor}.read-only, .${rowAceEditor} .read-only .ace_scroller`]:
         {
             backgroundColor: `${theme.palette.action.disabledBackground} !important`,
             color: `${theme.palette.action.disabled} !important`,
         },
-    "input[disabled], select[disabled], textarea[disabled], input[type='checkbox'][disabled]:after, input[type='radio'][disabled]:after, .row-ace-editor[disabled]":
+    [`input[disabled], select[disabled], textarea[disabled], input[type='checkbox'][disabled]:after, input[type='radio'][disabled]:after, .${rowAceEditor}[disabled]`]:
         {
             backgroundColor: `${theme.palette.action.disabledBackground} !important`,
             color: `${theme.palette.action.disabled} !important`,

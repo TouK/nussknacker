@@ -3,6 +3,7 @@ import { styled, css, Theme } from "@mui/material";
 import { Button } from "../FormElements";
 import { blend } from "@mui/system";
 import { blendLighten } from "../../containers/theme/helpers";
+import { nodeValue } from "./node-modal/NodeDetailsContent/NodeTableStyled";
 
 export const buttonBase = (theme: Theme) => css`
     border-radius: 0;
@@ -182,7 +183,7 @@ export const FocusableStyled = styled("div")(
                 display: inline-flex;
                 width: 100%;
 
-                .node-value {
+                .${nodeValue} {
                     width: 100% !important;
                 }
             }

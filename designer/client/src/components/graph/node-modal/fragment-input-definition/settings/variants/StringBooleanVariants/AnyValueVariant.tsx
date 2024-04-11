@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { ValidationsFields } from "../fields/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
+import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     item: AnyValueParameterVariant;
@@ -46,7 +47,7 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
                     disabled={readOnly}
-                    className={"node-input"}
+                    className={nodeInput}
                 />
             </FormControl>
         </>
