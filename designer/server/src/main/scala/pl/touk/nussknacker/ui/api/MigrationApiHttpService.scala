@@ -28,47 +28,8 @@ class MigrationApiHttpService(
   expose {
     remoteEnvironmentApiEndpoints.migrateEndpoint
       .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
-      .serverLogicEitherT { implicit loggedUser =>
-        { req: MigrateScenarioRequestDto =>
-          val migrateScenarioRequest = MigrateScenarioData.toDomain(req)
-
-          val localApiVersion    = migrationApiAdapterService.getCurrentApiVersion
-          val remoteApiVersion   = migrateScenarioRequest.currentVersion()
-          val versionsDifference = localApiVersion - remoteApiVersion
-
-          val liftedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData] =
-            if (versionsDifference > 0) {
-              migrationApiAdapterService.adaptUp(migrateScenarioRequest, versionsDifference)
-            } else Right(migrateScenarioRequest)
-
-          liftedMigrateScenarioRequestE match {
-            case Left(apiAdapterServiceError) =>
-              EitherT(
-                Future[Either[NuDesignerError, Unit]](
-                  Left(
-                    MigrationApiAdapterError(apiAdapterServiceError)
-                  )
-                )
-              )
-            case Right(liftedMigrateScenarioRequest) =>
-              liftedMigrateScenarioRequest match {
-                case currentMigrateScenarioRequest: CurrentMigrateScenarioRequest =>
-                  EitherT(migrationService.migrate(currentMigrateScenarioRequest))
-                case _ =>
-                  EitherT(
-                    Future[Either[NuDesignerError, Unit]](
-                      Left(
-                        RemoteEnvironmentCommunicationError(
-                          StatusCode.int2StatusCode(500),
-                          "Migration API adapter service lifted up remote migration request not to its newest local version"
-                        )
-                      )
-                    )
-                  )
-              }
-          }
-
-        }
+      .serverLogicEitherT { implicit loggedUser => req: MigrateScenarioRequestDto =>
+        migrationService.migrate(req)
       }
   }
 

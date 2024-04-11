@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.migrations
 
+import akka.http.scaladsl.model.StatusCode
 import cats.data.EitherT
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -9,6 +10,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequestDto
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -20,12 +22,18 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   GetScenarioWithDetailsOptions,
   UpdateScenarioCommand
 }
-import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
+import pl.touk.nussknacker.ui.process.migrate.{
+  MigrationApiAdapterError,
+  MigrationToArchivedError,
+  MigrationValidationError,
+  RemoteEnvironmentCommunicationError
+}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.util.ApiAdapterServiceError
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 
@@ -39,13 +47,57 @@ class MigrationService(
     processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener,
     scenarioParametersService: ProcessingTypeDataProvider[_, ScenarioParametersService],
-    useLegacyCreateScenarioApi: Boolean
+    useLegacyCreateScenarioApi: Boolean,
+    migrationApiAdapterService: MigrationApiAdapterService
 )(implicit val ec: ExecutionContext) {
 
   private val passUsernameInMigration = true
 
-  // FIXME: Rename process to scenario everywhere it's possible
   def migrate(
+      req: MigrateScenarioRequestDto
+  )(implicit loggedUser: LoggedUser): EitherT[Future, NuDesignerError, Unit] = {
+
+    val migrateScenarioRequest = MigrateScenarioData.toDomain(req)
+
+    val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
+    val remoteScenarioDescriptionVersion = migrateScenarioRequest.currentVersion()
+    val versionsDifference               = localScenarioDescriptionVersion - remoteScenarioDescriptionVersion
+
+    val liftedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData] =
+      if (versionsDifference > 0) {
+        migrationApiAdapterService.adaptUp(migrateScenarioRequest, versionsDifference)
+      } else Right(migrateScenarioRequest)
+
+    liftedMigrateScenarioRequestE match {
+      case Left(apiAdapterServiceError) =>
+        EitherT(
+          Future[Either[NuDesignerError, Unit]](
+            Left(
+              MigrationApiAdapterError(apiAdapterServiceError)
+            )
+          )
+        )
+      case Right(liftedMigrateScenarioRequest) =>
+        liftedMigrateScenarioRequest match {
+          case currentMigrateScenarioRequest: CurrentMigrateScenarioRequest =>
+            EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
+          case _ =>
+            EitherT(
+              Future[Either[NuDesignerError, Unit]](
+                Left(
+                  RemoteEnvironmentCommunicationError(
+                    StatusCode.int2StatusCode(500),
+                    "Migration API adapter service lifted up remote migration request not to its newest local version"
+                  )
+                )
+              )
+            )
+        }
+    }
+  }
+
+  // FIXME: Rename process to scenario everywhere it's possible
+  private def migrateCurrentScenarioDescription(
       migrateScenarioRequest: CurrentMigrateScenarioRequest
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
     val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
