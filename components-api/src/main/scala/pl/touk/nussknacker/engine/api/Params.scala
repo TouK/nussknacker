@@ -1,32 +1,46 @@
 package pl.touk.nussknacker.engine.api
 
-final case class Params(nameToValueMap: Map[String, Any]) {
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
-  def extract[T](paramName: String): Option[T] =
-    rawValueExtract(paramName).map(cast[T])
+final case class Params(nameToValueMap: Map[ParameterName, Any]) {
 
-  def extractUnsafe[T](paramName: String): T =
-    extract[T](paramName)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
+  def isPresent(name: ParameterName): Boolean = nameToValueMap.contains(name)
 
-  def extractOrEvaluate[T](paramName: String, context: Context): Option[T] = {
-    rawValueExtract(paramName)
+  def extract[T](name: ParameterName): Option[T] = {
+    extractValue(name).map(cast[T])
+  }
+
+  def extractUnsafe[T](name: ParameterName): T =
+    extract[T](name)
+      .getOrElse(throw new IllegalArgumentException(paramValueIsNoneMessage(name)))
+
+  def extractOrEvaluateLazyParam[T](name: ParameterName, context: Context): Option[T] = {
+    extractValue(name)
       .map {
-        case lp: LazyParameter[_] => lp.evaluate(context)
-        case other                => other
+        case lazyParameter: LazyParameter[_] => lazyParameter.evaluate(context)
+        case other                           => other
       }
       .map(cast[T])
   }
 
-  def extractOrEvaluateUnsafe[T](paramName: String, context: Context): T = {
-    extractOrEvaluate[T](paramName, context)
-      .getOrElse(throw new IllegalArgumentException(cannotFindParamNameMessage(paramName)))
+  def extractOrEvaluateLazyParamUnsafe[T](name: ParameterName, context: Context): T = {
+    extractOrEvaluateLazyParam(name, context)
+      .getOrElse(throw new IllegalArgumentException(paramValueIsNoneMessage(name)))
   }
 
-  private def rawValueExtract(paramName: String) = nameToValueMap.get(paramName).flatMap(Option.apply)
+  private def extractValue(paramName: ParameterName) = {
+    nameToValueMap.get(paramName) match {
+      case None        => throw new IllegalStateException(cannotFindParamNameMessage(paramName))
+      case Some(null)  => None
+      case Some(value) => Some(value)
+    }
+  }
 
-  private def cannotFindParamNameMessage(paramName: String) =
-    s"Cannot find param name [$paramName]. Available param names: ${nameToValueMap.keys.mkString(",")}"
+  private def cannotFindParamNameMessage(paramName: ParameterName) =
+    s"Cannot find param name [${paramName.value}]. Available param names: ${nameToValueMap.keys.map(_.value).mkString(",")}"
+
+  private def paramValueIsNoneMessage(paramName: ParameterName) =
+    s"Parameter [${paramName.value}] doesn't expect to be null!"
 
   private def cast[T](value: Any): T = value.asInstanceOf[T]
 

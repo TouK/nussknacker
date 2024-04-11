@@ -44,7 +44,6 @@ describe(Item.name, () => {
                         errors={[]}
                         variableTypes={{}}
                         onChange={mockOnChange}
-                        fixedValuesPresets={{}}
                         options={[
                             {
                                 value: "java.lang.Boolean",

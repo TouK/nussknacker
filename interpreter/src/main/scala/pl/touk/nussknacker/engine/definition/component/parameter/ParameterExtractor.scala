@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   AdditionalVariableWithFixedValue,
   Parameter
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{AdditionalVariables, BranchParamName, LazyParameter, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
@@ -26,12 +27,16 @@ import scala.util.control.NonFatal
 
 object ParameterExtractor {
 
-  def extractParameter(p: java.lang.reflect.Parameter, parametersConfig: Map[String, ParameterConfig]): Parameter = {
+  def extractParameter(
+      p: java.lang.reflect.Parameter,
+      parametersConfig: Map[ParameterName, ParameterConfig]
+  ): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())
     val branchParamName = Option(p.getAnnotation(classOf[BranchParamName]))
       .map(_.value())
     val name = (nodeParamNames orElse branchParamName)
+      .map(ParameterName.apply)
       .getOrElse(throwIllegalArgument(p, isBranch = false, "missing @ParamName or @BranchParamName annotation"))
     val parameterConfig = parametersConfig.getOrElse(name, ParameterConfig.empty)
 

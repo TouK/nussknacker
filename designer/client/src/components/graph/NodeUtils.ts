@@ -22,7 +22,7 @@ class NodeUtils {
         return !isEmpty(obj) && has(obj, "id") && has(obj, "type");
     };
 
-    nodeType = (node: NodeType) => {
+    nodeType = (node: UINodeType) => {
         return node.type ? node.type : "Properties";
     };
 
@@ -31,7 +31,7 @@ class NodeUtils {
         return type === "Properties";
     };
 
-    nodeIsFragment = (node): node is FragmentNodeType => {
+    nodeIsFragment = (node: UINodeType): node is FragmentNodeType => {
         return this.nodeType(node) === "FragmentInput";
     };
 

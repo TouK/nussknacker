@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
   DefaultValueDeterminerParameters
@@ -21,7 +22,7 @@ object StandardParameterEnrichment {
 
   def enrichParameterDefinitions(
       original: List[Parameter],
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   ): List[Parameter] = {
     original.map(p => enrichParameter(p, parametersConfig.getOrElse(p.name, ParameterConfig.empty)))
   }

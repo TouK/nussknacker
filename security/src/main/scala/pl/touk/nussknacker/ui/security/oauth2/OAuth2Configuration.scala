@@ -41,7 +41,7 @@ final case class OAuth2Configuration(
 ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
-  override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(Nil)
+  override lazy val users: List[ConfigUser] = usersOpt.getOrElse(Nil)
 
   def getUserRoles(identity: String): Set[String] =
     findUserById(identity)

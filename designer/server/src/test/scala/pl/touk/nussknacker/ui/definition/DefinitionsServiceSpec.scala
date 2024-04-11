@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
@@ -203,7 +204,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
       additionalConfigsFromProvider = Map(
         DesignerWideComponentId("streaming-service-enricher") -> ComponentAdditionalConfig(
           parameterConfigs = Map(
-            "paramStringEditor" -> ParameterAdditionalUIConfig(
+            ParameterName("paramStringEditor") -> ParameterAdditionalUIConfig(
               required = false,
               initialValue = Some(
                 FixedExpressionValue(
@@ -272,7 +273,8 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
         Some(_),
         DesignerWideComponentId.default(processingType.stringify, _)
       ),
-      model.modelDefinition
+      model.modelDefinition,
+      ProcessingMode.UnboundedStream
     )
 
     new DefinitionsService(

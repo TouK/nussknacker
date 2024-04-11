@@ -6,6 +6,7 @@ import cats.implicits.{catsSyntaxTuple2Semigroupal, toFoldableOps}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.nodecompilation.BaseComponentValidationHelper.validateVariableValue
 import pl.touk.nussknacker.engine.graph.node.{recordKeyFieldName, recordValueFieldName}
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
@@ -37,7 +38,7 @@ object RecordValidator {
       fields: List[CompiledIndexedRecordField]
   )(implicit nodeId: NodeId) = {
     fields.map { field =>
-      validateVariableValue(Valid(field.typedExpression), recordValueFieldName(field.index))
+      validateVariableValue(Valid(field.typedExpression), ParameterName(recordValueFieldName(field.index)))
     }.combineAll
   }
 
@@ -60,7 +61,7 @@ object RecordValidator {
           CustomParameterValidationError(
             "The key of a record has to be unique",
             "Record key not unique",
-            fieldName,
+            ParameterName(fieldName),
             nodeId.id
           )
         )

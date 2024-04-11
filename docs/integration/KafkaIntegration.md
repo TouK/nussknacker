@@ -39,7 +39,7 @@ To properly present information about topics and version and to recognize which 
   It means that it looks for schemas available at `<topic-name>-(key or value)` *subject*. For example for topic `transactions`, it looks for schemas at `transactions-key` *subject* for key and `transactions-value` *subject* for value
 - In the Azure Schema Registry, *subject* concept doesn't exist - schemas are grouped by the same *schema name*. Because of that, Nussknacker introduces
   own convention for association between schema and topic: *schema name* should be in format: `CamelCasedTopicNameKey` for keys and `CamelCasedTopicNameValue` for values.
-  For example for `input-events` topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
+  For example for `input-events` (or `input.events`) topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
   not only in Azure portal but also inside schema content - those names should be the same to make serialization works correctly
 
 ## Connection and Authentication Configuration
@@ -110,6 +110,8 @@ Regarding authentication, a couple of options can be used - you can provide cred
 `azure.tenant.id`, `azure.client.id` and `azure.client.secret` properties, or you can use one of other methods handled
 by Azure's [DefaultAzureCredential](https://learn.microsoft.com/en-us/java/api/overview/azure/identity-readme?view=azure-java-stable#defaultazurecredential).
 For example via Azure CLI or Azure PowerShell.
+
+Integration with Azure Schema Registry requires Kafka connection, make sure you have provided proper [configuration](#kafka---authentication).
 
 ## Messaging
 

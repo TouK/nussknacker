@@ -3,23 +3,25 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { useKey } from "rooks";
+import urljoin from "url-join";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
+import { BASE_PATH } from "../../../../config";
+import { isInputTarget } from "../../../../containers/BindKeyboardShortcuts";
+import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
+import { RootState } from "../../../../reducers";
+import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
+import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import ErrorBoundary from "../../../common/ErrorBoundary";
+import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
+import { applyIdFromFakeName } from "../IdField";
 import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import urljoin from "url-join";
-import { BASE_PATH } from "../../../../config";
-import { RootState } from "../../../../reducers";
-import { applyIdFromFakeName } from "../IdField";
-import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
-import { Scenario } from "../../../Process/types";
-import { getScenario } from "../../../../reducers/selectors/graph";
-import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -45,11 +47,15 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        await dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-
-        //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like props.close doesn't unmount component.
-        mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-        props.close();
+        try {
+            //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+            props.close();
+        } catch (e) {
+            //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
+            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
+        }
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
@@ -59,7 +65,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             !readOnly
                 ? {
                       title: t("dialog.button.apply", "apply"),
-                      action: () => performNodeEdit(),
+                      action: performNodeEdit,
                       disabled: !editedNode.id?.length,
                   }
                 : null,
@@ -81,9 +87,16 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     );
 
     const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton }),
+        () => ({ title: t("dialog.button.cancel", "cancel"), action: props.close, classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
+
+    useKey("Escape", (e) => {
+        e.preventDefault();
+        if (!isInputTarget(e.composedPath().shift())) {
+            props.close();
+        }
+    });
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [openFragmentButtonData, cancelButtonData, applyButtonData].filter(Boolean),

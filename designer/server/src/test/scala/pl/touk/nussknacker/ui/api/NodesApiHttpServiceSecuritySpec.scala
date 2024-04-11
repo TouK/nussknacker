@@ -6,22 +6,25 @@ import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithRichConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestCategory.{Category1, Category2}
-import pl.touk.nussknacker.test.config.WithRichDesignerConfig.TestProcessingType.{Streaming1, Streaming2}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.{
+  Streaming1,
+  Streaming2
+}
 import pl.touk.nussknacker.test.config.{
-  WithMockableDeploymentManager,
-  WithRichConfigRestAssuredUsersExtensions,
-  WithRichDesignerConfig
+  WithAccessControlCheckingConfigRestAssuredUsersExtensions,
+  WithAccessControlCheckingDesignerConfig,
+  WithMockableDeploymentManager
 }
 
 class NodesApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithRichDesignerConfig
-    with WithRichConfigScenarioHelper
+    with WithAccessControlCheckingDesignerConfig
+    with WithAccessControlCheckingConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithRichConfigRestAssuredUsersExtensions
+    with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
@@ -546,35 +549,40 @@ class NodesApiHttpServiceSecuritySpec
                |      "message": "Property numberOfThreads (Number of threads) has invalid value",
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property parallelism",
                |      "description": "Property parallelism is not known",
                |      "fieldName": "parallelism",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property checkpointIntervalInSeconds",
                |      "description": "Property checkpointIntervalInSeconds is not known",
                |      "fieldName": "checkpointIntervalInSeconds",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property spillStateToDisk",
                |      "description": "Property spillStateToDisk is not known",
                |      "fieldName": "spillStateToDisk",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property useAsyncInterpretation",
                |      "description": "Property useAsyncInterpretation is not known",
                |      "fieldName": "useAsyncInterpretation",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    }
                |  ],
                |  "validationPerformed": true
@@ -667,35 +675,40 @@ class NodesApiHttpServiceSecuritySpec
                |      "message": "Property numberOfThreads (Number of threads) has invalid value",
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property parallelism",
                |      "description": "Property parallelism is not known",
                |      "fieldName": "parallelism",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property checkpointIntervalInSeconds",
                |      "description": "Property checkpointIntervalInSeconds is not known",
                |      "fieldName": "checkpointIntervalInSeconds",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property spillStateToDisk",
                |      "description": "Property spillStateToDisk is not known",
                |      "fieldName": "spillStateToDisk",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    },
                |    {
                |      "typ": "UnknownProperty",
                |      "message": "Unknown property useAsyncInterpretation",
                |      "description": "Property useAsyncInterpretation is not known",
                |      "fieldName": "useAsyncInterpretation",
-               |      "errorType": "SaveAllowed"
+               |      "errorType": "SaveAllowed",
+               |      "details": null
                |    }
                |  ],
                |  "validationPerformed": true

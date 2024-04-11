@@ -1,16 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { useDispatch, useSelector } from "react-redux";
 import { moveToolbar, registerToolbars } from "../../actions/nk/toolbars";
 import { ToolbarsContainer } from "./ToolbarsContainer";
-import { SidePanel, PanelSide } from "../sidePanels/SidePanel";
+import { PanelSide, SidePanel } from "../sidePanels/SidePanel";
 import { Toolbar } from "./toolbar";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useSurvey } from "../toolbars/useSurvey";
-import { cx } from "@emotion/css";
-
-export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
+import { DragAndDropContainer } from "./DragAndDropContainer";
+import { styled } from "@mui/material";
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
     const { editFrontend } = useSelector(getCapabilities);
@@ -31,42 +29,41 @@ function ToolbarsLayer(props: { toolbars: Toolbar[]; configId: string }): JSX.El
     const dispatch = useDispatch();
     const { toolbars, configId } = props;
 
-    const [isDragging, setIsDragging] = useState(false);
-
     useEffect(() => {
         dispatch(registerToolbars(toolbars, configId));
     }, [dispatch, toolbars, configId]);
 
-    const onDragEnd = useCallback(
-        (result: DropResult) => {
-            setIsDragging(false);
-            const { destination, type, reason, source } = result;
-            if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
-                dispatch(moveToolbar([source.droppableId, source.index], [destination.droppableId, destination.index], configId));
-            }
-        },
-        [configId, dispatch],
-    );
-
-    const onDragStart = useCallback(() => {
-        setIsDragging(true);
-    }, []);
-
     const availableToolbars = useToolbarsVisibility(toolbars);
 
+    const onMove = useCallback((from, to) => dispatch(moveToolbar(from, to, configId)), [configId, dispatch]);
+
     return (
-        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
-            <SidePanel side={PanelSide.Left} className={cx("left", isDragging && "is-dragging-started")}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} className={"top"} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} className={"bottom"} />
+        <DragAndDropContainer onMove={onMove}>
+            <SidePanel side={PanelSide.Left}>
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} />
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} />
             </SidePanel>
 
-            <SidePanel side={PanelSide.Right} className={cx("right", isDragging && "is-dragging-started")}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} className={"top"} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} className={"bottom"} />
+            <SidePanel side={PanelSide.Right}>
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} />
+                <StyledToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} />
             </SidePanel>
-        </DragDropContext>
+        </DragAndDropContainer>
     );
 }
+
+const StyledToolbarsContainer = styled(ToolbarsContainer)(({ theme, side }) => {
+    const padding = `calc(${theme.spacing(0.375)} / 2)`;
+    switch (side) {
+        case ToolbarsSide.TopLeft:
+        case ToolbarsSide.TopRight:
+            return { paddingBottom: padding };
+        case ToolbarsSide.BottomLeft:
+        case ToolbarsSide.BottomRight:
+            return { paddingTop: padding };
+        default:
+            return { paddingTop: padding, paddingBottom: padding };
+    }
+});
 
 export default ToolbarsLayer;

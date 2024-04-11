@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.Validated.Invalid
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.ParametersValidationRequest
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.ParametersValidationRequest
 
 class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterable[String]) {
 
@@ -23,7 +23,9 @@ class ParametersValidator(modelData: ModelData, scenarioPropertiesNames: Iterabl
   ): List[NodeValidationError] = {
     val context = validationContextGlobalVariablesOnly.copy(localVariables = request.variableTypes)
     request.parameters
-      .map(param => expressionCompiler.compile(param.expression, Some(param.name), context, param.typ)(NodeId("")))
+      .map(param =>
+        expressionCompiler.compile(param.expression, Some(ParameterName(param.name)), context, param.typ)(NodeId(""))
+      )
       .collect { case Invalid(a) => a.map(PrettyValidationErrors.formatErrorMessage).toList }
       .flatten
   }

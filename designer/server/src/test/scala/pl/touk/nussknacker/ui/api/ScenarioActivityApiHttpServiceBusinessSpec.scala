@@ -2,16 +2,16 @@ package pl.touk.nussknacker.ui.api
 
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import io.restassured.response.ValidatableResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 
 import java.util.UUID
 
@@ -21,12 +21,11 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureExtensions
+    with WithScenarioActivitySpecAsserts
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging {
-
-  import ScenarioActivitySpecAsserts._
 
   private val exampleScenarioName = UUID.randomUUID().toString
   private val commentContent      = "test message"
@@ -87,7 +86,13 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
         .Then()
         .statusCode(200)
-        .verifyCommentExists(scenarioName = exampleScenarioName, commentContent = commentContent)
+        .verifyApplicationState {
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = commentContent,
+            commentUser = "allpermuser"
+          )
+        }
     }
     "return 404 for no existing scenario" in {
       given()
@@ -123,7 +128,9 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .delete(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/activity/comments/$commentId")
         .Then()
         .statusCode(200)
-        .verifyEmptyCommentsAndAttachments(exampleScenarioName)
+        .verifyApplicationState {
+          verifyEmptyCommentsAndAttachments(exampleScenarioName)
+        }
     }
     "return 500 for no existing comment" in {
       given()
@@ -160,7 +167,9 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/attachments")
         .Then()
         .statusCode(200)
-        .verifyAttachmentsExists(exampleScenarioName)
+        .verifyApplicationState {
+          verifyAttachmentsExists(exampleScenarioName)
+        }
     }
     "handle attachments with the same name" in {
       val fileContent1 = "very important content1"
@@ -302,91 +311,6 @@ class ScenarioActivityApiHttpServiceBusinessSpec
       .basicAuthAllPermUser()
       .streamBody(fileContent = fileContent, fileName = fileName)
       .post(s"$nuDesignerHttpAddress/api/processes/$scenarioName/1/activity/attachments")
-  }
-
-  object ScenarioActivitySpecAsserts {
-
-    implicit class VerifyCommentExists[T <: ValidatableResponse](validatableResponse: T) {
-
-      def verifyCommentExists(scenarioName: String, commentContent: String): ValidatableResponse = {
-        given()
-          .when()
-          .basicAuthAllPermUser()
-          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-          .Then()
-          .statusCode(200)
-          .body(
-            matchJsonWithRegexValues(
-              s"""
-                 |{
-                 |  "comments": [
-                 |    {
-                 |      "id": "${regexes.digitsRegex}",
-                 |      "processVersionId": 1,
-                 |      "content": "$commentContent",
-                 |      "user": "allpermuser",
-                 |      "createDate": "${regexes.zuluDateRegex}"
-                 |    }
-                 |  ],
-                 |  "attachments": []
-                 |}
-                 |""".stripMargin
-            )
-          )
-      }
-
-    }
-
-    implicit class VerifyEmptyCommentsAndAttachments[T <: ValidatableResponse](validatableResponse: T) {
-
-      def verifyEmptyCommentsAndAttachments(scenarioName: String): ValidatableResponse = {
-        given()
-          .when()
-          .basicAuthAllPermUser()
-          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-          .Then()
-          .equalsJsonBody(
-            s"""
-               |{
-               |  "comments": [],
-               |  "attachments": []
-               |}
-               |""".stripMargin
-          )
-      }
-
-    }
-
-    implicit class VerifyAttachmentsExists[T <: ValidatableResponse](validatableResponse: T) {
-
-      def verifyAttachmentsExists(scenarioName: String): ValidatableResponse = {
-        given()
-          .when()
-          .basicAuthAllPermUser()
-          .get(s"$nuDesignerHttpAddress/api/processes/$scenarioName/activity")
-          .Then()
-          .body(
-            matchJsonWithRegexValues(
-              s"""
-                 |{
-                 |  "comments": [],
-                 |  "attachments": [
-                 |    {
-                 |      "id": "${regexes.digitsRegex}",
-                 |      "processVersionId": 1,
-                 |      "fileName": "important_file.txt",
-                 |      "user": "allpermuser",
-                 |      "createDate": "${regexes.zuluDateRegex}"
-                 |    }
-                 |  ]
-                 |}
-                 |""".stripMargin
-            )
-          )
-      }
-
-    }
-
   }
 
 }

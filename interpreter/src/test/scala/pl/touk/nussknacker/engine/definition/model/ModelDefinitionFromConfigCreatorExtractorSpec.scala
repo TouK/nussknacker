@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   RegExpParameterValidator
 }
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
@@ -71,7 +72,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
 
     definition
       .asInstanceOf[DynamicComponentDefinitionWithImplementation]
-      .implementation
+      .component
       .asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
       .returnType shouldBe Typed[String]
   }
@@ -177,7 +178,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
         .getComponent(ComponentType.CustomComponent, "transformer1")
         .value
         .asInstanceOf[MethodBasedComponentDefinitionWithImplementation]
-    val parameter = definition.parameters.find(_.name == "param1")
+    val parameter = definition.parameters.find(_.name == ParameterName("param1"))
     parameter.map(_.validators) shouldBe Some(
       List(
         MandatoryParameterValidator,
@@ -242,7 +243,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
       Map(
         "configurable1" -> WithCategories.anyCategory(
           EmptyExplicitMethodToInvoke(
-            List(Parameter[Int]("param1"), Parameter[Duration]("durationParam")),
+            List(Parameter[Int](ParameterName("param1")), Parameter[Duration](ParameterName("durationParam"))),
             Typed[String]
           )
         )
@@ -371,7 +372,7 @@ class ModelDefinitionFromConfigCreatorExtractorSpec extends AnyFunSuite with Mat
   case class EmptyExplicitMethodToInvoke(parameters: List[Parameter], returnType: TypingResult)
       extends EagerServiceWithStaticParametersAndReturnType {
 
-    override def invoke(params: Params)(
+    override def invoke(eagerParameters: Map[ParameterName, Any])(
         implicit ec: ExecutionContext,
         collector: ServiceInvocationCollector,
         contextId: ContextId,

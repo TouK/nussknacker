@@ -57,7 +57,7 @@ class CollectTransformerTest
       .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input")
       .buildSimpleVariable("someVar", "ourVar", "'x = ' + (#outForEach * 2)")
       .customNode("collect", "outCollector", "collect", "Input expression" -> "#ourVar")
-      .emptySink("response", "response", SinkRawEditorParamName -> "true", "Value" -> "#outCollector")
+      .emptySink("response", "response", SinkRawEditorParamName.value -> "true", "Value" -> "#outCollector")
     val requestElements = (0 to 3).toList
 
     val responseElements = runScenarioAndExtractResponseElements(scenario, requestElements)
@@ -71,7 +71,7 @@ class CollectTransformerTest
       .customNode("for-each2", "outForEach2", "for-each", "Elements" -> "#input")
       .buildSimpleVariable("someVar", "outVar", "'i = ' + #outForEach1 + ', j = ' + #outForEach2")
       .customNode("collect", "outCollector", "collect", "Input expression" -> "#outVar")
-      .emptySink("response", "response", SinkRawEditorParamName -> "true", "Value" -> "#outCollector")
+      .emptySink("response", "response", SinkRawEditorParamName.value -> "true", "Value" -> "#outCollector")
     val requestElements = (0 to 3).toList
 
     val responseElements = runScenarioAndExtractResponseElements(scenario, requestElements)
@@ -89,12 +89,12 @@ class CollectTransformerTest
       .buildSimpleVariable("this variable should disappear", "previousCtxVar", "'value'")
       .customNode("collect", "outCollector", "collect", "Input expression" -> "#outForEach")
       .buildSimpleVariable(nodeIdWithError, "newCtxVar", "#previousCtxVar")
-      .emptySink("response", "response", SinkRawEditorParamName -> "true", "Value" -> "{'abc'}")
+      .emptySink("response", "response", SinkRawEditorParamName.value -> "true", "Value" -> "{'abc'}")
 
     val compilationError = runScenario(scenario, List(1)).invalidValue.toList.loneElement
 
     inside(compilationError) {
-      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", `nodeIdWithError`, _, _) =>
+      case ExpressionParserCompilationError("Unresolved reference 'previousCtxVar'", `nodeIdWithError`, _, _, None) =>
     }
   }
 

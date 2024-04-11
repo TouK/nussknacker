@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
+  CustomActionParameter,
   CustomActionResult,
   DeploymentId,
   ExternalDeploymentId
@@ -22,6 +23,11 @@ import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
 import _root_.sttp.client3.testing.SttpBackendStub
+import pl.touk.nussknacker.engine.api.definition.{
+  NotBlankParameterValidator,
+  NotNullParameterValidator,
+  StringParameterEditor
+}
 
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -219,14 +225,26 @@ class MockDeploymentManager(
     import SimpleStateStatus._
     List(
       deployment.CustomActionDefinition(
-        name = ScenarioActionName("hello"),
+        actionName = ScenarioActionName("hello"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
       deployment.CustomActionDefinition(
-        name = ScenarioActionName("not-implemented"),
+        actionName = ScenarioActionName("not-implemented"),
         allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)
       ),
-      deployment.CustomActionDefinition(name = ScenarioActionName("invalid-status"), allowedStateStatusNames = Nil)
+      deployment.CustomActionDefinition(
+        actionName = ScenarioActionName("invalid-status"),
+        allowedStateStatusNames = Nil
+      ),
+      deployment.CustomActionDefinition(
+        actionName = ScenarioActionName("has-params"),
+        allowedStateStatusNames = Nil,
+        parameters = CustomActionParameter(
+          "testParam",
+          StringParameterEditor,
+          NotBlankParameterValidator :: NotNullParameterValidator :: Nil
+        ) :: Nil
+      )
     )
   }
 

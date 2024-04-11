@@ -1,28 +1,33 @@
 package pl.touk.nussknacker.engine.testmode
 
-import java.util.UUID
-
+import io.circe.Json
 import pl.touk.nussknacker.engine.api._
-import TestProcess._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
 
+case class TestRunId private (id: String)
+
 object TestRunId {
-  def generate: TestRunId = TestRunId(UUID.randomUUID().toString)
+  def generate: TestRunId = new TestRunId(UUID.randomUUID().toString)
+
+  def apply(id: String): TestRunId = throw new IllegalArgumentException("Please use generate instead of apply")
 }
 
-case class TestRunId(id: String)
-
 //TODO: this class is passed explicitly in too many places, should be more tied to ResultCollector (maybe we can have listeners embedded there?)
-case class ResultsCollectingListener(holderClass: String, runId: TestRunId) extends ProcessListener with Serializable {
+case class ResultsCollectingListener[T](holderClass: String, runId: TestRunId, variableEncoder: Any => T)
+    extends ProcessListener
+    with Serializable {
 
-  def results: TestResults = ResultsCollectingListenerHolder.resultsForId(runId)
+  def results: TestResults[T] = ResultsCollectingListenerHolder.resultsForId(runId)
 
   def clean(): Unit = ResultsCollectingListenerHolder.cleanResult(runId)
 
   override def nodeEntered(nodeId: String, context: Context, processMetaData: MetaData): Unit = {
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, context))
+    ResultsCollectingListenerHolder.updateResults(runId, _.updateNodeResult(nodeId, context, variableEncoder))
   }
 
   override def endEncountered(
@@ -48,7 +53,7 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
   ): Unit = {
     ResultsCollectingListenerHolder.updateResults(
       runId,
-      _.updateExpressionResult(nodeId, context, expressionId, result)
+      _.updateExpressionResult(nodeId, context, expressionId, result, variableEncoder)
     )
   }
 
@@ -61,30 +66,43 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
   ): Unit = {}
 
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit =
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo))
+    ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo, variableEncoder))
 
 }
 
 object ResultsCollectingListenerHolder {
 
-  private var results = Map[TestRunId, TestResults]()
+  private val results = new ConcurrentHashMap[TestRunId, TestResults[Any]]()
 
   // TODO: casting is not so nice, but currently no other idea...
-  def resultsForId(id: TestRunId): TestResults = results(id)
+  def resultsForId[T](id: TestRunId): TestResults[T] = results.get(id).asInstanceOf[TestResults[T]]
 
-  def registerRun: ResultsCollectingListener = synchronized {
+  def registerTestEngineListener: ResultsCollectingListener[Json] = {
+    registerListener(TestInterpreterRunner.testResultsVariableEncoder)
+  }
+
+  def registerListener: ResultsCollectingListener[Any] = {
+    registerListener(identity)
+  }
+
+  def cleanResult(runId: TestRunId): Unit = {
+    results.remove(runId)
+  }
+
+  private def registerListener[T](variableEncoder: Any => T): ResultsCollectingListener[T] = {
     val runId = TestRunId.generate
-    results += (runId -> TestResults(Map(), Map(), Map(), List()))
-    ResultsCollectingListener(getClass.getCanonicalName, runId)
+    results.put(runId, TestResults(Map(), Map(), Map(), List()))
+    ResultsCollectingListener(getClass.getCanonicalName, runId, variableEncoder)
   }
 
-  private[testmode] def updateResults(runId: TestRunId, action: TestResults => TestResults): Unit = synchronized {
-    val current = results.getOrElse(runId, throw new IllegalArgumentException("Run was not registered..."))
-    results += (runId -> action(current))
-  }
-
-  def cleanResult(runId: TestRunId): Unit = synchronized {
-    results -= runId
+  private[testmode] def updateResults(runId: TestRunId, action: TestResults[Any] => TestResults[Any]): Unit = {
+    Option {
+      results.computeIfPresent(runId, (_: TestRunId, output: TestResults[Any]) => action(output))
+    } match {
+      case Some(_) =>
+      case None =>
+        throw new IllegalArgumentException("Run was not registered...")
+    }
   }
 
 }

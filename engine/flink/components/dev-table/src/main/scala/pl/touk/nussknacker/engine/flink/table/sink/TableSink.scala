@@ -2,19 +2,23 @@ package pl.touk.nussknacker.engine.flink.table.sink
 
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
-import org.apache.flink.table.api.Expressions.$
+import org.apache.flink.table.api.Table
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{Schema, Table}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.table.HardcodedSchema.{intColumnName, stringColumnName}
-import pl.touk.nussknacker.engine.flink.table.TableUtils.buildTableDescriptor
-import pl.touk.nussknacker.engine.flink.table.{DataSourceConfig, HardcodedSchema}
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.utils.NestedRowConversions._
+import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.mapToRowUnsafe
 
-class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[String, Any]]) extends FlinkSink {
+class TableSink(
+    tableDefinition: TableDefinition,
+    sqlStatements: List[SqlStatement],
+    value: LazyParameter[AnyRef]
+) extends FlinkSink {
 
-  override type Value = java.util.Map[String, Any]
+  override type Value = AnyRef
 
   override def prepareValue(
       dataStream: DataStream[Context],
@@ -22,7 +26,7 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
   ): DataStream[ValueWithContext[Value]] = {
     dataStream.flatMap(
       flinkNodeContext.lazyParameterHelper.lazyMapFunction(value),
-      flinkNodeContext.valueWithContextInfo.forType(HardcodedSchema.typingResult)
+      flinkNodeContext.valueWithContextInfo.forType(tableDefinition.typingResult)
     )
   }
 
@@ -32,9 +36,6 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
   ): DataStreamSink[_] = {
     val env      = dataStream.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
-
-    // TODO: this will not work with multiple sinks
-    val outputTableName = "some_sink_table_name"
 
     /*
       DataStream to Table transformation:
@@ -47,38 +48,30 @@ class TableSink(config: DataSourceConfig, value: LazyParameter[java.util.Map[Str
       6. Put the insert operation in the statementSet and do attachAsDataStream on it
       7. Continue with a DiscardingSink as DataStream
      */
-    val streamOfRows: SingleOutputStreamOperator[Row] =
-      dataStream.map(ctx => HardcodedSchema.MapRowConversion.fromMap(ctx.value))
+    val streamOfRows: SingleOutputStreamOperator[Row] = dataStream
+      .map(valueWithContext => {
+        mapToRowUnsafe(valueWithContext.value.asInstanceOf[java.util.Map[String, Any]], tableDefinition.columns)
+      })
 
     /*
-      This "f0" value is name given by flink at conversion of one element stream. For details read:
-      https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
+     This "f0" value is name given by flink at conversion of one element stream. For details read:
+     https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
      */
-    val nestedRowColumnName = "f0"
-    // TODO: avoid this step by mapping datastream directly without this intermediate table with nested row
-    val nestedRowSchema = Schema
-      .newBuilder()
-      .column(
-        nestedRowColumnName,
-        HardcodedSchema.rowDataType
-      )
-      .build()
+    // TODO: avoid this step by mapping DataStream directly without this intermediate table with nested row
+    val nestedRowSchema = columnsToSingleRowFlinkSchema(tableDefinition.columns)
+
     val tableWithNestedRow: Table = tableEnv.fromDataStream(
       streamOfRows,
       nestedRowSchema
     )
 
-    val flatInputValueTable = tableWithNestedRow
-      .select(
-        $(nestedRowColumnName).get(stringColumnName).as(stringColumnName),
-        $(nestedRowColumnName).get(intColumnName).as(intColumnName)
-      )
+    val inputValueTable = tableWithNestedRow
+      .select(flatteningSelectExpressions(tableDefinition.columns): _*)
 
-    val sinkTableDescriptor = buildTableDescriptor(config, HardcodedSchema.schema)
-    tableEnv.createTable(outputTableName, sinkTableDescriptor)
+    sqlStatements.foreach(tableEnv.executeSql)
 
-    val statementSet = tableEnv.createStatementSet();
-    statementSet.add(flatInputValueTable.insertInto(outputTableName))
+    val statementSet = tableEnv.createStatementSet()
+    statementSet.add(inputValueTable.insertInto(tableDefinition.tableName))
     statementSet.attachAsDataStream()
 
     /*

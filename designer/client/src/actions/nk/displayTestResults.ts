@@ -2,7 +2,7 @@ import HttpService, { SourceWithParametersTest, TestProcessResponse } from "../.
 import { displayProcessCounts } from "./displayProcessCounts";
 import { TestResults } from "../../common/TestResultUtils";
 import { ThunkAction } from "../reduxTypes";
-import { ProcessName, Scenario } from "src/components/Process/types";
+import { ProcessName } from "src/components/Process/types";
 import { ScenarioGraph } from "../../types";
 
 export function testProcessFromFile(processName: ProcessName, testDataFile: File, scenarioGraph: ScenarioGraph): ThunkAction {
@@ -39,7 +39,7 @@ export function testScenarioWithGeneratedData(testSampleSize: string, processNam
             type: "PROCESS_LOADING",
         });
 
-        HttpService.testScenarioWithGeneratedData(testSampleSize, processName, scenarioGraph)
+        HttpService.testScenarioWithGeneratedData(processName, testSampleSize, scenarioGraph)
             .then((response) => dispatch(displayTestResults(response.data)))
             .catch(() => dispatch({ type: "LOADING_FAILED" }));
     };

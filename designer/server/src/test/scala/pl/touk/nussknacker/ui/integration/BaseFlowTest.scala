@@ -12,6 +12,7 @@ import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -39,7 +40,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.NodeValidationRequest
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
 import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
@@ -313,7 +314,10 @@ class BaseFlowTest
     val scenarioGraph = ScenarioGraph(
       properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(
-        FragmentInputDefinition("input1", List(FragmentParameter("badParam", FragmentClazzRef("i.do.not.exist")))),
+        FragmentInputDefinition(
+          "input1",
+          List(FragmentParameter(ParameterName("badParam"), FragmentClazzRef("i.do.not.exist")))
+        ),
         FragmentOutputDefinition("output1", "out1")
       ),
       edges = List(Edge("input1", "output1", None)),
@@ -336,7 +340,8 @@ class BaseFlowTest
               "Invalid parameter type.",
               "Failed to load i.do.not.exist",
               Some("$param.badParam.$typ"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }

@@ -6,7 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#5609](https://github.com/TouK/nussknacker/pull/5609) Refactoring around DeploymentManager's actions:
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) Refactoring around DeploymentManager's actions:
   * Custom Actions
     * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
     * `CustomActionResult.req` was removed
@@ -22,12 +22,40 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `stop` without `deploymentId` argument - `StopScenarioCommand`
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
+  * "Action type" is renamed to "action name". Loosened the restriction on the name of the action:
+    * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
+    * in `ProcessAction` attribute `actionType` renamed to `actionName`
+    * in table `process_actions` column `action_type` is renamed to `action_name`
+* [#5762](https://github.com/TouK/nussknacker/pull/5762) for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
+* [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
+  * `AllowedProcessingModes.All` in case of all processing modes allowed
+  * `AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes)` in case only set of processing modes is allowed
+
+### Configuration changes
+
+* [#5744](https://github.com/TouK/nussknacker/pull/5744) Extracted unbounded stream specific components into separate
+  module:
+    * Components `periodic`, `union-memo`, `previousValue`, aggregates, joins and `delay` from `base` were moved into
+      `base-unbounded` module. They are now built as `flinkBaseUnbounded.jar` under
+      `work/components/flink/flinkBaseUnbounded.jar`.
+    * Configuration of tumbling windows aggregate offset is changed at the ComponentProvider level:
+      `components.base.aggregateWindowsConfig.tumblingWindowsOffset` should now be set
+      as `components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset`
+    * If you previously specified base component jar explicitly in `modelConfig.classPath`
+      as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
+      `components/flink/flinkBaseUnbounded.jar` explicitly.
 
 ### Other changes
 
-* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the plugable expression languages: `ExpressionConfig.languages` removed
+* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the pluggable expression languages: `ExpressionConfig.languages` removed
+* [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
+  * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
+  * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
+* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
+  * "Basic Decision Table" -> "Decision Table"
+  * "Expression" -> "Filtering expression"
 
-## In version 1.14.x (Not released yet)
+## In version 1.14.0
 
 ### Code API changes
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
@@ -73,6 +101,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
+* [#5438](https://github.com/TouK/nussknacker/pull/5438) Removed sealed trait `CustomActionError`, now `CustomActionResult` is always used
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) [#5457](https://github.com/TouK/nussknacker/pull/5457) Typed related changes
   * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead,
     in most cases just (`CommonSupertypeFinder.Default`)
@@ -115,14 +144,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     The `String` to `URL` converting logic is now inside `ModelClassLoader.apply`
 * [#5505](https://github.com/TouK/nussknacker/pull/5505) anonymous access functionality for Tapir-based API 
   * `AuthenticationResources` & `AnonymousAccess` traits were changed to be able to introduce anonymous access feature
-  * `AuthCredentials` class was changed too
-* [#5373](https://github.com/TouK/nussknacker/pull/5373) changes related to `Component`s and `LazyParameter`s:
+  * `AuthCredentials` class was changed too 
+* [#5373](https://github.com/TouK/nussknacker/pull/5373)[#5694](https://github.com/TouK/nussknacker/pull/5694) changes related to `Component`s and `LazyParameter`s:
   * `LazyParameter` can be evaluated on request thanks to its `evaluate` method 
-  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`
+  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`. `Params` data class, in its extraction methods, assumes that a parameter with the given name exists in the underlying Map.
   * `TypedExpression` was removed from `BaseDefinedParameter` hierarchy in favour of `TypingResult` 
   * `TypedExpression` doesn't depend on `ExpressionTypingInfo` anymore 
   * `ServiceInvoker` refactoring (parameters map was removed, a context is passed to its method)
   * `ProcessListener` interface changed slightly
+  * `ParameterWithExtractor` util was replaced with `ParameterDeclaration`.
   * classes renaming:
     * `LazyParameterInterpreter` to `LazyParameterInterpreter`
     * `GenericNodeTransformation` to `DynamicComponent`
@@ -136,11 +166,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `SingleGenericContextTransformationWrapper` to `SingleInputDynamicComponentWrapper`
     * `SourceFactoryGenericContextTransformationWrapper` to `SourceFactoryDynamicComponentWrapper`
     * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
+  * type `NodeTransformationDefinition` (inside `DynamicComponent`) renamed to `ContextTransformationDefinition`
+* [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
+* [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
+* [#5707](https://github.com/TouK/nussknacker/pull/5707) `ParameterName` data class was introduced. It replaces `String` in whole places where it's used as a parameter name
+* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+    * Classes `ResultsCollectingListener`, `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
+    * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
+    * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
+    * Added `variableEncoder` to `ResultsCollectingListenerHolder.registerRun`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
-  * `/processDefinitionData/componentIds` endpoint is removed
-  * `/processDefinitionData/*` response changes:
+  * `/api/processDefinitionData/componentIds` endpoint is removed
+  * `/api/processDefinitionData/*` response changes:
     * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps fields were replaced by
       one `components` map with key in format `$componentType-$componentName` and moved into top level of response
     * `typesInformation` field was renamed into `classes`, moved into top level of response 
@@ -149,32 +188,33 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
     * `defaultAsyncInterpretation` field was removed
 * [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
-  * `/process(Details)/**` endpoints:
+  * `/api/process(Details)/**` endpoints:
     * `id` fields was removed (it had the same value as `name`)
     * `processId` fields return always `null`
     * `.json.id` fields was renamed to `.json.name`
-  * `components/*/usages` endpoint:
+  * `/api/components/*/usages` endpoint:
     * `id` fields was removed (it had the same value as `name`)
     * `processId` fields was removed
-  * `processes/**/activity/attachments` - `processId` fields was removed
-  * `processes/**/activity/comments` - `processId` fields was removed
+  * `/api/processes/**/activity/attachments` - `processId` fields was removed
+  * `/api/processes/**/activity/comments` - `processId` fields was removed
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
 * [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata removal from the REST API requests and responses:
-  * `/processValidation` was changed to `/processValidation/$scenarioName` and changed request type
-  * `/testInfo/*` was changed to `/testInfo/$scenarioName/*` and changed request format regarding code API changes
-  * `/processManagement/generateAndTest/$samples` was changed to `/processManagement/generateAndTest/$scenarioName/$samples`
-  * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response format regarding code API changes
-  * `/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
-  * GET `/processes/*` and `/processesDetails/*` changed response format regarding code API changes
-  * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
-  * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
+  * `/api/processValidation` was changed to `/api/processValidation/$scenarioName` and changed request type
+  * `/api/testInfo/*` was changed to `/api/testInfo/$scenarioName/*` and changed request format regarding code API changes
+  * `/api/processManagement/generateAndTest/$samples` was changed to `/api/processManagement/generateAndTest/$scenarioName/$samples`
+  * `/api/processesExport/*` was changed to `/api/processesExport/$scenarioName/*` and changed response format regarding code API changes
+  * `/api/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
+  * GET `/api/processes/*` and `/api/processesDetails/*` changed response format regarding code API changes
+  * PUT `/api/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
+  * `/api/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
-  * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
+  * Endpoints returning test results (`/api/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
   * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
-* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/processes/category/*` endpoint was removed
-* [#5474](https://github.com/TouK/nussknacker/pull/5474) POST `/processes/$scenarioName/$category?isFragment=$isFragment` resource become deprecated.
+* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/api/processes/category/*` endpoint was removed
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) POST `/api/processes/$scenarioName/$category?isFragment=$isFragment` resource become deprecated.
   It will be replaced by POST `/processes` with fields: `name`, `isFragment`, `forwardedUserName`, `category`, `processingMode`, `engineSetupName`.
   Three last fields are optional. Please switch to the new API because in version 1.5, old API will be removed.
+* POST `/api/nodes/$scenarioName/validation` response for object in `validationErrors` array can have `details` of the error
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
@@ -188,6 +228,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   than wildcard.
   On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
   have components with other processing modes or other deployment configuration.
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) The `processToolbarConfig` toolbar with `type: "process-info-panel"` no longer accepts the `buttons` property. It only display scenario information now. However, a new toolbar with `type: "process-actions-panel"` has been introduced, which does accept the `buttons` property and renders actions similar to the old `type: "process-info-panel"`.
+
+### Helm chart changes
+* [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Helm chart now has two preconfigured scenario types (`streaming` and `request-response`) instead of one (`default`).
+  Because of that, scenario created using previous version of helm chart will have invalid configuration in the database.
+  To fix that, you have to manually connect to the database and execute sql statement:
+  ```sql
+    UPDATE processes SET processing_type = 'given-scenario-type' where processing_type = 'default';
+  ```
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump

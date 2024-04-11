@@ -11,7 +11,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.commons.io.IOUtils
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.FullSchemaNameDecomposed
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{
   AzureConfigurationFactory,
@@ -121,10 +121,12 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] = {
-    val fullSchemaNames = getAllFullSchemaNames
-    fullSchemaNames.map(_.collect { case FullSchemaNameDecomposed(topicName, _, false) =>
-      topicName
-    })
+    val kafkaConfig = KafkaConfig(Some(config.kafkaProperties), None)
+    val topics = KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
+      admin.listTopics().names().get().asScala.toList
+    }
+    val matchStrategy = SchemaNameTopicMatchStrategy(topics)
+    getAllFullSchemaNames.map(matchStrategy.getAllMatchingTopics(_, isKey = false))
   }
 
   override def getAllVersions(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] = {
@@ -133,10 +135,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
 
   private def getOneMatchingSchemaName(topicName: String, isKey: Boolean): Validated[SchemaRegistryError, String] = {
     getAllFullSchemaNames.andThen { fullSchemaNames =>
-      val matchingFullSchemaNames = fullSchemaNames.collect {
-        case fullSchemaName @ FullSchemaNameDecomposed(`topicName`, _, `isKey`) =>
-          fullSchemaName
-      }
+      val matchingFullSchemaNames = SchemaNameTopicMatchStrategy.getMatchingSchemas(topicName, fullSchemaNames, isKey)
       matchingFullSchemaNames match {
         case one :: Nil =>
           Valid(one)

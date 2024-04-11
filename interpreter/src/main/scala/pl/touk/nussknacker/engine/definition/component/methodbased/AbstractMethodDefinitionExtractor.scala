@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.definition.component.methodbased
 
-import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{BranchParamName, MethodToInvoke, OutputVariableName, ParamName}
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionExtractor
@@ -15,7 +16,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   def extractMethodDefinition(
       obj: T,
       methodToInvoke: Method,
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   ): Either[String, MethodDefinition] = {
     findMatchingMethod(obj, methodToInvoke).map { method =>
       new MethodDefinition(
@@ -41,7 +42,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
   private def extractParameters(
       obj: T,
       method: Method,
-      parametersConfig: Map[String, ParameterConfig]
+      parametersConfig: Map[ParameterName, ParameterConfig]
   ): OrderedDependencies = {
     val dependencies = method.getParameters.map { p =>
       if (additionalDependencies.contains(p.getType) && p.getAnnotation(classOf[ParamName]) == null &&

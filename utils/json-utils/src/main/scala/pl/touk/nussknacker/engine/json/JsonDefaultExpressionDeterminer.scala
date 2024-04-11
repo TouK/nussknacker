@@ -7,6 +7,7 @@ import org.json.JSONObject
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.JsonDefaultExpressionDeterminer.{InvalidValue, NullNotAllowed, TypeNotSupported}
 
@@ -17,7 +18,7 @@ object JsonDefaultExpressionDeterminer {
 
   private val extractorWithHandleNotSupported = new JsonDefaultExpressionDeterminer(true)
 
-  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: Option[String])(
+  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: Option[ParameterName])(
       implicit nodeId: NodeId
   ): ValidatedNel[ProcessCompilationError, Option[Expression]] =
     extractorWithHandleNotSupported

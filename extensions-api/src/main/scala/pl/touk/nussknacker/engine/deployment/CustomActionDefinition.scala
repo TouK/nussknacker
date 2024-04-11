@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.deployment
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.definition.ParameterEditor
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateStatus}
 
 import java.net.URI
@@ -19,14 +18,17 @@ Things to consider in future changes:
  */
 
 case class CustomActionDefinition(
-    name: ScenarioActionName,
+    actionName: ScenarioActionName,
     // We cannot use "engine.api.deployment.StateStatus" because it can be implemented as a class containing nonconstant attributes
     allowedStateStatusNames: List[StateStatus.StatusName],
     parameters: List[CustomActionParameter] = Nil,
     icon: Option[URI] = None
 )
 
-//TODO: validators, defaultValue, hint, labelOpt?
-case class CustomActionParameter(name: String, editor: ParameterEditor)
+case class CustomActionParameter(
+    name: String,
+    editor: ParameterEditor,
+    validators: List[ParameterValidator] = Nil
+)
 
 case class CustomActionResult(msg: String)

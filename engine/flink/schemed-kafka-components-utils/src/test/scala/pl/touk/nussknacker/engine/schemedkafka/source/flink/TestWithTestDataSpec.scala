@@ -3,11 +3,13 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import io.circe.Json._
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,11 +19,11 @@ import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  TopicParamName
+  schemaVersionParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.schema.Address
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -41,7 +43,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator =
     new KafkaAvroTestProcessConfigCreator(sinkForInputMetaResultsHolder) {
-      override protected def schemaRegistryClientFactory =
+      override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory =
         MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
     }
 
@@ -64,8 +66,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'$topic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$topic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
@@ -83,8 +85,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     val results = run(process, scenarioTestData)
 
     val testResultVars = results.nodeResults("end").head.variables
-    testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
-    testResultVars.get("inputMeta") shouldBe Some(inputMeta)
+    testResultVars("extractedTimestamp") shouldBe variable(expectedTimestamp)
+    testResultVars("inputMeta") shouldBe variable(inputMeta)
   }
 
   test("Should pass parameters correctly and use them in scenario test") {
@@ -95,20 +97,20 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        TopicParamName         -> s"'$topic'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$topic'",
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "city"   -> Expression.spel("'Lublin'"),
-      "street" -> Expression.spel("'Lipowa'"),
+    val parameterExpressions = Map(
+      ParameterName("city")   -> Expression.spel("'Lublin'"),
+      ParameterName("street") -> Expression.spel("'Lipowa'"),
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
     val results = run(process, scenarioTestData)
-    results.invocationResults("end").head.value shouldBe "Lublin-Lipowa"
+    results.invocationResults("end").head.value shouldBe variable("Lublin-Lipowa")
 
   }
 
@@ -118,21 +120,24 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .filter("filter", "#in != 'stop'")
       .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
 
-    val parameterExpressions: Map[String, Expression] = Map(
-      "in" -> Expression.spel("'some-text-id'")
+    val parameterExpressions = Map(
+      ParameterName("in") -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results          = run(fragment, scenarioTestData)
 
     results.nodeResults("fragment1") shouldBe List(
-      Context("fragment1-fragment1-0-0", Map("in" -> "some-text-id"))
+      ResultContext("fragment1-fragment1-0-0", Map("in" -> variable("some-text-id")))
     )
+
     results.nodeResults("fragmentEnd") shouldBe List(
-      Context("fragment1-fragment1-0-0", Map("in" -> "some-text-id", "out" -> "some-text-id"))
+      ResultContext("fragment1-fragment1-0-0", Map("in" -> variable("some-text-id"), "out" -> variable("some-text-id")))
     )
+
     results.invocationResults("fragmentEnd") shouldBe List(
-      ExpressionInvocationResult("fragment1-fragment1-0-0", "out", "some-text-id")
+      ExpressionInvocationResult("fragment1-fragment1-0-0", "out", variable("some-text-id"))
     )
+
     results.exceptions shouldBe empty
   }
 
@@ -142,15 +147,27 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
 
-  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[_] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(
         LocalModelData(config, List.empty, configCreator = creator),
         process,
         scenarioTestData,
-        FlinkTestConfiguration.configuration()
+        FlinkTestConfiguration.configuration(),
       )
     }
+  }
+
+  private def variable(value: Any) = {
+    val json = value match {
+      case im: InputMeta[_] =>
+        new InputMetaToJson()
+          .encoder(BestEffortJsonEncoder.defaultForTests.encode)
+          .apply(im)
+      case ln: Long => Json.fromLong(ln)
+      case any      => Json.fromString(any.toString)
+    }
+    Json.obj("pretty" -> json)
   }
 
 }

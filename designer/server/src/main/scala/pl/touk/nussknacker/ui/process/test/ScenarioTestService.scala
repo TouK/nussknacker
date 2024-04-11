@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.test
 
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.TestSourceParameters
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.TestSourceParameters
 import pl.touk.nussknacker.ui.api.TestDataSettings
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
@@ -70,11 +71,11 @@ class ScenarioTestService(
     } yield rawTestData
   }
 
-  def performTest[T](
+  def performTest(
       idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
-      rawTestData: RawScenarioTestData
+      rawTestData: RawScenarioTestData,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
     for {
       preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe
@@ -87,7 +88,7 @@ class ScenarioTestService(
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
-        scenarioTestData
+        scenarioTestData,
       )
       _ <- {
         assertTestResultsAreNotTooBig(testResults)
@@ -99,14 +100,14 @@ class ScenarioTestService(
       idWithName: ProcessIdWithName,
       scenarioGraph: ScenarioGraph,
       isFragment: Boolean,
-      parameterTestData: TestSourceParameters
+      parameterTestData: TestSourceParameters,
   )(implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts] = {
     val canonical = toCanonicalProcess(scenarioGraph, idWithName.name, isFragment)
     for {
       testResults <- testExecutorService.testProcess(
         idWithName,
         canonical,
-        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions)
+        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
       )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, isFragment, testResults))
@@ -120,7 +121,7 @@ class ScenarioTestService(
     processResolver.validateAndResolve(scenarioGraph, processName, isFragment)
   }
 
-  private def assertTestResultsAreNotTooBig(testResults: TestResults): Future[Unit] = {
+  private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
     if (testDataResultApproxByteSize > testDataSettings.resultsMaxBytes) {
       logger.info(
@@ -132,13 +133,13 @@ class ScenarioTestService(
     }
   }
 
-  private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults)(
+  private def computeCounts(canonical: CanonicalProcess, isFragment: Boolean, results: TestResults[_])(
       implicit loggedUser: LoggedUser
   ): Map[String, NodeCount] = {
     val counts = results.nodeResults.map { case (key, nresults) =>
       key -> RawCount(
         nresults.size.toLong,
-        results.exceptions.find(_.nodeComponentInfo.map(_.nodeId).contains(key)).size.toLong
+        results.exceptions.find(_.nodeId.contains(key)).size.toLong
       )
     }
     processCounter.computeCounts(canonical, isFragment, counts.get)

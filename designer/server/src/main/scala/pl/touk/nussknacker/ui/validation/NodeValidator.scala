@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.ui.api.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.{NodeValidationRequest, NodeValidationResult}
 import pl.touk.nussknacker.ui.definition.DefinitionsService
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -59,8 +59,9 @@ class NodeValidator(modelData: ModelData, fragmentRepository: FragmentRepository
         // We don't return MissingParameter error when we are returning those missing parameters to be added - since
         // it's not really exception ATM
         def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
-          case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
-          case _                            => false
+          case MissingParameters(params, _) =>
+            params.forall(missing => uiParams.exists(_.exists(_.name == missing.value)))
+          case _ => false
         }
 
         val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)

@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -135,11 +135,11 @@ class DeploymentServiceSpec
 
     val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
 
-    result shouldBe a[ValidationError]
+    result shouldBe a[CustomActionValidationError]
     result.getMessage.trim shouldBe "Comment is required."
 
     eventually {
-      val inProgressActions = actionRepository.getInProgressActionTypes(id.id).dbioActionValues
+      val inProgressActions = actionRepository.getInProgressActionNames(id.id).dbioActionValues
       inProgressActions should have size 0
     }
   }
@@ -164,7 +164,7 @@ class DeploymentServiceSpec
     }
 
     eventually {
-      val inProgressActions = actionRepository.getInProgressActionTypes(id.id).dbioActionValues
+      val inProgressActions = actionRepository.getInProgressActionNames(id.id).dbioActionValues
       inProgressActions should have size 0
     }
   }
@@ -182,19 +182,6 @@ class DeploymentServiceSpec
         .getProcessState(id)
         .futureValue
         .status shouldBe SimpleStateStatus.Running
-    }
-  }
-
-  test("should return error when trying to cancel without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
-
-    val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
-
-    deploymentManager.withWaitForCancelFinish {
-      val result = deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
-      result shouldBe a[ValidationError]
-      result.getMessage.trim shouldBe "Comment is required."
     }
   }
 
@@ -219,7 +206,7 @@ class DeploymentServiceSpec
       }
 
       eventually {
-        val inProgressActions = actionRepository.getInProgressActionTypes(processId.id).dbioActionValues
+        val inProgressActions = actionRepository.getInProgressActionNames(processId.id).dbioActionValues
         inProgressActions should have size 0
       }
     }
@@ -268,7 +255,7 @@ class DeploymentServiceSpec
     deploymentService.markActionExecutionFinished("streaming", actionId).futureValue
     eventually {
       val action =
-        actionRepository.getFinishedProcessActions(processId.id, Some(Set(ProcessActionType.Deploy))).dbioActionValues
+        actionRepository.getFinishedProcessActions(processId.id, Some(Set(ScenarioActionName.Deploy))).dbioActionValues
 
       action.loneElement.state shouldBe ProcessActionState.ExecutionFinished
       listener.events.toArray.filter(_.isInstanceOf[OnActionExecutionFinished]) should have length 1
@@ -301,16 +288,16 @@ class DeploymentServiceSpec
       val finishedStatus = deploymentService.getProcessState(processId).futureValue
       finishedStatus.status shouldBe SimpleStateStatus.Finished
       finishedStatus.allowedActions shouldBe List(
-        ProcessActionType.Deploy,
-        ProcessActionType.Archive,
-        ProcessActionType.Rename
+        ScenarioActionName.Deploy,
+        ScenarioActionName.Archive,
+        ScenarioActionName.Rename
       )
     }
 
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
     val lastStateAction = processDetails.lastStateAction.value
-    lastStateAction.actionType shouldBe ProcessActionType.Deploy
+    lastStateAction.actionName shouldBe ScenarioActionName.Deploy
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
     // we want to hide finished deploys
     processDetails.lastDeployedAction shouldBe empty
@@ -333,12 +320,12 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val processId                = prepareProcess(processName).dbioActionValues
 
-    def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
+    def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ScenarioActionName]) = {
       fetchingProcessRepository
         .fetchLatestProcessDetailsForProcessId[Unit](processId.id)
         .dbioActionValues
         .flatMap(_.lastStateAction)
-        .map(_.actionType) shouldBe expectedAction
+        .map(_.actionName) shouldBe expectedAction
       deploymentService.getProcessState(processId).futureValue.status shouldBe expectedStatus
     }
 
@@ -352,7 +339,7 @@ class DeploymentServiceSpec
       }
     }
     eventually {
-      checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
+      checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
       listener.events.toArray.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
     }
   }
@@ -409,9 +396,9 @@ class DeploymentServiceSpec
 
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
-    processDetails.history.value.head.actions.map(_.actionType) should be(
-      List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+    processDetails.history.value.head.actions.map(_.actionName) should be(
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     )
   }
 
@@ -434,9 +421,9 @@ class DeploymentServiceSpec
 
     val processDetails =
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
-    processDetails.history.value.head.actions.map(_.actionType) should be(
-      List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    processDetails.lastStateAction.exists(_.actionName == ScenarioActionName.Cancel) shouldBe true
+    processDetails.history.value.head.actions.map(_.actionName) should be(
+      List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
     )
   }
 
@@ -450,7 +437,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -487,7 +474,7 @@ class DeploymentServiceSpec
       val state = deploymentService.getProcessState(processId).futureValue
 
       state.status shouldBe SimpleStateStatus.Restarting
-      state.allowedActions shouldBe List(ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Cancel)
       state.description shouldBe "Scenario is restarting..."
     }
   }
@@ -502,7 +489,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -517,7 +504,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -541,7 +528,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -564,7 +551,7 @@ class DeploymentServiceSpec
       val state = deploymentService.getProcessState(processId).futureValue
 
       state.status shouldBe ProblemStateStatus.Failed
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     }
   }
 
@@ -578,7 +565,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -594,7 +581,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.FailedToGet
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -715,7 +702,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
     val _ = actionRepository
-      .addInProgressAction(processId.id, ProcessActionType.Deploy, Some(VersionId(1)), None)
+      .addInProgressAction(processId.id, ScenarioActionName.Deploy, Some(VersionId(1)), None)
       .dbioActionValues
 
     val state = deploymentService.getProcessState(processId).futureValue
@@ -796,7 +783,7 @@ class DeploymentServiceSpec
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
       state.description shouldBe expectedStatus.description
     }
   }
@@ -847,6 +834,19 @@ class DeploymentServiceSpec
     }
   }
 
+  test("should fail invoking custom action when action validation fails") {
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+    val actionName               = ScenarioActionName("has-params")
+    val wrongParams              = Map("testParam" -> "")
+
+    val result = deploymentService.invokeCustomAction(actionName, id, wrongParams).failed.futureValue
+
+    result shouldBe a[CustomActionValidationError]
+    result.getMessage.trim shouldBe s"Validation failed for: ${actionName}"
+  }
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     listener.clear()
@@ -873,20 +873,20 @@ class DeploymentServiceSpec
 
   private def preparedUnArchivedProcess(
       processName: ProcessName,
-      actionType: Option[ProcessActionType]
+      actionNameOpt: Option[ScenarioActionName]
   ): DB[(ProcessIdWithName, Option[ProcessActionId])] =
     for {
-      (processId, actionIdOpt) <- prepareArchivedProcess(processName, actionType)
+      (processId, actionIdOpt) <- prepareArchivedProcess(processName, actionNameOpt)
       _                        <- writeProcessRepository.archive(processId = processId, isArchived = false)
       _                        <- actionRepository.markProcessAsUnArchived(processId = processId.id, initialVersionId)
     } yield (processId, actionIdOpt)
 
   private def prepareArchivedProcess(
       processName: ProcessName,
-      actionType: Option[ProcessActionType]
+      actionNameOpt: Option[ScenarioActionName]
   ): DB[(ProcessIdWithName, Option[ProcessActionId])] = {
     for {
-      (processId, actionIdOpt) <- prepareProcessWithAction(processName, actionType)
+      (processId, actionIdOpt) <- prepareProcessWithAction(processName, actionNameOpt)
       _                        <- archiveProcess(processId)
     } yield (processId, actionIdOpt)
   }
@@ -905,9 +905,19 @@ class DeploymentServiceSpec
       (duringDeployProcessId, _) <- preparedUnArchivedProcess(duringDeployProcessName, None)
       (duringCancelProcessId, _) <- prepareDeployedProcess(duringCancelProcessName)
       _ <- actionRepository
-        .addInProgressAction(duringDeployProcessId.id, ProcessActionType.Deploy, Some(VersionId.initialVersionId), None)
+        .addInProgressAction(
+          duringDeployProcessId.id,
+          ScenarioActionName.Deploy,
+          Some(VersionId.initialVersionId),
+          None
+        )
       _ <- actionRepository
-        .addInProgressAction(duringCancelProcessId.id, ProcessActionType.Cancel, Some(VersionId.initialVersionId), None)
+        .addInProgressAction(
+          duringCancelProcessId.id,
+          ScenarioActionName.Cancel,
+          Some(VersionId.initialVersionId),
+          None
+        )
       _ <- prepareDeployedProcess(otherProcess)
       _ <- prepareFragment(fragmentName)
     } yield (duringDeployProcessId, duringCancelProcessId)
@@ -918,17 +928,17 @@ class DeploymentServiceSpec
 
   private def prepareProcessWithAction(
       processName: ProcessName,
-      actionType: Option[ProcessActionType]
+      actionNameOpt: Option[ScenarioActionName]
   ): DB[(ProcessIdWithName, Option[ProcessActionId])] = {
     for {
       processId   <- prepareProcess(processName)
-      actionIdOpt <- DBIOAction.sequenceOption(actionType.map(prepareAction(processId.id, _)))
+      actionIdOpt <- DBIOAction.sequenceOption(actionNameOpt.map(prepareAction(processId.id, _)))
     } yield (processId, actionIdOpt)
   }
 
-  private def prepareAction(processId: ProcessId, actionType: ProcessActionType) = {
-    val comment = Some(DeploymentComment.unsafe(actionType.toString.capitalize).toComment(actionType))
-    actionRepository.addInstantAction(processId, initialVersionId, actionType, comment, None).map(_.id)
+  private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
+    val comment = Some(DeploymentComment.unsafe(actionName.toString.capitalize).toComment(actionName))
+    actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 
   private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): DB[ProcessIdWithName] = {

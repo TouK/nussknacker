@@ -2,10 +2,11 @@ package pl.touk.nussknacker.ui.server
 
 import com.typesafe.scalalogging.LazyLogging
 import sttp.model.StatusCode
+import sttp.monad.FutureMonad
 import sttp.tapir.EndpointIO.Header
 import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
 import sttp.tapir.server.interceptor._
-import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
+import sttp.tapir.server.interceptor.decodefailure.{DecodeFailureHandler, DefaultDecodeFailureHandler}
 import sttp.tapir.server.interceptor.exception.{ExceptionContext, ExceptionHandler}
 import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.{DecodeResult, statusCode, stringBody}
@@ -17,19 +18,22 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(
 ) extends AkkaHttpServerInterpreter
     with LazyLogging {
 
+  private implicit val futureMonadError: FutureMonad = new FutureMonad
+
   override val akkaHttpServerOptions: AkkaHttpServerOptions =
     AkkaHttpServerOptions.customiseInterceptors
       .decodeFailureHandler(customDecodeFailureHandler)
       .exceptionHandler(customExceptionHandler)
       .options
 
-  private lazy val customDecodeFailureHandler = {
-    DefaultDecodeFailureHandler.default.copy(
-      failureMessage = ctx => {
+  private lazy val customDecodeFailureHandler: DecodeFailureHandler[Future] = {
+    val default: DefaultDecodeFailureHandler[Future] = DefaultDecodeFailureHandler[Future]
+    default.copy(
+      failureMessage = { ctx: DecodeFailureContext =>
         if (isMissingAuthorizationHeaderFailure(ctx))
           "The resource requires authentication, which was not supplied with the request"
         else
-          DefaultDecodeFailureHandler.default.failureMessage(ctx)
+          default.failureMessage(ctx)
       }
     )
   }

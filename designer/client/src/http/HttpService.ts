@@ -3,10 +3,12 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
+import { ProcessingType, SettingsData, ValidationData, ValidationRequest } from "../actions/nk";
 import api from "../api";
 import { UserData } from "../common/models/User";
 import {
+    ActionName,
+    PredefinedActionName,
     ProcessActionType,
     ProcessName,
     ProcessStateType,
@@ -16,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -124,6 +126,11 @@ export interface PropertiesValidationRequest {
     additionalFields: ProcessAdditionalFields;
 }
 
+export interface CustomActionValidationRequest {
+    actionName: string;
+    params: Record<string, string>;
+}
+
 export interface ExpressionSuggestionRequest {
     expression: Expression;
     caretPosition2d: CaretPosition2d;
@@ -146,6 +153,9 @@ export interface ScenarioParametersCombinations {
     combinations: ScenarioParametersCombination[];
     engineSetupErrors: Record<string, string[]>;
 }
+
+export type ProcessDefinitionDataDictOption = { key: string; label: string };
+type DictOption = { id: string; label: string };
 
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
@@ -225,7 +235,7 @@ class HttpService {
     }
 
     fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
-        return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`);
+        return api.get(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${labelPattern}`);
     }
 
     fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
@@ -283,10 +293,12 @@ class HttpService {
             .get<
                 {
                     performedAt: string;
-                    actionType: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY";
+                    actionName: ActionName;
                 }[]
             >(`/processes/${encodeURIComponent(processName)}/deployments`)
-            .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
+            .then((res) =>
+                res.data.filter(({ actionName }) => actionName === PredefinedActionName.Deploy).map(({ performedAt }) => performedAt),
+            );
     }
 
     deploy(processName: string, comment?: string): Promise<{ isSuccess: boolean }> {
@@ -476,6 +488,20 @@ class HttpService {
             });
     }
 
+    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
+        return api
+            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
+                    error,
+                    true,
+                );
+                return;
+            });
+    }
+
     getNodeAdditionalInfo(processName: string, node: NodeType, controller?: AbortController): Promise<AdditionalInfo | null> {
         return api
             .post<AdditionalInfo>(`/nodes/${encodeURIComponent(processName)}/additionalInfo`, node, {
@@ -639,7 +665,7 @@ class HttpService {
     }
 
     testScenarioWithGeneratedData(
-        processName,
+        processName: ProcessName,
         testSampleSize: string,
         scenarioGraph: ScenarioGraph,
     ): Promise<AxiosResponse<TestProcessResponse>> {
@@ -653,7 +679,7 @@ class HttpService {
         return promise;
     }
 
-    compareProcesses(processName, thisVersion, otherVersion, remoteEnv) {
+    compareProcesses(processName: ProcessName, thisVersion, otherVersion, remoteEnv) {
         const path = remoteEnv ? "remoteEnvironment" : "processes";
 
         const promise = api.get(`/${path}/${encodeURIComponent(processName)}/${thisVersion}/compare/${otherVersion}`);
@@ -694,6 +720,36 @@ class HttpService {
 
     fetchScenarioParametersCombinations() {
         return api.get<ScenarioParametersCombinations>(`/scenarioParametersCombinations`);
+    }
+
+    fetchProcessDefinitionDataDict(processingType: ProcessingType, dictId: string, label: string) {
+        return api
+            .get<ProcessDefinitionDataDictOption[]>(`/processDefinitionData/${processingType}/dicts/${dictId}/entry?label=${label}`)
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch options"),
+                        error,
+                    ),
+                ),
+            );
+    }
+
+    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, { refClazzName }: ReturnedType) {
+        return api
+            .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
+                expectedType: {
+                    value: { type: "TypedClass", refClazzName, params: [] },
+                },
+            })
+            .catch((error) =>
+                Promise.reject(
+                    this.#addError(
+                        i18next.t("notification.error.failedToFetchProcessDefinitionDataDict", "Failed to fetch presets"),
+                        error,
+                    ),
+                ),
+            );
     }
 
     #addInfo(message: string) {

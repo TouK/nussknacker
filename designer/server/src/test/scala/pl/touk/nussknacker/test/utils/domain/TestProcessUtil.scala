@@ -1,9 +1,15 @@
 package pl.touk.nussknacker.test.utils.domain
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.Deploy
+import pl.touk.nussknacker.engine.api.deployment.{
+  ProcessAction,
+  ProcessActionId,
+  ProcessActionState,
+  ScenarioActionName
+}
 import pl.touk.nussknacker.engine.api.graph.{ProcessProperties, ScenarioGraph}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -15,6 +21,7 @@ import pl.touk.nussknacker.ui.definition.component.ComponentModelData._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
+
 import java.time.Instant
 import java.util.UUID
 import scala.util.Random
@@ -34,7 +41,7 @@ object TestProcessUtil {
       category: String,
       isArchived: Boolean = false,
       processingType: String = ProcessingTypeStreaming,
-      lastAction: Option[ProcessActionType] = None,
+      lastAction: Option[ScenarioActionName] = None,
       json: Option[ScenarioGraph] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] =
     wrapWithScenarioDetailsEntity(
@@ -53,7 +60,7 @@ object TestProcessUtil {
       isArchived: Boolean = false,
       processingType: String = ProcessingTypeStreaming,
       json: Option[ScenarioGraph] = None,
-      lastAction: Option[ProcessActionType] = None
+      lastAction: Option[ScenarioActionName] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] = {
     val processName = ProcessName(name)
     wrapWithScenarioDetailsEntity(
@@ -91,7 +98,7 @@ object TestProcessUtil {
       isFragment: Boolean = false,
       isArchived: Boolean = false,
       processingType: ProcessingType = ProcessingTypeStreaming,
-      lastAction: Option[ProcessActionType] = None,
+      lastAction: Option[ScenarioActionName] = None,
       description: Option[String] = None,
       history: Option[List[ScenarioVersion]] = None
   ): ScenarioWithDetailsEntity[ScenarioGraph] = {
@@ -115,7 +122,7 @@ object TestProcessUtil {
       tags = None,
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if ProcessActionType.StateActionsTypes.contains(action) => createProcessAction(action)
+        case action if ScenarioActionName.StateActions.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect { case Deploy =>
         createProcessAction(Deploy)
@@ -155,7 +162,7 @@ object TestProcessUtil {
 
   lazy val sampleFragmentGraph: ScenarioGraph =
     createFragmentGraph(
-      List(FragmentInputDefinition("input", List(FragmentParameter("in", FragmentClazzRef[String]))))
+      List(FragmentInputDefinition("input", List(FragmentParameter(ParameterName("in"), FragmentClazzRef[String]))))
     )
 
   def createFragmentGraph(
@@ -163,14 +170,14 @@ object TestProcessUtil {
   ): ScenarioGraph =
     ScenarioGraph(ProcessProperties(FragmentSpecificData()), nodes, Nil)
 
-  def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
+  def createProcessAction(action: ScenarioActionName): ProcessAction = ProcessAction(
     id = ProcessActionId(UUID.randomUUID()),
     processId = ProcessId(generateId()),
     processVersionId = VersionId(generateId()),
     createdAt = Instant.now(),
     performedAt = Instant.now(),
     user = "user",
-    actionType = action,
+    actionName = action,
     state = ProcessActionState.Finished,
     failureMessage = None,
     commentId = None,

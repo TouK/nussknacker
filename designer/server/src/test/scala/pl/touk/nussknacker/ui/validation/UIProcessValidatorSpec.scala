@@ -9,17 +9,22 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
-import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValuesProvided}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ValueInputWithDictEditor,
+  ValueInputWithFixedValuesProvided
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -30,6 +35,7 @@ import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -55,16 +61,9 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationWarnings
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
-  dictParameterEditorServiceId,
-  existingSinkFactory,
-  existingSourceFactory,
-  processValidator,
-  processValidatorWithDicts,
-  sampleProcessName
-}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
@@ -106,7 +105,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           "Edges are not unique",
           "Node subIn has duplicate outgoing edges of type: FragmentOutput(out2), it cannot be saved properly",
           None,
-          NodeValidationErrorType.SaveNotAllowed
+          NodeValidationErrorType.SaveNotAllowed,
+          None
         )
       )
     )
@@ -150,11 +150,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.invalidNodes shouldBe Map(
       "subIn" -> List(
         NodeValidationError(
-          "NonUniqueEdge",
-          "Edges are not unique",
-          "Node subIn has duplicate outgoing edges to: out2, it cannot be saved properly",
-          None,
-          SaveNotAllowed
+          typ = "NonUniqueEdge",
+          message = "Edges are not unique",
+          description = "Node subIn has duplicate outgoing edges to: out2, it cannot be saved properly",
+          fieldName = None,
+          errorType = SaveNotAllowed,
+          details = None
         )
       )
     )
@@ -174,11 +175,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
-          "LooseNode",
-          "Loose node",
-          "Node loose is not connected to source, it cannot be saved properly",
-          None,
-          SaveNotAllowed
+          typ = "LooseNode",
+          message = "Loose node",
+          description = "Node loose is not connected to source, it cannot be saved properly",
+          fieldName = None,
+          errorType = SaveNotAllowed,
+          details = None
         ),
         List("loose")
       )
@@ -222,11 +224,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings.invalidNodes shouldBe Map(
       "filter" -> List(
         NodeValidationError(
-          "DisabledNode",
-          "Node filter is disabled",
-          "Deploying scenario with disabled node can have unexpected consequences",
-          None,
-          SaveAllowed
+          typ = "DisabledNode",
+          message = "Node filter is disabled",
+          description = "Deploying scenario with disabled node can have unexpected consequences",
+          fieldName = None,
+          errorType = SaveAllowed,
+          details = None
         )
       )
     )
@@ -246,11 +249,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
-          "DuplicatedNodeIds",
-          "Two nodes cannot have same id",
-          "Duplicate node ids: inID",
-          None,
-          RenderNotAllowed
+          typ = "DuplicatedNodeIds",
+          message = "Two nodes cannot have same id",
+          description = "Duplicate node ids: inID",
+          fieldName = None,
+          errorType = RenderNotAllowed,
+          details = None
         ),
         List("inID")
       )
@@ -277,11 +281,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe List(
       UIGlobalError(
         NodeValidationError(
-          "DuplicatedNodeIds",
-          "Two nodes cannot have same id",
-          "Duplicate node ids: switchID",
-          None,
-          RenderNotAllowed
+          typ = "DuplicatedNodeIds",
+          message = "Two nodes cannot have same id",
+          description = "Duplicate node ids: switchID",
+          fieldName = None,
+          errorType = RenderNotAllowed,
+          details = None
         ),
         List("switchID")
       )
@@ -326,7 +331,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("field1"),
-              ValidationResults.NodeValidationErrorType.SaveAllowed
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
             )
           ) =>
     }
@@ -337,7 +343,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("field1"),
-              ValidationResults.NodeValidationErrorType.SaveAllowed
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
             )
           ) =>
     }
@@ -419,7 +426,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed)) =>
+      case List(
+            NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed, None)
+          ) =>
     }
   }
 
@@ -445,7 +454,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "in",
               List(
                 FragmentParameter(
-                  "subParam1",
+                  ParameterName("subParam1"),
                   FragmentClazzRef("thisTypeDoesntExist"),
                   initialValue = None,
                   hintText = None,
@@ -474,13 +483,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "Invalid parameter type.",
               "Failed to load thisTypeDoesntExist",
               Some("$param.subParam1.$typ"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
   }
 
-  test("validates fragment input definition while validating fragment") {
+  test("validates fragment input definition while validating fragment - ValueInputWithFixedValuesProvided") {
     val fragmentWithInvalidParam =
       CanonicalProcess(
         MetaData("fragment1", FragmentSpecificData()),
@@ -490,7 +500,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "in",
               List(
                 FragmentParameter(
-                  "subParam1",
+                  ParameterName("subParam1"),
                   FragmentClazzRef[String],
                   initialValue = Some(FixedExpressionValue("'outsidePreset'", "outsidePreset")),
                   hintText = None,
@@ -503,13 +513,29 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   valueCompileTimeValidation = None
                 ),
                 FragmentParameter(
-                  "subParam2",
+                  ParameterName("subParam2"),
                   FragmentClazzRef[java.lang.Boolean],
                   initialValue = None,
                   hintText = None,
                   valueEditor = Some(
                     ValueInputWithFixedValuesProvided(
                       fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue")),
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam3_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = Some(FixedExpressionValue("'someValue'", "someValue")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithFixedValuesProvided(
+                      fixedValuesList = List(
+                        FixedExpressionValue("'someValue'", "someValue"),
+                        FixedExpressionValue("", ""),
+                      ),
                       allowOtherValue = false
                     )
                   ),
@@ -538,14 +564,139 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "The initial value provided for parameter 'subParam1' is not present in the parameter's possible values list",
               _,
               Some("$param.subParam1.$initialValue"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             ),
             NodeValidationError(
               "ExpressionParserCompilationErrorInFragmentDefinition",
               "Failed to parse expression: Bad expression type, expected: Boolean, found: String(someValue)",
               "There is a problem with expression: 'someValue'",
               Some("$param.subParam2.$fixedValuesList"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
+            )
+          ) =>
+    }
+  }
+
+  test("validates fragment input definition while validating fragment - ValueInputWithDictEditor") {
+    val fragmentWithInvalidParam =
+      CanonicalProcess(
+        MetaData("fragment1", FragmentSpecificData()),
+        List(
+          FlatNode(
+            FragmentInputDefinition(
+              "in",
+              List(
+                FragmentParameter(
+                  ParameterName("subParam1"),
+                  FragmentClazzRef[java.lang.Boolean],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "thisDictDoesntExist",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam2"),
+                  FragmentClazzRef[java.lang.Boolean],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam3"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam4_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue =
+                    Some(FixedExpressionValue("""{"key":"some string key","label":"some label"}""", "some label")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                ),
+                FragmentParameter(
+                  ParameterName("subParam5_valid"),
+                  FragmentClazzRef[java.lang.String],
+                  initialValue = Some(FixedExpressionValue("", "")),
+                  hintText = None,
+                  valueEditor = Some(
+                    ValueInputWithDictEditor(
+                      dictId = "someDictId",
+                      allowOtherValue = false
+                    )
+                  ),
+                  valueCompileTimeValidation = None
+                )
+              )
+            )
+          ),
+          FlatNode(
+            FragmentOutputDefinition("out", "out1", List.empty)
+          )
+        ),
+        List.empty
+      )
+
+    val fragmentGraph =
+      CanonicalProcessConverter.toScenarioGraph(fragmentWithInvalidParam)
+
+    val validationResult = processValidatorWithDicts(
+      Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
+    ).validate(fragmentGraph, sampleProcessName, isFragment = true)
+
+    validationResult.errors should not be empty
+    validationResult.errors.invalidNodes("in") should matchPattern {
+      case List(
+            NodeValidationError(
+              "DictNotDeclared",
+              "Dictionary not declared: thisDictDoesntExist",
+              _,
+              Some("$param.subParam1.$dictId"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            ),
+            NodeValidationError(
+              "DictIsOfInvalidType",
+              _,
+              "Values in dictionary 'someDictId' are of type 'String @ dictValue:someDictId' and cannot be treated as expected type: 'Boolean'",
+              Some("$param.subParam2.$dictId"),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            ),
+            NodeValidationError(
+              "EmptyMandatoryField",
+              "This field is mandatory and cannot be empty",
+              _,
+              Some("$param.subParam3.$dictId"),
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -561,7 +712,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "in",
               List(
                 FragmentParameter(
-                  "subParam1",
+                  ParameterName("subParam1"),
                   FragmentClazzRef[java.lang.String],
                   initialValue = None,
                   hintText = None,
@@ -570,7 +721,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     Some(ParameterValueCompileTimeValidation(Expression.spel("'a' + 'b'"), Some("some failed message")))
                 ),
                 FragmentParameter(
-                  "subParam2",
+                  ParameterName("subParam2"),
                   FragmentClazzRef[java.lang.String],
                   initialValue = None,
                   hintText = None,
@@ -605,14 +756,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               "Invalid validation expression: Bad expression type, expected: Boolean, found: String(ab)",
               "There is a problem with validation expression: 'a' + 'b'",
               Some("$param.subParam1.$validationExpression"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             ),
             NodeValidationError(
               "InvalidValidationExpression",
               "Invalid validation expression: Wrong part types",
               "There is a problem with validation expression: #value < 7",
               Some("$param.subParam2.$validationExpression"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -622,7 +775,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val invalidFragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[Long])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[Long])))
+        ),
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
@@ -634,7 +789,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
           "subIn",
-          FragmentRef(invalidFragment.name.value, List(NodeParameter("param1", "'someString'"))),
+          FragmentRef(invalidFragment.name.value, List(NodeParameter(ParameterName("param1"), "'someString'"))),
           isDisabled = Some(false)
         ),
         Sink("out", SinkRef(sinkTypeName, List()))
@@ -663,7 +818,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             "in",
             List(
               FragmentParameter(
-                "subParam1",
+                ParameterName("subParam1"),
                 FragmentClazzRef[String],
                 required = true,
                 initialValue = None,
@@ -692,7 +847,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           FragmentRef(
             fragment.name.value,
             List(
-              NodeParameter("subParam1", "'outsideAllowedValues'"),
+              NodeParameter(ParameterName("subParam1"), "'outsideAllowedValues'"),
             )
           ),
           isDisabled = Some(false)
@@ -702,7 +857,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           FragmentRef(
             fragment.name.value,
             List(
-              NodeParameter("subParam1", ""),
+              NodeParameter(ParameterName("subParam1"), ""),
             )
           ),
           isDisabled = Some(false)
@@ -727,7 +882,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("subParam1"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -738,7 +894,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("subParam1"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -748,7 +905,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val invalidFragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("fragment1", List(FragmentParameter("param1", FragmentClazzRef[Long])))),
+        FlatNode(
+          FragmentInputDefinition("fragment1", List(FragmentParameter(ParameterName("param1"), FragmentClazzRef[Long])))
+        ),
         FlatNode(Variable(id = "subVar", varName = "subVar", value = "#nonExistingVar")),
         FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
@@ -760,7 +919,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("in", SourceRef(sourceTypeName, List())),
         FragmentInput(
           "subIn",
-          FragmentRef(invalidFragment.name.value, List(NodeParameter("param1", "'someString'"))),
+          FragmentRef(invalidFragment.name.value, List(NodeParameter(ParameterName("param1"), "'someString'"))),
           isDisabled = Some(true)
         ),
         Sink("out", SinkRef(sinkTypeName, List()))
@@ -783,7 +942,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("subParam1", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("subParam1"), FragmentClazzRef[String])))
+        ),
         SplitNode(
           Split("split"),
           List(
@@ -800,7 +961,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
           "subIn",
-          FragmentRef(fragment.name.value, List(NodeParameter("subParam1", "'someString'"))),
+          FragmentRef(fragment.name.value, List(NodeParameter(ParameterName("subParam1"), "'someString'"))),
           isDisabled = Some(false)
         ),
         Variable(id = "var1", varName = "var1", value = "#subOut1.foo"),
@@ -836,7 +997,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("inID", SourceRef(ProcessTestData.existingSourceFactory, List())),
         Enricher(
           "custom",
-          ServiceRef("fooService3", List(NodeParameter("expression", Expression.spel("")))),
+          ServiceRef("fooService3", List(NodeParameter(ParameterName("expression"), Expression.spel("")))),
           "out"
         ),
         Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
@@ -855,7 +1016,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -875,7 +1037,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           additionalConfigsFromProvider = Map(
             DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
               parameterConfigs = Map(
-                "optionalParam" -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+                ParameterName("optionalParam") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
               )
             )
           )
@@ -897,7 +1059,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -917,7 +1080,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           additionalConfigsFromProvider = Map(
             DesignerWideComponentId("streaming-service-optionalParameterService") -> ComponentAdditionalConfig(
               parameterConfigs = Map(
-                "optionalParam" -> ParameterAdditionalUIConfig(
+                ParameterName("optionalParam") -> ParameterAdditionalUIConfig(
                   required = false,
                   initialValue = None,
                   hintText = None,
@@ -946,7 +1109,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -987,7 +1151,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1041,7 +1206,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1049,14 +1215,14 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  private def procesWithDictParameterEditorService(key: String) = createGraph(
+  private def procesWithDictParameterEditorService(expression: Expression) = createGraph(
     List(
       Source("inID", SourceRef(existingSourceFactory, List())),
       Enricher(
         "custom",
         ServiceRef(
           dictParameterEditorServiceId,
-          List(NodeParameter("expression", Expression.dictKeyWithLabel(key, Some("someLabel"))))
+          List(NodeParameter(ParameterName("expression"), expression))
         ),
         "out"
       ),
@@ -1065,8 +1231,36 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     List(Edge("inID", "custom", None), Edge("custom", "out", None))
   )
 
+  test("reports expression parsing error in DictParameterEditor") {
+    val process = procesWithDictParameterEditorService(
+      Expression(
+        Language.DictKeyWithLabel,
+        "not parsable key with label expression"
+      )
+    )
+
+    val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "KeyWithLabelExpressionParsingError",
+                "Error while parsing KeyWithLabel expression: not parsable key with label expression",
+                _,
+                Some("expression"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
   test("checks for unknown dictId in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("someKey")
+    val process = procesWithDictParameterEditorService(Expression.dictKeyWithLabel("someKey", Some("someLabel")))
 
     val result = processValidatorWithDicts(Map.empty).validate(process, sampleProcessName, isFragment = false)
 
@@ -1079,7 +1273,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1088,7 +1283,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("checks for unknown key in DictParameterEditor") {
-    val process = procesWithDictParameterEditorService("thisKeyDoesntExist")
+    val process =
+      procesWithDictParameterEditorService(Expression.dictKeyWithLabel("thisKeyDoesntExist", Some("someLabel")))
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map.empty))
@@ -1103,7 +1299,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1112,7 +1309,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   }
 
   test("validate DictParameterEditor happy path") {
-    val process = procesWithDictParameterEditorService("someKey")
+    val process = procesWithDictParameterEditorService(Expression.dictKeyWithLabel("someKey", Some("someLabel")))
 
     val result = processValidatorWithDicts(
       Map("someDictId" -> EmbeddedDictDefinition(Map("someKey" -> "someLabel")))
@@ -1124,7 +1321,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
 
   test("check for wrong fixed expression value in node parameter") {
     val scenarioGraph: ScenarioGraph = createScenarioGraphWithParams(
-      List(NodeParameter("expression", Expression.spel("wrong fixed value"))),
+      List(NodeParameter(ParameterName("expression"), Expression.spel("wrong fixed value"))),
       Map.empty
     )
 
@@ -1139,7 +1336,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 _,
                 _,
                 Some("expression"),
-                NodeValidationErrorType.SaveAllowed
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1166,7 +1364,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("numberOfThreads"),
-              NodeValidationErrorType.SaveAllowed
+              NodeValidationErrorType.SaveAllowed,
+              None
             )
           ) =>
     }
@@ -1177,7 +1376,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragment = CanonicalProcess(
       MetaData("fragment1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(FragmentInputDefinition("in", List(FragmentParameter("subParam1", FragmentClazzRef[String])))),
+        FlatNode(
+          FragmentInputDefinition("in", List(FragmentParameter(ParameterName("subParam1"), FragmentClazzRef[String])))
+        ),
         FlatNode(FragmentOutputDefinition("subOut1", "out", List(Field("foo", "42L"))))
       ),
       additionalBranches = List.empty
@@ -1188,7 +1389,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         Source("source", SourceRef(sourceTypeName, Nil)),
         FragmentInput(
           "subIn",
-          FragmentRef(fragment.name.value, List(NodeParameter("subParam1", "'someString'"))),
+          FragmentRef(fragment.name.value, List(NodeParameter(ParameterName("subParam1"), "'someString'"))),
           isDisabled = Some(false)
         ),
         Sink("sink", SinkRef(sinkTypeName, Nil))
@@ -1230,8 +1431,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       )
 
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
-    val processWithFragment = createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter("P1", "123")))
+      createFragmentDefinition(fragmentId, List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short])))
+    val processWithFragment =
+      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "123")))
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
     val result = processValidator.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
@@ -1245,8 +1447,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragmentId = "fragment1"
 
     val fragmentDefinition: CanonicalProcess =
-      createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true)))
-    val processWithFragment = createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter("P1", "")))
+      createFragmentDefinition(
+        fragmentId,
+        List(FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short]).copy(required = true))
+      )
+    val processWithFragment =
+      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName("P1"), "")))
 
     val processValidator = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result = processValidator.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
@@ -1255,7 +1461,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("subIn") should matchPattern {
       case Some(
-            List(NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed))
+            List(
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("P1"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
           ) =>
     }
   }
@@ -1268,16 +1483,16 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     val fragmentDefinition: CanonicalProcess = createFragmentDefinition(
       fragmentId,
       List(
-        FragmentParameter("P1", FragmentClazzRef[Short]).copy(required = true),
-        FragmentParameter("P2", FragmentClazzRef[String]).copy(required = true)
+        FragmentParameter(ParameterName("P1"), FragmentClazzRef[Short]).copy(required = true),
+        FragmentParameter(ParameterName("P2"), FragmentClazzRef[String]).copy(required = true)
       )
     )
 
     val processWithFragment = createScenarioGraphWithFragmentParams(
       fragmentId,
       List(
-        NodeParameter("P1", ""),
-        NodeParameter("P2", "")
+        NodeParameter(ParameterName("P1"), ""),
+        NodeParameter(ParameterName("P2"), "")
       )
     )
 
@@ -1289,8 +1504,22 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.errors.invalidNodes.get("subIn") should matchPattern {
       case Some(
             List(
-              NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
-              NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("P1"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              ),
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("P2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
             )
           ) =>
     }
@@ -1305,7 +1534,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentId,
         List(
           FragmentParameter(
-            paramName,
+            ParameterName(paramName),
             FragmentClazzRef[java.lang.String],
             initialValue = None,
             hintText = None,
@@ -1320,7 +1549,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       )
     val processWithFragment =
-      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Tomasz\"")))
+      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName(paramName), "\"Tomasz\"")))
 
     val processValidation = mockedProcessValidator(Some(fragmentDefinition), defaultConfig)
     val result = processValidation.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
@@ -1342,7 +1571,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         fragmentId,
         List(
           FragmentParameter(
-            paramName,
+            ParameterName(paramName),
             FragmentClazzRef[java.lang.String],
             initialValue = None,
             hintText = None,
@@ -1357,7 +1586,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       )
     val processWithFragment =
-      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(paramName, "\"Barabasz\"")))
+      createScenarioGraphWithFragmentParams(fragmentId, List(NodeParameter(ParameterName(paramName), "\"Barabasz\"")))
 
     val processValidation = mockedProcessValidator(Some(fragmentDefinition), configWithValidators)
     val result = processValidation.validate(processWithFragment, ProcessTestData.sampleProcessName, isFragment = false)
@@ -1370,8 +1599,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "CustomParameterValidationError",
                 "some failed message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
-                Some(paramName),
-                NodeValidationErrorType.SaveAllowed
+                Some(`paramName`),
+                NodeValidationErrorType.SaveAllowed,
+                None
               )
             )
           ) =>
@@ -1516,7 +1746,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       result.errors.globalErrors should matchPattern {
         case List(
               UIGlobalError(
-                NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed),
+                NodeValidationError("InvalidTailOfBranch", _, _, _, NodeValidationErrorType.SaveAllowed, None),
                 List("e")
               )
             ) =>
@@ -1611,7 +1841,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     )
   }
 
-  def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
+  private def validate(scenarioGraph: ScenarioGraph): ValidationResult = {
     TestFactory.processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
   }
 
@@ -1738,7 +1968,7 @@ private object UIProcessValidatorSpec {
         "custom",
         ServiceRef(
           "optionalParameterService",
-          List(NodeParameter("optionalParam", Expression.spel(optionalParamValue)))
+          List(NodeParameter(ParameterName("optionalParam"), Expression.spel(optionalParamValue)))
         ),
         "out"
       ),
@@ -1770,7 +2000,9 @@ private object UIProcessValidatorSpec {
       MetaData(fragmentDefinitionId, FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("in", fragmentInputParams)),
-        FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", Expression("spel", "'value'"))))),
+        FlatNode(
+          FragmentOutputDefinition("out", "out1", List(Field("strField", Expression(Language.Spel, "'value'"))))
+        ),
       ),
       additionalBranches = List.empty
     )
@@ -1812,7 +2044,7 @@ private object UIProcessValidatorSpec {
   }
 
   object SampleCustomProcessValidator extends CustomProcessValidator {
-    val badName = ProcessName("badName")
+    val badName: ProcessName = ProcessName("badName")
 
     val badNameError: ScenarioNameValidationError = ScenarioNameValidationError("BadName", "BadName")
 

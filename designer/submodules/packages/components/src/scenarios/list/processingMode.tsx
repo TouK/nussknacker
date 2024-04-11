@@ -25,12 +25,11 @@ export const processingModeItems = [
         displayableName: i18next.t(`scenarioDetails.processingModeVariants.requestResponse`, "Request-Response"),
         Icon: RequestResponse,
     },
-    //TODO: Uncomment when batch supported
-    // {
-    //     name: ProcessingMode.batch,
-    //     displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
-    //     Icon: Batch,
-    // },
+    {
+        name: ProcessingMode.batch,
+        displayableName: i18next.t(`scenarioDetails.processingModeVariants.batch`, "Batch"),
+        Icon: Batch,
+    },
 ];
 
 interface Props {

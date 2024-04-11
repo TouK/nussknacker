@@ -12,6 +12,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -75,6 +76,7 @@ class FlinkKafkaSource[T](
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
   }
 
+  @silent("deprecated")
   protected def flinkSourceFunction(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -83,6 +85,7 @@ class FlinkKafkaSource[T](
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
+  @silent("deprecated")
   protected def createFlinkSource(
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
@@ -123,7 +126,7 @@ class FlinkKafkaSource[T](
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
-  override def parametersToTestData(params: Map[String, AnyRef]): T = {
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): T = {
     val flatParams = TestingParametersSupport.unflattenParameters(params)
     deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
   }

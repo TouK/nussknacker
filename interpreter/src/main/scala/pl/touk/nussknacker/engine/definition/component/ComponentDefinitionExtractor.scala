@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.definition.component
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.context.transformation._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, MethodToInvoke, Service}
@@ -82,7 +83,7 @@ object ComponentDefinitionExtractor {
 
     def withUiDefinitionForNotDisabledComponent[T](
         returnType: Option[TypingResult]
-    )(f: (ComponentUiDefinition, Map[String, ParameterConfig]) => T): Option[T] = {
+    )(f: (ComponentUiDefinition, Map[ParameterName, ParameterConfig]) => T): Option[T] = {
       val defaultConfig =
         DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
       val configFromAdditional                    = additionalConfigs.getConfig(componentId)
@@ -102,7 +103,7 @@ object ComponentDefinitionExtractor {
               DynamicComponentDefinitionWithImplementation(
                 name = componentName,
                 implementationInvoker = invoker,
-                implementation = e,
+                component = e,
                 componentTypeSpecificData = componentTypeSpecificData,
                 uiDefinition = uiDefinition,
                 parametersConfig = parametersConfig
@@ -134,7 +135,7 @@ object ComponentDefinitionExtractor {
               MethodBasedComponentDefinitionWithImplementation(
                 name = componentName,
                 implementationInvoker = invoker,
-                implementation = component,
+                component = component,
                 componentTypeSpecificData = componentTypeSpecificData,
                 staticDefinition = staticDefinition,
                 uiDefinition = uiDefinition
@@ -176,7 +177,7 @@ object ComponentDefinitionExtractor {
   def filterOutDisabledAndComputeFinalUiDefinition(
       finalCombinedConfig: SingleComponentConfig,
       translateGroupName: ComponentGroupName => Option[ComponentGroupName]
-  ): Option[(ComponentUiDefinition, Map[String, ParameterConfig])] = {
+  ): Option[(ComponentUiDefinition, Map[ParameterName, ParameterConfig])] = {
     // At this stage, after combining all properties with default config, we are sure that some properties are defined
     def getDefinedProperty[T](propertyName: String, getProperty: SingleComponentConfig => Option[T]) =
       getProperty(finalCombinedConfig).getOrElse(

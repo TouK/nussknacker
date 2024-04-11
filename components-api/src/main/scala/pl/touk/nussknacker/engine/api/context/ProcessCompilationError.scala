@@ -4,7 +4,11 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -19,7 +23,7 @@ sealed trait ParameterValidationError extends PartSubGraphCompilationError with 
 
   def description: String
 
-  def paramName: String
+  def paramName: ParameterName
 }
 
 object ProcessCompilationError {
@@ -73,27 +77,28 @@ object ProcessCompilationError {
 
   final case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  final case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
+  final case class NotSupportedExpressionLanguage(languageId: Language, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object NotSupportedExpressionLanguage {
-    def apply(languageId: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+    def apply(languageId: Language)(implicit nodeId: NodeId): PartSubGraphCompilationError =
       NotSupportedExpressionLanguage(languageId, nodeId.id)
   }
 
   final case class ExpressionParserCompilationError(
       message: String,
       nodeId: String,
-      fieldName: Option[String],
-      originalExpr: String
+      paramName: Option[ParameterName],
+      originalExpr: String,
+      details: Option[ErrorDetails]
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
   final case class ExpressionParserCompilationErrorInFragmentDefinition(
       message: String,
       nodeId: String,
-      paramName: String,
+      paramName: ParameterName,
       subFieldName: Option[String],
       originalExpr: String
   ) extends PartSubGraphCompilationError
@@ -102,21 +107,21 @@ object ProcessCompilationError {
   final case class InvalidValidationExpression(
       message: String,
       nodeId: String,
-      paramName: String,
+      paramName: ParameterName,
       originalExpr: String
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
   object ExpressionParserCompilationError {
 
-    def apply(message: String, fieldName: Option[String], originalExpr: String)(
+    def apply(message: String, paramName: Option[ParameterName], originalExpr: String, details: Option[ErrorDetails])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
-      ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr)
+      ExpressionParserCompilationError(message, nodeId.id, paramName, originalExpr, details)
 
   }
 
-  final case class FragmentParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)
+  final case class FragmentParamClassLoadError(paramName: ParameterName, refClazzName: String, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -152,91 +157,110 @@ object ProcessCompilationError {
       MissingCustomNodeExecutor(name, nodeId.id)
   }
 
-  case class MissingParameters(params: Set[String], nodeId: String)
+  case class MissingParameters(params: Set[ParameterName], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
   final case class UnresolvedFragment(nodeId: String) extends PartSubGraphCompilationError with InASingleNode
 
   object MissingParameters {
-    def apply(params: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+    def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingParameters(params, nodeId.id)
   }
 
-  final case class RedundantParameters(params: Set[String], nodeId: String)
+  final case class RedundantParameters(params: Set[ParameterName], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object RedundantParameters {
-    def apply(params: Set[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+    def apply(params: Set[ParameterName])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       RedundantParameters(params, nodeId.id)
   }
 
-  final case class WrongParameters(requiredParameters: Set[String], passedParameters: Set[String], nodeId: String)
-      extends PartSubGraphCompilationError
+  final case class WrongParameters(
+      requiredParameters: Set[ParameterName],
+      passedParameters: Set[ParameterName],
+      nodeId: String
+  ) extends PartSubGraphCompilationError
       with InASingleNode
 
   object WrongParameters {
 
-    def apply(requiredParameters: Set[String], passedParameters: Set[String])(
+    def apply(requiredParameters: Set[ParameterName], passedParameters: Set[ParameterName])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
       WrongParameters(requiredParameters, passedParameters, nodeId.id)
 
   }
 
-  final case class BlankParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class BlankParameter(message: String, description: String, paramName: ParameterName, nodeId: String)
       extends ParameterValidationError
 
-  final case class EmptyMandatoryParameter(message: String, description: String, paramName: String, nodeId: String)
-      extends ParameterValidationError
+  final case class EmptyMandatoryParameter(
+      message: String,
+      description: String,
+      paramName: ParameterName,
+      nodeId: String
+  ) extends ParameterValidationError
 
   final case class InvalidIntegerLiteralParameter(
       message: String,
       description: String,
-      paramName: String,
+      paramName: ParameterName,
       nodeId: String
   ) extends ParameterValidationError
 
-  final case class MismatchParameter(message: String, description: String, paramName: String, nodeId: String)
+  final case class MismatchParameter(message: String, description: String, paramName: ParameterName, nodeId: String)
       extends ParameterValidationError
 
-  final case class LowerThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
-      extends ParameterValidationError
+  final case class LowerThanRequiredParameter(
+      message: String,
+      description: String,
+      paramName: ParameterName,
+      nodeId: String
+  ) extends ParameterValidationError
 
-  final case class GreaterThanRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
-      extends ParameterValidationError
+  final case class GreaterThanRequiredParameter(
+      message: String,
+      description: String,
+      paramName: ParameterName,
+      nodeId: String
+  ) extends ParameterValidationError
 
-  final case class JsonRequiredParameter(message: String, description: String, paramName: String, nodeId: String)
-      extends ParameterValidationError
+  final case class JsonRequiredParameter(
+      message: String,
+      description: String,
+      paramName: ParameterName,
+      nodeId: String
+  ) extends ParameterValidationError
 
   final case class CustomParameterValidationError(
       message: String,
       description: String,
-      paramName: String,
+      paramName: ParameterName,
       nodeId: String
   ) extends ParameterValidationError
 
-  final case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
+  final case class MissingRequiredProperty(paramName: ParameterName, label: Option[String], nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object MissingRequiredProperty {
-    def apply(paramName: String, label: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+    def apply(paramName: ParameterName, label: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
       MissingRequiredProperty(paramName, label, nodeId.id)
   }
 
-  final case class UnknownProperty(paramName: String, nodeId: String)
+  final case class UnknownProperty(paramName: ParameterName, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object UnknownProperty {
-    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+    def apply(paramName: ParameterName)(implicit nodeId: NodeId): PartSubGraphCompilationError =
       UnknownProperty(paramName, nodeId.id)
   }
 
   final case class InvalidPropertyFixedValue(
-      paramName: String,
+      paramName: ParameterName,
       label: Option[String],
       value: String,
       values: List[String],
@@ -246,44 +270,55 @@ object ProcessCompilationError {
 
   object InvalidPropertyFixedValue {
 
-    def apply(paramName: String, label: Option[String], value: String, values: List[String])(
+    def apply(paramName: ParameterName, label: Option[String], value: String, values: List[String])(
         implicit nodeId: NodeId
     ): PartSubGraphCompilationError =
       InvalidPropertyFixedValue(paramName, label, value, values, nodeId.id)
 
   }
 
-  final case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[String])
+  final case class OverwrittenVariable(variableName: String, nodeId: String, paramName: Option[ParameterName])
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object OverwrittenVariable {
-    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+
+    def apply(variableName: String, paramName: Option[ParameterName])(
+        implicit nodeId: NodeId
+    ): PartSubGraphCompilationError =
       OverwrittenVariable(variableName, nodeId.id, paramName)
+
   }
 
-  final case class InvalidVariableName(name: String, nodeId: String, paramName: Option[String])
+  final case class InvalidVariableName(name: String, nodeId: String, paramName: Option[ParameterName])
       extends PartSubGraphCompilationError
       with InASingleNode
 
   object InvalidVariableName {
-    def apply(variableName: String, paramName: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
+
+    def apply(variableName: String, paramName: Option[ParameterName])(
+        implicit nodeId: NodeId
+    ): PartSubGraphCompilationError =
       InvalidVariableName(variableName, nodeId.id, paramName)
+
   }
 
   final case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
-  final case class DuplicateFragmentInputParameter(paramName: String, nodeId: String)
+  final case class DuplicateFragmentInputParameter(paramName: ParameterName, nodeId: String)
       extends PartSubGraphCompilationError
       with InASingleNode
 
-  final case class RequireValueFromEmptyFixedList(paramName: String, nodeIds: Set[String])
+  final case class RequireValueFromEmptyFixedList(paramName: ParameterName, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
-  final case class InitialValueNotPresentInPossibleValues(paramName: String, nodeIds: Set[String])
+  final case class InitialValueNotPresentInPossibleValues(paramName: ParameterName, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
-  final case class UnsupportedFixedValuesType(paramName: String, typ: String, nodeIds: Set[String])
+  final case class UnsupportedFixedValuesType(paramName: ParameterName, typ: String, nodeIds: Set[String])
+      extends PartSubGraphCompilationError
+
+  final case class UnsupportedDictParameterEditorType(paramName: ParameterName, typ: String, nodeIds: Set[String])
       extends PartSubGraphCompilationError
 
   final case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
@@ -316,8 +351,21 @@ object ProcessCompilationError {
       extends DuplicateFragmentOutputNames
       with ScenarioGraphLevelError
 
-  final case class DictNotDeclared(dictId: String, nodeId: String, paramName: String)
+  final case class EmptyMandatoryField(nodeId: String, qualifiedFieldName: ParameterName)
       extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictNotDeclared(dictId: String, nodeId: String, paramName: ParameterName)
+      extends PartSubGraphCompilationError
+      with InASingleNode
+
+  final case class DictIsOfInvalidType(
+      dictId: String,
+      actualType: TypingResult,
+      expectedType: TypingResult,
+      nodeId: String,
+      paramName: ParameterName
+  ) extends PartSubGraphCompilationError
       with InASingleNode
 
   final case class DictEntryWithLabelNotExists(
@@ -325,7 +373,7 @@ object ProcessCompilationError {
       label: String,
       possibleLabels: Option[List[String]],
       nodeId: String,
-      paramName: String
+      paramName: ParameterName
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -334,7 +382,7 @@ object ProcessCompilationError {
       key: String,
       possibleKeys: Option[List[String]],
       nodeId: String,
-      paramName: String
+      paramName: ParameterName
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
@@ -342,24 +390,24 @@ object ProcessCompilationError {
       dictId: String,
       key: String,
       nodeId: String,
-      paramName: String
+      paramName: ParameterName
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
   final case class KeyWithLabelExpressionParsingError(
       keyWithLabel: String,
       message: String,
-      paramName: String,
+      paramName: ParameterName,
       nodeId: String
   ) extends PartSubGraphCompilationError
       with InASingleNode
 
-  final case class CustomNodeError(nodeId: String, message: String, paramName: Option[String])
+  final case class CustomNodeError(nodeId: String, message: String, paramName: Option[ParameterName])
       extends ProcessCompilationError
       with InASingleNode
 
   object CustomNodeError {
-    def apply(message: String, paramName: Option[String])(implicit nodeId: NodeId): CustomNodeError =
+    def apply(message: String, paramName: Option[ParameterName])(implicit nodeId: NodeId): CustomNodeError =
       CustomNodeError(nodeId.id, message, paramName)
   }
 
@@ -375,7 +423,7 @@ object ProcessCompilationError {
       extends ProcessCompilationError
       with ScenarioPropertiesError
 
-  final case class SpecificDataValidationError(fieldName: String, message: String)
+  final case class SpecificDataValidationError(paramName: ParameterName, message: String)
       extends ProcessCompilationError
       with ScenarioPropertiesError
 

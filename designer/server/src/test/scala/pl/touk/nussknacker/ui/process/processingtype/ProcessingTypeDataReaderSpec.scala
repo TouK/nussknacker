@@ -15,8 +15,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
-import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
@@ -29,18 +28,19 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
       |}""".stripMargin
 
   test("allow to access to processing type data only users that has read access to associated category") {
-    val config = ConfigFactory.parseString(s"""
-        |scenarioTypes {
-        |  foo {
-        |    $processingTypeBasicConfig
-        |    category: "foo"
-        |  }
-        |  bar {
-        |    $processingTypeBasicConfig
-        |    category: "bar"
-        |  }
-        |}
-        |""".stripMargin)
+    val config = ConfigFactory.parseString(
+      s"""scenarioTypes {
+         |  foo {
+         |    $processingTypeBasicConfig
+         |    category: "foo"
+         |  }
+         |  bar {
+         |    $processingTypeBasicConfig
+         |    category: "bar"
+         |  }
+         |}
+         |""".stripMargin
+    )
 
     val provider = ProcessingTypeDataProvider(
       StubbedProcessingTypeDataReader
@@ -53,18 +53,48 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
     val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
 
-    provider.forType("foo")(fooCategoryUser)
+    provider.forProcessingType("foo")(fooCategoryUser)
     an[UnauthorizedError] shouldBe thrownBy {
-      provider.forType("bar")(fooCategoryUser)
+      provider.forProcessingType("bar")(fooCategoryUser)
     }
     provider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
 
     val mappedProvider = provider.mapValues(_ => ())
-    mappedProvider.forType("foo")(fooCategoryUser)
+    mappedProvider.forProcessingType("foo")(fooCategoryUser)
     an[UnauthorizedError] shouldBe thrownBy {
-      mappedProvider.forType("bar")(fooCategoryUser)
+      mappedProvider.forProcessingType("bar")(fooCategoryUser)
     }
     mappedProvider.all(fooCategoryUser).keys should contain theSameElementsAs List("foo")
+  }
+
+  test("should allow to override engine setup name") {
+    val config = ConfigFactory.parseString(
+      s"""
+         |scenarioTypes {
+         |  foo {
+         |    deploymentConfig {
+         |      type: FooDeploymentManager
+         |      engineSetupName: "Overriden Engine Setup"
+         |    }
+         |    modelConfig {
+         |      classPath: []
+         |    }
+         |    category: "foo"
+         |  }
+         |}
+         |""".stripMargin
+    )
+    val provider = ProcessingTypeDataProvider(
+      StubbedProcessingTypeDataReader
+        .loadProcessingTypeData(
+          ConfigWithUnresolvedVersion(config),
+          _ => TestFactory.modelDependencies,
+          _ => TestFactory.deploymentManagerDependencies
+        )
+    )
+    val fooCategoryUser    = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
+    val processingTypeData = provider.forProcessingTypeUnsafe("foo")(fooCategoryUser)
+    processingTypeData.deploymentData.engineSetupName shouldEqual EngineSetupName("Overriden Engine Setup")
   }
 
   object StubbedProcessingTypeDataReader extends ProcessingTypeDataReader {
@@ -90,10 +120,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           MetaDataInitializer(StreamMetaData.typeName),
           Map.empty,
           List.empty,
+          DeploymentManagerType(deploymentManagerProvider.name),
           engineSetupName
         ),
-        processingTypeConfig.category,
-        ProcessingTypeUsageStatistics(None, None),
+        processingTypeConfig.category
       )
     }
 

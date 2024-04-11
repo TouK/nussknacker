@@ -1,13 +1,14 @@
 import React, { PropsWithChildren, useCallback } from "react";
 import { Field, NodeType, NodeValidationError } from "../../../types";
 import LabeledInput from "./editors/field/LabeledInput";
-import LabeledTextarea from "./editors/field/LabeledTextarea";
 import { useDiffMark } from "./PathsToMark";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { IdField } from "./IdField";
+import { DescriptionField } from "./DescriptionField";
 
 export interface NodeDetailsProps<F extends Field> {
     node: NodeType<F>;
-    setProperty: (propToMutate: string, newValue: unknown) => void;
+    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;
@@ -33,16 +34,14 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
 
     return (
         <>
-            <LabeledInput
-                value={node.id}
-                onChange={(event) => onInputChange("id", event)}
-                isMarked={isMarked("id")}
-                readOnly={readOnly}
+            <IdField
+                node={node}
+                isEditMode={!readOnly}
                 showValidation={showValidation}
-                fieldErrors={getValidationErrorsForField(errors, "$id")}
-            >
-                {renderFieldLabel("Name")}
-            </LabeledInput>
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                errors={errors}
+            />
             {outputField && outputName && (
                 <LabeledInput
                     value={node[outputField]}
@@ -58,16 +57,14 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
 
             {children}
 
-            <LabeledTextarea
-                value={node.additionalFields?.description || ""}
-                onChange={(event) => onInputChange("additionalFields.description", event)}
-                isMarked={isMarked("additionalFields.description")}
-                readOnly={readOnly}
-                className={"node-input"}
-                fieldErrors={getValidationErrorsForField(errors, "additionalFields.description")}
-            >
-                {renderFieldLabel("Description")}
-            </LabeledTextarea>
+            <DescriptionField
+                isEditMode={!readOnly}
+                showValidation={showValidation}
+                node={node}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                errors={errors}
+            />
         </>
     );
 }

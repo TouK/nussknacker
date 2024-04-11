@@ -1,4 +1,14 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+    createContext,
+    PropsWithChildren,
+    ReactElement,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useDebouncedCallback } from "use-debounce";
@@ -9,6 +19,7 @@ import {
     deleteSelection,
     nodesWithEdgesAdded,
     pasteSelection,
+    resetSelection,
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
@@ -37,6 +48,7 @@ interface UserActions {
     undo: UserAction;
     redo: UserAction;
     selectAll: UserAction;
+    deselectAll: UserAction;
 }
 
 function useClipboardParse() {
@@ -117,7 +129,7 @@ export default function SelectionContextProvider(
     props: PropsWithChildren<{
         pastePosition: () => { x: number; y: number };
     }>,
-): JSX.Element {
+): ReactElement {
     const dispatch = useDispatch();
     const { t } = useTranslation();
 
@@ -220,9 +232,8 @@ export default function SelectionContextProvider(
             delete: canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
             undo: () => dispatch(UndoActionCreators.undo()),
             redo: () => dispatch(UndoActionCreators.redo()),
-            selectAll: () => {
-                dispatch(selectAll());
-            },
+            selectAll: () => dispatch(selectAll()),
+            deselectAll: () => dispatch(resetSelection()),
         }),
         [copy, cut, paste, selectionState, hasSelection, canAccessClipboard, canModifySelected, capabilities.editFrontend, dispatch],
     );

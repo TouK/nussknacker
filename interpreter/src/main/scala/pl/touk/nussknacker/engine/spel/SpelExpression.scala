@@ -23,8 +23,9 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingRe
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
-import pl.touk.nussknacker.engine.expression.{NullExpression, parse}
+import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, ExpressionParser, TypedExpression}
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
@@ -89,7 +90,7 @@ class SpelExpression(
 
   override val original: String = parsed.original
 
-  override val language: String = flavour.languageId
+  override val language: Language = flavour.languageId
 
   private val expectedClass =
     expectedReturnType match {
@@ -140,7 +141,7 @@ class SpelExpressionParser(
 
   import pl.touk.nussknacker.engine.spel.SpelExpressionParser._
 
-  override final val languageId: String = flavour.languageId
+  override final val languageId: Language = flavour.languageId
 
   override def parseWithoutContextValidation(
       original: String,
@@ -210,7 +211,7 @@ class SpelExpressionParser(
 
 object SpelExpressionParser extends LazyLogging {
 
-  sealed abstract class Flavour(val languageId: String, val parserContext: Option[ParserContext])
+  sealed abstract class Flavour(val languageId: Language, val parserContext: Option[ParserContext])
   object Standard extends Flavour(GraphExpression.Language.Spel, None)
   // TODO: should we enable other prefixes/suffixes?
   object Template extends Flavour(GraphExpression.Language.SpelTemplate, Some(ParserContext.TEMPLATE_EXPRESSION))

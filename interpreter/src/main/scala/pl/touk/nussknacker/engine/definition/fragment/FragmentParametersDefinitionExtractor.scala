@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FragmentParamClassLoadError
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ValueInputWithDictEditor
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.FragmentParameterValidator
 import pl.touk.nussknacker.engine.definition.component.parameter.ParameterData
@@ -23,11 +24,12 @@ import pl.touk.nussknacker.engine.definition.component.parameter.validator.{
   ValidatorsExtractor
 }
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition}
 
 /*
- * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler and ValidationContext.
+ * This class doesn't validate the parameters' initialValue and valueEditor (e.g. values can be of incorrect type), as it would require ExpressionCompiler, ValidationContext and declared dictionaries.
  * They are validated separately when creating fragment in NodeCompiler.compileSource, but if they are not validated it is not a breaking issue anyway as a process using these incorrect values will fail validation.
  */
 class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
@@ -104,7 +106,13 @@ class FragmentParametersDefinitionExtractor(classLoader: ClassLoader) {
         editor = extractedEditor,
         validators = validators.toList,
         defaultValue = fragmentParameter.initialValue
-          .map(i => Expression.spel(i.expression))
+          .map(initialValue =>
+            fragmentParameter.valueEditor match {
+              case Some(ValueInputWithDictEditor(_, _)) =>
+                Expression(Language.DictKeyWithLabel, initialValue.expression)
+              case _ => Expression.spel(initialValue.expression)
+            }
+          )
           .orElse(
             DefaultValueDeterminerChain.determineParameterDefaultValue(
               DefaultValueDeterminerParameters(

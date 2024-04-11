@@ -5,13 +5,13 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
   WithMockableDeploymentManager,
-  WithSimplifiedConfigRestAssuredUsersExtensions,
   WithSimplifiedDesignerConfig
 }
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 
 class NodesApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -19,7 +19,7 @@ class NodesApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithSimplifiedConfigScenarioHelper
     with WithMockableDeploymentManager
-    with WithSimplifiedConfigRestAssuredUsersExtensions
+    with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
@@ -240,7 +240,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "message": "Failed to parse expression: Bad expression type, expected: Boolean, found: String",
              |      "description": "There is problem with expression in field Some($$expression) - it could not be parsed.",
              |      "fieldName": "$$expression",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -373,7 +374,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "message": "Failed to parse expression: Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
              |      "description": "There is problem with expression in field Some(Value) - it could not be parsed.",
              |      "fieldName": "Value",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -487,7 +489,8 @@ class NodesApiHttpServiceBusinessSpec
              |      "message": "Node name cannot be blank",
              |      "description": "Blank node name",
              |      "fieldName": "$$id",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -587,35 +590,40 @@ class NodesApiHttpServiceBusinessSpec
              |      "message": "Property numberOfThreads (Number of threads) has invalid value",
              |      "description": "Expected one of 1, 2, got: a.",
              |      "fieldName": "numberOfThreads",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property parallelism",
              |      "description": "Property parallelism is not known",
              |      "fieldName": "parallelism",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property checkpointIntervalInSeconds",
              |      "description": "Property checkpointIntervalInSeconds is not known",
              |      "fieldName": "checkpointIntervalInSeconds",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property spillStateToDisk",
              |      "description": "Property spillStateToDisk is not known",
              |      "fieldName": "spillStateToDisk",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property useAsyncInterpretation",
              |      "description": "Property useAsyncInterpretation is not known",
              |      "fieldName": "useAsyncInterpretation",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -657,42 +665,48 @@ class NodesApiHttpServiceBusinessSpec
              |      "message": "Scenario name cannot be blank",
              |      "description": "Blank scenario name",
              |      "fieldName": "$$id",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property parallelism",
              |      "description": "Property parallelism is not known",
              |      "fieldName": "parallelism",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property checkpointIntervalInSeconds",
              |      "description": "Property checkpointIntervalInSeconds is not known",
              |      "fieldName": "checkpointIntervalInSeconds",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property spillStateToDisk",
              |      "description": "Property spillStateToDisk is not known",
              |      "fieldName": "spillStateToDisk",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "UnknownProperty",
              |      "message": "Unknown property useAsyncInterpretation",
              |      "description": "Property useAsyncInterpretation is not known",
              |      "fieldName": "useAsyncInterpretation",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    },
              |    {
              |      "typ": "ScenarioNameValidationError",
              |      "message": "Invalid scenario name  . Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
              |      "description": "Provided scenario name is invalid for this category. Please enter valid name using only specified characters.",
              |      "fieldName": "$$id",
-             |      "errorType": "SaveAllowed"
+             |      "errorType": "SaveAllowed",
+             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -828,7 +842,8 @@ class NodesApiHttpServiceBusinessSpec
              |    "message": "Failed to parse expression: Bad expression type, expected: Boolean, found: Long(5)",
              |    "description": "There is problem with expression in field Some(condition) - it could not be parsed.",
              |    "fieldName": "condition",
-             |    "errorType": "SaveAllowed"
+             |    "errorType": "SaveAllowed",
+             |    "details": null
              |  } ],
              |  "validationPerformed": true
              |}""".stripMargin)

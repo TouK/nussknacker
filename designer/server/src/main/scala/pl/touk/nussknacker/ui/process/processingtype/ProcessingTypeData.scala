@@ -8,16 +8,14 @@ import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.definition.component.DynamicComponentStaticDefinitionDeterminer
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
-import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.util.control.NonFatal
 
 final case class ProcessingTypeData private (
-    processingType: ProcessingType,
+    name: ProcessingType,
     designerModelData: DesignerModelData,
     deploymentData: DeploymentData,
     category: String,
-    usageStatistics: ProcessingTypeUsageStatistics,
 ) {
 
   // TODO: We should allow to have >1 processing mode configured inside one model and return a List here
@@ -26,7 +24,7 @@ final case class ProcessingTypeData private (
   def scenarioParameters: ScenarioParametersWithEngineSetupErrors =
     ScenarioParametersWithEngineSetupErrors(
       ScenarioParameters(
-        designerModelData.singleProcessingMode,
+        designerModelData.processingMode,
         category,
         deploymentData.engineSetupName
       ),
@@ -46,7 +44,7 @@ object ProcessingTypeData {
   import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def createProcessingTypeData(
-      processingType: ProcessingType,
+      name: ProcessingType,
       modelData: ModelData,
       deploymentManagerProvider: DeploymentManagerProvider,
       deploymentManagerDependencies: DeploymentManagerDependencies,
@@ -66,18 +64,17 @@ object ProcessingTypeData {
           metaDataInitializer
         )
 
-      val designerModelData = createDesignerModelData(modelData, metaDataInitializer, processingType)
+      val designerModelData = createDesignerModelData(modelData, metaDataInitializer, name)
       ProcessingTypeData(
-        processingType,
+        name,
         designerModelData,
         deploymentData,
-        category,
-        ProcessingTypeUsageStatistics(deploymentConfig),
+        category
       )
     } catch {
       case NonFatal(ex) =>
         throw new IllegalArgumentException(
-          s"Error during creation of processing type data for processing type [$processingType]",
+          s"Error during creation of processing type data for processing type [$name]",
           ex
         )
     }
@@ -109,6 +106,7 @@ object ProcessingTypeData {
       metaDataInitializer,
       scenarioProperties,
       deploymentManagerProvider.additionalValidators(deploymentConfig),
+      DeploymentManagerType(deploymentManagerProvider.name),
       engineSetupName
     )
   }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import cats.Id
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
@@ -102,7 +104,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   protected def prepareSourceFinalResults(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       keyTypingResult: TypingResult,
       valueTypingResult: TypingResult,
       errors: List[ProcessCompilationError]
@@ -118,7 +120,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   protected def prepareSourceFinalErrors(
       context: ValidationContext,
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       errors: List[ProcessCompilationError]
   )(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
@@ -128,7 +130,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   // Overwrite this for dynamic type definitions.
   protected def prepareContextInitializer(
       dependencies: List[NodeDependencyValue],
-      parameters: List[(String, DefinedParameter)],
+      parameters: List[(ParameterName, DefinedParameter)],
       keyTypingResult: TypingResult,
       valueTypingResult: TypingResult
   ): ContextInitializer[ConsumerRecord[K, V]] =
@@ -178,19 +180,18 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
     * Basic implementation of definition of single topic parameter.
     * In case of fetching topics from external repository: return list of topics or raise exception.
     */
-  protected def prepareInitialParameters: List[Parameter] = topicParameter.parameter :: Nil
+  protected def prepareInitialParameters: List[Parameter] = topicParameterDeclaration.createParameter() :: Nil
 
-  protected val topicParameter: ParameterWithExtractor[String] =
-    ParameterWithExtractor.mandatory[String](
-      TopicParamName,
-      _.copy(validators = List(MandatoryParameterValidator, NotBlankParameterValidator))
-    )
+  protected val topicParameterDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] =
+    ParameterDeclaration
+      .mandatory[String](TopicParamName)
+      .withCreator(modify = _.copy(validators = List(MandatoryParameterValidator, NotBlankParameterValidator)))
 
   /**
     * Extracts topics from default topic parameter.
     */
   protected def extractTopics(params: Params): List[String] = {
-    val paramValue = topicParameter.extractValue(params)
+    val paramValue = topicParameterDeclaration.extractValueUnsafe(params)
     paramValue.split(topicNameSeparator).map(_.trim).toList
   }
 

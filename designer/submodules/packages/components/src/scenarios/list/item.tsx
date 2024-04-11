@@ -31,7 +31,7 @@ export function LastAction({ lastAction }: { lastAction: ProcessActionType }): J
             })}
         >
             <History />
-            <Typography variant="caption">{lastAction.actionType}</Typography>
+            <Typography variant="caption">{lastAction.actionName}</Typography>
         </Stack>
     ) : null;
 }

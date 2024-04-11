@@ -1,17 +1,18 @@
 describe("Processes list", () => {
     const NAME = "process-list";
+    const PROCESSING_MODE = "processing-mode";
 
     before(() => {
         cy.deleteAllTestProcesses({ filter: NAME, force: true });
+        cy.deleteAllTestProcesses({ filter: PROCESSING_MODE, force: true });
         cy.createTestProcessName(NAME).as("processName");
-        cy.createTestProcess(`${NAME}-processing-mode-Request-Response`, undefined, "RequestResponse", "Request-Response").as(
-            "request-response-scenario",
-        );
-        cy.createTestProcess(`${NAME}-processing-mode-Streaming`, undefined, undefined, "Unbounded-Stream");
+        cy.createTestProcess(`${PROCESSING_MODE}-Request-Response`, undefined, "RequestResponse", "Request-Response");
+        cy.createTestProcess(`${PROCESSING_MODE}-Streaming`, undefined, undefined, "Unbounded-Stream");
     });
 
     after(() => {
         cy.deleteAllTestProcesses({ filter: NAME });
+        cy.deleteAllTestProcesses({ filter: PROCESSING_MODE });
     });
 
     beforeEach(() => {
@@ -31,7 +32,9 @@ describe("Processes list", () => {
             .should("be.visible")
             .click();
         cy.get("#newProcessName", { timeout: 30000 }).type(this.processName);
-        cy.contains(/request-response/i).click();
+        cy.get('[data-testid="window-frame"]')
+            .contains(/request-response/i)
+            .click();
         cy.get("#processCategory").select(2);
         cy.contains(/^create$/i)
             .should("be.enabled")
@@ -50,10 +53,10 @@ describe("Processes list", () => {
     });
 
     it("should filter by processing mode", function () {
-        cy.get("[placeholder='Search...']").type(`${NAME}-processing-mode`);
-        cy.contains(/every of the 2 rows match the filters/i).should("be.visible");
+        cy.get("[placeholder='Search...']").type(`${PROCESSING_MODE}`);
+        cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
 
-        cy.get("[role='grid']").matchImage({ maxDiffThreshold: 0.02 });
+        cy.get("body").matchImage({ maxDiffThreshold: 0.02 });
 
         cy.contains("button", /processing mode/i).click();
 
@@ -63,19 +66,23 @@ describe("Processes list", () => {
             cy.contains(/streaming/i).click();
         });
 
-        cy.contains(/1 of the 2 rows match the filters/i).should("be.visible");
+        cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
+
+        cy.get("body").click();
+
+        cy.contains("button", /processing mode/i).click();
 
         cy.get("ul[role='menu']").within(() => {
             cy.contains(/Default/i).click();
         });
 
-        cy.contains(/every of the 2 rows match the filters/i).should("be.visible");
+        cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
 
         cy.get("ul[role='menu']").within(() => {
             cy.contains(/Request-Response/i).click();
         });
 
-        cy.contains(/1 of the 2 rows match the filters/i).should("be.visible");
+        cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
     });
 });
 

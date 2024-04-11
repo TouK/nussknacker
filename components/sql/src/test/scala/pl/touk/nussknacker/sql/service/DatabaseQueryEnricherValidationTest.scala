@@ -31,9 +31,9 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
       .apply(
         service.TransformationStep(
           List(
-            DatabaseQueryEnricher.ResultStrategyParam.name -> eagerValueParameter(SingleResultStrategy.name),
-            DatabaseQueryEnricher.QueryParamName           -> eagerValueParameter("select from"),
-            DatabaseQueryEnricher.CacheTTLParam.name       -> eagerValueParameter(Duration.ofMinutes(1)),
+            DatabaseQueryEnricher.resultStrategyParamName -> eagerValueParameter(SingleResultStrategy.name),
+            DatabaseQueryEnricher.queryParamName          -> eagerValueParameter("select from"),
+            DatabaseQueryEnricher.cacheTTLParamName       -> eagerValueParameter(Duration.ofMinutes(1)),
           ),
           None
         )
@@ -46,7 +46,7 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
     result shouldBe service.FinalResults(
       expectedOutputContext,
       List(
-        CustomNodeError("unexpected token: FROM in statement [select from]", Some(DatabaseQueryEnricher.QueryParamName))
+        CustomNodeError("unexpected token: FROM in statement [select from]", Some(DatabaseQueryEnricher.queryParamName))
       )
     )
   }
@@ -61,9 +61,9 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
       .apply(
         service.TransformationStep(
           List(
-            DatabaseQueryEnricher.ResultStrategyParam.name -> eagerValueParameter(ResultSetStrategy.name),
-            DatabaseQueryEnricher.QueryParamName           -> eagerValueParameter("select * from persons"),
-            DatabaseQueryEnricher.CacheTTLParam.name       -> eagerValueParameter(Duration.ofMinutes(1)),
+            DatabaseQueryEnricher.resultStrategyParamName -> eagerValueParameter(ResultSetStrategy.name),
+            DatabaseQueryEnricher.queryParamName          -> eagerValueParameter("select * from persons"),
+            DatabaseQueryEnricher.cacheTTLParamName       -> eagerValueParameter(Duration.ofMinutes(1)),
           ),
           None
         )

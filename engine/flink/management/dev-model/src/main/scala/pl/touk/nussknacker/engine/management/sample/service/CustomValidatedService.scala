@@ -5,6 +5,7 @@ import cats.data.{Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -23,13 +24,13 @@ class CustomValidatedService extends EagerService {
 
     def returnType: ValidatedNel[ProcessCompilationError, TypingResult] = {
       if (age < 18) {
-        Validated.invalidNel(CustomNodeError("Too young", Some("age")))
+        Validated.invalidNel(CustomNodeError("Too young", Some(ParameterName("age"))))
       } else {
         fields.returnType match {
           case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
             Validated.invalidNel(CustomNodeError("Service is invalid", None))
           case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-            Validated.invalidNel(CustomNodeError("All values should be strings", Some("fields")))
+            Validated.invalidNel(CustomNodeError("All values should be strings", Some(ParameterName("fields"))))
           case _ => Valid(Typed.typedClass[String])
         }
       }

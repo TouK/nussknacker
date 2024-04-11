@@ -36,9 +36,9 @@ export type NodeType<F extends Field = Field> = {
     outputName?: string;
     service?: {
         id: string;
-        parameters?: $TodoType[];
+        parameters?: Parameter[];
     };
-    nodeType: string;
+    nodeType?: string;
     [key: string]: any;
 };
 
@@ -59,12 +59,13 @@ export interface Expression {
     expression: string;
 }
 
-//TODO: Add other process properties...
-export type PropertiesType = NodeType & {
+export type PropertiesType = {
+    // FE applies fake id as name, but it's not send by/to BE
+    id?: string;
     type: "Properties";
     additionalFields: ProcessAdditionalFields;
 };
 
 export type NodeId = NodeType["id"];
 
-export type UINodeType = NodeType;
+export type UINodeType = NodeType | PropertiesType;

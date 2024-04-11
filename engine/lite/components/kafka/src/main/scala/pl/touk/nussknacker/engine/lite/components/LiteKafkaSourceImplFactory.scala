@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId, Params, VariableConstant
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
@@ -82,7 +83,7 @@ class LiteKafkaSourceImpl[K, V](
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
-  override def parametersToTestData(params: Map[String, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val flatParams = TestingParametersSupport.unflattenParameters(params)
     formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams))
   }

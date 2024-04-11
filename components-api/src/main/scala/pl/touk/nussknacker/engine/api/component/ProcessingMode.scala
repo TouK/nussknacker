@@ -1,35 +1,43 @@
 package pl.touk.nussknacker.engine.api.component
 
+import cats.Order
+import enumeratum._
 import io.circe.{Decoder, Encoder}
 
-sealed trait ProcessingMode {
-  def value: String
-  override def toString: String = value
-}
+import scala.collection.immutable
 
-case object RequestResponseProcessingMode extends ProcessingMode {
-  override def value: String = "Request-Response"
-}
+sealed trait ProcessingMode extends EnumEntry
 
-case class StreamProcessingMode(bounded: Boolean) extends ProcessingMode {
-  override def value: String = s"${if (bounded) "Bounded" else "Unbounded"}-Stream"
-}
+object ProcessingMode extends Enum[ProcessingMode] {
+  case object RequestResponse extends ProcessingMode
+  case object BoundedStream   extends ProcessingMode
+  case object UnboundedStream extends ProcessingMode
 
-object ProcessingMode {
+  override def values: immutable.IndexedSeq[ProcessingMode] = findValues
 
-  val RequestResponse: ProcessingMode = RequestResponseProcessingMode
-  val UnboundedStream: ProcessingMode = StreamProcessingMode(bounded = false)
-  val BoundedStream: ProcessingMode   = StreamProcessingMode(bounded = true)
+  private val RequestResponseJsonValue = "Request-Response"
+  private val BoundedStreamJsonValue   = "Bounded-Stream"
+  private val UnboundedStreamJsonValue = "Unbounded-Stream"
 
-  val all: Set[ProcessingMode] = Set(UnboundedStream, BoundedStream, RequestResponse)
+  implicit class ProcessingModeOps(processingMode: ProcessingMode) {
 
-  implicit val encoder: Encoder[ProcessingMode] = Encoder.encodeString.contramap(_.value)
+    def toJsonString: String = processingMode match {
+      case ProcessingMode.RequestResponse => RequestResponseJsonValue
+      case ProcessingMode.BoundedStream   => BoundedStreamJsonValue
+      case ProcessingMode.UnboundedStream => UnboundedStreamJsonValue
+    }
 
-  implicit val decoder: Decoder[ProcessingMode] = Decoder.decodeString.map {
-    case str if str == RequestResponse.value => RequestResponseProcessingMode
-    case str if str == UnboundedStream.value => UnboundedStream
-    case str if str == BoundedStream.value   => BoundedStream
-    case other                               => throw new IllegalArgumentException(s"Not known processing mode: $other")
   }
 
+  implicit val processingModeEncoder: Encoder[ProcessingMode] = Encoder.encodeString.contramap(_.toJsonString)
+
+  implicit val processingModeDecoder: Decoder[ProcessingMode] = Decoder.decodeString.map {
+    case RequestResponseJsonValue => ProcessingMode.RequestResponse
+    case BoundedStreamJsonValue   => ProcessingMode.BoundedStream
+    case UnboundedStreamJsonValue => ProcessingMode.UnboundedStream
+    case other                    => throw new IllegalArgumentException(s"Unknown processing mode: $other")
+  }
+
+  implicit val processingModeOrdering: Ordering[ProcessingMode] = Ordering.by(_.toJsonString)
+  implicit val processingModeOrder: Order[ProcessingMode]       = Order.fromOrdering
 }

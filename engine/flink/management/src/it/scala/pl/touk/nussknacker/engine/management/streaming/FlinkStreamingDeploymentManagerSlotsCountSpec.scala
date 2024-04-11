@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -8,7 +9,11 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
 
-class FlinkStreamingDeploymentManagerSlotsCountSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
+class FlinkStreamingDeploymentManagerSlotsCountSpec
+    extends AnyFunSuite
+    with Matchers
+    with StreamingDockerTest
+    with LazyLogging {
 
   override protected def classPath: List[String] = ClassPaths.scalaClasspath
 

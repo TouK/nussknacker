@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.ValueInputWithFixedValuesProvided
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithFixedValuesProvided}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
@@ -42,16 +42,15 @@ class DefinitionResourcesSpec
 
   private val definitionResources = new DefinitionResources(
     definitionsServices = testProcessingTypeDataProvider.mapValues { processingTypeData =>
-      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData.modelData)
+      val modelDefinitionEnricher = AlignedComponentsDefinitionProvider(processingTypeData.designerModelData)
 
       (
         DefinitionsService(
           processingTypeData,
           modelDefinitionEnricher,
-          new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.processingType),
+          new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, processingTypeData.name),
           fragmentRepository
-        ),
-        processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService
+        )
       )
     }
   )
@@ -96,7 +95,7 @@ class DefinitionResourcesSpec
             FragmentInputDefinition(
               "in",
               List(
-                FragmentParameter("param1", FragmentClazzRef[String]).copy(
+                FragmentParameter(ParameterName("param1"), FragmentClazzRef[String]).copy(
                   valueEditor = Some(
                     ValueInputWithFixedValuesProvided(
                       fixedValuesList = List(FixedExpressionValue("'someValue'", "someValue")),

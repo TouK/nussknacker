@@ -1,12 +1,12 @@
+import { cx } from "@emotion/css";
+import { Box, Typography } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import TreeView from "react-treeview";
 import { toggleToolboxGroup } from "../../../actions/nk/toolbars";
-import { getOpenedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
+import { getClosedComponentGroups, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
 import { ComponentGroup } from "../../../types";
 import Tool from "./Tool";
-import { cx } from "@emotion/css";
-import { Box, Typography } from "@mui/material";
 
 function isEmptyComponentGroup(componentGroup: ComponentGroup) {
     return componentGroup.components.length == 0;
@@ -33,7 +33,7 @@ interface Props {
 export function ToolboxComponentGroup(props: Props): JSX.Element {
     const { componentGroup, highlights = [], flatten } = props;
     const dispatch = useDispatch();
-    const openedComponentGroups = useSelector(getOpenedComponentGroups);
+    const closedComponentGroups = useSelector(getClosedComponentGroups);
     const { name } = componentGroup;
 
     const isEmpty = useMemo(() => isEmptyComponentGroup(componentGroup), [componentGroup]);
@@ -68,8 +68,8 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
     );
 
     const collapsed = useMemo(
-        () => isEmpty || (highlighted ? forceCollapsed : !openedComponentGroups[name]),
-        [forceCollapsed, highlighted, isEmpty, name, openedComponentGroups],
+        () => isEmpty || (highlighted ? forceCollapsed : closedComponentGroups[name]),
+        [forceCollapsed, highlighted, isEmpty, name, closedComponentGroups],
     );
 
     return flatten ? (

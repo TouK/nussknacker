@@ -2,12 +2,16 @@ package pl.touk.nussknacker.engine.graph
 
 import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder, deriveUnwrappedCodec}
 import io.circe.generic.extras.{ConfiguredJsonCodec, JsonKey}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.parameter.{ParameterValueCompileTimeValidation, ValueInputWithFixedValues}
+import pl.touk.nussknacker.engine.api.parameter.{
+  ParameterName,
+  ParameterValueCompileTimeValidation,
+  ParameterValueInput
+}
 import pl.touk.nussknacker.engine.api.{JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -311,20 +315,22 @@ object node {
   // shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
+    private implicit val parameterNameCodec: Codec[ParameterName] = deriveUnwrappedCodec
+
     @ConfiguredJsonCodec
     case class FragmentParameter(
-        name: String,
+        name: ParameterName,
         typ: FragmentClazzRef,
         required: Boolean = false,
         initialValue: Option[FixedExpressionValue],
         hintText: Option[String],
-        valueEditor: Option[ValueInputWithFixedValues],
+        valueEditor: Option[ParameterValueInput],
         valueCompileTimeValidation: Option[ParameterValueCompileTimeValidation],
     )
 
     object FragmentParameter {
 
-      def apply(name: String, typ: FragmentClazzRef): FragmentParameter = {
+      def apply(name: ParameterName, typ: FragmentClazzRef): FragmentParameter = {
         FragmentParameter(
           name,
           typ,
@@ -361,15 +367,18 @@ object node {
   val InputModeFieldName            = "$inputMode"
   val TypFieldName                  = "$typ"
   val FixedValuesListFieldName      = "$fixedValuesList"
+  val DictIdFieldName               = "$dictId"
   val ValidationExpressionFieldName = "$validationExpression"
 
   def qualifiedParamFieldName(
-      paramName: String,
+      paramName: ParameterName,
       subFieldName: Option[String]
-  ): String = // for example: "$param.P1.$initialValue"
-    subFieldName match {
-      case Some(subField) => ParameterFieldNamePrefix + "." + paramName + "." + subField
-      case None           => ParameterFieldNamePrefix + "." + paramName
+  ): ParameterName = // for example: "$param.P1.$initialValue"
+    ParameterName {
+      subFieldName match {
+        case Some(subField) => ParameterFieldNamePrefix + "." + paramName.value + "." + subField
+        case None           => ParameterFieldNamePrefix + "." + paramName
+      }
     }
 
   def recordKeyFieldName(index: Int)   = s"$$fields-$index-$$key"

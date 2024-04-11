@@ -1,5 +1,5 @@
-import { tintPrimary } from "./helpers";
 import { createTheme, Theme } from "@mui/material";
+import { tintPrimary } from "./helpers";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -302,7 +302,6 @@ export const nuTheme = createTheme({
             letterSpacing: "inherit",
             lineHeight: "inherit",
             textTransform: "inherit",
-            color: custom.colors.silverChalice,
         },
     },
     components: {
@@ -378,6 +377,22 @@ export const nuTheme = createTheme({
             variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],
             defaultProps: {
                 "data-testid": "form-helper-text",
+            },
+        },
+        MuiAutocomplete: {
+            styleOverrides: {
+                noOptions: ({ theme }) => ({
+                    ...theme.typography.body2,
+                    padding: theme.spacing(0.75, 2),
+                    marginTop: theme.spacing(0.5),
+                    backgroundColor: theme.custom.colors.secondaryBackground,
+                }),
+                loading: ({ theme }) => ({
+                    ...theme.typography.body2,
+                    padding: theme.spacing(0.75, 2),
+                    marginTop: theme.spacing(0.5),
+                    backgroundColor: theme.custom.colors.secondaryBackground,
+                }),
             },
         },
     },
