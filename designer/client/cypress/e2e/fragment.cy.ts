@@ -169,8 +169,8 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.contains(/^fragments$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         cy.contains("fragment-test")
             .last()
             .should("be.visible")
@@ -332,7 +332,7 @@ describe("Fragment", () => {
         cy.visitNewProcess(seed, "testProcess");
         cy.layoutScenario();
 
-        cy.contains("fragments").should("be.visible").click();
+        cy.contains("fragments").should("exist").scrollIntoView();
         cy.contains(`${seed2}-test`)
             .last()
             .should("be.visible")
@@ -359,7 +359,7 @@ describe("Fragment", () => {
         cy.createTestFragment(deadEndFragmentName, "deadEndFragment");
         cy.layoutScenario();
 
-        cy.contains("fragments").should("be.visible").click();
+        cy.contains("fragments").should("exist").scrollIntoView();
         cy.getNode("enricher").as("enricher");
         cy.contains(`${fragmentName}-test`)
             .last()
@@ -370,7 +370,7 @@ describe("Fragment", () => {
         cy.contains(/^ok$/i).click();
 
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
-        cy.contains("sinks").should("be.visible").click();
+        cy.contains("sinks").should("exist").scrollIntoView();
         cy.getNode("output").as("output");
         cy.contains("dead-end")
             .first()
@@ -384,6 +384,7 @@ describe("Fragment", () => {
         cy.viewport(2000, 800);
         cy.get<string>("@scenarioName").then((name) => cy.visitProcess(name));
         cy.getNode("sendSms").as("sendSms");
+        cy.contains("fragments").should("exist").scrollIntoView();
         cy.contains(`${deadEndFragmentName}-test`)
             .last()
             .should("be.visible")

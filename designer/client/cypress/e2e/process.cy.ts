@@ -127,8 +127,8 @@ describe("Process", () => {
 
         it("should allow drag component and drop on edge", () => {
             cy.contains(/^custom$/)
-                .should("be.visible")
-                .click();
+                .should("exist")
+                .scrollIntoView();
             cy.layoutScenario();
             cy.get("[data-testid='component:customFilter']")
                 .should("be.visible")
@@ -276,8 +276,8 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
 
         cy.contains(/^sinks$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         const x = 900;
         const y = 630;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
@@ -331,8 +331,8 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
 
         cy.contains(/^sinks$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         const x = 700;
         const y = 600;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {

@@ -1,3 +1,6 @@
+const width = 1440;
+const height = 900;
+
 describe("Creator toolbar", () => {
     const seed = "creator";
 
@@ -10,13 +13,21 @@ describe("Creator toolbar", () => {
     });
 
     beforeEach(() => {
-        cy.viewport("macbook-15");
+        cy.viewport(width, height);
         cy.visitNewProcess(seed).as("processName");
         cy.contains(/^Creator panel.*sources/i).as("toolbar");
     });
 
-    it("should allow filtering", () => {
-        cy.get("@toolbar").should("be.visible").matchImage();
+    it("should allow collapse (persist) and filtering", () => {
+        cy.contains(/^sources$/i).click();
+        cy.contains(/^base$/i).click();
+        cy.contains(/^custom$/i).click();
+        cy.contains(/^enrichers$/i).click();
+        cy.contains(/^types$/i).click();
+        cy.contains(/^services$/i).click();
+        cy.contains(/^sinks$/i).click();
+        cy.reload();
+        cy.get("@toolbar").matchImage();
         cy.get("@toolbar").find("input").type("var");
         cy.get("@toolbar").matchImage();
     });
