@@ -92,7 +92,7 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                         ...menuList(base),
                     }),
                     option: (base, props) => ({
-                        ...menuOption(base, props.isSelected, props.isFocused),
+                        ...menuOption(base, props.isSelected, props.isFocused, props.isDisabled),
                     }),
                 }}
                 tabSelectsValue={false}

@@ -53,7 +53,7 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
         case WindowKind.addProcess:
             return <AddProcessDialog {...props} />;
         case WindowKind.saveProcess:
-            return <CustomActionDialog {...props} />;
+            return <SaveProcessDialog {...props} />;
         case WindowKind.deployProcess:
             return <DeployProcessDialog {...props} />;
         case WindowKind.calculateCounts:

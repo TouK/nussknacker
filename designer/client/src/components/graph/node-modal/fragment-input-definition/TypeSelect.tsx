@@ -29,6 +29,7 @@ function useCaptureEsc() {
 export interface Option {
     value: string;
     label: string;
+    isDisabled?: boolean;
 }
 
 interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "options" | "onBlur" | "onChange"> {
@@ -89,7 +90,7 @@ export function TypeSelect({
                         ...menuList(base),
                     }),
                     option: (base, props) => ({
-                        ...menuOption(base, props.isSelected, props.isFocused),
+                        ...menuOption(base, props.isSelected, props.isFocused, props.isDisabled),
                     }),
                     valueContainer: (base, props) => ({
                         ...valueContainer(base),

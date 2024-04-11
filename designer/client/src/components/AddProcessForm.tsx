@@ -57,7 +57,7 @@ export function AddProcessForm({
 
     const categoryOptions: Option[] = [
         { value: "", label: "" },
-        ...categories.map((category) => ({ value: category.value, label: category.value })),
+        ...categories.map((category) => ({ value: category.value, label: category.value, isDisabled: category.disabled })),
     ];
 
     const engineOptions: Option[] = [{ value: "", label: "" }, ...engines.map((engine) => ({ value: engine, label: engine }))];

@@ -27,25 +27,23 @@ export const selectStyled = (theme: Theme) => {
         outline: 1px solid ${isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
     `;
 
-    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isFocused: boolean) => css`
+    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isFocused: boolean, isDisabled: boolean) => css`
         ${base}
         ${commonNodeInput("10px")};
         height: 25px;
         line-height: 25px;
         border: 1px;
         border-radius: 0;
-
-        ${isSelected &&
-        css`
-            background-color: ${blendDarken(theme.palette.primary.main, 0.5)};
-        `}
-
-        ${isFocused &&
-        css`
-            background-color: ${blendDarken(theme.palette.primary.main, 0.75)};
-        `}
-    &:hover {
-            background-color: ${blendDarken(theme.palette.action.hover, 0.15)};
+        background-color: ${isSelected
+            ? blendDarken(theme.palette.primary.main, 0.5)
+            : isFocused
+            ? blendDarken(theme.palette.primary.main, 0.75)
+            : isDisabled
+            ? "none"
+            : theme.palette.background.paper};
+        color: ${isDisabled && theme.palette.action.disabled};
+        &:hover {
+            background-color: ${!isDisabled && blendDarken(theme.palette.action.hover, 0.15)};
         }
     `;
 

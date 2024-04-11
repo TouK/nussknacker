@@ -2,7 +2,7 @@
 import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import { keys } from "lodash";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { WindowContent } from "../../windowManager";
 import { formatAbsolutely } from "../../common/DateUtils";
@@ -12,7 +12,6 @@ import { getProcessName, getProcessVersionId, getVersions } from "../../reducers
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
-import { SelectNode } from "../FormElements";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
@@ -20,8 +19,6 @@ import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 import { FormControl, FormLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Option, TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
-import { diff } from "react-ace";
-import { NodeValue } from "../graph/node-modal/node";
 
 interface State {
     currentDiffId: string;
@@ -53,12 +50,15 @@ const VersionsForm = () => {
         }
     }, [processName, otherEnvironment]);
 
-    function isLayoutChangeOnly(diffId: string): boolean {
-        const { type, currentNode, otherNode } = state.difference[diffId];
-        if (type === "NodeDifferent") {
-            return differentPathsForObjects(currentNode, otherNode).every((path) => path.startsWith("additionalFields.layoutData"));
-        }
-    }
+    const isLayoutChangeOnly = useCallback(
+        (diffId: string): boolean => {
+            const { type, currentNode, otherNode } = state.difference[diffId];
+            if (type === "NodeDifferent") {
+                return differentPathsForObjects(currentNode, otherNode).every((path) => path.startsWith("additionalFields.layoutData"));
+            }
+        },
+        [state.difference],
+    );
 
     const loadVersion = (versionId: string) => {
         if (versionId) {
@@ -78,18 +78,24 @@ const VersionsForm = () => {
         return versionId.replace(remotePrefix, "");
     };
 
-    const versionDisplayString = (versionId: string) => {
-        return isRemote(versionId) ? `${versionToPass(versionId)} on ${otherEnvironment}` : versionId;
-    };
+    const versionDisplayString = useCallback(
+        (versionId: string) => {
+            return isRemote(versionId) ? `${versionToPass(versionId)} on ${otherEnvironment}` : versionId;
+        },
+        [otherEnvironment],
+    );
 
     const createVersionId = (version: ProcessVersionType, versionPrefix = "") => {
         return versionPrefix + version.processVersionId;
     };
 
-    const createVersionElement = (version: ProcessVersionType, versionPrefix = "") => {
-        const versionId = createVersionId(version, versionPrefix);
-        return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}`;
-    };
+    const createVersionElement = useCallback(
+        (version: ProcessVersionType, versionPrefix = "") => {
+            const versionId = createVersionId(version, versionPrefix);
+            return `${versionDisplayString(versionId)} - created by ${version.user} ${formatAbsolutely(version.createDate)}`;
+        },
+        [versionDisplayString],
+    );
 
     const printDiff = (diffId: string) => {
         const diff = state.difference[diffId];
@@ -162,21 +168,29 @@ const VersionsForm = () => {
         return property ? <NodeDetailsContent node={property} /> : <div className="notPresent">Properties not present</div>;
     };
 
-    const versionOptions: Option[] = [
-        { label: "", value: "" },
-        ...versions
-            .filter((currentVersion) => version !== currentVersion.processVersionId)
-            .map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
-        ...(state?.remoteVersions ?? []).map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
-    ];
+    const versionOptions: Option[] = useMemo(() => {
+        return [
+            { label: "", value: "" },
+            ...versions
+                .filter((currentVersion) => version !== currentVersion.processVersionId)
+                .map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
+            ...(state?.remoteVersions ?? []).map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
+        ];
+    }, [createVersionElement, state?.remoteVersions, version, versions]);
 
-    const differenceOptions: Option[] = [
-        { label: "", value: "" },
-        ...keys(state?.difference ?? []).map((diffId) => ({
-            label: `${diffId} ${isLayoutChangeOnly(diffId) ? "(position only)" : ""}`,
-            value: diffId,
-        })),
-    ];
+    const differenceOptions: Option[] = useMemo(() => {
+        return [
+            { label: "", value: "" },
+            ...keys(state?.difference ?? []).map((diffId) => {
+                const layoutChangeOnly = isLayoutChangeOnly(diffId);
+                return {
+                    label: `${diffId} ${layoutChangeOnly ? "(position only)" : ""}`,
+                    value: diffId,
+                    isDisabled: layoutChangeOnly,
+                };
+            }),
+        ];
+    }, [isLayoutChangeOnly, state?.difference]);
 
     return (
         <>

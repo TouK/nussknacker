@@ -24,7 +24,7 @@ export function EdgeTypeSelect(props: Props): JSX.Element {
             id={id}
             onChange={(value) => onChange(getStringEnumElement(EdgeKind, value))}
             value={options.find((option) => option.value === edge.edgeType.type)}
-            options={options}
+            options={options.map((option) => ({ ...option, isDisabled: option.disabled }))}
             fieldErrors={[]}
             readOnly={readOnly}
         />
