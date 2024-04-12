@@ -252,7 +252,7 @@ class StandardRemoteEnvironmentSpec
         uri.toString.startsWith(s"$baseUri$relative") && method == m
       }
 
-      object GetMigrateApiVersion {
+      object GetMigrationScenarioDescriptionVersion {
         def unapply(arg: (String, HttpMethod)): Boolean = is("/migrate/scenario/description/version", GET)
       }
 
@@ -262,7 +262,7 @@ class StandardRemoteEnvironmentSpec
       // end helpers
 
       (uri.toString(), method) match {
-        case GetMigrateApiVersion() =>
+        case GetMigrationScenarioDescriptionVersion() =>
           Marshal(scenarioDescriptionVersion).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
