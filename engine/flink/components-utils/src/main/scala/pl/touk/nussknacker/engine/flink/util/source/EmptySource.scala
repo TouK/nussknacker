@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 case class EmptySource[T: TypeInformation](returnType: TypingResult) extends StandardFlinkSource[T] with ReturningType {
 
   @silent("deprecated")
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {

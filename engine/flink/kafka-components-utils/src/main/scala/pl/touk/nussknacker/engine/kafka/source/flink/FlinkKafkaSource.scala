@@ -58,7 +58,7 @@ class FlinkKafkaSource[T](
     with RecordFormatterBaseTestDataGenerator
     with TestWithParametersSupport[T] {
 
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {

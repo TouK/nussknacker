@@ -69,7 +69,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
     }
   }
 
-  override def sourceStream(
+  override def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {

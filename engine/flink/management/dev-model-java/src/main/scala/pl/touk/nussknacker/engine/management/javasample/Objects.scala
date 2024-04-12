@@ -19,7 +19,7 @@ class Objects extends Serializable {
     WithCategories.anyCategory(SourceFactory.noParamUnboundedStreamFactory[Model](new StandardFlinkSource[Model] {
 
       @silent("deprecated")
-      override def initialSourceStream(
+      override def sourceStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStreamSource[Model] = {

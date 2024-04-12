@@ -169,7 +169,7 @@ class FlinkProcessRegistrar(
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 
       val start = source
-        .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+        .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
