@@ -41,7 +41,7 @@ case class CollectionSource[T: TypeInformation](
       case Boundedness.BOUNDED =>
         env.fromCollection(list.asJava)
       case Boundedness.CONTINUOUS_UNBOUNDED =>
-        FlinkStandardSourceUtils.createSource(
+        FlinkStandardSourceUtils.createSourceStream(
           env = env,
           sourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava),
           typeInformation = typeInformation
