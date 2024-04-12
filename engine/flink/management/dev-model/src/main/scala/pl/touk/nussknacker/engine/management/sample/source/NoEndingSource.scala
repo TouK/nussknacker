@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSupport[String] {
 
   @silent("deprecated")
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[String] = {

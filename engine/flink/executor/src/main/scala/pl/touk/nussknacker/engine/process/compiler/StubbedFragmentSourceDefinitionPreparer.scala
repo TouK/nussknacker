@@ -90,7 +90,7 @@ class StubbedFragmentSourceDefinitionPreparer(
 
       // TODO local: question - either this is unimplemented or traits like CustomizableContextInitializerSource cant
       //  have self bound to FlinkSource
-      override def sourceStream(
+      override def contextStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[Context] = ???

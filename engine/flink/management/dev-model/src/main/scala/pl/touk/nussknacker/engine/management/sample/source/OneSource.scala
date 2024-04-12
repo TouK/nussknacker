@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 class OneSource extends StandardFlinkSource[String] {
 
   @silent("deprecated")
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[String] = {
