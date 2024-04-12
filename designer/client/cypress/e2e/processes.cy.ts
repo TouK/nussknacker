@@ -35,8 +35,7 @@ describe("Processes list", () => {
         cy.get('[data-testid="window-frame"]')
             .contains(/request-response/i)
             .click();
-        cy.get("#processCategory").click();
-        cy.get("[id$='option-2']").click({ force: true });
+        cy.get("#processCategory input").select(2);
         cy.contains(/^create$/i)
             .should("be.enabled")
             .click();
