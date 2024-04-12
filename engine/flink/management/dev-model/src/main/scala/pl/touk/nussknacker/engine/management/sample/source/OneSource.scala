@@ -6,8 +6,6 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkStandardSourceUtils,
@@ -45,7 +43,4 @@ class OneSource extends StandardFlinkSource[String] {
     )
   }
 
-  override def contextInitializer: ContextInitializer[String] = new BasicContextInitializer[String](Unknown)
-
-  override def timestampAssigner: Option[Nothing] = None
 }

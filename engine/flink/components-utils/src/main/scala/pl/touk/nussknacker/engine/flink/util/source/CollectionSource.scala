@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters._
 
 case class CollectionSource[T: TypeInformation](
     list: List[T],
-    timestampAssigner: Option[TimestampWatermarkHandler[T]],
+    override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
     returnType: TypingResult,
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
     flinkRuntimeMode: Option[RuntimeExecutionMode] = None
@@ -50,6 +50,4 @@ case class CollectionSource[T: TypeInformation](
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
-
-  override def contextInitializer: ContextInitializer[T] = new BasicContextInitializer[T](Unknown)
 }

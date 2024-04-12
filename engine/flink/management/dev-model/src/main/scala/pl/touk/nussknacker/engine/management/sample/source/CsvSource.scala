@@ -48,9 +48,5 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
   override def testRecordParser: TestRecordParser[CsvRecord] =
     (testRecord: TestRecord) => CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
 
-  override def timestampAssigner: Option[Nothing] = None
-
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[CsvRecord]] = timestampAssigner
-
-  override def contextInitializer: ContextInitializer[CsvRecord] = new BasicContextInitializer[CsvRecord](Unknown)
 }

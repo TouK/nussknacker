@@ -61,8 +61,6 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
     )
   }
 
-  override def contextInitializer: ContextInitializer[String] = new BasicContextInitializer[String](Unknown)
-
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(

@@ -43,8 +43,6 @@ class TableSource(
     new DataStreamSource(streamOfMaps)
   }
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[RECORD]] = None
-
   override val contextInitializer: ContextInitializer[RECORD] = new BasicContextInitializer[RECORD](Typed[RECORD])
 
 }
