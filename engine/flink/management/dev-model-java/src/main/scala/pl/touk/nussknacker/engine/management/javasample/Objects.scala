@@ -6,13 +6,11 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkStandardSourceUtils,
   StandardFlinkSource
 }
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class Objects extends Serializable {
@@ -39,9 +37,6 @@ class Objects extends Serializable {
         )
       }
 
-      override def contextInitializer: ContextInitializer[Model] = new BasicContextInitializer[Model](Unknown)
-
-      override def timestampAssigner: Option[TimestampWatermarkHandler[Model]] = None
     }))
 
   def sink: WithCategories[SinkFactory] = WithCategories.anyCategory(SinkFactory.noParam(EmptySink))
