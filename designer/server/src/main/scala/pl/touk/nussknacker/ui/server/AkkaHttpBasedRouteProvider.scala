@@ -422,7 +422,7 @@ class AkkaHttpBasedRouteProvider(
           componentsApiHttpService,
           dictApiHttpService,
           deploymentHttpService,
-          managementApiHttpService,
+//          managementApiHttpService,
           migrationApiHttpService,
           nodesApiHttpService,
           notificationApiHttpService,

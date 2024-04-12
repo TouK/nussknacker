@@ -1857,6 +1857,16 @@ paths:
       - httpAuth: []
 components:
   schemas:
+    ::_CellError:
+      required:
+      - head
+      - tl
+      type: object
+      properties:
+        head:
+          $ref: '#/components/schemas/CellError'
+        tl:
+          $ref: '#/components/schemas/List_CellError'
     AdditionalInfo:
       oneOf:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
@@ -2441,6 +2451,10 @@ components:
         y:
           type: integer
           format: int64
+    List_CellError:
+      oneOf:
+      - $ref: '#/components/schemas/::_CellError'
+      - $ref: '#/components/schemas/Nil'
     List_Field:
       oneOf:
       - $ref: '#/components/schemas/Nil'
@@ -3307,12 +3321,12 @@ components:
     SwitchDefault:
       type: object
     TabularDataDefinitionParserErrorDetails:
+      required:
+      - cellErrors
       type: object
       properties:
         cellErrors:
-          type: array
-          items:
-            $ref: '#/components/schemas/CellError'
+          $ref: '#/components/schemas/List_CellError'
     TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:
