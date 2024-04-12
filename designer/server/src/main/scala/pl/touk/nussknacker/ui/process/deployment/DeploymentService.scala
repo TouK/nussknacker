@@ -8,7 +8,7 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -126,7 +126,9 @@ class DeploymentService(
       deployedScenarioData <- prepareDeployedScenarioData(
         ctx.latestScenarioDetails,
         ctx.actionId,
-        command.nodesEventsFilteringRules
+        // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
+        //       references to existing fields and uses correct types. We should also protect from sql injection attacks
+        command.nodesDeploymentData
       )
       dmCommand = DMRunDeploymentCommand(
         deployedScenarioData.processVersion,
@@ -279,29 +281,20 @@ class DeploymentService(
   protected def prepareDeployedScenarioData(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
-      nodesEventsFilteringRules: NodesEventsFilteringRules,
+      nodesDeploymentData: NodesDeploymentData,
       additionalDeploymentData: Map[String, String] = Map.empty
   )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
     for {
       resolvedCanonicalProcess <- Future.fromTry(
         scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
       )
-      deploymentData = prepareDeploymentData(
-        user.toManagerUser,
+      deploymentData = DeploymentData(
         DeploymentId.fromActionId(actionId),
-        nodesEventsFilteringRules,
-        additionalDeploymentData
+        user.toManagerUser,
+        additionalDeploymentData,
+        nodesDeploymentData
       )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
-  }
-
-  protected def prepareDeploymentData(
-      user: User,
-      deploymentId: DeploymentId,
-      nodesEventsFilteringRules: NodesEventsFilteringRules,
-      additionalDeploymentData: Map[String, String]
-  ): DeploymentData = {
-    DeploymentData(deploymentId, user, additionalDeploymentData, nodesEventsFilteringRules)
   }
 
   private def runActionAndHandleResults[T, PS: ScenarioShapeFetchStrategy](

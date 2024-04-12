@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.deployment
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 
 @JsonCodec case class DeploymentData(
     deploymentId: DeploymentId,
     user: User,
     additionalDeploymentData: Map[String, String],
-    nodesEventsFilteringRules: NodesEventsFilteringRules
+    nodesData: NodesDeploymentData
 )
 
 object DeploymentData {
@@ -15,14 +15,14 @@ object DeploymentData {
   val systemUser: User = User("system", "system")
 
   val empty: DeploymentData =
-    DeploymentData(DeploymentId(""), systemUser, Map.empty, NodesEventsFilteringRules.PassAllEventsForEveryNode)
+    DeploymentData(DeploymentId(""), systemUser, Map.empty, NodesDeploymentData.empty)
 
   def withDeploymentId(deploymentIdString: String) =
     DeploymentData(
       DeploymentId(deploymentIdString),
       systemUser,
       Map.empty,
-      NodesEventsFilteringRules.PassAllEventsForEveryNode
+      NodesDeploymentData.empty
     )
 
 }

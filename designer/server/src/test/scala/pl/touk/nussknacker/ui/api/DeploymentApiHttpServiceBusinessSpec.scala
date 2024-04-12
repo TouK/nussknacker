@@ -87,10 +87,8 @@ class DeploymentApiHttpServiceBusinessSpec
     )
 
   private val correctDeploymentRequest = s"""{
-                                            |  "sourcesEventsFilteringRules": {
-                                            |    "$sourceNodeId": {
-                                            |      "date": "2024-01-01"
-                                            |    }
+                                            |  "nodesDeploymentData": {
+                                            |    "$sourceNodeId": "`date` = '2024-01-01'"
                                             |  }
                                             |}""".stripMargin
 

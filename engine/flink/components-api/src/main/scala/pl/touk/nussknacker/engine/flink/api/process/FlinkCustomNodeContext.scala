@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.component.NodeEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodeDeploymentData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -26,7 +26,7 @@ case class FlinkCustomNodeContext(
     validationContext: Either[ValidationContext, Map[String, ValidationContext]],
     typeInformationDetection: TypeInformationDetection,
     componentUseCase: ComponentUseCase,
-    nodeEventsFilteringRules: NodeEventsFilteringRules
+    nodeDeploymentData: Option[NodeDeploymentData]
 ) {
   def metaData: MetaData = jobData.metaData
 

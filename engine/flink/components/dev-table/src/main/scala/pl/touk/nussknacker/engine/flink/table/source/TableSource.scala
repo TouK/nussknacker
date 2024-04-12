@@ -8,7 +8,7 @@ import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.component.IsEqualToFieldRule
+import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -30,12 +30,13 @@ class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlState
 
     val selectQuery = tableEnv.from(tableDefinition.tableName)
 
-    val finalQuery = flinkNodeContext.nodeEventsFilteringRules.fieldRules.toList
-      .map { case (fieldName, IsEqualToFieldRule(expectedValue)) =>
-        $(fieldName.value).isEqual(expectedValue)
+    val finalQuery = flinkNodeContext.nodeDeploymentData
+      .map { case SqlFilteringExpression(sqlExpression) =>
+        tableEnv.executeSql(
+          s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableName} WHERE $sqlExpression"
+        )
+        tableEnv.from(filteringInternalViewName)
       }
-      .reduceOption { (expr1, expr2) => expr1.and(expr2) }
-      .map(selectQuery.filter)
       .getOrElse(selectQuery)
 
     val streamOfRows: DataStream[Row] = tableEnv.toDataStream(finalQuery)
@@ -59,6 +60,8 @@ class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlState
 }
 
 object TableSource {
+
+  private val filteringInternalViewName = "filteringView"
 
   type RECORD = java.util.Map[String, Any]
 

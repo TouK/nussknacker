@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -50,7 +50,7 @@ class DefaultProcessingTypeDeployedScenariosProvider(
           DeploymentId.fromActionId(lastDeployAction.id),
           deployingUser,
           Map.empty,
-          NodesEventsFilteringRules.PassAllEventsForEveryNode
+          NodesDeploymentData.empty
         )
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json).map { resolvedScenario =>

@@ -7,13 +7,13 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -39,8 +39,8 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class NotificationServiceTest
@@ -92,7 +92,7 @@ class NotificationServiceTest
             processIdWithName,
             savepointPath = None,
             comment = None,
-            NodesEventsFilteringRules.PassAllEventsForEveryNode,
+            NodesDeploymentData.empty,
             user
           )
         )
@@ -147,7 +147,7 @@ class NotificationServiceTest
             processIdWithName,
             savepointPath = None,
             comment = None,
-            NodesEventsFilteringRules.PassAllEventsForEveryNode,
+            NodesDeploymentData.empty,
             user
           )
         )
@@ -203,17 +203,17 @@ class NotificationServiceTest
       override protected def prepareDeployedScenarioData(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           actionId: ProcessActionId,
-          nodesEventsFilteringRules: NodesEventsFilteringRules,
+          nodesDeploymentData: NodesDeploymentData,
           additionalDeploymentData: Map[String, String] = Map.empty
       )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
         Future.successful(
           DeployedScenarioData(
             processDetails.toEngineProcessVersion,
-            prepareDeploymentData(
-              user.toManagerUser,
+            DeploymentData(
               DeploymentId.fromActionId(actionId),
-              nodesEventsFilteringRules,
-              additionalDeploymentData
+              user.toManagerUser,
+              additionalDeploymentData,
+              nodesDeploymentData
             ),
             processDetails.json
           )

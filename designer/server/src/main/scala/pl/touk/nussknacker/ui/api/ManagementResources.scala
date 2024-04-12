@@ -10,7 +10,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
@@ -131,7 +131,7 @@ class ManagementResources(
                         processId,
                         Some(savepointPath),
                         comment,
-                        NodesEventsFilteringRules.PassAllEventsForEveryNode,
+                        NodesDeploymentData.empty,
                         user
                       )
                     )
@@ -155,7 +155,7 @@ class ManagementResources(
                       processId,
                       None,
                       comment,
-                      NodesEventsFilteringRules.PassAllEventsForEveryNode,
+                      NodesDeploymentData.empty,
                       user
                     )
                   )

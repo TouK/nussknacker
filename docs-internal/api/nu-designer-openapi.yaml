@@ -517,6 +517,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DeploymentRequest'
+            example:
+              nodesDeploymentData:
+                sourceNodeId1: field1 = 'value'
         required: true
       responses:
         '200':
@@ -2171,11 +2174,11 @@ components:
       type: object
     DeploymentRequest:
       required:
-      - sourcesEventsFilteringRules
+      - nodesDeploymentData
       type: object
       properties:
-        sourcesEventsFilteringRules:
-          $ref: '#/components/schemas/Map_NodeId_NodeEventsFilteringRules'
+        nodesDeploymentData:
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
     Dict:
       required:
       - id
@@ -2531,10 +2534,10 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
-    Map_NodeId_NodeEventsFilteringRules:
+    Map_NodeId_NodeDeploymentData:
       type: object
       additionalProperties:
-        $ref: '#/components/schemas/Map_String'
+        type: string
     Map_String:
       type: object
       additionalProperties:

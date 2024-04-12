@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.NodesEventsFilteringRules
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -133,7 +133,7 @@ class DeploymentServiceSpec
 
     val result =
       deploymentServiceWithCommentSettings
-        .processCommand(RunDeploymentCommand(id, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user))
+        .processCommand(RunDeploymentCommand(id, None, None, NodesDeploymentData.empty, user))
         .failed
         .futureValue
 
@@ -153,7 +153,7 @@ class DeploymentServiceSpec
     val id                       = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(id, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+      RunDeploymentCommand(id, None, None, NodesDeploymentData.empty, user)
     )
 
     eventually {
@@ -180,7 +180,7 @@ class DeploymentServiceSpec
     val id                       = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(id, None, Some("samplePattern"), NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+      RunDeploymentCommand(id, None, Some("samplePattern"), NodesDeploymentData.empty, user)
     )
 
     eventually {
@@ -228,7 +228,7 @@ class DeploymentServiceSpec
     deploymentManager.withWaitForDeployFinish(processName) {
       deploymentService
         .processCommand(
-          RunDeploymentCommand(processId, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+          RunDeploymentCommand(processId, None, None, NodesDeploymentData.empty, user)
         )
         .futureValue
       deploymentService
@@ -348,7 +348,7 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(processId, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+            RunDeploymentCommand(processId, None, None, NodesDeploymentData.empty, user)
           )
           .futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
@@ -370,7 +370,7 @@ class DeploymentServiceSpec
       val result =
         deploymentService
           .processCommand(
-            RunDeploymentCommand(processId, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+            RunDeploymentCommand(processId, None, None, NodesDeploymentData.empty, user)
           )
           .failed
           .futureValue
@@ -821,7 +821,7 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(id, None, None, NodesEventsFilteringRules.PassAllEventsForEveryNode, user)
+            RunDeploymentCommand(id, None, None, NodesDeploymentData.empty, user)
           )
           .futureValue
         deploymentService

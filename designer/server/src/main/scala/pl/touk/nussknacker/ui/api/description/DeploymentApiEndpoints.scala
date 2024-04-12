@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.description
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.{NodeEventsFilteringRules, NodesEventsFilteringRules}
+import pl.touk.nussknacker.engine.api.component.{NodeDeploymentData, NodesDeploymentData, SqlFilteringExpression}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -33,7 +33,16 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .summary("Service allowing to request the deployment of a scenario")
       .put
       .in("scenarios" / path[ProcessName]("scenarioName") / "deployments" / path[RequestedDeploymentId]("deploymentId"))
-      .in(jsonBody[DeploymentRequest])
+      .in(
+        jsonBody[DeploymentRequest]
+          .example(
+            DeploymentRequest(
+              NodesDeploymentData(
+                Map(NodeId("sourceNodeId1") -> SqlFilteringExpression("field1 = 'value'"))
+              )
+            )
+          )
+      )
       .out(statusCode(Ok))
       .errorOut(
         oneOf[DeploymentError](
@@ -57,26 +66,19 @@ object DeploymentApiEndpoints {
 
   object Dtos {
 
-    // TODO:
-    //  - scenario graph version / the currently active version instead of the latest
+    // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
     final case class DeploymentRequest(
-        sourcesEventsFilteringRules: NodesEventsFilteringRules
+        nodesDeploymentData: NodesDeploymentData
     )
 
-    implicit val nodeEventsFilteringRulesCodec: Schema[NodeEventsFilteringRules] = Schema
-      .schemaForMap[String, String](identity)
-      .map[NodeEventsFilteringRules]((map: Map[String, String]) =>
-        Some(NodeEventsFilteringRules.convertMapToNodeRules(map))
-      )(
-        NodeEventsFilteringRules.convertNodeRulesToMap
-      )
+    implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.string[SqlFilteringExpression].as
 
-    implicit val nodesEventsFilteringRulesCodec: Schema[NodesEventsFilteringRules] = Schema
-      .schemaForMap[NodeId, NodeEventsFilteringRules](_.id)
-      .map[NodesEventsFilteringRules]((map: Map[NodeId, NodeEventsFilteringRules]) =>
-        Some(NodesEventsFilteringRules(map))
-      )(_.rulesByNodeId)
+    implicit val nodesDeploymentDataCodec: Schema[NodesDeploymentData] = Schema
+      .schemaForMap[NodeId, NodeDeploymentData](_.id)
+      .map[NodesDeploymentData]((map: Map[NodeId, NodeDeploymentData]) => Some(NodesDeploymentData(map)))(
+        _.dataByNodeId
+      )
 
     sealed trait DeploymentError
 

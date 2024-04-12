@@ -4,10 +4,7 @@ import cats.data.EitherT
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{
-  DeploymentError,
-  nodesEventsFilteringRulesCodec
-}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{DeploymentError, nodesDeploymentDataCodec}
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{NoPermission, NoScenario}
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
@@ -50,7 +47,7 @@ class DeploymentApiHttpService(
                     scenarioDetails.idWithNameUnsafe,
                     savepointPath = None,
                     comment = None,
-                    nodesEventsFilteringRules = request.sourcesEventsFilteringRules,
+                    nodesDeploymentData = request.nodesDeploymentData,
                     user = loggedUser
                   )
                 )
