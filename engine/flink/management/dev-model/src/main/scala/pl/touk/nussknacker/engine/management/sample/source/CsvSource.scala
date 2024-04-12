@@ -2,27 +2,41 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import com.github.ghik.silencer.silent
 import io.circe.Json
-
-import java.nio.charset.StandardCharsets
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStreamSource
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.process.TestDataGenerator
+import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkCustomNodeContext,
+  FlinkSourceTestSupport,
+  FlinkStandardSourceUtils,
+  StandardFlinkSource
+}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 
-class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
-
-  override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
+class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 
   @silent("deprecated")
-  override def flinkSourceFunction: SourceFunction[CsvRecord] = new SourceFunction[CsvRecord] {
-    override def cancel(): Unit                           = {}
-    override def run(ctx: SourceContext[CsvRecord]): Unit = {}
-  }
+  override def initialSourceStream(
+      env: StreamExecutionEnvironment,
+      flinkNodeContext: FlinkCustomNodeContext
+  ): DataStreamSource[CsvRecord] =
+    FlinkStandardSourceUtils.createSourceStream(
+      env = env,
+      sourceFunction = new SourceFunction[CsvRecord] {
+        override def cancel(): Unit                           = {}
+        override def run(ctx: SourceContext[CsvRecord]): Unit = {}
+      },
+      typeInformation = typeInformation
+    )
+
+  override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 
   override def generateTestData(size: Int): TestData = TestData(
     List(
@@ -37,4 +51,6 @@ class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[
   override def timestampAssigner: Option[Nothing] = None
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[CsvRecord]] = timestampAssigner
+
+  override def contextInitializer: ContextInitializer[CsvRecord] = new BasicContextInitializer[CsvRecord](Unknown)
 }

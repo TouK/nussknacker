@@ -3,6 +3,8 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -22,7 +24,12 @@ import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentParametersDefinitionExtractor
 }
-import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableContextInitializerSource,
+  FlinkCustomNodeContext,
+  FlinkSource,
+  FlinkSourceTestSupport
+}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
@@ -49,7 +56,7 @@ class StubbedFragmentSourceDefinitionPreparer(
   }
 
   private def buildSource(inputParameters: List[Parameter]): Source = {
-    new Source
+    new FlinkSource
       with CustomizableContextInitializerSource[Map[String, Any]]
       with FlinkSourceTestSupport[Map[String, Any]]
       with TestWithParametersSupport[Map[String, Any]] {
@@ -80,6 +87,13 @@ class StubbedFragmentSourceDefinitionPreparer(
             Valid(context)
           }
         }
+
+      // TODO local: question - either this is unimplemented or traits like CustomizableContextInitializerSource cant
+      //  have self bound to FlinkSource
+      override def sourceStream(
+          env: StreamExecutionEnvironment,
+          flinkNodeContext: FlinkCustomNodeContext
+      ): DataStream[Context] = ???
     }
   }
 
