@@ -26,6 +26,6 @@ export const filterRules = createFilterRules<ComponentType, ComponentsFiltersMod
         });
     },
     PROCESSING_MODE: (row, value) => {
-        return row;
+        return !value?.length || [].concat(value).some((f) => row["allowedProcessingModes"]?.includes(f));
     },
 });

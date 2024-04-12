@@ -14,6 +14,7 @@ import { ActiveFilters } from "../scenarios/filters/activeFilters";
 import { OptionsStack } from "../scenarios/filters/optionsStack";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
 import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
+import { processingModeItems } from "../scenarios/list/processingMode";
 
 function CountFilterItem({ count }: { count: number }) {
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
@@ -101,7 +102,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                 <FilterMenu label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")} count={getFilter("PROCESSING_MODE", true).length}>
                     <ProcessingModeStack
                         label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
-                        options={filterableValues.processingMode}
+                        options={filterableValues.processingModes}
                         value={getFilter("PROCESSING_MODE", true)}
                         onChange={setFilter("PROCESSING_MODE")}
                     />
@@ -127,7 +128,7 @@ export function Components(): JSX.Element {
     const { data: userData } = useUserQuery();
     const { t } = useTranslation();
 
-    const filterableKeys = useMemo(() => ["categories", "componentGroupName"], []);
+    const filterableKeys = useMemo(() => ["categories", "componentGroupName", "processingModes"], []);
     const filterableValues = useMemo(() => {
         const entries = filterableKeys.map((k) => [
             k,
@@ -135,7 +136,11 @@ export function Components(): JSX.Element {
                 .sort()
                 .map((v) => ({ name: v })),
         ]);
-        return Object.fromEntries([...entries, ["categories", (userData?.categories || []).map((name) => ({ name }))]]);
+        return Object.fromEntries([
+            ...entries,
+            ["processingModes", processingModeItems],
+            ["categories", (userData?.categories || []).map((name) => ({ name }))],
+        ]);
     }, [data, filterableKeys, userData?.categories]);
 
     const getLabel = useCallback(
@@ -148,6 +153,8 @@ export function Components(): JSX.Element {
                         val: value === 0 ? `${value}` : value <= 0 ? `< ${-value}` : `≥ ${value}`,
                         interpolation: { escapeValue: false },
                     });
+                case "PROCESSING_MODE":
+                    return processingModeItems.find((processingModeItem) => processingModeItem.name === value).displayableName;
             }
 
             if (value?.toString().length) {

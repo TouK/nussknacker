@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from "react";
 import { Button, Typography } from "@mui/material";
 import { FiltersContextType } from "../../common/filters/filtersContext";
 import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
-import { NuIcon } from "../../common";
 import i18next from "i18next";
 import Streaming from "../../assets/icons/streaming.svg";
 import Batch from "../../assets/icons/batch.svg";
@@ -62,6 +61,7 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
             color={isSelected ? "primary" : "inherit"}
             sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25, mx: 0 }}
             onClick={onClick}
+            aria-selected={isSelected}
         >
             <item.Icon />
             <Typography variant={"caption"}>{item.displayableName}</Typography>

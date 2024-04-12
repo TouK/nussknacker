@@ -230,6 +230,22 @@ describe("Components list", () => {
         cy.get("#app-container>main").matchImage();
     });
 
+    it("should allow filtering by processing mode", () => {
+        // Filter by processing mode
+        cy.contains("button", /processing mode/i).click();
+
+        cy.get("ul[role='menu']").matchImage();
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/streaming/i).click();
+        });
+
+        // Sort by processing mode
+        cy.get("[role='columnheader'][aria-label='Processing modes']").dblclick({ force: true });
+
+        cy.get("#app-container>main").matchImage();
+    });
+
     function filterByDefaultCategory() {
         // we filter by Default category to make sure that snapshots won't be made on our sandbox components li
         cy.contains(/^category$/i, { timeout: 60000 }).should("be.visible");
