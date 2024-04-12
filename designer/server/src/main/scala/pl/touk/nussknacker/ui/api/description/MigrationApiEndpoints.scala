@@ -50,7 +50,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .errorOut(nuDesignerErrorOutput)
       .withSecurity(auth)
 
-  lazy val apiVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, Int, Any] =
+  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, Int, Any] =
     baseNuApiEndpoint
       .summary("current version of the scenario description version being used")
       .tag("Migrations")

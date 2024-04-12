@@ -692,20 +692,52 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/migrate/apiVersion:
-    get:
+  /api/migrate:
+    post:
       tags:
       - Migrations
-      summary: current version of the migrations between environments API
-      operationId: getApiMigrateApiversion
+      summary: Migration between environments service
+      operationId: postApiMigrate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrateScenarioRequestDto'
+            examples:
+              Example:
+                summary: example of migration request between environments
+                value:
+                  version: 1
+                  sourceEnvironmentId: testEnv
+                  processingMode: Unbounded-Stream
+                  engineSetupName: Flink
+                  processCategory: Category1
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                        metaDataType: LiteStreamMetaData
+                    nodes:
+                    - id: source
+                      ref:
+                        typ: csv-source-lite
+                        parameters: []
+                      type: Source
+                    - id: sink
+                      ref:
+                        typ: dead-end-lite
+                        parameters: []
+                      type: Sink
+                    edges:
+                    - from: source
+                      to: sink
+                  processName: test
+                  isFragment: false
+        required: true
       responses:
         '200':
           description: ''
-          content:
-            text/plain:
-              schema:
-                type: integer
-                format: int32
         '400':
           description: ''
           content:
@@ -750,52 +782,20 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/migrate:
-    post:
+  /api/migrate/scenario/description/version:
+    get:
       tags:
       - Migrations
-      summary: Migration between environments service
-      operationId: postApiMigrate
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-            examples:
-              Example:
-                summary: example of migration request between environments
-                value:
-                  version: 1
-                  sourceEnvironmentId: testEnv
-                  processingMode: Unbounded-Stream
-                  engineSetupName: Flink
-                  processCategory: Category1
-                  scenarioGraph:
-                    properties:
-                      additionalFields:
-                        properties:
-                          parallelism: ''
-                        metaDataType: LiteStreamMetaData
-                    nodes:
-                    - id: source
-                      ref:
-                        typ: csv-source-lite
-                        parameters: []
-                      type: Source
-                    - id: sink
-                      ref:
-                        typ: dead-end-lite
-                        parameters: []
-                      type: Sink
-                    edges:
-                    - from: source
-                      to: sink
-                  processName: test
-                  isFragment: false
-        required: true
+      summary: current version of the scenario description version being used
+      operationId: getApiMigrateScenarioDescriptionVersion
       responses:
         '200':
           description: ''
+          content:
+            text/plain:
+              schema:
+                type: integer
+                format: int32
         '400':
           description: ''
           content:
@@ -2559,6 +2559,68 @@ components:
       properties:
         content:
           type: string
+    MigrateScenarioRequestDto:
+      oneOf:
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV1'
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV2'
+    MigrateScenarioRequestDtoV1:
+      required:
+      - version
+      - sourceEnvironmentId
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      type: object
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
+    MigrateScenarioRequestDtoV2:
+      required:
+      - version
+      - sourceEnvironmentId
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      type: object
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
     NextSwitch:
       required:
       - condition

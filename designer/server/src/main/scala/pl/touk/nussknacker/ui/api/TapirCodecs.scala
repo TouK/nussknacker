@@ -4,6 +4,7 @@ import cats.implicits.{toFunctorOps, toTraverseOps}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
@@ -110,23 +111,25 @@ object TapirCodecs {
     implicit val engineSetupNameSchema: Schema[EngineSetupName] = Schema.string
   }
 
+  object ScenarioGraphCodec {
+    implicit val scenrioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
+  }
+
   object ProcessNameCodec {
     implicit val processNameSchema: Schema[ProcessName] = Schema.string
   }
 
-  object MigrateScenarioRequestV1Codec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.anyObject
-  }
-
-  object MigrateScenarioRequestV2Codec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.anyObject
-  }
-
   object MigrateScenarioRequestCodec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequestDto] = Schema.anyObject
+
+    import ProcessNameCodec._
+    import EngineSetupNameCodec._
+    import ScenarioGraphCodec._
+    import ProcessingModeCodec._
+
+    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.derived
+    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
+
+    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequestDto] = Schema.derived
 
     implicit val migrateScenarioRequestDtoEncoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
       case v1: MigrateScenarioRequestDtoV1 => v1.asJson
