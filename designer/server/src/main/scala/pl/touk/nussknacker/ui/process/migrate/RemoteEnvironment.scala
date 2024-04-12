@@ -213,8 +213,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
 
     val result: EitherT[Future, NuDesignerError, Unit] = for {
-      remoteApiVersion <- fetchRemoteMigrationApiVersion
-      localApiVersion = migrationApiAdapterService.getCurrentApiVersion
+      remoteScenarioDescriptionVersion <- fetchRemoteMigrationScenarioDescriptionVersion
+      localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
       migrateScenarioRequest: MigrateScenarioData =
         MigrateScenarioDataV2(
           environmentId,
@@ -225,7 +225,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           processName,
           isFragment
         )
-      versionsDifference = localApiVersion - remoteApiVersion
+      versionsDifference = localScenarioDescriptionVersion - remoteScenarioDescriptionVersion
       transformedMigrateScenarioRequestE =
         if (versionsDifference > 0)
           migrationApiAdapterService.adaptDown(migrateScenarioRequest, versionsDifference)
@@ -263,11 +263,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
-  private def fetchRemoteMigrationApiVersion(implicit ec: ExecutionContext) = {
-    EitherT(fetchRemoteMigrationApiVersionAux.map[Either[NuDesignerError, Int]](Right(_)))
+  private def fetchRemoteMigrationScenarioDescriptionVersion(implicit ec: ExecutionContext) = {
+    EitherT(fetchRemoteMigrationScenarioDescriptionVersionAux.map[Either[NuDesignerError, Int]](Right(_)))
   }
 
-  private def fetchRemoteMigrationApiVersionAux(implicit ec: ExecutionContext): Future[Int] = {
+  private def fetchRemoteMigrationScenarioDescriptionVersionAux(implicit ec: ExecutionContext): Future[Int] = {
     invoke[Int](
       HttpMethods.GET,
       List("migrate", "scenario", "description", "version"),
