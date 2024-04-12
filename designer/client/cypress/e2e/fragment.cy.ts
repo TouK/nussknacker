@@ -143,6 +143,7 @@ describe("Fragment", () => {
             .contains(/preset selection/i)
             .siblings()
             .eq(0)
+            .find("input")
             .select(1);
 
         // Select Initial value
@@ -151,7 +152,8 @@ describe("Fragment", () => {
             .contains(/initial value/i)
             .siblings()
             .eq(0)
-            .select(1);
+            .click();
+        cy.get("[id$='option-1']").click({ force: true });
 
         cy.get("@window")
             .contains(/^apply$/i)
@@ -191,7 +193,8 @@ describe("Fragment", () => {
         cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).as("anyValueWithSuggestionField");
 
         cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Email Marketing 12.2019");
-        cy.get("@anyValueWithSuggestionField").clear().type("Campaign 2020").select(0);
+        cy.get("@anyValueWithSuggestionField").clear().type("Campaign 2020");
+        cy.get("[id$='option-0']").click({ force: true });
         cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Campaign 2020 News");
         cy.get("@anyValueWithSuggestionField").find('[title="Switch to expression mode"]').click();
         cy.get("@anyValueWithSuggestionField").contains('{"key":"9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8","label":"Campaign ');
