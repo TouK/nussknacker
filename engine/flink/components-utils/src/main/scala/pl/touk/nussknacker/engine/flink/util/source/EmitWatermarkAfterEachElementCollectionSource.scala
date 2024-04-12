@@ -56,7 +56,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](
     }
   }
 
-  override def sourceStream(
+  override def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {

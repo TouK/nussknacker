@@ -20,7 +20,7 @@ class TableSource(
     enableFlinkBatchExecutionMode: Boolean
 ) extends StandardFlinkSource[RECORD] {
 
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[RECORD] = {

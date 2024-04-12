@@ -31,7 +31,7 @@ case class CollectionSource[T: TypeInformation](
     with ReturningType {
 
   @silent("deprecated")
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {

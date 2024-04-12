@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 
   @silent("deprecated")
-  override def initialSourceStream(
+  override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[CsvRecord] =
