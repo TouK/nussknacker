@@ -112,7 +112,8 @@ object TapirCodecs {
   }
 
   object ScenarioGraphCodec {
-    implicit val scenrioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
+    // FIXME: Type me properly
+    implicit val scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
   }
 
   object ProcessNameCodec {
