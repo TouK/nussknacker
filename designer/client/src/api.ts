@@ -4,6 +4,8 @@ import { API_URL } from "./config";
 
 const headers = {};
 
+console.log("test");
+
 if (SystemUtils.hasAccessToken()) {
     headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
 }
