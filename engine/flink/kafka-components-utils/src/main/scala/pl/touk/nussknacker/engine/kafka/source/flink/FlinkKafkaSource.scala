@@ -48,7 +48,7 @@ class FlinkKafkaSource[T](
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
     passedAssigner: Option[TimestampWatermarkHandler[T]],
     val formatter: RecordFormatter,
-    val contextInitializer: ContextInitializer[T],
+    override val contextInitializer: ContextInitializer[T],
     testParametersInfo: KafkaTestParametersInfo,
     overriddenConsumerGroup: Option[String] = None,
     namingStrategy: NamingStrategy
