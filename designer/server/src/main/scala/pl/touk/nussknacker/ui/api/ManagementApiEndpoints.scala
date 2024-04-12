@@ -20,6 +20,8 @@ import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.{EndpointInput, path, statusCode, _}
 
+import pl.touk.nussknacker.ui.api.description.NodeValidationErrorSchemas._
+
 class ManagementApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
   private lazy val baseProcessManagementEndpoint = baseNuApiEndpoint.in("processManagement")
