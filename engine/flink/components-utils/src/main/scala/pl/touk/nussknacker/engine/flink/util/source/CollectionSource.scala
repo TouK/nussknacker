@@ -37,16 +37,18 @@ case class CollectionSource[T: TypeInformation](
   ): DataStreamSource[T] = {
     // TODO: remove setting runtime mode here after setting it on deployment level
     flinkRuntimeMode.foreach(env.setRuntimeMode)
-    boundedness match {
-      case Boundedness.BOUNDED =>
-        env.fromCollection(list.asJava)
-      case Boundedness.CONTINUOUS_UNBOUNDED =>
-        FlinkStandardSourceUtils.createSource(
-          env = env,
-          sourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava),
-          typeInformation = typeInformation
-        )
-    }
+    // Commented for experimental testing purposes
+//    boundedness match {
+//      case Boundedness.BOUNDED =>
+//        env.fromCollection(list.asJava)
+//      case Boundedness.CONTINUOUS_UNBOUNDED =>
+//        FlinkStandardSourceUtils.createSource(
+//          env = env,
+//          sourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava),
+//          typeInformation = typeInformation
+//        )
+//    }
+    env.fromCollection(list.asJava)
   }
 
   override def typeInformation: TypeInformation[T] = implicitly[TypeInformation[T]]
