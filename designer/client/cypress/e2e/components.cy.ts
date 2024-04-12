@@ -118,7 +118,8 @@ describe("Components list", () => {
         cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=Category1&USAGES=-1");
         cy.contains(/^name$/i).should("be.visible");
         cy.get("[role=row]").should("have.length", 2);
-        cy.contains("[role=row] *", /^Default$/).should("be.visible");
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=button]", /^Default$/).should("be.visible");
         cy.wait(300);
         cy.get("#app-container>main").matchImage();
     });
@@ -127,10 +128,12 @@ describe("Components list", () => {
         filterByBaseGroup();
         cy.contains(/^category$/i).should("be.visible");
         cy.get("[role=row]").should("have.length.above", 1);
-        cy.contains("[role=row] *", /^Default$/).click();
-        cy.contains("[role=row] *", /^Category1$/).click();
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Default$/).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Category1$/).click({ force: true });
         cy.matchQuery("?GROUP=base&CATEGORY=Default&CATEGORY=Category1");
-        cy.contains("[role=row] *", /^Default$/).click();
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Default$/).click({ force: true });
         cy.matchQuery("?GROUP=base&CATEGORY=Category1");
     });
 
