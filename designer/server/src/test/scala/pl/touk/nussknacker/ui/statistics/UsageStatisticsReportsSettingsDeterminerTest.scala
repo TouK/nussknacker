@@ -10,6 +10,7 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -45,6 +46,9 @@ class UsageStatisticsReportsSettingsDeterminerTest
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
+      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty))
     ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
@@ -57,7 +61,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.Running)
+      Some(SimpleStateStatus.Running),
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
     val statistics = UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData)
     statistics shouldEqual Map(
@@ -79,7 +88,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = isFragment,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("foo"),
-      None
+      None,
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
 
     forAll(
@@ -100,7 +114,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       processingMode,
       DeploymentManagerType("foo"),
-      None
+      None,
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
 
     forAll(
@@ -122,7 +141,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       dmType,
-      None
+      None,
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
 
     forAll(
@@ -145,7 +169,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("foo"),
-      status
+      status,
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
 
     UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(None))(
@@ -178,31 +207,55 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.NotDeployed)
+      Some(SimpleStateStatus.NotDeployed),
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
     val runningScenario = ScenarioStatisticsInputData(
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.Running)
+      Some(SimpleStateStatus.Running),
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
     val fragment = ScenarioStatisticsInputData(
       isFragment = true,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
-      None
+      None,
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
     val k8sRRScenario = ScenarioStatisticsInputData(
       isFragment = false,
       ProcessingMode.RequestResponse,
       DeploymentManagerType("lite-k8s"),
-      Some(SimpleStateStatus.Running)
+      Some(SimpleStateStatus.Running),
+      nodes = 2,
+      processCategory = "Category1",
+      processVersion = VersionId(2),
+      createdBy = "user",
+      fragmentsUsed = 0
     )
 
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
-      () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario)))
+      () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
+      // TODO need to provide proper sample data
+      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(List.empty))
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
