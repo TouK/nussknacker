@@ -36,6 +36,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
             summary = Some("example of migration request between environments"),
             value = MigrateScenarioRequest(
               sourceEnvironmentId = "testEnv",
+              remoteUserName = "remoteUser",
               processingMode = ProcessingMode.UnboundedStream,
               engineSetupName = EngineSetupName("Flink"),
               processCategory = "Category1",
@@ -145,6 +146,7 @@ object MigrationApiEndpoints {
     @derive(encoder, decoder)
     final case class MigrateScenarioRequest(
         sourceEnvironmentId: String,
+        remoteUserName: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,

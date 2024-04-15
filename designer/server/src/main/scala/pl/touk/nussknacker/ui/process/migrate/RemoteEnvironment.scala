@@ -198,6 +198,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     val migrateScenarioRequest: MigrateScenarioRequest =
       MigrateScenarioRequest(
         environmentId,
+        loggedUser.username,
         processingMode,
         engineSetupName,
         processCategory,

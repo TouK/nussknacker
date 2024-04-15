@@ -53,15 +53,21 @@ class MigrationService(
       migrateScenarioRequest.processCategory,
       migrateScenarioRequest.engineSetupName
     )
-    val scenarioGraph     = migrateScenarioRequest.scenarioGraph
-    val processName       = migrateScenarioRequest.processName
-    val isFragment        = migrateScenarioRequest.isFragment
-    val forwardedUser     = if (passUsernameInMigration) Some(loggedUser) else None
-    val forwardedUsername = forwardedUser.map(user => RemoteUserName(user.username))
-    val updateProcessComment =
-      UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${loggedUser.username}")
+    val scenarioGraph = migrateScenarioRequest.scenarioGraph
+    val processName   = migrateScenarioRequest.processName
+    val isFragment    = migrateScenarioRequest.isFragment
+    val forwardedUsernameO =
+      if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioRequest.remoteUserName)) else None
+    val updateProcessComment = {
+      forwardedUsernameO match {
+        case Some(remoteUserName: RemoteUserName) =>
+          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${remoteUserName.name}")
+        case None =>
+          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
+      }
+    }
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsername)
+      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsernameO)
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),
@@ -126,7 +132,7 @@ class MigrationService(
               case Failure(e) => Future.failed(e)
             }
         case None =>
-          createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
+          createProcess(processName, parameters, isFragment, forwardedUsernameO, useLegacyCreateScenarioApi)
       }
 
       processId <- processService.getProcessIdUnsafe(processName)
@@ -137,7 +143,7 @@ class MigrationService(
 
       canOverrideUsername <- processAuthorizer
         .check(processId, Permission.OverrideUsername, loggedUser)
-        .map(_ || forwardedUsername.isEmpty)
+        .map(_ || forwardedUsernameO.isEmpty)
       _ <-
         if (canOverrideUsername) Future.successful(Right(()))
         else Future.failed(new UnauthorizedError(loggedUser))
