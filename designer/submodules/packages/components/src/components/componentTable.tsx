@@ -45,8 +45,8 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "categories",
                 headerName: t("table.title.CATEGORIES", "Categories"),
-                minWidth: 250,
-                flex: 2,
+                minWidth: 350,
+                flex: 4,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <CategoriesCell {...props} />,
                 sortingOrder: ["desc", "asc", null],
@@ -54,7 +54,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
             {
                 field: "allowedProcessingModes",
                 headerName: t("table.title.PROCESSING_MODE", "Processing modes"),
-                minWidth: 250,
+                minWidth: 350,
                 flex: 3,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
                 renderCell: (props) => <ProcessingModesCell {...props} />,
