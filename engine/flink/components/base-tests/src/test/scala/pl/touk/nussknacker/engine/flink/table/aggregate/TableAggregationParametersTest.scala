@@ -57,7 +57,7 @@ class TableAggregationParametersTest extends AnyFunSuite with Matchers {
     inside(result) { case aggregationComponent.FinalResults(finalContext, Nil, _) =>
       finalContext shouldBe ValidationContext(
         Map(
-          outVariableName                   -> Typed[Number],
+          outVariableName                   -> Typed[Int],
           VariableConstants.KeyVariableName -> Typed[String]
         )
       )
