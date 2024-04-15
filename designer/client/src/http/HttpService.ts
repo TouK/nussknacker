@@ -18,15 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import {
-    Expression,
-    NodeType,
-    ProcessAdditionalFields,
-    ProcessDefinitionData,
-    ReturnedType,
-    ScenarioGraph,
-    VariableTypes
-} from "../types";
+import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -758,6 +750,10 @@ class HttpService {
                     ),
                 ),
             );
+    }
+
+    fetchStatisticUrls() {
+        return api.get<{ urls: string[] }>(`/statistic/url`);
     }
 
     #addInfo(message: string) {
