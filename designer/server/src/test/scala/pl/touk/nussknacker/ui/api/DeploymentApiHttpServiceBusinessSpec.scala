@@ -93,7 +93,7 @@ class DeploymentApiHttpServiceBusinessSpec
   "The endpoint for deployment requesting" - {
     "authenticated as user with deploy access should" - {
       // FIXME: unignore after fix flakiness on CI
-      "run deployment" ignore {
+      "run deployment" in {
         val requestedDeploymentId = "some-requested-deployment-id"
         given()
           .applicationState {
