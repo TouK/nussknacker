@@ -823,6 +823,7 @@ paths:
                 summary: example of migration request between environments
                 value:
                   sourceEnvironmentId: testEnv
+                  remoteUserName: remoteUser
                   processingMode: Unbounded-Stream
                   engineSetupName: Flink
                   processCategory: Category1
