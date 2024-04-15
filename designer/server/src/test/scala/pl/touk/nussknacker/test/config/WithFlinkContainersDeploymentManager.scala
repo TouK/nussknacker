@@ -17,7 +17,7 @@ trait WithFlinkContainersDeploymentManager
     with BeforeAndAfterAll {
   self: Suite with LazyLogging =>
 
-  override val container: Container = MultipleContainers((kafkaContainer: LazyContainer[_]) :: flinkContainers: _*)
+  override val container: Container = MultipleContainers(flinkContainers: _*)
 
   override protected def afterAll(): Unit = {
     FileUtils.deleteQuietly(savepointDir.toFile) // it might not work because docker user can has other uid

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithFlinkContainersDeploymentManager
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
 
 import java.nio.file.Files
 
@@ -31,7 +31,7 @@ class DeploymentApiHttpServiceBusinessSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with LazyLogging
-    with PatientScalaFutures
+    with VeryPatientScalaFutures
     with Matchers {
 
   private lazy val outputDirectory =
@@ -92,8 +92,7 @@ class DeploymentApiHttpServiceBusinessSpec
 
   "The endpoint for deployment requesting" - {
     "authenticated as user with deploy access should" - {
-      // FIXME: unignore after fix flakiness on CI
-      "run deployment" ignore {
+      "run deployment" in {
         val requestedDeploymentId = "some-requested-deployment-id"
         given()
           .applicationState {
@@ -173,8 +172,13 @@ class DeploymentApiHttpServiceBusinessSpec
   }
 
   private def outputTransactionSummaryContainsResult(): Unit = {
-    val transactionSummaryFiles = Option(outputDirectory.toFile.listFiles()).toList.flatten
-    transactionSummaryFiles should have size 1
+    val transactionSummaryFiles = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
+
+    // finished deploy doesn't mean that processing is finished
+    // TODO (next PRs): we need to wait for the job completed status instead
+    eventually {
+      transactionSummaryFiles should have size 1
+    }
     val transactionsSummaryContent =
       FileUtils.readFileToString(transactionSummaryFiles.head, StandardCharset.UTF_8)
     // TODO (next PRs): aggregate by clientId
