@@ -36,6 +36,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
             value = MigrateScenarioRequestDtoV2(
               version = 1,
               sourceEnvironmentId = "testEnv",
+              remoteUserName = "testUser",
               processingMode = ProcessingMode.UnboundedStream,
               engineSetupName = EngineSetupName("Flink"),
               processCategory = "Category1",
@@ -158,6 +159,7 @@ object MigrationApiEndpoints {
     final case class MigrateScenarioRequestDtoV1(
         version: Int,
         sourceEnvironmentId: String,
+        remoteUserName: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,
@@ -170,6 +172,7 @@ object MigrationApiEndpoints {
     final case class MigrateScenarioRequestDtoV2(
         version: Int,
         sourceEnvironmentId: String,
+        remoteUserName: String,
         processingMode: ProcessingMode,
         engineSetupName: EngineSetupName,
         processCategory: String,

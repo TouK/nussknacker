@@ -10,6 +10,7 @@ object MigrationApiAdapters {
       case v1: MigrateScenarioDataV1 =>
         MigrateScenarioDataV2(
           sourceEnvironmentId = v1.sourceEnvironmentId,
+          remoteUserName = v1.remoteUserName,
           processingMode = v1.processingMode,
           engineSetupName = v1.engineSetupName,
           processCategory = v1.processCategory,
@@ -24,6 +25,7 @@ object MigrationApiAdapters {
       case v2: MigrateScenarioDataV2 =>
         MigrateScenarioDataV1(
           sourceEnvironmentId = v2.sourceEnvironmentId,
+          remoteUserName = v2.remoteUserName,
           processingMode = v2.processingMode,
           engineSetupName = v2.engineSetupName,
           processCategory = v2.processCategory,

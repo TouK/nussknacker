@@ -104,6 +104,7 @@ class MigrationApiHttpServiceSecuritySpec
        |{
        |  "version": "2",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
+       |  "remoteUserName": "remoteUser",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",

@@ -53,13 +53,13 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
+          verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
           verifyScenarioAfterMigration(
             exampleProcessName.value,
             processVersionId = 2,
             isFragment = false,
-            modifiedBy = "Remote[allpermuser]",
-            createdBy = "Remote[allpermuser]",
+            modifiedBy = "Remote[remoteUser]",
+            createdBy = "Remote[remoteUser]",
             modelVersion = 0,
             historyProcessVersions = List(1, 2),
             scenarioGraphNodeIds = List("sink", "source")
@@ -78,12 +78,12 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
+          verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
           verifyScenarioAfterMigration(
             exampleProcessName.value,
             processVersionId = 2,
             isFragment = false,
-            modifiedBy = "Remote[allpermuser]",
+            modifiedBy = "Remote[remoteUser]",
             createdBy = "admin",
             modelVersion = 0,
             historyProcessVersions = List(1, 2),
@@ -131,12 +131,12 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
+          verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
           verifyScenarioAfterMigration(
             validFragment.name.value,
             processVersionId = 2,
             isFragment = true,
-            modifiedBy = "Remote[allpermuser]",
+            modifiedBy = "Remote[remoteUser]",
             createdBy = "admin",
             modelVersion = 0,
             historyProcessVersions = List(1, 2),
@@ -153,13 +153,13 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by allpermuser", "allpermuser")
+          verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
           verifyScenarioAfterMigration(
             validFragment.name.value,
             processVersionId = 2,
             isFragment = true,
-            modifiedBy = "Remote[allpermuser]",
-            createdBy = "Remote[allpermuser]",
+            modifiedBy = "Remote[remoteUser]",
+            createdBy = "Remote[remoteUser]",
             modelVersion = 0,
             historyProcessVersions = List(1, 2),
             scenarioGraphNodeIds = List("sink", "csv-source-lite")
@@ -208,6 +208,7 @@ class MigrationApiHttpServiceBusinessSpec
        |{
        |  "version": "2",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
+       |  "remoteUserName": "remoteUser",
        |  "processingMode": "Unbounded-Stream",
        |  "engineSetupName": "Mockable",
        |  "processName": "$scenarioName",

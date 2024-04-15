@@ -107,15 +107,21 @@ class MigrationService(
       migrateScenarioRequest.processCategory,
       migrateScenarioRequest.engineSetupName
     )
-    val scenarioGraph     = migrateScenarioRequest.scenarioGraph
-    val processName       = migrateScenarioRequest.processName
-    val isFragment        = migrateScenarioRequest.isFragment
-    val forwardedUser     = if (passUsernameInMigration) Some(loggedUser) else None
-    val forwardedUsername = forwardedUser.map(user => RemoteUserName(user.username))
-    val updateProcessComment =
-      UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${loggedUser.username}")
+    val scenarioGraph = migrateScenarioRequest.scenarioGraph
+    val processName   = migrateScenarioRequest.processName
+    val isFragment    = migrateScenarioRequest.isFragment
+    val forwardedUsernameO =
+      if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioRequest.remoteUserName)) else None
+    val updateProcessComment = {
+      forwardedUsernameO match {
+        case Some(forwardedUsername) =>
+          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${forwardedUsername.name}")
+        case None =>
+          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
+      }
+    }
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsername)
+      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsernameO)
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),
@@ -133,12 +139,12 @@ class MigrationService(
         targetEnvironmentId,
         parameters,
         isFragment,
-        forwardedUsername
+        forwardedUsernameO
       )
       processId <- getProcessId(processName)
       processIdWithName = ProcessIdWithName(processId, processName)
       _ <- checkLoggedUserCanWriteToProcess(processId)
-      _ <- checkLoggedUserCanOverrideProcess(processId, forwardedUsername)
+      _ <- checkLoggedUserCanOverrideProcess(processId, forwardedUsernameO)
       _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
     } yield ()
 

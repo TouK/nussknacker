@@ -22,6 +22,7 @@ object MigrateScenarioData {
       case MigrateScenarioRequestDtoV1(
             1,
             sourceEnvironmentId,
+            remoteUserName,
             processingMode,
             engineSetupName,
             processCategory,
@@ -31,6 +32,7 @@ object MigrateScenarioData {
           ) =>
         MigrateScenarioDataV1(
           sourceEnvironmentId,
+          remoteUserName,
           processingMode,
           engineSetupName,
           processCategory,
@@ -41,6 +43,7 @@ object MigrateScenarioData {
       case MigrateScenarioRequestDtoV2(
             2,
             sourceEnvironmentId,
+            remoteUserName,
             processingMode,
             engineSetupName,
             processCategory,
@@ -50,6 +53,7 @@ object MigrateScenarioData {
           ) =>
         MigrateScenarioDataV2(
           sourceEnvironmentId,
+          remoteUserName,
           processingMode,
           engineSetupName,
           processCategory,
@@ -64,6 +68,7 @@ object MigrateScenarioData {
     migrateScenarioRequest match {
       case dataV1 @ MigrateScenarioDataV1(
             sourceEnvironmentId,
+            remoteUserName,
             processingMode,
             engineSetupName,
             processCategory,
@@ -74,6 +79,7 @@ object MigrateScenarioData {
         MigrateScenarioRequestDtoV1(
           version = dataV1.currentVersion(),
           sourceEnvironmentId,
+          remoteUserName,
           processingMode,
           engineSetupName,
           processCategory,
@@ -83,6 +89,7 @@ object MigrateScenarioData {
         )
       case dataV2 @ MigrateScenarioDataV2(
             sourceEnvironmentId,
+            remoteUserName,
             processingMode,
             engineSetupName,
             processCategory,
@@ -93,6 +100,7 @@ object MigrateScenarioData {
         MigrateScenarioRequestDtoV2(
           version = dataV2.currentVersion(),
           sourceEnvironmentId,
+          remoteUserName,
           processingMode,
           engineSetupName,
           processCategory,
@@ -106,6 +114,7 @@ object MigrateScenarioData {
 
 final case class MigrateScenarioDataV1(
     sourceEnvironmentId: String,
+    remoteUserName: String,
     processingMode: ProcessingMode,
     engineSetupName: EngineSetupName,
     processCategory: String,
@@ -118,6 +127,7 @@ final case class MigrateScenarioDataV1(
 
 final case class MigrateScenarioDataV2(
     sourceEnvironmentId: String,
+    remoteUserName: String,
     processingMode: ProcessingMode,
     engineSetupName: EngineSetupName,
     processCategory: String,
