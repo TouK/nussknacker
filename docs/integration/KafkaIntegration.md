@@ -275,12 +275,13 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 - Flink cluster (both jobmanagers and taskmanagers) hosts - to be able to run job
 
 See [common config](#available-configuration-options) for the details of Kafka configuration, the table below presents additional options available only in Flink engine:
-      
+
 
 | Name                                              | Importance | Type                       | Default value    | Description                                                                                                                                                                                                     |
 |---------------------------------------------------|------------|----------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | kafkaEspProperties.defaultMaxOutOfOrdernessMillis | Medium     | duration                   | 60 seconds       | Configuration of [bounded out of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources |
-| idleTimeout                                       | Medium     | duration                   | 3 minutes        | Configuration of [idle timout](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources) used by Kafka sources                      |
+| enableIdleTimeout                                 | Medium     | boolean                    | true             | Enabling [idleness](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness) used by Kafka sources                                                                      |
+| idleTimeout                                       | Medium     | duration                   | 3 minutes        | Configuration of [idle timout](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness) used by Kafka sources                                                           |
 | consumerGroupNamingStrategy                       | Low        | processId/processId-nodeId | processId-nodeId | How consumer groups for sources should be named                                                                                                                                                                 |
 | avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should Avro messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                              |
             

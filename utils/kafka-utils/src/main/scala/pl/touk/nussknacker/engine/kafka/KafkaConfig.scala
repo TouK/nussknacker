@@ -27,7 +27,9 @@ case class KafkaConfig(
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
     kafkaAddress: Option[String] = None,
-    idleTimeout: Option[FiniteDuration] = Some(3 minutes)
+    // TODO question: move it into a generic map / move it into nested config class / leave it here?
+    enableIdleTimeout: Boolean = true,
+    idleTimeout: FiniteDuration = 3 minutes
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(

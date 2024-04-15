@@ -51,9 +51,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
   * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
   * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
-* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
-  * "Basic Decision Table" -> "Decision Table"
-  * "Expression" -> "Filtering expression"
+* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename:
+    * "Basic Decision Table" -> "Decision Table"
+    * "Expression" -> "Filtering expression"
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Added configurable idle timeout to Flink Kafka source with the
+  default value of 3 minutes. You can configure this timeout in Kafka component config at `idleTimeout` or disable
+  it at `enableIdleTimeout`. You can learn about idleness
+  in [Flink general docs](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources)
+  and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
+  allowing for disabling namespaced Kafka consumer groups
 
 ## In version 1.14.0
 

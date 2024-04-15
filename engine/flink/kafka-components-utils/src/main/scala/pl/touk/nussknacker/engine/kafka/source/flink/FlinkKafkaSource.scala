@@ -109,10 +109,12 @@ abstract class FlinkKafkaSource[T](
         val watermarkStrategyWithConfiguredLateness: WatermarkStrategy[T] = WatermarkStrategy.forBoundedOutOfOrderness(
           Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
         )
-        kafkaConfig.idleTimeout match {
-          case Some(timeout) =>
-            watermarkStrategyWithConfiguredLateness.withIdleness(java.time.Duration.ofMillis(timeout.toMillis))
-          case None => watermarkStrategyWithConfiguredLateness
+        if (kafkaConfig.enableIdleTimeout) {
+          watermarkStrategyWithConfiguredLateness.withIdleness(
+            java.time.Duration.ofMillis(kafkaConfig.idleTimeout.toMillis)
+          )
+        } else {
+          watermarkStrategyWithConfiguredLateness
         }
       })
     )
