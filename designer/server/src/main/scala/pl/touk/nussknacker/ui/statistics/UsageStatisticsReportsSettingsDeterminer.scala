@@ -18,7 +18,9 @@ import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, Pro
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{determineStatisticsForScenario, nuFingerprintFileName, prepareUrlString, toURL}
+import shapeless.syntax.std.tuple.productTupleOps
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
@@ -296,7 +298,7 @@ class UsageStatisticsReportsSettingsDeterminer(
     //    if last action is deploy add time for ongoing scenario
     if (hasStarted) {
       val current: Option[Long] = Some(Instant.now.getEpochSecond - lastActionTime.getEpochSecond)
-      listOfUptime.appended(current)
+      listOfUptime :+ current
     } else {
       listOfUptime
     }
