@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordPars
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
-  StandardFlinkSource
+  StandardFlinkSource,
+  StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
@@ -24,12 +25,14 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[CsvRecord] = env.addSource(
-    new SourceFunction[CsvRecord] {
-      override def cancel(): Unit                           = {}
+  ): DataStreamSource[CsvRecord] = StandardFlinkSourceFunctionUtils.createSourceStream(
+    env = env,
+    sourceFunction = new SourceFunction[CsvRecord] {
+      override def cancel(): Unit = {}
+
       override def run(ctx: SourceContext[CsvRecord]): Unit = {}
     },
-    typeInformation
+    typeInformation = typeInformation
   )
 
   override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])

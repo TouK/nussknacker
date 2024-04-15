@@ -21,7 +21,8 @@ import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
-  StandardFlinkSource
+  StandardFlinkSource,
+  StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -64,7 +65,11 @@ class FlinkKafkaSource[T](
   ): DataStreamSource[T] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
-    env.addSource(sourceFunction, typeInformation)
+    StandardFlinkSourceFunctionUtils.createSourceStream(
+      env = env,
+      sourceFunction = sourceFunction,
+      typeInformation = typeInformation
+    )
   }
 
   protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
