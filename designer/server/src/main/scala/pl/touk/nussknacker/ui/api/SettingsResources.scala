@@ -9,13 +9,12 @@ import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
 import java.net.URL
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class SettingsResources(
     config: FeatureTogglesConfig,
     authenticationMethod: String,
-    analyticsConfig: Option[AnalyticsConfig],
-    determineStatisticsUrl: () => Future[Option[String]]
+    analyticsConfig: Option[AnalyticsConfig]
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -25,30 +24,29 @@ class SettingsResources(
     pathPrefix("settings") {
       get {
         complete {
-          determineStatisticsUrl().map { statisticsUrl =>
-            val toggleOptions = ToggleFeaturesOptions(
-              counts = config.counts.isDefined,
-              metrics = config.metrics,
-              remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
-              environmentAlert = config.environmentAlert,
-              commentSettings = config.commentSettings,
-              deploymentCommentSettings = config.deploymentCommentSettings,
-              surveySettings = config.surveySettings,
-              tabs = config.tabs,
-              intervalTimeSettings = config.intervalTimeSettings,
-              testDataSettings = config.testDataSettings,
-              redirectAfterArchive = config.redirectAfterArchive,
-              usageStatisticsReports = UsageStatisticsReportsSettings(statisticsUrl.isDefined, statisticsUrl),
-            )
+          val toggleOptions = ToggleFeaturesOptions(
+            counts = config.counts.isDefined,
+            metrics = config.metrics,
+            remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
+            environmentAlert = config.environmentAlert,
+            commentSettings = config.commentSettings,
+            deploymentCommentSettings = config.deploymentCommentSettings,
+            surveySettings = config.surveySettings,
+            tabs = config.tabs,
+            intervalTimeSettings = config.intervalTimeSettings,
+            testDataSettings = config.testDataSettings,
+            redirectAfterArchive = config.redirectAfterArchive,
+            // TODO: It's disabled temporarily until we remove it on FE. We can remove it once it has been removed on FE.
+            usageStatisticsReports = UsageStatisticsReportsSettings(false, None)
+          )
 
-            val authenticationSettings = AuthenticationSettings(
-              authenticationMethod
-            )
+          val authenticationSettings = AuthenticationSettings(
+            authenticationMethod
+          )
 
-            val analyticsSettings =
-              analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-            UISettings(toggleOptions, authenticationSettings, analyticsSettings)
-          }
+          val analyticsSettings =
+            analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
+          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
         }
       }
     }
