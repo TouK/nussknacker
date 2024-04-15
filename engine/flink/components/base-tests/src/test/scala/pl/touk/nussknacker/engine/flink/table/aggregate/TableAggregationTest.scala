@@ -48,7 +48,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         TestRecord("B", 2),
       ),
       Boundedness.BOUNDED,
-      RuntimeExecutionMode.BATCH
+      Some(RuntimeExecutionMode.BATCH)
     )
 
     result.validValue.successes.toSet shouldBe Set(
