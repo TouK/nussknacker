@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.statistics
 
-import org.scalatest.OptionValues
+import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -19,16 +19,16 @@ import scala.concurrent.Future
 class UsageStatisticsReportsSettingsDeterminerTest
     extends AnyFunSuite
     with Matchers
-    with OptionValues
+    with EitherValues
     with PatientScalaFutures
     with TableDrivenPropertyChecks {
 
   private val sampleFingerprint = "fooFingerprint"
   private val fingerprintSupplier = (_: UsageStatisticsReportsConfig, _: FileName) =>
-    Future.successful(new Fingerprint(sampleFingerprint))
+    Future.successful(Right(new Fingerprint(sampleFingerprint)))
 
   test("should generate correct url with encoded params") {
-    UsageStatisticsReportsSettingsDeterminer.prepareUrl(
+    UsageStatisticsReportsSettingsDeterminer.prepareUrlString(
       ListMap("f" -> "a b", "v" -> "1.6.5-a&b=c")
     ) shouldBe "https://stats.nussknacker.io/?f=a+b&v=1.6.5-a%26b%3Dc"
   }
@@ -37,8 +37,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       fingerprintSupplier,
-      () => Future.successful(List.empty)
-    ).determineQueryParams().futureValue
+      () => Future.successful(Right(List.empty))
+    ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
     params should contain("version" -> BuildInfo.version)
@@ -194,8 +194,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       fingerprintSupplier,
-      () => Future.successful(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))
-    ).determineQueryParams().futureValue
+      () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario)))
+    ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
       "s_s"     -> "3",

@@ -17,18 +17,21 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
     implicit ec: ExecutionContext
 ) extends LazyLogging {
 
-  def fingerprint(config: UsageStatisticsReportsConfig, fingerprintFileName: FileName): Future[Fingerprint] = {
+  def fingerprint(
+      config: UsageStatisticsReportsConfig,
+      fingerprintFileName: FileName
+  ): Future[Either[StatisticError, Fingerprint]] = {
     // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
     // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
     config.fingerprint.filterNot(_.isBlank) match {
-      case Some(fingerprintFromConfig) => Future.successful(new Fingerprint(fingerprintFromConfig))
+      case Some(fingerprintFromConfig) => Future.successful(Right(new Fingerprint(fingerprintFromConfig)))
       case None                        => fetchOrGenerate(fingerprintFileName)
     }
   }
 
-  private def fetchOrGenerate(fingerprintFileName: FileName): Future[Fingerprint] = {
+  private def fetchOrGenerate(fingerprintFileName: FileName): Future[Either[StatisticError, Fingerprint]] = {
     val dbResult = for {
-      dbFingerprint <- fingerprintRepository.read()
+      dbFingerprint <- dbioRunner.run(fingerprintRepository.read())
       result <- dbFingerprint match {
         case Some(dbValue) => DBIO.successful(new Fingerprint(dbValue))
         case None => {

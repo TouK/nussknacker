@@ -12,6 +12,8 @@ import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.sql.SQLException
+import java.sql.SQLException
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -61,6 +63,16 @@ class FingerprintServiceTest
 
     fingerprint.value shouldBe "file stored"
     runner.run(repository.read()).futureValue shouldBe Some("file stored")
+  }
+
+  test("should return an error if database failed") {
+    val repository = mock[FingerprintRepository[DB]]
+    val sut = new FingerprintService(runner, repository)
+    when(repository.read()).thenReturn(DBIOAction.failed(new SQLException("some db exception")))
+
+    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+
+    fingerprint.left.value shouldBe DbError
   }
 
   private val config = UsageStatisticsReportsConfig(enabled = true, None, None)
