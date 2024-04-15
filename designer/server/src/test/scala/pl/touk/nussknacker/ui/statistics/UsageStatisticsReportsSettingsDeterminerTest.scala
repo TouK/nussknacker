@@ -281,7 +281,6 @@ class UsageStatisticsReportsSettingsDeterminerTest
       "v_c"     -> "1",
       "m_u"     -> "3832067",
       "v_u"     -> "3832067",
-      "c_u"     -> "streaming-dev-service-accountservice",
       "c_n"     -> "1",
       "s_s"     -> "3",
       "s_f"     -> "1",
