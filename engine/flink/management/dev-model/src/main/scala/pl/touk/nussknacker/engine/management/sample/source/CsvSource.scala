@@ -8,13 +8,11 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
-  FlinkStandardSourceUtils,
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -26,15 +24,13 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[CsvRecord] =
-    FlinkStandardSourceUtils.createSourceStream(
-      env = env,
-      sourceFunction = new SourceFunction[CsvRecord] {
-        override def cancel(): Unit                           = {}
-        override def run(ctx: SourceContext[CsvRecord]): Unit = {}
-      },
-      typeInformation = typeInformation
-    )
+  ): DataStreamSource[CsvRecord] = env.addSource(
+    new SourceFunction[CsvRecord] {
+      override def cancel(): Unit                           = {}
+      override def run(ctx: SourceContext[CsvRecord]): Unit = {}
+    },
+    typeInformation
+  )
 
   override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 

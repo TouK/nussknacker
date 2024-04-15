@@ -7,11 +7,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  FlinkStandardSourceUtils,
-  StandardFlinkSource
-}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, StandardFlinkSource}
 
 case class EmptySource[T: TypeInformation](returnType: TypingResult) extends StandardFlinkSource[T] with ReturningType {
 
@@ -19,15 +15,12 @@ case class EmptySource[T: TypeInformation](returnType: TypingResult) extends Sta
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[T] = {
-    FlinkStandardSourceUtils.createSourceStream(
-      env = env,
-      sourceFunction = new SourceFunction[T] {
-        override def cancel(): Unit                                  = {}
-        override def run(ctx: SourceFunction.SourceContext[T]): Unit = {}
-      },
-      typeInformation = implicitly[TypeInformation[T]]
-    )
-  }
+  ): DataStreamSource[T] = env.addSource(
+    new SourceFunction[T] {
+      override def cancel(): Unit                                  = {}
+      override def run(ctx: SourceFunction.SourceContext[T]): Unit = {}
+    },
+    implicitly[TypeInformation[T]]
+  )
 
 }

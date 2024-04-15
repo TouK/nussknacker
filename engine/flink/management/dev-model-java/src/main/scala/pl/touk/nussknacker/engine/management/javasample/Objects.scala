@@ -6,11 +6,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  FlinkStandardSourceUtils,
-  StandardFlinkSource
-}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, StandardFlinkSource}
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 
 class Objects extends Serializable {
@@ -22,20 +18,19 @@ class Objects extends Serializable {
       override def sourceStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
-      ): DataStreamSource[Model] = {
-        FlinkStandardSourceUtils.createSourceStream(
-          env = env,
-          sourceFunction = new SourceFunction[Model] {
-            override def cancel(): Unit = {}
-            override def run(ctx: SourceFunction.SourceContext[Model]): Unit = {
-              while (true) {
-                Thread.sleep(10000)
-              }
+      ): DataStreamSource[Model] = env.addSource(
+        new SourceFunction[Model] {
+          override def cancel(): Unit = {}
+
+          override def run(ctx: SourceFunction.SourceContext[Model]): Unit = {
+            while (true) {
+              Thread.sleep(10000)
             }
-          },
-          typeInformation = TypeInformation.of(classOf[Model])
-        )
-      }
+          }
+
+        },
+        TypeInformation.of(classOf[Model])
+      )
 
     }))
 

@@ -7,13 +7,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
-  FlinkStandardSourceUtils,
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -54,11 +51,7 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
       }
 
     }
-    FlinkStandardSourceUtils.createSourceStream(
-      env = env,
-      sourceFunction = flinkSourceFunction,
-      typeInformation = TypeInformation.of(classOf[String])
-    )
+    env.addSource(flinkSourceFunction, TypeInformation.of(classOf[String]))
   }
 
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])

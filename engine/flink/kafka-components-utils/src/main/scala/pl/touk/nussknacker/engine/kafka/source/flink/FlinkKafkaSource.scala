@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
-  FlinkStandardSourceUtils,
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
@@ -58,17 +57,14 @@ class FlinkKafkaSource[T](
     with RecordFormatterBaseTestDataGenerator
     with TestWithParametersSupport[T] {
 
+  @silent("deprecated")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[T] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
-    FlinkStandardSourceUtils.createSourceStream(
-      env = env,
-      sourceFunction = sourceFunction,
-      typeInformation = typeInformation
-    )
+    env.addSource(sourceFunction, typeInformation)
   }
 
   protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
