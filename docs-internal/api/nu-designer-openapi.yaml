@@ -1842,8 +1842,8 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: Constructed URL is invalid.
-                  value: Constructed URL is invalid.
+                  summary: Statistics generation failed.
+                  value: Statistics generation failed.
       security:
       - {}
       - httpAuth: []

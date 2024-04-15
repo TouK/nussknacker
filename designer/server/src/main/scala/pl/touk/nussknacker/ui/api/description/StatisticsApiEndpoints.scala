@@ -6,6 +6,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
+import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos
 import sttp.model.StatusCode.{InternalServerError, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
@@ -49,11 +50,11 @@ class StatisticsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
         oneOf[StatisticError](
           oneOfVariantFromMatchType(
             InternalServerError,
-            plainBody[InvalidURL.type]
+            plainBody[StatisticError]
               .example(
                 Example.of(
-                  summary = Some("Constructed URL is invalid."),
-                  value = InvalidURL
+                  summary = Some("Statistics generation failed."),
+                  value = StatisticError.InvalidURL
                 )
               )
           )
@@ -79,9 +80,9 @@ object StatisticsApiEndpoints {
       private def deserializationException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
-      implicit val invalidURLCodec: Codec[String, InvalidURL.type, CodecFormat.TextPlain] = {
+      implicit val errorCodec: Codec[String, StatisticError, CodecFormat.TextPlain] = {
         Codec.string.map(
-          Mapping.from[String, InvalidURL.type](deserializationException)(e => "Constructed URL is invalid.")
+          Mapping.from[String, StatisticError](deserializationException)(_ => "Statistics generation failed.")
         )
       }
 
