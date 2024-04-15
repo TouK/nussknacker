@@ -35,6 +35,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Removed `BasicFlinkSource` and `FlinkIntermediateRawSource`. Sources extending these traits should now extend 
     `StandardFlinkSource`. For reference on how to migrate, see changes in `FlinkKafkaSource` or `CollectionSource`
   * Renamed `FlinkSource`'s `sourceStream` method to `contextStream`
+  * Removed `EmptySourceFunction`
 * [#5757](https://github.com/TouK/nussknacker/pull/5757) Added support for bounded sources and Flink runtime mode in 
   Flink tests
   * `CollectionSource` now takes Flink's `Boundedness` with default `Unbounded` and `RuntimeExecutionMode` with default 
