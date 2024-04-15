@@ -13,7 +13,7 @@ object TableAggregator extends Enum[TableAggregator] {
   case object Sum extends TableAggregator {
     override val name: String                                               = "Sum"
     override val inputTypeConstraint: Option[TypingResult]                  = Some(Typed[Number])
-    override def outputType(inputTypeInRuntime: TypingResult): TypingResult = Typed[Number]
+    override def outputType(inputTypeInRuntime: TypingResult): TypingResult = inputTypeInRuntime
     override val flinkFunctionName: String                                  = BuiltInFunctionDefinitions.SUM.getName
   }
 

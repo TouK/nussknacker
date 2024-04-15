@@ -37,6 +37,7 @@ class DeploymentApiHttpServiceBusinessSpec
   private lazy val outputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
 
+  // TODO: use DECIMAL(15, 2) type instead of INT after adding support for all primitive types
   private lazy val tablesDefinitionBind = FileSystemBind(
     "designer/server/src/test/resources/config/business-cases/tables-definition.sql",
     "/opt/flink/designer/server/src/test/resources/config/business-cases/tables-definition.sql",
@@ -78,11 +79,19 @@ class DeploymentApiHttpServiceBusinessSpec
   private val scenario = ScenarioBuilder
     .streaming(scenarioName)
     .source("source", "table", "Table" -> Expression.spel("'transactions'"))
+    .customNode(
+      id = "aggregate",
+      outputVar = "agg",
+      customNodeRef = "aggregate",
+      "groupBy"     -> Expression.spel("#input.client_id"),
+      "aggregateBy" -> Expression.spel("#input.amount"),
+      "aggregator"  -> Expression.spel("'Sum'"),
+    )
     .emptySink(
       "sink",
       "table",
       "Table" -> Expression.spel("'transactions_summary'"),
-      "Value" -> Expression.spel("#input")
+      "Value" -> Expression.spel("{client_id: #key, amount: #agg}")
     )
 
   override protected def afterAll(): Unit = {
@@ -182,11 +191,9 @@ class DeploymentApiHttpServiceBusinessSpec
     }
     val transactionsSummaryContent =
       FileUtils.readFileToString(transactionsSummaryFiles.head, StandardCharset.UTF_8)
-    // TODO (next PRs): aggregate by clientId
     transactionsSummaryContent should include(
-      """client1,1.12
-        |client2,2.21
-        |client1,3""".stripMargin
+      """client2,2
+        |client1,4""".stripMargin
     )
   }
 
