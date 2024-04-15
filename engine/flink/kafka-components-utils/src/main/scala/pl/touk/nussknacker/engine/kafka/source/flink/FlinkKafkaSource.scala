@@ -47,7 +47,7 @@ abstract class FlinkKafkaSource[T](
     preparedTopics: List[PreparedKafkaTopic],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
-    passedAssigner: Option[TimestampWatermarkHandler[T]],
+    passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
     val formatter: RecordFormatter,
     testParametersInfo: KafkaTestParametersInfo,
     overriddenConsumerGroup: Option[String] = None,
@@ -103,14 +103,18 @@ abstract class FlinkKafkaSource[T](
     deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
   }
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = Some(
-    passedAssigner.getOrElse(
-      new StandardTimestampWatermarkHandler[T](
-        WatermarkStrategy
-          .forBoundedOutOfOrderness(
-            Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
-          )
-      )
+  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
+    Some(
+      new StandardTimestampWatermarkHandler[T]({
+        val watermarkStrategyWithConfiguredLateness: WatermarkStrategy[T] = WatermarkStrategy.forBoundedOutOfOrderness(
+          Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
+        )
+        kafkaConfig.idleTimeout match {
+          case Some(timeout) =>
+            watermarkStrategyWithConfiguredLateness.withIdleness(java.time.Duration.ofMillis(timeout.toMillis))
+          case None => watermarkStrategyWithConfiguredLateness
+        }
+      })
     )
   )
 
@@ -125,13 +129,9 @@ abstract class FlinkKafkaSource[T](
     deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
   }
 
-  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
-    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
-    if (kafkaConfig.useNamingStrategyForConsumerGroupId) {
-      namingStrategy.prepareName(baseName)
-    } else {
-      baseName
-    }
+  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {
+    case Some(overridden) => overridden
+    case None             => ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
   }
 
 }
