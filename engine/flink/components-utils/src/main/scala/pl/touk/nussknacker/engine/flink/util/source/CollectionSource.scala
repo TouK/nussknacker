@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
   ExplicitTypeInformationSource,
   FlinkCustomNodeContext,
-  StandardFlinkSource
+  StandardFlinkSource,
+  StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
@@ -39,7 +40,11 @@ case class CollectionSource[T: TypeInformation](
       case Boundedness.BOUNDED =>
         env.fromCollection(list.asJava)
       case Boundedness.CONTINUOUS_UNBOUNDED =>
-        env.addSource(new FromElementsFunction[T](list.filterNot(_ == null).asJava), typeInformation)
+        StandardFlinkSourceFunctionUtils.createSourceStream(
+          env = env,
+          sourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava),
+          typeInformation = typeInformation
+        )
     }
   }
 

@@ -6,7 +6,11 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, StandardFlinkSource}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  FlinkCustomNodeContext,
+  StandardFlinkSource,
+  StandardFlinkSourceFunctionUtils
+}
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 
 class OneSource extends StandardFlinkSource[String] {
@@ -15,8 +19,9 @@ class OneSource extends StandardFlinkSource[String] {
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[String] = {
-    val flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
+  ): DataStreamSource[String] = StandardFlinkSourceFunctionUtils.createSourceStream(
+    env = env,
+    sourceFunction = new SourceFunction[String] {
       var run     = true
       var emitted = false
 
@@ -31,8 +36,9 @@ class OneSource extends StandardFlinkSource[String] {
           Thread.sleep(1000)
         }
       }
-    }
-    env.addSource(flinkSourceFunction, TypeInformation.of(classOf[String]))
-  }
+
+    },
+    typeInformation = TypeInformation.of(classOf[String])
+  )
 
 }

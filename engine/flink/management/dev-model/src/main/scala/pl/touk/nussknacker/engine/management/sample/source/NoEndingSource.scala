@@ -11,7 +11,8 @@ import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
-  StandardFlinkSource
+  StandardFlinkSource,
+  StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
@@ -51,7 +52,11 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
       }
 
     }
-    env.addSource(flinkSourceFunction, TypeInformation.of(classOf[String]))
+    StandardFlinkSourceFunctionUtils.createSourceStream(
+      env = env,
+      sourceFunction = flinkSourceFunction,
+      typeInformation = TypeInformation.of(classOf[String])
+    )
   }
 
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
