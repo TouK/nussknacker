@@ -120,6 +120,8 @@ describe("Components list", () => {
         cy.get("[role=row]").should("have.length", 2);
         cy.contains("[role=row] *", /more/i).click({ force: true });
         cy.contains("[role=button]", /^Default$/).should("be.visible");
+        // Close more menu
+        cy.get("body").click(0, 0).click();
         cy.wait(300);
         cy.get("#app-container>main").matchImage();
     });
