@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.services
 
-import pl.touk.nussknacker.ui.api.BaseHttpService
 import sttp.tapir.docs.openapi.OpenAPIDocsOptions
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions
@@ -15,6 +14,7 @@ class NuDesignerExposedApiHttpService(
     notificationApiHttpService: NotificationApiHttpService,
     scenarioActivityApiHttpService: ScenarioActivityApiHttpService,
     scenarioParametersHttpService: ScenarioParametersApiHttpService,
+    migrationApiHttpService: MigrationApiHttpService
 ) {
 
   private val apiEndpoints =
@@ -23,7 +23,8 @@ class NuDesignerExposedApiHttpService(
       userApiHttpService.serverEndpoints ++
       notificationApiHttpService.serverEndpoints ++
       scenarioActivityApiHttpService.serverEndpoints ++
-      scenarioParametersHttpService.serverEndpoints
+      scenarioParametersHttpService.serverEndpoints ++
+      migrationApiHttpService.serverEndpoints
 
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
 

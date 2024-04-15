@@ -45,6 +45,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.migrations.MigrationService
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -262,6 +263,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val migrationApiHttpService = new MigrationApiHttpService(
+        config = resolvedConfig,
         authenticator = authenticationResources,
         migrationService = migrationService
       )
@@ -408,8 +410,7 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          migrationApiHttpService,
-          nodesApiHttpService
+          migrationApiHttpService
         )
 
       val akkaHttpServerInterpreter = {
