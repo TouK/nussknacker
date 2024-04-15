@@ -49,7 +49,7 @@ trait StandardFlinkSource[Raw]
     with CustomizableTimestampWatermarkHandlerSource[Raw]
     with ExplicitUidInOperatorsSupport {
 
-  def sourceStream(
+  protected def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStreamSource[Raw]
