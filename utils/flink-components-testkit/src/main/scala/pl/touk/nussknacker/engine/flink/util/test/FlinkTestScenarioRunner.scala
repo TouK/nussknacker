@@ -37,21 +37,19 @@ private object testComponents {
       data: List[T],
       timestampAssigner: Option[TimestampWatermarkHandler[T]],
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
-      flinkExecutionMode: RuntimeExecutionMode = RuntimeExecutionMode.STREAMING
-  ): ComponentDefinition = {
-    ComponentDefinition(
-      TestScenarioRunner.testDataSource,
-      SourceFactory.noParamUnboundedStreamFromClassTag[T](
-        new CollectionSource[T](
-          list = data,
-          timestampAssigner = timestampAssigner,
-          returnType = Typed.apply[T],
-          boundedness = boundedness,
-          flinkRuntimeMode = Some(flinkExecutionMode)
-        )
+      flinkExecutionMode: Option[RuntimeExecutionMode] = None
+  ): ComponentDefinition = ComponentDefinition(
+    TestScenarioRunner.testDataSource,
+    SourceFactory.noParamUnboundedStreamFromClassTag[T](
+      new CollectionSource[T](
+        list = data,
+        timestampAssigner = timestampAssigner,
+        returnType = Typed.apply[T],
+        boundedness = boundedness,
+        flinkRuntimeMode = flinkExecutionMode
       )
     )
-  }
+  )
 
   def noopSourceComponent: ComponentDefinition = {
     implicit val typeInf: TypeInformation[Any] = TypeInformation.of(classOf[Any])
@@ -86,7 +84,7 @@ class FlinkTestScenarioRunner(
       scenario: CanonicalProcess,
       data: List[I],
       boundedness: Boundedness,
-      flinkExecutionMode: RuntimeExecutionMode
+      flinkExecutionMode: Option[RuntimeExecutionMode]
   ): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] = getTypeInformation[I]
     runWithTestSourceComponent(scenario, testDataSourceComponent(data, None, boundedness, flinkExecutionMode))
