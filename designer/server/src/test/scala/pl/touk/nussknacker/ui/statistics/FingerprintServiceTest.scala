@@ -1,31 +1,30 @@
 package pl.touk.nussknacker.ui.statistics
 
-import db.util.DBIOActionInstances.DB
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, times, verify, when}
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
-import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
-import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepository
-import slick.dbio.{DBIOAction, SuccessAction}
+import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
-class FingerprintServiceTest extends AnyFunSuite with Matchers with OptionValues with PatientScalaFutures {
+class FingerprintServiceTest
+    extends AnyFunSuite
+    with Matchers
+    with OptionValues
+    with PatientScalaFutures
+    with WithHsqlDbTesting {
 
-  private val repository = mock[FingerprintRepository[DB]]
-  private val sut        = new FingerprintService(new DummyDbioActionRunner, repository)
+  private val runner: DBIOActionRunner = DBIOActionRunner(testDbRef)
+  private val repository               = new FingerprintRepositoryImpl(testDbRef)
+  private val sut                      = new FingerprintService(runner, repository)
 
   test("should return a fingerprint from the configuration") {
     val config = UsageStatisticsReportsConfig(enabled = true, Some("set via config"), None)
@@ -36,33 +35,32 @@ class FingerprintServiceTest extends AnyFunSuite with Matchers with OptionValues
   }
 
   test("should generate a random fingerprint if the configured one is blank") {
-    when(repository.read()).thenReturn(DBIOAction.successful(None))
-    when(repository.write(any[String]())).thenAnswer(_ => DummyDbioActionRunner.unitAction)
+    runner.run(repository.read()).futureValue shouldBe None
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
 
+    runner.run(repository.read()).futureValue shouldBe Some(fingerprint.value)
     fingerprint.value should fullyMatch regex "gen-\\w{10}"
   }
 
   test("should return a fingerprint from the database") {
-    when(repository.read()).thenReturn(DBIOAction.successful(Some("db stored")))
+    runner.runInTransaction(repository.write("db stored"))
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
 
     fingerprint.value shouldBe "db stored"
-    verify(repository, never()).write(ArgumentMatchers.eq("db stored"))
   }
 
   test("should return a fingerprint from a file and save it in the database") {
-    when(repository.read()).thenReturn(DBIOAction.successful(None))
+    runner.run(repository.read()).futureValue shouldBe None
+
     val fingerprintFile = getTempFileLocation
     writeContentToFile(fingerprintFile, "file stored")
-    when(repository.write(ArgumentMatchers.eq("file stored"))).thenAnswer(_ => DummyDbioActionRunner.unitAction)
 
     val fingerprint = sut.fingerprint(config, new FileName(fingerprintFile.getName)).futureValue
 
     fingerprint.value shouldBe "file stored"
-    verify(repository, times(1)).write(ArgumentMatchers.eq("file stored"))
+    runner.run(repository.read()).futureValue shouldBe Some("file stored")
   }
 
   private val config = UsageStatisticsReportsConfig(enabled = true, None, None)
@@ -77,20 +75,6 @@ class FingerprintServiceTest extends AnyFunSuite with Matchers with OptionValues
 
   private def writeContentToFile(file: File, content: String): Unit = {
     Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8))
-  }
-
-  class DummyDbioActionRunner extends DBIOActionRunner(mock[DbRef]) {
-
-    override def run[T](action: DB[T]): Future[T] = action match {
-      case SuccessAction(v) => Future.successful(v)
-      case _                => throw new IllegalStateException("Cannot run DB action")
-    }
-
-    override def runInTransaction[T](action: DB[T]): Future[T] = run(action)
-  }
-
-  object DummyDbioActionRunner {
-    val unitAction = DBIOAction.successful(())
   }
 
 }

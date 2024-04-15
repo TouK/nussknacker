@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepository
+import slick.dbio.DBIO
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -25,20 +26,22 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
     }
   }
 
-  private def fetchOrGenerate(fingerprintFileName: FileName): Future[Fingerprint] =
-    for {
-      dbFingerprint <- dbioRunner.run(fingerprintRepository.read())
+  private def fetchOrGenerate(fingerprintFileName: FileName): Future[Fingerprint] = {
+    val dbResult = for {
+      dbFingerprint <- fingerprintRepository.read()
       result <- dbFingerprint match {
-        case Some(dbValue) => Future.successful(new Fingerprint(dbValue))
+        case Some(dbValue) => DBIO.successful(new Fingerprint(dbValue))
         case None => {
           val generated = readFingerprintFromFile(fingerprintFileName).getOrElse(randomFingerprint)
           logger.info(s"Generated fingerprint $generated")
-          dbioRunner
-            .runInTransaction(fingerprintRepository.write(generated))
+          fingerprintRepository
+            .write(generated)
             .map(_ => new Fingerprint(generated))
         }
       }
     } yield result
+    dbioRunner.runInTransaction(dbResult)
+  }
 
   // TODO: The code below is added to ensure compatibility with older NU versions and should be removed in future release of NU 1.20.
   private def readFingerprintFromFile(fingerprintFileName: FileName): Option[String] =
