@@ -8,7 +8,6 @@ import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, StandardFlinkSource}
-import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._

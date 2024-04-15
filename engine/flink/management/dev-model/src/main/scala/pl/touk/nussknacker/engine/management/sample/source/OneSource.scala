@@ -6,11 +6,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.flink.api.process.{
-  FlinkCustomNodeContext,
-  FlinkStandardSourceUtils,
-  StandardFlinkSource
-}
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, StandardFlinkSource}
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 
 class OneSource extends StandardFlinkSource[String] {
@@ -36,11 +32,7 @@ class OneSource extends StandardFlinkSource[String] {
         }
       }
     }
-    FlinkStandardSourceUtils.createSourceStream(
-      env = env,
-      sourceFunction = flinkSourceFunction,
-      typeInformation = TypeInformation.of(classOf[String])
-    )
+    env.addSource(flinkSourceFunction, TypeInformation.of(classOf[String]))
   }
 
 }
