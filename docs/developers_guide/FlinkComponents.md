@@ -2,7 +2,7 @@
 
 [Sources, sinks and custom transformations](./Basics.md#components-and-componentproviders) are based on Flink API.
 In order to implement any of those you need to provide:
-- a Flink `DataStream` transformation
+- a Flink `DataStreamSource` in case of sources and a `DataStream` into `DataStreamSink` transformation in case of sinks
 - a Nussknacker [specification](./Components.md#specification)
 
 ## Sources
