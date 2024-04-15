@@ -172,15 +172,16 @@ class DeploymentApiHttpServiceBusinessSpec
   }
 
   private def outputTransactionSummaryContainsResult(): Unit = {
-    val transactionSummaryFiles = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
 
     // finished deploy doesn't mean that processing is finished
     // TODO (next PRs): we need to wait for the job completed status instead
-    eventually {
-      transactionSummaryFiles should have size 1
+    val transactionsSummaryFiles = eventually {
+      val files = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
+      files should have size 1
+      files
     }
     val transactionsSummaryContent =
-      FileUtils.readFileToString(transactionSummaryFiles.head, StandardCharset.UTF_8)
+      FileUtils.readFileToString(transactionsSummaryFiles.head, StandardCharset.UTF_8)
     // TODO (next PRs): aggregate by clientId
     transactionsSummaryContent should include(
       """client1,1.12
