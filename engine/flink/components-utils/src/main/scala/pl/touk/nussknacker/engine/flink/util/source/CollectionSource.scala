@@ -7,13 +7,11 @@ import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.FromElementsFunction
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
   ExplicitTypeInformationSource,
   FlinkCustomNodeContext,
-  FlinkStandardSourceUtils,
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -41,11 +39,7 @@ case class CollectionSource[T: TypeInformation](
       case Boundedness.BOUNDED =>
         env.fromCollection(list.asJava)
       case Boundedness.CONTINUOUS_UNBOUNDED =>
-        FlinkStandardSourceUtils.createSourceStream(
-          env = env,
-          sourceFunction = new FromElementsFunction[T](list.filterNot(_ == null).asJava),
-          typeInformation = typeInformation
-        )
+        env.addSource(new FromElementsFunction[T](list.filterNot(_ == null).asJava), typeInformation)
     }
   }
 
