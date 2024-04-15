@@ -45,6 +45,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.migrations.MigrationService
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
@@ -61,6 +62,7 @@ import pl.touk.nussknacker.ui.security.api.{
   LoggedUser,
   NussknackerInternalUser
 }
+import pl.touk.nussknacker.ui.services.{MigrationApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.services._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
@@ -249,6 +251,22 @@ class AkkaHttpBasedRouteProvider(
         processService = processService,
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
+
+      val migrationService = new MigrationService(
+        config = resolvedConfig,
+        processService = processService,
+        processResolver = processResolver,
+        processAuthorizer = processAuthorizer,
+        processChangeListener = processChangeListener,
+        scenarioParametersService = typeToConfig.mapCombined(_.parametersService),
+        useLegacyCreateScenarioApi = true
+      )
+
+      val migrationApiHttpService = new MigrationApiHttpService(
+        config = resolvedConfig,
+        authenticator = authenticationResources,
+        migrationService = migrationService
+      )
       val componentsApiHttpService = new ComponentApiHttpService(
         config = resolvedConfig,
         authenticator = authenticationResources,
@@ -392,6 +410,7 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
+          migrationApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

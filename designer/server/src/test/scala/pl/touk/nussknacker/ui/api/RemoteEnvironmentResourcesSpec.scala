@@ -7,18 +7,25 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.Filter
-import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
+import pl.touk.nussknacker.restmodel.scenariodetails.{
+  ScenarioParameters,
+  ScenarioWithDetails,
+  ScenarioWithDetailsForMigrations
+}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withPermissions
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.NuDesignerError
+import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 import pl.touk.nussknacker.ui.process.migrate.{
+  MissingScenarioGraphError,
   RemoteEnvironment,
   RemoteEnvironmentCommunicationError,
   TestMigrationResult
@@ -179,16 +186,6 @@ class RemoteEnvironmentResourcesSpec
     var migrateInvocations = List[ScenarioGraph]()
     var compareInvocations = List[ScenarioGraph]()
 
-    override def migrate(
-        localScenarioGraph: ScenarioGraph,
-        remoteProcessName: ProcessName,
-        parameters: ScenarioParameters,
-        isFragment: Boolean
-    )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-      migrateInvocations = localScenarioGraph :: migrateInvocations
-      Future.successful(Right(()))
-    }
-
     override def compare(
         localScenarioGraph: ScenarioGraph,
         remoteProcessName: ProcessName,
@@ -215,6 +212,19 @@ class RemoteEnvironmentResourcesSpec
         batchingExecutionContext: ExecutionContext
     )(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[NuDesignerError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
+    }
+
+    override def migrate(
+        processingMode: ProcessingMode,
+        engineSetupName: EngineSetupName,
+        processCategory: String,
+        scenarioGraph: ScenarioGraph,
+        processName: ProcessName,
+        isFragment: Boolean
+    )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
+      val localScenarioGraph = scenarioGraph
+      migrateInvocations = localScenarioGraph :: migrateInvocations
+      Future.successful(Right(()))
     }
 
   }
