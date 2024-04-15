@@ -7,16 +7,23 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
-import scala.collection.immutable.{ListMap, Map}
+import java.time.Instant
+import java.util.UUID
+import scala.collection.immutable.{ListMap, Map, TreeMap}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -253,12 +260,29 @@ class UsageStatisticsReportsSettingsDeterminerTest
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       // TODO need to provide proper sample data
-      () => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty))
+      () => Future.successful(Right(processActivityList)),
+      () => Future.successful(Right(componentList)),
+      () => Future.successful(Right(listOfProcessActions))
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
+      "m_n"     -> "2",
+      "v_n"     -> "2",
+      "c"       -> "1",
+      "v_m"     -> "2",
+      "v_v"     -> "2",
+      "a_n"     -> "1",
+      "m_f"     -> "0",
+      "v_f"     -> "0",
+      "m_a"     -> "1",
+      "v_a"     -> "1",
+      "e_a"     -> "1",
+      "m_c"     -> "1",
+      "v_c"     -> "1",
+      "m_u"     -> "3832067",
+      "v_u"     -> "3832067",
+      "c_u"     -> "streaming-dev-service-accountservice",
+      "c_n"     -> "1",
       "s_s"     -> "3",
       "s_f"     -> "1",
       "s_pm_s"  -> "3",
@@ -272,5 +296,105 @@ class UsageStatisticsReportsSettingsDeterminerTest
     )
     params should contain allElementsOf expectedStats
   }
+
+  private def processActivityList = {
+    val scenarioActivity: ScenarioActivity = ScenarioActivity(
+      comments = List(
+        Comment(
+          id = 1L,
+          processVersionId = 1L,
+          content = "some comment",
+          user = "test",
+          createDate = Instant.parse("2024-01-17T14:21:17Z")
+        )
+      ),
+      attachments = List(
+        Attachment(
+          id = 1L,
+          processVersionId = 1L,
+          fileName = "some_file.txt",
+          user = "test",
+          createDate = Instant.parse("2024-01-17T14:21:17Z")
+        )
+      )
+    )
+    List(
+      ProcessActivity(
+        scenarioActivity.comments.map(comment =>
+          DbProcessActivityRepository.Comment(
+            comment.id,
+            VersionId(comment.processVersionId),
+            comment.content,
+            comment.user,
+            comment.createDate
+          )
+        ),
+        scenarioActivity.attachments.map(attachment =>
+          DbProcessActivityRepository.Attachment(
+            attachment.id,
+            VersionId(attachment.processVersionId),
+            attachment.fileName,
+            attachment.user,
+            attachment.createDate
+          )
+        )
+      )
+    )
+  }
+
+  private val componentList = List(
+    ComponentListElement(
+      DesignerWideComponentId("streaming-dev-service-accountservice"),
+      "accountService",
+      "/assets/components/Processor.svg",
+      ComponentType.Service,
+      ComponentGroupName("services"),
+      List("Category1"),
+      links = List.empty,
+      usageCount = 3,
+      AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
+    )
+  )
+
+  private val listOfProcessActions = List(
+    List(
+      ProcessAction(
+        ProcessActionId(UUID.fromString("bb698fd8-b7aa-4601-bcbf-7347ff66aefc")),
+        ProcessId(2),
+        VersionId(2),
+        "user",
+        Instant.parse("2024-01-17T14:21:17Z"),
+        Instant.parse("2024-01-17T14:21:17Z"),
+        ScenarioActionName.Deploy,
+        ProcessActionState.Finished,
+        None,
+        Some(1),
+        Some("deploy comment"),
+        TreeMap(
+          "engine-version"  -> "0.1",
+          "generation-time" -> "2024-04-15T09:15:12.436321",
+          "process-version" -> "0.1"
+        )
+      ),
+      ProcessAction(
+        ProcessActionId(UUID.fromString("bb698fd8-b7aa-4601-bcbf-7347ff66aefc")),
+        ProcessId(2),
+        VersionId(2),
+        "user",
+        Instant.parse("2024-04-15T07:16:42.518161Z"),
+        Instant.parse("2024-04-15T07:16:51.557321Z"),
+        ScenarioActionName.Cancel,
+        ProcessActionState.Finished,
+        None,
+        Some(1),
+        Some("deploy comment"),
+        TreeMap(
+          "engine-version"  -> "0.1",
+          "generation-time" -> "2024-04-15T09:15:12.436321",
+          "process-version" -> "0.1"
+        )
+      )
+    )
+  )
 
 }
