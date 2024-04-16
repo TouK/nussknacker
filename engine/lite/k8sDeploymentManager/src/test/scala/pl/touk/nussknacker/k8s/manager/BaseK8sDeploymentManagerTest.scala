@@ -11,7 +11,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
   CancelScenarioCommand,
   DataFreshnessPolicy,
-  ProcessingTypeDeploymentServiceStub,
+  ProcessingTypeActionServiceStub,
+  ProcessingTypeDeployedScenariosProviderStub,
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -64,7 +65,8 @@ class BaseK8sDeploymentManagerTest
 
   protected def prepareManager(modelData: ModelData, deployConfig: Config): K8sDeploymentManager = {
     val dependencies = DeploymentManagerDependencies(
-      new ProcessingTypeDeploymentServiceStub(List.empty),
+      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+      new ProcessingTypeActionServiceStub,
       system.dispatcher,
       system,
       backend

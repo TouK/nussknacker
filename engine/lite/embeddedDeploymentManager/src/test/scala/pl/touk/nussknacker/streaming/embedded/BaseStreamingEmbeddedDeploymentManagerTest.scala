@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
   DeployedScenarioData,
   DeploymentManager,
-  ProcessingTypeDeploymentServiceStub,
+  ProcessingTypeActionServiceStub,
+  ProcessingTypeDeployedScenariosProviderStub,
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -110,7 +111,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
 
     val modelData         = LocalModelData(configToUse, kafkaComponents)
-    val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
+    val deploymentService = new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit =

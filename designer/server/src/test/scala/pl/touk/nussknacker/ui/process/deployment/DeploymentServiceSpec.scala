@@ -95,18 +95,15 @@ class DeploymentServiceSpec
 
   deploymentManager = new MockDeploymentManager(
     SimpleStateStatus.Running,
-    new DefaultProcessingTypeDeploymentService(
-      "streaming",
-      deploymentService,
-      AllDeployedScenarioService(testDbRef, "streaming")
-    )
+    DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
+    new DefaultProcessingTypeActionService("streaming", deploymentService)
   )
 
   private def createDeploymentService(
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = deploymentCommentSettings,
-  ): DeploymentService = {
-    new DeploymentServiceImpl(
+  ) = {
+    new DeploymentService(
       dmDispatcher,
       fetchingProcessRepository,
       actionRepository,
@@ -128,7 +125,7 @@ class DeploymentServiceSpec
   }
 
   test("should return error when trying to deploy without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -145,7 +142,7 @@ class DeploymentServiceSpec
   }
 
   test("should not deploy without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -170,7 +167,7 @@ class DeploymentServiceSpec
   }
 
   test("should pass when having an ok comment") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -186,7 +183,7 @@ class DeploymentServiceSpec
   }
 
   test("should not cancel a deployed process without cancel comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues

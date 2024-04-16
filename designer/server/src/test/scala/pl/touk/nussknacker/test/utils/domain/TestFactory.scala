@@ -8,7 +8,10 @@ import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentServiceStub
+import pl.touk.nussknacker.engine.api.deployment.{
+  ProcessingTypeActionServiceStub,
+  ProcessingTypeDeployedScenariosProviderStub
+}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
@@ -18,7 +21,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategory, TestProcessingType}
-import pl.touk.nussknacker.test.mock.{StubDeploymentService, StubFragmentRepository, TestAdditionalUIConfigProvider}
+import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubProcessStateProvider, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
@@ -120,14 +123,15 @@ object TestFactory {
   val deploymentManagerDependencies: DeploymentManagerDependencies = {
     val actorSystem = ActorSystem("TestFactory")
     DeploymentManagerDependencies(
-      new ProcessingTypeDeploymentServiceStub(List.empty),
+      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+      new ProcessingTypeActionServiceStub,
       actorSystem.dispatcher,
       actorSystem,
       SttpBackendStub.asynchronousFuture
     )
   }
 
-  def deploymentService() = new StubDeploymentService(Map.empty)
+  def processStateProvider() = new StubProcessStateProvider(Map.empty)
 
   def newDBIOActionRunner(dbRef: DbRef): DBIOActionRunner =
     DBIOActionRunner(dbRef)

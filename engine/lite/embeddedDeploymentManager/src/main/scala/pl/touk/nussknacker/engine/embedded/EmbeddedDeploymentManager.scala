@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -40,7 +40,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
     strategy.open(modelData.asInvokableModelData, contextPreparer)
-    valid(new EmbeddedDeploymentManager(modelData.asInvokableModelData, deploymentService, strategy))
+    valid(new EmbeddedDeploymentManager(modelData.asInvokableModelData, deployedScenariosProvider, strategy))
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =
@@ -63,7 +63,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
  */
 class EmbeddedDeploymentManager(
     override protected val modelData: ModelData,
-    processingTypeDeploymentService: ProcessingTypeDeploymentService,
+    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)
     extends LiteDeploymentManager
@@ -74,7 +74,7 @@ class EmbeddedDeploymentManager(
 
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
     val deployedScenarios =
-      Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
+      Await.result(deployedScenariosProvider.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios
       .map(data =>
         deployScenario(

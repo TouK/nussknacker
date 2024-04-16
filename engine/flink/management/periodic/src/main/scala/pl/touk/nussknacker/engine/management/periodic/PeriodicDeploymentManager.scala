@@ -58,7 +58,7 @@ object PeriodicDeploymentManager {
       periodicBatchConfig.executionConfig,
       processConfigEnricher,
       clock,
-      dependencies.deploymentService
+      dependencies.actionService
     )
     val deploymentActor = dependencies.actorSystem.actorOf(
       DeploymentActor.props(service, periodicBatchConfig.deployInterval),
