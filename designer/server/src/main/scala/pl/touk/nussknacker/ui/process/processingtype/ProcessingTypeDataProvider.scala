@@ -59,6 +59,23 @@ trait ProcessingTypeDataProvider[+Data, +CombinedData] {
     }
   }
 
+  final def forProcessingTypeEUnsafe(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): Either[UnauthorizedError, Data] = {
+    allAuthorized
+      .get(processingType) match {
+      case Some(dataO) =>
+        dataO match {
+          case Some(data) => Right(data)
+          case None       => Left(new UnauthorizedError(user))
+        }
+      case None =>
+        throw new IllegalStateException(
+          s"Error while providing process resolver for processing type $processingType requested by user ${user.username}"
+        )
+    }
+  }
+
   final def all(implicit user: LoggedUser): Map[ProcessingType, Data] = allAuthorized.collect { case (k, Some(v)) =>
     (k, v)
   }

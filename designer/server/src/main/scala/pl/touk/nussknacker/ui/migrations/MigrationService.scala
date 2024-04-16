@@ -246,23 +246,14 @@ class MigrationService(
   )(implicit loggedUser: LoggedUser) = {
     EitherT[Future, NuDesignerError, ValidationResults.ValidationResult](
       processResolver
-        .forProcessingTypeE(processingType) match {
+        .forProcessingTypeEUnsafe(processingType) match {
         case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
-        case Right(uiProcessResolverO) =>
-          uiProcessResolverO match {
-            case Some(uiProcessResolver) =>
-              Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](
-                FatalValidationError.renderNotAllowedAsError(
-                  uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
-                )
-              )
-            case None =>
-              Future.failed(
-                new IllegalStateException(
-                  s"Error while providing process resolver for processing type $processingType requested by user ${loggedUser.username}"
-                )
-              )
-          }
+        case Right(uiProcessResolver) =>
+          Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](
+            FatalValidationError.renderNotAllowedAsError(
+              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+            )
+          )
       }
     )
   }

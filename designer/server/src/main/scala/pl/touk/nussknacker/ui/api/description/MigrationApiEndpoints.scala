@@ -48,7 +48,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         )
       )
       .out(statusCode(Ok))
-      .errorOut(nuDesignerErrorOutput)
+      .errorOut(migrateEndpointErrorOutput)
       .withSecurity(auth)
 
   lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, Int, Any] =
@@ -58,10 +58,18 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .get
       .in("migrate" / "scenario" / "description" / "version")
       .out(plainBody[Int])
-      .errorOut(nuDesignerErrorOutput)
+      .errorOut(scenarioDescriptionVersionEndpointErrorOutput)
       .withSecurity(auth)
 
-  private val nuDesignerErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
+  private val scenarioDescriptionVersionEndpointErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
+    oneOf[NuDesignerError](
+      oneOfVariant(
+        Unauthorized,
+        plainBody[UnauthorizedError]
+      )
+    )
+
+  private val migrateEndpointErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
     oneOf[NuDesignerError](
       oneOfVariant(
         NotFound,
