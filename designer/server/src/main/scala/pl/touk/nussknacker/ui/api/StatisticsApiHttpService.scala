@@ -27,7 +27,7 @@ class StatisticsApiHttpService(
           .prepareStatisticsUrl()
           .map {
             case Left(CannotGenerateStatisticsError) => businessError(ApiCannotGenerateStatisticError)
-            case Right(url)                          => success(StatisticUrlResponseDto(url.toList))
+            case Right(maybeUrl)                     => success(StatisticUrlResponseDto(maybeUrl.toList))
           }
       }
   }

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.DbRef
 import slick.jdbc.JdbcProfile
@@ -9,7 +8,7 @@ import java.sql.SQLException
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
-class DBIOActionRunner(dbRef: DbRef) extends LazyLogging {
+class DBIOActionRunner(dbRef: DbRef) {
 
   protected lazy val profile: JdbcProfile = dbRef.profile
   protected lazy val api: profile.API     = profile.api
