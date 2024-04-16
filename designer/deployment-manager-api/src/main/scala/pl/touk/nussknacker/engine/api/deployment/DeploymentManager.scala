@@ -32,7 +32,7 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
 
 trait DeploymentManager extends AutoCloseable {
 
-  def processCommand[Result](command: ScenarioCommand[Result]): Future[Result]
+  def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
   final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
       implicit freshnessPolicy: DataFreshnessPolicy

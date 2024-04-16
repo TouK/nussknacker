@@ -1,14 +1,8 @@
 package pl.touk.nussknacker.engine.common.components
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerParameter,
-  FailedToDefineParameter,
-  NodeDependencyValue,
-  SingleInputDynamicComponent
-}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -37,8 +31,8 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
 
   }
 
-  private object FilterDecisionTableExpressionParameter {
-    val name: ParameterName = ParameterName("Filtering expression")
+  private object MatchConditionTableExpressionParameter {
+    val name: ParameterName = ParameterName("Match condition")
 
     val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
@@ -75,9 +69,9 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
   ): ServiceInvoker = {
-    val tabularTypedData    = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
-    val filteringExpression = FilterDecisionTableExpressionParameter.declaration.extractValueUnsafe(params)
-    new DecisionTableImplementation(tabularTypedData, filteringExpression)
+    val tabularTypedData = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
+    val matchCondition   = MatchConditionTableExpressionParameter.declaration.extractValueUnsafe(params)
+    new DecisionTableImplementation(tabularTypedData, matchCondition)
   }
 
   private lazy val prepare: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
@@ -94,11 +88,11 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
 
   private def basicDecisionTableParameterReady(
       context: ValidationContext
-  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
       NextParameters(
-        parameters = FilterDecisionTableExpressionParameter.declaration.createParameter(data) :: Nil,
+        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(data) :: Nil,
         errors = List.empty,
         state = None
       )
@@ -108,7 +102,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
           _
         )
         if name == BasicDecisionTableParameter.name &&
-          secondParamName == FilterDecisionTableExpressionParameter.name =>
+          secondParamName == MatchConditionTableExpressionParameter.name =>
       FinalResults(
         finalContext = context,
         errors = Nil,
@@ -116,15 +110,10 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       )
     case TransformationStep((name, FailedToDefineParameter) :: Nil, _) if name == BasicDecisionTableParameter.name =>
       NextParameters(
-        parameters = FilterDecisionTableExpressionParameter.declaration.createParameter(TabularTypedData.empty) :: Nil,
+        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(TabularTypedData.empty) :: Nil,
         errors = List.empty,
         state = None
       )
-//      FinalResults(
-//        finalContext = context,
-//        errors = CustomParameterValidationError("ERROR!!!", "error desc", name, nodeId.id) :: Nil,
-//        state = None
-//      )
   }
 
   private def allParametersReady(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -136,7 +125,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
           _
         )
         if firstParamName == BasicDecisionTableParameter.name &&
-          secondParamName == FilterDecisionTableExpressionParameter.name =>
+          secondParamName == MatchConditionTableExpressionParameter.name =>
       FinalResults.forValidation(context)(
         _.withVariable(
           name = OutputVariableNameDependency.extract(dependencies),

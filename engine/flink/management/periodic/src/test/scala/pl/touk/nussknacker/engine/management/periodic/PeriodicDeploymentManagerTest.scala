@@ -188,13 +188,13 @@ class PeriodicDeploymentManagerTest
     val emptyScenario = CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty)
 
     val validateResult = f.periodicDeploymentManager
-      .processCommand(ValidateScenarioCommand(processVersion, DeploymentData.empty, emptyScenario))
+      .processCommand(DMValidateScenarioCommand(processVersion, DeploymentData.empty, emptyScenario))
       .failed
       .futureValue
     validateResult shouldBe a[PeriodicProcessException]
 
     val deploymentResult = f.periodicDeploymentManager
-      .processCommand(RunDeploymentCommand(processVersion, DeploymentData.empty, emptyScenario, None))
+      .processCommand(DMRunDeploymentCommand(processVersion, DeploymentData.empty, emptyScenario, None))
       .failed
       .futureValue
     deploymentResult shouldBe a[PeriodicProcessException]
@@ -205,7 +205,12 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+        DMRunDeploymentCommand(
+          processVersion,
+          f.preparedDeploymentData,
+          PeriodicProcessGen.buildCanonicalProcess(),
+          None
+        )
       )
       .futureValue
 
@@ -219,7 +224,7 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(
+        DMRunDeploymentCommand(
           processVersion,
           DeploymentData.empty,
           PeriodicProcessGen.buildCanonicalProcess("0 0 0 ? * * 2000"),
@@ -239,7 +244,12 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+        DMRunDeploymentCommand(
+          processVersion,
+          f.preparedDeploymentData,
+          PeriodicProcessGen.buildCanonicalProcess(),
+          None
+        )
       )
       .futureValue
 
@@ -269,7 +279,12 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+        DMRunDeploymentCommand(
+          processVersion,
+          f.preparedDeploymentData,
+          PeriodicProcessGen.buildCanonicalProcess(),
+          None
+        )
       )
       .futureValue
 
@@ -290,7 +305,12 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+        DMRunDeploymentCommand(
+          processVersion,
+          f.preparedDeploymentData,
+          PeriodicProcessGen.buildCanonicalProcess(),
+          None
+        )
       )
       .futureValue
 
@@ -312,7 +332,12 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+        DMRunDeploymentCommand(
+          processVersion,
+          f.preparedDeploymentData,
+          PeriodicProcessGen.buildCanonicalProcess(),
+          None
+        )
       )
       .futureValue
 
@@ -334,7 +359,12 @@ class PeriodicDeploymentManagerTest
 
     f.periodicDeploymentManager
       .processCommand(
-        RunDeploymentCommand(processVersion, f.preparedDeploymentData, PeriodicProcessGen.buildCanonicalProcess(), None)
+        DMRunDeploymentCommand(
+          processVersion,
+          f.preparedDeploymentData,
+          PeriodicProcessGen.buildCanonicalProcess(),
+          None
+        )
       )
       .futureValue
 
@@ -357,7 +387,7 @@ class PeriodicDeploymentManagerTest
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
-    f.periodicDeploymentManager.processCommand(CancelScenarioCommand(processName, User("test", "Tester"))).futureValue
+    f.periodicDeploymentManager.processCommand(DMCancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
@@ -386,7 +416,7 @@ class PeriodicDeploymentManagerTest
     val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
     f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
 
-    f.periodicDeploymentManager.processCommand(CancelScenarioCommand(processName, User("test", "Tester"))).futureValue
+    f.periodicDeploymentManager.processCommand(DMCancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
@@ -408,7 +438,7 @@ class PeriodicDeploymentManagerTest
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
-    f.periodicDeploymentManager.processCommand(CancelScenarioCommand(processName, User("test", "Tester"))).futureValue
+    f.periodicDeploymentManager.processCommand(DMCancelScenarioCommand(processName, User("test", "Tester"))).futureValue
 
     f.repository.processEntities.loneElement.active shouldBe false
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed

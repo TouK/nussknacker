@@ -8,24 +8,23 @@ import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.language.higherKinds
 
 class StubProcessStateProvider(states: Map[ProcessName, ProcessState]) extends ProcessStateProvider {
 
   override def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     Future.successful(states(processDetails.name))
 
   override def getProcessState(
       processIdWithName: ProcessIdWithName
-  )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     Future.successful(states(processIdWithName.name))
 
   override def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
-      ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]] = Future.successful(processTraverse)
 

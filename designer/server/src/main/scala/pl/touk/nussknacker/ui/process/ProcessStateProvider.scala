@@ -14,16 +14,15 @@ trait ProcessStateProvider {
 
   def enrichDetailsWithProcessState[F[_]: Traverse](processTraverse: F[ScenarioWithDetails])(
       implicit user: LoggedUser,
-      ec: ExecutionContext,
       freshnessPolicy: DataFreshnessPolicy
   ): Future[F[ScenarioWithDetails]]
 
   def getProcessState(
       processDetails: ScenarioWithDetailsEntity[_]
-  )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
   def getProcessState(
       processIdWithName: ProcessIdWithName
-  )(implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
+  )(implicit user: LoggedUser, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
 }

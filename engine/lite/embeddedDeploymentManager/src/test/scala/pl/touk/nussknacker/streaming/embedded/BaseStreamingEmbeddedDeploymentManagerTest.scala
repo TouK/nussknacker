@@ -8,11 +8,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
+  DMRunDeploymentCommand,
   DeployedScenarioData,
   DeploymentManager,
   ProcessingTypeActionServiceStub,
-  ProcessingTypeDeployedScenariosProviderStub,
-  RunDeploymentCommand
+  ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -46,7 +46,9 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = scenario.name)
-      deploymentManager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
+      deploymentManager
+        .processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, scenario, None))
+        .futureValue
     }
 
   }

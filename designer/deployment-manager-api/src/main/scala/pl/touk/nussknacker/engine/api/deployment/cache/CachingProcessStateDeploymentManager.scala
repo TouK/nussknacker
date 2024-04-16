@@ -48,7 +48,7 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
     }
   }
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     delegate.processCommand(command)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = delegate.processStateDefinitionManager
