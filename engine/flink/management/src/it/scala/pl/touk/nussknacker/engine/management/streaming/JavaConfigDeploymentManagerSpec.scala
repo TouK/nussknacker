@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{CancelScenarioCommand, RunDeploymentCommand}
+import pl.touk.nussknacker.engine.api.deployment.{DMCancelScenarioCommand, DMRunDeploymentCommand}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -27,7 +27,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
     assert(
       deploymentManager
         .processCommand(
-          RunDeploymentCommand(
+          DMRunDeploymentCommand(
             ProcessVersion.empty.copy(processName = process.name),
             DeploymentData.empty,
             process,
@@ -43,7 +43,9 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
     }
 
     assert(
-      deploymentManager.processCommand(CancelScenarioCommand(process.name, user = userToAct)).isReadyWithin(10 seconds)
+      deploymentManager
+        .processCommand(DMCancelScenarioCommand(process.name, user = userToAct))
+        .isReadyWithin(10 seconds)
     )
   }
 

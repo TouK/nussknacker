@@ -8,11 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessActionId,
-  ProcessingTypeDeploymentServiceStub
-}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -74,9 +70,7 @@ class PeriodicProcessServiceTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
 
-    val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
-      List.empty
-    )
+    val actionService: ProcessingTypeActionServiceStub = new ProcessingTypeActionServiceStub
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
@@ -127,7 +121,7 @@ class PeriodicProcessServiceTest
 
       },
       Clock.systemDefaultZone(),
-      deploymentService
+      actionService
     )
 
   }
@@ -200,7 +194,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe Nil
+    f.actionService.sentActionIds shouldBe Nil
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
@@ -231,7 +225,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe Nil
+    f.actionService.sentActionIds shouldBe Nil
 
   }
 
@@ -248,7 +242,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe List(processActionId)
+    f.actionService.sentActionIds shouldBe List(processActionId)
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe false
@@ -276,7 +270,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe Nil
+    f.actionService.sentActionIds shouldBe Nil
 
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.map(

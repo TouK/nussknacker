@@ -99,7 +99,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Filtering expression")),
+                paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -123,7 +123,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Filtering expression")),
+                paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -223,7 +223,7 @@ trait DecisionTableSpec
       .source("request", TestScenarioRunner.testDataSource)
       .decisionTable(
         decisionTableParamValue = basicDecisionTableDefinition,
-        filterExpressionParamValue = expression,
+        matchConditionParamValue = expression,
         output = "dtResult",
       )
       .end("end", "value" -> sinkValueExpression)

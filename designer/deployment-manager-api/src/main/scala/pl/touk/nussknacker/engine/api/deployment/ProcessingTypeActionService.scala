@@ -1,15 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessId
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ProcessingTypeDeploymentService {
-
-  def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]]
+trait ProcessingTypeActionService {
 
   // Marks action execution finished. Returns true if update has some effect
   def markActionExecutionFinished(actionId: ProcessActionId)(implicit ec: ExecutionContext): Future[Boolean]
@@ -18,21 +13,11 @@ trait ProcessingTypeDeploymentService {
 
 }
 
-final case class DeployedScenarioData(
-    processVersion: ProcessVersion,
-    deploymentData: DeploymentData,
-    resolvedScenario: CanonicalProcess
-)
-
-class ProcessingTypeDeploymentServiceStub(
-    deployedScenarios: List[DeployedScenarioData]
-) extends ProcessingTypeDeploymentService {
+// This stub is in API module because we don't want to extract deployment-manager-tests-utils module
+class ProcessingTypeActionServiceStub extends ProcessingTypeActionService {
 
   @volatile
   var actionIds: List[ProcessActionId] = List.empty
-
-  override def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] =
-    Future.successful(deployedScenarios)
 
   override def markActionExecutionFinished(
       actionId: ProcessActionId

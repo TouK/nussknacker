@@ -60,7 +60,7 @@ class StreamingEmbeddedDeploymentManagerTest
     kafkaClient.createConsumer().consumeWithJson[Json](outputTopic).take(1).head.message() shouldBe input
 
     wrapInFailingLoader {
-      manager.processCommand(CancelScenarioCommand(name, User("a", "b"))).futureValue
+      manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
     }
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
@@ -96,7 +96,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     kafkaClient.createConsumer().consumeWithJson[Json](outputTopic).take(1).head.message() shouldBe input
 
-    manager.processCommand(CancelScenarioCommand(name, User("a", "b"))).futureValue
+    manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
 
@@ -212,7 +212,7 @@ class StreamingEmbeddedDeploymentManagerTest
     kafkaClient.sendMessage(inputTopic, message("3")).futureValue
     consumer.take(3) shouldBe List(prefixMessage("start", "1"), prefixMessage("next", "2"), prefixMessage("next", "3"))
 
-    manager.processCommand(CancelScenarioCommand(name, User("a", "b"))).futureValue
+    manager.processCommand(DMCancelScenarioCommand(name, User("a", "b"))).futureValue
 
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
@@ -262,7 +262,7 @@ class StreamingEmbeddedDeploymentManagerTest
 
     val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
     val results = wrapInFailingLoader {
-      manager.processCommand(TestScenarioCommand(name, scenario, testData)).futureValue
+      manager.processCommand(DMTestScenarioCommand(name, scenario, testData)).futureValue
     }
     results.nodeResults("sink") should have length 2
     val idGenerator       = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")

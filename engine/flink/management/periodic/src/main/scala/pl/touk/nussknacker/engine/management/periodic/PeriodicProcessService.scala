@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentStatus, _}
+import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
@@ -38,7 +38,7 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
-    deploymentService: ProcessingTypeDeploymentService
+    actionService: ProcessingTypeActionService
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -355,7 +355,7 @@ class PeriodicProcessService(
   ): RepositoryAction[Callback] =
     scheduledProcessesRepository.monad.pure { () =>
       processActionIdOption
-        .map(deploymentService.markActionExecutionFinished)
+        .map(actionService.markActionExecutionFinished)
         .sequence
         .map(_ => ())
     }
