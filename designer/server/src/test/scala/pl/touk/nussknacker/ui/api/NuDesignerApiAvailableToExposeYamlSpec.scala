@@ -20,6 +20,7 @@ import scala.util.Try
 // if the test fails it probably means that you should regenerate the Nu Designer OpenAPI document
 // you can do it but running manually the object `GenerateDesignerOpenApiYamlFile` with main method or
 // using SBT's task: `sbt generateDesignerOpenApi`
+// Warning! OpenAPI can be generated differently depending on the scala version.
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {

@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  CellError,
   ErrorDetails,
   TabularDataDefinitionParserErrorDetails
 }
@@ -90,7 +91,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
           Some(
             TabularDataDefinitionParserErrorDetails(
               invalidCells.map { coordinates =>
-                TabularDataDefinitionParserErrorDetails.CellError(
+                CellError(
                   columnName = coordinates.columnName.name,
                   rowIndex = coordinates.rowIndex,
                   errorMessage =
