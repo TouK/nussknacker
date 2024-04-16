@@ -8,7 +8,7 @@ import { getProcessName } from "./NodeDetailsContent/selectors";
 import NodeUtils from "../NodeUtils";
 import { styled } from "@mui/material";
 
-import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
+import { getBorderColor } from "../../../containers/theme/helpers";
 
 interface Props {
     node: NodeType;

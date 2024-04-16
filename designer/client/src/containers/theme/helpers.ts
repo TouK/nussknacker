@@ -8,3 +8,9 @@ export const getBorderColor = (theme: Theme) =>
     getLuminance(theme.palette.background.paper) > 0.5
         ? blendDarken(theme.palette.background.paper, 0.25)
         : blendLighten(theme.palette.background.paper, 0.25);
+
+export function getNodeBorderColor(theme) {
+    return getLuminance(theme.palette.background.paper) > 0.5
+        ? blendDarken(theme.palette.background.paper, 0.25)
+        : blendLighten(theme.palette.background.paper, 0.4);
+}

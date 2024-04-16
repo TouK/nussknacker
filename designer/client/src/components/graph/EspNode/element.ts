@@ -13,7 +13,7 @@ import millify from "millify";
 import { UserSettings } from "../../../reducers/userSettings";
 import { Theme } from "@mui/material";
 import { blend } from "@mui/system";
-import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
+import { blendLighten, getNodeBorderColor } from "../../../containers/theme/helpers";
 
 const maxLineLength = 24;
 const maxLineCount = 2;
@@ -107,7 +107,7 @@ export const updateNodeCounts =
             fill: hasErrors
                 ? blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3)
                 : blendLighten(theme.palette.background.paper, 0.04),
-            stroke: hasErrors ? theme.palette.error.main : getBorderColor(theme),
+            stroke: hasErrors ? theme.palette.error.main : getNodeBorderColor(theme),
             strokeWidth: hasErrors ? 1 : 0.5,
             width: testResultsWidth,
         };
@@ -149,7 +149,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     fill: theme.palette.text.primary,
                 },
                 border: {
-                    stroke: node.isDisabled ? "none" : getBorderColor(theme),
+                    stroke: node.isDisabled ? "none" : getNodeBorderColor(theme),
                     strokeWidth: 0.5,
                 },
             },
