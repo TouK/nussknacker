@@ -7,6 +7,9 @@ describe("Processes list", () => {
         cy.deleteAllTestProcesses({ filter: PROCESSING_MODE, force: true });
         cy.createTestProcessName(NAME).as("processName");
         cy.createTestProcess(`${PROCESSING_MODE}-Request-Response`, undefined, "RequestResponse", "Request-Response");
+
+        // Sometimes it's a small difference with the creation date time of scenarios, that's why we need to wait to keep elements in the same order
+        cy.wait(500);
         cy.createTestProcess(`${PROCESSING_MODE}-Streaming`, undefined, undefined, "Unbounded-Stream");
     });
 
