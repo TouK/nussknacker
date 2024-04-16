@@ -162,7 +162,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
     );
 
     return (
-        <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE} renderClone={renderDraggable}>
+        <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE}>
             {renderDroppable}
         </Droppable>
     );
