@@ -111,7 +111,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
           secondParamName == FilterDecisionTableExpressionParameter.name =>
       FinalResults(
         finalContext = context,
-        errors = CustomParameterValidationError("ERROR!!!", "error desc", name, nodeId.id) :: Nil,
+        errors = Nil,
         state = None
       )
     case TransformationStep((name, FailedToDefineParameter) :: Nil, _) if name == BasicDecisionTableParameter.name =>
