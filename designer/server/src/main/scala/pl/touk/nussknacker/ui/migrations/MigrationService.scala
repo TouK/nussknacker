@@ -54,19 +54,17 @@ class MigrationService(
   private val passUsernameInMigration = true
 
   def migrate(
-      req: MigrateScenarioRequestDto
+      migrateScenarioData: MigrateScenarioData
   )(implicit loggedUser: LoggedUser): EitherT[Future, NuDesignerError, Unit] = {
 
-    val migrateScenarioRequest = MigrateScenarioData.toDomain(req)
-
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
-    val remoteScenarioDescriptionVersion = migrateScenarioRequest.currentVersion()
+    val remoteScenarioDescriptionVersion = migrateScenarioData.currentVersion()
     val versionsDifference               = localScenarioDescriptionVersion - remoteScenarioDescriptionVersion
 
     val liftedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData] =
       if (versionsDifference > 0) {
-        migrationApiAdapterService.adaptUp(migrateScenarioRequest, versionsDifference)
-      } else Right(migrateScenarioRequest)
+        migrationApiAdapterService.adaptUp(migrateScenarioData, versionsDifference)
+      } else Right(migrateScenarioData)
 
     liftedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
