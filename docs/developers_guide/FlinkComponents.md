@@ -12,7 +12,7 @@ The recommended way to implement a source is through [StandardFlinkSource](https
 interface. Your source only has to implement a `sourceStream` method that provides [DataStreamSource](https://nightlies.apache.org/flink/flink-docs-master/api/java/org/apache/flink/streaming/api/datastream/DataStreamSource.html)
 based on [StreamExecutionEnvironment](https://nightlies.apache.org/flink/flink-docs-master/api/java/org/apache/flink/streaming/api/environment/StreamExecutionEnvironment.html).
 
-This way provides a standard transformation of the input value into a Nussknacker `Context` and allows the implementation to customize these steps:
+This approach provides a standard transformation of the input value into a Nussknacker `Context` and allows the implementation to customize these steps:
 - [Timestamp watermark handler](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/timestampwatermark/TimestampWatermarkHandler.scala)
   so that events are correctly processed downstream, for example to avoid (or force!) dropping late events by aggregates. Read more about
   [notion of time](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only)
@@ -23,11 +23,11 @@ This way provides a standard transformation of the input value into a Nussknacke
 
 ### Generic implementation
 Nussknacker also provides a more generic interface for implementing sources - [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala).
-The difference is instead of providing a Flink `DataStreamSource`, arbitrary `DataStream[Context]` can be provided 
-directly, however you have to remember to assign timestamps, watermarks and initialize the context.
+Instead of providing a Flink `DataStreamSource`, you can provide an arbitrary `DataStream[Context]` directly. However, you 
+have to remember to assign timestamps, watermarks, and initialize the context.
 
 ### Test support
-To enable testing functionality in scenarios using your source implementation, your source needs to implement certain test-specific interaces:
+To enable testing functionality in scenarios using your source implementation, your source needs to implement certain test-specific interfaces:
 - Basic test support - `FlinkSourceTestSupport` - besides the more general `SourceTestSupport`, the implementation: 
     - has to provide a Flink `TypeInformation` for serializing/deserializing data emitted from source (e.g. `#input`)
     - optionally can provide a `TimestampWatermarkHandler` that will be used only for tests
