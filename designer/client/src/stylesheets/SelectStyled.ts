@@ -1,7 +1,7 @@
 import { alpha, css, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
-import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
+import { blendLighten, getBorderColor } from "../containers/theme/helpers";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
@@ -27,7 +27,7 @@ export const selectStyled = (theme: Theme) => {
         outline: 1px solid ${isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
     `;
 
-    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isFocused: boolean, isDisabled: boolean) => css`
+    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isDisabled: boolean) => css`
         ${base}
         ${commonNodeInput("10px")};
         height: 25px;
@@ -35,15 +35,14 @@ export const selectStyled = (theme: Theme) => {
         border: 1px;
         border-radius: 0;
         background-color: ${isSelected
-            ? blendDarken(theme.palette.primary.main, 0.5)
-            : isFocused
-            ? blendDarken(theme.palette.primary.main, 0.75)
+            ? blendLighten(theme.palette.background.paper, 0.15)
             : isDisabled
             ? "none"
             : theme.palette.background.paper};
         color: ${isDisabled && theme.palette.action.disabled};
         &:hover {
-            background-color: ${!isDisabled && blendDarken(theme.palette.action.hover, 0.15)};
+            color: inherit;
+            background-color: ${!isDisabled && theme.palette.action.hover};
         }
     `;
 
@@ -93,6 +92,7 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         z-index: 2;
         border-radius: 0;
+        background-color: ${theme.palette.background.paper};
     `;
 
     const valueContainer = (base: CSSObjectWithLabel) => css`

@@ -45,10 +45,7 @@ export default function Input(props: InputProps): JSX.Element {
                         onChange={onChange}
                         onFocus={onFocus}
                         type={type}
-                        className={cx([
-                            !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`,
-                            inputClassName,
-                        ])}
+                        className={cx([nodeInput, showValidation || (!isEmpty(fieldErrors) && nodeInputWithError), inputClassName])}
                         value={value || ""}
                     />
                 }

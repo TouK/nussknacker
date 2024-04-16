@@ -1,7 +1,7 @@
 import { cyan, deepOrange, lime } from "@mui/material/colors";
 import { alpha, createTheme, Theme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
-import { getBorderColor } from "nussknackerUi/themeHelpers";
+import { getBorderColor, blendLighten } from "nussknackerUi/themeHelpers";
 
 const darkBase = createTheme({
     palette: {
@@ -73,9 +73,7 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                 zIndex: root.zIndex.mobileStepper - 1,
                             },
                             columnHeadersInner: {
-                                backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } })[
-                                    root.palette.mode
-                                ],
+                                backgroundColor: blendLighten(root.palette.background.paper, 0.12),
                             },
                             cell: {
                                 "&:focus-within": {

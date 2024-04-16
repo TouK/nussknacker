@@ -150,7 +150,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                 },
                 border: {
                     stroke: node.isDisabled ? "none" : getNodeBorderColor(theme),
-                    strokeWidth: 0.5,
+                    strokeWidth: 1,
                 },
             },
             rankDir: "R",

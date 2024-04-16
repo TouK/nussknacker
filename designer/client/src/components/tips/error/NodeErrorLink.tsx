@@ -12,7 +12,7 @@ export const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElem
     const styles = css({
         whiteSpace: "normal",
         fontWeight: 600,
-        color: theme.palette.error.main,
+        color: theme.palette.error.light,
         "a&": {
             "&:hover": {
                 color: Color(theme.palette.error.main).lighten(0.25).hex(),

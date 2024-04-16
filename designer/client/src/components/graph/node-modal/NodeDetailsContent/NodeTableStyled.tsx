@@ -102,7 +102,7 @@ export const NodeTableStyled = styled("div")(
             height: 20px;
         }
         .${nodeInputWithError} {
-            outline: 1px solid ${theme.palette.error.main} !important;
+            outline: 1px solid ${theme.palette.error.light} !important;
             outline-offset: initial !important;
             border-radius: 2px;
         }

@@ -140,6 +140,7 @@ const darkModePalette = {
         main: `#762976`,
     },
     error: {
+        light: "#DE7E8A",
         main: `#D4354D`,
     },
     warning: {
@@ -160,7 +161,7 @@ const darkModePalette = {
     },
     action: {
         hover: alpha("#D2A8FF", 0.24),
-        active: alpha("#D2A8FF", 0.24),
+        active: alpha("#D2A8FF", 0.4),
     },
     custom: {
         nodes: {
@@ -330,6 +331,9 @@ export const nuTheme = (mode: PaletteMode) =>
                         root: ({ theme }) => ({
                             marginLeft: 0,
                             color: theme.palette.success.main,
+                            "&.Mui-error": {
+                                color: theme.palette.error.light,
+                            },
                         }),
                     },
                     variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],

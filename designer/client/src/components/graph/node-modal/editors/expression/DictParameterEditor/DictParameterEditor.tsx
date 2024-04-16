@@ -113,7 +113,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                 loading={isFetching}
                 renderOption={(props, option) => {
                     return (
-                        <Box component={"li"} sx={menuOption({}, false, false, false) as SxProps<Theme>} {...props} aria-selected={false}>
+                        <Box component={"li"} sx={menuOption({}, false, false) as SxProps<Theme>} {...props} aria-selected={false}>
                             {option.label}
                         </Box>
                     );
