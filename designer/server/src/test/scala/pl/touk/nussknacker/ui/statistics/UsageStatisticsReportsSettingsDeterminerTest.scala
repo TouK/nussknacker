@@ -69,11 +69,11 @@ class UsageStatisticsReportsSettingsDeterminerTest
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
       Some(SimpleStateStatus.Running),
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
     val statistics = UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData)
     statistics shouldEqual Map(
@@ -95,12 +95,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = isFragment,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("foo"),
-      None,
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      status = None,
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
 
     forAll(
@@ -121,12 +121,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       processingMode,
       DeploymentManagerType("foo"),
-      None,
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      status = None,
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
 
     forAll(
@@ -148,12 +148,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       isFragment = false,
       ProcessingMode.UnboundedStream,
       dmType,
-      None,
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      status = None,
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
 
     forAll(
@@ -177,11 +177,11 @@ class UsageStatisticsReportsSettingsDeterminerTest
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("foo"),
       status,
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
 
     UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(None))(
@@ -215,44 +215,44 @@ class UsageStatisticsReportsSettingsDeterminerTest
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
       Some(SimpleStateStatus.NotDeployed),
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
     val runningScenario = ScenarioStatisticsInputData(
       isFragment = false,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
       Some(SimpleStateStatus.Running),
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
     val fragment = ScenarioStatisticsInputData(
       isFragment = true,
       ProcessingMode.UnboundedStream,
       DeploymentManagerType("flinkStreaming"),
       None,
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
     val k8sRRScenario = ScenarioStatisticsInputData(
       isFragment = false,
       ProcessingMode.RequestResponse,
       DeploymentManagerType("lite-k8s"),
       Some(SimpleStateStatus.Running),
-      nodes = 2,
-      processCategory = "Category1",
-      processVersion = VersionId(2),
+      nodesCount = 2,
+      scenarioCategory = "Category1",
+      scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsed = 0
+      fragmentsUsedCount = 0
     )
 
     val params = new UsageStatisticsReportsSettingsDeterminer(
@@ -266,22 +266,26 @@ class UsageStatisticsReportsSettingsDeterminerTest
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
-      "m_n"     -> "2",
-      "v_n"     -> "2",
-      "c"       -> "1",
-      "v_m"     -> "2",
-      "v_v"     -> "2",
       "a_n"     -> "1",
-      "m_f"     -> "0",
-      "v_f"     -> "0",
-      "m_a"     -> "1",
-      "v_a"     -> "1",
-      "e_a"     -> "1",
-      "m_c"     -> "1",
-      "v_c"     -> "1",
-      "m_u"     -> "3832067",
-      "v_u"     -> "3832067",
+      "a_t"     -> "1",
+      "a_v"     -> "1",
+      "c"       -> "1",
       "c_n"     -> "1",
+      "c_v"     -> "1",
+      "v_m"     -> "2",
+      "v_ma"    -> "2",
+      "v_mi"    -> "2",
+      "v_v"     -> "2",
+      "u_v"     -> "3832067",
+      "u_ma"    -> "3832067",
+      "u_mi"    -> "3832067",
+      "c_t"     -> "1",
+      "f_m"     -> "0",
+      "f_v"     -> "0",
+      "n_m"     -> "2",
+      "n_v"     -> "2",
+      "n_ma"    -> "2",
+      "n_mi"    -> "2",
       "s_s"     -> "3",
       "s_f"     -> "1",
       "s_pm_s"  -> "3",
