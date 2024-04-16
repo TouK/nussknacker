@@ -121,12 +121,14 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
         .flatten
         .map(Right(_))
     }
-    new UsageStatisticsReportsSettingsDeterminer(config,
+    new UsageStatisticsReportsSettingsDeterminer(
+      config,
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
       fetchComponentList,
-      fetchScenarioActions)
+      fetchScenarioActions
+    )
 
   }
 
