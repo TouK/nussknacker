@@ -61,7 +61,8 @@ import pl.touk.nussknacker.ui.services.{
   MigrationApiHttpService,
   NuDesignerExposedApiHttpService
 }
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -398,18 +399,24 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+      val fingerprintService           = new FingerprintService(dbioRunner, new FingerprintRepositoryImpl(dbRef))
       val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
         usageStatisticsReportsConfig,
         processService,
-        processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType)
+        processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
+        fingerprintService.fingerprint
+      )
+
+      val statisticsApiHttpService = new StatisticsApiHttpService(
+        authenticationResources,
+        usageStatisticsReportsSettingsDeterminer
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
         authenticationResources.name,
-        analyticsConfig,
-        () => usageStatisticsReportsSettingsDeterminer.determineStatisticsUrl()
+        analyticsConfig
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
@@ -428,7 +435,8 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          userApiHttpService
+          userApiHttpService,
+          statisticsApiHttpService
         )
 
       val akkaHttpServerInterpreter = {
