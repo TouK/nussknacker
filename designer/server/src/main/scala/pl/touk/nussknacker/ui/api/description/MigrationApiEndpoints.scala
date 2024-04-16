@@ -56,7 +56,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .summary("current version of the scenario description version being used")
       .tag("Migrations")
       .get
-      .in("migrate" / "scenario" / "description" / "version")
+      .in("migrate" / "scenario" / "description" / "version") // FIXME: Rename to `migration`
       .out(plainBody[Int])
       .errorOut(scenarioDescriptionVersionEndpointErrorOutput)
       .withSecurity(auth)
