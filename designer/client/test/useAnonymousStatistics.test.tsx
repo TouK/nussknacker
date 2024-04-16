@@ -9,7 +9,7 @@ import { AxiosResponse } from "axios";
 jest.mock("react-redux");
 jest.mock("../src/http/HttpService");
 
-const mockFetchStatisticUrls = httpService.fetchStatisticUrls as jest.MockedFunction<typeof httpService.fetchStatisticUrls>;
+const mockFetchStatisticUrls = httpService.fetchStatisticUsage as jest.MockedFunction<typeof httpService.fetchStatisticUsage>;
 const mockUserSelector = useSelector as jest.MockedFunction<typeof useSelector>;
 
 describe("useAnonymousStatistics", () => {
@@ -27,8 +27,8 @@ describe("useAnonymousStatistics", () => {
 
         renderHook(() => useAnonymousStatistics());
 
-        expect(httpService.fetchStatisticUrls).toHaveBeenCalledTimes(1);
-        expect(httpService.fetchStatisticUrls).toHaveBeenCalledWith();
+        expect(httpService.fetchStatisticUsage).toHaveBeenCalledTimes(1);
+        expect(httpService.fetchStatisticUsage).toHaveBeenCalledWith();
 
         // Verify first anonymous statistic URL
         await waitFor(() => {
@@ -53,6 +53,6 @@ describe("useAnonymousStatistics", () => {
         renderHook(() => useAnonymousStatistics(1));
 
         // Ensure that fetchStatisticUrls is not called
-        expect(httpService.fetchStatisticUrls).not.toHaveBeenCalled();
+        expect(httpService.fetchStatisticUsage).not.toHaveBeenCalled();
     });
 });

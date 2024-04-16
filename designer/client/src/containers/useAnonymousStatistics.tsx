@@ -27,7 +27,7 @@ export function useAnonymousStatistics(statisticFetchTime = STATISTIC_FETCH_TIME
             }
         };
 
-        httpService.fetchStatisticUrls().then((response) => {
+        httpService.fetchStatisticUsage().then((response) => {
             response.data.urls.forEach((url) => {
                 setTimeout(() => {
                     appendStatisticElement(url);

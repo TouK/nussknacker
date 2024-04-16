@@ -752,8 +752,8 @@ class HttpService {
             );
     }
 
-    fetchStatisticUrls() {
-        return api.get<{ urls: string[] }>(`/statistic/url`);
+    fetchStatisticUsage() {
+        return api.get<{ urls: string[] }>(`/statistic/usage`);
     }
 
     #addInfo(message: string) {
