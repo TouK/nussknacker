@@ -2,6 +2,9 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
+import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{NodeDeploymentData, NodesDeploymentData, SqlFilteringExpression}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -10,13 +13,18 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.api.TapirCodecs
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.NoScenario
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
+  DeploymentCommentError,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{
   DeploymentError,
   DeploymentRequest,
   RequestedDeploymentId
 }
-import sttp.model.StatusCode.{NotFound, Ok}
+import pl.touk.nussknacker.ui.listener.Comment
+import sttp.model.StatusCode
+import sttp.model.StatusCode.Ok
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -39,7 +47,8 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
             DeploymentRequest(
               NodesDeploymentData(
                 Map(NodeId("sourceNodeId1") -> SqlFilteringExpression("field1 = 'value'"))
-              )
+              ),
+              comment = None
             )
           )
       )
@@ -47,12 +56,22 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .errorOut(
         oneOf[DeploymentError](
           oneOfVariantFromMatchType(
-            NotFound,
+            StatusCode.NotFound,
             plainBody[NoScenario]
               .example(
                 Example.of(
                   summary = Some("No scenario {scenarioName} found"),
                   value = NoScenario(ProcessName("'example scenario'"))
+                )
+              )
+          ),
+          oneOfVariantFromMatchType(
+            StatusCode.BadRequest,
+            plainBody[DeploymentCommentError]
+              .example(
+                Example.of(
+                  summary = Some("Comment is required"),
+                  value = DeploymentCommentError("Comment is required.")
                 )
               )
           )
@@ -69,7 +88,8 @@ object DeploymentApiEndpoints {
     // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
     final case class DeploymentRequest(
-        nodesDeploymentData: NodesDeploymentData
+        nodesDeploymentData: NodesDeploymentData,
+        comment: Option[ApiComment]
     )
 
     implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.string[SqlFilteringExpression].as
@@ -88,6 +108,8 @@ object DeploymentApiEndpoints {
 
       final case object NoPermission extends DeploymentError with CustomAuthorizationError
 
+      final case class DeploymentCommentError(message: String) extends DeploymentError
+
       private def deserializationNotSupportedException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
@@ -99,19 +121,32 @@ object DeploymentApiEndpoints {
         )
       }
 
+      implicit val deploymentCommentErrorCodec: Codec[String, DeploymentCommentError, CodecFormat.TextPlain] = {
+        Codec.string.map(
+          Mapping.from[String, DeploymentCommentError](deserializationNotSupportedException)(_.message)
+        )
+      }
+
     }
 
     final case class RequestedDeploymentId(value: String)
 
     object RequestedDeploymentId {
 
-      private def encode(deploymentId: RequestedDeploymentId): String = deploymentId.value
+      implicit val deploymentIdCodec: PlainCodec[RequestedDeploymentId] =
+        Codec.string.map(RequestedDeploymentId(_))(_.value)
 
-      private def decode(value: String): DecodeResult[RequestedDeploymentId] = {
-        DecodeResult.Value(RequestedDeploymentId(value))
-      }
+    }
 
-      implicit val deploymentIdCodec: PlainCodec[RequestedDeploymentId] = Codec.string.mapDecode(decode)(encode)
+    final case class ApiComment(override val value: String) extends Comment
+
+    object ApiComment {
+
+      implicit val encoder: Encoder[ApiComment] = deriveUnwrappedEncoder
+
+      implicit val decoder: Decoder[ApiComment] = deriveUnwrappedDecoder
+
+      implicit val schema: Schema[ApiComment] = Schema.string
 
     }
 

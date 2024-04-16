@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import cats.Traverse
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
   OnDeployActionFailed,
   OnDeployActionSuccess
 }
-import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.{Comment, ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -205,11 +204,8 @@ class DeploymentService(
 
   // TODO: this is temporary step: we want ParameterValidator here. The aim is to align deployment and custom actions
   //  and validate deployment comment (and other action parameters) the same way as in node expressions or additional properties.
-  private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
-    DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
-      case Valid(deploymentComment) => Future.successful(deploymentComment)
-      case Invalid(exc)             => Future.failed(CustomActionValidationError(exc.message))
-    }
+  private def validateDeploymentComment(comment: Option[Comment]): Future[Option[DeploymentComment]] =
+    Future.fromTry(DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings).toEither.toTry)
 
   protected def validateBeforeDeploy(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],

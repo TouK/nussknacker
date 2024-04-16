@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.{DMScenarioCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
+import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -21,7 +22,7 @@ sealed trait ScenarioCommand[Result] {
 case class RunDeploymentCommand(
     processId: ProcessIdWithName,
     savepointPath: Option[String],
-    comment: Option[String],
+    comment: Option[Comment],
     nodesDeploymentData: NodesDeploymentData,
     user: LoggedUser
 ) extends ScenarioCommand[Future[Option[ExternalDeploymentId]]]
@@ -35,5 +36,5 @@ case class CustomActionCommand(
 
 // TODO CancelScenarioCommand will be legacy in some future because it operates on the scenario level instead of deployment level -
 //      we should replace it by command operating on deployment
-case class CancelScenarioCommand(processId: ProcessIdWithName, comment: Option[String], user: LoggedUser)
+case class CancelScenarioCommand(processId: ProcessIdWithName, comment: Option[Comment], user: LoggedUser)
     extends ScenarioCommand[Unit]

@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment, UserComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -180,7 +180,7 @@ class DeploymentServiceSpec
     val id                       = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(id, None, Some("samplePattern"), NodesDeploymentData.empty, user)
+      RunDeploymentCommand(id, None, Some(UserComment("samplePattern")), NodesDeploymentData.empty, user)
     )
 
     eventually {
@@ -965,7 +965,7 @@ class DeploymentServiceSpec
   }
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
-    val comment = Some(DeploymentComment.unsafe(actionName.toString.capitalize).toComment(actionName))
+    val comment = Some(DeploymentComment.unsafe(UserComment(actionName.toString.capitalize)).toComment(actionName))
     actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 

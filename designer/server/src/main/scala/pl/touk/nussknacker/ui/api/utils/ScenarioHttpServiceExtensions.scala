@@ -45,12 +45,15 @@ trait ScenarioHttpServiceExtensions {
   ): EitherT[Future, BusinessErrorType, T] = {
     EitherT(
       future.transform {
-        case Success(result)                             => Success(Right(result))
-        case Failure(_: UnauthorizedError)               => Success(Left(noPermissionError))
-        case Failure(ProcessNotFoundError(scenarioName)) => Success(Left(noScenarioError(scenarioName)))
-        case Failure(ex)                                 => Failure(ex)
+        case Success(result)                                    => Success(Right(result))
+        case Failure(_: UnauthorizedError)                      => Success(Left(noPermissionError))
+        case Failure(ProcessNotFoundError(scenarioName))        => Success(Left(noScenarioError(scenarioName)))
+        case Failure(err) if handleOtherErrors.isDefinedAt(err) => Success(Left(handleOtherErrors(err)))
+        case Failure(ex)                                        => Failure(ex)
       }
     )
   }
+
+  protected def handleOtherErrors: PartialFunction[Throwable, BusinessErrorType] = PartialFunction.empty
 
 }
