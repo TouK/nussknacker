@@ -1934,7 +1934,6 @@ lazy val designer = (project in file("designer/server"))
         "io.circe"                      %% "circe-generic-extras"            % circeGenericExtrasV,
         "org.reflections"                % "reflections"                     % "0.10.2",
         "com.github.pathikrit"          %% "better-files"                    % "3.9.2",
-        "com.typesafe.slick"            %% "slick-testkit"                   % slickV               % Test,
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
         "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
         "org.scalatestplus"             %% "mockito-4-11"                    % scalaTestPlusV       % Test,

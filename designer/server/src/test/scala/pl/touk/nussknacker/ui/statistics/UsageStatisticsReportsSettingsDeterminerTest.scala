@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.statistics
 
-import org.apache.commons.io.FileUtils
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -13,9 +12,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.util.UUID
 import scala.collection.immutable.{ListMap, Map}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -28,6 +24,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
     with TableDrivenPropertyChecks {
 
   private val sampleFingerprint = "fooFingerprint"
+  private val fingerprintSupplier = (_: UsageStatisticsReportsConfig, _: FileName) =>
+    Future.successful(new Fingerprint(sampleFingerprint))
 
   test("should generate correct url with encoded params") {
     UsageStatisticsReportsSettingsDeterminer.prepareUrl(
@@ -36,41 +34,14 @@ class UsageStatisticsReportsSettingsDeterminerTest
   }
 
   test("should determine query params with version and source ") {
-    val fingerprintFile = getTempFileLocation
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      fingerprintFile,
+      fingerprintSupplier,
       () => Future.successful(List.empty)
     ).determineQueryParams().futureValue
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
     params should contain("version" -> BuildInfo.version)
-    fingerprintFile.exists() shouldBe false
-  }
-
-  test("should determine random fingerprint if configured is blank") {
-    val fingerprintFile = getTempFileLocation
-    val params = new UsageStatisticsReportsSettingsDeterminer(
-      UsageStatisticsReportsConfig(enabled = true, Some(""), None),
-      fingerprintFile,
-      () => Future.successful(List.empty)
-    ).determineQueryParams().futureValue
-    params("fingerprint") should startWith("gen-")
-    fingerprintFile.exists() shouldBe true
-  }
-
-  test("should read persisted fingerprint") {
-    val fingerprintFile = File.createTempFile("nussknacker", ".fingerprint")
-    fingerprintFile.deleteOnExit()
-    val savedFingerprint = "foobarbaz123"
-    FileUtils.writeStringToFile(fingerprintFile, savedFingerprint, StandardCharsets.UTF_8)
-
-    val params = new UsageStatisticsReportsSettingsDeterminer(
-      UsageStatisticsReportsConfig(enabled = true, None, None),
-      fingerprintFile,
-      () => Future.successful(List.empty)
-    ).determineQueryParams().futureValue
-    params.get("fingerprint").value shouldEqual savedFingerprint
   }
 
   test("should determine statistics for running scenario with streaming processing mode and flink engine") {
@@ -220,10 +191,9 @@ class UsageStatisticsReportsSettingsDeterminerTest
       Some(SimpleStateStatus.Running)
     )
 
-    val fingerprintFile = getTempFileLocation
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      fingerprintFile,
+      fingerprintSupplier,
       () => Future.successful(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))
     ).determineQueryParams().futureValue
 
@@ -240,12 +210,6 @@ class UsageStatisticsReportsSettingsDeterminerTest
       "s_a"     -> "2",
     )
     params should contain allElementsOf expectedStats
-  }
-
-  private def getTempFileLocation: File = {
-    val file = new File(System.getProperty("java.io.tmpdir"), s"nussknacker-${UUID.randomUUID()}.fingerprint")
-    file.deleteOnExit()
-    file
   }
 
 }

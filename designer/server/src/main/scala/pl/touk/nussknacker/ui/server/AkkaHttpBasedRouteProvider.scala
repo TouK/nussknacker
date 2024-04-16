@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
-import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.{MigrationApiHttpService, _}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{
   AnalyticsConfig,
@@ -59,6 +59,9 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser,
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.api.MigrationApiHttpService
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
+import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -399,18 +402,24 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+      val fingerprintService           = new FingerprintService(dbioRunner, new FingerprintRepositoryImpl(dbRef))
       val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
         usageStatisticsReportsConfig,
         processService,
-        processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType)
+        processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
+        fingerprintService.fingerprint
+      )
+
+      val statisticsApiHttpService = new StatisticsApiHttpService(
+        authenticationResources,
+        usageStatisticsReportsSettingsDeterminer
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
         authenticationResources.name,
-        analyticsConfig,
-        () => usageStatisticsReportsSettingsDeterminer.determineStatisticsUrl()
+        analyticsConfig
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
@@ -429,7 +438,8 @@ class AkkaHttpBasedRouteProvider(
           notificationApiHttpService,
           scenarioActivityApiHttpService,
           scenarioParametersHttpService,
-          userApiHttpService
+          userApiHttpService,
+          statisticsApiHttpService
         )
 
       val akkaHttpServerInterpreter = {

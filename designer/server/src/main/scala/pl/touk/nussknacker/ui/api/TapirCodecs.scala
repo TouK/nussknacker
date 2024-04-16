@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.api
 import cats.implicits.{toFunctorOps, toTraverseOps}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder}
+import cats.implicits.toTraverseOps
+import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -16,6 +18,8 @@ import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileNam
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
+
+import java.net.URL
 
 object TapirCodecs {
 
@@ -144,6 +148,19 @@ object TapirCodecs {
       }
     }
 
+  }
+
+  object URLCodec {
+
+    implicit val circeCodec: CirceCodec[URL] = {
+      CirceCodec.from(
+        Decoder.decodeURI.map(_.toURL),
+        Encoder.encodeJson.contramap[URL](url => Json.fromString(url.toString))
+      )
+    }
+
+    implicit val urlSchema: Schema[URL]        = Schema.string[URL]
+    implicit val urlSchemas: Schema[List[URL]] = urlSchema.asIterable[List]
   }
 
 }

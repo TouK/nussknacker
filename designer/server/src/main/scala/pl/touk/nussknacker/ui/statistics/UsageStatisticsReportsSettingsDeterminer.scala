@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -14,15 +13,14 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
 
-import java.io.File
-import java.net.URLEncoder
+import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Random, Try}
+import scala.util.{Failure, Success, Try}
 
 object UsageStatisticsReportsSettingsDeterminer {
 
-  private val nuFingerprintFileName = "nussknacker.fingerprint"
+  private val nuFingerprintFileName = new FileName("nussknacker.fingerprint")
 
   private val flinkDeploymentManagerType = DeploymentManagerType("flinkStreaming")
 
@@ -37,12 +35,9 @@ object UsageStatisticsReportsSettingsDeterminer {
       config: UsageStatisticsReportsConfig,
       processService: ProcessService,
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
-      deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _]
+      deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
+      fingerprintSupplier: (UsageStatisticsReportsConfig, FileName) => Future[Fingerprint]
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsDeterminer = {
-    val fingerprintFile = new File(
-      Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp"),
-      nuFingerprintFileName
-    )
     def fetchNonArchivedScenarioParameters(): Future[List[ScenarioStatisticsInputData]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
       //       given user has no access rights.
@@ -64,7 +59,7 @@ object UsageStatisticsReportsSettingsDeterminer {
           )
         }
     }
-    new UsageStatisticsReportsSettingsDeterminer(config, fingerprintFile, fetchNonArchivedScenarioParameters)
+    new UsageStatisticsReportsSettingsDeterminer(config, fingerprintSupplier, fetchNonArchivedScenarioParameters)
   }
 
   // We have four dimensions:
@@ -101,56 +96,50 @@ object UsageStatisticsReportsSettingsDeterminer {
       .mkString("https://stats.nussknacker.io/?", "&", "")
   }
 
+  private def toURL(urlString: String): Future[Option[URL]] =
+    Try(new URI(urlString).toURL) match {
+      case Failure(ex)    => Future.failed(new IllegalStateException("Invalid URL generated", ex))
+      case Success(value) => Future.successful(Some(value))
+    }
+
 }
 
 class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
-    fingerprintFile: File,
+    fingerprintSupplier: (UsageStatisticsReportsConfig, FileName) => Future[Fingerprint],
     fetchNonArchivedScenariosInputData: () => Future[List[ScenarioStatisticsInputData]]
 )(implicit ec: ExecutionContext) {
 
-  def determineStatisticsUrl(): Future[Option[String]] = {
+  def determineStatisticsUrl(): Future[Option[URL]] = {
     if (config.enabled) {
       determineQueryParams()
-        .map { queryParams =>
+        .flatMap { queryParams =>
           val url = prepareUrl(queryParams)
-          Some(url)
+          toURL(url)
         }
     } else {
       Future.successful(None)
     }
   }
 
-  private[statistics] def determineQueryParams(): Future[Map[String, String]] = {
-    fetchNonArchivedScenariosInputData()
-      .map { scenariosInputData =>
-        val scenariosStatistics =
-          scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)
+  private[statistics] def determineQueryParams(): Future[Map[String, String]] =
+    for {
+      scenariosInputData <- fetchNonArchivedScenariosInputData()
+      scenariosStatistics = scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)
+      fingerprint <- fingerprintSupplier(config, nuFingerprintFileName)
+      basicStatistics = determineBasicStatistics(fingerprint, config)
+    } yield basicStatistics ++ scenariosStatistics
 
-        Map(
-          // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
-          // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
-          "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(fingerprint),
-          // If it is not set, we assume that it is some custom build from source code
-          "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
-          "version" -> BuildInfo.version
-        ) ++ scenariosStatistics
-      }
-  }
-
-  private lazy val fingerprint: String = persistedFingerprint {
-    randomFingerprint
-  }
-
-  private def persistedFingerprint(compute: => String) = {
-    Try(FileUtils.readFileToString(fingerprintFile, StandardCharsets.UTF_8)).getOrElse {
-      val f = compute
-      Try(FileUtils.writeStringToFile(fingerprintFile, f, StandardCharsets.UTF_8))
-      f
-    }
-  }
-
-  private def randomFingerprint = s"gen-${Random.alphanumeric.take(10).mkString}"
+  private def determineBasicStatistics(
+      fingerprint: Fingerprint,
+      config: UsageStatisticsReportsConfig
+  ): Map[String, String] =
+    Map(
+      "fingerprint" -> fingerprint.value,
+      // If it is not set, we assume that it is some custom build from source code
+      "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
+      "version" -> BuildInfo.version
+    )
 
 }
 
