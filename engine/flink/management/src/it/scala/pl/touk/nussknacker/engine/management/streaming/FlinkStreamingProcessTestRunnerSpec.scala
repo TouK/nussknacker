@@ -6,7 +6,7 @@ import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.engine.api.deployment.TestScenarioCommand
+import pl.touk.nussknacker.engine.api.deployment.DMTestScenarioCommand
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -43,7 +43,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val process = SampleProcess.prepareProcess(processName)
 
-    whenReady(deploymentManager.processCommand(TestScenarioCommand(processName, process, scenarioTestData))) { r =>
+    whenReady(deploymentManager.processCommand(DMTestScenarioCommand(processName, process, scenarioTestData))) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
         "nightFilter"  -> List(ResultContext(s"$processName-startProcess-0-0", Map("input" -> variable("terefere")))),
@@ -64,7 +64,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val caught = intercept[IllegalArgumentException] {
       Await.result(
-        deploymentManager.processCommand(TestScenarioCommand(ProcessName(processId), process, scenarioTestData)),
+        deploymentManager.processCommand(DMTestScenarioCommand(ProcessName(processId), process, scenarioTestData)),
         patienceConfig.timeout
       )
     }

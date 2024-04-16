@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.RunDeploymentCommand
+import pl.touk.nussknacker.engine.api.deployment.DMRunDeploymentCommand
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
@@ -27,7 +27,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec
 
     try {
       deploymentManager
-        .processCommand(RunDeploymentCommand(version, DeploymentData.empty, process, None))
+        .processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, process, None))
         .failed
         .futureValue shouldEqual
         NotEnoughSlotsException(taskManagerSlotCount, taskManagerSlotCount, SlotsBalance(0, parallelism))

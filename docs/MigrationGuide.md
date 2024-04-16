@@ -14,14 +14,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `CustomActionRequest` (from the `extension-api`) was renamed to `CustomActionCommand`
   * Other "action" methods - all methods operating on a scenario (or its deployment) were replaced by case classes and
     one method handling them all: `processCommand(command)`:
-    * `validate` - `ValidateScenarioCommand`
-    * `deploy` - `RunDeploymentCommand`
-    * `cancel` with `deploymentId` argument - `CancelDeploymentCommand`
-    * `cancel` without `deploymentId` argument - `CancelScenarioCommand`
-    * `stop` with `deploymentId` argument - `StopDeploymentCommand`
-    * `stop` without `deploymentId` argument - `StopScenarioCommand`
-    * `savepoint` - `MakeScenarioSavepointCommand`
-    * `test` - `TestScenarioCommand`
+    * `validate` - `DMValidateScenarioCommand`
+    * `deploy` - `DMRunDeploymentCommand`
+    * `cancel` with `deploymentId` argument - `DMCancelDeploymentCommand`
+    * `cancel` without `deploymentId` argument - `DMCancelScenarioCommand`
+    * `stop` with `deploymentId` argument - `DMStopDeploymentCommand`
+    * `stop` without `deploymentId` argument - `DMStopScenarioCommand`
+    * `savepoint` - `DMMakeScenarioSavepointCommand`
+    * `test` - `DMTestScenarioCommand`
   * "Action type" was renamed to "action name". Loosened the restriction on the name of the action:
     * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
     * in `ProcessAction` attribute `actionType` renamed to `actionName`

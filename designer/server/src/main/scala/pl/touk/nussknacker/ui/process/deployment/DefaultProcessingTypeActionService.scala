@@ -20,12 +20,8 @@ class DefaultProcessingTypeActionService(
 
 trait ActionService {
 
-  def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(
-      implicit ec: ExecutionContext
-  ): Future[Boolean]
+  def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId): Future[Boolean]
 
-  def getLastStateAction(processingType: ProcessingType, processId: ProcessId)(
-      implicit ec: ExecutionContext
-  ): Future[Option[ProcessAction]]
+  def getLastStateAction(processingType: ProcessingType, processId: ProcessId): Future[Option[ProcessAction]]
 
 }

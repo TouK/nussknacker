@@ -87,10 +87,10 @@ class EmbeddedDeploymentManager(
       .toMap
   }
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] =
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case _: ValidateScenarioCommand => Future.successful(())
-      case RunDeploymentCommand(processVersion, deploymentData, canonicalProcess, _) =>
+      case _: DMValidateScenarioCommand => Future.successful(())
+      case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, _) =>
         Future {
           deployScenarioClosingOldIfNeeded(
             processVersion,
@@ -99,11 +99,11 @@ class EmbeddedDeploymentManager(
             throwInterpreterRunExceptionsImmediately = true
           )
         }
-      case command: CancelDeploymentCommand => cancelDeployment(command)
-      case command: CancelScenarioCommand   => cancelScenario(command)
-      case command: TestScenarioCommand     => processTestActionCommand(command)
-      case _: StopDeploymentCommand | _: StopScenarioCommand | _: MakeScenarioSavepointCommand |
-          _: CustomActionCommand =>
+      case command: DMCancelDeploymentCommand => cancelDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case command: DMTestScenarioCommand     => testScenario(command)
+      case _: DMStopDeploymentCommand | _: DMStopScenarioCommand | _: DMMakeScenarioSavepointCommand |
+          _: DMCustomActionCommand =>
         notImplemented
     }
 
@@ -148,7 +148,7 @@ class EmbeddedDeploymentManager(
     deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
   }
 
-  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+  private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
     import command._
     deployments.get(scenarioName) match {
       case None                 => Future.failed(new IllegalArgumentException(s"Cannot find scenario $scenarioName"))
@@ -156,7 +156,7 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  private def cancelDeployment(command: CancelDeploymentCommand): Future[Unit] = {
+  private def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = {
     import command._
     for {
       deploymentData <- deployments
