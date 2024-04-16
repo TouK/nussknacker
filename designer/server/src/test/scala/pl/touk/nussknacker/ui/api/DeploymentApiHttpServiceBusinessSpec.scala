@@ -44,7 +44,7 @@ class DeploymentApiHttpServiceBusinessSpec
                                             |  }
                                             |}""".stripMargin
 
-  "The endpoint for deployment requesting" - {
+  "The deployment requesting endpoint" - {
     "authenticated as user with deploy access should" - {
       "run deployment" in {
         val requestedDeploymentId = "some-requested-deployment-id"

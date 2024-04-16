@@ -17,12 +17,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
-import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
@@ -32,7 +32,12 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment, UserComment}
+import pl.touk.nussknacker.ui.process.repository.{
+  CommentValidationError,
+  DBIOActionRunner,
+  DeploymentComment,
+  UserComment
+}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -137,7 +142,7 @@ class DeploymentServiceSpec
         .failed
         .futureValue
 
-    result shouldBe a[CustomActionValidationError]
+    result shouldBe a[CommentValidationError]
     result.getMessage.trim shouldBe "Comment is required."
 
     eventually {

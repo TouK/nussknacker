@@ -46,7 +46,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
       .withValue("deploymentCommentSettings.validationPattern", ConfigValueFactory.fromAnyRef(s".*$configuredPhrase.*"))
   }
 
-  "The endpoint for deployment requesting" - {
+  "The deployment requesting endpoint" - {
     "With validationPattern configured in deploymentCommentSettings" - {
       "When no deployment comment is passed should" - {
         "return 400" in {

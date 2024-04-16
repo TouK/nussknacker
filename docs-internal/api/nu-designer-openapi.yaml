@@ -525,11 +525,15 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Comment is required
+                  value: Comment is required.
         '401':
           description: ''
           content:
@@ -2179,6 +2183,10 @@ components:
       properties:
         nodesDeploymentData:
           $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+        comment:
+          type:
+          - string
+          - 'null'
     Dict:
       required:
       - id
