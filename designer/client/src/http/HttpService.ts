@@ -79,6 +79,7 @@ export type ComponentType = {
     categories: string[];
     actions: ComponentActionType[];
     usageCount: number;
+    allowedProcessingModes: ProcessingMode[];
     links: Array<{
         id: string;
         title: string;
@@ -124,6 +125,11 @@ export interface TestProcessResponse {
 export interface PropertiesValidationRequest {
     name: string;
     additionalFields: ProcessAdditionalFields;
+}
+
+export interface CustomActionValidationRequest {
+    actionName: string;
+    params: Record<string, string>;
 }
 
 export interface ExpressionSuggestionRequest {
@@ -476,6 +482,20 @@ class HttpService {
             .catch((error) => {
                 this.#addError(
                     i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
+                    error,
+                    true,
+                );
+                return;
+            });
+    }
+
+    validateCustomAction(processName: string, customActionRequest: CustomActionValidationRequest): Promise<ValidationData> {
+        return api
+            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/validation`, customActionRequest)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t("notification.error.failedToValidateCustomAction", "Failed to get CustomActionValidation"),
                     error,
                     true,
                 );

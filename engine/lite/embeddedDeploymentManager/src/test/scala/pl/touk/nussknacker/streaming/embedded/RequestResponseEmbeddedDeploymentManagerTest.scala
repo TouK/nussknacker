@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   DeployedScenarioData,
   DeploymentManager,
-  ProcessingTypeDeploymentServiceStub,
+  ProcessingTypeActionServiceStub,
+  ProcessingTypeDeployedScenariosProviderStub,
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -48,7 +49,8 @@ class RequestResponseEmbeddedDeploymentManagerTest
     )
     val as: ActorSystem = ActorSystem(getClass.getSimpleName)
     val dependencies = DeploymentManagerDependencies(
-      new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios),
+      new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios),
+      new ProcessingTypeActionServiceStub,
       as.dispatcher,
       as,
       SttpBackendStub.asynchronousFuture

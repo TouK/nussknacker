@@ -95,18 +95,15 @@ class DeploymentServiceSpec
 
   deploymentManager = new MockDeploymentManager(
     SimpleStateStatus.Running,
-    new DefaultProcessingTypeDeploymentService(
-      "streaming",
-      deploymentService,
-      AllDeployedScenarioService(testDbRef, "streaming")
-    )
+    DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
+    new DefaultProcessingTypeActionService("streaming", deploymentService)
   )
 
   private def createDeploymentService(
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = deploymentCommentSettings,
-  ): DeploymentService = {
-    new DeploymentServiceImpl(
+  ) = {
+    new DeploymentService(
       dmDispatcher,
       fetchingProcessRepository,
       actionRepository,
@@ -128,14 +125,14 @@ class DeploymentServiceSpec
   }
 
   test("should return error when trying to deploy without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
 
     val result = deploymentServiceWithCommentSettings.deployProcessAsync(id, None, None).failed.futureValue
 
-    result shouldBe a[ValidationError]
+    result shouldBe a[CustomActionValidationError]
     result.getMessage.trim shouldBe "Comment is required."
 
     eventually {
@@ -145,7 +142,7 @@ class DeploymentServiceSpec
   }
 
   test("should not deploy without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -170,7 +167,7 @@ class DeploymentServiceSpec
   }
 
   test("should pass when having an ok comment") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
@@ -185,21 +182,8 @@ class DeploymentServiceSpec
     }
   }
 
-  test("should return error when trying to cancel without comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
-
-    val processName: ProcessName = generateProcessName
-    val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
-
-    deploymentManager.withWaitForCancelFinish {
-      val result = deploymentServiceWithCommentSettings.cancelProcess(processId, None).failed.futureValue
-      result shouldBe a[ValidationError]
-      result.getMessage.trim shouldBe "Comment is required."
-    }
-  }
-
   test("should not cancel a deployed process without cancel comment when comment is required") {
-    val deploymentServiceWithCommentSettings: DeploymentService = createDeploymentServiceWithCommentSettings
+    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
@@ -845,6 +829,19 @@ class DeploymentServiceSpec
     assertThrowsWithParent[FragmentStateException] {
       deploymentService.getProcessState(id).futureValue
     }
+  }
+
+  test("should fail invoking custom action when action validation fails") {
+
+    val processName: ProcessName = generateProcessName
+    val id                       = prepareProcess(processName).dbioActionValues
+    val actionName               = ScenarioActionName("has-params")
+    val wrongParams              = Map("testParam" -> "")
+
+    val result = deploymentService.invokeCustomAction(actionName, id, wrongParams).failed.futureValue
+
+    result shouldBe a[CustomActionValidationError]
+    result.getMessage.trim shouldBe s"Validation failed for: ${actionName}"
   }
 
   override def beforeEach(): Unit = {

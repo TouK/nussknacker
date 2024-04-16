@@ -491,7 +491,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
   ): FlinkRestManager = {
     val deploymentManagerDependencies = DeploymentManagerDependencies(
-      new ProcessingTypeDeploymentServiceStub(List.empty),
+      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+      new ProcessingTypeActionServiceStub,
       ExecutionContext.global,
       ActorSystem(getClass.getSimpleName),
       sttpBackend

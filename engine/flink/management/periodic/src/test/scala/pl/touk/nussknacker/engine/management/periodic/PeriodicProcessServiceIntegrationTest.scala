@@ -14,26 +14,15 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessActionId,
-  ProcessingTypeDeploymentService,
-  ProcessingTypeDeploymentServiceStub
-}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
-import pl.touk.nussknacker.engine.management.periodic.model.{
-  PeriodicProcessDeploymentState,
-  PeriodicProcessDeploymentStatus,
-  ScheduleData,
-  ScheduleDeploymentData,
-  SchedulesState
-}
+import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import slick.jdbc
@@ -125,10 +114,6 @@ class PeriodicProcessServiceIntegrationTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener                  = false
 
-    val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(
-      List.empty
-    )
-
     def periodicProcessService(currentTime: Instant, processingType: String = processingType) =
       new PeriodicProcessService(
         delegateDeploymentManager = delegateDeploymentManagerStub,
@@ -148,7 +133,7 @@ class PeriodicProcessServiceIntegrationTest
         executionConfig = executionConfig,
         processConfigEnricher = ProcessConfigEnricher.identity,
         clock = fixedClock(currentTime),
-        deploymentService
+        new ProcessingTypeActionServiceStub
       )
 
   }

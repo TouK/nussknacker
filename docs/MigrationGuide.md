@@ -6,7 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) Refactoring around DeploymentManager's actions:
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) [#5837](https://github.com/TouK/nussknacker/pull/5837) Refactoring around DeploymentManager's actions:
   * Custom Actions
     * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
     * `CustomActionResult.req` was removed
@@ -22,10 +22,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `stop` without `deploymentId` argument - `StopScenarioCommand`
     * `savepoint` - `MakeScenarioSavepointCommand`
     * `test` - `TestScenarioCommand`
-  * "Action type" is renamed to "action name". Loosened the restriction on the name of the action:
+  * "Action type" was renamed to "action name". Loosened the restriction on the name of the action:
     * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
     * in `ProcessAction` attribute `actionType` renamed to `actionName`
     * in table `process_actions` column `action_type` is renamed to `action_name`
+  * `DeploymentManagerDependencies.deploymentService` was splitted into `deployedScenariosProvider` and `actionService`
 * [#5762](https://github.com/TouK/nussknacker/pull/5762) for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
   * `AllowedProcessingModes.All` in case of all processing modes allowed

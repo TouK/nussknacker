@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{
   CustomActionDefinition,
+  CustomActionParameter,
   CustomActionResult,
   DeploymentId,
   ExternalDeploymentId
@@ -22,6 +23,11 @@ import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import shapeless.syntax.typeable.typeableOps
 import _root_.sttp.client3.testing.SttpBackendStub
+import pl.touk.nussknacker.engine.api.definition.{
+  NotBlankParameterValidator,
+  NotNullParameterValidator,
+  StringParameterEditor
+}
 
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -39,14 +45,17 @@ object MockDeploymentManager {
 
 class MockDeploymentManager(
     defaultProcessStateStatus: StateStatus = SimpleStateStatus.NotDeployed,
-    deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(Nil)
+    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider =
+      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+    actionService: ProcessingTypeActionService = new ProcessingTypeActionServiceStub
 ) extends FlinkDeploymentManager(
       ModelData(
         ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig),
         TestFactory.modelDependencies
       ),
       DeploymentManagerDependencies(
-        deploymentService,
+        deployedScenariosProvider,
+        actionService,
         ExecutionContext.global,
         ActorSystem("MockDeploymentManager"),
         SttpBackendStub.asynchronousFuture
@@ -229,6 +238,15 @@ class MockDeploymentManager(
       deployment.CustomActionDefinition(
         actionName = ScenarioActionName("invalid-status"),
         allowedStateStatusNames = Nil
+      ),
+      deployment.CustomActionDefinition(
+        actionName = ScenarioActionName("has-params"),
+        allowedStateStatusNames = Nil,
+        parameters = CustomActionParameter(
+          "testParam",
+          StringParameterEditor,
+          NotBlankParameterValidator :: NotNullParameterValidator :: Nil
+        ) :: Nil
       )
     )
   }

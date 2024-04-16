@@ -243,10 +243,9 @@ class ManagementResources(
         } ~
         path("customAction" / ProcessNameSegment) { processName =>
           (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
-            val params = req.params.getOrElse(Map.empty)
             complete {
               deploymentService
-                .invokeCustomAction(req.actionName, process, params)
+                .invokeCustomAction(req.actionName, process, req.params)
                 .flatMap(actionResult =>
                   toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
                 )
