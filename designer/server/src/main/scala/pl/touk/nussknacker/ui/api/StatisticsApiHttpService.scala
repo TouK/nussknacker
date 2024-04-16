@@ -2,12 +2,12 @@ package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
-  CannotGenerateStatisticError => ApiCannotGenerateStatisticError,
+  CannotGenerateStatisticError,
   StatisticError,
   StatisticUrlResponseDto
 }
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import pl.touk.nussknacker.ui.statistics.{CannotGenerateStatisticsError, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 
 import scala.concurrent.ExecutionContext
 
@@ -26,8 +26,8 @@ class StatisticsApiHttpService(
         determiner
           .prepareStatisticsUrl()
           .map {
-            case Left(CannotGenerateStatisticsError) => businessError(ApiCannotGenerateStatisticError)
-            case Right(maybeUrl)                     => success(StatisticUrlResponseDto(maybeUrl.toList))
+            case Left(_)         => businessError(CannotGenerateStatisticError)
+            case Right(maybeUrl) => success(StatisticUrlResponseDto(maybeUrl.toList))
           }
       }
   }

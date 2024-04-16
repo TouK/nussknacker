@@ -20,7 +20,7 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
   def fingerprint(
       config: UsageStatisticsReportsConfig,
       fingerprintFileName: FileName
-  ): Future[Either[CannotGenerateStatisticsError, Fingerprint]] = {
+  ): Future[Either[StatisticError, Fingerprint]] = {
     // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
     // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
     config.fingerprint.filterNot(_.isBlank) match {
@@ -31,31 +31,33 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
 
   private def fetchOrGenerate(
       fingerprintFileName: FileName
-  ): Future[Either[CannotGenerateStatisticsError, Fingerprint]] = {
-    val dbResult = for {
-      dbFingerprint <- fingerprintRepository.read()
+  ): Future[Either[StatisticError, Fingerprint]] =
+    for {
+      dbFingerprint <- dbioRunner.run(fingerprintRepository.read())
       result <- dbFingerprint match {
-        case Some(dbValue) => DBIO.successful(new Fingerprint(dbValue))
+        case Some(dbValue) => Future.successful(Right(new Fingerprint(dbValue)))
         case None => {
           val generated = readFingerprintFromFile(fingerprintFileName).getOrElse(randomFingerprint)
-          logger.info(s"Generated fingerprint $generated")
-          fingerprintRepository
-            .write(generated)
-            .map(_ => new Fingerprint(generated))
+          val readOrSaveAction = fingerprintRepository
+            .readOrSave(generated)
+            .map {
+              case Left(_) =>
+                logger.warn("Cannot persist fingerprint in DB")
+                Left(CannotGenerateStatisticsError)
+              case Right(fingerprint) =>
+                logger.info(s"Generated fingerprint ${fingerprint.value}")
+                Right(fingerprint)
+            }
+          dbioRunner.runInTransaction(readOrSaveAction)
         }
       }
     } yield result
-    dbioRunner.safeRunInTransaction(dbResult) { ex =>
-      logger.warn("Exception occurred during database access", ex)
-      CannotGenerateStatisticsError
-    }
-  }
 
   // TODO: The code below is added to ensure compatibility with older NU versions and should be removed in future release of NU 1.20.
-  private def readFingerprintFromFile(fingerprintFileName: FileName): Option[String] =
+  private def readFingerprintFromFile(fingerprintFileName: FileName): Option[Fingerprint] =
     Try(FileUtils.readFileToString(fingerprintFile(fingerprintFileName), StandardCharsets.UTF_8)) match {
       case Failure(_)     => None
-      case Success(value) => Some(value.trim)
+      case Success(value) => Some(new Fingerprint(value.trim))
     }
 
   private def fingerprintFile(fingerprintFileName: FileName): File =
@@ -64,5 +66,5 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
       fingerprintFileName.value
     )
 
-  private def randomFingerprint = s"gen-${Random.alphanumeric.take(10).mkString}"
+  private def randomFingerprint = new Fingerprint(s"gen-${Random.alphanumeric.take(10).mkString}")
 }
