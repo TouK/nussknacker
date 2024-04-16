@@ -56,15 +56,15 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
 
 trait StubbingCommands { self: DeploymentManager =>
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
-    case _: ValidateScenarioCommand                      => Future.successful(())
-    case _: RunDeploymentCommand                         => Future.successful(None)
-    case _: StopDeploymentCommand                        => Future.successful(SavepointResult(""))
-    case _: StopScenarioCommand                          => Future.successful(SavepointResult(""))
-    case _: CancelDeploymentCommand                      => Future.successful(())
-    case _: CancelScenarioCommand                        => Future.successful(())
-    case _: MakeScenarioSavepointCommand                 => Future.successful(SavepointResult(""))
-    case _: CustomActionCommand | _: TestScenarioCommand => notImplemented
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
+    case _: DMValidateScenarioCommand                        => Future.successful(())
+    case _: DMRunDeploymentCommand                           => Future.successful(None)
+    case _: DMStopDeploymentCommand                          => Future.successful(SavepointResult(""))
+    case _: DMStopScenarioCommand                            => Future.successful(SavepointResult(""))
+    case _: DMCancelDeploymentCommand                        => Future.successful(())
+    case _: DMCancelScenarioCommand                          => Future.successful(())
+    case _: DMMakeScenarioSavepointCommand                   => Future.successful(SavepointResult(""))
+    case _: DMCustomActionCommand | _: DMTestScenarioCommand => notImplemented
   }
 
 }

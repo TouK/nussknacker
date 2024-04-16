@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.generics
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 trait ExpressionParseError {
@@ -17,13 +16,9 @@ object ExpressionParseError {
 
   @ConfiguredJsonCodec sealed trait ErrorDetails
 
-  sealed trait ExpressionParserCompilationErrorDetails extends ErrorDetails
-  final case class TabularDataDefinitionParserErrorDetails(cellErrors: List[CellError])
-      extends ExpressionParserCompilationErrorDetails
+  final case class TabularDataDefinitionParserErrorDetails(cellErrors: List[CellError]) extends ErrorDetails
 
-  object TabularDataDefinitionParserErrorDetails {
-    @JsonCodec final case class CellError(columnName: String, rowIndex: Int, errorMessage: String)
-  }
+  @JsonCodec final case class CellError(columnName: String, rowIndex: Int, errorMessage: String)
 
 }
 

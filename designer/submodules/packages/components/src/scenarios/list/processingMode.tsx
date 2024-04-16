@@ -61,6 +61,7 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
             color={isSelected ? "primary" : "inherit"}
             sx={{ textTransform: "capitalize", display: "flex", gap: 1, alignItems: "center", fontSize: "1rem", py: 0.25, mx: 0 }}
             onClick={onClick}
+            aria-selected={isSelected}
         >
             <item.Icon color={"inherit"} />
             <Typography variant={"caption"}>{item.displayableName}</Typography>

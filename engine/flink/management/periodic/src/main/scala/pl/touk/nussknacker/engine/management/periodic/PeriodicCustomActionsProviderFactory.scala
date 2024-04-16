@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
+import pl.touk.nussknacker.engine.api.deployment.DMCustomActionCommand
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionResult}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
@@ -25,7 +25,7 @@ trait PeriodicCustomActionsProvider {
   def customActions: List[CustomActionDefinition]
 
   def invokeCustomAction(
-      actionRequest: CustomActionCommand
+      actionRequest: DMCustomActionCommand
   ): Future[CustomActionResult]
 
 }
@@ -34,7 +34,7 @@ object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider 
   override def customActions: List[CustomActionDefinition] = Nil
 
   override def invokeCustomAction(
-      actionRequest: CustomActionCommand
+      actionRequest: DMCustomActionCommand
   ): Future[CustomActionResult] =
     Future.failed(new NotImplementedError())
 

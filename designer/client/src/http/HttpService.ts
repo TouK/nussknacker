@@ -79,6 +79,7 @@ export type ComponentType = {
     categories: string[];
     actions: ComponentActionType[];
     usageCount: number;
+    allowedProcessingModes: ProcessingMode[];
     links: Array<{
         id: string;
         title: string;

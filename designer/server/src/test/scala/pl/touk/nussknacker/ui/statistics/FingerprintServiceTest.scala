@@ -1,0 +1,80 @@
+package pl.touk.nussknacker.ui.statistics
+
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
+import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
+
+import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class FingerprintServiceTest
+    extends AnyFunSuite
+    with Matchers
+    with OptionValues
+    with PatientScalaFutures
+    with WithHsqlDbTesting {
+
+  private val runner: DBIOActionRunner = DBIOActionRunner(testDbRef)
+  private val repository               = new FingerprintRepositoryImpl(testDbRef)
+  private val sut                      = new FingerprintService(runner, repository)
+
+  test("should return a fingerprint from the configuration") {
+    val config = UsageStatisticsReportsConfig(enabled = true, Some("set via config"), None)
+
+    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+
+    fingerprint.value shouldBe "set via config"
+  }
+
+  test("should generate a random fingerprint if the configured one is blank") {
+    runner.run(repository.read()).futureValue shouldBe None
+
+    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+
+    runner.run(repository.read()).futureValue shouldBe Some(fingerprint.value)
+    fingerprint.value should fullyMatch regex "gen-\\w{10}"
+  }
+
+  test("should return a fingerprint from the database") {
+    runner.runInTransaction(repository.write("db stored"))
+
+    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+
+    fingerprint.value shouldBe "db stored"
+  }
+
+  test("should return a fingerprint from a file and save it in the database") {
+    runner.run(repository.read()).futureValue shouldBe None
+
+    val fingerprintFile = getTempFileLocation
+    writeContentToFile(fingerprintFile, "file stored")
+
+    val fingerprint = sut.fingerprint(config, new FileName(fingerprintFile.getName)).futureValue
+
+    fingerprint.value shouldBe "file stored"
+    runner.run(repository.read()).futureValue shouldBe Some("file stored")
+  }
+
+  private val config = UsageStatisticsReportsConfig(enabled = true, None, None)
+
+  private def getTempFileLocation: File = {
+    val file = new File(System.getProperty("java.io.tmpdir"), randomFingerprintFileName.value)
+    file.deleteOnExit()
+    file
+  }
+
+  private def randomFingerprintFileName: FileName = new FileName(s"nussknacker-${UUID.randomUUID()}.fingerprint")
+
+  private def writeContentToFile(file: File, content: String): Unit = {
+    Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8))
+  }
+
+}

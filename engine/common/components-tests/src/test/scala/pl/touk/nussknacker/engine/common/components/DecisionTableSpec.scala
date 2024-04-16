@@ -7,8 +7,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, TabularDataDefinitionParserErrorDetails}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -100,7 +99,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Filtering expression")),
+                paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -124,7 +123,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Filtering expression")),
+                paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -224,7 +223,7 @@ trait DecisionTableSpec
       .source("request", TestScenarioRunner.testDataSource)
       .decisionTable(
         decisionTableParamValue = basicDecisionTableDefinition,
-        filterExpressionParamValue = expression,
+        matchConditionParamValue = expression,
         output = "dtResult",
       )
       .end("end", "value" -> sinkValueExpression)
