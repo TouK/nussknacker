@@ -61,7 +61,12 @@ trait CommentActions {
     Sequence[Long]("process_comments_id_sequence").next.result
   }
 
-  def newCommentAction(processId: ProcessId, processVersionId: => VersionId, comment: Option[Comment])(
+  def newCommentAction(
+      processId: ProcessId,
+      processVersionId: => VersionId,
+      comment: Option[Comment],
+      overriddenUsername: Option[String] = Option.empty
+  )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): DB[Option[CommentEntityData]] = {
@@ -74,7 +79,10 @@ trait CommentActions {
             processId = processId,
             processVersionId = processVersionId,
             content = c.value,
-            user = loggedUser.username,
+            user = overriddenUsername match {
+              case Some(username) => username
+              case _              => loggedUser.username
+            },
             createDate = Timestamp.from(Instant.now())
           )
           _ <- commentsTable += entityData

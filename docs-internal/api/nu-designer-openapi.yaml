@@ -1550,6 +1550,11 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: forwarded-username
+        in: header
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           text/plain:
@@ -1561,7 +1566,7 @@ paths:
           description: ''
         '400':
           description: 'Invalid value for: path parameter versionId, Invalid value
-            for: body'
+            for: body, Invalid value for: header forwarded-username'
           content:
             text/plain:
               schema:

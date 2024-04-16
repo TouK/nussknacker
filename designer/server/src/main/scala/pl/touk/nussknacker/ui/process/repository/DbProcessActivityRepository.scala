@@ -16,7 +16,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessActivityRepository {
 
-  def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)(
+  def addComment(
+      processId: ProcessId,
+      processVersionId: VersionId,
+      comment: CommentValue,
+      overriddenUsername: Option[String]
+  )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Unit]
@@ -43,11 +48,16 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
 
   import profile.api._
 
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)(
+  override def addComment(
+      processId: ProcessId,
+      processVersionId: VersionId,
+      comment: CommentValue,
+      overriddenUsername: Option[String]
+  )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Unit] = {
-    run(newCommentAction(processId, processVersionId, Option(comment))).map(_ => ())
+    run(newCommentAction(processId, processVersionId, Option(comment), overriddenUsername)).map(_ => ())
   }
 
   override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = {

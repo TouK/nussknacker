@@ -7,8 +7,12 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment => DbAttachment, Comment => DbComment, ProcessActivity => DbProcessActivity}
-import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
+  Attachment => DbAttachment,
+  Comment => DbComment,
+  ProcessActivity => DbProcessActivity
+}
+import pl.touk.nussknacker.ui.server.HeadersSupport.{FileName, ForwardedUsername}
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
@@ -25,6 +29,7 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
   import ScenarioActivityApiEndpoints.Dtos.ScenarioActivityError._
   import ScenarioActivityApiEndpoints.Dtos._
   import TapirCodecs.ContentDispositionCodec._
+  import TapirCodecs.ForwardedUsernameCodec._
   import TapirCodecs.HeaderCodec._
   import TapirCodecs.ScenarioNameCodec._
   import TapirCodecs.VersionIdCodec._
@@ -74,7 +79,8 @@ class ScenarioActivityApiEndpoints(auth: EndpointInput[AuthCredentials]) extends
       .post
       .in(
         ("processes" / path[ProcessName]("scenarioName") / path[VersionId]("versionId") / "activity"
-          / "comments" / stringBody).mapTo[AddCommentRequest]
+          / "comments" / stringBody / header[Option[ForwardedUsername]](ForwardedUsername.headerName))
+          .mapTo[AddCommentRequest]
       )
       .out(statusCode(Ok))
       .errorOut(scenarioNotFoundErrorOutput)
@@ -232,7 +238,12 @@ object ScenarioActivityApiEndpoints {
 
     }
 
-    final case class AddCommentRequest(scenarioName: ProcessName, versionId: VersionId, commentContent: String)
+    final case class AddCommentRequest(
+        scenarioName: ProcessName,
+        versionId: VersionId,
+        commentContent: String,
+        forwardedUsername: Option[ForwardedUsername]
+    )
 
     final case class DeleteCommentRequest(scenarioName: ProcessName, commentId: Long)
 

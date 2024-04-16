@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
-import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
+import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName, ForwardedUsername}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
@@ -64,6 +64,19 @@ object TapirCodecs {
         override def format: TextPlain = CodecFormat.TextPlain()
       }
 
+  }
+
+  object ForwardedUsernameCodec {
+    def encode(forwardedUsername: ForwardedUsername): String = forwardedUsername.value
+
+    def decode(s: String): DecodeResult[ForwardedUsername] = {
+      val scenarioName = ForwardedUsername(s)
+      DecodeResult.Value(scenarioName)
+    }
+
+    implicit val forwardedUsernameCodec: PlainCodec[ForwardedUsername] = Codec.string.mapDecode(decode)(encode)
+
+    implicit val schema: Schema[ForwardedUsername] = Schema.string
   }
 
   object HeaderCodec {

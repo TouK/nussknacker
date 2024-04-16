@@ -24,4 +24,10 @@ object HeadersSupport {
       new ContentDisposition(Some(FileName(fileName)))
   }
 
+  final case class ForwardedUsername(value: String)
+
+  object ForwardedUsername {
+    val headerName = "forwarded-username"
+  }
+
 }

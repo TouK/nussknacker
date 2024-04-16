@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
+import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, ForwardedUsername}
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
 import sttp.model.MediaType
 
@@ -55,6 +55,7 @@ class ScenarioActivityApiHttpService(
         for {
           scenarioId <- getScenarioIdByName(request.scenarioName)
           _          <- isAuthorized(scenarioId, Permission.Write)
+          _          <- isOverridingUsername(request.forwardedUsername, scenarioId)
           _          <- addNewComment(request, scenarioId)
         } yield ()
       }
@@ -118,11 +119,23 @@ class ScenarioActivityApiHttpService(
         }
     )
 
+  private def isOverridingUsername(forwardedUsername: Option[ForwardedUsername], scenarioId: ProcessId)(
+      implicit loggedUser: LoggedUser
+  ): EitherT[Future, ScenarioActivityError, Unit] = forwardedUsername match {
+    case None    => EitherT[Future, ScenarioActivityError, Unit](Future.successful(Right(())))
+    case Some(_) => isAuthorized(scenarioId, Permission.OverrideUsername)
+  }
+
   private def addNewComment(request: AddCommentRequest, scenarioId: ProcessId)(
       implicit loggedUser: LoggedUser
   ): EitherT[Future, ScenarioActivityError, Unit] =
     EitherT.right(
-      scenarioActivityRepository.addComment(scenarioId, request.versionId, UserComment(request.commentContent))
+      scenarioActivityRepository.addComment(
+        scenarioId,
+        request.versionId,
+        UserComment(request.commentContent),
+        request.forwardedUsername.map(_.value)
+      )
     )
 
   private def deleteComment(request: DeleteCommentRequest): EitherT[Future, ScenarioActivityError, Unit] =

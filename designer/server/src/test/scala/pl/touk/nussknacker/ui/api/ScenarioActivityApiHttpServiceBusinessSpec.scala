@@ -12,6 +12,7 @@ import pl.touk.nussknacker.test.config.{
   WithSimplifiedDesignerConfig
 }
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
+import pl.touk.nussknacker.ui.server.HeadersSupport.ForwardedUsername
 
 import java.util.UUID
 
@@ -94,6 +95,27 @@ class ScenarioActivityApiHttpServiceBusinessSpec
           )
         }
     }
+    "add comment with overridden username" in {
+      val overriddenUsername = "someOtherName"
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .header(ForwardedUsername.headerName, overriddenUsername)
+        .when()
+        .basicAuthAllPermUser()
+        .plainBody(commentContent)
+        .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
+        .Then()
+        .statusCode(200)
+        .verifyApplicationState(
+          verifyCommentExists(
+            scenarioName = exampleScenarioName,
+            commentContent = commentContent,
+            commentUser = overriddenUsername
+          )
+        )
+    }
     "return 404 for no existing scenario" in {
       given()
         .applicationState {
@@ -106,6 +128,19 @@ class ScenarioActivityApiHttpServiceBusinessSpec
         .Then()
         .statusCode(404)
         .equalsPlainBody(s"No scenario $wrongScenarioName found")
+    }
+    "return 403 when adding comment with overridden username without appropriate permission" in {
+      given()
+        .applicationState {
+          createSavedScenario(exampleScenario)
+        }
+        .header(ForwardedUsername.headerName, "someOtherName")
+        .when()
+        .basicAuthWriter()
+        .plainBody(commentContent)
+        .post(s"$nuDesignerHttpAddress/api/processes/$exampleScenarioName/1/activity/comments")
+        .Then()
+        .statusCode(403)
     }
   }
 

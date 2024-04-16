@@ -31,7 +31,7 @@ class UserApiHttpServiceBusinessSpec
              |  "isAdmin": false,
              |  "categories": [ "Category1" ],
              |  "categoryPermissions": {
-             |      "Category1": [ "Deploy", "Read", "Write" ]
+             |      "Category1": [ "Deploy", "OverrideUsername", "Read", "Write" ]
              |    },
              |  "globalPermissions": []
              |}""".stripMargin)

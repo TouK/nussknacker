@@ -43,7 +43,12 @@ class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with Scala
 
 private object TestProcessActivityRepository extends ProcessActivityRepository {
 
-  override def addComment(processId: ProcessId, processVersionId: VersionId, comment: Comment)(
+  override def addComment(
+      processId: ProcessId,
+      processVersionId: VersionId,
+      comment: Comment,
+      overriddenUsername: Option[String]
+  )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Unit] = ???
