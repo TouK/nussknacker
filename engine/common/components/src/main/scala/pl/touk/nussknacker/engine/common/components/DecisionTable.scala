@@ -35,8 +35,8 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
 
   }
 
-  private object FilterDecisionTableExpressionParameter {
-    val name: ParameterName = ParameterName("Filtering expression")
+  private object MatchConditionTableExpressionParameter {
+    val name: ParameterName = ParameterName("Match condition")
 
     val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
@@ -70,9 +70,9 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       dependencies: List[NodeDependencyValue],
       finalState: Option[Unit]
   ): ServiceInvoker = {
-    val tabularTypedData    = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
-    val filteringExpression = FilterDecisionTableExpressionParameter.declaration.extractValueUnsafe(params)
-    new DecisionTableImplementation(tabularTypedData, filteringExpression)
+    val tabularTypedData = BasicDecisionTableParameter.declaration.extractValueUnsafe(params)
+    val matchExpression  = MatchConditionTableExpressionParameter.declaration.extractValueUnsafe(params)
+    new DecisionTableImplementation(tabularTypedData, matchExpression)
   }
 
   private lazy val prepare: ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
@@ -87,7 +87,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
       NextParameters(
-        parameters = FilterDecisionTableExpressionParameter.declaration.createParameter(data) :: Nil,
+        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(data) :: Nil,
         errors = List.empty,
         state = None
       )
@@ -135,7 +135,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
           _
         )
         if firstParamName == BasicDecisionTableParameter.name &&
-          secondParamName == FilterDecisionTableExpressionParameter.name =>
+          secondParamName == MatchConditionTableExpressionParameter.name =>
       FinalResults.forValidation(context)(
         _.withVariable(
           name = OutputVariableNameDependency.extract(dependencies),

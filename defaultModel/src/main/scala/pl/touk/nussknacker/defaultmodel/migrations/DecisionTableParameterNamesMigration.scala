@@ -21,7 +21,7 @@ object DecisionTableParameterNamesMigration extends NodeMigration {
     params.map { param =>
       param.name.value match {
         case "Basic Decision Table" => param.copy(name = ParameterName("Decision Table"))
-        case "Expression"           => param.copy(name = ParameterName("Filtering expression"))
+        case "Expression"           => param.copy(name = ParameterName("Match condition"))
         case _                      => param
       }
     }
