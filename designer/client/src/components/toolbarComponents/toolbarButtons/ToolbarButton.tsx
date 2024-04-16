@@ -32,7 +32,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         cursor: disabled ? "not-allowed" : "pointer",
         fontSize: PANEL_BUTTON_FONT_SIZE,
         width,
-        height: width,
+        height: "fit-content",
         outline: "none",
 
         borderColor: hasError ? colors.error : "transparent",
