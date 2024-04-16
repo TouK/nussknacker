@@ -5,9 +5,9 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.DbRef
 import slick.jdbc.JdbcProfile
 
+import java.sql.SQLException
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
-import scala.util.{Failure, Success}
 
 class DBIOActionRunner(dbRef: DbRef) extends LazyLogging {
 
@@ -21,21 +21,18 @@ class DBIOActionRunner(dbRef: DbRef) extends LazyLogging {
   def run[T](action: DB[T]): Future[T] =
     dbRef.db.run(action)
 
-  def safeRunInTransaction[T, E](action: DB[T], error: Throwable => E)(
+  def safeRunInTransaction[T, E](action: DB[T])(error: Throwable => E)(
       implicit ec: ExecutionContext
   ): Future[Either[E, T]] =
-    safeRun(action.transactionally, error)
+    safeRun(action.transactionally)(error)
 
-  def safeRun[T, E](action: DB[T], error: Throwable => E)(
+  def safeRun[E, T](action: DB[T])(error: Throwable => E)(
       implicit ec: ExecutionContext
   ): Future[Either[E, T]] =
-    run(action).transformWith {
-      case Failure(ex) => {
-        logger.warn("Exception occurred during database access", ex)
-        Future.successful(Left(error(ex)))
+    run(action.map(t => Right(t)))
+      .recover { case ex: SQLException =>
+        Left(error(ex))
       }
-      case Success(value) => Future.successful(Right(value))
-    }
 
 }
 

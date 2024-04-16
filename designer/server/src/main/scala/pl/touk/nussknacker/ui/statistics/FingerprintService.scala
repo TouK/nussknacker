@@ -20,7 +20,7 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
   def fingerprint(
       config: UsageStatisticsReportsConfig,
       fingerprintFileName: FileName
-  ): Future[Either[StatisticError, Fingerprint]] = {
+  ): Future[Either[CannotGenerateStatisticsError, Fingerprint]] = {
     // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
     // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
     config.fingerprint.filterNot(_.isBlank) match {
@@ -29,9 +29,11 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
     }
   }
 
-  private def fetchOrGenerate(fingerprintFileName: FileName): Future[Either[StatisticError, Fingerprint]] = {
+  private def fetchOrGenerate(
+      fingerprintFileName: FileName
+  ): Future[Either[CannotGenerateStatisticsError, Fingerprint]] = {
     val dbResult = for {
-      dbFingerprint <- dbioRunner.run(fingerprintRepository.read())
+      dbFingerprint <- fingerprintRepository.read()
       result <- dbFingerprint match {
         case Some(dbValue) => DBIO.successful(new Fingerprint(dbValue))
         case None => {
@@ -43,7 +45,10 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
         }
       }
     } yield result
-    dbioRunner.runInTransaction(dbResult)
+    dbioRunner.safeRunInTransaction(dbResult) { ex =>
+      logger.warn("Exception occurred during database access", ex)
+      CannotGenerateStatisticsError
+    }
   }
 
   // TODO: The code below is added to ensure compatibility with older NU versions and should be removed in future release of NU 1.20.

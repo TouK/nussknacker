@@ -1,18 +1,21 @@
 package pl.touk.nussknacker.ui.statistics
 
-import org.scalatest.OptionValues
+import db.util.DBIOActionInstances.DB
+import org.mockito.Mockito.when
+import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
-import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
+import pl.touk.nussknacker.ui.statistics.repository.{FingerprintRepository, FingerprintRepositoryImpl}
+import slick.dbio.DBIOAction
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.sql.SQLException
 import java.sql.SQLException
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class FingerprintServiceTest
     extends AnyFunSuite
     with Matchers
-    with OptionValues
+    with EitherValues
     with PatientScalaFutures
     with WithHsqlDbTesting {
 
@@ -33,13 +36,13 @@ class FingerprintServiceTest
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
 
-    fingerprint.value shouldBe "set via config"
+    fingerprint.value.value shouldBe "set via config"
   }
 
   test("should generate a random fingerprint if the configured one is blank") {
     runner.run(repository.read()).futureValue shouldBe None
 
-    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
+    val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue.value
 
     runner.run(repository.read()).futureValue shouldBe Some(fingerprint.value)
     fingerprint.value should fullyMatch regex "gen-\\w{10}"
@@ -50,7 +53,7 @@ class FingerprintServiceTest
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
 
-    fingerprint.value shouldBe "db stored"
+    fingerprint.value.value shouldBe "db stored"
   }
 
   test("should return a fingerprint from a file and save it in the database") {
@@ -61,18 +64,18 @@ class FingerprintServiceTest
 
     val fingerprint = sut.fingerprint(config, new FileName(fingerprintFile.getName)).futureValue
 
-    fingerprint.value shouldBe "file stored"
+    fingerprint.value.value shouldBe "file stored"
     runner.run(repository.read()).futureValue shouldBe Some("file stored")
   }
 
   test("should return an error if database failed") {
     val repository = mock[FingerprintRepository[DB]]
-    val sut = new FingerprintService(runner, repository)
+    val sut        = new FingerprintService(runner, repository)
     when(repository.read()).thenReturn(DBIOAction.failed(new SQLException("some db exception")))
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
 
-    fingerprint.left.value shouldBe DbError
+    fingerprint.left.value shouldBe CannotGenerateStatisticsError
   }
 
   private val config = UsageStatisticsReportsConfig(enabled = true, None, None)

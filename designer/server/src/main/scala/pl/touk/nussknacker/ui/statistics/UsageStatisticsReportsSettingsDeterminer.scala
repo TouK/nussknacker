@@ -44,9 +44,13 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
       processService: ProcessService,
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
-      fingerprintSupplier: (UsageStatisticsReportsConfig, FileName) => Future[Either[StatisticError, Fingerprint]]
+      fingerprintSupplier: (
+          UsageStatisticsReportsConfig,
+          FileName
+      ) => Future[Either[CannotGenerateStatisticsError, Fingerprint]]
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsDeterminer = {
-    def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
+    def fetchNonArchivedScenarioParameters()
+        : Future[Either[CannotGenerateStatisticsError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
       //       given user has no access rights.
       val user                                  = NussknackerInternalUser.instance
@@ -70,7 +74,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
         }
         .recoverWith { case ex: SQLException =>
           logger.warn("Exception occurred during database access", ex)
-          Future.successful(Left(DbError))
+          Future.successful(Left(CannotGenerateStatisticsError))
         }
     }
     new UsageStatisticsReportsSettingsDeterminer(config, fingerprintSupplier, fetchNonArchivedScenarioParameters)
@@ -110,11 +114,11 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
       .mkString("https://stats.nussknacker.io/?", "&", "")
   }
 
-  private def toURL(urlString: String): Either[StatisticError, Option[URL]] =
+  private def toURL(urlString: String): Either[CannotGenerateStatisticsError, Option[URL]] =
     Try(new URI(urlString).toURL) match {
       case Failure(ex) => {
         logger.warn(s"Exception occurred while creating URL from string: [$urlString]", ex)
-        Left(UrlError)
+        Left(CannotGenerateStatisticsError)
       }
       case Success(value) => Right(Some(value))
     }
@@ -123,11 +127,16 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
 
 class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
-    fingerprintSupplier: (UsageStatisticsReportsConfig, FileName) => Future[Either[StatisticError, Fingerprint]],
-    fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]]
+    fingerprintSupplier: (
+        UsageStatisticsReportsConfig,
+        FileName
+    ) => Future[Either[CannotGenerateStatisticsError, Fingerprint]],
+    fetchNonArchivedScenariosInputData: () => Future[
+      Either[CannotGenerateStatisticsError, List[ScenarioStatisticsInputData]]
+    ]
 )(implicit ec: ExecutionContext) {
 
-  def determineStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
+  def prepareStatisticsUrl(): Future[Either[CannotGenerateStatisticsError, Option[URL]]] = {
     if (config.enabled) {
       determineQueryParams().value
         .map {
@@ -139,7 +148,7 @@ class UsageStatisticsReportsSettingsDeterminer(
     }
   }
 
-  private[statistics] def determineQueryParams(): EitherT[Future, StatisticError, Map[String, String]] =
+  private[statistics] def determineQueryParams(): EitherT[Future, CannotGenerateStatisticsError, Map[String, String]] =
     for {
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
       scenariosStatistics = scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)

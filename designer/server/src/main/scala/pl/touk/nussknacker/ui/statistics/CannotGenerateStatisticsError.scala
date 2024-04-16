@@ -1,0 +1,4 @@
+package pl.touk.nussknacker.ui.statistics
+
+sealed trait CannotGenerateStatisticsError
+object CannotGenerateStatisticsError extends CannotGenerateStatisticsError

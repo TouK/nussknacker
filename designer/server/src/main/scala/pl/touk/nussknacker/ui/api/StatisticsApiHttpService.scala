@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.api
 
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints
-import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticError.{
-  DbError => ApiDbError,
-  InvalidURL
+import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
+  CannotGenerateStatisticError => ApiCannotGenerateStatisticError,
+  StatisticError,
+  StatisticUrlResponseDto
 }
-import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{StatisticError, StatisticUrlResponseDto}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import pl.touk.nussknacker.ui.statistics.{DbError, UrlError, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.{CannotGenerateStatisticsError, UsageStatisticsReportsSettingsDeterminer}
 
 import scala.concurrent.ExecutionContext
 
@@ -24,14 +24,10 @@ class StatisticsApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[StatisticError])
       .serverLogic { _ => _ =>
         determiner
-          .determineStatisticsUrl()
+          .prepareStatisticsUrl()
           .map {
-            case Left(error) =>
-              error match {
-                case DbError  => businessError(ApiDbError)
-                case UrlError => businessError(InvalidURL)
-              }
-            case Right(url) => success(StatisticUrlResponseDto(url.toList))
+            case Left(CannotGenerateStatisticsError) => businessError(ApiCannotGenerateStatisticError)
+            case Right(url)                          => success(StatisticUrlResponseDto(url.toList))
           }
       }
   }
