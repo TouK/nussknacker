@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.{ApiCallComment, UserComment}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -130,7 +131,8 @@ class ManagementResources(
                       RunDeploymentCommand(
                         processId,
                         Some(savepointPath),
-                        comment,
+                        // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
+                        comment.map(ApiCallComment(_)),
                         NodesDeploymentData.empty,
                         user
                       )
@@ -154,7 +156,7 @@ class ManagementResources(
                     RunDeploymentCommand(
                       processId,
                       None,
-                      comment,
+                      comment.map(UserComment),
                       NodesDeploymentData.empty,
                       user
                     )
@@ -170,7 +172,7 @@ class ManagementResources(
             canDeploy(processId) {
               complete {
                 measureTime("cancel", metricRegistry) {
-                  deploymentService.processCommand(CancelScenarioCommand(processId, comment, user))
+                  deploymentService.processCommand(CancelScenarioCommand(processId, comment.map(UserComment), user))
                 }
               }
             }
