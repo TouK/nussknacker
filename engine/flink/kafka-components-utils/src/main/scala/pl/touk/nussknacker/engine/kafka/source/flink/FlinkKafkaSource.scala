@@ -43,7 +43,7 @@ import java.time.Duration
 import java.util.Properties
 import scala.jdk.CollectionConverters._
 
-abstract class FlinkKafkaSource[T](
+class FlinkKafkaSource[T](
     preparedTopics: List[PreparedKafkaTopic],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
@@ -70,6 +70,10 @@ abstract class FlinkKafkaSource[T](
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
 
     prepareSourceStream(env, flinkNodeContext, sourceFunction)
+  }
+
+  override val typeInformation: TypeInformation[T] = {
+    wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
   }
 
   @silent("deprecated")
@@ -102,6 +106,8 @@ abstract class FlinkKafkaSource[T](
     val topic = topics.head
     deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
   }
+
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
     Some(
