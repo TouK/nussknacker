@@ -8,7 +8,6 @@ describe("Process", () => {
     after(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
-
     describe("initially clean", () => {
         beforeEach(() => {
             cy.visitNewProcess(seed).as("processName");
@@ -387,6 +386,7 @@ describe("Process", () => {
 
         // Center diagram before the screen to have all nodes visible
         cy.contains("button", "layout").click();
+        cy.wait(500);
         cy.getNode("filter")
             .click()
             .parent()

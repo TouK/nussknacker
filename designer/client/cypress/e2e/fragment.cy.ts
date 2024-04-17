@@ -388,7 +388,7 @@ describe("Fragment", () => {
         cy.contains(`${deadEndFragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("@sendSms", { target: { x: 250, y: -20 }, force: true });
+            .drag("@sendSms", { target: { x: 230, y: -20 }, force: true });
         cy.layoutScenario();
 
         cy.get("@sendSms")
