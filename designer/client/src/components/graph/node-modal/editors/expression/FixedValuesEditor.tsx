@@ -66,7 +66,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 styles={{
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({
-                        ...control(base, props.isFocused, props.isDisabled),
+                        ...control(base, props.isFocused, props.isDisabled, !isEmpty(fieldErrors)),
                     }),
                     menu: (base) => ({
                         ...menu(base),

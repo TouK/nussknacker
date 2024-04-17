@@ -3,7 +3,6 @@ import React, { useCallback } from "react";
 import { ChangeableValue } from "./ChangeableValue";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable } from "./graph/node-modal/NodeDetailsContent/NodeTable";
-import { NodeInput } from "./FormElements";
 import { getValidationErrorsForField } from "./graph/node-modal/editors/Validators";
 import { Box, FormControl, FormGroup, FormLabel, Link, Typography } from "@mui/material";
 import { Trans, useTranslation } from "react-i18next";
@@ -15,7 +14,8 @@ import { ProcessingMode } from "../http/HttpService";
 import { NodeValidationError } from "../types";
 import { isEmpty } from "lodash";
 import { Option, TypeSelect } from "./graph/node-modal/fragment-input-definition/TypeSelect";
-import { nodeInput, nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { nodeValue } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import Input from "./graph/node-modal/editors/field/Input";
 
 export type FormValue = { processName: string; processCategory: string; processingMode: string; processEngine: string };
 
@@ -133,18 +133,16 @@ export function AddProcessForm({
                 <FormControl>
                     <FormLabel required>{t("addProcessForm.label.name", "Name")}</FormLabel>
                     <div className={nodeValue}>
-                        <NodeInput
+                        <Input
                             type="text"
                             id="newProcessName"
                             value={value.processName}
-                            className={nodeInput}
                             onChange={(e) => onFieldChange("processName", e.target.value)}
                             onBlur={() => {
                                 onBlurChange("processName", true);
                             }}
-                        />
-                        <ValidationLabels
                             fieldErrors={touched.processName ? getValidationErrorsForField(validationErrors, "processName") : []}
+                            showValidation={true}
                         />
                     </div>
                 </FormControl>

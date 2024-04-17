@@ -73,7 +73,7 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                         padding: 0,
                     }),
                     control: (base, props) => ({
-                        ...control(base, props.isFocused, props.isDisabled),
+                        ...control(base, props.isFocused, props.isDisabled, false),
                         height: "0 !important",
                         minHeight: "0 !important",
                         maxHeight: "0 !important",

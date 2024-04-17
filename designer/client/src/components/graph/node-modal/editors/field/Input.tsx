@@ -9,7 +9,7 @@ import { nodeInput, nodeInputWithError } from "../../NodeDetailsContent/NodeTabl
 export interface InputProps
     extends Pick<
         InputWithFocusProps,
-        "className" | "placeholder" | "autoFocus" | "onChange" | "readOnly" | "type" | "onFocus" | "disabled"
+        "className" | "placeholder" | "autoFocus" | "onChange" | "onBlur" | "readOnly" | "type" | "onFocus" | "disabled" | "id"
     > {
     value: string;
     inputClassName?: string;
@@ -32,26 +32,28 @@ export default function Input(props: InputProps): JSX.Element {
         placeholder,
         onFocus,
         onChange,
+        onBlur,
+        ...rest
     } = props;
 
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
-                {
-                    <NodeInput
-                        autoFocus={autoFocus}
-                        readOnly={readOnly}
-                        placeholder={placeholder}
-                        onChange={onChange}
-                        onFocus={onFocus}
-                        type={type}
-                        className={cx([
-                            !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`,
-                            inputClassName,
-                        ])}
-                        value={value || ""}
-                    />
-                }
+                <NodeInput
+                    {...rest}
+                    autoFocus={autoFocus}
+                    readOnly={readOnly}
+                    placeholder={placeholder}
+                    onChange={onChange}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    type={type}
+                    className={cx([
+                        !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`,
+                        inputClassName,
+                    ])}
+                    value={value || ""}
+                />
             </div>
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>

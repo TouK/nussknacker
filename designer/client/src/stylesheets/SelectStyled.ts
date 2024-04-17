@@ -15,7 +15,7 @@ export const selectStyled = (theme: Theme) => {
         outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.05)};
     `;
 
-    const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`
+    const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean, isError: boolean) => css`
         ${base};
         background-color: ${isDisabled ? theme.palette.action.disabledBackground : theme.palette.background.paper};
         color: ${theme.palette.action.disabled} !important;
@@ -24,7 +24,7 @@ export const selectStyled = (theme: Theme) => {
         border: none;
         border-radius: 0;
         box-shadow: 0;
-        outline: 1px solid ${isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
+        outline: 1px solid ${isError ? theme.palette.error.light : isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
     `;
 
     const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isDisabled: boolean) => css`

@@ -7,6 +7,7 @@ import ValidationLabels from "../../../modals/ValidationLabels";
 import { FieldError } from "../editors/Validators";
 import { cx } from "@emotion/css";
 import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { isEmpty } from "lodash";
 
 const StyledNodeValue = styled(NodeValue)({ width: "100%" });
 
@@ -78,7 +79,7 @@ export function TypeSelect({
                 styles={{
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({
-                        ...control(base, props.isFocused, props.isDisabled),
+                        ...control(base, props.isFocused, props.isDisabled, !isEmpty(fieldErrors)),
                     }),
                     menu: (base) => ({
                         ...menu(base),
