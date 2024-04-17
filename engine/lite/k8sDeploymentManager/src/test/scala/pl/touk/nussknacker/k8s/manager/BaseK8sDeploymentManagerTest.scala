@@ -9,10 +9,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{
-  CancelScenarioCommand,
+  DMCancelScenarioCommand,
+  DMRunDeploymentCommand,
   DataFreshnessPolicy,
-  ProcessingTypeDeploymentServiceStub,
-  RunDeploymentCommand
+  ProcessingTypeActionServiceStub,
+  ProcessingTypeDeployedScenariosProviderStub
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -64,7 +65,8 @@ class BaseK8sDeploymentManagerTest
 
   protected def prepareManager(modelData: ModelData, deployConfig: Config): K8sDeploymentManager = {
     val dependencies = DeploymentManagerDependencies(
-      new ProcessingTypeDeploymentServiceStub(List.empty),
+      new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+      new ProcessingTypeActionServiceStub,
       system.dispatcher,
       system,
       backend
@@ -123,7 +125,7 @@ class BaseK8sDeploymentManagerTest
       with LazyLogging {
 
     def withRunningScenario(action: => Unit): Unit = {
-      manager.processCommand(RunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
+      manager.processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
       try {
         waitForRunning(version)
         action
@@ -134,7 +136,7 @@ class BaseK8sDeploymentManagerTest
           }
           throw ex
       } finally {
-        manager.processCommand(CancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
+        manager.processCommand(DMCancelScenarioCommand(version.processName, DeploymentData.systemUser)).futureValue
         eventually {
           manager.getProcessStates(version.processName).futureValue.value shouldBe List.empty
         }

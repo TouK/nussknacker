@@ -32,7 +32,7 @@ class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matc
         id = "decision-table-service",
         parameters = List(
           Parameter(ParameterName("Decision Table"), exampleDecisionTableJson),
-          Parameter(ParameterName("Filtering expression"), "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"),
+          Parameter(ParameterName("Match condition"), "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"),
         )
       ),
       output = "Output",

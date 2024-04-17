@@ -106,7 +106,7 @@ trait NuResourcesTest
   )
 
   protected val deploymentService: DeploymentService =
-    new DeploymentServiceImpl(
+    new DeploymentService(
       dmDispatcher,
       fetchingProcessRepository,
       actionRepository,
@@ -162,7 +162,7 @@ trait NuResourcesTest
 
   protected val processesRoute = new ProcessesResources(
     processService = processService,
-    deploymentService = deploymentService,
+    processStateService = deploymentService,
     processToolbarService = configProcessToolbarService,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener
@@ -181,9 +181,9 @@ trait NuResourcesTest
     LoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
-  protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService =
+  protected def createDBProcessService(processStateProvider: ProcessStateProvider): DBProcessService =
     new DBProcessService(
-      deploymentService,
+      processStateProvider,
       newProcessPreparerByProcessingType,
       typeToConfig.mapCombined(_.parametersService),
       processResolverByProcessingType,
