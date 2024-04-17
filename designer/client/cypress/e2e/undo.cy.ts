@@ -30,6 +30,7 @@ describe("Undo/Redo", () => {
             .should("be.disabled");
         cy.contains(/^copy$/i).as("copy");
         cy.contains(/^paste$/i).as("paste");
+        cy.wait(200);
     });
 
     it("should work for add and move to edge", () => {

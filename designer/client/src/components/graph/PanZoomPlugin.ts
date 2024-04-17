@@ -93,7 +93,7 @@ export class PanZoomPlugin {
         this.viewport = updatedViewport;
 
         const transitionName = "fit";
-        const scale = Math.min(2, 0.8 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
+        const scale = Math.min(1, 0.78 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
         const center = content.center();
         const translate = this.getTranslatedCenter(center, this.viewport, scale);
 
