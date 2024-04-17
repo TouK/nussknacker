@@ -5,6 +5,7 @@ import { GlobalCursor } from "./GlobalCursor";
 import { select, Selection } from "d3-selection";
 import { D3ZoomEvent, zoom, ZoomBehavior, ZoomedElementBaseType, zoomIdentity, ZoomTransform } from "d3-zoom";
 import { rafThrottle } from "./rafThrottle";
+import { isVisualTesting } from "../toolbarSettings/DEV_TOOLBARS";
 
 function isModified(event: MouseEvent | TouchEvent) {
     return event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
@@ -102,7 +103,7 @@ export class PanZoomPlugin {
         this.paperSelection
             .interrupt(transitionName)
             .transition(transitionName)
-            .duration(750)
+            .duration(isVisualTesting ? 0 : 750)
             .call(this.zoomBehavior.transform, zoomTransform);
     }
 
