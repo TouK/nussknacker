@@ -1,7 +1,10 @@
 describe("Fragment", () => {
     const seed = "fragment";
     before(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
+        cy.deleteAllTestProcesses({
+            filter: seed,
+            force: true,
+        });
     });
 
     after(() => {
@@ -175,7 +178,10 @@ describe("Fragment", () => {
             .last()
             .should("be.visible")
             .drag("#nk-graph-main", {
-                target: { x: 800, y: 600 },
+                target: {
+                    x: 800,
+                    y: 600,
+                },
                 force: true,
             });
         cy.layoutScenario();
@@ -336,7 +342,13 @@ describe("Fragment", () => {
         cy.contains(`${seed2}-test`)
             .last()
             .should("be.visible")
-            .drag("#nk-graph-main", { target: { x: 800, y: 600 }, force: true });
+            .drag("#nk-graph-main", {
+                target: {
+                    x: 800,
+                    y: 600,
+                },
+                force: true,
+            });
         cy.layoutScenario();
 
         cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
@@ -364,7 +376,13 @@ describe("Fragment", () => {
         cy.contains(`${fragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("@enricher", { target: { x: 250, y: -20 }, force: true });
+            .drag("@enricher", {
+                target: {
+                    x: 250,
+                    y: -20,
+                },
+                force: true,
+            });
         cy.layoutScenario();
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
@@ -375,7 +393,13 @@ describe("Fragment", () => {
         cy.contains("dead-end")
             .first()
             .should("be.visible")
-            .drag("@output", { target: { x: 0, y: 0 }, force: true });
+            .drag("@output", {
+                target: {
+                    x: 0,
+                    y: 0,
+                },
+                force: true,
+            });
         cy.get("@output").click().type("{backspace}");
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
@@ -383,12 +407,19 @@ describe("Fragment", () => {
 
         cy.viewport(2000, 800);
         cy.get<string>("@scenarioName").then((name) => cy.visitProcess(name));
+        cy.layoutScenario();
         cy.getNode("sendSms").as("sendSms");
         cy.contains("fragments").should("exist").scrollIntoView();
         cy.contains(`${deadEndFragmentName}-test`)
             .last()
             .should("be.visible")
-            .drag("@sendSms", { target: { x: 230, y: -20 }, force: true });
+            .drag("@sendSms", {
+                target: {
+                    x: 240,
+                    y: -20,
+                },
+                force: true,
+            });
         cy.layoutScenario();
 
         cy.get("@sendSms")
