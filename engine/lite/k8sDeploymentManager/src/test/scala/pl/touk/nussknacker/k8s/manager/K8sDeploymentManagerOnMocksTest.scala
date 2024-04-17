@@ -9,12 +9,18 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, Inside, OptionValues}
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DataFreshnessPolicy,
+  ProcessingTypeActionServiceStub,
+  ProcessingTypeDeployedScenariosProvider,
+  ProcessingTypeDeployedScenariosProviderStub
+}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
 import skuber.api.Configuration
 import sttp.client3.testing.SttpBackendStub
+
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
@@ -64,7 +70,8 @@ class K8sDeploymentManagerOnMocksTest
       k8sConfig,
       ConfigFactory.empty(),
       DeploymentManagerDependencies(
-        new ProcessingTypeDeploymentServiceStub(List.empty),
+        new ProcessingTypeDeployedScenariosProviderStub(List.empty),
+        new ProcessingTypeActionServiceStub,
         system.dispatcher,
         system,
         SttpBackendStub.asynchronousFuture

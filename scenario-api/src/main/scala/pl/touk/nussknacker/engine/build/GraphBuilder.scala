@@ -199,15 +199,15 @@ trait GraphBuilder[R] {
 
   def decisionTable(
       decisionTableParamValue: Expression,
-      filterExpressionParamValue: Expression,
+      matchConditionParamValue: Expression,
       output: String,
   ): GraphBuilder[R] = {
     enricher(
       id = "decision-table",
       output,
       svcId = "decision-table",
-      "Decision Table"       -> decisionTableParamValue,
-      "Filtering expression" -> filterExpressionParamValue,
+      "Decision Table"  -> decisionTableParamValue,
+      "Match condition" -> matchConditionParamValue,
     )
   }
 

@@ -55,12 +55,12 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
       savepointPath: Option[String] = None
   ): Option[ExternalDeploymentId] = {
     deploymentManager
-      .processCommand(RunDeploymentCommand(processVersion, DeploymentData.empty, process, savepointPath))
+      .processCommand(DMRunDeploymentCommand(processVersion, DeploymentData.empty, process, savepointPath))
       .futureValue
   }
 
   protected def cancelProcess(processName: ProcessName): Unit = {
-    deploymentManager.processCommand(CancelScenarioCommand(processName, user = userToAct)).futureValue
+    deploymentManager.processCommand(DMCancelScenarioCommand(processName, user = userToAct)).futureValue
     eventually {
       val statuses = deploymentManager
         .getProcessStates(processName)

@@ -22,7 +22,6 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
 }
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util._
@@ -31,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessesResources(
     protected val processService: ProcessService,
-    deploymentService: DeploymentService,
+    processStateService: ProcessStateProvider,
     processToolbarService: ScenarioToolbarService,
     val processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener
@@ -240,7 +239,7 @@ class ProcessesResources(
         (get & processId(processName)) { processId =>
           complete {
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-            deploymentService.getProcessState(processId).map(ToResponseMarshallable(_))
+            processStateService.getProcessState(processId).map(ToResponseMarshallable(_))
           }
         }
       } ~ path("processes" / ProcessNameSegment / "toolbars") { processName =>

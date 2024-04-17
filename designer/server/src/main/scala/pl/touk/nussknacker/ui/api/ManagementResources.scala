@@ -22,7 +22,13 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentService}
+import pl.touk.nussknacker.ui.process.deployment.{
+  CancelScenarioCommand,
+  CustomActionCommand,
+  DeploymentManagerDispatcher,
+  DeploymentService,
+  RunDeploymentCommand
+}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -94,7 +100,7 @@ class ManagementResources(
               convertSavepointResultToResponse(
                 dispatcher
                   .deploymentManagerUnsafe(processId)(ec, user)
-                  .flatMap(_.processCommand(MakeScenarioSavepointCommand(processId.name, savepointDir)))
+                  .flatMap(_.processCommand(DMMakeScenarioSavepointCommand(processId.name, savepointDir)))
               )
             }
           }
@@ -107,7 +113,7 @@ class ManagementResources(
                 convertSavepointResultToResponse(
                   dispatcher
                     .deploymentManagerUnsafe(processId)(ec, user)
-                    .flatMap(_.processCommand(StopScenarioCommand(processId.name, savepointDir, user.toManagerUser)))
+                    .flatMap(_.processCommand(DMStopScenarioCommand(processId.name, savepointDir, user.toManagerUser)))
                 )
               }
             }
@@ -119,7 +125,7 @@ class ManagementResources(
               canDeploy(processId) {
                 complete {
                   deploymentService
-                    .deployProcessAsync(processId, Some(savepointPath), comment)
+                    .processCommand(RunDeploymentCommand(processId, Some(savepointPath), comment, user))
                     .map(_ => ())
                 }
               }
@@ -135,7 +141,7 @@ class ManagementResources(
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
-                  .deployProcessAsync(processId, None, comment)
+                  .processCommand(RunDeploymentCommand(processId, None, comment, user))
                   .map(_ => ())
               }
             }
@@ -147,8 +153,7 @@ class ManagementResources(
             canDeploy(processId) {
               complete {
                 measureTime("cancel", metricRegistry) {
-                  deploymentService
-                    .cancelProcess(processId, comment)
+                  deploymentService.processCommand(CancelScenarioCommand(processId, comment, user))
                 }
               }
             }
@@ -245,7 +250,7 @@ class ManagementResources(
           (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
             complete {
               deploymentService
-                .invokeCustomAction(req.actionName, process, req.params)
+                .processCommand(CustomActionCommand(req.actionName, process, req.params, user))
                 .flatMap(actionResult =>
                   toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
                 )

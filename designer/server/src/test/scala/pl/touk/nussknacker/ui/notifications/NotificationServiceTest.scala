@@ -19,7 +19,12 @@ import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
+import pl.touk.nussknacker.ui.process.deployment.{
+  DeploymentManagerDispatcher,
+  DeploymentService,
+  RunDeploymentCommand,
+  ScenarioResolver
+}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{
@@ -76,11 +81,14 @@ class NotificationServiceTest
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
       when(
-        deploymentManager.processCommand(any[RunDeploymentCommand])
+        deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
-      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, global).flatten.futureValue
+      deploymentService
+        .processCommand(RunDeploymentCommand(processIdWithName, savepointPath = None, comment = None, user))
+        .flatten
+        .futureValue
     }
 
     val userForSuccess = TestFactory.adminUser("successUser", "successUser")
@@ -117,14 +125,17 @@ class NotificationServiceTest
         user: LoggedUser
     ): Option[ExternalDeploymentId] = {
       when(
-        deploymentManager.processCommand(any[RunDeploymentCommand])
+        deploymentManager.processCommand(any[DMRunDeploymentCommand])
       ).thenAnswer { invocation =>
-        passedDeploymentId = Some(invocation.getArgument[RunDeploymentCommand](0).deploymentData.deploymentId)
+        passedDeploymentId = Some(invocation.getArgument[DMRunDeploymentCommand](0).deploymentData.deploymentId)
         Future.fromTry(givenDeployResult)
       }
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
-      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, global).flatten.futureValue
+      deploymentService
+        .processCommand(RunDeploymentCommand(processIdWithName, savepointPath = None, comment = None, user))
+        .flatten
+        .futureValue
     }
 
     val user = TestFactory.adminUser("fooUser", "fooUser")
@@ -155,7 +166,7 @@ class NotificationServiceTest
     when(managerDispatcher.deploymentManagerUnsafe(any[String])(any[LoggedUser])).thenReturn(deploymentManager)
     val config              = NotificationConfig(20 minutes)
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
-    val deploymentService = new DeploymentServiceImpl(
+    val deploymentService = new DeploymentService(
       managerDispatcher,
       processRepository,
       actionRepository,
@@ -170,13 +181,13 @@ class NotificationServiceTest
       override protected def validateBeforeDeploy(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           deployedScenarioData: DeployedScenarioData
-      )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = Future.successful(())
+      )(implicit user: LoggedUser): Future[Unit] = Future.successful(())
 
       override protected def prepareDeployedScenarioData(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           actionId: ProcessActionId,
           additionalDeploymentData: Map[String, String] = Map.empty
-      )(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
+      )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
         Future.successful(
           DeployedScenarioData(
             processDetails.toEngineProcessVersion,
