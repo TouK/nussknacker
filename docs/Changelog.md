@@ -14,6 +14,7 @@
 * [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
 * [#5853](https://github.com/TouK/nussknacker/pull/5853) Add processing mode information and filtering to the components table
 * [#5843](https://github.com/TouK/nussknacker/pull/5843) Added new endpoint to provide statistics URL
+* [#5879](https://github.com/TouK/nussknacker/pull/5879) Added username override mechanism for adding comments
 
 1.14.0 (21 Mar 2024)
 -------------------------
