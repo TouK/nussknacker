@@ -70,19 +70,21 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     val matchingPartitionDirectory = transactionSummaryDirectories.head
     matchingPartitionDirectory.getName shouldEqual "date=2024-01-01"
 
-    val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
-    partitionFiles should have size 1
-    val firstFile = partitionFiles.head
+    eventually {
+      val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
+      partitionFiles should have size 1
+      val firstFile = partitionFiles.head
 
-    val content =
-      FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
+      val content =
+        FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
 
-    // TODO (next PRs): aggregate by clientId
-    content should include(
-      """"2024-01-01 10:00:00",client1,1.12
-        |"2024-01-01 10:01:00",client2,2.21
-        |"2024-01-01 10:02:00",client1,3""".stripMargin
-    )
+      // TODO (next PRs): aggregate by clientId
+      content should include(
+        """"2024-01-01 10:00:00",client1,1.12
+          |"2024-01-01 10:01:00",client2,2.21
+          |"2024-01-01 10:02:00",client1,3""".stripMargin
+      )
+    }
   }
 
 }
