@@ -31,7 +31,7 @@ function Survey(props: ToolbarPanelProps) {
     }
 
     return (
-        <ToolbarWrapper {...props} onClose={hideSurvey} color={theme.palette.primary.main}>
+        <ToolbarWrapper {...props} disableCollapse color={theme.palette.primary.main}>
             <Stack p={1} spacing={0.5}>
                 <Typography color={theme.palette.getContrastText(theme.palette.primary.main)} variant="body2">
                     {survey.text}
