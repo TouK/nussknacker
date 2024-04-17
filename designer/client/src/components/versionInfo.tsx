@@ -72,7 +72,7 @@ export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
                     transition: "all .25s",
                 },
 
-                color: alpha(theme.palette.common.black, 0.75),
+                color: theme.palette.getContrastText(theme.palette.background.paper),
                 background: alpha(theme.palette.common.white, expanded ? 0.25 : 0),
                 backdropFilter: expanded ? "blur(5px)" : "none",
 
@@ -101,7 +101,7 @@ export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
                     pointerEvents: "auto",
                     padding: ".5em .5em .2em .5em",
                     transform: `translateX(${expanded ? 0 : 25}%) translateY(${expanded ? 0 : 45}%) rotate(${expanded ? 0 : -15}deg)`,
-                    color: expanded ? "inherit" : alpha(theme.palette.common.black, 0.25),
+                    color: expanded ? "inherit" : theme.palette.getContrastText(theme.palette.background.paper),
                 })}
             >
                 <Nu size="2em" />
