@@ -753,6 +753,10 @@ class HttpService {
             );
     }
 
+    fetchStatisticUsage() {
+        return api.get<{ urls: string[] }>(`/statistic/usage`);
+    }
+
     #addInfo(message: string) {
         if (this.#notificationActions) {
             this.#notificationActions.success(message);
