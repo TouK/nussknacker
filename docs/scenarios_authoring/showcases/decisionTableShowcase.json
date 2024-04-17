@@ -1,0 +1,127 @@
+{
+  "metaData" : {
+    "id" : "decsion-table-fragment-rr",
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+        "docsUrl" : ""
+      },
+      "metaDataType" : "FragmentSpecificData"
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "carSensorStream",
+      "parameters" : [
+        {
+          "name" : "id",
+          "typ" : {
+            "refClazzName" : "java.lang.Long"
+          },
+          "required" : false,
+          "initialValue" : null,
+          "hintText" : "",
+          "valueEditor" : null,
+          "valueCompileTimeValidation" : null
+        },
+        {
+          "name" : "controls",
+          "typ" : {
+            "refClazzName" : "java.lang.Boolean"
+          },
+          "required" : false,
+          "initialValue" : null,
+          "hintText" : "",
+          "valueEditor" : null,
+          "valueCompileTimeValidation" : null
+        },
+        {
+          "name" : "engine",
+          "typ" : {
+            "refClazzName" : "java.lang.Boolean"
+          },
+          "required" : false,
+          "initialValue" : null,
+          "hintText" : "",
+          "valueEditor" : null,
+          "valueCompileTimeValidation" : null
+        }
+      ],
+      "additionalFields" : {
+        "description" : "stream of data from car sensors",
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "FragmentInputDefinition"
+    },
+    {
+      "id" : "decision-table",
+      "service" : {
+        "id" : "decision-table",
+        "parameters" : [
+          {
+            "name" : "Decision Table",
+            "expression" : {
+              "language" : "tabularDataDefinition",
+              "expression" : "{\n  \"rows\": [\n    [\n      \"True\",\n      \"False\",\n      \"False\"\n    ],\n    [\n      \"False\",\n      \"False\",\n      \"True\"\n    ],\n    [\n      \"False\",\n      \"True\",\n      \"True\"\n    ],\n    [\n      \"True\",\n      \"True\",\n      \"True\"\n    ]\n  ],\n  \"columns\": [\n    {\n      \"name\": \"Engine_Starts\",\n      \"type\": \"java.lang.Boolean\"\n    },\n    {\n      \"name\": \"Controls_light_up\",\n      \"type\": \"java.lang.Boolean\"\n    },\n    {\n      \"name\": \"Service\",\n      \"type\": \"java.lang.Boolean\"\n    }\n  ]\n}"
+            }
+          },
+          {
+            "name" : "Match condition",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#engine == #ROW.Engine_Starts && #controls == #ROW.Controls_light_up"
+            }
+          }
+        ]
+      },
+      "output" : "serviceList",
+      "additionalFields" : {
+        "description" : "Cars that need service",
+        "layoutData" : {
+          "x" : 0,
+          "y" : 180
+        }
+      },
+      "type" : "Enricher"
+    },
+    {
+      "id" : "variable",
+      "varName" : "varName",
+      "value" : {
+        "language" : "spel",
+        "expression" : "#serviceList"
+      },
+      "additionalFields" : {
+        "description" : "list of cars that need service",
+        "layoutData" : {
+          "x" : 0,
+          "y" : 360
+        }
+      },
+      "type" : "Variable"
+    },
+    {
+      "id" : "dead-end",
+      "ref" : {
+        "typ" : "dead-end",
+        "parameters" : [
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 540
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}
