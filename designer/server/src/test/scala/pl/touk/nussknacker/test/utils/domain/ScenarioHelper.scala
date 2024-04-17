@@ -106,7 +106,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy
-    val comment    = DeploymentComment.unsafe("Deploy comment").toComment(actionName)
+    val comment    = DeploymentComment.unsafe(UserComment("Deploy comment")).toComment(actionName)
     dbioRunner.run(
       actionRepository.addInstantAction(
         scenarioId,
@@ -120,7 +120,7 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
 
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
-    val comment    = DeploymentComment.unsafe("Cancel comment").toComment(actionName)
+    val comment    = DeploymentComment.unsafe(UserComment("Cancel comment")).toComment(actionName)
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )

@@ -10,6 +10,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
@@ -30,6 +31,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.{ApiCallComment, UserComment}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -125,7 +127,16 @@ class ManagementResources(
               canDeploy(processId) {
                 complete {
                   deploymentService
-                    .processCommand(RunDeploymentCommand(processId, Some(savepointPath), comment, user))
+                    .processCommand(
+                      RunDeploymentCommand(
+                        processId,
+                        Some(savepointPath),
+                        // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
+                        comment.map(ApiCallComment(_)),
+                        NodesDeploymentData.empty,
+                        user
+                      )
+                    )
                     .map(_ => ())
                 }
               }
@@ -141,7 +152,15 @@ class ManagementResources(
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
-                  .processCommand(RunDeploymentCommand(processId, None, comment, user))
+                  .processCommand(
+                    RunDeploymentCommand(
+                      processId,
+                      None,
+                      comment.map(UserComment),
+                      NodesDeploymentData.empty,
+                      user
+                    )
+                  )
                   .map(_ => ())
               }
             }
@@ -153,7 +172,7 @@ class ManagementResources(
             canDeploy(processId) {
               complete {
                 measureTime("cancel", metricRegistry) {
-                  deploymentService.processCommand(CancelScenarioCommand(processId, comment, user))
+                  deploymentService.processCommand(CancelScenarioCommand(processId, comment.map(UserComment), user))
                 }
               }
             }
