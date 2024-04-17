@@ -68,29 +68,16 @@ class MigrationService(
 
     liftedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
-        EitherT(
-          Future[Either[NuDesignerError, Unit]](
-            Left(
-              MigrationApiAdapterError(apiAdapterServiceError)
-            )
+        EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
+      case Right(currentMigrateScenarioRequest: CurrentMigrateScenarioData) =>
+        EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
+      case _ =>
+        EitherT.leftT(
+          RemoteEnvironmentCommunicationError(
+            StatusCode.int2StatusCode(500),
+            "Migration API adapter service lifted up remote migration request not to its newest local version"
           )
         )
-      case Right(liftedMigrateScenarioRequest) =>
-        liftedMigrateScenarioRequest match {
-          case currentMigrateScenarioRequest: CurrentMigrateScenarioData =>
-            EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
-          case _ =>
-            EitherT(
-              Future[Either[NuDesignerError, Unit]](
-                Left(
-                  RemoteEnvironmentCommunicationError(
-                    StatusCode.int2StatusCode(500),
-                    "Migration API adapter service lifted up remote migration request not to its newest local version"
-                  )
-                )
-              )
-            )
-        }
     }
   }
 
@@ -242,15 +229,13 @@ class MigrationService(
       isFragment: Boolean,
       processingType: ProcessingType
   )(implicit loggedUser: LoggedUser) = {
-    EitherT[Future, NuDesignerError, ValidationResults.ValidationResult](
+    EitherT.fromEither[Future](
       processResolver
         .forProcessingTypeEUnsafe(processingType) match {
-        case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
+        case Left(e) => Left(e)
         case Right(uiProcessResolver) =>
-          Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](
-            FatalValidationError.renderNotAllowedAsError(
-              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
-            )
+          FatalValidationError.renderNotAllowedAsError(
+            uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
           )
       }
     )
