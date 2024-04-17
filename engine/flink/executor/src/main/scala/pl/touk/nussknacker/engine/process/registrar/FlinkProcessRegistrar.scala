@@ -84,7 +84,15 @@ class FlinkProcessRegistrar(
 
       val compilerDataForProcessPart =
         FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
-      register(env, compilerDataForProcessPart, compilerData, process, resultCollector, typeInformationDetection)
+      register(
+        env,
+        compilerDataForProcessPart,
+        compilerData,
+        process,
+        resultCollector,
+        typeInformationDetection,
+        deploymentData
+      )
       streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
   }
@@ -119,7 +127,8 @@ class FlinkProcessRegistrar(
       compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
-      typeInformationDetection: TypeInformationDetection
+      typeInformationDetection: TypeInformationDetection,
+      deploymentData: DeploymentData
   ): Unit = {
 
     val metaData         = compilerData.metaData
@@ -146,7 +155,10 @@ class FlinkProcessRegistrar(
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        compilerData.componentUseCase
+        compilerData.componentUseCase,
+        // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
+        //       of silently skip these data
+        deploymentData.nodesData.dataByNodeId.get(NodeId(nodeComponentId.nodeId))
       )
     }
 
