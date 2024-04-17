@@ -1750,6 +1750,10 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-flink-base-components-tests",
+    libraryDependencies ++= Seq(
+      "org.apache.flink" % "flink-connector-files" % flinkV % Test,
+      "org.apache.flink" % "flink-csv"             % flinkV % Test
+    )
   )
   .dependsOn(
     flinkComponentsTestkit              % Test,
