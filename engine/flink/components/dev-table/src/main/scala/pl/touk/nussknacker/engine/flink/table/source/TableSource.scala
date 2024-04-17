@@ -4,9 +4,11 @@ import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -26,9 +28,18 @@ class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlState
 
     sqlStatements.foreach(tableEnv.executeSql)
 
-    val table = tableEnv.from(tableDefinition.tableName)
+    val selectQuery = tableEnv.from(tableDefinition.tableName)
 
-    val streamOfRows: DataStream[Row] = tableEnv.toDataStream(table)
+    val finalQuery = flinkNodeContext.nodeDeploymentData
+      .map { case SqlFilteringExpression(sqlExpression) =>
+        tableEnv.executeSql(
+          s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableName} WHERE $sqlExpression"
+        )
+        tableEnv.from(filteringInternalViewName)
+      }
+      .getOrElse(selectQuery)
+
+    val streamOfRows: DataStream[Row] = tableEnv.toDataStream(finalQuery)
 
     val streamOfMaps = streamOfRows
       .map(RowConversions.rowToMap)
@@ -49,6 +60,8 @@ class TableSource(tableDefinition: TableDefinition, sqlStatements: List[SqlState
 }
 
 object TableSource {
+
+  private val filteringInternalViewName = "filteringView"
 
   type RECORD = java.util.Map[String, Any]
 
