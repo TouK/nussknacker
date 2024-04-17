@@ -67,7 +67,7 @@ object LastVariableFilterTransformer
     case TransformationStep((_, _) :: (`valueParameterName`, DefinedLazyParameter(expr)) :: Nil, _) =>
       NextParameters(conditionParameterDeclaration.createParameter(expr) :: Nil)
     // if we cannot determine value, we'll assume it's type is Unknown
-    case TransformationStep((_, _) :: (`valueParameterName`, FailedToDefineParameter) :: Nil, _) =>
+    case TransformationStep((_, _) :: (`valueParameterName`, FailedToDefineParameter(_)) :: Nil, _) =>
       NextParameters(conditionParameterDeclaration.createParameter(Unknown) :: Nil)
     case TransformationStep((_, _) :: (`valueParameterName`, _) :: (`conditionParameterName`, _) :: Nil, _) =>
       FinalResults(context)

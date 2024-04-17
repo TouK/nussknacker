@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.common.components
 
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData
 import pl.touk.nussknacker.engine.graph.expression.TabularTypedData.Column
 
@@ -34,15 +35,16 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   private object MatchConditionTableExpressionParameter {
     val name: ParameterName = ParameterName("Match condition")
 
-    val declaration: ParameterCreator[TabularTypedData] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
+    val declaration
+        : ParameterCreator[Iterable[Column.Definition]] with ParameterExtractor[LazyParameter[lang.Boolean]] = {
       ParameterDeclaration
         .lazyMandatory[java.lang.Boolean](name)
-        .withAdvancedCreator[TabularTypedData](
-          create = data =>
+        .withAdvancedCreator[Iterable[Column.Definition]](
+          create = columnDefinitions =>
             _.copy(additionalVariables =
               Map(
                 decisionTableRowRuntimeVariableName -> AdditionalVariableProvidedInRuntime(
-                  rowDataTypingResult(data.columnDefinitions)
+                  rowDataTypingResult(columnDefinitions)
                 )
               )
             )
@@ -83,13 +85,27 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
       NextParameters(
-        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(data) :: Nil,
+        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(data.columnDefinitions) :: Nil,
         errors = List.empty,
         state = None
       )
-    case TransformationStep((name, FailedToDefineParameter) :: Nil, _) if name == BasicDecisionTableParameter.name =>
+    case TransformationStep((name, FailedToDefineParameter(errors)) :: Nil, _)
+        if name == BasicDecisionTableParameter.name =>
+      val details = errors.toList.flatMap {
+        case e: ProcessCompilationError.ExpressionParserCompilationError =>
+          e.details match {
+            case Some(details: TabularDataDefinitionParserErrorDetails) => Some(details)
+            case Some(_) | None                                         => None
+          }
+        case _ =>
+          None
+      }.headOption
+      val columnDefinitions = details match {
+        case Some(d) => d.columnDefinitions.map(cd => Column.Definition(cd.name, cd.aType))
+        case None    => TabularTypedData.empty.columnDefinitions
+      }
       NextParameters(
-        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(TabularTypedData.empty) :: Nil,
+        parameters = MatchConditionTableExpressionParameter.declaration.createParameter(columnDefinitions) :: Nil,
         errors = List.empty,
         state = None
       )
@@ -99,16 +115,18 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
     case TransformationStep(
-          (firstParamName, FailedToDefineParameter) ::
+          (firstParamName, FailedToDefineParameter(_)) ::
           (secondParamName, _) :: Nil,
           _
         )
         if firstParamName == BasicDecisionTableParameter.name &&
           secondParamName == MatchConditionTableExpressionParameter.name =>
-      FinalResults(
-        finalContext = context,
-        errors = Nil,
-        state = None
+      FinalResults.forValidation(context)(
+        _.withVariable(
+          name = OutputVariableNameDependency.extract(dependencies),
+          value = Unknown,
+          paramName = None
+        )
       )
     case TransformationStep(
           (firstParamName, DefinedEagerParameter(data: TabularTypedData, _)) ::

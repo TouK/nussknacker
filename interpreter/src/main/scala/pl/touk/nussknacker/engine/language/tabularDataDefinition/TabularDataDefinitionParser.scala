@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
   CellError,
+  ColumnDefinition,
   ErrorDetails,
   TabularDataDefinitionParserErrorDetails
 }
@@ -79,7 +80,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
           s"Column names should be unique. Duplicates: ${columnNames.distinct.toList.mkString(",")}"
         case Error.ValidationError(CellsCountInRowDifferentThanColumnsCount) =>
           "All rows should have the same number of cells as there are columns"
-        case Error.ValidationError(InvalidCellValues(_)) =>
+        case Error.ValidationError(InvalidCellValues(_, _)) =>
           "Typing error in some cells"
       }
 
@@ -87,7 +88,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
         case Error.JsonParsingError(_)                                       => None
         case Error.ValidationError(ColumnNameUniquenessViolation(_))         => None
         case Error.ValidationError(CellsCountInRowDifferentThanColumnsCount) => None
-        case Error.ValidationError(InvalidCellValues(invalidCells)) =>
+        case Error.ValidationError(InvalidCellValues(invalidCells, columnDefinitions)) =>
           Some(
             TabularDataDefinitionParserErrorDetails(
               invalidCells.map { coordinates =>
@@ -97,7 +98,8 @@ object TabularDataDefinitionParser extends ExpressionParser {
                   errorMessage =
                     s"Column has '${coordinates.columnName.aType.getSimpleName}' type but its value cannot be converted to the type."
                 )
-              }.toList
+              }.toList,
+              columnDefinitions.map(cd => ColumnDefinition(cd.name, cd.aType))
             )
           )
       }
