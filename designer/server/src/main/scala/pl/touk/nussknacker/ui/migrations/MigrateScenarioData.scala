@@ -15,7 +15,7 @@ sealed trait MigrateScenarioData extends VersionedData
 
 object MigrateScenarioData {
 
-  type CurrentMigrateScenarioRequest = MigrateScenarioDataV2
+  type CurrentMigrateScenarioData = MigrateScenarioDataV2
 
   def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): MigrateScenarioData =
     migrateScenarioRequestDto match {

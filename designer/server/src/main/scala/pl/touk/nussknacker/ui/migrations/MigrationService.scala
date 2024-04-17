@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.Migrate
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
-import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioRequest
+import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
@@ -77,7 +77,7 @@ class MigrationService(
         )
       case Right(liftedMigrateScenarioRequest) =>
         liftedMigrateScenarioRequest match {
-          case currentMigrateScenarioRequest: CurrentMigrateScenarioRequest =>
+          case currentMigrateScenarioRequest: CurrentMigrateScenarioData =>
             EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
           case _ =>
             EitherT(
@@ -96,20 +96,20 @@ class MigrationService(
 
   // FIXME: Rename process to scenario everywhere it's possible
   private def migrateCurrentScenarioDescription(
-      migrateScenarioRequest: CurrentMigrateScenarioRequest
+      migrateScenarioData: CurrentMigrateScenarioData
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
+    val sourceEnvironmentId = migrateScenarioData.sourceEnvironmentId
     val targetEnvironmentId = config.getString("environment")
     val parameters = ScenarioParameters(
-      migrateScenarioRequest.processingMode,
-      migrateScenarioRequest.processCategory,
-      migrateScenarioRequest.engineSetupName
+      migrateScenarioData.processingMode,
+      migrateScenarioData.processCategory,
+      migrateScenarioData.engineSetupName
     )
-    val scenarioGraph = migrateScenarioRequest.scenarioGraph
-    val processName   = migrateScenarioRequest.processName
-    val isFragment    = migrateScenarioRequest.isFragment
+    val scenarioGraph = migrateScenarioData.scenarioGraph
+    val processName   = migrateScenarioData.processName
+    val isFragment    = migrateScenarioData.isFragment
     val forwardedUsernameO =
-      if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioRequest.remoteUserName)) else None
+      if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioData.remoteUserName)) else None
     val updateProcessComment = {
       forwardedUsernameO match {
         case Some(forwardedUsername) =>
