@@ -9,11 +9,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId, ProcessingMode}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId, ProcessingMode}
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
@@ -56,163 +52,12 @@ class UsageStatisticsReportsSettingsDeterminerTest
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
+      _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty))
     ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
     params should contain("version" -> BuildInfo.version)
-  }
-
-  test("should determine statistics for running scenario with streaming processing mode and flink engine") {
-    val scenarioData = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.Running),
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None
-    )
-    val statistics = UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData)
-    statistics shouldEqual Map(
-      "s_s"     -> 1,
-      "s_f"     -> 0,
-      "s_pm_s"  -> 1,
-      "s_pm_b"  -> 0,
-      "s_pm_rr" -> 0,
-      "s_dm_f"  -> 1,
-      "s_dm_l"  -> 0,
-      "s_dm_e"  -> 0,
-      "s_dm_c"  -> 0,
-      "s_a"     -> 1,
-    )
-  }
-
-  test("should determine statistics for scenario vs fragment") {
-    def scenarioData(isFragment: Boolean) = ScenarioStatisticsInputData(
-      isFragment = isFragment,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("foo"),
-      status = None,
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None
-    )
-
-    forAll(
-      Table(
-        ("isFragment", "expectedScenarioFragmentStats"),
-        (false, Map("s_s" -> 1, "s_f" -> 0)),
-        (true, Map("s_s" -> 0, "s_f" -> 1)),
-      )
-    ) { (isFragment, expectedScenarioFragmentStats) =>
-      val resultStatistics =
-        UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(isFragment))
-      resultStatistics should contain allElementsOf expectedScenarioFragmentStats
-    }
-  }
-
-  test("should determine statistics for processing mode") {
-    def scenarioData(processingMode: ProcessingMode) = ScenarioStatisticsInputData(
-      isFragment = false,
-      processingMode,
-      DeploymentManagerType("foo"),
-      status = None,
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None
-    )
-
-    forAll(
-      Table(
-        ("processingMode", "expectedProcessingModeStats"),
-        (ProcessingMode.UnboundedStream, Map("s_pm_s" -> 1, "s_pm_b" -> 0, "s_pm_rr" -> 0)),
-        (ProcessingMode.BoundedStream, Map("s_pm_s" -> 0, "s_pm_b" -> 1, "s_pm_rr" -> 0)),
-        (ProcessingMode.RequestResponse, Map("s_pm_s" -> 0, "s_pm_b" -> 0, "s_pm_rr" -> 1)),
-      )
-    ) { (processingMode, expectedProcessingModeStats) =>
-      val resultStatistics =
-        UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(processingMode))
-      resultStatistics should contain allElementsOf expectedProcessingModeStats
-    }
-  }
-
-  test("should determine statistics for deployment manager") {
-    def scenarioData(dmType: DeploymentManagerType) = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      dmType,
-      status = None,
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None
-    )
-
-    forAll(
-      Table(
-        ("dmType", "expectedProcessingModeStats"),
-        (DeploymentManagerType("flinkStreaming"), Map("s_dm_f" -> 1, "s_dm_l" -> 0, "s_dm_e" -> 0, "s_dm_c" -> 0)),
-        (DeploymentManagerType("lite-k8s"), Map("s_dm_f" -> 0, "s_dm_l" -> 1, "s_dm_e" -> 0, "s_dm_c" -> 0)),
-        (DeploymentManagerType("lite-embedded"), Map("s_dm_f" -> 0, "s_dm_l" -> 0, "s_dm_e" -> 1, "s_dm_c" -> 0)),
-        (DeploymentManagerType("custom "), Map("s_dm_f" -> 0, "s_dm_l" -> 0, "s_dm_e" -> 0, "s_dm_c" -> 1)),
-      )
-    ) { (dmType, expectedDMStats) =>
-      val resultStatistics =
-        UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(dmType))
-      resultStatistics should contain allElementsOf expectedDMStats
-    }
-  }
-
-  test("should determine statistics for status") {
-    def scenarioData(status: Option[StateStatus]) = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("foo"),
-      status,
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None
-    )
-
-    UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(None))(
-      "s_a"
-    ) shouldBe 0
-    UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.NotDeployed))
-    )(
-      "s_a"
-    ) shouldBe 0
-    UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.DuringDeploy))
-    )(
-      "s_a"
-    ) shouldBe 0
-    UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.Running))
-    )(
-      "s_a"
-    ) shouldBe 1
-    UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(
-      scenarioData(Some(SimpleStateStatus.Canceled))
-    )(
-      "s_a"
-    ) shouldBe 0
   }
 
   test("should combined statistics for all scenarios") {
@@ -226,7 +71,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None
+      lastDeployedAction = None,
+      scenarioId = None
     )
     val runningScenario = ScenarioStatisticsInputData(
       isFragment = false,
@@ -238,7 +84,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None
+      lastDeployedAction = None,
+      scenarioId = None
     )
     val fragment = ScenarioStatisticsInputData(
       isFragment = true,
@@ -250,7 +97,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None
+      lastDeployedAction = None,
+      scenarioId = None
     )
     val k8sRRScenario = ScenarioStatisticsInputData(
       isFragment = false,
@@ -262,49 +110,50 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioVersion = VersionId(2),
       createdBy = "user",
       fragmentsUsedCount = 0,
-      lastDeployedAction = None
+      lastDeployedAction = None,
+      scenarioId = None
     )
 
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
-      () => Future.successful(Right(processActivityList)),
+      _  => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
-      "a_n"     -> "1",
-      "a_t"     -> "1",
-      "a_v"     -> "1",
-      "c"       -> "1",
-      "c_n"     -> "1",
-      "c_v"     -> "1",
-      "v_m"     -> "2",
-      "v_ma"    -> "2",
-      "v_mi"    -> "2",
-      "v_v"     -> "2",
-      "u_v"     -> "0",
-      "u_ma"    -> "0",
-      "u_mi"    -> "0",
-      "c_t"     -> "1",
-      "f_m"     -> "0",
-      "f_v"     -> "0",
-      "n_m"     -> "2",
-      "n_v"     -> "2",
-      "n_ma"    -> "2",
-      "n_mi"    -> "2",
-      "s_s"     -> "3",
-      "s_f"     -> "1",
-      "s_pm_s"  -> "3",
-      "s_pm_b"  -> "0",
-      "s_pm_rr" -> "1",
-      "s_dm_f"  -> "3",
-      "s_dm_l"  -> "1",
-      "s_dm_e"  -> "0",
-      "s_dm_c"  -> "0",
-      "s_a"     -> "2",
-    )
+      AuthorsCount       -> "1",
+      AttachmentsTotal   -> "1",
+      AttachmentsAverage -> "1",
+      CategoriesCount    -> "1",
+      CommentsTotal      -> "1",
+      CommentsAverage    -> "1",
+      VersionsMedian     -> "2",
+      VersionsMax        -> "2",
+      VersionsMin        -> "2",
+      VersionsAverage    -> "2",
+      UptimeAverage      -> "0",
+      UptimeMax          -> "0",
+      UptimeMin          -> "0",
+      ComponentsCount    -> "1",
+      FragmentsMedian    -> "0",
+      FragmentsAverage   -> "0",
+      NodesMedian        -> "2",
+      NodesAverage       -> "2",
+      NodesMax           -> "2",
+      NodesMin           -> "2",
+      "s_s"              -> "3",
+      "s_f"              -> "1",
+      "s_pm_s"           -> "3",
+      "s_pm_b"           -> "0",
+      "s_pm_rr"          -> "1",
+      "s_dm_f"           -> "3",
+      "s_dm_l"           -> "1",
+      "s_dm_e"           -> "0",
+      "s_dm_c"           -> "0",
+      "s_a"              -> "2",
+    ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }
 
