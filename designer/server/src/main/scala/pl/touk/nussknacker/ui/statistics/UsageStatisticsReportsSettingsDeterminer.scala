@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.statistics
 
+import cats.data.EitherT
 import cats.implicits.toFoldableOps
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -11,14 +13,19 @@ import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptio
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{
+  determineStatisticsForScenario,
+  nuFingerprintFileName,
+  prepareUrlString,
+  toURL
+}
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-object UsageStatisticsReportsSettingsDeterminer {
+object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
 
   private val nuFingerprintFileName = new FileName("nussknacker.fingerprint")
 
@@ -36,9 +43,9 @@ object UsageStatisticsReportsSettingsDeterminer {
       processService: ProcessService,
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
-      fingerprintSupplier: (UsageStatisticsReportsConfig, FileName) => Future[Fingerprint]
+      fingerprintService: FingerprintService
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsDeterminer = {
-    def fetchNonArchivedScenarioParameters(): Future[List[ScenarioStatisticsInputData]] = {
+    def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
       //       given user has no access rights.
       val user                                  = NussknackerInternalUser.instance
@@ -49,17 +56,19 @@ object UsageStatisticsReportsSettingsDeterminer {
           GetScenarioWithDetailsOptions.detailsOnly.withFetchState
         )(user)
         .map { scenariosDetails =>
-          scenariosDetails.map(scenario =>
-            ScenarioStatisticsInputData(
-              scenario.isFragment,
-              scenario.processingMode,
-              deploymentManagerTypeByProcessingType(scenario.processingType),
-              scenario.state.map(_.status)
+          Right(
+            scenariosDetails.map(scenario =>
+              ScenarioStatisticsInputData(
+                scenario.isFragment,
+                scenario.processingMode,
+                deploymentManagerTypeByProcessingType(scenario.processingType),
+                scenario.state.map(_.status)
+              )
             )
           )
         }
     }
-    new UsageStatisticsReportsSettingsDeterminer(config, fingerprintSupplier, fetchNonArchivedScenarioParameters)
+    new UsageStatisticsReportsSettingsDeterminer(config, fingerprintService, fetchNonArchivedScenarioParameters)
   }
 
   // We have four dimensions:
@@ -86,7 +95,7 @@ object UsageStatisticsReportsSettingsDeterminer {
     ).mapValuesNow(if (_) 1 else 0)
   }
 
-  private[statistics] def prepareUrl(queryParams: Map[String, String]) = {
+  private[statistics] def prepareUrlString(queryParams: Map[String, String]): String = {
     // Sorting for purpose of easier testing
     queryParams.toList
       .sortBy(_._1)
@@ -96,37 +105,40 @@ object UsageStatisticsReportsSettingsDeterminer {
       .mkString("https://stats.nussknacker.io/?", "&", "")
   }
 
-  private def toURL(urlString: String): Future[Option[URL]] =
+  private def toURL(urlString: String): Either[StatisticError, Option[URL]] =
     Try(new URI(urlString).toURL) match {
-      case Failure(ex)    => Future.failed(new IllegalStateException("Invalid URL generated", ex))
-      case Success(value) => Future.successful(Some(value))
+      case Failure(ex) => {
+        logger.warn(s"Exception occurred while creating URL from string: [$urlString]", ex)
+        Left(CannotGenerateStatisticsError)
+      }
+      case Success(value) => Right(Some(value))
     }
 
 }
 
 class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
-    fingerprintSupplier: (UsageStatisticsReportsConfig, FileName) => Future[Fingerprint],
-    fetchNonArchivedScenariosInputData: () => Future[List[ScenarioStatisticsInputData]]
+    fingerprintService: FingerprintService,
+    fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]]
 )(implicit ec: ExecutionContext) {
 
-  def determineStatisticsUrl(): Future[Option[URL]] = {
+  def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
     if (config.enabled) {
-      determineQueryParams()
-        .flatMap { queryParams =>
-          val url = prepareUrl(queryParams)
-          toURL(url)
+      determineQueryParams().value
+        .map {
+          case Right(queryParams) => toURL(prepareUrlString(queryParams))
+          case Left(e)            => Left(e)
         }
     } else {
-      Future.successful(None)
+      Future.successful(Right(None))
     }
   }
 
-  private[statistics] def determineQueryParams(): Future[Map[String, String]] =
+  private[statistics] def determineQueryParams(): EitherT[Future, StatisticError, Map[String, String]] =
     for {
-      scenariosInputData <- fetchNonArchivedScenariosInputData()
+      scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
       scenariosStatistics = scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)
-      fingerprint <- fingerprintSupplier(config, nuFingerprintFileName)
+      fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
       basicStatistics = determineBasicStatistics(fingerprint, config)
     } yield basicStatistics ++ scenariosStatistics
 
