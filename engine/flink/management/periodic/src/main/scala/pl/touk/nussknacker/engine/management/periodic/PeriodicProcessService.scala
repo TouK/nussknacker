@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentStatus, _}
+import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
@@ -38,7 +39,7 @@ class PeriodicProcessService(
     executionConfig: PeriodicExecutionConfig,
     processConfigEnricher: ProcessConfigEnricher,
     clock: Clock,
-    deploymentService: ProcessingTypeDeploymentService
+    actionService: ProcessingTypeActionService
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
 
@@ -355,7 +356,7 @@ class PeriodicProcessService(
   ): RepositoryAction[Callback] =
     scheduledProcessesRepository.monad.pure { () =>
       processActionIdOption
-        .map(deploymentService.markActionExecutionFinished)
+        .map(actionService.markActionExecutionFinished)
         .sequence
         .map(_ => ())
     }
@@ -366,7 +367,9 @@ class PeriodicProcessService(
     val deploymentData = DeploymentData(
       DeploymentId(id.toString),
       DeploymentData.systemUser,
-      additionalDeploymentDataProvider.prepareAdditionalData(deployment)
+      additionalDeploymentDataProvider.prepareAdditionalData(deployment),
+      // TODO: in the future we could allow users to specify nodes data during schedule requesting
+      NodesDeploymentData.empty
     )
     val deploymentWithJarData = deployment.periodicProcess.deploymentData
     val deploymentAction = for {

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MismatchParameter
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
-import pl.touk.nussknacker.engine.api.deployment.CustomActionCommand
+import pl.touk.nussknacker.engine.api.deployment.DMCustomActionCommand
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -80,14 +80,14 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
   }
 
   def validateCustomActionParams(
-      command: CustomActionCommand
+      command: DMCustomActionCommand
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     this.validateCustomActionParams(
       fromCommand(command)
     )
   }
 
-  private def fromCommand(customActionCommand: CustomActionCommand): CustomActionRequest = {
+  private def fromCommand(customActionCommand: DMCustomActionCommand): CustomActionRequest = {
     CustomActionRequest(
       customActionCommand.actionName,
       customActionCommand.params

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -18,14 +19,15 @@ import scala.util.{Failure, Success}
 
 // This class is extracted from DeploymentService to avoid a cyclic dependency:
 // DeploymentService -> EmbeddedDeploymentManager -> ... -> DeploymentService.getDeployedScenarios
-class AllDeployedScenarioService(
+class DefaultProcessingTypeDeployedScenariosProvider(
     processRepository: FetchingProcessRepository[DB],
     dbioRunner: DBIOActionRunner,
     scenarioResolver: ScenarioResolver,
     processingType: ProcessingType
-) extends LazyLogging {
+) extends ProcessingTypeDeployedScenariosProvider
+    with LazyLogging {
 
-  def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
+  override def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
     implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
     for {
       deployedProcesses <- {
@@ -43,8 +45,13 @@ class AllDeployedScenarioService(
       dataList <- Future.sequence(deployedProcesses.flatMap { details =>
         val lastDeployAction = details.lastDeployedAction.get
         // TODO: what should be in name?
-        val deployingUser  = User(lastDeployAction.user, lastDeployAction.user)
-        val deploymentData = DeploymentData(DeploymentId.fromActionId(lastDeployAction.id), deployingUser, Map.empty)
+        val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
+        val deploymentData = DeploymentData(
+          DeploymentId.fromActionId(lastDeployAction.id),
+          deployingUser,
+          Map.empty,
+          NodesDeploymentData.empty
+        )
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json).map { resolvedScenario =>
             DeployedScenarioData(
@@ -65,12 +72,14 @@ class AllDeployedScenarioService(
 
 }
 
-object AllDeployedScenarioService {
+object DefaultProcessingTypeDeployedScenariosProvider {
 
   // This factory method prepare objects that are also prepared by AkkaHttpBasedRouteProvider
   // but without dependency to ModelData - it necessary to avoid a cyclic dependency:
   // DeploymentService -> EmbeddedDeploymentManager -> ... -> DeploymentService.getDeployedScenarios
-  def apply(dbRef: DbRef, processingType: ProcessingType)(implicit ec: ExecutionContext): AllDeployedScenarioService = {
+  def apply(dbRef: DbRef, processingType: ProcessingType)(
+      implicit ec: ExecutionContext
+  ): ProcessingTypeDeployedScenariosProvider = {
     val dbioRunner = DBIOActionRunner(dbRef)
     val dumbModelInfoProvier = ProcessingTypeDataProvider.withEmptyCombinedData(
       Map(processingType -> ValueWithRestriction.anyUser(Map.empty[String, String]))
@@ -78,7 +87,7 @@ object AllDeployedScenarioService {
     val actionRepository        = new DbProcessActionRepository(dbRef, dumbModelInfoProvier)
     val processRepository       = DBFetchingProcessRepository.create(dbRef, actionRepository)
     val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
-    new AllDeployedScenarioService(
+    new DefaultProcessingTypeDeployedScenariosProvider(
       processRepository,
       dbioRunner,
       new ScenarioResolver(

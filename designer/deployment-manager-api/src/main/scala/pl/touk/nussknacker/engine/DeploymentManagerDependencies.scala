@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
+import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeActionService, ProcessingTypeDeployedScenariosProvider}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class DeploymentManagerDependencies(
-    deploymentService: ProcessingTypeDeploymentService,
+    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
+    actionService: ProcessingTypeActionService,
     executionContext: ExecutionContext,
     actorSystem: ActorSystem,
     sttpBackend: SttpBackend[Future, Any],

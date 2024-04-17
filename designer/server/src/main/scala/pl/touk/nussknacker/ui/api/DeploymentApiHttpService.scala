@@ -5,10 +5,15 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{NoPermission, NoScenario}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
+  DeploymentCommentError,
+  NoPermission,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, RunDeploymentCommand}
+import pl.touk.nussknacker.ui.process.repository.CommentValidationError
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,16 +47,24 @@ class DeploymentApiHttpService(
             // TODO (next PRs): Currently it is done sync, but eventually we should make it async and add an endpoint for deployment status verification
             _ <- eitherifyErrors(
               deploymentService
-                .deployProcessAsync(
-                  scenarioDetails.idWithNameUnsafe,
-                  savepointPath = None,
-                  comment = None
+                .processCommand(
+                  RunDeploymentCommand(
+                    scenarioDetails.idWithNameUnsafe,
+                    savepointPath = None,
+                    comment = request.comment,
+                    nodesDeploymentData = request.nodesDeploymentData,
+                    user = loggedUser
+                  )
                 )
                 .flatten
             )
           } yield ()
         }
       }
+  }
+
+  override protected def handleOtherErrors: PartialFunction[Throwable, DeploymentError] = {
+    case CommentValidationError(message) => DeploymentCommentError(message)
   }
 
 }
