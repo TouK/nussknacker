@@ -67,7 +67,7 @@ object ScenarioStatistics {
         VersionsMin      -> versionsMin,
         AuthorsCount     -> authorsCount,
         FragmentsMedian  -> fragmentsMedian,
-        FragmentsAverage -> fragmentsAverage,
+        FragmentsAverage -> fragmentsAverage
       ) ++ uptimeStatsMap)
         .map { case (k, v) => (k.toString, v.toString) }
     }
@@ -80,21 +80,11 @@ object ScenarioStatistics {
       Map.empty
     } else {
       //        Attachment stats
-      val sortedAttachmentCountList = listOfActivities
-        .map { activity =>
-          activity.attachments
-        }
-        .map(_.length)
-        .sorted
-      val attachmentAverage = sortedAttachmentCountList.sum / sortedAttachmentCountList.length
-      val attachmentsTotal  = sortedAttachmentCountList.sum
+      val sortedAttachmentCountList = listOfActivities.map(_.attachments.length).sorted
+      val attachmentAverage         = sortedAttachmentCountList.sum / sortedAttachmentCountList.length
+      val attachmentsTotal          = sortedAttachmentCountList.sum
       //        Comment stats
-      val comments = listOfActivities
-        .map { activity =>
-          activity.comments
-        }
-        .map(_.length)
-        .sorted
+      val comments        = listOfActivities.map(_.comments.length).sorted
       val commentsTotal   = comments.sum
       val commentsAverage = comments.sum / comments.length
 
