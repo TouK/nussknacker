@@ -5,7 +5,7 @@ import cats.implicits.{toFoldableOps, toTraverseOps}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ScenarioActionName, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
@@ -19,13 +19,11 @@ import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, Pro
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer._
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{determineStatisticsForScenario, nuFingerprintFileName, prepareUrlString, toURL}
 import shapeless.syntax.std.tuple.productTupleOps
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
-import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -64,16 +62,17 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
         .map { scenariosDetails =>
           Right(
             scenariosDetails.map(scenario =>
-            ScenarioStatisticsInputData(
-              isFragment = scenario.isFragment,
-              processingMode = scenario.processingMode,
-              deploymentManagerType = deploymentManagerTypeByProcessingType(scenario.processingType),
-              status = scenario.state.map(_.status),
-              nodesCount = scenario.scenarioGraph.map(_.nodes.length).getOrElse(0),
-              scenarioCategory = scenario.processCategory,
-              scenarioVersion = scenario.processVersionId,
-              createdBy = scenario.createdBy,
-              fragmentsUsedCount = getFragmentsUsedInScenario(scenario.scenarioGraph)
+              ScenarioStatisticsInputData(
+                isFragment = scenario.isFragment,
+                processingMode = scenario.processingMode,
+                deploymentManagerType = deploymentManagerTypeByProcessingType(scenario.processingType),
+                status = scenario.state.map(_.status),
+                nodesCount = scenario.scenarioGraph.map(_.nodes.length).getOrElse(0),
+                scenarioCategory = scenario.processCategory,
+                scenarioVersion = scenario.processVersionId,
+                createdBy = scenario.createdBy,
+                fragmentsUsedCount = getFragmentsUsedInScenario(scenario.scenarioGraph),
+                lastDeployedAction = scenario.lastDeployedAction
               )
             )
           )
@@ -101,28 +100,12 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
         .map(Right(_))
     }
 
-    def fetchScenarioActions(): Future[Either[StatisticError, List[List[ProcessAction]]]] = {
-      implicit val user: LoggedUser = NussknackerInternalUser.instance
-      processService
-        .getLatestProcessesWithDetails(
-          ScenarioQuery.unarchivedProcesses,
-          GetScenarioWithDetailsOptions.detailsOnly.withFetchState
-        )(user)
-        .map(scenarioList =>
-          scenarioList.map { scenario =>
-            processService.getProcessActions(scenario.processIdUnsafe)
-          }.sequence
-        )
-        .flatten
-        .map(Right(_))
-    }
     new UsageStatisticsReportsSettingsDeterminer(
       config,
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
-      fetchComponentList,
-      fetchScenarioActions
+      fetchComponentList
     )
 
   }
@@ -188,8 +171,7 @@ class UsageStatisticsReportsSettingsDeterminer(
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
     fetchActivity: () => Future[Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]],
-    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
-    fetchScenarioActions: () => Future[Either[StatisticError, List[List[ProcessAction]]]]
+    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]]
 )(implicit ec: ExecutionContext) {
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
@@ -210,115 +192,12 @@ class UsageStatisticsReportsSettingsDeterminer(
       scenariosStatistics = scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)
       fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
       basicStatistics = determineBasicStatistics(fingerprint, config)
-      scenariosCount = scenariosInputData.count(!_.isFragment)
-      // Nodes stats
-      sortedNodes = scenariosInputData.map(_.nodesCount)
-      nodesMedian  = sortedNodes.get(sortedNodes.length / 2).getOrElse(0)
-      nodesAverage = sortedNodes.sum / scenariosInputData.length
-      nodesMax     = sortedNodes.head
-      nodesMin     = sortedNodes.last
-      // Category stats
-      categoriesCount = scenariosInputData.map(_.scenarioCategory).toSet.size
-      //        Version stats
-      sortedVersions  = scenariosInputData.map(_.scenarioVersion.value).sorted
-      versionsMedian  = sortedVersions.get(sortedVersions.length / 2).getOrElse(-1)
-      versionsAverage = sortedVersions.sum / scenariosInputData.length
-      versionsMax     = sortedVersions.head
-      versionsMin     = sortedVersions.last
-      //        Author stats
-      authorsCount = scenariosInputData.map(_.createdBy).toSet.size
-      //        Fragment stats
-      fragments        = scenariosInputData.map(_.fragmentsUsedCount).sorted
-      fragmentsMedian  = fragments.get(fragments.length / 2).getOrElse(0)
-      fragmentsAverage = fragments.sum / scenariosCount
-      map = Map(
-        NodesMedian      -> nodesMedian,
-        NodesAverage     -> nodesAverage,
-        NodesMax         -> nodesMax,
-        NodesMin         -> nodesMin,
-        CategoriesCount  -> categoriesCount,
-        VersionsMedian   -> versionsMedian,
-        VersionsAverage  -> versionsAverage,
-        VersionsMax      -> versionsMax,
-        VersionsMin      -> versionsMin,
-        AuthorsCount     -> authorsCount,
-        FragmentsMedian  -> fragmentsMedian,
-        FragmentsAverage -> fragmentsAverage,
-      ).map { case (k, v) => (k.toString, v.toString) }
-      listOfActivities <- new EitherT(fetchActivity())
-      //        Attachment stats
-      sortedAttachmentCountList = listOfActivities.map(_.attachments).map(_.length).sorted
-      attachmentAverage = sortedAttachmentCountList.sum / sortedAttachmentCountList.length
-      attachmentsTotal  = sortedAttachmentCountList.sum
-      //        Comment stats
-      comments = listOfActivities.map(_.comments).map(_.length).sorted
-      commentsTotal   = comments.sum
-      commentsAverage = comments.sum / comments.length
-      activityMap = Map(
-        AttachmentsAverage -> attachmentAverage,
-        AttachmentsTotal   -> attachmentsTotal,
-        CommentsTotal      -> commentsTotal,
-        CommentsAverage    -> commentsAverage
-      ).map { case (k, v) => (k.toString, v.toString) }
-      componentList <- new EitherT(fetchComponentList())
-      withoutFragments      = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      componentsByNameCount = withoutFragments.groupBy(_.name)
-      componentMap = Map(
-        ComponentsCount -> componentsByNameCount.size
-      ).map { case (k, v) => (k.toString, v.toString) }
-      listForScenarios <- new EitherT(fetchScenarioActions())
-      uptimeMap <- listForScenarios.map {
-        case List() => Map.empty[String, String]
-        case listForScenarios =>
-          val uptimes = listForScenarios.map { listOfActions =>
-            calculateUpTimeStats(listOfActions).flatten.sorted match {
-              case Nil                    => 0
-              case deploymentsUpTimeStats => deploymentsUpTimeStats.sum.toInt / deploymentsUpTimeStats.length
-            }
-          }
-          val uptimeAverage = uptimes.sum / uptimes.length
-          val uptimeMax     = uptimes.head
-          val uptimeMin     = uptimes.last
-          Map(
-            UptimeAverage -> uptimeAverage,
-            UptimeMax     -> uptimeMax,
-            UptimeMin     -> uptimeMin
-          ).map { case (k, v) => (k.toString, v.toString) }
-      }
-    } yield basicStatistics ++ scenariosStatistics ++ map ++ activityMap ++ componentMap ++ uptimeMap
-  }
-
-  private def calculateUpTimeStats(scenarioActions: List[ProcessAction]): List[Option[Long]] = {
-    val iter                    = scenarioActions.reverseIterator
-    var hasStarted              = false
-    var lastActionTime: Instant = Instant.now
-    val listOfUptime = iter.map {
-      case ProcessAction(_, _, _, _, _, performedAt, ScenarioActionName.Deploy, _, _, _, _, _) =>
-        if (hasStarted) {
-          val uptime = performedAt.getEpochSecond - lastActionTime.getEpochSecond
-          hasStarted = true
-          lastActionTime = performedAt
-          Some(uptime)
-        } else {
-          hasStarted = true
-          lastActionTime = performedAt
-          None
-        }
-      case ProcessAction(_, _, _, _, _, performedAt, ScenarioActionName.Cancel, _, _, _, _, _) =>
-        val uptime = performedAt.getEpochSecond - lastActionTime.getEpochSecond
-        hasStarted = false
-        lastActionTime = performedAt
-        Some(uptime)
-      case _ =>
-        None
-    }.toList
-    //    if last action is deploy add time for ongoing scenario
-    if (hasStarted) {
-      val current: Option[Long] = Some(Instant.now.getEpochSecond - lastActionTime.getEpochSecond)
-      listOfUptime :+ current
-    } else {
-      listOfUptime
-    }
+      generalStatistics = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
+      activity <- fetchActivity()
+      activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
+      componentList <- fetchComponentList()
+      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
+    } yield basicStatistics ++ scenariosStatistics ++ generalStatistics ++ activityStatistics ++ componentStatistics
   }
 
   private def determineBasicStatistics(
@@ -343,30 +222,6 @@ private[statistics] case class ScenarioStatisticsInputData(
     scenarioCategory: String,
     scenarioVersion: VersionId,
     createdBy: String,
-    fragmentsUsedCount: Int
+    fragmentsUsedCount: Int,
+    lastDeployedAction: Option[ProcessAction]
 )
-
-sealed abstract class StatisticKey(val name: String) {
-  override def toString: String = name
-}
-
-case object AuthorsCount       extends StatisticKey("a_n")
-case object CategoriesCount    extends StatisticKey("c")
-case object ComponentsCount    extends StatisticKey("c_n")
-case object VersionsMedian     extends StatisticKey("v_m")
-case object AttachmentsTotal   extends StatisticKey("a_t")
-case object AttachmentsAverage extends StatisticKey("a_v")
-case object VersionsMax        extends StatisticKey("v_ma")
-case object VersionsMin        extends StatisticKey("v_mi")
-case object VersionsAverage    extends StatisticKey("v_v")
-case object UptimeAverage      extends StatisticKey("u_v")
-case object UptimeMax          extends StatisticKey("u_ma")
-case object UptimeMin          extends StatisticKey("u_mi")
-case object CommentsAverage    extends StatisticKey("c_v")
-case object CommentsTotal      extends StatisticKey("c_t")
-case object FragmentsMedian    extends StatisticKey("f_m")
-case object FragmentsAverage   extends StatisticKey("f_v")
-case object NodesMedian        extends StatisticKey("n_m")
-case object NodesAverage       extends StatisticKey("n_v")
-case object NodesMax           extends StatisticKey("n_ma")
-case object NodesMin           extends StatisticKey("n_mi")

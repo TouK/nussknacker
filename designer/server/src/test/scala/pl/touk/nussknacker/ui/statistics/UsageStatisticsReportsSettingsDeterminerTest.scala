@@ -9,9 +9,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType, DesignerWideComponentId, ProcessingMode}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -22,8 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
 import java.time.Instant
-import java.util.UUID
-import scala.collection.immutable.{ListMap, Map, TreeMap}
+import scala.collection.immutable.{ListMap, Map}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -55,7 +57,6 @@ class UsageStatisticsReportsSettingsDeterminerTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty))
     ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
@@ -73,7 +74,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
     val statistics = UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData)
     statistics shouldEqual Map(
@@ -100,7 +102,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
 
     forAll(
@@ -126,7 +129,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
 
     forAll(
@@ -153,7 +157,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
 
     forAll(
@@ -181,7 +186,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
 
     UsageStatisticsReportsSettingsDeterminer.determineStatisticsForScenario(scenarioData(None))(
@@ -219,7 +225,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
     val runningScenario = ScenarioStatisticsInputData(
       isFragment = false,
@@ -230,7 +237,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
     val fragment = ScenarioStatisticsInputData(
       isFragment = true,
@@ -241,7 +249,8 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
     val k8sRRScenario = ScenarioStatisticsInputData(
       isFragment = false,
@@ -252,17 +261,16 @@ class UsageStatisticsReportsSettingsDeterminerTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0
+      fragmentsUsedCount = 0,
+      lastDeployedAction = None
     )
 
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
-      // TODO need to provide proper sample data
       () => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
-      () => Future.successful(Right(listOfProcessActions))
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
@@ -276,9 +284,9 @@ class UsageStatisticsReportsSettingsDeterminerTest
       "v_ma"    -> "2",
       "v_mi"    -> "2",
       "v_v"     -> "2",
-      "u_v"     -> "3832067",
-      "u_ma"    -> "3832067",
-      "u_mi"    -> "3832067",
+      "u_v"     -> "0",
+      "u_ma"    -> "0",
+      "u_mi"    -> "0",
       "c_t"     -> "1",
       "f_m"     -> "0",
       "f_v"     -> "0",
@@ -356,47 +364,6 @@ class UsageStatisticsReportsSettingsDeterminerTest
       links = List.empty,
       usageCount = 3,
       AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
-    )
-  )
-
-  private val listOfProcessActions = List(
-    List(
-      ProcessAction(
-        ProcessActionId(UUID.fromString("bb698fd8-b7aa-4601-bcbf-7347ff66aefc")),
-        ProcessId(2),
-        VersionId(2),
-        "user",
-        Instant.parse("2024-01-17T14:21:17Z"),
-        Instant.parse("2024-01-17T14:21:17Z"),
-        ScenarioActionName.Deploy,
-        ProcessActionState.Finished,
-        None,
-        Some(1),
-        Some("deploy comment"),
-        TreeMap(
-          "engine-version"  -> "0.1",
-          "generation-time" -> "2024-04-15T09:15:12.436321",
-          "process-version" -> "0.1"
-        )
-      ),
-      ProcessAction(
-        ProcessActionId(UUID.fromString("bb698fd8-b7aa-4601-bcbf-7347ff66aefc")),
-        ProcessId(2),
-        VersionId(2),
-        "user",
-        Instant.parse("2024-04-15T07:16:42.518161Z"),
-        Instant.parse("2024-04-15T07:16:51.557321Z"),
-        ScenarioActionName.Cancel,
-        ProcessActionState.Finished,
-        None,
-        Some(1),
-        Some("deploy comment"),
-        TreeMap(
-          "engine-version"  -> "0.1",
-          "generation-time" -> "2024-04-15T09:15:12.436321",
-          "process-version" -> "0.1"
-        )
-      )
     )
   )
 
