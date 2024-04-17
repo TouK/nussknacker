@@ -39,12 +39,13 @@ class FingerprintServiceTest
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue.value
 
-    runner.run(repository.read()).futureValue shouldBe Some(fingerprint.value)
+    runner.run(repository.read()).futureValue shouldBe Some(fingerprint)
     fingerprint.value should fullyMatch regex "gen-\\w{10}"
   }
 
   test("should return a fingerprint from the database") {
-    runner.runInTransaction(repository.readOrSave(new Fingerprint("db stored")))
+    runner.runInTransaction(repository.readOrSave(new Fingerprint("db stored"))).futureValue
+    runner.run(repository.read()).futureValue shouldBe Some(new Fingerprint("db stored"))
 
     val fingerprint = sut.fingerprint(config, randomFingerprintFileName).futureValue
 
@@ -60,7 +61,7 @@ class FingerprintServiceTest
     val fingerprint = sut.fingerprint(config, new FileName(fingerprintFile.getName)).futureValue
 
     fingerprint.value.value shouldBe "file stored"
-    runner.run(repository.read()).futureValue shouldBe Some("file stored")
+    runner.run(repository.read()).futureValue shouldBe Some(new Fingerprint("file stored"))
   }
 
   private val config = UsageStatisticsReportsConfig(enabled = true, None, None)

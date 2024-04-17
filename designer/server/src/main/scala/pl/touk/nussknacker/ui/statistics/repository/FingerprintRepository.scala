@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 trait FingerprintRepository[F[_]] {
-  def read(): F[Option[String]]
+  def read(): F[Option[Fingerprint]]
   def readOrSave(freshFingerprint: Fingerprint): F[Either[Error, Fingerprint]]
 }
 
@@ -22,15 +22,15 @@ class FingerprintRepositoryImpl(protected val dbRef: DbRef)(implicit ec: Executi
   protected val profile: JdbcProfile = dbRef.profile
   import profile.api._
 
-  override def read(): DB[Option[String]] = fingerprintsTable
+  override def read(): DB[Option[Fingerprint]] = fingerprintsTable
     .take(1)
     .map(_.value)
     .result
-    .map(_.headOption)
+    .map(_.headOption.map(f => new Fingerprint(f)))
 
   override def readOrSave(freshFingerprint: Fingerprint): DB[Either[Error, Fingerprint]] =
     read().flatMap {
-      case Some(existingFingerprint) => DBIO.successful(Right(new Fingerprint(existingFingerprint)))
+      case Some(existingFingerprint) => DBIO.successful(Right(existingFingerprint))
       case None =>
         fingerprintsTable
           .+=(FingerprintEntityData(freshFingerprint.value))

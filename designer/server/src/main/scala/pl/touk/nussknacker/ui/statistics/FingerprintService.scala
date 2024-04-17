@@ -6,7 +6,6 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepository
-import slick.dbio.DBIO
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -35,7 +34,7 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
     for {
       dbFingerprint <- dbioRunner.run(fingerprintRepository.read())
       result <- dbFingerprint match {
-        case Some(dbValue) => Future.successful(Right(new Fingerprint(dbValue)))
+        case Some(dbValue) => Future.successful(Right(dbValue))
         case None => {
           val generated = readFingerprintFromFile(fingerprintFileName).getOrElse(randomFingerprint)
           val readOrSaveAction = fingerprintRepository
