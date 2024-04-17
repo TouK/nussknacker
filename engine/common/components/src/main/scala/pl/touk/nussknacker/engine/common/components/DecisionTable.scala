@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.common.components
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -91,19 +92,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       )
     case TransformationStep((name, FailedToDefineParameter(errors)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
-      val details = errors.toList.flatMap {
-        case e: ProcessCompilationError.ExpressionParserCompilationError =>
-          e.details match {
-            case Some(details: TabularDataDefinitionParserErrorDetails) => Some(details)
-            case Some(_) | None                                         => None
-          }
-        case _ =>
-          None
-      }.headOption
-      val columnDefinitions = details match {
-        case Some(d) => d.columnDefinitions.map(cd => Column.Definition(cd.name, cd.aType))
-        case None    => TabularTypedData.empty.columnDefinitions
-      }
+      val columnDefinitions = extractColumnDefinitionsFrom(errors).getOrElse(TabularTypedData.empty.columnDefinitions)
       NextParameters(
         parameters = MatchConditionTableExpressionParameter.declaration.createParameter(columnDefinitions) :: Nil,
         errors = List.empty,
@@ -187,5 +176,20 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
         columnDef.name -> Typed.typedClass(columnDef.aType)
       }.toMap
     )
+
+  private def extractColumnDefinitionsFrom(errors: NonEmptyList[ProcessCompilationError]) = {
+    errors.toList
+      .flatMap {
+        case e: ProcessCompilationError.ExpressionParserCompilationError =>
+          e.details match {
+            case Some(details: TabularDataDefinitionParserErrorDetails) => Some(details)
+            case Some(_) | None                                         => None
+          }
+        case _ =>
+          None
+      }
+      .map(_.columnDefinitions.map(cd => Column.Definition(cd.name, cd.aType)))
+      .headOption
+  }
 
 }

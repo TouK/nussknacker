@@ -176,7 +176,7 @@ trait DecisionTableSpec
                       )
                     ),
                     List(
-                      ColumnDefinition("name", classOf[String]),
+                      ColumnDefinition("name", classOf[java.lang.Integer]),
                       ColumnDefinition("age", classOf[java.lang.Integer]),
                       ColumnDefinition("DoB", classOf[java.time.LocalDate]),
                     )
@@ -187,7 +187,7 @@ trait DecisionTableSpec
                 message = "Operator '==' used with not comparable types: Integer and String(John)",
                 nodeId = "decision-table",
                 paramName = Some(ParameterName("Match condition")),
-                originalExpr = "#ROW['age'] > #input.minAge",
+                originalExpr = """#ROW.age > #input.minAge && #ROW.name == "John"""",
                 details = None
               )
             )

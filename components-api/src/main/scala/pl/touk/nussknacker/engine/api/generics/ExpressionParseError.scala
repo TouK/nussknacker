@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
+import io.circe.{Codec, Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
@@ -26,14 +26,15 @@ object ExpressionParseError {
 
   @JsonCodec final case class CellError(columnName: String, rowIndex: Int, errorMessage: String)
 
-  private implicit val classCodec: Codec[Class[_]] = Codec.from(
-    Decoder.decodeString.emapTry[Class[_]] { str => Try(Class.forName(str)) },
-    Encoder.encodeString.contramap(_.getName)
-  )
-
   final case class ColumnDefinition(name: String, aType: Class[_])
-  implicit val columnDefinitionCodec: Codec[ColumnDefinition] =
-    Codec.forProduct2("name", "aType")(ColumnDefinition.apply)(cd => (cd.name, cd.aType)) // todo: improve
+
+  implicit val columnDefinitionCodec: Codec[ColumnDefinition] = {
+    implicit val classCodec: Codec[Class[_]] = Codec.from(
+      Decoder.decodeString.emapTry[Class[_]] { str => Try(Class.forName(str)) },
+      Encoder.encodeString.contramap(_.getName)
+    )
+    Codec.forProduct2("name", "aType")(ColumnDefinition.apply)(cd => (cd.name, cd.aType))
+  }
 
 }
 
