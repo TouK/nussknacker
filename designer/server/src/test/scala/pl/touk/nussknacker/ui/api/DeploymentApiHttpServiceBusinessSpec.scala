@@ -18,6 +18,7 @@ import pl.touk.nussknacker.test.config.{
   WithFlinkContainersDeploymentManager
 }
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
+import scala.jdk.CollectionConverters._
 
 import java.nio.file.Files
 
@@ -190,10 +191,10 @@ class DeploymentApiHttpServiceBusinessSpec
       files
     }
     val transactionsSummaryContent =
-      FileUtils.readFileToString(transactionsSummaryFiles.head, StandardCharset.UTF_8)
-    transactionsSummaryContent should include(
-      """client2,2
-        |client1,4""".stripMargin
+      FileUtils.readLines(transactionsSummaryFiles.head, StandardCharset.UTF_8).asScala.toSet
+    transactionsSummaryContent shouldBe Set(
+      "client1,4",
+      "client2,2"
     )
   }
 
