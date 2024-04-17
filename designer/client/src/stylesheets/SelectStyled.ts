@@ -93,6 +93,8 @@ export const selectStyled = (theme: Theme) => {
         z-index: 2;
         border-radius: 0;
         background-color: ${theme.palette.background.paper};
+        box-shadow: none;
+        outline: 1px solid ${getBorderColor(theme)};
     `;
 
     const valueContainer = (base: CSSObjectWithLabel) => css`
