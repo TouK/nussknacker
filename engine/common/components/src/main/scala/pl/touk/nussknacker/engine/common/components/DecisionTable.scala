@@ -58,10 +58,7 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
-    prepare orElse basicDecisionTableParameterReady(context) orElse allParametersReady(
-      context,
-      dependencies
-    ) orElse catchall
+    prepare orElse basicDecisionTableParameterDefined orElse allParametersDefined(context, dependencies)
   }
 
   override def implementation(
@@ -82,30 +79,12 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
     )
   }
 
-  private lazy val catchall: ContextTransformationDefinition = { case TransformationStep(aaa, ddd) =>
-    throw new IllegalStateException(s"ddd + $aaa + $ddd")
-  }
-
-  private def basicDecisionTableParameterReady(
-      context: ValidationContext
-  ): ContextTransformationDefinition = {
+  private lazy val basicDecisionTableParameterDefined: ContextTransformationDefinition = {
     case TransformationStep((name, DefinedEagerParameter(data: TabularTypedData, _)) :: Nil, _)
         if name == BasicDecisionTableParameter.name =>
       NextParameters(
         parameters = MatchConditionTableExpressionParameter.declaration.createParameter(data) :: Nil,
         errors = List.empty,
-        state = None
-      )
-    case TransformationStep(
-          (name, FailedToDefineParameter) ::
-          (secondParamName, _) :: Nil,
-          _
-        )
-        if name == BasicDecisionTableParameter.name &&
-          secondParamName == MatchConditionTableExpressionParameter.name =>
-      FinalResults(
-        finalContext = context,
-        errors = Nil,
         state = None
       )
     case TransformationStep((name, FailedToDefineParameter) :: Nil, _) if name == BasicDecisionTableParameter.name =>
@@ -116,9 +95,21 @@ object DecisionTable extends EagerService with SingleInputDynamicComponent[Servi
       )
   }
 
-  private def allParametersReady(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  private def allParametersDefined(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
   ): ContextTransformationDefinition = {
+    case TransformationStep(
+          (firstParamName, FailedToDefineParameter) ::
+          (secondParamName, _) :: Nil,
+          _
+        )
+        if firstParamName == BasicDecisionTableParameter.name &&
+          secondParamName == MatchConditionTableExpressionParameter.name =>
+      FinalResults(
+        finalContext = context,
+        errors = Nil,
+        state = None
+      )
     case TransformationStep(
           (firstParamName, DefinedEagerParameter(data: TabularTypedData, _)) ::
           (secondParamName, _) :: Nil,

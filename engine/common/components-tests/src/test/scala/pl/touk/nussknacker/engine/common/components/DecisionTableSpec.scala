@@ -146,7 +146,7 @@ trait DecisionTableSpec
         )
         inside(result) { case Validated.Invalid(errors) =>
           errors should be(
-            NonEmptyList.one(
+            NonEmptyList.of(
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
@@ -173,6 +173,20 @@ trait DecisionTableSpec
                     )
                   )
                 )
+              ),
+              ExpressionParserCompilationError(
+                message = "There is no property 'age' in type: Record{}",
+                nodeId = "decision-table",
+                paramName = Some(ParameterName("Match condition")),
+                originalExpr = "#ROW['age'] > #input.minAge",
+                details = None
+              ),
+              ExpressionParserCompilationError(
+                message = "Unresolved reference 'dtResult'",
+                nodeId = "end",
+                paramName = Some(ParameterName("value")),
+                originalExpr = "#dtResult",
+                details = None
               )
             )
           )
