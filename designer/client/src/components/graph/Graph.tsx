@@ -676,7 +676,7 @@ export class Graph extends React.Component<Props> {
                     movingCells.push(...movedNodes);
                 }
 
-                this.panAndZoom.panToOverflow(movingCells, this.viewport);
+                // this.panAndZoom.panToOverflow(movingCells, this.viewport);
             }),
         );
     }
