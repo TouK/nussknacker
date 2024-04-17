@@ -28,7 +28,7 @@ class UsageStatisticsReportsSettingsDeterminerTest
 
   private val sampleFingerprint = "fooFingerprint"
 
-  private val fingerprintService: FingerprintService = mock[FingerprintService](
+  private val mockedFingerprintService: FingerprintService = mock[FingerprintService](
     new Answer[Future[Either[StatisticError, Fingerprint]]] {
       override def answer(invocation: InvocationOnMock): Future[Either[StatisticError, Fingerprint]] =
         Future.successful(Right(new Fingerprint(sampleFingerprint)))
@@ -44,7 +44,7 @@ class UsageStatisticsReportsSettingsDeterminerTest
   test("should determine query params with version and source ") {
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      fingerprintService,
+      mockedFingerprintService,
       () => Future.successful(Right(List.empty))
     ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
@@ -201,7 +201,7 @@ class UsageStatisticsReportsSettingsDeterminerTest
 
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      fingerprintService,
+      mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario)))
     ).determineQueryParams().value.futureValue.value
 

@@ -22,9 +22,9 @@ class FingerprintServiceTest
     with PatientScalaFutures
     with WithHsqlDbTesting {
 
-  private val runner: DBIOActionRunner = DBIOActionRunner(testDbRef)
-  private val repository               = new FingerprintRepositoryImpl(testDbRef)
-  private val sut                      = new FingerprintService(runner, repository)
+  private implicit val runner: DBIOActionRunner = DBIOActionRunner(testDbRef)
+  private val repository                        = new FingerprintRepositoryImpl(testDbRef)
+  private val sut                               = new FingerprintService(repository)
 
   test("should return a fingerprint from the configuration") {
     val config = UsageStatisticsReportsConfig(enabled = true, Some("set via config"), None)

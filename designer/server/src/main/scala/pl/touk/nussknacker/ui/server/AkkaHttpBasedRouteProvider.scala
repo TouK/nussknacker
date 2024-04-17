@@ -111,9 +111,9 @@ class AkkaHttpBasedRouteProvider(
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
-      val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = new DbProcessActionRepository(dbRef, modelBuildInfo)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      implicit val dbioRunner: DBIOActionRunner = DBIOActionRunner(dbRef)
+      val actionRepository                      = new DbProcessActionRepository(dbRef, modelBuildInfo)
+      val processRepository                     = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
       val writeProcessRepository  = ProcessRepository.create(dbRef, migrations)
@@ -400,7 +400,7 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-      val fingerprintService           = new FingerprintService(dbioRunner, new FingerprintRepositoryImpl(dbRef))
+      val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
       val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
         usageStatisticsReportsConfig,
         processService,

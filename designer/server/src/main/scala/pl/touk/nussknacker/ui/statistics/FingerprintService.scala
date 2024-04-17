@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.db.DBIOActionExtensions
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepository
 
@@ -12,9 +13,11 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
 
-class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: FingerprintRepository[DB])(
-    implicit ec: ExecutionContext
-) extends LazyLogging {
+class FingerprintService(fingerprintRepository: FingerprintRepository[DB])(
+    implicit ec: ExecutionContext,
+    dbioRunner: DBIOActionRunner
+) extends LazyLogging
+    with DBIOActionExtensions {
 
   def fingerprint(
       config: UsageStatisticsReportsConfig,
@@ -32,22 +35,22 @@ class FingerprintService(dbioRunner: DBIOActionRunner, fingerprintRepository: Fi
       fingerprintFileName: FileName
   ): Future[Either[StatisticError, Fingerprint]] =
     for {
-      dbFingerprint <- dbioRunner.run(fingerprintRepository.read())
+      dbFingerprint <- fingerprintRepository.read().run
       result <- dbFingerprint match {
         case Some(dbValue) => Future.successful(Right(dbValue))
         case None => {
           val generated = readFingerprintFromFile(fingerprintFileName).getOrElse(randomFingerprint)
-          val readOrSaveAction = fingerprintRepository
+          fingerprintRepository
             .readOrSave(generated)
             .map {
               case Left(_) =>
                 logger.warn("Cannot persist fingerprint in DB")
                 Left(CannotGenerateStatisticsError)
               case Right(fingerprint) =>
-                logger.info(s"Generated fingerprint ${fingerprint.value}")
+                logger.debug(s"Saved fingerprint ${fingerprint.value}")
                 Right(fingerprint)
             }
-          dbioRunner.runInTransaction(readOrSaveAction)
+            .runInTransaction
         }
       }
     } yield result
