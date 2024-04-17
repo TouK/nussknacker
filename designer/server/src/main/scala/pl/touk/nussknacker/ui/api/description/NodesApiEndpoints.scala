@@ -604,6 +604,7 @@ object NodesApiEndpoints {
     implicit lazy val edgeTypeSchema: Schema[EdgeType]                         = Schema.derived
     implicit lazy val edgeSchema: Schema[Edge]                                 = Schema.derived
     implicit lazy val cellErrorSchema: Schema[CellError]                       = Schema.derived
+    implicit lazy val columnDefinitionSchema: Schema[CellError]                = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
