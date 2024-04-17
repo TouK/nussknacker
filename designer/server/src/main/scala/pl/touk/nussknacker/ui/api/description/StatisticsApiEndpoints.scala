@@ -53,7 +53,7 @@ class StatisticsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
               .example(
                 Example.of(
                   summary = Some("Statistics generation failed."),
-                  value = StatisticError.InvalidURL
+                  value = CannotGenerateStatisticError
                 )
               )
           )
@@ -72,10 +72,9 @@ object StatisticsApiEndpoints {
     final case class StatisticUrlResponseDto private (urls: List[URL])
 
     sealed trait StatisticError
+    final case object CannotGenerateStatisticError extends StatisticError
 
     object StatisticError {
-      final case object InvalidURL extends StatisticError
-      final case object DbError    extends StatisticError
 
       private def deserializationException =
         (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
