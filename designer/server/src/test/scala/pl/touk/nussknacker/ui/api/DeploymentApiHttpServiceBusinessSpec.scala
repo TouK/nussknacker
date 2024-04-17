@@ -5,11 +5,14 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.RequestedDeploymentId
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -24,12 +27,12 @@ class DeploymentApiHttpServiceBusinessSpec
     with VeryPatientScalaFutures
     with Matchers {
 
-  private val scenarioName = "batch-test"
+  private val scenarioName = ProcessName("batch-test")
 
   private val sourceNodeId = "fooSourceNodeId"
 
   private val scenario = ScenarioBuilder
-    .streaming(scenarioName)
+    .streaming(scenarioName.value)
     .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
     .emptySink(
       "sink",
@@ -46,8 +49,8 @@ class DeploymentApiHttpServiceBusinessSpec
 
   "The deployment requesting endpoint" - {
     "authenticated as user with deploy access should" - {
-      "run deployment" in {
-        val requestedDeploymentId = "some-requested-deployment-id"
+      "run deployment that will process input files" in {
+        val requestedDeploymentId = RequestedDeploymentId.generate
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -57,10 +60,12 @@ class DeploymentApiHttpServiceBusinessSpec
           .jsonBody(correctDeploymentRequest)
           .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId")
           .Then()
-          // TODO (next PRs): we should return 201 and we should check status of deployment before we verify output
-          .statusCode(200)
+          .statusCode(202)
+          .verifyApplicationState {
+            waitForDeploymentStatusMatches(scenarioName, requestedDeploymentId, SimpleStateStatus.Finished)
+          }
           .verifyExternalState {
-            outputTransactionSummaryContainsResult()
+            outputTransactionSummaryContainsExpectedResult()
           }
       }
     }
@@ -73,7 +78,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/${RequestedDeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -88,7 +93,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthUnknownUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/${RequestedDeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -103,7 +108,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthNoPermUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/${RequestedDeploymentId.generate}")
           .Then()
           .statusCode(403)
       }
@@ -118,7 +123,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthWriter()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/${RequestedDeploymentId.generate}")
           .Then()
           .statusCode(403)
       }

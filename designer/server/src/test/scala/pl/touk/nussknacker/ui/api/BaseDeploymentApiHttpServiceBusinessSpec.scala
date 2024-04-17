@@ -2,18 +2,34 @@ package pl.touk.nussknacker.ui.api
 
 import com.nimbusds.jose.util.StandardCharset
 import com.typesafe.scalalogging.LazyLogging
+import io.restassured.RestAssured.`given`
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
 import org.scalatest.Suite
 import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.PatienceConfiguration.Interval
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Seconds, Span}
 import org.testcontainers.containers.BindMode
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
-import pl.touk.nussknacker.test.config.WithFlinkContainersDeploymentManager
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithFlinkContainersDeploymentManager
+}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.RequestedDeploymentId
 
 import java.nio.file.Files
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
-  self: Suite with LazyLogging with Matchers with Eventually =>
+  self: NuItTest
+    with Suite
+    with LazyLogging
+    with Matchers
+    with Eventually
+    with WithBusinessCaseRestAssuredUsersExtensions =>
 
   private lazy val outputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
@@ -58,33 +74,42 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     super.afterAll()
   }
 
-  protected def outputTransactionSummaryContainsResult(): Unit = {
-    // finished deploy doesn't mean that processing is finished
-    // TODO (next PRs): we need to wait for the job completed status instead
-    val transactionSummaryDirectories = eventually {
-      val directories = Option(outputDirectory.toFile.listFiles()).toList.flatten
-      directories should have size 1
-      directories
+  protected def waitForDeploymentStatusMatches(
+      scenarioName: ProcessName,
+      requestedDeploymentId: RequestedDeploymentId,
+      expectedStatus: StateStatus
+  ): Unit = {
+    // A little bit longer interval than default to avoid too many log entries of requests
+    eventually(Interval(Span(2, Seconds))) {
+      given()
+        .when()
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId/status")
+        .Then()
+        .statusCode(200)
+        .equalsPlainBody(expectedStatus.name)
     }
+  }
+
+  protected def outputTransactionSummaryContainsExpectedResult(): Unit = {
+    val transactionSummaryDirectories = Option(outputDirectory.toFile.listFiles()).toList.flatten
     transactionSummaryDirectories should have size 1
     val matchingPartitionDirectory = transactionSummaryDirectories.head
     matchingPartitionDirectory.getName shouldEqual "date=2024-01-01"
 
-    eventually {
-      val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
-      partitionFiles should have size 1
-      val firstFile = partitionFiles.head
+    val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
+    partitionFiles should have size 1
+    val firstFile = partitionFiles.head
 
-      val content =
-        FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
+    val content =
+      FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
 
-      // TODO (next PRs): aggregate by clientId
-      content should include(
-        """"2024-01-01 10:00:00",client1,1.12
-          |"2024-01-01 10:01:00",client2,2.21
-          |"2024-01-01 10:02:00",client1,3""".stripMargin
-      )
-    }
+    // TODO (next PRs): aggregate by clientId
+    content should include(
+      """"2024-01-01 10:00:00",client1,1.12
+        |"2024-01-01 10:01:00",client2,2.21
+        |"2024-01-01 10:02:00",client1,3""".stripMargin
+    )
   }
 
 }

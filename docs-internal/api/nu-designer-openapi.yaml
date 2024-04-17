@@ -497,6 +497,72 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/scenarios/{scenarioName}/deployments/{deploymentId}/status:
+    get:
+      summary: Service allowing to check status of deployment
+      operationId: getApiScenariosScenarionameDeploymentsDeploymentidStatus
+      parameters:
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: deploymentId
+        in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
+      responses:
+        '200':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: path parameter deploymentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+      security:
+      - {}
+      - httpAuth: []
   /api/scenarios/{scenarioName}/deployments/{deploymentId}:
     put:
       summary: Service allowing to request the deployment of a scenario
@@ -509,9 +575,13 @@ paths:
           type: string
       - name: deploymentId
         in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
         required: true
         schema:
           type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
       requestBody:
         content:
           application/json:
@@ -522,7 +592,7 @@ paths:
                 sourceNodeId1: field1 = 'value'
         required: true
       responses:
-        '200':
+        '202':
           description: ''
         '400':
           description: ''
