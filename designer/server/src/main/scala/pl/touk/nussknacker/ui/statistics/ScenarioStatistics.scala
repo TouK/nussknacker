@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.statistics
 import cats.implicits.toFoldableOps
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
@@ -19,6 +20,13 @@ object ScenarioStatistics {
 
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
+
+  def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
+    scenariosInputData
+      .map(ScenarioStatistics.determineStatisticsForScenario)
+      .combineAll
+      .mapValuesNow(_.toString)
+  }
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     if (scenariosInputData.isEmpty) {

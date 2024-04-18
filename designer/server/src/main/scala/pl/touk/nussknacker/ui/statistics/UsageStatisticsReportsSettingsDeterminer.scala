@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.data.EitherT
-import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -153,10 +152,7 @@ class UsageStatisticsReportsSettingsDeterminer(
   private[statistics] def determineQueryParams(): EitherT[Future, StatisticError, Map[String, String]] = {
     for {
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
-      scenariosStatistics = scenariosInputData
-        .map(ScenarioStatistics.determineStatisticsForScenario)
-        .combineAll
-        .mapValuesNow(_.toString)
+      scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
       fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
       basicStatistics   = determineBasicStatistics(fingerprint, config)
       generalStatistics = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
