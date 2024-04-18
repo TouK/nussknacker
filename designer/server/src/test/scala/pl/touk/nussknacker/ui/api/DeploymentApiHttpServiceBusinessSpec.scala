@@ -31,11 +31,27 @@ class DeploymentApiHttpServiceBusinessSpec
   private val scenario = ScenarioBuilder
     .streaming(scenarioName)
     .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
+    .customNode(
+      id = "aggregate",
+      outputVar = "agg",
+      customNodeRef = "aggregate",
+      "groupBy"     -> Expression.spel("#input.client_id + ',' + #input.date"),
+      "aggregateBy" -> Expression.spel("#input.amount"),
+      "aggregator"  -> Expression.spel("'Sum'"),
+    )
+    // TODO: get rid of concatenating the key and pass the timedate to output table
+    .buildSimpleVariable(
+      "var",
+      "keyValues",
+      Expression.spel("#key.split(',')")
+    )
     .emptySink(
-      "sink",
-      "table",
+      id = "sink",
+      typ = "table",
       "Table" -> Expression.spel("'transactions_summary'"),
-      "Value" -> Expression.spel("#input")
+      "Value" -> Expression.spel(
+        "{client_id: #keyValues[0], date: #keyValues[1], amount: #agg}"
+      )
     )
 
   private val correctDeploymentRequest = s"""{
