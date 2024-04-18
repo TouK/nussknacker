@@ -25,8 +25,14 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
                         width: "100%",
                         backgroundColor: theme.palette.success.dark,
                         cursor: "pointer",
+                        color: theme.palette.getContrastText(theme.palette.success.dark),
                     }),
-                    multiValueLabel: (base) => ({ ...base, width: "100%", fontWeight: "bold", color: theme.palette.text.secondary }),
+                    multiValueLabel: (base) => ({
+                        ...base,
+                        width: "100%",
+                        fontWeight: "bold",
+                        color: theme.palette.getContrastText(theme.palette.success.dark),
+                    }),
                     control: (base) => ({ ...base, padding: 0, border: "none", backgroundColor: theme.palette.background.paper }),
                     valueContainer: (base) => ({ ...base, padding: 4, flexWrap: "wrap-reverse" }),
                 }}
