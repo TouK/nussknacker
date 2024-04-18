@@ -44,32 +44,32 @@ services:
       interval: 20s
       retries: 5
 
-  akhq:
-    container_name: cypress_e2e_akhq
-    image: tchiotludo/akhq:${AKHQ_VERSION-0.24.0}
-    environment:
-      AKHQ_CONFIGURATION: |
-        micronaut:
-          server:
-            context-path: /akhq
-        akhq:
-          security:
-            default-group: ${AKHQ_SECURITY_GROUP-admin}
-          connections:
-            nussknacker:
-              properties:
-                bootstrap.servers: "redpanda:9092"
-              schema-registry:
-                url: "http://redpanda:8081"
-    # We need to override built-in healthcheck because it doesn't respect context-path setting
-    healthcheck:
-      test: [ "CMD-SHELL", "curl --fail http://localhost:28081/akhq/health || exit 1" ]
-      interval: 10s
-      retries: 5
-    ports:
-      - 3085:8080
-    links:
-      - redpanda
+#  akhq:
+#    container_name: cypress_e2e_akhq
+#    image: tchiotludo/akhq:${AKHQ_VERSION-0.24.0}
+#    environment:
+#      AKHQ_CONFIGURATION: |
+#        micronaut:
+#          server:
+#            context-path: /akhq
+#        akhq:
+#          security:
+#            default-group: ${AKHQ_SECURITY_GROUP-admin}
+#          connections:
+#            nussknacker:
+#              properties:
+#                bootstrap.servers: "redpanda:9092"
+#              schema-registry:
+#                url: "http://redpanda:8081"
+#    # We need to override built-in healthcheck because it doesn't respect context-path setting
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl --fail http://localhost:28081/akhq/health || exit 1" ]
+#      interval: 10s
+#      retries: 5
+#    ports:
+#      - 3085:8080
+#    links:
+#      - redpanda
 
 networks:
   default:

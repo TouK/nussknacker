@@ -248,7 +248,7 @@
         "start:backend-remote": "npm run clean-translations && webpack serve",
         "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io npm run start:backend-remote",
         "start:backend-demo": "BACKEND_DOMAIN=https://demo.nussknacker.io npm run start:backend-remote",
-        "backend:docker": "docker-compose up -d",
+        "backend:docker": "docker-compose kill && docker-compose rm -f -v && docker-compose up -d --no-recreate",
         "pretest": "npm run check",
         "test:unit": "jest --reporters=default --reporters=jest-junit",
         "test:e2e": "cypress run",
