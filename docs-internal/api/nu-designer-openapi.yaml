@@ -790,20 +790,19 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/migrate/scenario/description/version:
+  /api/migration/scenario/description/version:
     get:
       tags:
       - Migrations
       summary: current version of the scenario description version being used
-      operationId: getApiMigrateScenarioDescriptionVersion
+      operationId: getApiMigrationScenarioDescriptionVersion
       responses:
         '200':
           description: ''
           content:
-            text/plain:
+            application/json:
               schema:
-                type: integer
-                format: int32
+                $ref: '#/components/schemas/ApiVersion'
         '401':
           description: ''
           content:
@@ -1956,6 +1955,14 @@ components:
     AdditionalInfo:
       oneOf:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
+    ApiVersion:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: integer
+          format: int32
     Attachment:
       required:
       - id
