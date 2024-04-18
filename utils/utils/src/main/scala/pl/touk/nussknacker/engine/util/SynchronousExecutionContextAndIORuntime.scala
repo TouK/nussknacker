@@ -55,11 +55,16 @@ object SynchronousExecutionContextAndIORuntime extends LazyLogging {
   //       need it, so we just disable it. There is no other way to do it by setting system property. After IORuntime
   //       creation we clear the property (to not affect creating other /not existing currently/ IORuntimes)
   private def withDisableCatsTracingMode(create: => IORuntime): IORuntime = synchronized {
-    System.setProperty("cats.effect.tracing.mode", "NONE")
+    val tracingModePropertyName = "cats.effect.tracing.mode"
+    val originalTracingMode     = Option(System.getProperty(tracingModePropertyName))
+    System.setProperty(tracingModePropertyName, "NONE")
     try {
       create
     } finally {
-      System.clearProperty("cats.effect.tracing.mode")
+      originalTracingMode match {
+        case Some(mode) => System.setProperty(tracingModePropertyName, mode)
+        case None       => System.clearProperty(tracingModePropertyName)
+      }
     }
   }
 
