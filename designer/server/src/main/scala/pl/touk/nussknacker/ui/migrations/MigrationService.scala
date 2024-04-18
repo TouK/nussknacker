@@ -10,7 +10,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequestDto
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{MigrateScenarioRequestDto, MigrationError}
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -35,7 +35,15 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.ApiAdapterServiceError
 import pl.touk.nussknacker.ui.validation.FatalValidationError
-import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
+import pl.touk.nussknacker.ui.{
+  BadRequestError,
+  FatalError,
+  IllegalOperationError,
+  NotFoundError,
+  NuDesignerError,
+  OtherError,
+  UnauthorizedError
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -55,7 +63,7 @@ class MigrationService(
 
   def migrate(
       migrateScenarioData: MigrateScenarioData
-  )(implicit loggedUser: LoggedUser): EitherT[Future, NuDesignerError, Unit] = {
+  )(implicit loggedUser: LoggedUser): EitherT[Future, MigrationError, Unit] = {
 
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = migrateScenarioData.currentVersion()
@@ -68,13 +76,12 @@ class MigrationService(
 
     liftedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
-        EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
+        EitherT.leftT(MigrationError.MigrationApiAdapter(apiAdapterServiceError))
       case Right(currentMigrateScenarioRequest: CurrentMigrateScenarioData) =>
         EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
       case _ =>
         EitherT.leftT(
-          RemoteEnvironmentCommunicationError(
-            StatusCode.int2StatusCode(500),
+          MigrationError.RemoteEnvironmentCommunicationError(
             "Migration API adapter service lifted up remote migration request not to its newest local version"
           )
         )
@@ -84,7 +91,7 @@ class MigrationService(
   // FIXME: Rename process to scenario everywhere it's possible
   private def migrateCurrentScenarioDescription(
       migrateScenarioData: CurrentMigrateScenarioData
-  )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
+  )(implicit loggedUser: LoggedUser): Future[Either[MigrationError, Unit]] = {
     val sourceEnvironmentId = migrateScenarioData.sourceEnvironmentId
     val targetEnvironmentId = config.getString("environment")
     val parameters = ScenarioParameters(
@@ -133,7 +140,13 @@ class MigrationService(
       _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
     } yield ()
 
-    result.value
+    result.leftMap {
+      case _: UnauthorizedError => MigrationError.Unauthorized(loggedUser)
+      case _ @MigrationToArchivedError(processName, environment) =>
+        MigrationError.MigrationToArchived(processName, environment)
+      case _ @MigrationValidationError(errors) => MigrationError.Validation(errors)
+      case nuDesignerError: NuDesignerError    => MigrationError.Unknown(nuDesignerError.getMessage)
+    }.value
   }
 
   private def checkLoggedUserCanWriteToProcess(processId: ProcessId)(implicit loggedUser: LoggedUser) = {

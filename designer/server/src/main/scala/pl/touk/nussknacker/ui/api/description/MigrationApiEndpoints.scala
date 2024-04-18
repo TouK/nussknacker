@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description
 
+import akka.http.scaladsl.model.StatusCode
 import derevo.circe._
 import derevo.derive
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -9,12 +10,15 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ApiVersion._
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
-import pl.touk.nussknacker.ui.util.ApiVersion
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, ApiVersion, OutOfRangeAdapterRequestError}
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -25,7 +29,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
   import MigrationApiEndpoints.Dtos._
   import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 
-  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequestDto, NuDesignerError, Unit, Any] =
+  lazy val migrateEndpoint: SecuredEndpoint[MigrateScenarioRequestDto, MigrationError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Migration between environments service")
       .tag("Migrations")
@@ -50,17 +54,17 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         )
       )
       .out(statusCode(Ok))
-      .errorOut(migrateEndpointErrorOutput)
+      .errorOut(migrateEndpointErrorOutputV2)
       .withSecurity(auth)
 
-  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, ApiVersion, Any] =
+  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, MigrationError, ApiVersion, Any] =
     baseNuApiEndpoint
       .summary("current version of the scenario description version being used")
       .tag("Migrations")
       .get
       .in("migration" / "scenario" / "description" / "version")
       .out(jsonBody[ApiVersion])
-      .errorOut(scenarioDescriptionVersionEndpointErrorOutput)
+      .errorOut(scenarioDescriptionVersionEndpointErrorOutputV2)
       .withSecurity(auth)
 
   private val scenarioDescriptionVersionEndpointErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
@@ -68,6 +72,42 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       oneOfVariant(
         Unauthorized,
         plainBody[UnauthorizedError]
+      )
+    )
+
+  private val scenarioDescriptionVersionEndpointErrorOutputV2: EndpointOutput.OneOf[MigrationError, MigrationError] =
+    oneOf[MigrationError](
+      oneOfVariant(
+        Unauthorized,
+        plainBody[MigrationError.Unauthorized]
+      )
+    )
+
+  private val migrateEndpointErrorOutputV2: EndpointOutput.OneOf[MigrationError, MigrationError] =
+    oneOf[MigrationError](
+      oneOfVariant(
+        BadRequest,
+        plainBody[MigrationError.Validation]
+      ),
+      oneOfVariant(
+        BadRequest,
+        plainBody[MigrationError.MigrationToArchived]
+      ),
+      oneOfVariant(
+        Unauthorized,
+        plainBody[MigrationError.Unauthorized]
+      ),
+      oneOfVariant(
+        InternalServerError,
+        plainBody[MigrationError.MigrationApiAdapter]
+      ),
+      oneOfVariant(
+        InternalServerError,
+        plainBody[MigrationError.Unknown]
+      ),
+      oneOfVariant(
+        InternalServerError,
+        plainBody[Dtos.MigrationError.RemoteEnvironmentCommunicationError]
       )
     )
 
@@ -119,6 +159,88 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 object MigrationApiEndpoints {
 
   object Dtos {
+    sealed trait MigrationError
+
+    object MigrationError {
+      final case class Validation(errors: ValidationErrors)                                extends MigrationError
+      final case class MigrationToArchived(processName: ProcessName, environment: String)  extends MigrationError
+      final case class Unauthorized(user: LoggedUser)                                      extends MigrationError
+      final case class MigrationApiAdapter(apiAdapterServiceError: ApiAdapterServiceError) extends MigrationError
+
+      implicit val validationErrorCodec: Codec[String, Validation, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, Validation](deserializationException)(validationError => {
+            val errors = validationError.errors
+
+            val messages = errors.globalErrors.map(_.error.message) ++
+              errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) =>
+                s"$node - ${nerror.map(_.message).mkString(", ")}"
+              }
+            s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
+          })
+        )
+
+      final case class RemoteEnvironmentCommunicationError(message: String) extends MigrationError
+
+      final case class Unknown(message: String) extends MigrationError
+
+      implicit val migrationToArchivedErrorCodec: Codec[String, MigrationToArchived, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, MigrationToArchived](deserializationException)(migrationToArchived => {
+            val processName = migrationToArchived.processName
+            val environment = migrationToArchived.environment
+            s"Cannot migrate, scenario $processName is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
+          })
+        )
+
+      implicit val unauthorizedErrorCodec: Codec[String, Unauthorized, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, Unauthorized](deserializationException)(unauthorized => {
+            val user = unauthorized.user
+
+            s"The supplied user [${user.username}] is not authorized to access this resource"
+          })
+        )
+
+      implicit val migrationApiAdapterErrorCodec: Codec[String, MigrationApiAdapter, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, MigrationApiAdapter](deserializationException)(migrationApiAdapter => {
+            val apiAdapterError = migrationApiAdapter.apiAdapterServiceError
+
+            apiAdapterError match {
+              case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+                signedNoOfVersionsLeftToApply match {
+                  case n if n >= 0 =>
+                    s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
+                  case _ =>
+                    s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
+                }
+            }
+          })
+        )
+
+      implicit val unknownErrorCodec: Codec[String, Unknown, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, Unknown](deserializationException)(unknown => {
+            val message = unknown.message
+
+            s"Unknown migration between environments error happened: $message"
+          })
+        )
+
+      implicit val remoteEnvironmentCommunicationErrorCodec
+          : Codec[String, RemoteEnvironmentCommunicationError, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, RemoteEnvironmentCommunicationError](deserializationException)(
+            remoteEnvironmentCommunicationError => {
+              val message = remoteEnvironmentCommunicationError.message
+
+              message
+            }
+          )
+        )
+
+    }
 
     def deserializationException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")

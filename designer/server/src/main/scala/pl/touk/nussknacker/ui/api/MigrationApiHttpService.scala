@@ -22,7 +22,7 @@ class MigrationApiHttpService(
 
   expose {
     remoteEnvironmentApiEndpoints.migrateEndpoint
-      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
+      .serverSecurityLogic(authorizeKnownUser[MigrationError])
       .serverLogicEitherT { implicit loggedUser => req: MigrateScenarioRequestDto =>
         val migrateScenarioData = MigrateScenarioData.toDomain(req)
         migrationService.migrate(migrateScenarioData)
@@ -31,7 +31,7 @@ class MigrationApiHttpService(
 
   expose {
     remoteEnvironmentApiEndpoints.scenarioDescriptionVersionEndpoint
-      .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
+      .serverSecurityLogic(authorizeKnownUser[MigrationError])
       .serverLogic(_ => _ => Future(Right(new ApiVersion(migrationApiAdapterService.getCurrentApiVersion))))
   }
 

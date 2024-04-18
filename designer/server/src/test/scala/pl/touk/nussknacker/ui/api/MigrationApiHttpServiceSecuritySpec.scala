@@ -54,7 +54,7 @@ class MigrationApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("User doesn't have access to the given category")
+          .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
       }
       "forbid access for user with limited writing permissions" in {
         given()
@@ -82,7 +82,7 @@ class MigrationApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("User doesn't have access to the given category")
+          .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
       }
     }
   }
