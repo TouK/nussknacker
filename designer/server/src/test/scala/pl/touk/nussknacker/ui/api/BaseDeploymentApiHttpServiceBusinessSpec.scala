@@ -7,17 +7,51 @@ import org.scalatest.Suite
 import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.containers.BindMode
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.config.WithFlinkContainersDeploymentManager
 
+import scala.jdk.CollectionConverters._
 import java.nio.file.Files
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: Suite with LazyLogging with Matchers with Eventually =>
 
+  protected val scenarioName = "batch-test"
+
+  protected val sourceNodeId = "fooSourceNodeId"
+
+  protected val scenario = ScenarioBuilder
+    .streaming(scenarioName)
+    .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
+    .customNode(
+      id = "aggregate",
+      outputVar = "agg",
+      customNodeRef = "aggregate",
+      "groupBy"     -> Expression.spel("#input.client_id + ',' + #input.date"),
+      "aggregateBy" -> Expression.spel("#input.amount"),
+      "aggregator"  -> Expression.spel("'Sum'"),
+    )
+    // TODO: get rid of concatenating the key and pass the timedate to output table
+    .buildSimpleVariable(
+      "var",
+      "keyValues",
+      Expression.spel("#key.split(',')")
+    )
+    .emptySink(
+      id = "sink",
+      typ = "table",
+      "Table" -> Expression.spel("'transactions_summary'"),
+      "Value" -> Expression.spel(
+        "{client_id: #keyValues[0], date: #keyValues[1], amount: #agg}"
+      )
+    )
+
   private lazy val outputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
 
+  // TODO: use DECIMAL(15, 2) type instead of INT after adding support for all primitive types
   private lazy val tablesDefinitionBind = FileSystemBind(
     "designer/server/src/test/resources/config/business-cases/tables-definition.sql",
     "/opt/flink/designer/server/src/test/resources/config/business-cases/tables-definition.sql",
@@ -40,7 +74,9 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     List(
       tablesDefinitionBind,
       // input must be also available on the JM side to allow their to split work into multiple subtasks
-      inputTransactionsBind
+      inputTransactionsBind,
+      // output directory has to be available on JM to allow writing the final output file and deleting the temp files
+      outputTransactionsSummaryBind
     )
 
   override protected def taskManagerExtraFSBinds: List[FileSystemBind] = {
@@ -62,7 +98,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     // finished deploy doesn't mean that processing is finished
     // TODO (next PRs): we need to wait for the job completed status instead
     val transactionSummaryDirectories = eventually {
-      val directories = Option(outputDirectory.toFile.listFiles()).toList.flatten
+      val directories = Option(outputDirectory.toFile.listFiles().filter(!_.isHidden)).toList.flatten
       directories should have size 1
       directories
     }
@@ -71,18 +107,15 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     matchingPartitionDirectory.getName shouldEqual "date=2024-01-01"
 
     eventually {
-      val partitionFiles = Option(matchingPartitionDirectory.listFiles()).toList.flatten
+      val partitionFiles = Option(matchingPartitionDirectory.listFiles().filter(!_.isHidden)).toList.flatten
       partitionFiles should have size 1
       val firstFile = partitionFiles.head
 
-      val content =
-        FileUtils.readFileToString(firstFile, StandardCharset.UTF_8)
+      val content = FileUtils.readLines(firstFile, StandardCharset.UTF_8).asScala.toSet
 
-      // TODO (next PRs): aggregate by clientId
-      content should include(
-        """"2024-01-01 10:00:00",client1,1.12
-          |"2024-01-01 10:01:00",client2,2.21
-          |"2024-01-01 10:02:00",client1,3""".stripMargin
+      content shouldBe Set(
+        "client1,4",
+        "client2,2"
       )
     }
   }

@@ -874,11 +874,12 @@ object SampleNodes {
       import scala.jdk.CollectionConverters._
       val elementsValue = elementsDeclaration.extractValueUnsafe(params).asScala.toList
 
-      new CollectionSource(elementsValue, None, Typed[String])
-        with TestDataGenerator
-        with FlinkSourceTestSupport[String] {
-
-        override val contextInitializer: ContextInitializer[String] = customContextInitializer
+      new CollectionSource(
+        list = elementsValue,
+        timestampAssigner = None,
+        returnType = Typed[String],
+      ) with TestDataGenerator with FlinkSourceTestSupport[String] {
+        override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
         override def generateTestData(size: Int): TestData = TestData(
           elementsValue.map(e => TestRecord(Json.fromString(e)))
@@ -1033,8 +1034,7 @@ object SampleNodes {
     SourceFactory.noParamUnboundedStreamFactory[SimpleRecord](
       new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord])
         with FlinkSourceTestSupport[SimpleRecord] {
-        override def testRecordParser: TestRecordParser[SimpleRecord] = simpleRecordParser
-
+        override def testRecordParser: TestRecordParser[SimpleRecord]                          = simpleRecordParser
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
       }
     )

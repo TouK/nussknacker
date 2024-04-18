@@ -55,7 +55,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
   ): Source = {
     new FlinkSource with ReturningType {
 
-      override def sourceStream(
+      override def contextStream(
           env: StreamExecutionEnvironment,
           flinkNodeContext: FlinkCustomNodeContext
       ): DataStream[Context] = {
