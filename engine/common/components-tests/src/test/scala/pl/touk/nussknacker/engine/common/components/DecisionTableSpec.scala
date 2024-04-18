@@ -162,17 +162,20 @@ trait DecisionTableSpec
                       CellError(
                         columnName = "name",
                         rowIndex = 0,
-                        errorMessage = "Column has 'Integer' type but its value cannot be converted to the type."
+                        errorMessage =
+                          "The column 'name' is expected to contain Integer values, but the entered value does not match this type."
                       ),
                       CellError(
                         columnName = "name",
                         rowIndex = 1,
-                        errorMessage = "Column has 'Integer' type but its value cannot be converted to the type."
+                        errorMessage =
+                          "The column 'name' is expected to contain Integer values, but the entered value does not match this type."
                       ),
                       CellError(
                         columnName = "name",
                         rowIndex = 2,
-                        errorMessage = "Column has 'Integer' type but its value cannot be converted to the type."
+                        errorMessage =
+                          "The column 'name' is expected to contain Integer values, but the entered value does not match this type."
                       )
                     ),
                     List(
