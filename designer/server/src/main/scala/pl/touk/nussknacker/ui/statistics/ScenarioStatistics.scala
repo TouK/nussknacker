@@ -50,9 +50,9 @@ object ScenarioStatistics {
       //        Author stats
       val authorsCount = scenariosInputData.map(_.createdBy).toSet.size
       //        Fragment stats
-      val fragmentsCount   = scenariosInputData.map(_.fragmentsUsedCount).sorted
-      val fragmentsMedian  = calculateMedian(fragmentsCount)
-      val fragmentsAverage = fragmentsCount.sum / scenariosCount
+      val fragmentsUsedCount   = scenariosInputData.map(_.fragmentsUsedCount).sorted
+      val fragmentsUsedMedian  = calculateMedian(fragmentsUsedCount)
+      val fragmentsUsedAverage = fragmentsUsedCount.sum / scenariosCount
       //          Uptime stats
       val lastActions = scenariosInputData.flatMap(_.lastDeployedAction)
       val sortedUptimes = lastActions.map { action =>
@@ -75,18 +75,18 @@ object ScenarioStatistics {
       }
 
       (Map(
-        NodesMedian      -> nodesMedian,
-        NodesAverage     -> nodesAverage,
-        NodesMax         -> nodesMax,
-        NodesMin         -> nodesMin,
-        CategoriesCount  -> categoriesCount,
-        VersionsMedian   -> versionsMedian,
-        VersionsAverage  -> versionsAverage,
-        VersionsMax      -> versionsMax,
-        VersionsMin      -> versionsMin,
-        AuthorsCount     -> authorsCount,
-        FragmentsMedian  -> fragmentsMedian,
-        FragmentsAverage -> fragmentsAverage
+        NodesMedian          -> nodesMedian,
+        NodesAverage         -> nodesAverage,
+        NodesMax             -> nodesMax,
+        NodesMin             -> nodesMin,
+        CategoriesCount      -> categoriesCount,
+        VersionsMedian       -> versionsMedian,
+        VersionsAverage      -> versionsAverage,
+        VersionsMax          -> versionsMax,
+        VersionsMin          -> versionsMin,
+        AuthorsCount         -> authorsCount,
+        FragmentsUsedMedian  -> fragmentsUsedMedian,
+        FragmentsUsedAverage -> fragmentsUsedAverage
       ) ++ uptimeStatsMap)
         .map { case (k, v) => (k.toString, v.toString) }
     }
@@ -177,8 +177,8 @@ case object UptimeMax            extends StatisticKey("u_ma")
 case object UptimeMin            extends StatisticKey("u_mi")
 case object CommentsAverage      extends StatisticKey("c_v")
 case object CommentsTotal        extends StatisticKey("c_t")
-case object FragmentsMedian      extends StatisticKey("f_m")
-case object FragmentsAverage     extends StatisticKey("f_v")
+case object FragmentsUsedMedian  extends StatisticKey("f_m")
+case object FragmentsUsedAverage extends StatisticKey("f_v")
 case object NodesMedian          extends StatisticKey("n_m")
 case object NodesAverage         extends StatisticKey("n_v")
 case object NodesMax             extends StatisticKey("n_ma")
