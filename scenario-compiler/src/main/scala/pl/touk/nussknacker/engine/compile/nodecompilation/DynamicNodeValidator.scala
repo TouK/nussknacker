@@ -121,7 +121,7 @@ class DynamicNodeValidator(
                       .map { case (par, extraNodeParamOpt) =>
                         (List.empty[ProcessCompilationError], par, extraNodeParamOpt)
                       }
-                      .valueOr(ne => (ne.toList, FailedToDefineParameter, None))
+                      .valueOr(ne => (ne.toList, FailedToDefineParameter(ne), None))
                     (
                       parametersAcc :+ (newParam -> newEvaluatedParam),
                       errorsAcc ++ paramEvaluationError,

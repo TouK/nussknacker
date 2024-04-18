@@ -257,7 +257,7 @@ object validationHelpers {
             _
           ) =>
         FinalResults(context, state = Some(Valid(paramWithFixedValues)))
-      case TransformationStep((ParameterName("paramWithFixedValues"), FailedToDefineParameter) :: Nil, _) =>
+      case TransformationStep((ParameterName("paramWithFixedValues"), FailedToDefineParameter(_)) :: Nil, _) =>
         FinalResults(context, state = Some(Invalid(())))
     }
 

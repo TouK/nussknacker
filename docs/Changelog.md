@@ -15,6 +15,7 @@
 * [#5853](https://github.com/TouK/nussknacker/pull/5853) Add processing mode information and filtering to the components table
 * [#5843](https://github.com/TouK/nussknacker/pull/5843) Added new endpoint to provide statistics URL
 * [#5873](https://github.com/TouK/nussknacker/pull/5873) Handle list of the anonymous statistic URLs, and send them in the interval
+* [#5889](https://github.com/TouK/nussknacker/pull/5889) Decision Table component parameters validation improvement
 
 1.14.0 (21 Mar 2024)
 -------------------------

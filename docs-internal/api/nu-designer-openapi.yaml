@@ -2014,6 +2014,16 @@ components:
           format: int32
         errorMessage:
           type: string
+    ColumnDefinition:
+      required:
+      - name
+      - aType
+      type: object
+      properties:
+        name:
+          type: string
+        aType:
+          type: string
     Comment:
       required:
       - id
@@ -3393,6 +3403,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CellError'
+        columnDefinitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnDefinition'
     TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:
