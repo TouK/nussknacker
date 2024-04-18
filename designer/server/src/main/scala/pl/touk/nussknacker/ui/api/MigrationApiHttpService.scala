@@ -6,6 +6,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.util.ApiVersion
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +32,7 @@ class MigrationApiHttpService(
   expose {
     remoteEnvironmentApiEndpoints.scenarioDescriptionVersionEndpoint
       .serverSecurityLogic(authorizeKnownUser[NuDesignerError])
-      .serverLogic(_ => _ => Future(Right(migrationApiAdapterService.getCurrentApiVersion)))
+      .serverLogic(_ => _ => Future(Right(new ApiVersion(migrationApiAdapterService.getCurrentApiVersion))))
   }
 
 }

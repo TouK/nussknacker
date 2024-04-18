@@ -11,8 +11,10 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
+import pl.touk.nussknacker.ui.api.TapirCodecs.ApiVersion._
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
+import pl.touk.nussknacker.ui.util.ApiVersion
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -51,13 +53,13 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .errorOut(migrateEndpointErrorOutput)
       .withSecurity(auth)
 
-  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, Int, Any] =
+  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, NuDesignerError, ApiVersion, Any] =
     baseNuApiEndpoint
       .summary("current version of the scenario description version being used")
       .tag("Migrations")
       .get
-      .in("migrate" / "scenario" / "description" / "version") // FIXME: Rename to `migration`
-      .out(plainBody[Int])
+      .in("migration" / "scenario" / "description" / "version")
+      .out(jsonBody[ApiVersion])
       .errorOut(scenarioDescriptionVersionEndpointErrorOutput)
       .withSecurity(auth)
 

@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapt
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.util.ApiVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -253,7 +254,7 @@ class StandardRemoteEnvironmentSpec
       }
 
       object GetMigrationScenarioDescriptionVersion {
-        def unapply(arg: (String, HttpMethod)): Boolean = is("/migrate/scenario/description/version", GET)
+        def unapply(arg: (String, HttpMethod)): Boolean = is("/migration/scenario/description/version", GET)
       }
 
       object Migrate {
@@ -263,7 +264,7 @@ class StandardRemoteEnvironmentSpec
 
       (uri.toString(), method) match {
         case GetMigrationScenarioDescriptionVersion() =>
-          Marshal(scenarioDescriptionVersion).to[RequestEntity].map { entity =>
+          Marshal(ApiVersion(scenarioDescriptionVersion)).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>

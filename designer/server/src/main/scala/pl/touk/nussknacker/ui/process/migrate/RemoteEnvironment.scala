@@ -24,7 +24,12 @@ import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
-import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
+import pl.touk.nussknacker.ui.util.{
+  ApiAdapterServiceError,
+  ApiVersion,
+  OutOfRangeAdapterRequestError,
+  ScenarioGraphComparator
+}
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
@@ -265,18 +270,22 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchRemoteMigrationScenarioDescriptionVersion(implicit ec: ExecutionContext) = {
-    EitherT(fetchRemoteMigrationScenarioDescriptionVersionAux.map[Either[NuDesignerError, Int]](Right(_)))
+    EitherT(
+      fetchRemoteMigrationScenarioDescriptionVersionAux.map[Either[NuDesignerError, Int]](apiVersion =>
+        Right(apiVersion.value)
+      )
+    )
   }
 
-  private def fetchRemoteMigrationScenarioDescriptionVersionAux(implicit ec: ExecutionContext): Future[Int] = {
-    invoke[Int](
+  private def fetchRemoteMigrationScenarioDescriptionVersionAux(implicit ec: ExecutionContext): Future[ApiVersion] = {
+    invoke[ApiVersion](
       HttpMethods.GET,
-      List("migrate", "scenario", "description", "version"),
+      List("migration", "scenario", "description", "version"),
       Query.Empty,
       requestEntity = HttpEntity.Empty,
       headers = Seq.empty
     ) { res =>
-      Unmarshal(res.entity).to[Int]
+      Unmarshal(res.entity).to[ApiVersion]
     }
   }
 

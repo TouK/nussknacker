@@ -36,10 +36,13 @@ class MigrationApiHttpServiceBusinessSpec
       given()
         .when()
         .basicAuthAllPermUser()
-        .get(s"$nuDesignerHttpAddress/api/migrate/scenario/description/version")
+        .get(s"$nuDesignerHttpAddress/api/migration/scenario/description/version")
         .Then()
         .statusCode(200)
-        .equalsPlainBody(s"${adapters.keySet.size + 1}")
+        .body(
+          "value",
+          equalTo[Int](MigrationApiAdapters.adapters.keySet.size + 1)
+        )
     }
   }
 
