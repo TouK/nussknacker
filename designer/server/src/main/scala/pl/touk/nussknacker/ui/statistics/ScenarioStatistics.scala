@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.statistics
 import cats.implicits.toFoldableOps
 import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
@@ -11,6 +10,15 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import java.time.Instant
 
 object ScenarioStatistics {
+
+  private val flinkDeploymentManagerType = DeploymentManagerType("flinkStreaming")
+
+  private val liteK8sDeploymentManagerType = DeploymentManagerType("lite-k8s")
+
+  private val liteEmbeddedDeploymentManagerType = DeploymentManagerType("lite-embedded")
+
+  private val knownDeploymentManagerTypes =
+    Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     if (scenariosInputData.isEmpty) {
@@ -34,9 +42,9 @@ object ScenarioStatistics {
       //        Author stats
       val authorsCount = scenariosInputData.map(_.createdBy).toSet.size
       //        Fragment stats
-      val fragments        = scenariosInputData.map(_.fragmentsUsedCount).sorted
-      val fragmentsMedian  = calculateMedian(fragments)
-      val fragmentsAverage = fragments.sum / scenariosCount
+      val fragmentsCount   = scenariosInputData.map(_.fragmentsUsedCount).sorted
+      val fragmentsMedian  = calculateMedian(fragmentsCount)
+      val fragmentsAverage = fragmentsCount.sum / scenariosCount
       //          Uptime stats
       val lastActions = scenariosInputData.flatMap(_.lastDeployedAction)
       val sortedUptimes = lastActions.map { action =>
@@ -113,15 +121,6 @@ object ScenarioStatistics {
     }
   }
 
-  private val flinkDeploymentManagerType = DeploymentManagerType("flinkStreaming")
-
-  private val liteK8sDeploymentManagerType = DeploymentManagerType("lite-k8s")
-
-  private val liteEmbeddedDeploymentManagerType = DeploymentManagerType("lite-embedded")
-
-  private val knownDeploymentManagerTypes =
-    Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
-
   // We have four dimensions:
   // - scenario / fragment
   // - processing mode: streaming, r-r, batch
@@ -133,17 +132,17 @@ object ScenarioStatistics {
   // We decided to pick the 2nd option which gives a reasonable balance between amount of collected data and insights
   private[statistics] def determineStatisticsForScenario(inputData: ScenarioStatisticsInputData): Map[String, Int] = {
     Map(
-      "s_s"     -> !inputData.isFragment,
-      "s_f"     -> inputData.isFragment,
-      "s_pm_s"  -> (inputData.processingMode == ProcessingMode.UnboundedStream),
-      "s_pm_b"  -> (inputData.processingMode == ProcessingMode.BoundedStream),
-      "s_pm_rr" -> (inputData.processingMode == ProcessingMode.RequestResponse),
-      "s_dm_f"  -> (inputData.deploymentManagerType == flinkDeploymentManagerType),
-      "s_dm_l"  -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
-      "s_dm_e"  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
-      "s_dm_c"  -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
-      "s_a"     -> inputData.status.contains(SimpleStateStatus.Running),
-    ).mapValuesNow(if (_) 1 else 0)
+      ScenarioCount        -> !inputData.isFragment,
+      FragmentCount        -> inputData.isFragment,
+      UnboundedStreamCount -> (inputData.processingMode == ProcessingMode.UnboundedStream),
+      BoundedStreamCount   -> (inputData.processingMode == ProcessingMode.BoundedStream),
+      RequestResponseCount -> (inputData.processingMode == ProcessingMode.RequestResponse),
+      FlinkDMCount         -> (inputData.deploymentManagerType == flinkDeploymentManagerType),
+      LiteK8sDMCount       -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
+      LiteEmbeddedDMCount  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
+      UnknownDMCount       -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
+      ActiveCount          -> inputData.status.contains(SimpleStateStatus.Running),
+    ).map { case (k, v) => (k.toString, if (v) 1 else 0) }
   }
 
   private def calculateMedian[T: Numeric](list: List[T]): T = {
@@ -156,23 +155,33 @@ sealed abstract class StatisticKey(val name: String) {
   override def toString: String = name
 }
 
-case object AuthorsCount       extends StatisticKey("a_n")
-case object CategoriesCount    extends StatisticKey("c")
-case object ComponentsCount    extends StatisticKey("c_n")
-case object VersionsMedian     extends StatisticKey("v_m")
-case object AttachmentsTotal   extends StatisticKey("a_t")
-case object AttachmentsAverage extends StatisticKey("a_v")
-case object VersionsMax        extends StatisticKey("v_ma")
-case object VersionsMin        extends StatisticKey("v_mi")
-case object VersionsAverage    extends StatisticKey("v_v")
-case object UptimeAverage      extends StatisticKey("u_v")
-case object UptimeMax          extends StatisticKey("u_ma")
-case object UptimeMin          extends StatisticKey("u_mi")
-case object CommentsAverage    extends StatisticKey("c_v")
-case object CommentsTotal      extends StatisticKey("c_t")
-case object FragmentsMedian    extends StatisticKey("f_m")
-case object FragmentsAverage   extends StatisticKey("f_v")
-case object NodesMedian        extends StatisticKey("n_m")
-case object NodesAverage       extends StatisticKey("n_v")
-case object NodesMax           extends StatisticKey("n_ma")
-case object NodesMin           extends StatisticKey("n_mi")
+case object AuthorsCount         extends StatisticKey("a_n")
+case object CategoriesCount      extends StatisticKey("c")
+case object ComponentsCount      extends StatisticKey("c_n")
+case object VersionsMedian       extends StatisticKey("v_m")
+case object AttachmentsTotal     extends StatisticKey("a_t")
+case object AttachmentsAverage   extends StatisticKey("a_v")
+case object VersionsMax          extends StatisticKey("v_ma")
+case object VersionsMin          extends StatisticKey("v_mi")
+case object VersionsAverage      extends StatisticKey("v_v")
+case object UptimeAverage        extends StatisticKey("u_v")
+case object UptimeMax            extends StatisticKey("u_ma")
+case object UptimeMin            extends StatisticKey("u_mi")
+case object CommentsAverage      extends StatisticKey("c_v")
+case object CommentsTotal        extends StatisticKey("c_t")
+case object FragmentsMedian      extends StatisticKey("f_m")
+case object FragmentsAverage     extends StatisticKey("f_v")
+case object NodesMedian          extends StatisticKey("n_m")
+case object NodesAverage         extends StatisticKey("n_v")
+case object NodesMax             extends StatisticKey("n_ma")
+case object NodesMin             extends StatisticKey("n_mi")
+case object ScenarioCount        extends StatisticKey("s_s")
+case object FragmentCount        extends StatisticKey("s_f")
+case object UnboundedStreamCount extends StatisticKey("s_pm_s")
+case object BoundedStreamCount   extends StatisticKey("s_pm_b")
+case object RequestResponseCount extends StatisticKey("s_pm_rr")
+case object FlinkDMCount         extends StatisticKey("s_dm_f")
+case object LiteK8sDMCount       extends StatisticKey("s_dm_l")
+case object LiteEmbeddedDMCount  extends StatisticKey("s_dm_e")
+case object UnknownDMCount       extends StatisticKey("s_dm_c")
+case object ActiveCount          extends StatisticKey("s_a")
