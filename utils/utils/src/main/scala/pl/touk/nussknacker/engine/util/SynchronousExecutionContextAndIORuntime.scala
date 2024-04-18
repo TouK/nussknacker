@@ -53,7 +53,8 @@ object SynchronousExecutionContextAndIORuntime extends LazyLogging {
 
   // note: even if the provided by us IORuntime is dummy, it registers MBean for a sake of monitoring fibers. We don't
   //       need it, so we just disable it. There is no other way to do it by setting system property. After IORuntime
-  //       creation we clear the property (to not affect creating other /not existing currently/ IORuntimes)
+  //       creation we clear the property (to not affect creating other /not existing currently/ IORuntimes). Note that
+  //       we change here the global state, so this is not a bullet proof solution.
   private def withDisableCatsTracingMode(create: => IORuntime): IORuntime = synchronized {
     val tracingModePropertyName = "cats.effect.tracing.mode"
     val originalTracingMode     = Option(System.getProperty(tracingModePropertyName))
