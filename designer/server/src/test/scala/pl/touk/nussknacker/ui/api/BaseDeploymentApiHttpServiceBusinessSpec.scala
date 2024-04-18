@@ -7,14 +7,46 @@ import org.scalatest.Suite
 import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.containers.BindMode
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.config.WithFlinkContainersDeploymentManager
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import java.nio.file.Files
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: Suite with LazyLogging with Matchers with Eventually =>
+
+  protected val scenarioName = "batch-test"
+
+  protected val sourceNodeId = "fooSourceNodeId"
+
+  protected val scenario = ScenarioBuilder
+    .streaming(scenarioName)
+    .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
+    .customNode(
+      id = "aggregate",
+      outputVar = "agg",
+      customNodeRef = "aggregate",
+      "groupBy"     -> Expression.spel("#input.client_id + ',' + #input.date"),
+      "aggregateBy" -> Expression.spel("#input.amount"),
+      "aggregator"  -> Expression.spel("'Sum'"),
+    )
+    // TODO: get rid of concatenating the key and pass the timedate to output table
+    .buildSimpleVariable(
+      "var",
+      "keyValues",
+      Expression.spel("#key.split(',')")
+    )
+    .emptySink(
+      id = "sink",
+      typ = "table",
+      "Table" -> Expression.spel("'transactions_summary'"),
+      "Value" -> Expression.spel(
+        "{client_id: #keyValues[0], date: #keyValues[1], amount: #agg}"
+      )
+    )
 
   private lazy val outputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
