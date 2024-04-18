@@ -38,6 +38,10 @@ import "./jqueryPassiveEvents";
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
 
+function clamp(number: number, max: number) {
+    return Math.round(Math.min(max, Math.max(-max, number)));
+}
+
 type Props = GraphProps & {
     processCategory: string;
     processDefinitionData: ProcessDefinitionData;
@@ -132,21 +136,63 @@ export class Graph extends React.Component<Props> {
         return paper;
     };
 
+    private bindMoveWithEdge(cellView: dia.CellView) {
+        const { paper, model } = cellView;
+        const cell = this.graph.getCell(model.id);
+        const border = 80;
+
+        const mousePosition = new g.Point(this.viewport.center());
+
+        const updateMousePosition = (cellView: dia.CellView, event: dia.Event) => {
+            mousePosition.update(event.clientX, event.clientY);
+        };
+
+        let frame: number;
+        const panWithEdge = () => {
+            const rect = this.viewport.clone().inflate(-border, -border);
+            if (!rect.containsPoint(mousePosition)) {
+                const distance = rect.pointNearestToPoint(mousePosition).difference(mousePosition);
+                const x = clamp(distance.x / 2, border / 4);
+                const y = clamp(distance.y / 2, border / 4);
+                this.panAndZoom.panBy({
+                    x,
+                    y,
+                });
+                if (isModelElement(cell)) {
+                    const p = cell.position();
+                    cell.position(p.x - x, p.y - y);
+                }
+            }
+            frame = requestAnimationFrame(panWithEdge);
+        };
+        frame = requestAnimationFrame(panWithEdge);
+
+        paper.on(Events.CELL_POINTERMOVE, updateMousePosition);
+        return () => {
+            paper.off(Events.CELL_POINTERMOVE, updateMousePosition);
+            cancelAnimationFrame(frame);
+        };
+    }
+
     private bindPaperEvents() {
         this.processGraphPaper
             //trigger new custom event on finished cell move
             .on(Events.CELL_POINTERDOWN, (cellView: dia.CellView) => {
-                const model = cellView.model;
+                const { model, paper } = cellView;
+
                 const moveCallback = () => {
                     cellView.once(Events.CELL_POINTERUP, () => {
                         cellView.trigger(Events.CELL_MOVED, cellView);
-                        this.processGraphPaper.trigger(Events.CELL_MOVED, cellView);
+                        paper.trigger(Events.CELL_MOVED, cellView);
                     });
                 };
 
                 model.once(Events.CHANGE_POSITION, moveCallback);
+                const cleanup = this.bindMoveWithEdge(cellView);
+
                 cellView.once(Events.CELL_POINTERUP, () => {
                     model.off(Events.CHANGE_POSITION, moveCallback);
+                    cleanup();
                 });
             })
             //we want to inject node during 'Drag and Drop' from graph paper
@@ -621,18 +667,18 @@ export class Graph extends React.Component<Props> {
         return model;
     }
 
-    moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
+    private moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
         this.redrawing = true;
         const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId);
-        const cellsToBeMoved = nodeIdsToBeMoved.map((nodeId) => this.graph.getCell(nodeId));
+        const cellsToBeMoved = nodeIdsToBeMoved.map((nodeId) => this.graph.getCell(nodeId)).filter(isModelElement);
         const { position: originalPosition } = this.findNodeInLayout(movedNodeId);
         const offset = {
             x: position.x - originalPosition.x,
             y: position.y - originalPosition.y,
         };
-        cellsToBeMoved.filter(isModelElement).forEach((cell) => {
+        cellsToBeMoved.forEach((cell) => {
             const { position: originalPosition } = this.findNodeInLayout(cell.id.toString());
-            cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y);
+            cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y, { group: true });
         });
         this.redrawing = false;
         return cellsToBeMoved;
@@ -663,10 +709,9 @@ export class Graph extends React.Component<Props> {
     private bindNodesMoving(): void {
         this.graph.on(
             Events.CHANGE_POSITION,
-            rafThrottle((element: dia.Cell, position: Position) => {
-                if (this.redrawing || !isModelElement(element)) {
-                    return;
-                }
+            rafThrottle((element: dia.Cell, position: dia.Point, options) => {
+                if (this.redrawing || !isModelElement(element)) return;
+                if (options.group) return;
 
                 const movingCells: dia.Cell[] = [element];
                 const nodeId = element.id.toString();
@@ -675,8 +720,6 @@ export class Graph extends React.Component<Props> {
                     const movedNodes = this.moveSelectedNodesRelatively(nodeId, position);
                     movingCells.push(...movedNodes);
                 }
-
-                this.panAndZoom.panToOverflow(movingCells, this.viewport);
             }),
         );
     }

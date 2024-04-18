@@ -11,14 +11,6 @@ function isModified(event: MouseEvent | TouchEvent) {
     return event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
 }
 
-function clamp(number: number, max: number) {
-    return Math.round(Math.min(max, Math.max(-max, number)));
-}
-
-function adjust(number: number, multi = 1, pow = 1) {
-    return Math.round((number >= 0 ? Math.pow(number, pow) : -Math.pow(-number, pow)) * multi);
-}
-
 function transformToCSSMatrix({ x, y, k }: ZoomTransform): string {
     const matrix = [
         [k.toFixed(4), 0, x.toFixed(4)],
@@ -33,9 +25,9 @@ export type Viewport = g.Rect;
 export class PanZoomPlugin {
     private zoomBehavior: ZoomBehavior<ZoomedElementBaseType, unknown>;
     private paperSelection: Selection<SVGElement, unknown, null, undefined>;
-    private panBy = rafThrottle(({ x, y }: { x: number; y: number }) => {
-        this.paperSelection.interrupt("pan").transition("pan").duration(25).call(this.zoomBehavior.translateBy, x, y);
-    });
+    panBy = ({ x, y }: { x: number; y: number }) => {
+        this.paperSelection.call(this.zoomBehavior.translateBy, x, y);
+    };
     private globalCursor: GlobalCursor;
     private zoomTo = throttle((scale: number): void => {
         this.paperSelection.transition().duration(750).call(this.zoomBehavior.scaleTo, scale);
@@ -113,31 +105,6 @@ export class PanZoomPlugin {
 
     zoomOut(): void {
         this.zoomTo(this.zoom * 0.5);
-    }
-
-    panToOverflow(cells: dia.Cell[], updatedViewport?: Viewport) {
-        this.viewport = updatedViewport;
-
-        const border = Math.min(100, adjust(this.viewport.width, 0.05), adjust(this.viewport.height, 0.05));
-        const adjustedViewport = this.viewport.inflate(-border, -border).round();
-
-        const cellsBBox = this.paper.localToClientRect(this.paper.model.getCellsBBox(cells)).round();
-
-        if (adjustedViewport.containsRect(cellsBBox)) {
-            return;
-        }
-
-        const top = Math.min(0, adjustedViewport.topLine().pointOffset(cellsBBox.topMiddle()));
-        const bottom = Math.max(0, adjustedViewport.bottomLine().pointOffset(cellsBBox.bottomMiddle()));
-        const left = Math.min(0, -adjustedViewport.leftLine().pointOffset(cellsBBox.leftMiddle()));
-        const right = Math.max(0, -adjustedViewport.rightLine().pointOffset(cellsBBox.rightMiddle()));
-
-        const x = -Math.round(left + right);
-        const y = -Math.round(top + bottom);
-        this.panBy({
-            x: clamp(adjust(x, 0.2, 1.5), 60),
-            y: clamp(adjust(y, 0.2, 1.5), 60),
-        });
     }
 
     private getTranslatedCenter = (center: g.Point, viewport: Viewport, scale: number) => {

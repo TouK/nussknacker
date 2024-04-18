@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, routers } from "jointjs";
-import { Edge, EdgeKind, ScenarioGraph, ProcessDefinitionData } from "../../../types";
+import { Edge, EdgeKind, ProcessDefinitionData, ScenarioGraph } from "../../../types";
 import NodeUtils from "../NodeUtils";
 
 const LINK_TEXT_COLOR = "#686868";
@@ -76,6 +76,7 @@ export const defaultRouter: routers.RouterJSON = {
         endDirections,
         step: 15,
         padding: 20,
+        maximumLoops: 200,
     },
 };
 

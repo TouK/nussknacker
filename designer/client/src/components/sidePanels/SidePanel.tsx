@@ -45,7 +45,7 @@ function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], inV
 
     useEffect(() => {
         getGraph?.()?.adjustViewport({
-            [side]: ref.current?.getBoundingClientRect().width * isOccupied,
+            [side]: inView ? ref.current?.getBoundingClientRect().width * isOccupied : 0,
         });
     }, [getGraph, inView, isOccupied, side]);
 
