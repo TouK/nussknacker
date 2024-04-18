@@ -1,0 +1,76 @@
+services:
+  designer:
+    container_name: cypress_e2e_designer
+    image: touk/nussknacker:${NUSSKNACKER_VERSION-"staging-latest"}
+    pull_policy: ${DOCKER_PULL_OPTION:-always}
+    environment:
+      JDK_JAVA_OPTIONS: -Xmx512M
+      KAFKA_ADDRESS: redpanda:9092
+      OPENAPI_SERVICE_URL: "http://dummy:5000"
+      SQL_ENRICHER_URL: "dummy:5432"
+      KAFKA_AUTO_OFFSET_RESET: "earliest"
+      SCHEMA_REGISTRY_URL: http://redpanda:8081
+      CONFIG_FILE: /opt/nussknacker/conf/dev-application.conf
+      CONFIG_FORCE_usageStatisticsReports_enabled: "false"
+      CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type: stub
+    volumes:
+      - type: bind
+        source: ${CONFIG_PATH:-../../nussknacker-dist/src/universal/conf/dev-application.conf}
+        target: /opt/nussknacker/conf/dev-application.conf
+    ports:
+      - "${BE_PORT:-8080}:8080"
+    depends_on:
+      - redpanda
+
+  redpanda:
+    container_name: cypress_e2e_redpanda
+    image: vectorized/redpanda:v23.3.11
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --node-id 0
+      - --set redpanda.enable_transactions=true
+      - --set redpanda.enable_idempotence=true
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
+      - --advertise-kafka-addr PLAINTEXT://redpanda:9092,OUTSIDE://localhost:3032
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+    ports:
+      - "3032:3032"
+      - "3082:8081"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl localhost:8081/subjects" ]
+      interval: 20s
+      retries: 5
+
+  akhq:
+    container_name: cypress_e2e_akhq
+    image: tchiotludo/akhq:${AKHQ_VERSION-0.24.0}
+    environment:
+      AKHQ_CONFIGURATION: |
+        micronaut:
+          server:
+            context-path: /akhq
+        akhq:
+          security:
+            default-group: ${AKHQ_SECURITY_GROUP-admin}
+          connections:
+            nussknacker:
+              properties:
+                bootstrap.servers: "redpanda:9092"
+              schema-registry:
+                url: "http://redpanda:8081"
+    # We need to override built-in healthcheck because it doesn't respect context-path setting
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --fail http://localhost:28081/akhq/health || exit 1" ]
+      interval: 10s
+      retries: 5
+    ports:
+      - 3085:8080
+    links:
+      - redpanda
+
+networks:
+  default:
+    name: cypress_e2e_network
