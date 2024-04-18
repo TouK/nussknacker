@@ -157,8 +157,11 @@ object ScenarioStatistics {
   }
 
   private def calculateAverage[T: Numeric](list: List[T]): T = {
-    val result = implicitly[Numeric[T]].toInt(list.sum) / list.length
-    implicitly[Numeric[T]].fromInt(result)
+    if (list.isEmpty) implicitly[Numeric[T]].zero
+    else {
+      val result = implicitly[Numeric[T]].toInt(list.sum) / list.length
+      implicitly[Numeric[T]].fromInt(result)
+    }
   }
 
   private def getMax[T: Numeric](orderedList: List[T]): T = {
