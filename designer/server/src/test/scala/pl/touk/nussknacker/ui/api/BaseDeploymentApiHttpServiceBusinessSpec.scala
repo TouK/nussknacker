@@ -113,7 +113,6 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
 
       val content = FileUtils.readLines(firstFile, StandardCharset.UTF_8).asScala.toSet
 
-      // TODO (next PRs): aggregate by clientId
       content shouldBe Set(
         "client1,4",
         "client2,2"
