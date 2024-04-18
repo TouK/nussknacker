@@ -75,6 +75,11 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
     ProcessObjectDependencies.withConfig(tableKafkaComponentsConfig)
   )
 
+  override protected def afterAll(): Unit = {
+    FileUtils.deleteQuietly(outputDirectory.toFile)
+    super.afterAll()
+  }
+
   test("file to file") {
     val runner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
