@@ -517,16 +517,23 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DeploymentRequest'
+            example:
+              nodesDeploymentData:
+                sourceNodeId1: field1 = 'value'
         required: true
       responses:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: body'
+          description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Comment is required
+                  value: Comment is required.
         '401':
           description: ''
           content:
@@ -2170,7 +2177,16 @@ components:
     DateTimeParameterEditor:
       type: object
     DeploymentRequest:
+      required:
+      - nodesDeploymentData
       type: object
+      properties:
+        nodesDeploymentData:
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+        comment:
+          type:
+          - string
+          - 'null'
     Dict:
       required:
       - id
@@ -2526,6 +2542,10 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
+    Map_NodeId_NodeDeploymentData:
+      type: object
+      additionalProperties:
+        type: string
     Map_String:
       type: object
       additionalProperties:

@@ -9,6 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -16,12 +17,12 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
-import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
-import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.utils.domain.TestFactory._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
@@ -31,7 +32,12 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
+import pl.touk.nussknacker.ui.process.repository.{
+  CommentValidationError,
+  DBIOActionRunner,
+  DeploymentComment,
+  UserComment
+}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -131,9 +137,12 @@ class DeploymentServiceSpec
     val id                       = prepareProcess(processName).dbioActionValues
 
     val result =
-      deploymentServiceWithCommentSettings.processCommand(RunDeploymentCommand(id, None, None, user)).failed.futureValue
+      deploymentServiceWithCommentSettings
+        .processCommand(RunDeploymentCommand(id, None, None, NodesDeploymentData.empty, user))
+        .failed
+        .futureValue
 
-    result shouldBe a[CustomActionValidationError]
+    result shouldBe a[CommentValidationError]
     result.getMessage.trim shouldBe "Comment is required."
 
     eventually {
@@ -148,7 +157,9 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
 
-    deploymentServiceWithCommentSettings.processCommand(RunDeploymentCommand(id, None, None, user))
+    deploymentServiceWithCommentSettings.processCommand(
+      RunDeploymentCommand(id, None, None, NodesDeploymentData.empty, user)
+    )
 
     eventually {
       val status = deploymentServiceWithCommentSettings
@@ -173,7 +184,9 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val id                       = prepareProcess(processName).dbioActionValues
 
-    deploymentServiceWithCommentSettings.processCommand(RunDeploymentCommand(id, None, Some("samplePattern"), user))
+    deploymentServiceWithCommentSettings.processCommand(
+      RunDeploymentCommand(id, None, Some(UserComment("samplePattern")), NodesDeploymentData.empty, user)
+    )
 
     eventually {
       deploymentServiceWithCommentSettings
@@ -218,7 +231,11 @@ class DeploymentServiceSpec
     val processId                = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForDeployFinish(processName) {
-      deploymentService.processCommand(RunDeploymentCommand(processId, None, None, user)).futureValue
+      deploymentService
+        .processCommand(
+          RunDeploymentCommand(processId, None, None, NodesDeploymentData.empty, user)
+        )
+        .futureValue
       deploymentService
         .getProcessState(processId)
         .futureValue
@@ -334,7 +351,11 @@ class DeploymentServiceSpec
 
       checkStatusAction(SimpleStateStatus.NotDeployed, None)
       deploymentManager.withWaitForDeployFinish(processName) {
-        deploymentService.processCommand(RunDeploymentCommand(processId, None, None, user)).futureValue
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(processId, None, None, NodesDeploymentData.empty, user)
+          )
+          .futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
         listener.events shouldBe Symbol("empty")
       }
@@ -352,7 +373,12 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       val result =
-        deploymentService.processCommand(RunDeploymentCommand(processId, None, None, user)).failed.futureValue
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(processId, None, None, NodesDeploymentData.empty, user)
+          )
+          .failed
+          .futureValue
       result.getMessage shouldBe "Parallelism too large"
       deploymentManager.deploys should not contain processName
       fetchingProcessRepository
@@ -798,7 +824,11 @@ class DeploymentServiceSpec
       val initialStatus = SimpleStateStatus.NotDeployed
       deploymentService.getProcessState(id).futureValue.status shouldBe initialStatus
       deploymentManager.withWaitForDeployFinish(processName) {
-        deploymentService.processCommand(RunDeploymentCommand(id, None, None, user)).futureValue
+        deploymentService
+          .processCommand(
+            RunDeploymentCommand(id, None, None, NodesDeploymentData.empty, user)
+          )
+          .futureValue
         deploymentService
           .getProcessState(id)
           .futureValue
@@ -940,7 +970,7 @@ class DeploymentServiceSpec
   }
 
   private def prepareAction(processId: ProcessId, actionName: ScenarioActionName) = {
-    val comment = Some(DeploymentComment.unsafe(actionName.toString.capitalize).toComment(actionName))
+    val comment = Some(DeploymentComment.unsafe(UserComment(actionName.toString.capitalize)).toComment(actionName))
     actionRepository.addInstantAction(processId, initialVersionId, actionName, comment, None).map(_.id)
   }
 

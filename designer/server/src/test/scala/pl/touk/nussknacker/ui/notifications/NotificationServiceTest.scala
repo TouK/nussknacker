@@ -7,12 +7,13 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
@@ -38,8 +39,8 @@ import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class NotificationServiceTest
@@ -86,7 +87,15 @@ class NotificationServiceTest
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
-        .processCommand(RunDeploymentCommand(processIdWithName, savepointPath = None, comment = None, user))
+        .processCommand(
+          RunDeploymentCommand(
+            processIdWithName,
+            savepointPath = None,
+            comment = None,
+            NodesDeploymentData.empty,
+            user
+          )
+        )
         .flatten
         .futureValue
     }
@@ -133,7 +142,15 @@ class NotificationServiceTest
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       when(deploymentManager.customActionsDefinitions).thenReturn(Nil)
       deploymentService
-        .processCommand(RunDeploymentCommand(processIdWithName, savepointPath = None, comment = None, user))
+        .processCommand(
+          RunDeploymentCommand(
+            processIdWithName,
+            savepointPath = None,
+            comment = None,
+            NodesDeploymentData.empty,
+            user
+          )
+        )
         .flatten
         .futureValue
     }
@@ -186,12 +203,18 @@ class NotificationServiceTest
       override protected def prepareDeployedScenarioData(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
           actionId: ProcessActionId,
+          nodesDeploymentData: NodesDeploymentData,
           additionalDeploymentData: Map[String, String] = Map.empty
       )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
         Future.successful(
           DeployedScenarioData(
             processDetails.toEngineProcessVersion,
-            prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId), additionalDeploymentData),
+            DeploymentData(
+              DeploymentId.fromActionId(actionId),
+              user.toManagerUser,
+              additionalDeploymentData,
+              nodesDeploymentData
+            ),
             processDetails.json
           )
         )

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -23,7 +24,8 @@ class DefaultProcessingTypeDeployedScenariosProvider(
     dbioRunner: DBIOActionRunner,
     scenarioResolver: ScenarioResolver,
     processingType: ProcessingType
-) extends ProcessingTypeDeployedScenariosProvider with LazyLogging {
+) extends ProcessingTypeDeployedScenariosProvider
+    with LazyLogging {
 
   override def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
     implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser.instance
@@ -43,8 +45,13 @@ class DefaultProcessingTypeDeployedScenariosProvider(
       dataList <- Future.sequence(deployedProcesses.flatMap { details =>
         val lastDeployAction = details.lastDeployedAction.get
         // TODO: what should be in name?
-        val deployingUser  = User(lastDeployAction.user, lastDeployAction.user)
-        val deploymentData = DeploymentData(DeploymentId.fromActionId(lastDeployAction.id), deployingUser, Map.empty)
+        val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
+        val deploymentData = DeploymentData(
+          DeploymentId.fromActionId(lastDeployAction.id),
+          deployingUser,
+          Map.empty,
+          NodesDeploymentData.empty
+        )
         val deployedScenarioDataTry =
           scenarioResolver.resolveScenario(details.json).map { resolvedScenario =>
             DeployedScenarioData(
@@ -70,7 +77,9 @@ object DefaultProcessingTypeDeployedScenariosProvider {
   // This factory method prepare objects that are also prepared by AkkaHttpBasedRouteProvider
   // but without dependency to ModelData - it necessary to avoid a cyclic dependency:
   // DeploymentService -> EmbeddedDeploymentManager -> ... -> DeploymentService.getDeployedScenarios
-  def apply(dbRef: DbRef, processingType: ProcessingType)(implicit ec: ExecutionContext): ProcessingTypeDeployedScenariosProvider = {
+  def apply(dbRef: DbRef, processingType: ProcessingType)(
+      implicit ec: ExecutionContext
+  ): ProcessingTypeDeployedScenariosProvider = {
     val dbioRunner = DBIOActionRunner(dbRef)
     val dumbModelInfoProvier = ProcessingTypeDataProvider.withEmptyCombinedData(
       Map(processingType -> ValueWithRestriction.anyUser(Map.empty[String, String]))
