@@ -32,27 +32,26 @@ object ScenarioStatistics {
     if (scenariosInputData.isEmpty) {
       Map.empty
     } else {
-      val scenariosCount = scenariosInputData.count(!_.isFragment)
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
       val nodesMedian  = calculateMedian(sortedNodes)
-      val nodesAverage = sortedNodes.sum / scenariosInputData.length
-      val nodesMax     = sortedNodes.head
-      val nodesMin     = sortedNodes.last
+      val nodesAverage = calculateAverage(sortedNodes)
+      val nodesMax     = getMax(sortedNodes)
+      val nodesMin     = getMin(sortedNodes)
       //        Category stats
       val categoriesCount = scenariosInputData.map(_.scenarioCategory).toSet.size
       //        Version stats
       val sortedVersions  = scenariosInputData.map(_.scenarioVersion.value).sorted
       val versionsMedian  = calculateMedian(sortedVersions)
-      val versionsAverage = sortedVersions.sum / scenariosInputData.length
-      val versionsMax     = sortedVersions.head
-      val versionsMin     = sortedVersions.last
+      val versionsAverage = calculateAverage(sortedVersions)
+      val versionsMax     = getMax(sortedVersions)
+      val versionsMin     = getMin(sortedVersions)
       //        Author stats
       val authorsCount = scenariosInputData.map(_.createdBy).toSet.size
       //        Fragment stats
-      val fragmentsUsedCount   = scenariosInputData.map(_.fragmentsUsedCount).sorted
+      val fragmentsUsedCount   = scenariosInputData.filterNot(_.isFragment).map(_.fragmentsUsedCount).sorted
       val fragmentsUsedMedian  = calculateMedian(fragmentsUsedCount)
-      val fragmentsUsedAverage = fragmentsUsedCount.sum / scenariosCount
+      val fragmentsUsedAverage = calculateAverage(fragmentsUsedCount)
       //          Uptime stats
       val lastActions = scenariosInputData.flatMap(_.lastDeployedAction)
       val sortedUptimes = lastActions.map { action =>
@@ -67,9 +66,9 @@ object ScenarioStatistics {
           )
         } else {
           Map(
-            UptimeAverage -> sortedUptimes.sum / sortedUptimes.length,
-            UptimeMax     -> sortedUptimes.head,
-            UptimeMin     -> sortedUptimes.last
+            UptimeAverage -> calculateAverage(sortedUptimes),
+            UptimeMax     -> getMax(sortedUptimes),
+            UptimeMin     -> getMin(sortedUptimes)
           )
         }
       }
@@ -99,13 +98,13 @@ object ScenarioStatistics {
       Map.empty
     } else {
       //        Attachment stats
-      val sortedAttachmentCountList = listOfActivities.map(_.attachments.length).sorted
-      val attachmentAverage         = sortedAttachmentCountList.sum / sortedAttachmentCountList.length
+      val sortedAttachmentCountList = listOfActivities.map(_.attachments.length)
+      val attachmentAverage         = calculateAverage(sortedAttachmentCountList)
       val attachmentsTotal          = sortedAttachmentCountList.sum
       //        Comment stats
-      val comments        = listOfActivities.map(_.comments.length).sorted
+      val comments        = listOfActivities.map(_.comments.length)
       val commentsTotal   = comments.sum
-      val commentsAverage = comments.sum / comments.length
+      val commentsAverage = calculateAverage(comments)
 
       Map(
         AttachmentsAverage -> attachmentAverage,
@@ -153,8 +152,23 @@ object ScenarioStatistics {
     ).map { case (k, v) => (k.toString, if (v) 1 else 0) }
   }
 
-  private def calculateMedian[T: Numeric](list: List[T]): T = {
-    list.get(list.size / 2).getOrElse(implicitly[Numeric[T]].zero)
+  private def calculateMedian[T: Numeric](orderedList: List[T]): T = {
+    orderedList.get(orderedList.size / 2).getOrElse(implicitly[Numeric[T]].zero)
+  }
+
+  private def calculateAverage[T: Numeric](list: List[T]): T = {
+    val result = implicitly[Numeric[T]].toInt(list.sum) / list.length
+    implicitly[Numeric[T]].fromInt(result)
+  }
+
+  private def getMax[T: Numeric](orderedList: List[T]): T = {
+    if (orderedList.isEmpty) implicitly[Numeric[T]].zero
+    else orderedList.head
+  }
+
+  private def getMin[T: Numeric](orderedList: List[T]): T = {
+    if (orderedList.isEmpty) implicitly[Numeric[T]].zero
+    else orderedList.last
   }
 
 }
