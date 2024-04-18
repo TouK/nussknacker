@@ -1,14 +1,17 @@
 import { alpha } from "@mui/material";
+import { PaletteOptions } from "@mui/material/styles/createPalette";
+import { EnvironmentTagColor } from "../EnvironmentTag";
 
-// It's for a testing purpose only, to check if all color relations are added. We don't support light mode yet
-export const lightModePalette = {
+const standardPalette: PaletteOptions = {
     primary: {
         main: "#8256B5",
     },
     secondary: {
+        light: "#bf570c",
         main: "#BF360C",
     },
     error: {
+        light: "#DE7E8A",
         main: "#B71C1C",
     },
     warning: {
@@ -16,6 +19,8 @@ export const lightModePalette = {
     },
     success: {
         main: "#388E3C",
+        dark: `#206920`,
+        contrastText: `#FFFFFF`,
     },
     background: {
         paper: "#c6c7d1",
@@ -29,7 +34,18 @@ export const lightModePalette = {
         hover: alpha("#8256B5", 0.08),
         active: alpha("#8256B5", 0.12),
     },
+};
+
+// It's for a testing purpose only, to check if all color relations are added. We don't support light mode yet
+export const lightModePalette = {
+    ...standardPalette,
     custom: {
+        environmentAlert: {
+            [EnvironmentTagColor.green]: "#14B86B",
+            [EnvironmentTagColor.yellow]: "hsl(35,84%,62%)",
+            [EnvironmentTagColor.red]: "hsl(2,64%,58%)",
+            [EnvironmentTagColor.blue]: "#7894E8",
+        },
         nodes: {
             Source: {
                 fill: "#509D6E",

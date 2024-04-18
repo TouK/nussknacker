@@ -1,6 +1,8 @@
 import { alpha } from "@mui/material";
+import { PaletteOptions } from "@mui/material/styles/createPalette";
+import { EnvironmentTagColor } from "../EnvironmentTag";
 
-export const darkModePalette = {
+const standardPalette: PaletteOptions = {
     primary: {
         main: `#D2A8FF`,
     },
@@ -32,7 +34,17 @@ export const darkModePalette = {
         hover: alpha("#D2A8FF", 0.24),
         active: alpha("#D2A8FF", 0.4),
     },
+};
+
+export const darkModePalette = {
+    ...standardPalette,
     custom: {
+        environmentAlert: {
+            [EnvironmentTagColor.green]: "#14B86B",
+            [EnvironmentTagColor.yellow]: "hsl(35,84%,62%)",
+            [EnvironmentTagColor.red]: "hsl(2,64%,58%)",
+            [EnvironmentTagColor.blue]: "#7894E8",
+        },
         nodes: {
             Source: {
                 fill: "#509D6E",

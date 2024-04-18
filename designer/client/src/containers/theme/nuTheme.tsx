@@ -5,6 +5,8 @@ import { deepmerge } from "@mui/utils";
 import { lightModePalette } from "./lightModePalette";
 import { darkModePalette } from "./darkModePalette";
 
+type ModePalette = typeof darkModePalette & typeof lightModePalette;
+
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
         largeMessage: true;
@@ -15,12 +17,8 @@ declare module "@mui/material/FormHelperText" {
 }
 
 declare module "@mui/material/styles" {
-    interface PaletteOptions {
-        custom?: (typeof darkModePalette)["custom"];
-    }
-
     interface Palette {
-        custom?: (typeof darkModePalette)["custom"];
+        custom?: ModePalette["custom"];
     }
 
     interface Theme {
@@ -43,12 +41,16 @@ const custom = {
     fontSize: 14,
 };
 
-export const getDesignTokens = (mode: PaletteMode) => ({
-    palette: {
-        mode,
-        ...(mode === "light" ? lightModePalette : darkModePalette),
-    },
-});
+export const getDesignTokens = (mode: PaletteMode) => {
+    const modePalette: ModePalette = mode === "light" ? lightModePalette : darkModePalette;
+
+    return {
+        palette: {
+            mode,
+            ...modePalette,
+        },
+    };
+};
 
 const headerCommonStyles = {
     fontWeight: 500,
