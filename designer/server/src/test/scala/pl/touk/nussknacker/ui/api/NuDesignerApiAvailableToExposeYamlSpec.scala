@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
+import com.networknt.schema._
 import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
+import org.scalactic.anyvals.NonEmptyList
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
@@ -9,6 +11,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
+import sttp.apispec.openapi.OpenAPI
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.{Endpoint, EndpointInput, auth}
@@ -23,25 +26,38 @@ import scala.util.Try
 // Warning! OpenAPI can be generated differently depending on the scala version.
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
+  test("Nu Designer OpenAPI document with all available to expose endpoints should have examples matching schemas") {
+    val generatedSchema = NuDesignerApiAvailableToExpose.generateOpenApi
+    SchemaExamplesValidator.validateSchemaExamples(generatedSchema) shouldBe empty
+  }
+
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
     val currentNuDesignerOpenApiYamlContent =
       (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
-    NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
+
+    val generatedSchema = NuDesignerApiAvailableToExpose.generateOpenApi
+
+    generatedSchema.toYaml should be(currentNuDesignerOpenApiYamlContent)
   }
 
 }
 
+case class InvalidExample(
+    example: String,
+    operationId: Option[String],
+    isRequest: Boolean,
+    errors: NonEmptyList[ValidationMessage]
+)
+
 object NuDesignerApiAvailableToExpose {
 
-  def generateOpenApiYaml: String = {
+  def generateOpenApi: OpenAPI = {
     val endpoints = findApiEndpointsClasses().flatMap(findEndpointsInClass)
-    val docs = OpenAPIDocsInterpreter(NuDesignerExposedApiHttpService.openAPIDocsOptions).toOpenAPI(
+    OpenAPIDocsInterpreter(NuDesignerExposedApiHttpService.openAPIDocsOptions).toOpenAPI(
       es = endpoints,
       title = NuDesignerExposedApiHttpService.openApiDocumentTitle,
       version = ""
     )
-
-    docs.toYaml
   }
 
   private def findApiEndpointsClasses() = {

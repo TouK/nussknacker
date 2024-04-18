@@ -5,6 +5,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.scalalogging.StrictLogging
 import pl.touk.nussknacker.ui.api.NuDesignerApiAvailableToExpose
 import pl.touk.nussknacker.ui.util.Project
+import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 
 object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
 
@@ -26,7 +27,7 @@ object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
   private def generateAndSave(outputFile: File) = IO {
     outputFile
       .createFileIfNotExists(createParents = true)
-      .overwrite(NuDesignerApiAvailableToExpose.generateOpenApiYaml)
+      .overwrite(NuDesignerApiAvailableToExpose.generateOpenApi.toYaml)
   }
 
   private def defaultOutputFileLocation =
