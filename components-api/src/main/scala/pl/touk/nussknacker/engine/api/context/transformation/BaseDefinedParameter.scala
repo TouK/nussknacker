@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
+import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 sealed trait BaseDefinedParameter {
@@ -36,6 +38,6 @@ case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBran
     extends DefinedBranchParameter
 
 //TODO: and for branch parameters??
-case object FailedToDefineParameter extends DefinedSingleParameter {
+case class FailedToDefineParameter(errors: NonEmptyList[ProcessCompilationError]) extends DefinedSingleParameter {
   override val returnType: TypingResult = Unknown
 }
