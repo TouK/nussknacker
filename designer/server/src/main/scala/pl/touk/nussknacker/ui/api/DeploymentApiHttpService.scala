@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
@@ -37,11 +36,11 @@ class DeploymentApiHttpService(
     endpoints.requestScenarioDeploymentEndpoint
       .serverSecurityLogic(authorizeKnownUser[DeploymentError])
       .serverLogicEitherT { implicit loggedUser =>
-        // TODO (next PRs): use params
-        { case (scenarioName, deploymentId, request) =>
+        // FIXME: use deploymentId
+        { case (deploymentId, request) =>
           for {
             // TODO reuse fetched scenario inside DeploymentService.deployProcessAsync
-            scenarioDetails <- getScenarioWithDetailsByName(scenarioName)
+            scenarioDetails <- getScenarioWithDetailsByName(request.scenarioName)
             _ <- EitherT.fromEither[Future](
               Either.cond(loggedUser.can(scenarioDetails.processCategory, Permission.Deploy), (), NoPermission)
             )
@@ -67,13 +66,8 @@ class DeploymentApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[DeploymentError])
       .serverLogicEitherT { implicit loggedUser =>
         // FIXME: use deploymentId
-        { case (scenarioName, deploymentId) =>
-          implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-          for {
-            scenarioDetails <- getScenarioWithDetailsByName(scenarioName)
-            // TODO reuse fetched scenario inside getProcessState
-            state <- eitherifyErrors(deploymentService.getProcessState(scenarioDetails.idWithNameUnsafe))
-          } yield state.status.name
+        { deploymentId =>
+          ???
         }
       }
   }

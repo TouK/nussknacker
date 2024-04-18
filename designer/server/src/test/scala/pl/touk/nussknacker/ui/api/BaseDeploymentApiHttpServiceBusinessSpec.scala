@@ -12,7 +12,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import org.testcontainers.containers.BindMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{
@@ -75,7 +74,6 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   }
 
   protected def waitForDeploymentStatusMatches(
-      scenarioName: ProcessName,
       requestedDeploymentId: RequestedDeploymentId,
       expectedStatus: StateStatus
   ): Unit = {
@@ -84,7 +82,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       given()
         .when()
         .basicAuthAdmin()
-        .get(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId/status")
+        .get(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId/status")
         .Then()
         .statusCode(200)
         .equalsPlainBody(expectedStatus.name)

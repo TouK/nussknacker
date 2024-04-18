@@ -10,7 +10,6 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.TapirCodecs
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
   DeploymentCommentError,
   NoScenario
@@ -32,8 +31,6 @@ import java.util.UUID
 
 class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import TapirCodecs.ScenarioNameCodec._
-
   private val deploymentIdPathCapture = path[RequestedDeploymentId]("deploymentId")
     .copy(info =
       Info
@@ -45,17 +42,18 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
     )
 
   lazy val requestScenarioDeploymentEndpoint
-      : SecuredEndpoint[(ProcessName, RequestedDeploymentId, DeploymentRequest), DeploymentError, Unit, Any] =
+      : SecuredEndpoint[(RequestedDeploymentId, DeploymentRequest), DeploymentError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Service allowing to request the deployment of a scenario")
       .put
       .in(
-        "scenarios" / path[ProcessName]("scenarioName") / "deployments" / deploymentIdPathCapture
+        "deployments" / deploymentIdPathCapture
       )
       .in(
         jsonBody[DeploymentRequest]
           .example(
             DeploymentRequest(
+              scenarioName = ProcessName("scenario1"),
               NodesDeploymentData(
                 Map(NodeId("sourceNodeId1") -> SqlFilteringExpression("field1 = 'value'"))
               ),
@@ -90,13 +88,12 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
-  lazy val checkDeploymentStatusEndpoint
-      : SecuredEndpoint[(ProcessName, RequestedDeploymentId), DeploymentError, StatusName, Any] =
+  lazy val checkDeploymentStatusEndpoint: SecuredEndpoint[RequestedDeploymentId, DeploymentError, StatusName, Any] =
     baseNuApiEndpoint
-      .summary("Service allowing to check status of deployment")
+      .summary("Service allowing to check the status of a deployment")
       .get
       .in(
-        "scenarios" / path[ProcessName]("scenarioName") / "deployments" / deploymentIdPathCapture / "status"
+        "deployments" / deploymentIdPathCapture / "status"
       )
       .out(statusCode(StatusCode.Ok).and(stringBody))
       .errorOut(
@@ -121,9 +118,12 @@ object DeploymentApiEndpoints {
 
   object Dtos {
 
+    implicit lazy val scenarioNameSchema: Schema[ProcessName] = Schema.derived
+
     // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
     final case class DeploymentRequest(
+        scenarioName: ProcessName,
         nodesDeploymentData: NodesDeploymentData,
         comment: Option[ApiCallComment]
     )

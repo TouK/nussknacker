@@ -497,16 +497,11 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarios/{scenarioName}/deployments/{deploymentId}/status:
+  /api/deployments/{deploymentId}/status:
     get:
-      summary: Service allowing to check status of deployment
-      operationId: getApiScenariosScenarionameDeploymentsDeploymentidStatus
+      summary: Service allowing to check the status of a deployment
+      operationId: getApiDeploymentsDeploymentidStatus
       parameters:
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
       - name: deploymentId
         in: path
         description: Identifier in the UUID format that will be used for the verification
@@ -563,16 +558,11 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarios/{scenarioName}/deployments/{deploymentId}:
+  /api/deployments/{deploymentId}:
     put:
       summary: Service allowing to request the deployment of a scenario
-      operationId: putApiScenariosScenarionameDeploymentsDeploymentid
+      operationId: putApiDeploymentsDeploymentid
       parameters:
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
       - name: deploymentId
         in: path
         description: Identifier in the UUID format that will be used for the verification
@@ -588,6 +578,7 @@ paths:
             schema:
               $ref: '#/components/schemas/DeploymentRequest'
             example:
+              scenarioName: scenario1
               nodesDeploymentData:
                 sourceNodeId1: field1 = 'value'
         required: true
@@ -2248,9 +2239,12 @@ components:
       type: object
     DeploymentRequest:
       required:
+      - scenarioName
       - nodesDeploymentData
       type: object
       properties:
+        scenarioName:
+          $ref: '#/components/schemas/ProcessName'
         nodesDeploymentData:
           $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
         comment:
