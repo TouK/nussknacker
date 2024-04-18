@@ -163,19 +163,19 @@ trait DecisionTableSpec
                         columnName = "name",
                         rowIndex = 0,
                         errorMessage =
-                          "The column 'name' is expected to contain Integer values, but the entered value does not match this type."
+                          "The column 'name' is expected to contain 'Integer' values, but the entered value does not match this type."
                       ),
                       CellError(
                         columnName = "name",
                         rowIndex = 1,
                         errorMessage =
-                          "The column 'name' is expected to contain Integer values, but the entered value does not match this type."
+                          "The column 'name' is expected to contain 'Integer' values, but the entered value does not match this type."
                       ),
                       CellError(
                         columnName = "name",
                         rowIndex = 2,
                         errorMessage =
-                          "The column 'name' is expected to contain Integer values, but the entered value does not match this type."
+                          "The column 'name' is expected to contain 'Integer' values, but the entered value does not match this type."
                       )
                     ),
                     List(

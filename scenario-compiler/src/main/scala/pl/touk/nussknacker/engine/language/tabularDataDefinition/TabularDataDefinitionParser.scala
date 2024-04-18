@@ -96,7 +96,7 @@ object TabularDataDefinitionParser extends ExpressionParser {
                   columnName = coordinates.columnName.name,
                   rowIndex = coordinates.rowIndex,
                   errorMessage =
-                    s"The column '${coordinates.columnName.name}' is expected to contain ${coordinates.columnName.aType.getSimpleName} values, but the entered value does not match this type."
+                    s"The column '${coordinates.columnName.name}' is expected to contain '${coordinates.columnName.aType.getSimpleName}' values, but the entered value does not match this type."
                 )
               }.toList,
               columnDefinitions.map(cd => ColumnDefinition(cd.name, cd.aType))
