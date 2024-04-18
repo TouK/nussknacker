@@ -3,9 +3,6 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -21,8 +18,11 @@ import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, Pro
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{determineStatisticsForScenario, nuFingerprintFileName, prepareUrlString, toURL}
-import shapeless.syntax.std.tuple.productTupleOps
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{
+  nuFingerprintFileName,
+  prepareUrlString,
+  toURL
+}
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
@@ -74,7 +74,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
     }
     def fetchActivity(
         scenarioInputData: List[ScenarioStatisticsInputData]
-    ): Future[Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]]  = {
+    ): Future[Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]] = {
       val scenarioIds = scenarioInputData.flatMap(_.scenarioId)
 
       scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
@@ -82,8 +82,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
 
     def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
       implicit val user: LoggedUser = NussknackerInternalUser.instance
-      componentService
-        .getComponentsList
+      componentService.getComponentsList
         .map(Right(_))
     }
 
@@ -133,7 +132,9 @@ class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
-    fetchActivity: List[ScenarioStatisticsInputData] => Future[Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]],
+    fetchActivity: List[ScenarioStatisticsInputData] => Future[
+      Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
+    ],
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]]
 )(implicit ec: ExecutionContext) {
 
@@ -157,11 +158,11 @@ class UsageStatisticsReportsSettingsDeterminer(
         .combineAll
         .mapValuesNow(_.toString)
       fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-      basicStatistics = determineBasicStatistics(fingerprint, config)
+      basicStatistics   = determineBasicStatistics(fingerprint, config)
       generalStatistics = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
-      activity <- fetchActivity(scenariosInputData)
+      activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
-      componentList <- fetchComponentList()
+      componentList <- new EitherT(fetchComponentList())
       componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
     } yield basicStatistics ++ scenariosStatistics ++ generalStatistics ++ activityStatistics ++ componentStatistics
   }
@@ -176,6 +177,7 @@ class UsageStatisticsReportsSettingsDeterminer(
       "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       "version" -> BuildInfo.version
     )
+
 }
 
 private[statistics] case class ScenarioStatisticsInputData(
