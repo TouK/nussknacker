@@ -56,7 +56,7 @@ class StubbedFragmentSourceDefinitionPreparer(
   }
 
   private def buildSource(inputParameters: List[Parameter]): Source = {
-    new FlinkSource
+    new Source
       with CustomizableContextInitializerSource[Map[String, Any]]
       with FlinkSourceTestSupport[Map[String, Any]]
       with TestWithParametersSupport[Map[String, Any]] {
@@ -87,13 +87,6 @@ class StubbedFragmentSourceDefinitionPreparer(
             Valid(context)
           }
         }
-
-      // TODO local: question - either this is unimplemented or traits like CustomizableContextInitializerSource cant
-      //  have self bound to FlinkSource
-      override def contextStream(
-          env: StreamExecutionEnvironment,
-          flinkNodeContext: FlinkCustomNodeContext
-      ): DataStream[Context] = ???
     }
   }
 

@@ -28,7 +28,7 @@ trait FlinkSource extends Source {
   *             This is needed to handle e.g. syntax suggestions in UI (in sources with explicite @MethodToInvoke).
   */
 trait FlinkSourceTestSupport[Raw] extends SourceTestSupport[Raw] with ExplicitTypeInformationSource[Raw] {
-  self: FlinkSource =>
+  self: Source =>
 
   // TODO: design better way of handling test data in generic FlinkSource
   // Probably we *still* want to use CollectionSource (and have some custom logic in parser if needed), but timestamps
@@ -84,14 +84,14 @@ trait StandardFlinkSource[Raw]
 
 }
 
-trait CustomizableContextInitializerSource[Raw] { self: FlinkSource =>
+trait CustomizableContextInitializerSource[Raw] { self: Source =>
   def contextInitializer: ContextInitializer[Raw] = new BasicContextInitializer[Raw](Unknown)
 }
 
-trait CustomizableTimestampWatermarkHandlerSource[Raw] { self: FlinkSource =>
+trait CustomizableTimestampWatermarkHandlerSource[Raw] { self: Source =>
   def timestampAssigner: Option[TimestampWatermarkHandler[Raw]] = None
 }
 
-trait ExplicitTypeInformationSource[Raw] { self: FlinkSource =>
+trait ExplicitTypeInformationSource[Raw] { self: Source =>
   def typeInformation: TypeInformation[Raw]
 }
