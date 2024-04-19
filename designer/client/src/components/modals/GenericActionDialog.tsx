@@ -1,9 +1,8 @@
-import { css, cx } from "@emotion/css";
+import { css } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { getProcessName } from "../../reducers/selectors/graph";
 import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
@@ -16,9 +15,8 @@ import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
 import { isEmpty } from "lodash";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
-import { FormControl } from "@mui/material";
+import { Box, FormControl } from "@mui/material";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
@@ -31,7 +29,9 @@ export type GenericActionLayout = {
 
 export interface GenericActionParameters {
     parameters?: UIParameter[];
-    parametersValues: { [key: string]: Expression };
+    parametersValues: {
+        [key: string]: Expression;
+    };
     onParamUpdate?: (name: string) => (value: any) => void;
 }
 
@@ -45,19 +45,36 @@ interface GenericAction extends GenericActionParameters {
 interface GenericActionDialogProps {
     action: GenericAction;
     errors: NodeValidationError[];
-    value: { [p: string]: Expression };
-    setValue: (value: ((prevState: { [p: string]: Expression }) => { [p: string]: Expression }) | { [p: string]: Expression }) => void;
+    value: {
+        [p: string]: Expression;
+    };
+    setValue: (
+        value:
+            | ((prevState: { [p: string]: Expression }) => {
+                  [p: string]: Expression;
+              })
+            | {
+                  [p: string]: Expression;
+              },
+    ) => void;
 }
 
 function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
     const { value, setValue, action, errors } = props;
     const dispatch = useDispatch();
+
     const setParam = useCallback(
         (name: string) => (value: any) => {
             action.onParamUpdate(name)(value);
-            setValue((current) => ({ ...current, [name]: { expression: value, language: current[name].language } }));
+            setValue((current) => ({
+                ...current,
+                [name]: {
+                    expression: value,
+                    language: current[name].language,
+                },
+            }));
         },
-        [dispatch, value],
+        [action, setValue],
     );
 
     useEffect(() => {
@@ -73,11 +90,18 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                 variableTypes: action.variableTypes,
             }),
         );
-    }, [value]);
+    }, [action.parameters, action.processingType, action.variableTypes, dispatch, value]);
 
     useEffect(() => setValue(value), [setValue, value]);
+
     return (
-        <div className={css({ height: "100%", display: "grid", gridTemplateRows: "auto 1fr" })}>
+        <div
+            className={css({
+                height: "100%",
+                display: "grid",
+                gridTemplateRows: "auto 1fr",
+            })}
+        >
             <ContentSize>
                 <NodeTable>
                     {(action?.parameters || []).map((param) => {
@@ -114,7 +138,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
 }
 
 export function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction>): JSX.Element {
-    const processName = useSelector(getProcessName);
     const { t } = useTranslation();
     const action = props.data.meta;
     const [value, setValue] = useState(() =>
@@ -132,7 +155,7 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
     const confirm = useCallback(async () => {
         action.onConfirmAction(value);
         props.close();
-    }, [processName, action.layout.name, value, props]);
+    }, [action, value, props]);
 
     const cancelText = action.layout.cancelText ? action.layout.cancelText : "cancel";
     const confirmText = action.layout.confirmText ? action.layout.confirmText : "confirm";
@@ -143,16 +166,27 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
                 action: () => props.close(),
                 classname: LoadingButtonTypes.secondaryButton,
             },
-            { title: t(`dialog.generic.button.${confirmText}`, confirmText), action: () => confirm(), disabled: !isValid },
+            {
+                title: t(`dialog.generic.button.${confirmText}`, confirmText),
+                action: () => confirm(),
+                disabled: !isValid,
+            },
         ],
         [cancelText, confirm, confirmText, isValid, props, t],
     );
 
+    const components = useMemo(
+        () => ({
+            // HeaderTitle: () => <NodeDetailsModalHeader node={node} />,
+        }),
+        [],
+    );
+
     return (
-        <WindowContent {...props} buttons={buttons}>
-            <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
+        <WindowContent {...props} buttons={buttons} components={components}>
+            <Box sx={{ minWidth: 600 }}>
                 <GenericActionForm action={action} errors={validationErrors} value={value} setValue={setValue} />
-            </div>
+            </Box>
         </WindowContent>
     );
 }

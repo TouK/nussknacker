@@ -1,23 +1,26 @@
-import { styled, Typography } from "@mui/material";
-import React, { PropsWithChildren } from "react";
-import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
+import { styled } from "@mui/material";
+import { IconModalTitle } from "./IconModalTitle";
+import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
+import { getLuminance } from "@mui/system/colorManipulator";
 
-import { blendLighten } from "../../../../containers/theme/helpers";
+const getColorBlend = (color: string, value: number) =>
+    getLuminance(color) > 0.5 ? blendDarken(color, value) : blendLighten(color, value);
 
-const SubtypeStyled = styled("div")(({ theme }) => ({
-    height: `${MODAL_HEADER_HEIGHT}px`,
-    backgroundColor: blendLighten(theme.palette.background.paper, 0.1),
-    display: "flex",
-    alignItems: "center",
-    padding: theme.spacing(0, 1.25),
-}));
+export const Subtype = styled(IconModalTitle)(({ theme }) => {
+    const backgroundColor = getColorBlend(theme.palette.background.paper, 0.1);
+    const color = theme.palette.text.secondary;
+    return {
+        color,
+        backgroundColor,
+        padding: theme.spacing(0, 1.6),
+        columnGap: theme.spacing(1),
 
-export const Subtype = ({ children }: PropsWithChildren<unknown>) => {
-    return (
-        <SubtypeStyled>
-            <Typography mx={0.5} variant={"subtitle2"}>
-                {children}
-            </Typography>
-        </SubtypeStyled>
-    );
-};
+        "a > &": {
+            color: color,
+            ":hover": {
+                color: theme.palette.text.primary,
+                backgroundColor: getColorBlend(backgroundColor, 0.1),
+            },
+        },
+    };
+});

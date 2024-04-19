@@ -1,14 +1,16 @@
 import { get, has, isEmpty } from "lodash";
-import React, { useMemo } from "react";
+import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { useSelector } from "react-redux";
 import nodeAttributes from "../../../../assets/json/nodeAttributes.json";
 import { getProcessDefinitionData } from "../../../../reducers/selectors/settings";
 import { NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import ProcessUtils from "../../../../common/ProcessUtils";
-import { ComponentIconStyled, ModalHeader, ModalTitleContainer, NodeDetailsModalTitle } from "./NodeDetailsStyled";
-import { NodeClassDocs } from "./SubHeader";
-import { Box, Typography, useTheme } from "@mui/material";
+import { IconStyled, ModalHeader } from "./NodeDetailsStyled";
+import { NodeDocs } from "./SubHeader";
+import { IconModalTitle } from "./IconModalTitle";
+import { useTheme } from "@mui/material";
+import { useComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 
 const nodeClassProperties = [`service.id`, `ref.typ`, `nodeType`, `ref.id`];
 
@@ -20,34 +22,48 @@ const findNodeClass = (node: NodeType) =>
 
 const getNodeAttributes = (node: NodeType) => nodeAttributes[NodeUtils.nodeType(node)];
 
-const NodeDetailsModalHeader = ({ node }: { node: NodeType }): JSX.Element => {
-    const { components = {} } = useSelector(getProcessDefinitionData);
-    const docsUrl = useMemo(() => ProcessUtils.extractComponentDefinition(node, components)?.docsUrl, [components, node]);
-    const theme = useTheme();
+type IconModalHeaderProps = PropsWithChildren<{
+    startIcon?: React.ReactElement;
+    endIcon?: React.ReactElement;
+    subheader?: React.ReactElement;
+    className?: string;
+}>;
 
-    const attributes = getNodeAttributes(node);
-    const nodeStyles = theme.palette.custom.nodes[NodeUtils.nodeType(node)];
-
-    const variableLanguage = node?.value?.language;
-    const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + attributes.name;
-
-    const nodeClass = findNodeClass(node);
-
+function IconModalHeader({ subheader, className, ...props }: IconModalHeaderProps) {
     return (
-        <ModalHeader onDragStart={(e) => e.preventDefault()}>
-            <ModalTitleContainer>
-                <Box display={"flex"}>
-                    <ComponentIconStyled node={node} backgroundColor={nodeStyles.fill} />
-                    <NodeDetailsModalTitle>
-                        <Typography mx={0.5} variant={"subtitle2"}>
-                            {header}
-                        </Typography>
-                    </NodeDetailsModalTitle>
-                </Box>
-            </ModalTitleContainer>
-            <NodeClassDocs nodeClass={nodeClass} docsUrl={docsUrl} />
+        <ModalHeader className={className}>
+            <IconModalTitle
+                sx={{
+                    textTransform: "lowercase",
+                    span: { px: 1.6 },
+                }}
+                {...props}
+            />
+            {subheader}
         </ModalHeader>
     );
-};
+}
 
-export default NodeDetailsModalHeader;
+export const NodeDetailsModalHeader = ({ node, ...props }: { node: NodeType; className?: string }): ReactElement => {
+    const { components = {} } = useSelector(getProcessDefinitionData);
+
+    const docsUrl = useMemo(() => ProcessUtils.extractComponentDefinition(node, components)?.docsUrl, [components, node]);
+    const { name } = getNodeAttributes(node);
+    const variableLanguage = node?.value?.language;
+    const nodeClass = findNodeClass(node);
+
+    const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + name;
+    const src = useComponentIcon(node);
+    const theme = useTheme();
+    const backgroundColor = theme.palette.custom.nodes[NodeUtils.nodeType(node)].fill;
+
+    return (
+        <IconModalHeader
+            startIcon={<IconStyled src={src} sx={{ backgroundColor }} />}
+            subheader={<NodeDocs name={nodeClass} href={docsUrl} />}
+            {...props}
+        >
+            {header}
+        </IconModalHeader>
+    );
+};
