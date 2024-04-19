@@ -7,7 +7,6 @@ import { Theme } from "@mui/material";
 function createStyle(theme: Theme) {
     const style = V("style").node;
     style.appendChild(document.createTextNode(exportStyled(theme).styles));
-    console.log(style);
     return style;
 }
 

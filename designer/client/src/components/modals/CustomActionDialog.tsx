@@ -99,7 +99,6 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const action = props.data.meta;
     const [validationError, setValidationError] = useState("");
 
-    console.log(props.data);
     const [value, setValue] = useState<UnknownRecord>();
 
     const confirm = useCallback(async () => {

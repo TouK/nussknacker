@@ -41,10 +41,10 @@ export const lightModePalette = {
     ...standardPalette,
     custom: {
         environmentAlert: {
-            [EnvironmentTagColor.green]: "#14B86B",
-            [EnvironmentTagColor.yellow]: "hsl(35,84%,62%)",
-            [EnvironmentTagColor.red]: "hsl(2,64%,58%)",
-            [EnvironmentTagColor.blue]: "#7894E8",
+            [EnvironmentTagColor.green]: "#80D880",
+            [EnvironmentTagColor.yellow]: "#FDE3A0",
+            [EnvironmentTagColor.red]: "#DF818C",
+            [EnvironmentTagColor.blue]: "#43A1E6",
         },
         nodes: {
             Source: {

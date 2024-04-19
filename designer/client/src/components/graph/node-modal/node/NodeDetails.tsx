@@ -126,7 +126,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
             buttons={buttons}
             components={components}
             classnames={{
-                header: css({ backgroundColor: "#dd0000" }),
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
