@@ -13,6 +13,8 @@
   * Tapir: 1.7.4 -> 1.9.11
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+* [#5798](https://github.com/TouK/nussknacker/pull/5798) Improvements in DeploymentService:
+    * Custom actions are registered in NU database
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Added information about component's allowed processing modes to Component API
 * [#5831](https://github.com/TouK/nussknacker/pull/5831) Fragment input parameters presets support
 * [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
@@ -21,7 +23,7 @@
 * [#5843](https://github.com/TouK/nussknacker/pull/5843) Added new endpoint to provide statistics URL
 * [#5873](https://github.com/TouK/nussknacker/pull/5873) Handle list of the anonymous statistic URLs, and send them in the interval
 * [#5889](https://github.com/TouK/nussknacker/pull/5889) Decision Table component parameters validation improvement
-* [#5898](https://github.com/TouK/nussknacker/pull/5898) fixed Nu runtime memory leak
+* [#5898](https://github.com/TouK/nussknacker/pull/5898) Fixed Nu runtime memory leak
 * [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 
 1.14.0 (21 Mar 2024)
