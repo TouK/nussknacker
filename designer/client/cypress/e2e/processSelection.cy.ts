@@ -40,7 +40,7 @@ describe("Process mouse drag", () => {
 
     it("should select only fully covered (to right)", () => {
         cy.get("@canvas").trigger("keydown", { key: "Meta" });
-        cy.get("@canvas").realMouseDown({ metaKey: true, x: 300, y: 100 });
+        cy.get("@canvas").realMouseDown({ metaKey: true, x: 100, y: 100 });
         cy.get("@canvas").realMouseMove(700, 500, { metaKey: true });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").realMouseUp({ x: 700, y: 500 });
@@ -50,25 +50,24 @@ describe("Process mouse drag", () => {
     it("should select partially covered (to left)", () => {
         cy.get("@canvas").trigger("keydown", { key: "Meta" });
         cy.get("@canvas").realMouseDown({ metaKey: true, x: 700, y: 100 });
-        cy.get("@canvas").realMouseMove(500, 500, { metaKey: true });
+        cy.get("@canvas").realMouseMove(300, 500, { metaKey: true });
         cy.get("@graph").matchImage(snapshotParams);
-        cy.get("@canvas").realMouseUp({ x: 500, y: 500 });
+        cy.get("@canvas").realMouseUp({ x: 300, y: 500 });
         cy.get("@graph").matchImage(snapshotParams);
     });
 
     it("should switch modes, append and inverse select with shift", () => {
         cy.get("@canvas").trigger("keydown", { key: "Meta" });
         cy.get("@canvas").realMouseDown({ metaKey: true, x: 700, y: 100 });
-        cy.get("@canvas").realMouseMove(500, 400, { metaKey: true });
+        cy.get("@canvas").realMouseMove(300, 400, { metaKey: true });
         cy.get("@graph").matchImage(snapshotParams);
-        cy.get("@canvas").realMouseUp({ metaKey: true, x: 500, y: 400 });
+        cy.get("@canvas").realMouseUp();
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("keydown", { key: "Shift" });
         cy.get("@canvas").realMouseDown({ shiftKey: true, x: 700, y: 150 });
-        cy.get("@canvas").realMouseMove(500, 550, { metaKey: true });
+        cy.get("@canvas").realMouseMove(300, 550, { shiftKey: true });
         cy.get("@graph").matchImage(snapshotParams);
-        cy.get("@canvas").realMouseUp({ metaKey: true });
-        cy.get("@canvas").trigger("mouseup", { force: true });
+        cy.get("@canvas").realMouseUp();
         cy.get("@graph").matchImage(snapshotParams);
     });
 });
