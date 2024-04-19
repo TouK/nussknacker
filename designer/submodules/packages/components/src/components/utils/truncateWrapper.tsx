@@ -30,7 +30,7 @@ const TruncateButton = styled("button")(({ theme }) => ({
     background: "none",
     border: "none",
     outline: "none",
-    color: theme.palette.common.white,
+    color: theme.palette.text.secondary,
     display: "flex",
     alignItems: "center",
     textTransform: "lowercase",
@@ -58,7 +58,7 @@ const Truncator = ({
     const { t } = useTranslation();
     return (
         <TruncateButton {...bindTrigger(popupState)} className="truncator">
-            <Visibility sx={(theme) => ({ fontSize: "18px", color: theme.palette.common.white })} />
+            <Visibility sx={{ fontSize: "18px" }} />
             <Typography sx={{ mx: "4px", fontSize: "13px" }}>
                 {itemsCount === hiddenItemsCount
                     ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })

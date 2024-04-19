@@ -99,6 +99,8 @@ export class Graph extends React.Component<Props> {
     };
 
     createPaper = (): dia.Paper => {
+        const { theme } = this.props;
+
         const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly;
         const paper = createPaper({
             frozen: true,
@@ -119,7 +121,7 @@ export class Graph extends React.Component<Props> {
             },
         });
 
-        const uniqueArrowMarker = createUniqueArrowMarker(paper);
+        const uniqueArrowMarker = createUniqueArrowMarker(paper, theme);
         // arrow id from paper is needed, so we have to mutate this
         paper.options.defaultLink = (cellView, magnet) => {
             // actual props are needed when link is created

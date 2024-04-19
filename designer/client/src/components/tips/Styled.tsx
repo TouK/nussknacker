@@ -1,6 +1,7 @@
 import { ComponentType, SVGProps } from "react";
 import { alpha, lighten, styled } from "@mui/material";
 import { Link } from "react-router-dom";
+import { SvgIconOwnProps } from "@mui/material/SvgIcon/SvgIcon";
 
 export const LinkStyled = styled(Link)(({ theme }) => ({
     color: theme.palette.warning.main,
@@ -13,17 +14,15 @@ export const LinkStyled = styled(Link)(({ theme }) => ({
     },
 }));
 
-export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) =>
-    styled(Icon)(
-        ({ theme }) => `
-    width: 16px;
-    height: 16px;
-    color: ${theme.palette.success.main};
-    float: left;
-    margin-right: 5px;
-    margin-top: 2px;
-`,
-    );
+export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>, color: string) =>
+    styled(Icon)(() => ({
+        width: "16px",
+        height: "16px",
+        float: "left",
+        marginRight: "5px",
+        marginTop: "2px",
+        color,
+    }));
 
 export const TipPanelStyled = styled("div")<{
     isHighlighted: boolean;

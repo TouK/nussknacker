@@ -23,7 +23,8 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
     const { options, onRangeSelect: onSelect, children, onClick, wrapperStyle, ...buttonProps } = props;
     const theme = useTheme();
 
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, dropdownIndicator, indicatorSeparator } =
+        selectStyled(theme);
 
     const toggleOpen = useCallback(
         (e) => {
@@ -80,6 +81,12 @@ export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & Dropdow
                         overflow: "hidden",
                         margin: 0,
                         padding: 0,
+                    }),
+                    dropdownIndicator: (base) => ({
+                        ...dropdownIndicator(base),
+                    }),
+                    indicatorSeparator: (base) => ({
+                        ...indicatorSeparator(base),
                     }),
                     menuPortal: ({ width, ...base }) => ({ ...menuPortal({ ...base, minWidth: width }) }),
                     menu: ({ position, ...base }) => ({ ...menu(base) }),

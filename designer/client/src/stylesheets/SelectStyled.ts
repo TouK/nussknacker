@@ -1,7 +1,8 @@
 import { alpha, css, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
-import { blendLighten, getBorderColor } from "../containers/theme/helpers";
+import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
+import { getLuminance } from "@mui/system/colorManipulator";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
@@ -12,7 +13,10 @@ export const selectStyled = (theme: Theme) => {
         color: ${theme.palette.text.secondary};
         font-weight: 400;
         font-size: 14px;
-        outline: 1px solid ${blendLighten(theme.palette.background.paper, 0.05)};
+        outline: 1px solid
+            ${getLuminance(theme.palette.background.paper) > 0.5
+                ? blendLighten(theme.palette.background.paper, 0.05)
+                : blendDarken(theme.palette.background.paper, 0.05)};
     `;
 
     const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean, isError: boolean) => css`
@@ -35,13 +39,15 @@ export const selectStyled = (theme: Theme) => {
         border: 1px;
         border-radius: 0;
         background-color: ${isSelected
-            ? blendLighten(theme.palette.background.paper, 0.15)
+            ? getLuminance(theme.palette.background.paper) > 0.5
+                ? blendDarken(theme.palette.background.paper, 0.15)
+                : blendLighten(theme.palette.background.paper, 0.15)
             : isDisabled
             ? "none"
             : theme.palette.background.paper};
         color: ${isDisabled && theme.palette.action.disabled};
         &:hover {
-            color: inherit;
+            color: ${!isDisabled && "inherit"};
             background-color: ${!isDisabled && theme.palette.action.hover};
         }
     `;
@@ -101,6 +107,16 @@ export const selectStyled = (theme: Theme) => {
         ${base};
     `;
 
+    const dropdownIndicator = (base: CSSObjectWithLabel) => css`
+        ${base};
+        color: currentColor;
+    `;
+
+    const indicatorSeparator = (base: CSSObjectWithLabel) => css`
+        ${base};
+        background-color: currentColor;
+    `;
+
     return {
         control,
         menu,
@@ -110,5 +126,7 @@ export const selectStyled = (theme: Theme) => {
         input,
         singleValue,
         valueContainer,
+        dropdownIndicator,
+        indicatorSeparator,
     };
 };

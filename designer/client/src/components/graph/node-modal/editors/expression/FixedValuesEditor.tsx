@@ -51,7 +51,8 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
 
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
+        selectStyled(theme);
     return (
         <div className={cx(className)}>
             <Creatable
@@ -67,6 +68,12 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({
                         ...control(base, props.isFocused, props.isDisabled, !isEmpty(fieldErrors)),
+                    }),
+                    dropdownIndicator: (base) => ({
+                        ...dropdownIndicator(base),
+                    }),
+                    indicatorSeparator: (base) => ({
+                        ...indicatorSeparator(base),
                     }),
                     menu: (base) => ({
                         ...menu(base),

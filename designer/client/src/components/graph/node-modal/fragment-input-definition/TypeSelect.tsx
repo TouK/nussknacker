@@ -58,7 +58,8 @@ export function TypeSelect({
     const { setCaptureEsc, preventEsc } = useCaptureEsc();
     const theme = useTheme();
 
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, dropdownIndicator, indicatorSeparator } =
+        selectStyled(theme);
 
     return (
         <StyledNodeValue marked={isMarked} onKeyDown={preventEsc}>
@@ -80,6 +81,12 @@ export function TypeSelect({
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({
                         ...control(base, props.isFocused, props.isDisabled, !isEmpty(fieldErrors)),
+                    }),
+                    dropdownIndicator: (base) => ({
+                        ...dropdownIndicator(base),
+                    }),
+                    indicatorSeparator: (base) => ({
+                        ...indicatorSeparator(base),
                     }),
                     menu: (base) => ({
                         ...menu(base),
