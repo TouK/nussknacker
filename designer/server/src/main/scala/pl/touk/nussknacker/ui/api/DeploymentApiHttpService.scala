@@ -5,10 +5,15 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{NoPermission, NoScenario}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
+  DeploymentCommentError,
+  NoPermission,
+  NoScenario
+}
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, RunDeploymentCommand}
+import pl.touk.nussknacker.ui.process.repository.CommentValidationError
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,7 +51,8 @@ class DeploymentApiHttpService(
                   RunDeploymentCommand(
                     scenarioDetails.idWithNameUnsafe,
                     savepointPath = None,
-                    comment = None,
+                    comment = request.comment,
+                    nodesDeploymentData = request.nodesDeploymentData,
                     user = loggedUser
                   )
                 )
@@ -55,6 +61,10 @@ class DeploymentApiHttpService(
           } yield ()
         }
       }
+  }
+
+  override protected def handleOtherErrors: PartialFunction[Throwable, DeploymentError] = {
+    case CommentValidationError(message) => DeploymentCommentError(message)
   }
 
 }

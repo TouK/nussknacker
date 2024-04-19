@@ -14,6 +14,9 @@
 * [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
 * [#5853](https://github.com/TouK/nussknacker/pull/5853) Add processing mode information and filtering to the components table
 * [#5843](https://github.com/TouK/nussknacker/pull/5843) Added new endpoint to provide statistics URL
+* [#5873](https://github.com/TouK/nussknacker/pull/5873) Handle list of the anonymous statistic URLs, and send them in the interval
+* [#5889](https://github.com/TouK/nussknacker/pull/5889) Decision Table component parameters validation improvement
+* [#5898](https://github.com/TouK/nussknacker/pull/5898) fixed Nu runtime memory leak
 * [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 
 1.14.0 (21 Mar 2024)

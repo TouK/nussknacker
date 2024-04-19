@@ -10,6 +10,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
@@ -53,7 +54,12 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   private val savepointRequestId = "123-savepoint"
   private val savepointPath      = "savepointPath"
 
-  private val defaultDeploymentData = DeploymentData(DeploymentId(""), User("user1", "User 1"), Map.empty)
+  private val defaultDeploymentData = DeploymentData(
+    DeploymentId(""),
+    User("user1", "User 1"),
+    Map.empty,
+    NodesDeploymentData.empty
+  )
 
   private val returnedJobId = "jobId"
 

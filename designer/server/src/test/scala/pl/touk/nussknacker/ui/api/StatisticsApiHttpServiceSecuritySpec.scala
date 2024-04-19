@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
-  WithAccessControlCheckingDesignerConfig,
-  WithSimplifiedDesignerConfig
+  WithAccessControlCheckingDesignerConfig
 }
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers}
 
@@ -37,7 +36,7 @@ class StatisticsApiHttpServiceSecuritySpec
             matchJsonWithRegexValues(
               s"""
                  |{
-                 |  "urls": ["https://stats.nussknacker.io/\\\\?fingerprint=[\\\\w-]+?&source=sources&version=$nuVersion"]
+                 |  "urls": ["https://stats.nussknacker.io/\\\\?c_n=[0-9]+&fingerprint=[\\\\w-]+?&source=sources&version=$nuVersion"]
                  |}
                  |""".stripMargin
             )

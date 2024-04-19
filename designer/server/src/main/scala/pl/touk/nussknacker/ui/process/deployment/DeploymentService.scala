@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import cats.Traverse
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
   OnDeployActionFailed,
   OnDeployActionSuccess
 }
-import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.{Comment, ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -122,7 +122,13 @@ class DeploymentService(
         p => Some(p.processingType)
       )
       // 2. command specific section
-      deployedScenarioData <- prepareDeployedScenarioData(ctx.latestScenarioDetails, ctx.actionId)
+      deployedScenarioData <- prepareDeployedScenarioData(
+        ctx.latestScenarioDetails,
+        ctx.actionId,
+        // TODO: We should validate node deployment data - e.g. if sql expression is a correct sql expression,
+        //       references to existing fields and uses correct types. We should also protect from sql injection attacks
+        command.nodesDeploymentData
+      )
       dmCommand = DMRunDeploymentCommand(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
@@ -198,11 +204,8 @@ class DeploymentService(
 
   // TODO: this is temporary step: we want ParameterValidator here. The aim is to align deployment and custom actions
   //  and validate deployment comment (and other action parameters) the same way as in node expressions or additional properties.
-  private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
-    DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
-      case Valid(deploymentComment) => Future.successful(deploymentComment)
-      case Invalid(exc)             => Future.failed(CustomActionValidationError(exc.message))
-    }
+  private def validateDeploymentComment(comment: Option[Comment]): Future[Option[DeploymentComment]] =
+    Future.fromTry(DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings).toEither.toTry)
 
   protected def validateBeforeDeploy(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
@@ -274,26 +277,20 @@ class DeploymentService(
   protected def prepareDeployedScenarioData(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
+      nodesDeploymentData: NodesDeploymentData,
       additionalDeploymentData: Map[String, String] = Map.empty
   )(implicit user: LoggedUser): Future[DeployedScenarioData] = {
     for {
       resolvedCanonicalProcess <- Future.fromTry(
         scenarioResolver.forProcessingTypeUnsafe(processDetails.processingType).resolveScenario(processDetails.json)
       )
-      deploymentData = prepareDeploymentData(
-        user.toManagerUser,
+      deploymentData = DeploymentData(
         DeploymentId.fromActionId(actionId),
-        additionalDeploymentData
+        user.toManagerUser,
+        additionalDeploymentData,
+        nodesDeploymentData
       )
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
-  }
-
-  protected def prepareDeploymentData(
-      user: User,
-      deploymentId: DeploymentId,
-      additionalDeploymentData: Map[String, String]
-  ): DeploymentData = {
-    DeploymentData(deploymentId, user, additionalDeploymentData)
   }
 
   private def runActionAndHandleResults[T, PS: ScenarioShapeFetchStrategy](
