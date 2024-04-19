@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   designer:
     container_name: e2e_designer
@@ -19,28 +17,21 @@ services:
 
   kafka:
     container_name: e2e_kafka
+    image: vectorized/redpanda:v23.3.11
     command:
-    - redpanda
-    - start
-    - --smp
-    - '1'
-    - --set
-    - redpanda.enable_transactions=true
-    - --set
-    - redpanda.enable_idempotence=true
-    - --reserve-memory
-    - 0M
-    - --overprovisioned
-    - --node-id
-    - '0'
-    - --kafka-addr
-    - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
-    - --advertise-kafka-addr
-    - PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
-    image: vectorized/redpanda:v22.3.5
+      - redpanda start
+      - --smp 1
+      - --set redpanda.enable_transactions=true
+      - --set redpanda.enable_idempotence=true
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
+      - --advertise-kafka-addr PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
     ports:
       - "3032:3032"
 
+  #We use confluent schema-registry because redpanda doesn't support json schema: https://docs.redpanda.com/current/manage/schema-reg/schema-reg-overview/
   schemaregistry:
     container_name: e2e_schemaregistry
     image: confluentinc/cp-schema-registry:7.3.0
