@@ -24,7 +24,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnDeployActionSuccess}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
@@ -362,7 +362,7 @@ class DeploymentServiceSpec
     }
     eventually {
       checkStatusAction(SimpleStateStatus.Running, Some(ScenarioActionName.Deploy))
-      listener.events.toArray.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
+      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
     }
   }
 
