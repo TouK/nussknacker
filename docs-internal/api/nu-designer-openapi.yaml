@@ -769,18 +769,6 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-        '409':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
         '500':
           description: ''
           content:

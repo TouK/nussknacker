@@ -54,7 +54,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         )
       )
       .out(statusCode(Ok))
-      .errorOut(migrateEndpointErrorOutputV2)
+      .errorOut(migrateEndpointErrorOutput)
       .withSecurity(auth)
 
   lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, MigrationError, ApiVersion, Any] =
@@ -64,18 +64,10 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .get
       .in("migration" / "scenario" / "description" / "version")
       .out(jsonBody[ApiVersion])
-      .errorOut(scenarioDescriptionVersionEndpointErrorOutputV2)
+      .errorOut(scenarioDescriptionVersionEndpointErrorOutput)
       .withSecurity(auth)
 
-  private val scenarioDescriptionVersionEndpointErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
-    oneOf[NuDesignerError](
-      oneOfVariant(
-        Unauthorized,
-        plainBody[UnauthorizedError]
-      )
-    )
-
-  private val scenarioDescriptionVersionEndpointErrorOutputV2: EndpointOutput.OneOf[MigrationError, MigrationError] =
+  private val scenarioDescriptionVersionEndpointErrorOutput: EndpointOutput.OneOf[MigrationError, MigrationError] =
     oneOf[MigrationError](
       oneOfVariant(
         Unauthorized,
@@ -83,7 +75,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       )
     )
 
-  private val migrateEndpointErrorOutputV2: EndpointOutput.OneOf[MigrationError, MigrationError] =
+  private val migrateEndpointErrorOutput: EndpointOutput.OneOf[MigrationError, MigrationError] =
     oneOf[MigrationError](
       oneOfVariant(
         BadRequest,
@@ -108,42 +100,6 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       oneOfVariant(
         InternalServerError,
         plainBody[Dtos.MigrationError.RemoteEnvironmentCommunicationError]
-      )
-    )
-
-  private val migrateEndpointErrorOutput: EndpointOutput.OneOf[NuDesignerError, NuDesignerError] =
-    oneOf[NuDesignerError](
-      oneOfVariant(
-        NotFound,
-        plainBody[NotFoundError]
-      ),
-      oneOfVariant(
-        BadRequest,
-        plainBody[MigrationToArchivedError]
-      ),
-      oneOfVariant(
-        BadRequest,
-        plainBody[BadRequestError]
-      ),
-      oneOfVariant(
-        BadRequest,
-        plainBody[MigrationValidationError]
-      ),
-      oneOfVariant(
-        Unauthorized,
-        plainBody[UnauthorizedError]
-      ),
-      oneOfVariant(
-        Conflict,
-        plainBody[IllegalOperationError]
-      ),
-      oneOfVariant(
-        InternalServerError,
-        plainBody[OtherError]
-      ),
-      oneOfVariant(
-        InternalServerError,
-        plainBody[FatalError]
       )
     )
 
