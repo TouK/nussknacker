@@ -24,6 +24,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.{TestCategor
 import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubProcessStateProvider, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
@@ -172,7 +173,8 @@ object TestFactory {
   val newProcessPreparer: NewProcessPreparer =
     new NewProcessPreparer(
       ProcessTestData.streamingTypeSpecificInitialData,
-      FlinkStreamingPropertiesConfig.properties
+      FlinkStreamingPropertiesConfig.properties,
+      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify)
     )
 
   val newProcessPreparerByProcessingType: ProcessingTypeDataProvider[NewProcessPreparer, _] =
