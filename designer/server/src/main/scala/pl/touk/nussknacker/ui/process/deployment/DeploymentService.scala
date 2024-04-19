@@ -85,7 +85,7 @@ class DeploymentService(
       // and deployment continues on flink, lastDeployedAction is empty. Then we allow cancel action to proceed, to cancel
       // a running job. In that case there is no deploy action and action cancel is removed.
       // TODO: This inconsistent action-state handling needs a fix.
-      _ <- validateDeploymentComment(comment)
+      validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[Unit](
         processId,
         actionName,
@@ -94,12 +94,11 @@ class DeploymentService(
         _ => None
       )
       // 2. command specific section
-      deploymentComment = comment.map(DeploymentComment.unsafe)
-      dmCommand         = DMCancelScenarioCommand(processId.name, user.toManagerUser)
+      dmCommand = DMCancelScenarioCommand(processId.name, user.toManagerUser)
       // 3. common for all commands/actions
       actionResult <- runActionAndHandleResults(
         actionName,
-        deploymentComment,
+        validatedComment,
         ctx
       ) {
         dispatcher
