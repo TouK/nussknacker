@@ -48,6 +48,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private def customActionRequest(params: Map[String, String]) = {
     CustomActionRequest(
       testCustomActionName,
+      None,
       params
     )
   }

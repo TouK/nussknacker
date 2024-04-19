@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
@@ -874,10 +874,31 @@ class DeploymentServiceSpec
     val wrongParams              = Map("testParam" -> "")
 
     val result =
-      deploymentService.processCommand(CustomActionCommand(actionName, id, wrongParams, user)).failed.futureValue
+      deploymentService.processCommand(CustomActionCommand(actionName, id, None, wrongParams, user)).failed.futureValue
 
     result shouldBe a[CustomActionValidationError]
     result.getMessage.trim shouldBe s"Validation failed for: ${actionName}"
+  }
+
+  test("should register custom action and comment in repository") {
+    val processName: ProcessName = generateProcessName
+    val processId                = prepareProcess(processName).dbioActionValues
+    val actionName               = ScenarioActionName("hello")
+    val comment                  = UserComment("not empty comment")
+
+    val result =
+      deploymentService
+        .processCommand(CustomActionCommand(actionName, processId, Some(comment), Map.empty, user))
+        .futureValue
+
+    eventually {
+      result shouldBe CustomActionResult("Hi")
+      val action = actionRepository.getFinishedProcessActions(processId.id, Some(Set(actionName))).dbioActionValues
+
+      action.loneElement.state shouldBe ProcessActionState.Finished
+      action.loneElement.comment shouldBe Some(comment.value)
+      listener.events.toArray.filter(_.isInstanceOf[OnActionSuccess]) should have length 1
+    }
   }
 
   override def beforeEach(): Unit = {

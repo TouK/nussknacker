@@ -30,6 +30,7 @@ case class RunDeploymentCommand(
 case class CustomActionCommand(
     actionName: ScenarioActionName,
     processIdWithName: ProcessIdWithName,
+    comment: Option[Comment],
     params: Map[String, String],
     user: LoggedUser
 ) extends ScenarioCommand[CustomActionResult]

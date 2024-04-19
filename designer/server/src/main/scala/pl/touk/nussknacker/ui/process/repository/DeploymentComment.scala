@@ -15,7 +15,7 @@ class DeploymentComment private (value: Comment) {
     val prefix = actionName match {
       case ScenarioActionName.Deploy => PrefixDeployedDeploymentComment
       case ScenarioActionName.Cancel => PrefixCanceledDeploymentComment
-      case _                         => throw new AssertionError(s"Not supported deployment action: $actionName")
+      case _                         => NoPrefix
     }
     new Comment {
       override def value: String = prefix + DeploymentComment.this.value.value
@@ -28,6 +28,7 @@ object DeploymentComment {
 
   private val PrefixDeployedDeploymentComment = "Deployment: "
   private val PrefixCanceledDeploymentComment = "Stop: "
+  private val NoPrefix                        = ""
 
   def createDeploymentComment(
       comment: Option[Comment],
