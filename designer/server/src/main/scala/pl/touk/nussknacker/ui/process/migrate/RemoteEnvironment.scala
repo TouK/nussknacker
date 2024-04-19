@@ -245,16 +245,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   private def handleTransformedMigrateScenarioRequest(
       transformedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData]
-  )(implicit ec: ExecutionContext) = {
+  )(implicit ec: ExecutionContext): EitherT[Future, NuDesignerError, Unit] = {
     transformedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
-        EitherT(
-          Future[Either[NuDesignerError, Unit]](
-            Left(
-              MigrationApiAdapterError(apiAdapterServiceError)
-            )
-          )
-        )
+        EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
       case Right(transformedMigrateScenarioRequest) =>
         val dto = MigrateScenarioData.fromDomain(transformedMigrateScenarioRequest)
         EitherT(
