@@ -53,14 +53,6 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
       |
       |""".stripMargin
 
-  private lazy val kafkaTableConfig =
-    s"""
-       |{
-       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: true
-       |}
-       |""".stripMargin
-
   private lazy val sqlTablesDefinitionFilePath = {
     val tempFile = File.createTempFile("tables-definition", ".sql")
     tempFile.deleteOnExit()
@@ -68,11 +60,16 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
     tempFile.toPath
   }
 
-  private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
+  private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(s"""
+       |{
+       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  enableFlinkBatchExecutionMode: true
+       |}
+       |""".stripMargin)
 
-  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
-    tableKafkaComponentsConfig,
-    ProcessObjectDependencies.withConfig(tableKafkaComponentsConfig)
+  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
+    tableComponentsConfig,
+    ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )
 
   override protected def afterAll(): Unit = {
@@ -80,10 +77,10 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
     super.afterAll()
   }
 
-  test("file to file") {
+  test("should do file-to-file ping-pong") {
     val runner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-      .withExtraComponents(additionalComponents)
+      .withExtraComponents(tableComponents)
       .build()
 
     val scenario = ScenarioBuilder
@@ -92,10 +89,10 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
       .emptySink("end", "table", "Table" -> "'transactions_summary'", "Value" -> "#input")
 
     val result = runner.runWithData(
-      scenario,
-      List.empty,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      scenario = scenario,
+      data = List.empty,
+      boundedness = Boundedness.BOUNDED,
+      flinkExecutionMode = Some(RuntimeExecutionMode.BATCH)
     )
 
     result.isValid shouldBe true
