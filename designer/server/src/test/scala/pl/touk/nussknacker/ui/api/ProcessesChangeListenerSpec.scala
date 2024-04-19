@@ -102,7 +102,7 @@ class ProcessesChangeListenerSpec
 
     deploymentManager.withFailingDeployment(processName) {
       deployProcess(processName) ~> checkEventually {
-        processChangeListener.events.toArray.last should matchPattern { case OnActionFailed(`processId`, _) => }
+        processChangeListener.events.toArray.last should matchPattern { case OnActionFailed(`processId`, _, _) => }
       }
     }
   }
