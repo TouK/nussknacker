@@ -1,6 +1,6 @@
 {
     "metaData": {
-        "id": "TestFromFile",
+        "id": "dumbStreamKafkaSourceScenario",
         "additionalFields": {
             "description": null,
             "properties": {
@@ -25,7 +25,7 @@
                         "name": "Topic",
                         "expression": {
                             "language": "spel",
-                            "expression": "'people'"
+                            "expression": "'transactions'"
                         }
                     },
                     {
