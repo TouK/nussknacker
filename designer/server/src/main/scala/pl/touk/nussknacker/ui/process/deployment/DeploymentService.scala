@@ -17,11 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
-  OnActionExecutionFinished,
-  OnDeployActionFailed,
-  OnDeployActionSuccess
-}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{Comment, ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -331,8 +327,7 @@ class DeploymentService(
       case Failure(exception) =>
         logger.error(s"Action: $actionString finished with failure", exception)
         val performedAt = clock.instant()
-        // TODO: rename to OnActionFailed
-        processChangeListener.handle(OnDeployActionFailed(ctx.latestScenarioDetails.processId, exception))
+        processChangeListener.handle(OnActionFailed(ctx.latestScenarioDetails.processId, exception, actionName))
         dbioRunner
           .runInTransaction(
             actionRepository.markActionAsFailed(
@@ -352,9 +347,8 @@ class DeploymentService(
             logger.info(s"Finishing $actionString")
             val performedAt = clock.instant()
             val comment     = deploymentComment.map(_.toComment(actionName))
-            // TODO: rename to OnActionSuccess
             processChangeListener.handle(
-              OnDeployActionSuccess(
+              OnActionSuccess(
                 ctx.latestScenarioDetails.processId,
                 versionOnWhichActionIsDone,
                 comment,
