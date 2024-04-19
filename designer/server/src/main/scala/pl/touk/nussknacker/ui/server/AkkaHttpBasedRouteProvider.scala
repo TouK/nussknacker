@@ -405,7 +405,9 @@ class AkkaHttpBasedRouteProvider(
         usageStatisticsReportsConfig,
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
-        fingerprintService
+        fingerprintService,
+        processActivityRepository,
+        componentService
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(

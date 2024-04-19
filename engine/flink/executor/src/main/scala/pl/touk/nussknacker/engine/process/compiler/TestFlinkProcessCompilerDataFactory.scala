@@ -10,7 +10,11 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableContextInitializerSource,
+  FlinkSource,
+  FlinkSourceTestSupport
+}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -101,14 +105,22 @@ class StubbedSourcePreparer(
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
     originalSource match {
-      case sourceWithContextInitializer: FlinkIntermediateRawSource[Object @unchecked] =>
-        new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
+      case sourceWithContextInitializer: CustomizableContextInitializerSource[Object @unchecked] =>
+        new CollectionSource[Object](
+          list = samples,
+          timestampAssigner = originalSource.timestampAssignerForTest,
+          returnType = typingResult,
+        )(
           originalSource.typeInformation
         ) {
           override val contextInitializer: ContextInitializer[Object] = sourceWithContextInitializer.contextInitializer
         }
       case _ =>
-        new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
+        new CollectionSource[Object](
+          list = samples,
+          timestampAssigner = originalSource.timestampAssignerForTest,
+          returnType = typingResult
+        )(
           originalSource.typeInformation
         )
     }

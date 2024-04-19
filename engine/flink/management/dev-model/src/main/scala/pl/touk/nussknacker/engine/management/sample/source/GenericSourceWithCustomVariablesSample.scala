@@ -86,11 +86,12 @@ object GenericSourceWithCustomVariablesSample
   ): Source = {
     val elementsValue = elementsParamDeclaration.extractValueUnsafe(params).asScala.toList
 
-    new CollectionSource[String](elementsValue, None, Typed[String])(TypeInformation.of(classOf[String]))
-      with TestDataGenerator
-      with FlinkSourceTestSupport[String] {
-
-      override val contextInitializer: ContextInitializer[String] = customContextInitializer
+    new CollectionSource(
+      list = elementsValue,
+      timestampAssigner = None,
+      returnType = Typed[ProcessingType],
+    )(TypeInformation.of(classOf[ProcessingType])) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] {
+      override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def generateTestData(size: Int): TestData = TestData(
         elementsValue.map(el => TestRecord(Json.fromString(el)))

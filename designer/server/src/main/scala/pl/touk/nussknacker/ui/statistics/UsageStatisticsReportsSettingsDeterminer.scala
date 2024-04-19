@@ -1,20 +1,23 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.data.EitherT
-import cats.implicits.toFoldableOps
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
-import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{
-  determineStatisticsForScenario,
   nuFingerprintFileName,
   prepareUrlString,
   toURL
@@ -29,21 +32,14 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
 
   private val nuFingerprintFileName = new FileName("nussknacker.fingerprint")
 
-  private val flinkDeploymentManagerType = DeploymentManagerType("flinkStreaming")
-
-  private val liteK8sDeploymentManagerType = DeploymentManagerType("lite-k8s")
-
-  private val liteEmbeddedDeploymentManagerType = DeploymentManagerType("lite-embedded")
-
-  private val knownDeploymentManagerTypes =
-    Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
-
   def apply(
       config: UsageStatisticsReportsConfig,
       processService: ProcessService,
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
-      fingerprintService: FingerprintService
+      fingerprintService: FingerprintService,
+      scenarioActivityRepository: ProcessActivityRepository,
+      componentService: ComponentService
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsDeterminer = {
     def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
@@ -53,46 +49,61 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
       processService
         .getLatestProcessesWithDetails(
           ScenarioQuery.unarchived,
-          GetScenarioWithDetailsOptions.detailsOnly.withFetchState
+          GetScenarioWithDetailsOptions.withsScenarioGraph.withFetchState
         )(user)
         .map { scenariosDetails =>
           Right(
             scenariosDetails.map(scenario =>
               ScenarioStatisticsInputData(
-                scenario.isFragment,
-                scenario.processingMode,
-                deploymentManagerTypeByProcessingType(scenario.processingType),
-                scenario.state.map(_.status)
+                isFragment = scenario.isFragment,
+                processingMode = scenario.processingMode,
+                deploymentManagerType = deploymentManagerTypeByProcessingType(scenario.processingType),
+                status = scenario.state.map(_.status),
+                nodesCount = scenario.scenarioGraph.map(_.nodes.length).getOrElse(0),
+                scenarioCategory = scenario.processCategory,
+                scenarioVersion = scenario.processVersionId,
+                createdBy = scenario.createdBy,
+                fragmentsUsedCount = getFragmentsUsedInScenario(scenario.scenarioGraph),
+                lastDeployedAction = scenario.lastDeployedAction,
+                scenarioId = scenario.processId
               )
             )
           )
         }
     }
-    new UsageStatisticsReportsSettingsDeterminer(config, fingerprintService, fetchNonArchivedScenarioParameters)
+    def fetchActivity(
+        scenarioInputData: List[ScenarioStatisticsInputData]
+    ): Future[Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]] = {
+      val scenarioIds = scenarioInputData.flatMap(_.scenarioId)
+
+      scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
+    }
+
+    def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
+      implicit val user: LoggedUser = NussknackerInternalUser.instance
+      componentService.getComponentsList
+        .map(Right(_))
+    }
+
+    new UsageStatisticsReportsSettingsDeterminer(
+      config,
+      fingerprintService,
+      fetchNonArchivedScenarioParameters,
+      fetchActivity,
+      fetchComponentList
+    )
+
   }
 
-  // We have four dimensions:
-  // - scenario / fragment
-  // - processing mode: streaming, r-r, batch
-  // - dm type: flink, k8s, embedded, custom
-  // - status: active (running), other
-  // We have two options:
-  // 1. To aggregate statistics for every combination - it give us 3*4*2 + 3*4 = 36 parameters
-  // 2. To aggregate statistics for every dimension separately - it gives us 2+3+4+1 = 10 parameters
-  // We decided to pick the 2nd option which gives a reasonable balance between amount of collected data and insights
-  private[statistics] def determineStatisticsForScenario(inputData: ScenarioStatisticsInputData): Map[String, Int] = {
-    Map(
-      "s_s"     -> !inputData.isFragment,
-      "s_f"     -> inputData.isFragment,
-      "s_pm_s"  -> (inputData.processingMode == ProcessingMode.UnboundedStream),
-      "s_pm_b"  -> (inputData.processingMode == ProcessingMode.BoundedStream),
-      "s_pm_rr" -> (inputData.processingMode == ProcessingMode.RequestResponse),
-      "s_dm_f"  -> (inputData.deploymentManagerType == flinkDeploymentManagerType),
-      "s_dm_l"  -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
-      "s_dm_e"  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
-      "s_dm_c"  -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
-      "s_a"     -> inputData.status.contains(SimpleStateStatus.Running),
-    ).mapValuesNow(if (_) 1 else 0)
+  private def getFragmentsUsedInScenario(scenarioGraph: Option[ScenarioGraph]): Int = {
+    scenarioGraph match {
+      case Some(graph) =>
+        graph.nodes.map {
+          case _: FragmentInput => 1
+          case _                => 0
+        }.sum
+      case None => 0
+    }
   }
 
   private[statistics] def prepareUrlString(queryParams: Map[String, String]): String = {
@@ -119,7 +130,11 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
 class UsageStatisticsReportsSettingsDeterminer(
     config: UsageStatisticsReportsConfig,
     fingerprintService: FingerprintService,
-    fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]]
+    fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
+    fetchActivity: List[ScenarioStatisticsInputData] => Future[
+      Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
+    ],
+    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]]
 )(implicit ec: ExecutionContext) {
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
@@ -134,13 +149,19 @@ class UsageStatisticsReportsSettingsDeterminer(
     }
   }
 
-  private[statistics] def determineQueryParams(): EitherT[Future, StatisticError, Map[String, String]] =
+  private[statistics] def determineQueryParams(): EitherT[Future, StatisticError, Map[String, String]] = {
     for {
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
-      scenariosStatistics = scenariosInputData.map(determineStatisticsForScenario).combineAll.mapValuesNow(_.toString)
+      scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
       fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-      basicStatistics = determineBasicStatistics(fingerprint, config)
-    } yield basicStatistics ++ scenariosStatistics
+      basicStatistics   = determineBasicStatistics(fingerprint, config)
+      generalStatistics = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
+      activity <- new EitherT(fetchActivity(scenariosInputData))
+      activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
+      componentList <- new EitherT(fetchComponentList())
+      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
+    } yield basicStatistics ++ scenariosStatistics ++ generalStatistics ++ activityStatistics ++ componentStatistics
+  }
 
   private def determineBasicStatistics(
       fingerprint: Fingerprint,
@@ -160,5 +181,12 @@ private[statistics] case class ScenarioStatisticsInputData(
     processingMode: ProcessingMode,
     deploymentManagerType: DeploymentManagerType,
     // For fragments status is empty
-    status: Option[StateStatus]
+    status: Option[StateStatus],
+    nodesCount: Int,
+    scenarioCategory: String,
+    scenarioVersion: VersionId,
+    createdBy: String,
+    fragmentsUsedCount: Int,
+    lastDeployedAction: Option[ProcessAction],
+    scenarioId: Option[ProcessId]
 )

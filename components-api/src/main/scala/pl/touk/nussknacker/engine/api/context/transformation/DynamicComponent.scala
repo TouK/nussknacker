@@ -50,7 +50,7 @@ sealed trait DynamicComponent[T] extends Component {
   )(implicit nodeId: NodeId): FinalResults = {
     val fallback = fallbackFinalResult(step, inputContext, outputVariable)
     // if some parameters are failed to define, then probably it just missing implementation of this corner case and we can just use fallback
-    if (step.parameters.map(_._2).contains(FailedToDefineParameter)) {
+    if (step.parameters.map(_._2).exists(_.isInstanceOf[FailedToDefineParameter])) {
       fallback
     } else {
       // TODO: better error
