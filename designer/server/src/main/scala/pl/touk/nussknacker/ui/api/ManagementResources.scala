@@ -269,7 +269,9 @@ class ManagementResources(
           (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
             complete {
               deploymentService
-                .processCommand(CustomActionCommand(req.actionName, process, req.params, user))
+                .processCommand(
+                  CustomActionCommand(req.actionName, process, req.comment.map(UserComment), req.params, user)
+                )
                 .flatMap(actionResult =>
                   toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
                 )

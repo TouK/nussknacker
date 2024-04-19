@@ -628,11 +628,11 @@ class DeploymentService(
 
   // TODO: further changes
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
-  //       - see those actions in the actions table
-  //       - send notifications about finished/failed custom actions
+  //       - better comment validation
   private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
     import command._
     for {
+      validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
         processIdWithName,
         actionName,
@@ -649,7 +649,7 @@ class DeploymentService(
       )
       actionResult <- runActionAndHandleResults(
         actionName,
-        None,
+        validatedComment,
         ctx
       ) {
         dispatcher
