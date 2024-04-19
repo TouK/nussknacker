@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DMScenarioCommand, ScenarioAct
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
 import pl.touk.nussknacker.ui.listener.Comment
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.Future
@@ -13,7 +14,12 @@ sealed trait ScenarioCommand[Result] {
   val commonData: CommonCommandData
 }
 
-case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Option[Comment], user: LoggedUser) {
+case class CommonCommandData(
+    processIdWithName: ProcessIdWithName,
+    comment: Option[Comment],
+    user: LoggedUser,
+    remoteUserName: Option[RemoteUserName] = None
+) {
   implicit def implicitUser: LoggedUser = user
 }
 

@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand
 }
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.{ApiCallComment, UserComment}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -268,18 +269,22 @@ class ManagementResources(
         } ~
         path("customAction" / ProcessNameSegment) { processName =>
           (post & processId(processName) & entity(as[CustomActionRequest])) { (processIdWithName, req) =>
-            complete {
-              deploymentService
-                .processCommand(
-                  CustomActionCommand(
-                    commonData = CommonCommandData(processIdWithName, req.comment.map(UserComment), user),
-                    actionName = req.actionName,
-                    params = req.params
-                  )
-                )
-                .flatMap(actionResult =>
-                  toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
-                )
+            optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
+              canOverrideUsername(processIdWithName.id, remoteUserName)(ec, user) {
+                complete {
+                  deploymentService
+                    .processCommand(
+                      CustomActionCommand(
+                        commonData = CommonCommandData(processIdWithName, req.comment.map(UserComment), user, remoteUserName),
+                        actionName = req.actionName,
+                        params = req.params
+                      )
+                    )
+                    .flatMap(actionResult =>
+                      toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)
+                    )
+                }
+              }
             }
           }
         }
