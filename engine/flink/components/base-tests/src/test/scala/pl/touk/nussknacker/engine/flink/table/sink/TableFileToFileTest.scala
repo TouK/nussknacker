@@ -25,31 +25,37 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private lazy val outputDirectory =
-    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
-  private lazy val inputFilePath =
-    new File("engine/flink/components/base-tests/src/test/resources/transactions").toPath.toAbsolutePath
+  private lazy val outputDirectory = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}")
+  private lazy val inputDirectory =
+    new File("engine/flink/components/base-tests/src/test/resources/all-types/input").toPath.toAbsolutePath
 
   private lazy val tablesDefinition =
     s"""
-      |CREATE TABLE transactions
-      |(
-      |    client_id STRING,
-      |    amount    INT
+      |CREATE TABLE input (
+      |    `string`              STRING,
+      |    `boolean`             BOOLEAN,
+      |    `tinyInt`             TINYINT,
+      |    `smallInt`            SMALLINT,
+      |    `int`                 INT,
+      |    `bigint`              BIGINT,
+      |    `float`               FLOAT,
+      |    `double`              DOUBLE,
+      |    `decimal`             DECIMAL,
+      |    `date`                DATE,
+      |    `time`                TIME,
+      |    `timestamp`           TIMESTAMP,
+      |    `timestampLtz`        TIMESTAMP_LTZ
       |) WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$inputFilePath',
-      |      'format' = 'csv'
+      |      'path' = 'file:///$inputDirectory',
+      |      'format' = 'json'
       |);
-      |CREATE TABLE transactions_summary
-      |(
-      |    client_id STRING,
-      |    amount    INT
-      |) WITH (
+      |
+      |CREATE TABLE output WITH (
       |      'connector' = 'filesystem',
       |      'path' = 'file:///$outputDirectory',
-      |      'format' = 'csv'
-      |);
+      |      'format' = 'json'
+      |) LIKE input;
       |
       |""".stripMargin
 
@@ -77,7 +83,7 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
     super.afterAll()
   }
 
-  test("should do file-to-file ping-pong") {
+  test("should do file-to-file ping-pong for all primitive types") {
     val runner = TestScenarioRunner
       .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
       .withExtraComponents(tableComponents)
@@ -85,8 +91,8 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> "'transactions'")
-      .emptySink("end", "table", "Table" -> "'transactions_summary'", "Value" -> "#input")
+      .source("start", "table", "Table" -> "'input'")
+      .emptySink("end", "table", "Table" -> "'output'", "Value" -> "#input")
 
     val result = runner.runWithData(
       scenario = scenario,
@@ -96,18 +102,15 @@ class TableFileToFileTest extends AnyFunSuite with FlinkSpec with Matchers with 
     )
 
     result.isValid shouldBe true
-    val transactionsSummaryFiles = eventually {
+    val outputFile = eventually {
       val files = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
       files should have size 1
       files
     }
-    val transactionsSummaryContentLines =
-      FileUtils.readLines(transactionsSummaryFiles.head, StandardCharsets.UTF_8).asScala.toSet
-    transactionsSummaryContentLines shouldBe Set(
-      "client1,1",
-      "client2,2",
-      "client1,3"
-    )
+    val outputFileContent = FileUtils.readFileToString(outputFile.head, StandardCharsets.UTF_8)
+    val inputFileContent  = FileUtils.readFileToString(inputDirectory.toFile.listFiles().head, StandardCharsets.UTF_8)
+
+    outputFileContent shouldBe inputFileContent
   }
 
 }

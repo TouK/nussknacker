@@ -1763,7 +1763,8 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
     name := "nussknacker-flink-base-components-tests",
     libraryDependencies ++= Seq(
       "org.apache.flink" % "flink-connector-files" % flinkV % Test,
-      "org.apache.flink" % "flink-csv"             % flinkV % Test
+      "org.apache.flink" % "flink-csv"             % flinkV % Test,
+      "org.apache.flink" % "flink-json"            % flinkV % Test
     )
   )
   .dependsOn(
