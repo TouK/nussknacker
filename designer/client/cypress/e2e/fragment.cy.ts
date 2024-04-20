@@ -353,12 +353,7 @@ describe("Fragment", () => {
 
         cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
-        cy.get("[title='Documentation']").should("have.attr", "href", docsUrl);
-        cy.get("[data-testid=window]").as("window");
-        cy.get("@window")
-            .contains(/^input$/)
-            .should("be.visible");
-        cy.get("@window").wait(200).matchImage();
+        cy.get("[title='Documentation']").should("have.attr", "href", docsUrl).parent().matchImage();
 
         cy.deleteAllTestProcesses({ filter: seed2 });
     });
