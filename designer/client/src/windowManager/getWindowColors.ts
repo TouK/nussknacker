@@ -1,17 +1,18 @@
 import { css } from "@emotion/css";
 import { WindowKind } from "./WindowKind";
+import { Theme } from "@mui/material";
 
-export function getWindowColors(type = WindowKind.default): string {
+export function getWindowColors(type = WindowKind.default, theme: Theme): string {
     switch (type) {
         case WindowKind.calculateCounts:
         case WindowKind.compareVersions:
-            return css({ backgroundColor: "#1ba1af", color: "white" });
+            return css(theme.palette.custom.windows.compareVersions);
         case WindowKind.customAction:
-            return css({ backgroundColor: "white", color: "black" });
+            return css(theme.palette.custom.windows.customAction);
         case WindowKind.addProcess:
         case WindowKind.addFragment:
         case WindowKind.default:
         default:
-            return css({ backgroundColor: "#2D8E54", color: "white" });
+            return css(theme.palette.custom.windows.default);
     }
 }

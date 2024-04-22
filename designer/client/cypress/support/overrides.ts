@@ -126,3 +126,15 @@ Cypress.Commands.overwrite<"trigger", "element">("trigger", (originalFn, subject
     }
     return originalFn(subject, eventName, ...args);
 });
+
+Cypress.Commands.overwrite<"select", "element">("select", (originalFn, subject, value, options) => {
+    const handleReactSelectSelection =
+        subject[0].className.includes("singleValue") || subject[0].className.includes("control") || subject[0].ariaLabel === "type-select";
+
+    if (handleReactSelectSelection) {
+        cy.wrap(subject).click({ force: true });
+        cy.get(`[id$='option-${value}']`).click({ force: true });
+    } else {
+        return originalFn(subject, value, options);
+    }
+});

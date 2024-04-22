@@ -63,7 +63,7 @@ export const ProcessingModeItem = ({ processingMode, filtersContext }: Props) =>
             onClick={onClick}
             aria-selected={isSelected}
         >
-            <item.Icon />
+            <item.Icon color={"inherit"} />
             <Typography variant={"caption"}>{item.displayableName}</Typography>
         </Button>
     );

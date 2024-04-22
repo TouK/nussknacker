@@ -15,6 +15,7 @@ import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { cx } from "@emotion/css";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
+import { nodeInputWithError, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 
 interface InputProps {
     value: string;
@@ -63,8 +64,8 @@ export function ExpressionSuggest(props: Props): JSX.Element {
         <>
             <div
                 className={cx([
-                    "row-ace-editor",
-                    showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
+                    rowAceEditor,
+                    showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
                     isMarked && "marked",
                     editorFocused && "focused",
                     inputProps.readOnly && "read-only",

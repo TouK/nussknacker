@@ -4,11 +4,12 @@ import { FixedListParameterVariant, onChangeType } from "../../../item";
 import InitialValue from "../fields/InitialValue";
 import { FixedValuesSetting } from "../fields/FixedValuesSetting";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
-import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
+import { TextAreaNode } from "../../../../../../FormElements";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { FixedValuesGroup } from "../fields/FixedValuesGroup";
+import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     item: FixedListParameterVariant;
@@ -54,12 +55,12 @@ export const FixedListVariant = ({ item, path, onChange, readOnly, variableTypes
             />
             <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <TextAreaNodeWithFocus
+                <TextAreaNode
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
                     disabled={readOnly}
-                    className={"node-input"}
+                    className={nodeInput}
                 />
             </FormControl>
         </>

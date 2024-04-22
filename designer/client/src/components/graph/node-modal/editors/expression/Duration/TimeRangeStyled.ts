@@ -1,5 +1,4 @@
 import { css, styled } from "@mui/material";
-import { alpha } from "../../../../../../containers/theme/helpers";
 
 export const TimeRangeStyled = styled("div")(
     ({ theme }) => css`
@@ -19,11 +18,9 @@ export const TimeRangeStyled = styled("div")(
         .time-range-input {
             width: 45px !important;
             border: none !important;
-            background-color: ${theme.custom.colors.secondaryBackground};
-            color: ${theme.custom.colors.secondaryColor};
+            background-color: ${theme.palette.background.paper};
             text-align: center;
             padding-left: 12px;
-            outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
             height: 35px;
         }
 

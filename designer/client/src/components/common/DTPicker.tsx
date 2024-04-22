@@ -2,15 +2,12 @@ import React from "react";
 import DateTimePicker from "react-datetime";
 import { useTranslation } from "react-i18next";
 import { styled } from "@mui/material";
-import { NodeInputCss } from "../NodeInput";
-import "./DTPicker.css";
+import { nodeInputCss } from "../NodeInput";
 
-const DTPickerStyled = styled(DateTimePicker)(
-    ({ theme }) => `
-    ${NodeInputCss(theme).styles}
-    padding: 0 !important;
-`,
-);
+const DTPickerStyled = styled(DateTimePicker)(() => ({
+    ...nodeInputCss,
+    padding: "0 !important",
+}));
 const style = {
     background: "none",
     border: "none",
@@ -20,7 +17,6 @@ const style = {
     display: "flex",
     padding: "0 10px",
     alignItems: "center",
-    outline: "none",
 };
 
 export function DTPicker({ dateFormat, timeFormat, inputProps, onChange, value }: DateTimePicker.DatetimepickerProps): JSX.Element {
