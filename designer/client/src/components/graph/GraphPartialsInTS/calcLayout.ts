@@ -19,7 +19,7 @@ export function calcLayout(graph: dia.Graph, selectedItems: string[] = []): void
             dagre: dagre,
             nodeSep: 60,
             edgeSep: 0,
-            rankSep: 132,
+            rankSep: 102,
             rankDir: "TB",
         });
         if (!util.isEqual(graphPoint, alignPoint)) {
