@@ -26,6 +26,7 @@ case class KafkaConfig(
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
     kafkaAddress: Option[String] = None,
+    idlenessConfig: Option[IdlenessConfig] = None
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -43,21 +44,14 @@ case class KafkaConfig(
       .map(max => java.time.Duration.ofMillis(max.toLong))
       .getOrElse(KafkaEspPropertiesConfig.defaultMaxOutOfOrdernessMillisDefault)
 
-  def idleTimeout: Option[java.time.Duration] = for {
-    enableIdleTimeout <- kafkaEspProperties
-      .flatMap(_.get(KafkaEspPropertiesConfig.enableIdleTimeoutPath))
-      .map(_.toBoolean)
-      .orElse(Some(KafkaEspPropertiesConfig.enableIdleTimeoutDefault))
-    timeoutDuration <-
-      if (enableIdleTimeout) {
-        kafkaEspProperties
-          .flatMap(_.get(KafkaEspPropertiesConfig.idleTimeoutInMillisPath))
-          .map(timeout => java.time.Duration.ofMillis(timeout.toLong))
-          .orElse(Some(KafkaEspPropertiesConfig.idleTimeoutInMillisDefault))
-      } else {
-        None
-      }
-  } yield timeoutDuration
+  def idleTimeout: Option[java.time.Duration] = {
+    val finalIdleConfig = idlenessConfig.getOrElse(IdlenessConfig.default)
+    if (finalIdleConfig.enableIdleTimeout) {
+      Some(java.time.Duration.ofMillis(finalIdleConfig.idleTimeoutDuration.toMillis))
+    } else {
+      None
+    }
+  }
 
   def kafkaBootstrapServers: Option[String] = kafkaProperties
     .getOrElse(Map.empty)
@@ -70,10 +64,6 @@ private object KafkaEspPropertiesConfig {
   val forceLatestReadPath                   = "forceLatestRead"
   val defaultMaxOutOfOrdernessMillisPath    = "defaultMaxOutOfOrdernessMillis"
   val defaultMaxOutOfOrdernessMillisDefault = java.time.Duration.ofMillis(60000)
-  val enableIdleTimeoutPath                 = "enableIdleTimeout"
-  val enableIdleTimeoutDefault              = true
-  val idleTimeoutInMillisPath               = "idleTimeoutInMillis"
-  val idleTimeoutInMillisDefault            = java.time.Duration.ofMillis(180000)
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
@@ -121,4 +111,10 @@ object CachedTopicsExistenceValidatorConfig {
     adminClientTimeout = 500 millis
   )
 
+}
+
+case class IdlenessConfig(enableIdleTimeout: Boolean, idleTimeoutDuration: FiniteDuration)
+
+object IdlenessConfig {
+  val default: IdlenessConfig = IdlenessConfig(enableIdleTimeout = true, idleTimeoutDuration = 3 minutes)
 }

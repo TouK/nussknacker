@@ -55,8 +55,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * "Basic Decision Table" -> "Decision Table"
     * "Expression" -> "Filtering expression"
 * [#5875](https://github.com/TouK/nussknacker/pull/5875) Added configurable idle timeout to Flink Kafka source with the
-  default value of 3 minutes. You can configure this timeout in Kafka component config at `kafkaEspProperties.idleTimeoutInMillis` 
-  or disable it at `kafkaEspProperties.enableIdleTimeout`. You can learn about idleness
+  default value of 3 minutes. You can configure this timeout in Kafka component config at `idlenessConfig.idleTimeoutDuration` 
+  or disable it at `idlenessConfig.enableIdleTimeout`. You can learn about idleness
   in [Flink general docs](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources)
   and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
 * [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag

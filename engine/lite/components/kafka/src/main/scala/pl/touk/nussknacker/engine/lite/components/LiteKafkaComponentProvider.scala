@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{
   NussknackerVersion
 }
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalSchemaBasedSerdeProvider,
@@ -38,6 +39,13 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
     def universal(componentType: ComponentType) = s"DataSourcesAndSinks#kafka-$componentType"
 
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+
+    if (KafkaConfig.parseConfig(dependencies.config).idlenessConfig.isDefined) {
+      throw new IllegalArgumentException(
+        "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
+          "Please remove the idleness config from your Lite Kafka sources config."
+      )
+    }
 
     List(
       ComponentDefinition(

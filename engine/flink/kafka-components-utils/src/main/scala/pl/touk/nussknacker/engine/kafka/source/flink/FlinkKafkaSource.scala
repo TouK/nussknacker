@@ -111,9 +111,9 @@ class FlinkKafkaSource[T](
   override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
     Some(
       StandardTimestampWatermarkHandler.boundedOutOfOrderness(
-        None,
-        kafkaConfig.defaultMaxOutOfOrdernessMillis,
-        kafkaConfig.idleTimeout
+        extract = None,
+        maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
+        idlenessTimeoutDuration = kafkaConfig.idleTimeout
       )
     )
   )
