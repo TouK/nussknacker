@@ -1431,7 +1431,8 @@ lazy val developmentTestsDeploymentManager = (project in development("deployment
   )
   .dependsOn(
     deploymentManagerApi % Provided,
-    flinkDeploymentManager, // for accessing flink property config
+    flinkDeploymentManager, // for accessing Flink property config
+    scenarioCompiler,       // for run tests on the Flink
     testUtils % Test
   )
 
