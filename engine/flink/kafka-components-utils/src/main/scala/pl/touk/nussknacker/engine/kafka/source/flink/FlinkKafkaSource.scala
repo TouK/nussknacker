@@ -36,7 +36,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.time.Duration
@@ -111,18 +110,11 @@ class FlinkKafkaSource[T](
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
     Some(
-      new StandardTimestampWatermarkHandler[T]({
-        val watermarkStrategyWithConfiguredLateness: WatermarkStrategy[T] = WatermarkStrategy.forBoundedOutOfOrderness(
-          Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
-        )
-        if (kafkaConfig.enableIdleTimeout) {
-          watermarkStrategyWithConfiguredLateness.withIdleness(
-            java.time.Duration.ofMillis(kafkaConfig.idleTimeout.toMillis)
-          )
-        } else {
-          watermarkStrategyWithConfiguredLateness
-        }
-      })
+      StandardTimestampWatermarkHandler.boundedOutOfOrderness(
+        None,
+        kafkaConfig.defaultMaxOutOfOrdernessMillis,
+        kafkaConfig.idleTimeout
+      )
     )
   )
 
@@ -211,8 +203,4 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     TypeInformation.of(classOf[ConsumerRecord[K, V]])
   }
 
-}
-
-object FlinkKafkaSource {
-  val defaultMaxOutOfOrdernessMillis = 60000
 }

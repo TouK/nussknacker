@@ -21,7 +21,10 @@ class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSuppor
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(
     StandardTimestampWatermarkHandler
-      .boundedOutOfOrderness[String]((_: String) => System.currentTimeMillis(), Duration.ofMinutes(10))
+      .boundedOutOfOrderness[String](
+        assigner = (_: String) => System.currentTimeMillis(),
+        maxOutOfOrderness = Duration.ofMinutes(10),
+      )
   )
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner

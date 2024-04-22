@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 
 import scala.concurrent.duration._
 
@@ -27,9 +26,6 @@ case class KafkaConfig(
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
     kafkaAddress: Option[String] = None,
-    // TODO question: move it into a generic map / move it into nested config class / leave it here?
-    enableIdleTimeout: Boolean = true,
-    idleTimeout: FiniteDuration = 3 minutes
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -38,16 +34,46 @@ case class KafkaConfig(
     avroAsJsonSerialization
   )
 
-  def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
+  def forceLatestRead: Option[Boolean] =
+    kafkaEspProperties.flatMap(_.get(KafkaEspPropertiesConfig.forceLatestReadPath)).map(_.toBoolean)
 
-  def defaultMaxOutOfOrdernessMillis: Option[Long] =
-    kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)
+  def defaultMaxOutOfOrdernessMillis: java.time.Duration =
+    kafkaEspProperties
+      .flatMap(_.get(KafkaEspPropertiesConfig.defaultMaxOutOfOrdernessMillisPath))
+      .map(max => java.time.Duration.ofMillis(max.toLong))
+      .getOrElse(KafkaEspPropertiesConfig.defaultMaxOutOfOrdernessMillisDefault)
+
+  def idleTimeout: Option[java.time.Duration] = for {
+    enableIdleTimeout <- kafkaEspProperties
+      .flatMap(_.get(KafkaEspPropertiesConfig.enableIdleTimeoutPath))
+      .map(_.toBoolean)
+      .orElse(Some(KafkaEspPropertiesConfig.enableIdleTimeoutDefault))
+    timeoutDuration <-
+      if (enableIdleTimeout) {
+        kafkaEspProperties
+          .flatMap(_.get(KafkaEspPropertiesConfig.idleTimeoutInMillisPath))
+          .map(timeout => java.time.Duration.ofMillis(timeout.toLong))
+          .orElse(Some(KafkaEspPropertiesConfig.idleTimeoutInMillisDefault))
+      } else {
+        None
+      }
+  } yield timeoutDuration
 
   def kafkaBootstrapServers: Option[String] = kafkaProperties
     .getOrElse(Map.empty)
     .get("bootstrap.servers")
     .orElse(kafkaAddress)
 
+}
+
+private object KafkaEspPropertiesConfig {
+  val forceLatestReadPath                   = "forceLatestRead"
+  val defaultMaxOutOfOrdernessMillisPath    = "defaultMaxOutOfOrdernessMillis"
+  val defaultMaxOutOfOrdernessMillisDefault = java.time.Duration.ofMillis(60000)
+  val enableIdleTimeoutPath                 = "enableIdleTimeout"
+  val enableIdleTimeoutDefault              = true
+  val idleTimeoutInMillisPath               = "idleTimeoutInMillis"
+  val idleTimeoutInMillisDefault            = java.time.Duration.ofMillis(180000)
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {

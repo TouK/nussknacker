@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory
   extractTimestampField
 }
 import pl.touk.nussknacker.engine.kafka.source.delayed.{DelayCalculator, FixedDelayCalculator}
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.kafka.source.flink.{
   FlinkConsumerRecordBasedKafkaSource,
   FlinkKafkaSource,
@@ -161,8 +160,9 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       extract: SerializableTimestampAssigner[ConsumerRecord[K, V]]
   ): TimestampWatermarkHandler[ConsumerRecord[K, V]] = {
     StandardTimestampWatermarkHandler.boundedOutOfOrderness(
-      extract,
-      Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
+      Some(extract),
+      kafkaConfig.defaultMaxOutOfOrdernessMillis,
+      kafkaConfig.idleTimeout
     )
   }
 
