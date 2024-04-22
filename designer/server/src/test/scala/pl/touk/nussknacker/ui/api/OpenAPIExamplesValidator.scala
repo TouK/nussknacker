@@ -4,17 +4,18 @@ import com.networknt.schema.{InputFormat, InvalidSchemaRefException, JsonSchemaF
 import io.circe.Json
 import io.circe.syntax.EncoderOps
 import org.scalactic.anyvals.NonEmptyList
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import sttp.apispec.{ExampleMultipleValue, ExampleSingleValue, Schema}
 import sttp.apispec.openapi.{MediaType, OpenAPI, Operation}
 import sttp.apispec.openapi.circe._
+
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
 object OpenAPIExamplesValidator {
 
   def validateExamples(spec: OpenAPI): List[InvalidExample] = {
-    val componentsSchemas = spec.components.map(_.schemas).getOrElse(Map.empty).map { case (key, schemaLike) =>
-      s"#/components/schemas/$key" -> schemaLike.asJson
-    }
+    val componentsSchemas = spec.components.map(_.schemas.mapValuesNow(_.asJson)).getOrElse(Map.empty)
     for {
       (_, pathItem) <- spec.paths.pathItems.toList
       operation <- List(
@@ -64,7 +65,7 @@ object OpenAPIExamplesValidator {
         schema match {
           case jsonSchema: Schema =>
             val resolvedSchema = removeNullsFromJson(
-              resolveSchemaReferences(jsonSchema.asJson, componentsSchemas, Set.empty)
+              resolveSchemaReferences(jsonSchema.asJson, componentsSchemas)
             )
             val schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
             val schema        = schemaFactory.getSchema(resolvedSchema.spaces2)
@@ -73,8 +74,8 @@ object OpenAPIExamplesValidator {
         }
       }
       (exampleId, refOrExample) <- mediaType.examples.toList
-      example           <- refOrExample.toOption.toList
-      exampleValue      <- example.value.toList
+      example                   <- refOrExample.toOption.toList
+      exampleValue              <- example.value.toList
       singleExampleValue <- exampleValue match {
         case ExampleSingleValue(value)    => List(value)
         case ExampleMultipleValue(values) => values
@@ -85,47 +86,45 @@ object OpenAPIExamplesValidator {
       }
       // validate works only with objects?
       if singleExampleValueString.startsWith("{")
-      invalidJson <- {
-        try {
-          NonEmptyList
-            .from(jsonSchema.validate(singleExampleValueString, InputFormat.JSON).asScala.toList)
-            .map { errors =>
-              InvalidExample(singleExampleValueString, operation.operationId, isRequest, exampleId, errors)
-            }
-            .toList
-        } catch {
-          // FIXME: recursive schemas
-          case _: InvalidSchemaRefException => List.empty
+      invalidJson <- NonEmptyList
+        .from(jsonSchema.validate(singleExampleValueString, InputFormat.JSON).asScala.toList)
+        .map { errors =>
+          InvalidExample(singleExampleValueString, operation.operationId, isRequest, exampleId, errors)
         }
-      }
+        .toList
     } yield invalidJson
   }
 
   private def resolveSchemaReferences(
       schema: Json,
-      components: Map[String, Json],
-      alreadyResolved: Set[String]
+      components: Map[String, Json]
   ): Json = {
-    (for {
-      ref <- schema.hcursor.get[String]("$ref").toOption
-      // FIXME: recursive schemas
-      if !alreadyResolved.contains(ref)
-      resolvedSchema <- components.get(ref)
-    } yield {
-      resolveSchemaReferences(resolvedSchema, components, alreadyResolved + ref)
-    }).getOrElse {
-      schema.fold(
-        jsonNull = schema,
-        jsonBoolean = Json.fromBoolean,
-        jsonNumber = Json.fromJsonNumber,
-        jsonString = Json.fromString,
-        jsonArray = arr => Json.fromValues(arr.map(resolveSchemaReferences(_, components, alreadyResolved))),
-        jsonObject = obj =>
-          Json.fromFields(obj.toList.map { case (key, value) =>
-            key -> resolveSchemaReferences(value, components, alreadyResolved)
-          })
-      )
+    def resolveNested(nested: Json): Json = {
+      nested.hcursor
+        .downField("$ref")
+        .withFocus(ref =>
+          ref.asString.map(_.replace("#/components/schemas/", "#/definitions/")).map(Json.fromString).getOrElse(ref)
+        )
+        .top
+        .getOrElse(nested)
+        .fold(
+          jsonNull = nested,
+          jsonBoolean = Json.fromBoolean,
+          jsonNumber = Json.fromJsonNumber,
+          jsonString = Json.fromString,
+          jsonArray = arr => Json.fromValues(arr.map(resolveNested)),
+          jsonObject = obj => Json.fromFields(obj.toMap.mapValuesNow(resolveNested))
+        )
     }
+
+    val topLevel = schema.mapObject(
+      _.add(
+        "definitions",
+        Json.fromFields(components.mapValuesNow(resolveNested))
+      )
+    )
+
+    resolveNested(topLevel)
   }
 
   private def removeNullsFromJson(json: Json): Json = {
