@@ -304,6 +304,7 @@ val logbackV                = "1.2.12"
 val logbackJsonV            = "0.1.5"
 val circeV                  = "0.14.5"
 val circeGenericExtrasV     = "0.14.3"
+val circeYamlV              = "0.14.2"
 val jwtCirceV               = "9.3.0"
 val jacksonV                = "2.14.3"
 val catsV                   = "2.9.0"
@@ -1954,7 +1955,7 @@ lazy val designer = (project in file("designer/server"))
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
         "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
         "com.networknt"                  % "json-schema-validator"           % "1.4.0"              % Test,
-        "io.circe"                      %% "circe-yaml-v12"                  % circeV               % Test,
+        "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
