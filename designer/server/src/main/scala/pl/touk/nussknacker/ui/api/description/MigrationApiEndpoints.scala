@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.description
 
 import akka.http.scaladsl.model.StatusCode
+import cats.Show
 import derevo.circe._
 import derevo.derive
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
@@ -38,7 +39,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .in(
         jsonBody[MigrateScenarioRequestDto].example(
           Example.of(
-            summary = Some("example of migration request between environments"),
+            summary = Some("Migrate given scenario to current Nu instance"),
             value = MigrateScenarioRequestDtoV2(
               version = 1,
               sourceEnvironmentId = "testEnv",
@@ -57,49 +58,28 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .errorOut(migrateEndpointErrorOutput)
       .withSecurity(auth)
 
-  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, MigrationError, ApiVersion, Any] =
+  lazy val scenarioDescriptionVersionEndpoint: SecuredEndpoint[Unit, Unit, ApiVersion, Any] =
     baseNuApiEndpoint
       .summary("current version of the scenario description version being used")
       .tag("Migrations")
       .get
       .in("migration" / "scenario" / "description" / "version")
       .out(jsonBody[ApiVersion])
-      .errorOut(scenarioDescriptionVersionEndpointErrorOutput)
       .withSecurity(auth)
-
-  private val scenarioDescriptionVersionEndpointErrorOutput: EndpointOutput.OneOf[MigrationError, MigrationError] =
-    oneOf[MigrationError](
-      oneOfVariant(
-        Unauthorized,
-        plainBody[MigrationError.Unauthorized]
-      )
-    )
 
   private val migrateEndpointErrorOutput: EndpointOutput.OneOf[MigrationError, MigrationError] =
     oneOf[MigrationError](
       oneOfVariant(
         BadRequest,
-        plainBody[MigrationError.Validation]
+        plainBody[MigrationError.InvalidScenario]
       ),
       oneOfVariant(
         BadRequest,
-        plainBody[MigrationError.MigrationToArchived]
+        plainBody[MigrationError.CannotMigrateArchivedScenario]
       ),
       oneOfVariant(
         Unauthorized,
-        plainBody[MigrationError.Unauthorized]
-      ),
-      oneOfVariant(
-        InternalServerError,
-        plainBody[MigrationError.MigrationApiAdapter]
-      ),
-      oneOfVariant(
-        InternalServerError,
-        plainBody[MigrationError.Unknown]
-      ),
-      oneOfVariant(
-        InternalServerError,
-        plainBody[Dtos.MigrationError.RemoteEnvironmentCommunicationError]
+        plainBody[MigrationError.InsufficientPermission]
       )
     )
 
@@ -118,14 +98,15 @@ object MigrationApiEndpoints {
     sealed trait MigrationError
 
     object MigrationError {
-      final case class Validation(errors: ValidationErrors)                                extends MigrationError
-      final case class MigrationToArchived(processName: ProcessName, environment: String)  extends MigrationError
-      final case class Unauthorized(user: LoggedUser)                                      extends MigrationError
+      final case class InvalidScenario(errors: ValidationErrors) extends MigrationError
+      final case class CannotMigrateArchivedScenario(processName: ProcessName, environment: String)
+          extends MigrationError
+      final case class InsufficientPermission(user: LoggedUser)                            extends MigrationError
       final case class MigrationApiAdapter(apiAdapterServiceError: ApiAdapterServiceError) extends MigrationError
 
-      implicit val validationErrorCodec: Codec[String, Validation, CodecFormat.TextPlain] =
+      implicit val invalidScenarioErrorCodec: Codec[String, InvalidScenario, CodecFormat.TextPlain] =
         Codec.string.map(
-          Mapping.from[String, Validation](deserializationException)(validationError => {
+          Mapping.from[String, InvalidScenario](deserializationException)(validationError => {
             val errors = validationError.errors
 
             val messages = errors.globalErrors.map(_.error.message) ++
@@ -136,110 +117,29 @@ object MigrationApiEndpoints {
           })
         )
 
-      final case class RemoteEnvironmentCommunicationError(message: String) extends MigrationError
-
-      final case class Unknown(message: String) extends MigrationError
-
-      implicit val migrationToArchivedErrorCodec: Codec[String, MigrationToArchived, CodecFormat.TextPlain] =
+      implicit val cannotMigrateArchivedScenarioErrorCodec
+          : Codec[String, CannotMigrateArchivedScenario, CodecFormat.TextPlain] =
         Codec.string.map(
-          Mapping.from[String, MigrationToArchived](deserializationException)(migrationToArchived => {
+          Mapping.from[String, CannotMigrateArchivedScenario](deserializationException)(migrationToArchived => {
             val processName = migrationToArchived.processName
             val environment = migrationToArchived.environment
             s"Cannot migrate, scenario $processName is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
           })
         )
 
-      implicit val unauthorizedErrorCodec: Codec[String, Unauthorized, CodecFormat.TextPlain] =
+      implicit val insufficientPermissionErrorCodec: Codec[String, InsufficientPermission, CodecFormat.TextPlain] =
         Codec.string.map(
-          Mapping.from[String, Unauthorized](deserializationException)(unauthorized => {
+          Mapping.from[String, InsufficientPermission](deserializationException)(unauthorized => {
             val user = unauthorized.user
 
             s"The supplied user [${user.username}] is not authorized to access this resource"
           })
         )
 
-      implicit val migrationApiAdapterErrorCodec: Codec[String, MigrationApiAdapter, CodecFormat.TextPlain] =
-        Codec.string.map(
-          Mapping.from[String, MigrationApiAdapter](deserializationException)(migrationApiAdapter => {
-            val apiAdapterError = migrationApiAdapter.apiAdapterServiceError
-
-            apiAdapterError match {
-              case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
-                signedNoOfVersionsLeftToApply match {
-                  case n if n >= 0 =>
-                    s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
-                  case _ =>
-                    s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
-                }
-            }
-          })
-        )
-
-      implicit val unknownErrorCodec: Codec[String, Unknown, CodecFormat.TextPlain] =
-        Codec.string.map(
-          Mapping.from[String, Unknown](deserializationException)(unknown => {
-            val message = unknown.message
-
-            s"Unknown migration between environments error happened: $message"
-          })
-        )
-
-      implicit val remoteEnvironmentCommunicationErrorCodec
-          : Codec[String, RemoteEnvironmentCommunicationError, CodecFormat.TextPlain] =
-        Codec.string.map(
-          Mapping.from[String, RemoteEnvironmentCommunicationError](deserializationException)(
-            remoteEnvironmentCommunicationError => {
-              val message = remoteEnvironmentCommunicationError.message
-
-              message
-            }
-          )
-        )
-
     }
 
     def deserializationException =
       (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
-    implicit val notFoundErrorCodec: Codec[String, NotFoundError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, NotFoundError](deserializationException)(_.getMessage)
-      )
-
-    implicit val migrationToArchivedErrorCodec: Codec[String, MigrationToArchivedError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, MigrationToArchivedError](deserializationException)(_.getMessage)
-      )
-
-    implicit val badRequestErrorCodec: Codec[String, BadRequestError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, BadRequestError](deserializationException)(_.getMessage)
-      )
-
-    implicit val unauthorizedErrorCodec: Codec[String, UnauthorizedError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, UnauthorizedError](deserializationException)(_.getMessage)
-      )
-
-    implicit val illegalOperationErrorCodec: Codec[String, IllegalOperationError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, IllegalOperationError](deserializationException)(_.getMessage)
-      )
-
-    implicit val otherErrorCodec: Codec[String, OtherError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, OtherError](deserializationException)(_.getMessage)
-      )
-
-    implicit val migrationValidationErrorCodec: Codec[String, MigrationValidationError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, MigrationValidationError](deserializationException)(_.getMessage)
-      )
-
-    implicit val fatalErrorCodec: Codec[String, FatalError, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, FatalError](deserializationException)(_.getMessage)
-      )
 
     sealed trait MigrateScenarioRequestDto
 

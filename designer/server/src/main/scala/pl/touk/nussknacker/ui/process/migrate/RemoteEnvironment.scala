@@ -266,7 +266,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   private def fetchRemoteMigrationScenarioDescriptionVersion(implicit ec: ExecutionContext) = {
     EitherT(
       fetchRemoteMigrationScenarioDescriptionVersionAux.map[Either[NuDesignerError, Int]](apiVersion =>
-        Right(apiVersion.value)
+        Right(apiVersion.version)
       )
     )
   }

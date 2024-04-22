@@ -4,4 +4,4 @@ import derevo.circe._
 import derevo.derive
 
 @derive(encoder, decoder)
-final case class ApiVersion(value: Int)
+final case class ApiVersion(version: Int)

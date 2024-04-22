@@ -31,8 +31,8 @@ class MigrationApiHttpService(
 
   expose {
     remoteEnvironmentApiEndpoints.scenarioDescriptionVersionEndpoint
-      .serverSecurityLogic(authorizeKnownUser[MigrationError])
-      .serverLogic(_ => _ => Future(Right(new ApiVersion(migrationApiAdapterService.getCurrentApiVersion))))
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogic(_ => _ => Future(Right(ApiVersion(migrationApiAdapterService.getCurrentApiVersion))))
   }
 
 }

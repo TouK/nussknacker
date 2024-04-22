@@ -40,8 +40,8 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .body(
-          "value",
-          equalTo[Int](MigrationApiAdapters.adapters.keySet.size + 1)
+          "version",
+          equalTo[Int](2)
         )
     }
   }

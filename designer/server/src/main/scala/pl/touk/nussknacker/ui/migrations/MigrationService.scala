@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.migrations
 
-import akka.http.scaladsl.model.StatusCode
 import cats.data.EitherT
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -10,7 +9,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{MigrateScenarioRequestDto, MigrationError}
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrationError
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
@@ -22,28 +21,15 @@ import pl.touk.nussknacker.ui.process.ProcessService.{
   GetScenarioWithDetailsOptions,
   UpdateScenarioCommand
 }
-import pl.touk.nussknacker.ui.process.migrate.{
-  MigrationApiAdapterError,
-  MigrationToArchivedError,
-  MigrationValidationError,
-  RemoteEnvironmentCommunicationError
-}
+import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
-import pl.touk.nussknacker.ui.util.ApiAdapterServiceError
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
-import pl.touk.nussknacker.ui.{
-  BadRequestError,
-  FatalError,
-  IllegalOperationError,
-  NotFoundError,
-  NuDesignerError,
-  OtherError,
-  UnauthorizedError
-}
+import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -76,14 +62,20 @@ class MigrationService(
 
     liftedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
-        EitherT.leftT(MigrationError.MigrationApiAdapter(apiAdapterServiceError))
+        throw new IllegalStateException(apiAdapterServiceError match {
+          case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+            signedNoOfVersionsLeftToApply match {
+              case n if n >= 0 =>
+                s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
+              case _ =>
+                s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
+            }
+        })
       case Right(currentMigrateScenarioRequest: CurrentMigrateScenarioData) =>
         EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
       case _ =>
-        EitherT.leftT(
-          MigrationError.RemoteEnvironmentCommunicationError(
-            "Migration API adapter service lifted up remote migration request not to its newest local version"
-          )
+        throw new IllegalStateException(
+          "Migration API adapter service lifted up remote migration request not to its newest local version"
         )
     }
   }
@@ -141,11 +133,11 @@ class MigrationService(
     } yield ()
 
     result.leftMap {
-      case _: UnauthorizedError => MigrationError.Unauthorized(loggedUser)
+      case _: UnauthorizedError => MigrationError.InsufficientPermission(loggedUser)
       case _ @MigrationToArchivedError(processName, environment) =>
-        MigrationError.MigrationToArchived(processName, environment)
-      case _ @MigrationValidationError(errors) => MigrationError.Validation(errors)
-      case nuDesignerError: NuDesignerError    => MigrationError.Unknown(nuDesignerError.getMessage)
+        MigrationError.CannotMigrateArchivedScenario(processName, environment)
+      case _ @MigrationValidationError(errors) => MigrationError.InvalidScenario(errors)
+      case nuDesignerError: NuDesignerError    => throw new IllegalStateException(nuDesignerError.getMessage)
     }.value
   }
 
