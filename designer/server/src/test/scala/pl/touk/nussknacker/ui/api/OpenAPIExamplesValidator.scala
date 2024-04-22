@@ -61,18 +61,16 @@ object OpenAPIExamplesValidator {
   ): List[InvalidExample] = {
     for {
       schema <- mediaType.schema.toList
-      jsonSchema <- {
-        schema match {
-          case jsonSchema: Schema =>
-            val resolvedSchema = removeNullsFromJson(
+      resolvedSchema <- schema match {
+        case jsonSchema: Schema =>
+          List(
+            removeNullsFromJson(
               resolveSchemaReferences(jsonSchema.asJson, componentsSchemas)
             )
-            val schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012)
-            val schema        = schemaFactory.getSchema(resolvedSchema.spaces2)
-            List(schema)
-          case _ => Nil
-        }
+          )
+        case _ => Nil
       }
+      jsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(resolvedSchema.spaces2)
       (exampleId, refOrExample) <- mediaType.examples.toList
       example                   <- refOrExample.toOption.toList
       exampleValue              <- example.value.toList
@@ -89,7 +87,7 @@ object OpenAPIExamplesValidator {
       invalidJson <- NonEmptyList
         .from(jsonSchema.validate(singleExampleValueString, InputFormat.JSON).asScala.toList)
         .map { errors =>
-          InvalidExample(singleExampleValueString, operation.operationId, isRequest, exampleId, errors)
+          InvalidExample(singleExampleValueString, resolvedSchema, operation.operationId, isRequest, exampleId, errors)
         }
         .toList
     } yield invalidJson

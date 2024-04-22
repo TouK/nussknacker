@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import com.networknt.schema._
+import io.circe.Json
 import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
 import org.scalactic.anyvals.NonEmptyList
@@ -30,13 +31,16 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
     val generatedSchema          = NuDesignerApiAvailableToExpose.generateOpenApi
     val examplesValidationResult = OpenAPIExamplesValidator.validateExamples(generatedSchema)
     val clue = examplesValidationResult
-      .map { case InvalidExample(_, operationId, isRequest, exampleId, errors) =>
+      .map { case InvalidExample(example, _, operationId, isRequest, exampleId, errors) =>
         errors
           .map(_.getMessage)
           .distinct
-          .map("  " + _)
+          .map("    " + _)
           .mkString(
-            s"${operationId.getOrElse("<not defined>")} > ${if (isRequest) "request" else "response"} > $exampleId\n",
+            s"""${operationId.getOrElse("<not defined>")} > ${if (isRequest) "request" else "response"} > $exampleId
+               |  example: $example
+               |  errors:
+               |""".stripMargin,
             "\n",
             ""
           )
@@ -60,6 +64,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
 case class InvalidExample(
     example: String,
+    resolvedSchema: Json,
     operationId: Option[String],
     isRequest: Boolean,
     exampleId: String,
