@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
+import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.definition.{
   DateParameterEditor,
@@ -31,11 +31,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(actorSystem: ActorSystem)
+class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseModelData)
     extends DeploymentManager
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
+  import pl.touk.nussknacker.engine.ModelData._
   import SimpleStateStatus._
 
   // Use these "magic" description values to simulate deployment/validation failure
@@ -71,6 +72,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random                                      = new scala.util.Random()
 
+  private lazy val flinkTestRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
+
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
 
     def withStateStatus(stateStatus: StateStatus): StatusDetails = {
@@ -85,32 +88,33 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   }
 
-  override def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = command match {
-    case ValidateScenarioCommand(_, _, canonicalProcess) =>
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
+    case DMValidateScenarioCommand(_, _, canonicalProcess) =>
       if (description(canonicalProcess).contains(descriptionForValidationFail)) {
         Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
       } else {
         Future.successful(())
       }
-    case command: RunDeploymentCommand                      => runDeployment(command)
-    case StopDeploymentCommand(name, _, savepointDir, user) =>
+    case command: DMRunDeploymentCommand                      => runDeployment(command)
+    case DMStopDeploymentCommand(name, _, savepointDir, user) =>
       // TODO: stopping specific deployment
-      stopScenario(StopScenarioCommand(name, savepointDir, user))
-    case command: StopScenarioCommand           => stopScenario(command)
-    case CancelDeploymentCommand(name, _, user) =>
+      stopScenario(DMStopScenarioCommand(name, savepointDir, user))
+    case command: DMStopScenarioCommand           => stopScenario(command)
+    case DMCancelDeploymentCommand(name, _, user) =>
       // TODO: cancelling specific deployment
-      cancelScenario(CancelScenarioCommand(name, user))
-    case command: CancelScenarioCommand  => cancelScenario(command)
-    case command: CustomActionCommand    => invokeCustomAction(command)
-    case _: MakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
-    case _: TestScenarioCommand          => notImplemented
+      cancelScenario(DMCancelScenarioCommand(name, user))
+    case command: DMCancelScenarioCommand  => cancelScenario(command)
+    case command: DMCustomActionCommand    => invokeCustomAction(command)
+    case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
+    case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
+      flinkTestRunner.test(canonicalProcess, scenarioTestData) // it's just for streaming e2e tests from file purposes
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
     canonicalProcess.metaData.additionalFields.description
   }
 
-  private def runDeployment(command: RunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val previous                = memory.get(processVersion.processName)
@@ -138,7 +142,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     result.future
   }
 
-  private def stopScenario(command: StopScenarioCommand): Future[SavepointResult] = {
+  private def stopScenario(command: DMStopScenarioCommand): Future[SavepointResult] = {
     import command._
     logger.debug(s"Starting stopping scenario: $scenarioName..")
     asyncChangeState(scenarioName, Finished)
@@ -146,7 +150,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     Future.successful(SavepointResult(""))
   }
 
-  private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
+  private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
     import command._
     logger.debug(s"Starting canceling scenario: $scenarioName..")
     changeState(scenarioName, DuringCancel)
@@ -166,7 +170,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def customActionsDefinitions: List[CustomActionDefinition] = customActionStatusMapping.keys.toList
 
-  private def invokeCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
+  private def invokeCustomAction(command: DMCustomActionCommand): Future[CustomActionResult] = {
     val processName = command.processVersion.processName
     val statusOpt = customActionStatusMapping
       .collectFirst { case (customAction, status) if customAction.actionName == command.actionName => status }
@@ -229,7 +233,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
-    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem))
+    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem, modelData))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

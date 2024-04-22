@@ -1,9 +1,10 @@
 import { cx } from "@emotion/css";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import React, { ChangeEvent } from "react";
-import { TextAreaWithFocus } from "../../../../withFocus";
+import { TextArea } from "../../../../FormElements";
 import { FieldError } from "../Validators";
 import { isEmpty } from "lodash";
+import { nodeInput, nodeInputWithError } from "../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     isMarked: boolean;
@@ -27,12 +28,12 @@ export function Textarea(props: Props) {
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
-                <TextAreaWithFocus
+                <TextArea
                     autoFocus={autoFocus}
                     readOnly={readOnly}
                     placeholder={placeholder}
                     className={cx([
-                        !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
+                        !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`,
                         inputClassName,
                     ])}
                     value={value || ""}

@@ -1,0 +1,14 @@
+{
+    "type": "record",
+    "name": "Transaction",
+    "fields": [
+        {
+            "name": "client_id",
+            "type": "long"
+        },
+        {
+            "name": "amount",
+            "type": "double"
+        }
+    ]
+}

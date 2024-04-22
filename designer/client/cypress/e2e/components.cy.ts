@@ -118,7 +118,10 @@ describe("Components list", () => {
         cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=Category1&USAGES=-1");
         cy.contains(/^name$/i).should("be.visible");
         cy.get("[role=row]").should("have.length", 2);
-        cy.contains("[role=row] *", /^Default$/).should("be.visible");
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=button]", /^Default$/).should("be.visible");
+        // Close more menu
+        cy.get("body").click(0, 0).click();
         cy.wait(300);
         cy.get("#app-container>main").matchImage();
     });
@@ -127,10 +130,12 @@ describe("Components list", () => {
         filterByBaseGroup();
         cy.contains(/^category$/i).should("be.visible");
         cy.get("[role=row]").should("have.length.above", 1);
-        cy.contains("[role=row] *", /^Default$/).click();
-        cy.contains("[role=row] *", /^Category1$/).click();
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Default$/).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Category1$/).click({ force: true });
         cy.matchQuery("?GROUP=base&CATEGORY=Default&CATEGORY=Category1");
-        cy.contains("[role=row] *", /^Default$/).click();
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Default$/).click({ force: true });
         cy.matchQuery("?GROUP=base&CATEGORY=Category1");
     });
 
@@ -227,6 +232,26 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
+        cy.get("#app-container>main").matchImage({
+            screenshotConfig: {
+                blackout: ["[role='row']:not(:first-of-type) > [role='cell'][data-field='modificationDate'] span"],
+            },
+        });
+    });
+
+    it("should allow filtering by processing mode", () => {
+        // Filter by processing mode
+        cy.contains("button", /processing mode/i).click();
+
+        cy.get("ul[role='menu']").matchImage();
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/streaming/i).click();
+        });
+
+        // Sort by processing mode
+        cy.get("[role='columnheader'][aria-label='Processing modes']").dblclick({ force: true });
+
         cy.get("#app-container>main").matchImage();
     });
 

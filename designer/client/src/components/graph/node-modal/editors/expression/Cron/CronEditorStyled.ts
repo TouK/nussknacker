@@ -1,32 +1,31 @@
 import { css, styled } from "@mui/material";
-import { alpha } from "../../../../../../containers/theme/helpers";
+
+import { blendLighten, getBorderColor } from "../../../../../../containers/theme/helpers";
 
 export const CronEditorStyled = styled("div")(
     ({ theme }) => css`
-        width: 70%;
+        width: 100%;
         .cron_builder_bordering {
             border-radius: none;
             border: none;
             padding: 8px 0 0 0;
             text-align: left;
+            background: ${theme.palette.background.paper};
         }
         .container-fluid {
             padding: 0;
         }
         .cron_builder {
             width: 100%;
-            background-color: ${theme.custom.colors.secondaryBackground};
-            outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
+            background-color: ${theme.palette.background.paper};
+            outline: 1px solid ${getBorderColor(theme)};
             border: none;
-            * {
-                color: ${theme.custom.colors.secondaryColor};
-            }
         }
         .well {
             display: flex;
             align-items: center;
-            background-color: ${theme.custom.colors.eclipse} !important;
-            border: 1px solid ${theme.custom.colors.doveGray} !important;
+            background-color: ${theme.palette.background.paper} !important;
+            border: 1px solid ${getBorderColor(theme)} !important;
             margin-bottom: 8px !important;
             border-radius: 0 !important;
             padding: 12px !important;
@@ -55,17 +54,16 @@ export const CronEditorStyled = styled("div")(
                     &:hover,
                     &:focus {
                         text-decoration: none;
-                        background-color: ${theme.custom.colors.gallery};
                     }
                 }
 
                 // Disabled state sets text to gray and nukes hover/tab effects
                 &.disabled > a {
-                    color: ${theme.custom.colors.boulder};
+                    color: ${theme.palette.action.disabled};
 
                     &:hover,
                     &:focus {
-                        color: ${theme.custom.colors.boulder};
+                        color: ${theme.palette.action.disabled};
                         text-decoration: none;
                         cursor: not-allowed;
                         background-color: transparent;
@@ -75,16 +73,27 @@ export const CronEditorStyled = styled("div")(
         }
         .cron_builder_bordering input {
             border-radius: 0;
-            background: ${theme.custom.colors.nightRider};
+            background: ${theme.palette.background.paper};
         }
         .cron_builder_bordering input[type="radio"] {
             margin-top: 2px;
             vertical-align: text-top;
+            accent-color: ${theme.palette.primary.main};
+            margin-right: ${theme.spacing(1)};
+        }
+
+        .cron_builder_bordering input[type="checkbox"] {
+            accent-color: ${theme.palette.primary.main};
+            margin-right: ${theme.spacing(1)};
         }
         .cron_builder_bordering input[type="number"] {
             height: 26px;
-            border: 1px solid ${theme.custom.colors.doveGray};
+            border: 1px solid ${getBorderColor(theme)};
             width: 12% !important;
+        }
+
+        .cron_builder_bordering input {
+            border: 1px solid ${getBorderColor(theme)};
         }
         .span6 {
             width: 50%;
@@ -96,16 +105,15 @@ export const CronEditorStyled = styled("div")(
             vertical-align: bottom;
             margin: 8px 0 0 0;
             transform: scale(1.2);
-            background-color: ${theme.custom.colors.revolver};
             -moz-appearance: none;
         }
         .nav-tabs > li > a {
             border-radius: 0;
-            border-right: 1px solid ${theme.custom.colors.doveGray};
-            border-left: 1px solid ${theme.custom.colors.doveGray};
-            border-top: 1px solid ${theme.custom.colors.doveGray};
+            border-right: 1px solid ${getBorderColor(theme)};
+            border-left: 1px solid ${getBorderColor(theme)};
+            border-top: 1px solid ${getBorderColor(theme)};
             border-bottom: 0;
-            color: ${theme.custom.colors.curiousBlue} !important;
+            color: ${theme.palette.text.secondary} !important;
         }
         .nav-tabs > li.active > a,
         .nav-tabs > li.active > a:hover,
@@ -114,26 +122,24 @@ export const CronEditorStyled = styled("div")(
         .cron_builder .nav-tabs > li.active > a,
         .nav-tabs > li.active > a:hover,
         .nav-tabs > li.active > a:focus {
-            background: ${theme.custom.colors.abbey};
-            border-right: 1px solid ${theme.custom.colors.doveGray};
-            border-left: 1px solid ${theme.custom.colors.doveGray};
-            border-top: 1px solid ${theme.custom.colors.doveGray};
+            background: ${theme.palette.action.hover} !important;
+            border-right: 1px solid ${getBorderColor(theme)};
+            border-left: 1px solid ${getBorderColor(theme)};
+            border-top: 1px solid ${getBorderColor(theme)};
             border-bottom: 0;
-            color: ${theme.custom.colors.dustyGray};
         }
         .cron_builder .nav-tabs > li.active > a {
-            color: ${theme.custom.colors.secondaryColor};
-            border-bottom: 1px solid ${theme.custom.colors.doveGray};
+            border-bottom: 1px solid ${getBorderColor(theme)};
         }
         .cron-builder-bg {
-            background-color: ${theme.custom.colors.secondaryBackground} !important;
+            background-color: ${theme.palette.background.paper} !important;
             margin-top: 8px;
         }
         .minutes,
         .hours {
-            background: ${theme.custom.colors.nightRider};
+            background: ${theme.palette.background.paper};
             border-radius: 0;
-            border: 1px solid ${theme.custom.colors.doveGray};
+            border: 1px solid ${getBorderColor(theme)};
             margin-left: 8px;
         }
         .col-md-offset-2 {
@@ -142,6 +148,11 @@ export const CronEditorStyled = styled("div")(
         .col-md-6 {
             width: 100% !important;
             padding-left: 0 !important;
+        }
+        .nav-link.active {
+            background-color: inherit !important;
+            color: ${theme.palette.primary.main} !important;
+            border-color: ${theme.palette.primary.main} !important;
         }
     `,
 );

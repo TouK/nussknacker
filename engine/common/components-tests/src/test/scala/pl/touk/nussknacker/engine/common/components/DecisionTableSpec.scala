@@ -7,8 +7,11 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.TabularDataDefinitionParserErrorDetails.CellError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{
+  CellError,
+  ColumnDefinition,
+  TabularDataDefinitionParserErrorDetails
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -100,7 +103,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "There is no property 'years' in type: Record{DoB: LocalDate, age: Integer, name: String}",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Filtering expression")),
+                paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['years'] > #input.minAge",
                 details = None
               )
@@ -124,7 +127,7 @@ trait DecisionTableSpec
               ExpressionParserCompilationError(
                 message = "Wrong part types",
                 nodeId = "decision-table",
-                paramName = Some(ParameterName("Filtering expression")),
+                paramName = Some(ParameterName("Match condition")),
                 originalExpr = "#ROW['name'] > #input.minAge",
                 details = None
               )
@@ -138,7 +141,7 @@ trait DecisionTableSpec
         val result = execute[TestMessage, SCENARIO_RESULT](
           scenario = decisionTableExampleScenario(
             basicDecisionTableDefinition = invalidColumnTypeDecisionTableJson,
-            expression = "#ROW['age'] > #input.minAge",
+            expression = """#ROW.age > #input.minAge && #ROW.name == "John"""",
           ),
           withData = List(
             TestMessage(id = "1", minAge = 30),
@@ -147,7 +150,7 @@ trait DecisionTableSpec
         )
         inside(result) { case Validated.Invalid(errors) =>
           errors should be(
-            NonEmptyList.one(
+            NonEmptyList.of(
               ExpressionParserCompilationError(
                 message = "Typing error in some cells",
                 nodeId = "decision-table",
@@ -159,21 +162,36 @@ trait DecisionTableSpec
                       CellError(
                         columnName = "name",
                         rowIndex = 0,
-                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                        errorMessage =
+                          "The column 'name' is expected to contain 'Integer' values, but the entered value does not match this type."
                       ),
                       CellError(
                         columnName = "name",
                         rowIndex = 1,
-                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                        errorMessage =
+                          "The column 'name' is expected to contain 'Integer' values, but the entered value does not match this type."
                       ),
                       CellError(
                         columnName = "name",
                         rowIndex = 2,
-                        errorMessage = "Column has 'Object' type but its value cannot be converted to the type."
+                        errorMessage =
+                          "The column 'name' is expected to contain 'Integer' values, but the entered value does not match this type."
                       )
+                    ),
+                    List(
+                      ColumnDefinition("name", classOf[java.lang.Integer]),
+                      ColumnDefinition("age", classOf[java.lang.Integer]),
+                      ColumnDefinition("DoB", classOf[java.time.LocalDate]),
                     )
                   )
                 )
+              ),
+              ExpressionParserCompilationError(
+                message = "Operator '==' used with not comparable types: Integer and String(John)",
+                nodeId = "decision-table",
+                paramName = Some(ParameterName("Match condition")),
+                originalExpr = """#ROW.age > #input.minAge && #ROW.name == "John"""",
+                details = None
               )
             )
           )
@@ -202,7 +220,7 @@ trait DecisionTableSpec
   private lazy val invalidColumnTypeDecisionTableJson = Expression.tabularDataDefinition {
     s"""{
        |  "columns": [
-       |    { "name": "name", "type": "java.lang.Object" },
+       |    { "name": "name", "type": "java.lang.Integer" },
        |    { "name": "age", "type": "java.lang.Integer" },
        |    { "name": "DoB", "type": "java.time.LocalDate" }
        |  ],
@@ -224,7 +242,7 @@ trait DecisionTableSpec
       .source("request", TestScenarioRunner.testDataSource)
       .decisionTable(
         decisionTableParamValue = basicDecisionTableDefinition,
-        filterExpressionParamValue = expression,
+        matchConditionParamValue = expression,
         output = "dtResult",
       )
       .end("end", "value" -> sinkValueExpression)

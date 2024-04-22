@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
-import { styled } from "@mui/material";
+import { alpha, lighten, styled, Theme, useTheme } from "@mui/material";
 import { PanelSide } from "./SidePanel";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
@@ -21,20 +21,20 @@ const trackStyleProps = (side: PanelSide) => ({
     left: side === PanelSide.Right ? 0 : null,
 });
 
-const thumbYStyleProps = {
+const thumbYStyleProps = (theme: Theme) => ({
     borderRadius: CLEAN_STYLE,
     cursor: CLEAN_STYLE,
-    backgroundColor: "rgba(0,0,0, 0.45)",
-};
+    backgroundColor: alpha(theme.palette.common.black, 0.45),
+});
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
 
-const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({
+const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({ theme }) => ({
     minHeight: "100%",
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: isScrollPossible && "#646464",
+    background: isScrollPossible && lighten(theme.palette.background.paper, 0.4),
     pointerEvents: isScrollPossible ? "auto" : "inherit",
 }));
 
@@ -44,6 +44,7 @@ interface ScrollbarsExtended {
 }
 
 export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWithChildren<ScrollbarsExtended>) {
+    const theme = useTheme();
     const [isScrollPossible, setScrollPossible] = useState<boolean>();
 
     useEffect(() => {
@@ -58,7 +59,7 @@ export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWith
             }}
             disableTracksWidthCompensation
             trackYProps={{ style: trackStyleProps(side) }}
-            thumbYProps={{ style: thumbYStyleProps }}
+            thumbYProps={{ style: thumbYStyleProps(theme) }}
             contentProps={{ style: scrollerStyleProps }}
             scrollbarWidth={SCROLLBAR_WIDTH}
             scrollerProps={{ style: { marginRight: -SCROLLBAR_WIDTH } }}

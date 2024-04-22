@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, TestScenarioCommand}
+import pl.touk.nussknacker.engine.api.deployment.{DMTestScenarioCommand, DeploymentManager}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -29,7 +29,7 @@ class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver, deploy
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[Json]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
-      testResult <- deploymentManager.processCommand(TestScenarioCommand(id.name, resolvedProcess, scenarioTestData))
+      testResult <- deploymentManager.processCommand(DMTestScenarioCommand(id.name, resolvedProcess, scenarioTestData))
     } yield testResult
   }
 

@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.component.{
   DesignerWideComponentId,
   EmptyAdditionalUIConfigProviderFactory
 }
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeployedScenariosProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
@@ -61,7 +62,8 @@ import pl.touk.nussknacker.ui.services.{
   MigrationApiHttpService,
   NuDesignerExposedApiHttpService
 }
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -93,14 +95,14 @@ class AkkaHttpBasedRouteProvider(
       featureTogglesConfig = FeatureTogglesConfig.create(resolvedConfig)
       _                    = logger.info(s"Designer config loaded: \nfeatureTogglesConfig: $featureTogglesConfig")
       countsReporter <- createCountsReporter(featureTogglesConfig, environment, sttpBackend)
-      deploymentServiceSupplier  = new DelayedInitDeploymentServiceSupplier
+      actionServiceSupplier      = new DelayedInitActionServiceSupplier
       additionalUIConfigProvider = createAdditionalUIConfigProvider(resolvedConfig, sttpBackend)
       processingTypeDataProvider <- prepareProcessingTypeDataReload(
         config,
         processingTypeDataStateFactory,
         additionalUIConfigProvider,
-        deploymentServiceSupplier,
-        AllDeployedScenarioService(dbRef, _),
+        actionServiceSupplier,
+        DefaultProcessingTypeDeployedScenariosProvider(dbRef, _),
         sttpBackend,
       )
     } yield {
@@ -109,9 +111,9 @@ class AkkaHttpBasedRouteProvider(
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
-      val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = new DbProcessActionRepository(dbRef, modelBuildInfo)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      implicit val dbioRunner: DBIOActionRunner = DBIOActionRunner(dbRef)
+      val actionRepository                      = new DbProcessActionRepository(dbRef, modelBuildInfo)
+      val processRepository                     = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
       val writeProcessRepository  = ProcessRepository.create(dbRef, migrations)
@@ -171,7 +173,7 @@ class AkkaHttpBasedRouteProvider(
           futureProcessRepository
         )
 
-      val deploymentService = new DeploymentServiceImpl(
+      val deploymentService = new DeploymentService(
         dmDispatcher,
         processRepository,
         actionRepository,
@@ -184,7 +186,7 @@ class AkkaHttpBasedRouteProvider(
       )
       deploymentService.invalidateInProgressActions()
 
-      deploymentServiceSupplier.set(deploymentService)
+      actionServiceSupplier.set(deploymentService)
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
@@ -334,7 +336,7 @@ class AkkaHttpBasedRouteProvider(
         val routes = List(
           new ProcessesResources(
             processService = processService,
-            deploymentService = deploymentService,
+            processStateService = deploymentService,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
@@ -398,10 +400,14 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+      val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
       val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
         usageStatisticsReportsConfig,
         processService,
-        processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType)
+        processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
+        fingerprintService,
+        processActivityRepository,
+        componentService
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
@@ -547,8 +553,8 @@ class AkkaHttpBasedRouteProvider(
       designerConfig: ConfigWithUnresolvedVersion,
       processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
       additionalUIConfigProvider: AdditionalUIConfigProvider,
-      deploymentServiceSupplier: Supplier[DeploymentService],
-      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
+      actionServiceProvider: Supplier[ActionService],
+      createDeployedScenariosProvider: ProcessingType => ProcessingTypeDeployedScenariosProvider,
       sttpBackend: SttpBackend[Future, Any],
   ): Resource[IO, ProcessingTypeDataReload] = {
     Resource
@@ -557,10 +563,10 @@ class AkkaHttpBasedRouteProvider(
           new ProcessingTypeDataReload({ () =>
             def getDeploymentManagerDependencies(processingType: ProcessingType) = {
               DeploymentManagerDependencies(
-                new DefaultProcessingTypeDeploymentService(
+                createDeployedScenariosProvider(processingType),
+                new DefaultProcessingTypeActionService(
                   processingType,
-                  deploymentServiceSupplier.get(),
-                  createAllDeployedScenarioService(processingType)
+                  actionServiceProvider.get(),
                 ),
                 system.dispatcher,
                 system,
@@ -613,19 +619,19 @@ class AkkaHttpBasedRouteProvider(
     additionalUIConfigProviderFactory.create(config, sttpBackend)
   }
 
-  private class DelayedInitDeploymentServiceSupplier extends Supplier[DeploymentService] {
-    private val deploymentServiceRef = new AtomicReference[Option[DeploymentService]](None)
+  private class DelayedInitActionServiceSupplier extends Supplier[ActionService] {
+    private val actionServiceRef = new AtomicReference[Option[ActionService]](None)
 
-    override def get(): DeploymentService = {
-      val deploymentService = deploymentServiceRef.get()
-      deploymentService.getOrElse(
+    override def get(): ActionService = {
+      val actionService = actionServiceRef.get()
+      actionService.getOrElse(
         throw new IllegalStateException(
-          "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData"
+          "Illegal initialization: ActionService should be initialized before ProcessingTypeData"
         )
       )
     }
 
-    def set(deploymentService: DeploymentService): Unit = deploymentServiceRef.set(Some(deploymentService))
+    def set(actionService: ActionService): Unit = actionServiceRef.set(Some(actionService))
   }
 
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { ButtonWithFocus } from "../../../../withFocus";
+import { Button } from "../../../../FormElements";
 import { styled, useTheme } from "@mui/material";
 import { EditorType } from "./Editor";
 import { css } from "@emotion/css";
@@ -9,17 +9,22 @@ import ListIcon from "./icons/list.svg";
 import ScheduleIcon from "./icons/schedule.svg";
 import DateIcon from "./icons/date_range.svg";
 
-export const SwitchButton = styled(ButtonWithFocus)(({ disabled, theme }) => ({
+import { blendLighten } from "../../../../../containers/theme/helpers";
+
+export const SwitchButton = styled(Button)(({ disabled, theme }) => ({
     width: 35,
     height: 35,
     padding: 5,
-    backgroundColor: theme.custom.colors.secondaryBackground,
+    backgroundColor: theme.palette.background.paper,
     border: "none",
     opacity: disabled ? 0.5 : 1,
     filter: disabled ? "saturate(0)" : "non",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    "&:focus": {
+        outline: `1px solid ${theme.palette.primary.main} !important`,
+    },
     "& > svg": {
         width: "100%",
     },
@@ -47,7 +52,7 @@ function getTypeIcon(type: EditorType) {
 export function SimpleEditorIcon({ type }: { type: EditorType }) {
     const theme = useTheme();
     const Icon = getTypeIcon(type);
-    return <Icon className={css({ color: theme.custom.colors.ok })} />;
+    return <Icon className={css({ color: theme.palette.success.main })} />;
 }
 
 export const RawEditorIcon = CodeIcon;

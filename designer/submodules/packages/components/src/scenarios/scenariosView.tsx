@@ -38,12 +38,12 @@ function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
         <>
             <Stack ref={ref} direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
                 {addScenario && (
-                    <Button variant="contained" size={"small"} onClick={addScenario}>
+                    <Button variant="outlined" size={"small"} onClick={addScenario}>
                         Add New scenario
                     </Button>
                 )}
                 {addFragment && (
-                    <Button variant="contained" size={"small"} onClick={addFragment}>
+                    <Button variant="outlined" size={"small"} onClick={addFragment}>
                         Add New fragment
                     </Button>
                 )}

@@ -14,12 +14,11 @@ import java.nio.file.{Files, Path}
 import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
 
-// TODO Current Flink setup requires Kafka for zookpeeper - we should run Flink in some lighter version or extract another container with ZK only
-trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogging =>
+trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLogging =>
 
   protected val FlinkJobManagerRestPort = 8081
 
-  protected lazy val taskManagerSlotCount = 8
+  protected lazy val taskManagerSlotCount = 32
 
   protected def jobManagerExtraFSBinds: List[FileSystemBind] = List.empty
 
@@ -32,7 +31,7 @@ trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogg
 
   protected lazy val savepointDir: Path = prepareSavepointVolumeDir()
 
-  protected val jobManagerContainer: GenericContainer = {
+  protected lazy val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
@@ -55,11 +54,14 @@ trait WithFlinkContainers extends WithKafkaContainer { self: Suite with LazyLogg
     }
   }
 
-  protected val taskManagerContainer: GenericContainer = {
+  protected lazy val taskManagerContainer: GenericContainer = {
     new GenericContainer(
       dockerImage = prepareFlinkImage(),
       command = "taskmanager" :: Nil,
-      env = Map("TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
+      env = Map(
+        "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString,
+        "JOB_MANAGER_RPC_ADDRESS"           -> jobManagerContainer.container.getContainerInfo.getConfig.getHostName
+      ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Successful registration at resource manager.*"))
     ).configure { self =>
       self.setNetwork(network)

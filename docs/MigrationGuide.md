@@ -6,7 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) Refactoring around DeploymentManager's actions:
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) [#5837](https://github.com/TouK/nussknacker/pull/5837) Refactoring around DeploymentManager's actions:
   * Custom Actions
     * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
     * `CustomActionResult.req` was removed
@@ -14,22 +14,35 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `CustomActionRequest` (from the `extension-api`) was renamed to `CustomActionCommand`
   * Other "action" methods - all methods operating on a scenario (or its deployment) were replaced by case classes and
     one method handling them all: `processCommand(command)`:
-    * `validate` - `ValidateScenarioCommand`
-    * `deploy` - `RunDeploymentCommand`
-    * `cancel` with `deploymentId` argument - `CancelDeploymentCommand`
-    * `cancel` without `deploymentId` argument - `CancelScenarioCommand`
-    * `stop` with `deploymentId` argument - `StopDeploymentCommand`
-    * `stop` without `deploymentId` argument - `StopScenarioCommand`
-    * `savepoint` - `MakeScenarioSavepointCommand`
-    * `test` - `TestScenarioCommand`
-  * "Action type" is renamed to "action name". Loosened the restriction on the name of the action:
+    * `validate` - `DMValidateScenarioCommand`
+    * `deploy` - `DMRunDeploymentCommand`
+    * `cancel` with `deploymentId` argument - `DMCancelDeploymentCommand`
+    * `cancel` without `deploymentId` argument - `DMCancelScenarioCommand`
+    * `stop` with `deploymentId` argument - `DMStopDeploymentCommand`
+    * `stop` without `deploymentId` argument - `DMStopScenarioCommand`
+    * `savepoint` - `DMMakeScenarioSavepointCommand`
+    * `test` - `DMTestScenarioCommand`
+  * "Action type" was renamed to "action name". Loosened the restriction on the name of the action:
     * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
     * in `ProcessAction` attribute `actionType` renamed to `actionName`
     * in table `process_actions` column `action_type` is renamed to `action_name`
+  * `DeploymentManagerDependencies.deploymentService` was splitted into `deployedScenariosProvider` and `actionService`
 * [#5762](https://github.com/TouK/nussknacker/pull/5762) for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
   * `AllowedProcessingModes.All` in case of all processing modes allowed
   * `AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes)` in case only set of processing modes is allowed
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Refactored API around `FlinkSource`
+  * Added `StandardFlinkSource` with more granular additional traits replacing the need for `FlinkIntermediateRawSource`
+  * Removed `BasicFlinkSource` and `FlinkIntermediateRawSource`. Sources extending these traits should now extend 
+    `StandardFlinkSource`. For reference on how to migrate, see changes in `FlinkKafkaSource` or `CollectionSource`
+  * Renamed `FlinkSource`'s `sourceStream` method to `contextStream`
+  * Removed `EmptySourceFunction`
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Added support for bounded sources and Flink runtime mode in 
+  Flink tests
+  * `CollectionSource` now takes Flink's `Boundedness` with default `Unbounded` and `RuntimeExecutionMode` with default 
+    `None` as a parameters. It's encouraged to set the `Boundedness` to bounded if applicable
+  * `Boundedness` and `RuntimeExecutionMode` is also possible to set in `FlinkTestScenarioRunner` in new overloading 
+    `runWithData` method
 
 ### Configuration changes
 
@@ -44,6 +57,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * If you previously specified base component jar explicitly in `modelConfig.classPath`
       as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
       `components/flink/flinkBaseUnbounded.jar` explicitly.
+    * [#5887](https://github.com/TouK/nussknacker/pull/5887) When using a custom DesignerConfig, ensure that long text elements like 'generate file' are positioned in the last row to prevent excessive spacing between elements.
 
 ### Other changes
 
@@ -51,9 +65,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
   * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
   * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
-* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename:
-    * "Basic Decision Table" -> "Decision Table"
-    * "Expression" -> "Filtering expression"
+* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
+  * "Basic Decision Table" -> "Decision Table"
+  * "Expression" -> "Match condition"
+* [#5881](https://github.com/TouK/nussknacker/pull/5881) `nussknacker-interpreter` module was renamed to `nussknacker-scenario-compiler`
 * [#5875](https://github.com/TouK/nussknacker/pull/5875) Added configurable idle timeout to Flink Kafka source with the
   default value of 3 minutes. You can configure this timeout in Kafka component config at `idlenessConfig.idleTimeoutDuration` 
   or disable it at `idlenessConfig.enableIdleTimeout`. You can learn about idleness

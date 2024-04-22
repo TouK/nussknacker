@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
 import NodeUtils from "../NodeUtils";
 import { isEmpty } from "lodash";
+import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 
 interface IdFieldProps {
     isEditMode?: boolean;
@@ -50,7 +51,7 @@ export function IdField({ isEditMode, node, renderFieldLabel, setProperty, showV
             showValidation={showValidation}
             onChange={(newValue) => setProperty(FAKE_NAME_PROP_NAME, newValue.toString())}
             readOnly={!isEditMode}
-            className={!showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error"}
+            className={!showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`}
             fieldErrors={fieldErrors}
             value={value}
             autoFocus

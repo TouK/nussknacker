@@ -1,122 +1,54 @@
 {
     "Source": {
-        "name": "Source",
-        "styles": {
-            "fill": "#2d8e54",
-            "color": "white"
-        }
+        "name": "Source"
     },
     "FragmentInputDefinition": {
-        "name": "FragmentInputDefinition",
-        "styles": {
-            "fill": "#2d8e54",
-            "color": "white"
-        }
+        "name": "FragmentInputDefinition"
     },
     "Sink": {
-        "name": "Sink",
-        "styles": {
-            "fill": "#db4646",
-            "color": "white"
-        }
+        "name": "Sink"
     },
     "FragmentOutputDefinition": {
-        "name": "FragmentOutputDefinition",
-        "styles": {
-            "fill": "#db4646",
-            "color": "white"
-        }
+        "name": "FragmentOutputDefinition"
     },
     "Filter": {
-        "name": "Filter",
-        "styles": {
-            "fill": "#db7e3a",
-            "color": "white"
-        }
+        "name": "Filter"
     },
     "Switch": {
-        "name": "Choice",
-        "styles": {
-            "fill": "#70c6ce",
-            "color": "white"
-        }
+        "name": "Choice"
     },
     "VariableBuilder": {
-        "name": "Map Variable",
-        "styles": {
-            "fill": "#FEB58A",
-            "color": "white"
-        }
+        "name": "Map Variable"
     },
     "Variable": {
-        "name": "Variable",
-        "styles": {
-            "fill": "#FEB58A",
-            "color": "white"
-        }
+        "name": "Variable"
     },
     "Enricher": {
-        "name": "Enricher",
-        "styles": {
-            "fill": "#805db2",
-            "color": "white"
-        }
+        "name": "Enricher"
     },
     "FragmentInput": {
-        "name": "FragmentInput",
-        "styles": {
-            "fill": "#805db2",
-            "color": "white"
-        }
+        "name": "FragmentInput"
     },
     "Split": {
-        "name": "Split",
-        "styles": {
-            "fill": "#FCC56D",
-            "color": "white"
-        }
+        "name": "Split"
     },
     "Processor": {
-        "name": "Processor",
-        "styles": {
-            "fill": "#4583dd",
-            "color": "white"
-        }
+        "name": "Processor"
     },
     "Aggregate": {
-        "name": "Aggregate",
-        "styles": {
-            "fill": "#e892bd",
-            "color": "white"
-        }
+        "name": "Aggregate"
     },
     "Properties": {
-        "name": "Properties",
-        "styles": {
-            "fill": "#46ca94",
-            "color": "white"
-        }
+        "name": "Properties"
     },
     "CustomNode": {
-        "name": "CustomNode",
-        "styles": {
-            "fill": "#1aada6",
-            "color": "white"
-        }
+        "name": "CustomNode"
     },
     "Join": {
-        "name": "Join",
-        "styles": {
-            "fill": "#1aada6",
-            "color": "white"
-        }
+        "name": "Join"
     },
     "_group": {
         "name": "Group",
-        "notEditable": true,
-        "styles": {
-            "fill": "#1aada6",
-            "color": "white"
-        }
+        "notEditable": true
     }
 }

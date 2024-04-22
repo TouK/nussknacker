@@ -7,6 +7,9 @@ describe("Processes list", () => {
         cy.deleteAllTestProcesses({ filter: PROCESSING_MODE, force: true });
         cy.createTestProcessName(NAME).as("processName");
         cy.createTestProcess(`${PROCESSING_MODE}-Request-Response`, undefined, "RequestResponse", "Request-Response");
+
+        // Sometimes it's a small difference with the creation date time of scenarios, that's why we need to wait to keep elements in the same order
+        cy.wait(1000);
         cy.createTestProcess(`${PROCESSING_MODE}-Streaming`, undefined, undefined, "Unbounded-Stream");
     });
 
@@ -35,7 +38,7 @@ describe("Processes list", () => {
         cy.get('[data-testid="window-frame"]')
             .contains(/request-response/i)
             .click();
-        cy.get("#processCategory").select(2);
+        cy.get("#processCategory input").select(2);
         cy.contains(/^create$/i)
             .should("be.enabled")
             .click();

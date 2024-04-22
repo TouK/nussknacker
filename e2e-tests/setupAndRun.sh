@@ -16,5 +16,3 @@ trap 'docker-compose kill && docker-compose rm -f -v' EXIT
 ./waitForOk.sh http://admin:admin@localhost:3081/api/app/buildInfo "Designer" "Designer failed to start" designer
 ./waitForOk.sh http://localhost:4081/subjects "Schema registry" "Schema registry failed to start" schemaregistry
 ./run.sh
-
-

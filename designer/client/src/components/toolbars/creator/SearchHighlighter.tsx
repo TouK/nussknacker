@@ -20,8 +20,8 @@ export function SearchHighlighter({
             autoEscape
             highlightTag={`span`}
             highlightStyle={{
-                color: theme.custom.colors.warning,
-                background: theme.custom.colors.secondaryBackground,
+                color: theme.palette.warning.main,
+                background: theme.palette.background.paper,
                 fontWeight: "bold",
             }}
         />

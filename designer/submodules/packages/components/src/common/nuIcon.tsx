@@ -6,5 +6,5 @@ const Icon = loadable(async () => import("nussknackerUi/Icon"));
 export const NuIcon = styled(Icon)(({ theme }) => ({
     width: "1em",
     height: "1em",
-    color: theme.palette.primary.main,
+    color: "inherit",
 }));

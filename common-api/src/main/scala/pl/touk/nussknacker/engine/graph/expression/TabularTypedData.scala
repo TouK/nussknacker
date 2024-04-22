@@ -50,7 +50,8 @@ object TabularTypedData {
   object CreationError {
     final case class ColumnNameUniquenessViolation(columnNames: NonEmptyList[String]) extends CreationError
     case object CellsCountInRowDifferentThanColumnsCount                              extends CreationError
-    final case class InvalidCellValues(cells: NonEmptyList[CellCoordinates])          extends CreationError
+    final case class InvalidCellValues(cells: NonEmptyList[CellCoordinates], columns: List[Column.Definition])
+        extends CreationError
 
     object InvalidCellValues {
       final case class CellCoordinates(columnName: Column.Definition, rowIndex: Int)
@@ -101,7 +102,7 @@ object TabularTypedData {
     val cellErrors = data.rows.flatMap(validateCellsInRow)
     NonEmptyList.fromFoldable(cellErrors) match {
       case None    => Right(())
-      case Some(e) => Left(InvalidCellValues(e))
+      case Some(e) => Left(InvalidCellValues(e, data.columnDefinitions.toList))
     }
   }
 

@@ -85,7 +85,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
           )
         else Nil
       NextParameters(List(additionalDataValueParamDeclaration.createParameter(contexts, byBranch)), error)
-    case TransformationStep((roleParamName, FailedToDefineParameter) :: (keyParamName, _) :: Nil, _)
+    case TransformationStep((roleParamName, FailedToDefineParameter(_)) :: (keyParamName, _) :: Nil, _)
         if roleParamName == roleParamDeclaration.parameterName && keyParamName == keyParamDeclaration.parameterName =>
       FinalResults(ValidationContext())
     case TransformationStep(

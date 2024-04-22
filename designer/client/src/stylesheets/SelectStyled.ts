@@ -1,60 +1,54 @@
-import { css, darken, Theme } from "@mui/material";
+import { alpha, css, Theme } from "@mui/material";
 import { CSSProperties } from "react";
 import { CSSObjectWithLabel } from "react-select";
-import { alpha } from "../containers/theme/helpers";
+import { blendDarken, blendLighten, getBorderColor } from "../containers/theme/helpers";
+import { getLuminance } from "@mui/system/colorManipulator";
 
 export const selectStyled = (theme: Theme) => {
     const commonNodeInput = (padding: CSSProperties["padding"]) => css`
         width: 100%;
         padding: 0 ${padding};
         border: none;
-        background-color: ${theme.custom.colors.secondaryBackground};
-        color: ${theme.custom.colors.secondaryColor};
+        background-color: ${theme.palette.background.paper};
+        color: ${theme.palette.text.secondary};
         font-weight: 400;
         font-size: 14px;
-        outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
+        outline: 1px solid
+            ${getLuminance(theme.palette.background.paper) > 0.5
+                ? blendLighten(theme.palette.background.paper, 0.05)
+                : blendDarken(theme.palette.background.paper, 0.05)};
     `;
 
-    const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean) => css`
+    const control = (base: CSSObjectWithLabel, isFocused: boolean, isDisabled: boolean, isError: boolean) => css`
         ${base};
-        background-color: ${theme.custom.colors.secondaryBackground};
+        background-color: ${isDisabled ? theme.palette.action.disabledBackground : theme.palette.background.paper};
+        color: ${theme.palette.action.disabled} !important;
         max-height: 35px;
         min-height: 35px;
-        border: 0;
+        border: none;
         border-radius: 0;
-        color: ${theme.custom.colors.secondaryColor};
         box-shadow: 0;
-
-        ${isFocused &&
-        css`
-            outline: 2px solid ${theme.custom.colors.cobalt} !important;
-            outline-offset: -1px !important;
-        `}
-        ${isDisabled &&
-        css`
-            background-color: ${theme.custom.colors.charcoal} !important;
-        `}
+        outline: 1px solid ${isError ? theme.palette.error.light : isFocused ? theme.palette.primary.main : getBorderColor(theme)} !important;
     `;
 
-    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isFocused: boolean) => css`
+    const menuOption = (base: CSSObjectWithLabel, isSelected: boolean, isDisabled: boolean) => css`
         ${base}
         ${commonNodeInput("10px")};
         height: 25px;
         line-height: 25px;
         border: 1px;
         border-radius: 0;
-
-        ${isSelected &&
-        css`
-            background-color: ${theme.custom.colors.cobalt};
-        `}
-
-        ${isFocused &&
-        css`
-            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
-        `}
-    &:hover {
-            background-color: ${darken(theme.custom.colors.cobalt, 0.5)};
+        background-color: ${isSelected
+            ? getLuminance(theme.palette.background.paper) > 0.5
+                ? blendDarken(theme.palette.background.paper, 0.15)
+                : blendLighten(theme.palette.background.paper, 0.15)
+            : isDisabled
+            ? "none"
+            : theme.palette.background.paper};
+        color: ${isDisabled && theme.palette.action.disabled};
+        &:hover {
+            color: ${!isDisabled && "inherit"};
+            background-color: ${!isDisabled && theme.palette.action.hover};
         }
     `;
 
@@ -67,12 +61,9 @@ export const selectStyled = (theme: Theme) => {
     const singleValue = (base: CSSObjectWithLabel, isDisabled: boolean) => css`
         ${base};
         ${commonNodeInput("0")}; //TODO input hides partially due to padding...
+        background-color: ${isDisabled ? "inherit" : theme.palette.background.paper};
         position: absolute;
         outline: none;
-        ${isDisabled &&
-        css`
-            background-color: ${theme.custom.colors.charcoal} !important;
-        `}
     `;
 
     const menuList = (base: CSSObjectWithLabel) => css`
@@ -86,15 +77,15 @@ export const selectStyled = (theme: Theme) => {
         }
 
         ::-webkit-scrollbar-track {
-            background: ${theme.custom.colors.doveGray};
+            background: ${blendLighten(theme.palette.background.paper, 0.5)};
         }
 
         ::-webkit-scrollbar-thumb {
-            background: ${theme.custom.colors.gray};
+            background: ${alpha(theme.palette.background.paper, 0.85)};
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: ${theme.custom.colors.emperor};
+            background: ${theme.palette.action.hover};
         }
     `;
 
@@ -107,15 +98,23 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         z-index: 2;
         border-radius: 0;
+        background-color: ${theme.palette.background.paper};
+        box-shadow: none;
+        outline: 1px solid ${getBorderColor(theme)};
     `;
 
-    const valueContainer = (base: CSSObjectWithLabel, hasValue: boolean) => css`
+    const valueContainer = (base: CSSObjectWithLabel) => css`
         ${base};
-        ${hasValue &&
-        css`
-            background-color: ${theme.custom.colors.secondaryBackground}
-            color: ${theme.custom.colors.secondaryColor}
-        `}
+    `;
+
+    const dropdownIndicator = (base: CSSObjectWithLabel) => css`
+        ${base};
+        color: currentColor;
+    `;
+
+    const indicatorSeparator = (base: CSSObjectWithLabel) => css`
+        ${base};
+        background-color: currentColor;
     `;
 
     return {
@@ -127,5 +126,7 @@ export const selectStyled = (theme: Theme) => {
         input,
         singleValue,
         valueContainer,
+        dropdownIndicator,
+        indicatorSeparator,
     };
 };

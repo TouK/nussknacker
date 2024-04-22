@@ -1,6 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Variable } from "../../../../common/TestResultUtils";
 import { cx } from "@emotion/css";
+import { nodeInput, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     value: Variable;
@@ -14,7 +15,7 @@ function prettyPrint(obj: unknown) {
 export default forwardRef<HTMLTextAreaElement, Props>(function TestValue(props: Props, ref: React.Ref<HTMLTextAreaElement>) {
     const { value, shouldHideTestResults } = props;
     return (
-        <div className={cx("node-value", shouldHideTestResults && "partly-hidden")}>
+        <div className={cx(nodeValue, shouldHideTestResults && "partly-hidden")}>
             {value?.original ? <ReadonlyTextarea ref={ref} value={value.original} /> : null}
             <ReadonlyTextarea ref={ref} value={prettyPrint(value?.pretty)} />
             {shouldHideTestResults ? (
@@ -37,7 +38,7 @@ const ReadonlyTextarea = forwardRef<HTMLTextAreaElement, { value: string }>(func
         <textarea
             ref={innerRef}
             style={{ height: textAreaFullHeight }}
-            className="node-input"
+            className={nodeInput}
             readOnly
             value={value}
             rows={value.split("\n").length}
