@@ -9,9 +9,9 @@ import sttp.apispec.openapi.{MediaType, OpenAPI, Operation}
 import sttp.apispec.openapi.circe._
 import scala.jdk.CollectionConverters._
 
-object SchemaExamplesValidator {
+object OpenAPIExamplesValidator {
 
-  def validateSchemaExamples(spec: OpenAPI): List[InvalidExample] = {
+  def validateExamples(spec: OpenAPI): List[InvalidExample] = {
     val componentsSchemas = spec.components.map(_.schemas).getOrElse(Map.empty).map { case (key, schemaLike) =>
       s"#/components/schemas/$key" -> schemaLike.asJson
     }
@@ -57,7 +57,7 @@ object SchemaExamplesValidator {
       operation: Operation,
       isRequest: Boolean,
       componentsSchemas: Map[String, Json]
-  ): List[InvalidExample] =
+  ): List[InvalidExample] = {
     for {
       schema <- mediaType.schema.toList
       jsonSchema <- {
@@ -72,7 +72,7 @@ object SchemaExamplesValidator {
           case _ => Nil
         }
       }
-      (_, refOrExample) <- mediaType.examples.toList
+      (exampleId, refOrExample) <- mediaType.examples.toList
       example           <- refOrExample.toOption.toList
       exampleValue      <- example.value.toList
       singleExampleValue <- exampleValue match {
@@ -90,7 +90,7 @@ object SchemaExamplesValidator {
           NonEmptyList
             .from(jsonSchema.validate(singleExampleValueString, InputFormat.JSON).asScala.toList)
             .map { errors =>
-              InvalidExample(singleExampleValueString, operation.operationId, isRequest, errors)
+              InvalidExample(singleExampleValueString, operation.operationId, isRequest, exampleId, errors)
             }
             .toList
         } catch {
@@ -99,6 +99,7 @@ object SchemaExamplesValidator {
         }
       }
     } yield invalidJson
+  }
 
   private def resolveSchemaReferences(
       schema: Json,

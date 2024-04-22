@@ -27,8 +27,24 @@ import scala.util.Try
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints should have examples matching schemas") {
-    val generatedSchema = NuDesignerApiAvailableToExpose.generateOpenApi
-    SchemaExamplesValidator.validateSchemaExamples(generatedSchema) shouldBe empty
+    val generatedSchema          = NuDesignerApiAvailableToExpose.generateOpenApi
+    val examplesValidationResult = OpenAPIExamplesValidator.validateExamples(generatedSchema)
+    val clue = examplesValidationResult
+      .map { case InvalidExample(_, operationId, isRequest, exampleId, errors) =>
+        errors
+          .map(_.getMessage)
+          .distinct
+          .map("  " + _)
+          .mkString(
+            s"${operationId.getOrElse("<not defined>")} > ${if (isRequest) "request" else "response"} > $exampleId\n",
+            "\n",
+            ""
+          )
+      }
+      .mkString("\n")
+    withClue(clue) {
+      examplesValidationResult shouldBe empty
+    }
   }
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
@@ -46,6 +62,7 @@ case class InvalidExample(
     example: String,
     operationId: Option[String],
     isRequest: Boolean,
+    exampleId: String,
     errors: NonEmptyList[ValidationMessage]
 )
 
