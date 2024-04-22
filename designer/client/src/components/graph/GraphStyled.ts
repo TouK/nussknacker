@@ -40,15 +40,15 @@ export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
             display: "none",
         },
         ".connection-wrap": {
+            cursor: "default",
             "&:hover": {
-                cursor: "default",
                 opacity: 0,
                 strokeOpacity: 0,
             },
         },
         ".connection": {
             stroke: theme.palette.text.secondary,
-            "stroke-width": 1,
+            strokeWidth: 1,
         },
         // simple method to get dragging state
         '&[style*="pointer"]': {

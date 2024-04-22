@@ -52,12 +52,12 @@ export const CommentButton = styled(NkButton)(
     border-radius: 3px !important;
     cursor: pointer;
     &:hover {
-        background-color: ${lighten(theme.palette.background.paper, 0.2)} !important;
+        background-color: ${theme.palette.action.hover} !important;
     }
 `,
 );
 
-export const PanelComment = styled("div")(() => ({
+export const PanelComment = styled("div")(({ theme }) => ({
     marginTop: "1px",
     fontSize: "12px",
     wordBreak: "break-word",

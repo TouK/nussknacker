@@ -4,11 +4,12 @@ import { FieldName, onChangeType, ValueCompileTimeValidation } from "../../../it
 import { fieldLabel } from "./StyledSettingsComponnets";
 import { NodeValidationError, ReturnedType, VariableTypes } from "../../../../../../../types";
 import EditableEditor from "../../../../editors/EditableEditor";
-import { NodeInput } from "../../../../../../FormElements";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../../../reducers/selectors/settings";
+import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
+import Input from "../../../../editors/field/Input";
 
 interface ValidationFields extends ValueCompileTimeValidation {
     variableTypes: VariableTypes;
@@ -66,18 +67,20 @@ export default function ValidationFields({
                         "An empty value means that the validation error message will be generated dynamically based on the validation expression.",
                     ),
                 })}
-                <NodeInput
-                    style={{ width: "70%" }}
-                    value={validationFailedMessage}
-                    onChange={(event) =>
-                        onChange(
-                            `${path}.valueCompileTimeValidation.validationFailedMessage`,
-                            event.currentTarget.value === "" ? null : event.currentTarget.value,
-                        )
-                    }
-                    readOnly={readOnly}
-                    placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
-                />
+                <div className={nodeValue}>
+                    <Input
+                        value={validationFailedMessage}
+                        onChange={(event) =>
+                            onChange(
+                                `${path}.valueCompileTimeValidation.validationFailedMessage`,
+                                event.currentTarget.value === "" ? null : event.currentTarget.value,
+                            )
+                        }
+                        readOnly={readOnly}
+                        placeholder={t("fragment.validation.validationErrorMessagePlaceholder", "eg. Parameter value is not valid.")}
+                        fieldErrors={[]}
+                    />
+                </div>
             </FormControl>
         </>
     );

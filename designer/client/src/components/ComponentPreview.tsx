@@ -90,7 +90,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
 
 const Port = ({ className }: { className?: string }) => {
     const size = portSize * 2;
-    const position = size / 2;
+    const position = size * 2;
     const port = css({
         width: size,
         height: size,

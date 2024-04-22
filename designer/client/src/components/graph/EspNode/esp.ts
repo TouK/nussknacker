@@ -47,7 +47,7 @@ const border: dia.MarkupNodeJSON = {
     attributes: {
         width: RECT_WIDTH,
         height: RECT_HEIGHT,
-        "stroke-width": 1,
+        strokeWidth: 1,
         fill: "none",
         rx: BORDER_RADIUS,
     },
