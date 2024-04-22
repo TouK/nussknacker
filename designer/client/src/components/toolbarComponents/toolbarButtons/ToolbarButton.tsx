@@ -2,7 +2,7 @@ import { css, cx } from "@emotion/css";
 import { Typography, useTheme } from "@mui/material";
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { PANEL_BUTTON_FONT_SIZE, PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
+import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
 import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { Icon } from "./ToolbarButtonStyled";
@@ -28,9 +28,8 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         userSelect: "none",
         opacity: disabled ? 0.3 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
-        fontSize: PANEL_BUTTON_FONT_SIZE,
         width,
-        height: width,
+        height: "fit-content",
         outline: "none",
 
         borderColor: hasError ? palette.error.main : "transparent",
@@ -50,7 +49,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         children: (
             <>
                 <Icon title={title}>{icon}</Icon>
-                <Typography variant={"caption"} display={variant === ButtonsVariant.small ? "none" : "unset"}>
+                <Typography variant={"overline"} display={variant === ButtonsVariant.small ? "none" : "unset"}>
                     {name}
                 </Typography>
             </>

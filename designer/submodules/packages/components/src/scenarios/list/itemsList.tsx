@@ -24,7 +24,11 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
             <ListItemAvatar sx={{ minWidth: "46px" }}>
                 <ScenarioAvatar scenario={row} />
             </ListItemAvatar>
-            <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
+            <ListItemText
+                primary={<FirstLine row={row} />}
+                secondary={<SecondLine row={row} />}
+                secondaryTypographyProps={{ component: "span" }}
+            />
         </ListItemButton>
     );
 });

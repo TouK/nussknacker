@@ -18,6 +18,7 @@
 * [#5873](https://github.com/TouK/nussknacker/pull/5873) Handle list of the anonymous statistic URLs, and send them in the interval
 * [#5889](https://github.com/TouK/nussknacker/pull/5889) Decision Table component parameters validation improvement
 * [#5898](https://github.com/TouK/nussknacker/pull/5898) fixed Nu runtime memory leak
+* [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 
 1.14.0 (21 Mar 2024)
 -------------------------
