@@ -4,31 +4,9 @@ sidebar_position: 5
 
 # Machine Learning (Enterprise only)
 
-## Overview
-                              
-Nussknacker can evaluate ML models using the Machine Learning component. The ML Enricher is an Enterprise component of Nussknacker and requires a separate license, contact info@nussknacker.io for license terms and instructions how to obtain jar with ML Enricher. 
+Nussknacker can infer ML models using the Machine Learning enrichers. The ML enrichers are Enterprise components of Nussknacker and require a separate license. Please contact <info@nussknacker.io> for license terms and more details.
 
-Models can be either JPMML encoded or exported with H2O Mojo/Pojo. 
-Model repository can be one of the following:
-- file system
-- MLFlow registry
-- custom model registry
-                                 
-
-## Configuration
-
-The Machine Learning enricher is configured under `components` configuration key. Check this [configuration file snippet](../installation_configuration_guide/Common.md#configuration-areas) to understand the placement of `components` configuration key in the configuration file.
-
-Sample configuration:
-```
-components.prinzPMML {  
-    pmmlConfig {
-      fileExtension: ".pmml"
-      modelsDirectory: "file:///opt/nussknacker/pmml-models"
-      modelVersionSeparator: "-v"
-    }
-  }
-```
-If ML Enricher is configured, Designer will automatically generate a component for each ML model found and place them in the Enrichers section of the tools palette.
-
-If new ML models are added, Designer needs to be restarted to detect them. 
+We support the inference of the following ML technologies:
+- native Python models discovered using the [MLflow](https://mlflow.org/) model registry and executed with our ML runtime
+- models exported in the [PMML](https://en.wikipedia.org/wiki/Predictive_Model_Markup_Language) format
+- models exported in the [H2O](https://h2o.ai/) format

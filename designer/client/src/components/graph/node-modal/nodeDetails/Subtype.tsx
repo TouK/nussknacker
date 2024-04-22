@@ -2,13 +2,15 @@ import { styled, Typography } from "@mui/material";
 import React, { PropsWithChildren } from "react";
 import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
 
-const SubtypeStyled = styled("div")`
-    height: ${MODAL_HEADER_HEIGHT}px;
-    background: #3a3a3a;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-`;
+import { blendLighten } from "../../../../containers/theme/helpers";
+
+const SubtypeStyled = styled("div")(({ theme }) => ({
+    height: `${MODAL_HEADER_HEIGHT}px`,
+    backgroundColor: blendLighten(theme.palette.background.paper, 0.1),
+    display: "flex",
+    alignItems: "center",
+    padding: theme.spacing(0, 1.25),
+}));
 
 export const Subtype = ({ children }: PropsWithChildren<unknown>) => {
     return (

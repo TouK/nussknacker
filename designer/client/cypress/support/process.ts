@@ -21,6 +21,10 @@ declare global {
             layoutScenario: typeof layoutScenario;
             deployScenario: typeof deployScenario;
             cancelScenario: typeof cancelScenario;
+            createKafkaTopic: typeof createKafkaTopic;
+            removeKafkaTopic: typeof removeKafkaTopic;
+            createSchema: typeof createSchema;
+            removeSchema: typeof removeSchema;
         }
     }
 }
@@ -178,6 +182,48 @@ function deleteAllTestProcesses({ filter, force }: { filter?: string; force?: bo
     });
 }
 
+function createKafkaTopic(topic: string) {
+    const redpandaContainerName = Cypress.env("REDPANDA_CONTAINER") || "cypress_e2e_redpanda";
+    return cy.exec(`docker exec ${redpandaContainerName} rpk topic create ${topic}`);
+}
+
+function removeKafkaTopic(topic: string) {
+    const redpandaContainerName = Cypress.env("REDPANDA_CONTAINER") || "cypress_e2e_redpanda";
+    return cy.exec(`docker exec ${redpandaContainerName} rpk topic delete ${topic}`);
+}
+
+function createSchema(subject: string, schemaFileName: string) {
+    const schemaRegistryUrl = Cypress.env("SCHEMA_REGISTRY_ADDRESS") || "http://localhost:3082";
+    return cy.fixture(schemaFileName).then((schemaContent) => {
+        cy.request({
+            method: "POST",
+            url: `${schemaRegistryUrl}/subjects/${subject}/versions`,
+            body: { schema: JSON.stringify(schemaContent) },
+            headers: {
+                "Content-Type": "application/vnd.schemaregistry.v1+json",
+            },
+        }).then((response) => {
+            expect(response.status).to.eq(200); // Check for a successful response
+            cy.log("Schema ID:", response.body.id);
+        });
+    });
+}
+
+function removeSchema(subject: string) {
+    const schemaRegistryUrl = Cypress.env("SCHEMA_REGISTRY_ADDRESS") || "http://localhost:3082";
+    cy.request({
+        method: "DELETE",
+        url: `${schemaRegistryUrl}/subjects/${subject}?permanent=true`,
+        headers: {
+            "Content-Type": "application/vnd.schemaregistry.v1+json",
+        },
+        failOnStatusCode: false,
+    }).then((response) => {
+        expect(response.status).to.be.oneOf([200, 204, 404]); // Successful deletion should return 200 or 204
+        cy.log("Force deleted all versions of schema subject:", subject);
+    });
+}
+
 function getNode(name: string, end?: boolean) {
     return cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000 });
 }
@@ -245,5 +291,8 @@ Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
 Cypress.Commands.add("deployScenario", deployScenario);
 Cypress.Commands.add("cancelScenario", cancelScenario);
-
+Cypress.Commands.add("createKafkaTopic", createKafkaTopic);
+Cypress.Commands.add("removeKafkaTopic", removeKafkaTopic);
+Cypress.Commands.add("createSchema", createSchema);
+Cypress.Commands.add("removeSchema", removeSchema);
 export default {};

@@ -1,5 +1,5 @@
 import { css, cx } from "@emotion/css";
-import { useTheme } from "@mui/material";
+import { styled, useTheme } from "@mui/material";
 import React, { forwardRef, PropsWithChildren, ReactElement, useCallback, useImperativeHandle, useRef } from "react";
 import { ClearIcon } from "../table/SearchFilter";
 import { InputProps, ThemedInput } from "./ThemedInput";
@@ -39,11 +39,6 @@ export const InputWithIcon = forwardRef<Focusable, Props>(function InputWithIcon
         width: size / 2,
         height: size / 2,
         marginLeft: size / 4,
-        svg: {
-            boxShadow: `0 0 ${size / 4}px ${size / 8}px ${theme.custom.colors.secondaryBackground}, 0 0 ${size / 2}px ${size / 2}px ${
-                theme.custom.colors.secondaryBackground
-            } inset`,
-        },
     });
 
     const ref = useRef<HTMLInputElement>();

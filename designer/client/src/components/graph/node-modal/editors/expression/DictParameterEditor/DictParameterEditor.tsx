@@ -8,13 +8,14 @@ import { ExtendedEditor } from "../Editor";
 import { ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { ParamType } from "../../types";
-import { NodeInput } from "../../../../../withFocus";
+import { NodeInput } from "../../../../../FormElements";
 import { selectStyled } from "../../../../../../stylesheets/SelectStyled";
 import i18next from "i18next";
 import ValidationLabels from "../../../../../modals/ValidationLabels";
 import { cx } from "@emotion/css";
 import { isEmpty } from "lodash";
 import { tryParseOrNull } from "../../../../../../common/JsonUtils";
+import { nodeInput, nodeInputWithError, nodeValue } from "../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -72,7 +73,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     const isValid = isEmpty(fieldErrors);
 
     return (
-        <Box className={"node-value"}>
+        <Box className={nodeValue}>
             <Autocomplete
                 disabled={readOnly}
                 renderInput={({ inputProps, InputProps }) => (
@@ -80,8 +81,9 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
                         <NodeInput
                             {...inputProps}
                             className={cx(
+                                nodeInput,
                                 inputProps.className,
-                                showValidation && !isValid && "node-input-with-error",
+                                showValidation && !isValid && nodeInputWithError,
                                 readOnly && "read-only",
                             )}
                         />

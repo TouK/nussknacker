@@ -57,6 +57,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * If you previously specified base component jar explicitly in `modelConfig.classPath`
       as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
       `components/flink/flinkBaseUnbounded.jar` explicitly.
+    * [#5887](https://github.com/TouK/nussknacker/pull/5887) When using a custom DesignerConfig, ensure that long text elements like 'generate file' are positioned in the last row to prevent excessive spacing between elements.
 
 ### Other changes
 

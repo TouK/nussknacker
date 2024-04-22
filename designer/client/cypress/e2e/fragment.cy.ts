@@ -34,8 +34,7 @@ describe("Fragment", () => {
         cy.get("@window").contains("+").click();
         cy.get("[data-testid='fieldsRow:4']").find("[placeholder='Field name']").type("name_string_any_with_suggestion");
         toggleSettings(4);
-        cy.get("[data-testid='settings:4']").contains("Any value").click();
-        cy.get("[id$='option-1']").click({ force: true });
+        cy.get("[data-testid='settings:4']").contains("Any value").select(1);
 
         // Display Add list item errors when blank value
         cy.get("[data-testid='settings:4']").contains("User defined list").click();
@@ -77,15 +76,13 @@ describe("Fragment", () => {
         cy.get("@window").contains("+").click();
         cy.get("[data-testid='fieldsRow:5']").find("[placeholder='Field name']").type("name_string_fixed");
         toggleSettings(5);
-        cy.get("[data-testid='settings:5']").contains("Any value").click();
-        cy.get("[id$='option-0']").click({ force: true });
+        cy.get("[data-testid='settings:5']").contains("Any value").select(1);
         cy.get("[data-testid='settings:5']").contains("User defined list").click();
         cy.get("[data-testid='settings:5']").find("[id='ace-editor']").type("#meta.processName");
         cy.get("[data-testid='settings:5']").contains("Typing...").should("not.exist");
         cy.get("[data-testid='settings:5']").find("[id='ace-editor']").type("{enter}");
         cy.get("[data-testid='settings:5']").find("[role='button']").contains("#meta.processName");
-        cy.get("[data-testid='settings:5']").find("[aria-label='type-select']").eq(1).click();
-        cy.get("[id$='option-1']").click({ force: true });
+        cy.get("[data-testid='settings:5']").find("[aria-label='type-select']").eq(1).select(1);
         cy.get("[data-testid='settings:5']").find("textarea").eq(1).type("Hint text test");
 
         cy.get("[data-testid='settings:5']")
@@ -127,8 +124,7 @@ describe("Fragment", () => {
         toggleSettings(7);
 
         // Select any value with suggestions Input mode
-        cy.get("[data-testid='settings:7']").contains("Any value").click();
-        cy.get("[id$='option-1']").click({ force: true });
+        cy.get("[data-testid='settings:7']").contains("Any value").select(1);
 
         // Activate preset mode
         cy.get("[data-testid='settings:7']").contains("Preset").click();
@@ -147,8 +143,8 @@ describe("Fragment", () => {
             .contains(/preset selection/i)
             .siblings()
             .eq(0)
-            .click();
-        cy.get("[id$='option-1']").click({ force: true });
+            .find("input")
+            .select(1);
 
         // Select Initial value
         cy.get("[data-testid='settings:7']")
