@@ -80,6 +80,7 @@ export const GraphStyled = styled(FocusableStyled)(({ theme }) => ({
                 path: {
                     fill: theme.palette.background.default,
                     scale: "0.6",
+                    transform: "translate(-16px, -16px)",
                 },
             },
         },
