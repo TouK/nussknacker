@@ -12,7 +12,6 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
-import sttp.apispec.openapi.OpenAPI
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.{Endpoint, EndpointInput, auth}
@@ -28,44 +27,34 @@ import scala.util.Try
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints should have examples matching schemas") {
-    val generatedSchema          = NuDesignerApiAvailableToExpose.generateOpenApi
-    val examplesValidationResult = OpenAPIExamplesValidator.validateExamples(generatedSchema)
+    val generatedSpec            = NuDesignerApiAvailableToExpose.generateOpenApiYaml
+    val examplesValidationResult = OpenAPIExamplesValidator.validateExamples(generatedSpec)
     val clue = examplesValidationResult
-      .map { case InvalidExample(example, _, operationId, isRequest, exampleId, errors) =>
+      .map { case InvalidExample(_, _, operationId, isRequest, exampleId, errors) =>
         errors
           .map(_.getMessage)
           .distinct
           .map("    " + _)
-          .mkString(
-            s"""${operationId.getOrElse("<not defined>")} > ${if (isRequest) "request" else "response"} > $exampleId
-               |  example: $example
-               |  errors:
-               |""".stripMargin,
-            "\n",
-            ""
-          )
+          .mkString(s"$operationId > ${if (isRequest) "request" else "response"} > $exampleId\n", "\n", "")
       }
-      .mkString("\n")
+      .mkString("", "\n", "\n")
     withClue(clue) {
-      examplesValidationResult shouldBe empty
+      examplesValidationResult.size shouldEqual 0
     }
   }
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
     val currentNuDesignerOpenApiYamlContent =
       (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
-
-    val generatedSchema = NuDesignerApiAvailableToExpose.generateOpenApi
-
-    generatedSchema.toYaml should be(currentNuDesignerOpenApiYamlContent)
+    NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
   }
 
 }
 
 case class InvalidExample(
-    example: String,
+    example: Json,
     resolvedSchema: Json,
-    operationId: Option[String],
+    operationId: String,
     isRequest: Boolean,
     exampleId: String,
     errors: NonEmptyList[ValidationMessage]
@@ -73,13 +62,15 @@ case class InvalidExample(
 
 object NuDesignerApiAvailableToExpose {
 
-  def generateOpenApi: OpenAPI = {
+  def generateOpenApiYaml: String = {
     val endpoints = findApiEndpointsClasses().flatMap(findEndpointsInClass)
-    OpenAPIDocsInterpreter(NuDesignerExposedApiHttpService.openAPIDocsOptions).toOpenAPI(
+    val docs = OpenAPIDocsInterpreter(NuDesignerExposedApiHttpService.openAPIDocsOptions).toOpenAPI(
       es = endpoints,
       title = NuDesignerExposedApiHttpService.openApiDocumentTitle,
       version = ""
     )
+
+    docs.toYaml
   }
 
   private def findApiEndpointsClasses() = {

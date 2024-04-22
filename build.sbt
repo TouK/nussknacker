@@ -1953,7 +1953,8 @@ lazy val designer = (project in file("designer/server"))
         "com.github.erosb"               % "everit-json-schema"              % everitSchemaV exclude ("commons-logging", "commons-logging"),
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
         "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
-        "com.networknt"                  % "json-schema-validator"           % "1.4.0"              % Test
+        "com.networknt"                  % "json-schema-validator"           % "1.4.0"              % Test,
+        "io.circe"                      %% "circe-yaml-v12"                  % circeV               % Test,
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
