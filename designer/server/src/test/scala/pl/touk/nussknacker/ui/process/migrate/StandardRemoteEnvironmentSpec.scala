@@ -268,14 +268,6 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
-          /*
-            FIXME: Currently, MigrateScenarioRequestDtoV1 and MigrateScenarioRequestDtoV2 are "the same" and they serve
-              only for hint for the developer who'll add real next MigrateScenarioRequestDtoV3. I propose then to get
-              rid one these two and merge them into one (v1). This operation need to be performed only once, because
-              having two DTOses again will be helpful for developers to add new ones. Also the implementation of
-              this parsing should simplify since yawn parser will be able to better distinguish between them! (at least
-              when the migrations will concern field names / field types).
-           */
           parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
             case Right(migrateScenarioRequestDtoV2) if migrateScenarioRequestDtoV2.version == 2 =>
               lastlySentMigrateScenarioRequest = Some(
