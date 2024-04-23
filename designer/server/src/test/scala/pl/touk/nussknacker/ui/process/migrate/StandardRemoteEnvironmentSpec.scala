@@ -278,17 +278,23 @@ class StandardRemoteEnvironmentSpec
            */
           parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
             case Right(migrateScenarioRequestDtoV2) if migrateScenarioRequestDtoV2.version == 2 =>
-              lastlySentMigrateScenarioRequest = Some(MigrateScenarioData.toDomain(migrateScenarioRequestDtoV2))
+              lastlySentMigrateScenarioRequest = Some(
+                MigrateScenarioData.toDomain(migrateScenarioRequestDtoV2).rightValue
+              )
             case Right(_) =>
               parseBodyToJson(request).as[MigrateScenarioRequestDtoV1] match {
                 case Right(migrateScenarioRequestDtoV1) =>
-                  lastlySentMigrateScenarioRequest = Some(MigrateScenarioData.toDomain(migrateScenarioRequestDtoV1))
+                  lastlySentMigrateScenarioRequest = Some(
+                    MigrateScenarioData.toDomain(migrateScenarioRequestDtoV1).rightValue
+                  )
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
             case Left(_) =>
               parseBodyToJson(request).as[MigrateScenarioRequestDtoV1] match {
                 case Right(migrateScenarioRequestDtoV1) =>
-                  lastlySentMigrateScenarioRequest = Some(MigrateScenarioData.toDomain(migrateScenarioRequestDtoV1))
+                  lastlySentMigrateScenarioRequest = Some(
+                    MigrateScenarioData.toDomain(migrateScenarioRequestDtoV1).rightValue
+                  )
                 case Left(_) => lastlySentMigrateScenarioRequest = None
               }
           }

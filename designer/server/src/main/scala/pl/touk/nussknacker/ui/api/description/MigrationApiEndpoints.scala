@@ -121,6 +121,10 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
               value = MigrationError.InsufficientPermission(LoggedUser.apply("Peter", "Griffin"))
             )
           )
+      ),
+      oneOfVariant(
+        BadRequest,
+        plainBody[MigrationError.CannotTransformMigrateScenarioRequestIntoMigrationDomain]
       )
     )
 
@@ -147,6 +151,10 @@ object MigrationApiEndpoints {
       final case class CannotMigrateArchivedScenario(processName: ProcessName, environment: String)
           extends MigrationError
       final case class InsufficientPermission(user: LoggedUser) extends MigrationError
+
+      final case class CannotTransformMigrateScenarioRequestIntoMigrationDomain(
+          migrateScenarioRequestDto: MigrateScenarioRequestDto
+      ) extends MigrationError
 
       implicit val invalidScenarioErrorCodec: Codec[String, InvalidScenario, CodecFormat.TextPlain] =
         Codec.string.map(
@@ -178,6 +186,14 @@ object MigrationApiEndpoints {
 
             s"The supplied user [${user.username}] is not authorized to access this resource"
           })
+        )
+
+      implicit val cannotTransformMigrateScenarioRequestIntoMigrationDomainErrorCodec
+          : Codec[String, CannotTransformMigrateScenarioRequestIntoMigrationDomain, CodecFormat.TextPlain] =
+        Codec.string.map(
+          Mapping.from[String, CannotTransformMigrateScenarioRequestIntoMigrationDomain](deserializationException)(_ =>
+            s"Error occurred while transforming migrate scenario request into domain object"
+          )
         )
 
       def from(nuDesignerError: NuDesignerError)(implicit loggedUser: LoggedUser): MigrationError =

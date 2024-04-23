@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
@@ -24,8 +25,12 @@ class MigrationApiHttpService(
     remoteEnvironmentApiEndpoints.migrateEndpoint
       .serverSecurityLogic(authorizeKnownUser[MigrationError])
       .serverLogicEitherT { implicit loggedUser => req: MigrateScenarioRequestDto =>
-        val migrateScenarioData = MigrateScenarioData.toDomain(req)
-        migrationService.migrate(migrateScenarioData)
+        val migrateScenarioDataE = MigrateScenarioData.toDomain(req)
+        migrateScenarioDataE match {
+          case Left(migrationError) => EitherT.leftT(migrationError)
+          case Right(migrateScenarioData) =>
+            migrationService.migrate(migrateScenarioData)
+        }
       }
   }
 

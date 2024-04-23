@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
   MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2
+  MigrateScenarioRequestDtoV2,
+  MigrationError
 }
 import pl.touk.nussknacker.ui.util.VersionedData
 
@@ -17,7 +18,7 @@ object MigrateScenarioData {
 
   type CurrentMigrateScenarioData = MigrateScenarioDataV2
 
-  def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): MigrateScenarioData =
+  def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): Either[MigrationError, MigrateScenarioData] =
     migrateScenarioRequestDto match {
       case MigrateScenarioRequestDtoV1(
             1,
@@ -30,15 +31,17 @@ object MigrateScenarioData {
             processName,
             isFragment
           ) =>
-        MigrateScenarioDataV1(
-          sourceEnvironmentId,
-          remoteUserName,
-          processingMode,
-          engineSetupName,
-          processCategory,
-          scenarioGraph,
-          processName,
-          isFragment
+        Right(
+          MigrateScenarioDataV1(
+            sourceEnvironmentId,
+            remoteUserName,
+            processingMode,
+            engineSetupName,
+            processCategory,
+            scenarioGraph,
+            processName,
+            isFragment
+          )
         )
       case MigrateScenarioRequestDtoV2(
             2,
@@ -51,17 +54,19 @@ object MigrateScenarioData {
             processName,
             isFragment
           ) =>
-        MigrateScenarioDataV2(
-          sourceEnvironmentId,
-          remoteUserName,
-          processingMode,
-          engineSetupName,
-          processCategory,
-          scenarioGraph,
-          processName,
-          isFragment
+        Right(
+          MigrateScenarioDataV2(
+            sourceEnvironmentId,
+            remoteUserName,
+            processingMode,
+            engineSetupName,
+            processCategory,
+            scenarioGraph,
+            processName,
+            isFragment
+          )
         )
-      case e => throw new IllegalStateException(s"Unexpected version number in DTO, got: $e")
+      case _ => Left(MigrationError.CannotTransformMigrateScenarioRequestIntoMigrationDomain(migrateScenarioRequestDto))
     }
 
   def fromDomain(migrateScenarioRequest: MigrateScenarioData): MigrateScenarioRequestDto =

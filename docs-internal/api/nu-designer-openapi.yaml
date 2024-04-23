@@ -752,11 +752,6 @@ paths:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: Attempt to migrate scenario which is already archived
-                  value: Cannot migrate, scenario process1 is archived on test. You
-                    have to unarchive scenario on test in order to migrate.
         '401':
           description: ''
           content:
