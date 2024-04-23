@@ -4,6 +4,7 @@ import { GlobalCursor } from "./GlobalCursor";
 import { pressedKeys } from "./KeysObserver";
 import { isTouchEvent } from "../../helpers/detectDevice";
 import { pointers, select, Selection } from "d3-selection";
+import { alpha, Theme } from "@mui/material";
 
 export enum SelectionMode {
     replace = "replace",
@@ -39,7 +40,7 @@ export class RangeSelectPlugin {
     private keys: string[];
     private selectStart: g.PlainPoint | null;
 
-    constructor(private paper: dia.Paper) {
+    constructor(private paper: dia.Paper, private readonly theme: Theme) {
         this.element.on("pointerdown.range", this.onStart.bind(this));
         this.body.on("pointermove.range", this.onRangeChange.bind(this)).on("pointerup.range", this.onEndSelection.bind(this));
         this.svg.on("touchmove.range", this.onAbortByMultitouch.bind(this), { passive: true });
@@ -188,12 +189,12 @@ export class RangeSelectPlugin {
             body:
                 this.mode === SelectionMode.toggle
                     ? {
-                          fill: "rgba(0,255,85,0.15)",
-                          stroke: "#009966",
+                          fill: alpha(this.theme.palette.success.main, 0.2),
+                          stroke: this.theme.palette.success.main,
                       }
                     : {
-                          fill: "rgba(0,183,255,0.2)",
-                          stroke: "#0066FF",
+                          fill: alpha(this.theme.palette.primary.main, 0.2),
+                          stroke: this.theme.palette.primary.main,
                       },
         });
     };

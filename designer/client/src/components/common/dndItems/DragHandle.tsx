@@ -68,7 +68,7 @@ export const DragHandle: React.FC<{ active?: boolean }> = ({ active }): React.JS
                 onMouseUp={onMouseUp}
                 className={cx(
                     css({
-                        g: { fill: isActive ? theme.palette.primary.main : theme.custom.colors.primary },
+                        g: { fill: isActive ? theme.palette.primary.main : theme.palette.text.secondary },
                     }),
                 )}
             />

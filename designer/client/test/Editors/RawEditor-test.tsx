@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
 import { mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 const mockStore = configureMockStore();
 
@@ -43,7 +44,7 @@ describe(RawEditor.name, () => {
             </NuThemeProvider>,
         );
 
-        const inputErrorIndicator = container.getElementsByClassName("node-input-with-error");
+        const inputErrorIndicator = container.getElementsByClassName(nodeInputWithError);
         expect(inputErrorIndicator.item(0)).toBeInTheDocument();
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });

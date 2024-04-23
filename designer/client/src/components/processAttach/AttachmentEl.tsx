@@ -5,6 +5,7 @@ import HttpService from "../../http/HttpService";
 import Date from "../common/Date";
 import { AttachmentDetails, DownloadAttachment, DownloadButton, AttachHeader } from "./StyledAttach";
 import { ProcessName } from "../Process/types";
+import { Typography } from "@mui/material";
 
 export function AttachmentEl({ data, processName }: { data: Attachment; processName: ProcessName }) {
     return (
@@ -17,9 +18,9 @@ export function AttachmentEl({ data, processName }: { data: Attachment; processN
             <AttachmentDetails>
                 <AttachHeader>
                     <Date date={data.createDate} />
-                    <span>{` | v${data.processVersionId} | ${data.user}`}</span>
+                    <Typography variant={"overline"}>{` | v${data.processVersionId} | ${data.user}`}</Typography>
                 </AttachHeader>
-                <p> {data.fileName} </p>
+                <Typography> {data.fileName} </Typography>
             </AttachmentDetails>
         </li>
     );

@@ -4,30 +4,24 @@ import ProcessBackIcon from "../../assets/img/arrows/back-process.svg";
 import { useTranslation } from "react-i18next";
 import { matchPath, useLocation } from "react-router-dom";
 import { MetricsBasePath } from "../../containers/paths";
-import { styled } from "@mui/material";
+import { styled, Typography } from "@mui/material";
+
+import { blendLighten } from "../../containers/theme/helpers";
 
 const BackIcon = styled(ProcessBackIcon)(() => ({
     height: "12px",
 }));
 
-const ButtonText = styled("span")(({ theme }) => ({
-    fontSize: "14px",
-    fontWeight: 600,
-    color: theme.custom.colors.secondaryColor,
-    marginLeft: "8px",
-}));
-
 const ProcessLinkButton = styled(ProcessLink)(({ theme }) => ({
-    backgroundColor: theme.custom.colors.tundora,
-    border: `1px solid ${theme.custom.colors.tundora}`,
-    borderRadius: "3px",
-    height: "25px",
+    color: theme.palette.text.primary,
+    backgroundColor: blendLighten(theme.palette.background.paper, 0.2),
     display: "flex",
     alignItems: "center",
-    padding: "0 8px",
+    padding: theme.spacing(0, 1),
     cursor: "pointer",
     "&:hover, &:focus": {
-        backgroundColor: theme.custom.colors.scorpion,
+        textDecoration: "none",
+        backgroundColor: theme.palette.action.hover,
     },
 }));
 
@@ -49,7 +43,7 @@ export default function ProcessBackButton() {
             title={t("processBackButton.title", "Go back to {{processName}} graph page", { processName })}
         >
             <BackIcon />
-            <ButtonText>{t("processBackButton.text", "back to {{processName}}", { processName })}</ButtonText>
+            <Typography ml={1}>{t("processBackButton.text", "Back to {{processName}}", { processName })}</Typography>
         </ProcessLinkButton>
     );
 }

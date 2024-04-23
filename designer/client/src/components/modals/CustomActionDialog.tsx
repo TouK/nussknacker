@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { loadProcessState } from "../../actions/nk";
 import HttpService, { CustomActionValidationRequest } from "../../http/HttpService";
-import { CustomAction, NodeValidationError, ValidationErrors } from "../../types";
+import { CustomAction, NodeValidationError } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent, WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
@@ -16,8 +16,8 @@ import ErrorBoundary from "../common/ErrorBoundary";
 import { FormControl, FormHelperText, FormLabel } from "@mui/material";
 import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
-import { debounce } from "lodash";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -73,7 +73,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                         <ErrorBoundary>
                             <Editor
                                 editorConfig={param?.editor}
-                                className={"node-value"}
+                                className={nodeValue}
                                 fieldErrors={getValidationErrorsForField(errors, param.name)}
                                 formatter={null}
                                 expressionInfo={null}

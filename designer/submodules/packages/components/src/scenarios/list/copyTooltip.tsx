@@ -56,11 +56,11 @@ export function CopyTooltip({ children, text, title }: PropsWithChildren<{ text:
                 },
                 tooltip: {
                     sx: {
-                        bgcolor: (t) => (t.palette.mode === "dark" ? "white" : "black"),
-                        color: (t) => (t.palette.mode === "dark" ? "black" : "white"),
+                        bgcolor: (t) => (t.palette.mode === "dark" ? t.palette.common.white : t.palette.common.black),
+                        color: (t) => (t.palette.mode === "dark" ? t.palette.common.black : t.palette.common.white),
                     },
                 },
-                arrow: { sx: { color: (t) => (t.palette.mode === "dark" ? "white" : "black") } },
+                arrow: { sx: { color: (t) => (t.palette.mode === "dark" ? t.palette.common.white : t.palette.common.black) } },
             }}
             placement="bottom-start"
             arrow

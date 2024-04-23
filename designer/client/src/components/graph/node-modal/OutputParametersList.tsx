@@ -7,6 +7,7 @@ import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
 import { isEmpty } from "lodash";
 import { FormControl, FormLabel } from "@mui/material";
+import { nodeInput, nodeInputWithError, nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 type OutputFieldProps = {
     autoFocus?: boolean;
@@ -35,7 +36,7 @@ function OutputField({
 }: OutputFieldProps): JSX.Element {
     const readOnly = !isEditMode || readonly;
 
-    const className = !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error";
+    const className = !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`;
     const [isMarked] = useDiffMark();
 
     return (
@@ -122,7 +123,7 @@ export default function OutputParametersList({
             <FormLabel title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
             </FormLabel>
-            <div className="node-value">
+            <div className={nodeValue}>
                 <div className="fieldsControl">
                     {entries.map(([name, value]) => (
                         <OutputField

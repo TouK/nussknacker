@@ -18,7 +18,7 @@ export function calcLayout(graph: dia.Graph, cellsToLayout: dia.Cell[] = []): vo
             dagre: dagre,
             nodeSep: 60,
             edgeSep: 0,
-            rankSep: 120,
+            rankSep: 102,
             rankDir: "TB",
         });
         if (!util.isEqual(graphPoint, alignPoint)) {

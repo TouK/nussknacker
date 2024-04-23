@@ -43,7 +43,7 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                 sx={{ opacity }}
                 secondaryAction={
                     !row.isFragment && (
-                        <IconButton component={ExternalLink} href={metricsHref(row.name)}>
+                        <IconButton color={"inherit"} component={ExternalLink} href={metricsHref(row.name)}>
                             <AssessmentIcon />
                         </IconButton>
                     )

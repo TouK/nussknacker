@@ -2,11 +2,10 @@
 import { dia, routers } from "jointjs";
 import { Edge, EdgeKind, ProcessDefinitionData, ScenarioGraph } from "../../../types";
 import NodeUtils from "../NodeUtils";
+import { Theme } from "@mui/material";
+import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
 
-const LINK_TEXT_COLOR = "#686868";
-const LINK_COLOR = "#F5F5F5";
-
-function makeLabels(label = "", prefix = ""): dia.Link.Label[] {
+function makeLabels(theme: Theme, label = "", prefix = ""): dia.Link.Label[] {
     const havePrefix = prefix.length > 0;
     return label.length === 0
         ? []
@@ -22,9 +21,9 @@ function makeLabels(label = "", prefix = ""): dia.Link.Label[] {
                           refHeight: "100%",
                           refWidth2: 12,
                           refHeight2: 12,
-                          stroke: LINK_TEXT_COLOR,
-                          fill: LINK_COLOR,
-                          strokeWidth: 1,
+                          stroke: getBorderColor(theme),
+                          fill: blendLighten(theme.palette.background.paper, 0.04),
+                          strokeWidth: 0.5,
                           rx: 5,
                           ry: 5,
                           cursor: "pointer",
@@ -33,17 +32,17 @@ function makeLabels(label = "", prefix = ""): dia.Link.Label[] {
                           text: havePrefix ? `${prefix}: ${label}` : label,
                           fontWeight: 600,
                           fontSize: 10,
-                          fill: LINK_TEXT_COLOR,
+                          fill: theme.palette.text.secondary,
                       },
                   },
               },
           ];
 }
 
-export function makeLink(edge: Edge & { index?: number }, paper: dia.Paper) {
+export function makeLink(edge: Edge & { index?: number }, paper: dia.Paper, theme: Theme) {
     const edgeLabel = NodeUtils.edgeLabel(edge);
     const switchEdges: string[] = [EdgeKind.switchNext, EdgeKind.switchDefault];
-    const labels = makeLabels(edgeLabel, switchEdges.includes(edge.edgeType?.type) ? `${edge.index}` : "");
+    const labels = makeLabels(theme, edgeLabel, switchEdges.includes(edge.edgeType?.type) ? `${edge.index}` : "");
     return (
         paper
             .getDefaultLink(null, null)
@@ -80,7 +79,12 @@ export const defaultRouter: routers.RouterJSON = {
     },
 };
 
-export function getDefaultLinkCreator(arrowMarkerId: string, scenarioGraph: ScenarioGraph, processDefinition: ProcessDefinitionData) {
+export function getDefaultLinkCreator(
+    arrowMarkerId: string,
+    scenarioGraph: ScenarioGraph,
+    processDefinition: ProcessDefinitionData,
+    theme: Theme,
+) {
     return (cellView: dia.CellView, magnet: SVGElement) => {
         const isReversed = magnet?.getAttribute("port") === "In";
 
@@ -117,7 +121,7 @@ export function getDefaultLinkCreator(arrowMarkerId: string, scenarioGraph: Scen
                     processDefinition,
                     scenarioGraph,
                 });
-                link.labels(makeLabels(NodeUtils.edgeLabel(edge)));
+                link.labels(makeLabels(theme, NodeUtils.edgeLabel(edge)));
             } else {
                 link.labels([]);
             }

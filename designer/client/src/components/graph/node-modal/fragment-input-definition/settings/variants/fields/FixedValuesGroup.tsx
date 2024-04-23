@@ -14,7 +14,6 @@ interface FixedValuesGroup {
 
 export function FixedValuesGroup({ item, onChange, path, fixedValuesType, readOnly }: FixedValuesGroup) {
     const { t } = useTranslation();
-    const theme = useTheme();
 
     return (
         <FormControl>
@@ -33,13 +32,11 @@ export function FixedValuesGroup({ item, onChange, path, fixedValuesType, readOn
                 }}
             >
                 <FormControlLabel
-                    sx={{ color: theme.custom.colors.secondaryColor }}
                     value={FixedValuesType.ValueInputWithDictEditor}
                     control={<Radio />}
                     label={<Typography variant={"caption"}>{t("fragment.settings.preset", "Preset")}</Typography>}
                 />
                 <FormControlLabel
-                    sx={{ color: theme.custom.colors.secondaryColor }}
                     value={FixedValuesType.ValueInputWithFixedValuesProvided}
                     control={<Radio />}
                     label={<Typography variant={"caption"}>{t("fragment.settings.userDefinedList", "User defined list")}</Typography>}
