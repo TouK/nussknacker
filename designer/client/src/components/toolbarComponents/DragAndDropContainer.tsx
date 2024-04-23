@@ -1,10 +1,9 @@
-import { GlobalStyles, useTheme } from "@mui/material";
 import React, { PropsWithChildren, useCallback, useState } from "react";
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { ToolbarPosition } from "../../actions/nk/toolbars";
-import { alpha } from "../../containers/theme/helpers";
-import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME } from "./ToolbarsContainer";
+import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
 
 type Props = PropsWithChildren<{
     onMove: (from: ToolbarPosition, to: ToolbarPosition) => void;
@@ -42,7 +41,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                         minHeight: isDragging ? "1em" : null,
                         minWidth: SIDEBAR_WIDTH,
                         position: "relative",
-
+                        backgroundColor: theme.palette.background.paper,
                         "&::after": {
                             content: isDragging ? "''" : null,
                             transition: theme.transitions.create(["all"], { duration: theme.transitions.duration.standard }),
@@ -53,7 +52,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                             bottom: 0,
                             backdropFilter: "blur(0.5px)",
                             background: theme.palette.action.selected,
-                            outline: `3px dashed ${theme.palette.action.active}`,
+                            outline: `3px dashed ${theme.palette.common.white}`,
                             outlineOffset: -4,
 
                             [`.${DRAGGING_FROM_CLASSNAME} > &`]: {

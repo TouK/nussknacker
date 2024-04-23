@@ -1,13 +1,14 @@
 import React from "react";
 import InitialValue from "../fields/InitialValue";
 import { SettingLabelStyled } from "../fields/StyledSettingsComponnets";
-import { TextAreaNodeWithFocus } from "../../../../../../withFocus";
+import { TextAreaNode } from "../../../../../../FormElements";
 import { AnyValueParameterVariant, onChangeType } from "../../../item";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { useTranslation } from "react-i18next";
 import { ValidationsFields } from "../fields/validation";
 import { getValidationErrorsForField } from "../../../../editors/Validators";
 import { FormControl } from "@mui/material";
+import { nodeInput } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     item: AnyValueParameterVariant;
@@ -41,12 +42,12 @@ export const AnyValueVariant = ({ item, path, onChange, readOnly, variableTypes,
             />
             <FormControl>
                 <SettingLabelStyled>{t("fragment.hintText", "Hint text:")}</SettingLabelStyled>
-                <TextAreaNodeWithFocus
+                <TextAreaNode
                     value={item.hintText}
                     onChange={(e) => onChange(`${path}.hintText`, e.currentTarget.value)}
                     style={{ width: "70%" }}
                     disabled={readOnly}
-                    className={"node-input"}
+                    className={nodeInput}
                 />
             </FormControl>
         </>

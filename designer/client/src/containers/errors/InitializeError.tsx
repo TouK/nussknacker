@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
 import { InitErrorComponentProps } from "../Auth/InitErrorComponent";
-import { StyledBlueButton } from "./StyledBlueButton";
 import { RootErrorPage } from "../../components/common/RootErrorBoundary";
+import { LoadingButton } from "../../windowManager/LoadingButton";
 
 interface ErrorProps {
     message: string;
@@ -56,7 +56,7 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
     const { description, button, message } = errorProps;
     return (
         <RootErrorPage message={message} description={description}>
-            {button && <StyledBlueButton onClick={() => retry()}>{button}</StyledBlueButton>}
+            {button && <LoadingButton title={button} action={() => retry()} />}
         </RootErrorPage>
     );
 }

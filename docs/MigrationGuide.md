@@ -31,6 +31,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
   * `AllowedProcessingModes.All` in case of all processing modes allowed
   * `AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes)` in case only set of processing modes is allowed
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Refactored API around `FlinkSource`
+  * Added `StandardFlinkSource` with more granular additional traits replacing the need for `FlinkIntermediateRawSource`
+  * Removed `BasicFlinkSource` and `FlinkIntermediateRawSource`. Sources extending these traits should now extend 
+    `StandardFlinkSource`. For reference on how to migrate, see changes in `FlinkKafkaSource` or `CollectionSource`
+  * Renamed `FlinkSource`'s `sourceStream` method to `contextStream`
+  * Removed `EmptySourceFunction`
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Added support for bounded sources and Flink runtime mode in 
+  Flink tests
+  * `CollectionSource` now takes Flink's `Boundedness` with default `Unbounded` and `RuntimeExecutionMode` with default 
+    `None` as a parameters. It's encouraged to set the `Boundedness` to bounded if applicable
+  * `Boundedness` and `RuntimeExecutionMode` is also possible to set in `FlinkTestScenarioRunner` in new overloading 
+    `runWithData` method
 
 ### Configuration changes
 
@@ -45,6 +57,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * If you previously specified base component jar explicitly in `modelConfig.classPath`
       as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
       `components/flink/flinkBaseUnbounded.jar` explicitly.
+    * [#5887](https://github.com/TouK/nussknacker/pull/5887) When using a custom DesignerConfig, ensure that long text elements like 'generate file' are positioned in the last row to prevent excessive spacing between elements.
 
 ### Other changes
 
@@ -55,6 +68,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
   * "Basic Decision Table" -> "Decision Table"
   * "Expression" -> "Match condition"
+* [#5881](https://github.com/TouK/nussknacker/pull/5881) `nussknacker-interpreter` module was renamed to `nussknacker-scenario-compiler`
 
 ## In version 1.14.0
 

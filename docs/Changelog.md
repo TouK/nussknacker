@@ -3,18 +3,26 @@
 1.15.0 (Not released yet)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
-* [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) Libraries bump:
+* [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) [#3922](https://github.com/TouK/nussknacker/pull/5901) Libraries bump:
+  * Cats 2.9.0 -> 2.10.0
+  * Cats Effect: 3.5.2 -> 3.5.4
   * Flink: 1.17.2 -> 1.18.1
+  * Kafka client: 3.6.1 -> 3.6.2
+  * Netty 4.1.93 -> 4.1.109
+  * openapi-circe-yaml: 0.6.0 -> 0.7.4
   * Tapir: 1.7.4 -> 1.9.11
-  * openapi-circe-yaml: 0.6.0 -> 0.7.4 
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Added information about component's allowed processing modes to Component API
 * [#5831](https://github.com/TouK/nussknacker/pull/5831) Fragment input parameters presets support
 * [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
+* [#5848](https://github.com/TouK/nussknacker/pull/5848) Change colors across an entire user interface
 * [#5853](https://github.com/TouK/nussknacker/pull/5853) Add processing mode information and filtering to the components table
 * [#5843](https://github.com/TouK/nussknacker/pull/5843) Added new endpoint to provide statistics URL
 * [#5873](https://github.com/TouK/nussknacker/pull/5873) Handle list of the anonymous statistic URLs, and send them in the interval
+* [#5889](https://github.com/TouK/nussknacker/pull/5889) Decision Table component parameters validation improvement
+* [#5898](https://github.com/TouK/nussknacker/pull/5898) fixed Nu runtime memory leak
+* [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 
 1.14.0 (21 Mar 2024)
 -------------------------

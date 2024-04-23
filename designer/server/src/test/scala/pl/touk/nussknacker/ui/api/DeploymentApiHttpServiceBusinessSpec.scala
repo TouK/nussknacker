@@ -5,10 +5,6 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
@@ -26,20 +22,6 @@ class DeploymentApiHttpServiceBusinessSpec
     with LazyLogging
     with VeryPatientScalaFutures
     with Matchers {
-
-  private val scenarioName = ProcessName("batch-test")
-
-  private val sourceNodeId = "fooSourceNodeId"
-
-  private val scenario = ScenarioBuilder
-    .streaming(scenarioName.value)
-    .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
-    .emptySink(
-      "sink",
-      "table",
-      "Table" -> Expression.spel("'transactions_summary'"),
-      "Value" -> Expression.spel("#input")
-    )
 
   private val correctDeploymentRequest = s"""{
                                             |  "scenarioName": "$scenarioName",

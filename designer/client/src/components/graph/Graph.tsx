@@ -32,6 +32,7 @@ import { Scenario } from "../Process/types";
 import { nodeFocused, nodeValidationError } from "./focusableStyled";
 import { dragHovered } from "./GraphStyled";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
+import { Theme } from "@mui/material";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
@@ -44,6 +45,7 @@ type Props = GraphProps & {
     userSettings: UserSettings;
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
     isPristine?: boolean;
+    theme: Theme;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -97,6 +99,8 @@ export class Graph extends React.Component<Props> {
     };
 
     createPaper = (): dia.Paper => {
+        const { theme } = this.props;
+
         const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly;
         const paper = createPaper({
             frozen: true,
@@ -117,7 +121,7 @@ export class Graph extends React.Component<Props> {
             },
         });
 
-        const uniqueArrowMarker = createUniqueArrowMarker(paper);
+        const uniqueArrowMarker = createUniqueArrowMarker(paper, theme);
         // arrow id from paper is needed, so we have to mutate this
         paper.options.defaultLink = (cellView, magnet) => {
             // actual props are needed when link is created
@@ -125,6 +129,7 @@ export class Graph extends React.Component<Props> {
                 uniqueArrowMarker,
                 this.props.scenario.scenarioGraph,
                 this.props.processDefinitionData,
+                this.props.theme,
             );
             return linkCreator(cellView, magnet);
         };
@@ -181,9 +186,11 @@ export class Graph extends React.Component<Props> {
     }
 
     drawGraph = (scenarioGraph: ScenarioGraph, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
+        const { theme } = this.props;
+
         this.redrawing = true;
 
-        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData);
+        applyCellChanges(this.processGraphPaper, scenarioGraph, processDefinitionData, theme);
 
         if (isEmpty(layout)) {
             this.directedLayout();
@@ -320,7 +327,7 @@ export class Graph extends React.Component<Props> {
 
         if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
             const { toggleSelection, resetSelection } = this.props;
-            new RangeSelectPlugin(this.processGraphPaper, this.panAndZoom.getPinchEventActive);
+            new RangeSelectPlugin(this.processGraphPaper, this.panAndZoom.getPinchEventActive, this.props.theme);
             this.processGraphPaper.on("rangeSelect:selected", ({ elements, mode }: RangeSelectedEventData) => {
                 const nodes = elements.filter((el) => isModelElement(el)).map(({ id }) => id.toString());
                 if (mode === SelectionMode.toggle) {
@@ -396,9 +403,9 @@ export class Graph extends React.Component<Props> {
     }
 
     updateNodesCounts(): void {
-        const { processCounts, userSettings } = this.props;
+        const { processCounts, userSettings, theme } = this.props;
         const nodes = this.graph.getElements().filter(isModelElement);
-        nodes.forEach(updateNodeCounts(processCounts, userSettings));
+        nodes.forEach(updateNodeCounts(processCounts, userSettings, theme));
     }
 
     zoomIn(): void {
@@ -410,7 +417,7 @@ export class Graph extends React.Component<Props> {
     }
 
     async exportGraph(): Promise<string> {
-        return await prepareSvg(this._exportGraphOptions);
+        return await prepareSvg(this._exportGraphOptions, this.props.theme);
     }
 
     twoWayValidateConnection = (

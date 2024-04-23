@@ -114,7 +114,13 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     tempFile.toPath
   }
 
-  private lazy val kafkaTableConfig = s"tableDefinitionFilePath: $sqlTablesDefinitionFilePath"
+  private lazy val kafkaTableConfig =
+    s"""
+       |{
+       |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
+       |  enableFlinkBatchExecutionMode: false
+       |}
+       |""".stripMargin
 
   private lazy val tableKafkaComponentsConfig: Config = ConfigFactory.parseString(kafkaTableConfig)
 

@@ -5,7 +5,7 @@ import { addAttachment } from "../../actions/nk";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
-import { NodeInput } from "../withFocus";
+import { NodeInput } from "../FormElements";
 import { AddAttachmentsWrapper, AttachmentButton, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
 import { Typography } from "@mui/material";
 

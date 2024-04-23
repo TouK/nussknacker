@@ -653,7 +653,7 @@ object SampleNodes {
           ) =>
         val split = value.split(",").toList
         NextParameters(split.map(name => Parameter(ParameterName(name), Unknown)), state = Some(split))
-      case TransformationStep((`par1ParamName`, FailedToDefineParameter) :: (`lazyPar1ParamName`, _) :: Nil, None) =>
+      case TransformationStep((`par1ParamName`, FailedToDefineParameter(_)) :: (`lazyPar1ParamName`, _) :: Nil, None) =>
         outputParameters(context, dependencies, Nil)
       case TransformationStep((`par1ParamName`, _) :: (`lazyPar1ParamName`, _) :: rest, Some(names))
           if rest.map(_._1.value) == names =>
@@ -778,7 +778,7 @@ object SampleNodes {
           case _       => ???
         }
         NextParameters(versionDeclaration.createParameter(intVersions) :: Nil)
-      case TransformationStep((`aTypeParamName`, FailedToDefineParameter) :: Nil, None) =>
+      case TransformationStep((`aTypeParamName`, FailedToDefineParameter(_)) :: Nil, None) =>
         output(context, dependencies)
       case TransformationStep((`aTypeParamName`, _) :: (`versionParamName`, _) :: Nil, None) =>
         output(context, dependencies)
@@ -874,11 +874,12 @@ object SampleNodes {
       import scala.jdk.CollectionConverters._
       val elementsValue = elementsDeclaration.extractValueUnsafe(params).asScala.toList
 
-      new CollectionSource(elementsValue, None, Typed[String])
-        with TestDataGenerator
-        with FlinkSourceTestSupport[String] {
-
-        override val contextInitializer: ContextInitializer[String] = customContextInitializer
+      new CollectionSource(
+        list = elementsValue,
+        timestampAssigner = None,
+        returnType = Typed[String],
+      ) with TestDataGenerator with FlinkSourceTestSupport[String] {
+        override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
         override def generateTestData(size: Int): TestData = TestData(
           elementsValue.map(e => TestRecord(Json.fromString(e)))
@@ -947,7 +948,7 @@ object SampleNodes {
           case _       => ???
         }
         NextParameters(versionParamDeclaration.createParameter(intVersions) :: Nil)
-      case TransformationStep((`valueParamName`, _) :: (`aTypeParamName`, FailedToDefineParameter) :: Nil, None) =>
+      case TransformationStep((`valueParamName`, _) :: (`aTypeParamName`, FailedToDefineParameter(_)) :: Nil, None) =>
         FinalResults(context)
       case TransformationStep((`valueParamName`, _) :: (`aTypeParamName`, _) :: (`versionParamName`, _) :: Nil, None) =>
         FinalResults(context)
@@ -1033,8 +1034,7 @@ object SampleNodes {
     SourceFactory.noParamUnboundedStreamFactory[SimpleRecord](
       new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord])
         with FlinkSourceTestSupport[SimpleRecord] {
-        override def testRecordParser: TestRecordParser[SimpleRecord] = simpleRecordParser
-
+        override def testRecordParser: TestRecordParser[SimpleRecord]                          = simpleRecordParser
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
       }
     )
