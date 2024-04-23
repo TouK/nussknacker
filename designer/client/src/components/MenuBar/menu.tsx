@@ -33,7 +33,7 @@ export const PlainLink = styled(TabElement)(({ theme }) => ({
 const List = styled(TruncatedList)({
     flex: 1,
     display: "flex",
-    padding: ".01px", // avoid size rounding problem (flickering of list elements) for stupid zoom values
+    padding: ".05px", // avoid size rounding problem (flickering of list elements) for stupid zoom values
     li: {
         // expand leftmost elements to force right alignment
         "&:nth-of-type(1), &:nth-of-type(2)": {

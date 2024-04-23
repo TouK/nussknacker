@@ -91,6 +91,11 @@ const nodeStyles = (theme: Theme) => {
             }
         }
 
+        .joint-layers {
+            will-change: transform;
+            transition: none 0s ease 0s;
+        }
+
         .${nodeValidationError} {
             ${nodeHighlight(
                 theme.palette.error.main,
@@ -143,6 +148,7 @@ export const FocusableStyled = styled("div")(
         css`
             width: 100% !important;
             height: 100% !important;
+            user-select: none;
 
             ${nodeStyles(theme)}
 
@@ -223,8 +229,6 @@ export const FocusableStyled = styled("div")(
                 `}
             ${id === "nk-graph-fragment" &&
             `width: 100% !important;
-                #svg-pan-zoom-controls {
-                    transform: translate(0, 0px) scale(0.5);
-                }`}
+                `}
         `,
 );

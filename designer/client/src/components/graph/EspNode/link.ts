@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, routers } from "jointjs";
-import { Edge, EdgeKind, ScenarioGraph, ProcessDefinitionData } from "../../../types";
+import { Edge, EdgeKind, ProcessDefinitionData, ScenarioGraph } from "../../../types";
 import NodeUtils from "../NodeUtils";
 import { Theme } from "@mui/material";
 import { blendLighten, getBorderColor } from "../../../containers/theme/helpers";
@@ -75,6 +75,7 @@ export const defaultRouter: routers.RouterJSON = {
         endDirections,
         step: 15,
         padding: 20,
+        maximumLoops: 200,
     },
 };
 

@@ -30,11 +30,13 @@ declare global {
 }
 
 const processIndexes = {};
+
 function createTestProcessName(name?: string) {
     processIndexes[name] = ++processIndexes[name] || 1;
     const index = padStart(processIndexes[name].toString(), 3, "0");
     return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
 }
+
 function createProcess(
     name?: string,
     fixture?: string,
@@ -248,7 +250,7 @@ function dragNode(
     return cy.getNode(name);
 }
 
-function layoutScenario(waitTime = 400) {
+function layoutScenario(waitTime = 600) {
     cy.contains(/^layout$/).click();
     cy.wait(waitTime); //wait for graph view (zoom, pan) to settle
 }

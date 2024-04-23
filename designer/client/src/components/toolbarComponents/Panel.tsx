@@ -12,6 +12,9 @@ export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) 
     ":focus": {
         background: theme.palette.action.focus,
     },
+    "@media (hover: none)": {
+        padding: ".4em",
+    },
 }));
 
 export const Panel = styled("div")<{ expanded?: boolean; color?: string; width?: number | string }>(
