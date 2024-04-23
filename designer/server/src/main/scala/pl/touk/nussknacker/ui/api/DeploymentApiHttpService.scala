@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.Deploy
 }
 import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, RunDeploymentCommand}
+import pl.touk.nussknacker.ui.process.deployment.{CommonCommandData, DeploymentService, RunDeploymentCommand}
 import pl.touk.nussknacker.ui.process.repository.CommentValidationError
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
@@ -49,11 +49,9 @@ class DeploymentApiHttpService(
               deploymentService
                 .processCommand(
                   RunDeploymentCommand(
-                    scenarioDetails.idWithNameUnsafe,
+                    commonData = CommonCommandData(scenarioDetails.idWithNameUnsafe, request.comment, loggedUser),
                     savepointPath = None,
-                    comment = request.comment,
                     nodesDeploymentData = request.nodesDeploymentData,
-                    user = loggedUser
                   )
                 )
                 .flatten
