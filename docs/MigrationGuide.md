@@ -69,6 +69,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * "Basic Decision Table" -> "Decision Table"
   * "Expression" -> "Match condition"
 * [#5881](https://github.com/TouK/nussknacker/pull/5881) `nussknacker-interpreter` module was renamed to `nussknacker-scenario-compiler`
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Added configurable idle timeout to Flink Kafka source with the
+  default value of 3 minutes. You can configure this timeout in Kafka component config at `idleTimeout.duration` 
+  or disable it at `idleTimeout.enabled`. You can learn about idleness
+  in [Flink general docs](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources)
+  and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
+  allowing for disabling namespaced Kafka consumer groups
 
 ## In version 1.14.0
 
