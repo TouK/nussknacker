@@ -77,7 +77,7 @@ object MigrateScenarioData {
             isFragment
           ) =>
         MigrateScenarioRequestDtoV1(
-          version = dataV1.currentVersion(),
+          version = dataV1.currentVersion,
           sourceEnvironmentId,
           remoteUserName,
           processingMode,
@@ -98,7 +98,7 @@ object MigrateScenarioData {
             isFragment
           ) =>
         MigrateScenarioRequestDtoV2(
-          version = dataV2.currentVersion(),
+          version = dataV2.currentVersion,
           sourceEnvironmentId,
           remoteUserName,
           processingMode,
@@ -122,7 +122,7 @@ final case class MigrateScenarioDataV1(
     processName: ProcessName,
     isFragment: Boolean,
 ) extends MigrateScenarioData {
-  override def currentVersion(): Int = 1
+  override val currentVersion: Int = 1
 }
 
 final case class MigrateScenarioDataV2(
@@ -135,5 +135,5 @@ final case class MigrateScenarioDataV2(
     processName: ProcessName,
     isFragment: Boolean,
 ) extends MigrateScenarioData {
-  override def currentVersion(): Int = 2
+  override val currentVersion: Int = 2
 }
