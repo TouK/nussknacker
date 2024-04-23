@@ -752,12 +752,22 @@ paths:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Attempt to migrate scenario which is already archived
+                  value: Cannot migrate, scenario process1 is archived on test. You
+                    have to unarchive scenario on test in order to migrate.
         '401':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Migration performed by user witout sufficient permissions
+                  value: The supplied user [Griffin] is not authorized to access this
+                    resource
         '403':
           description: ''
           content:

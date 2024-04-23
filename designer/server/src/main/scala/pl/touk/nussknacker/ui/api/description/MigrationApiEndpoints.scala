@@ -11,7 +11,12 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
+  NodeValidationError,
+  NodeValidationErrorType,
+  UIGlobalError,
+  ValidationErrors
+}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ApiVersion._
@@ -72,14 +77,50 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       oneOfVariant(
         BadRequest,
         plainBody[MigrationError.InvalidScenario]
+          .example(
+            Example.of(
+              summary = Some("Invalid scenario to migrate"),
+              value = MigrationError.InvalidScenario(
+                ValidationErrors(
+                  Map.empty,
+                  List.empty,
+                  List(
+                    UIGlobalError(
+                      NodeValidationError(
+                        "FragmentParamClassLoadError",
+                        "Invalid parameter type.",
+                        "Failed to load i.do.not.exist",
+                        Some("$param.badParam.$typ"),
+                        NodeValidationErrorType.SaveAllowed,
+                        None
+                      ),
+                      List("node1")
+                    )
+                  )
+                )
+              )
+            )
+          )
       ),
       oneOfVariant(
         BadRequest,
         plainBody[MigrationError.CannotMigrateArchivedScenario]
+          .example(
+            Example.of(
+              summary = Some("Attempt to migrate scenario which is already archived"),
+              value = MigrationError.CannotMigrateArchivedScenario(ProcessName("process1"), "test")
+            )
+          )
       ),
       oneOfVariant(
         Unauthorized,
         plainBody[MigrationError.InsufficientPermission]
+          .example(
+            Example.of(
+              summary = Some("Migration performed by user witout sufficient permissions"),
+              value = MigrationError.InsufficientPermission(LoggedUser.apply("Peter", "Griffin"))
+            )
+          )
       )
     )
 
