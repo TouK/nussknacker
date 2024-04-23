@@ -8,6 +8,7 @@ import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment._
 
+// TODO: it does not refer to "deployment" only, rename to ValidatedComment
 class DeploymentComment private (value: Comment) {
 
   def toComment(actionName: ScenarioActionName): Comment = {

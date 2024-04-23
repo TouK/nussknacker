@@ -10,7 +10,7 @@
 * [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
     * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
 * [#5798](https://github.com/TouK/nussknacker/pull/5798) Improvements in DeploymentService:
-    * Custom actions are registered in NU database
+    * Custom actions are handled in the same way as deploy and cancel: action and comment are registered in NU database
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Added information about component's allowed processing modes to Component API
 * [#5831](https://github.com/TouK/nussknacker/pull/5831) Fragment input parameters presets support
 * [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
