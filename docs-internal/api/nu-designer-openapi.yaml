@@ -1948,10 +1948,10 @@ components:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
     ApiVersion:
       required:
-      - value
+      - version
       type: object
       properties:
-        value:
+        version:
           type: integer
           format: int32
     Attachment:
