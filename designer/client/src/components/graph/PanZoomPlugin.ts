@@ -22,6 +22,8 @@ function transformToCSSMatrix({ x, y, k }: ZoomTransform): string {
 
 export type Viewport = g.Rect;
 
+const FIT_TRANSITION_NAME = "fit";
+
 export class PanZoomPlugin {
     private zoomBehavior: ZoomBehavior<ZoomedElementBaseType, unknown>;
     private paperSelection: Selection<SVGElement, unknown, null, undefined>;
@@ -85,16 +87,15 @@ export class PanZoomPlugin {
     fitContent(content: g.Rect, updatedViewport?: Viewport): void {
         this.viewport = updatedViewport;
 
-        const transitionName = "fit";
         const scale = Math.min(1, 0.78 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
         const center = content.center();
         const translate = this.getTranslatedCenter(center, this.viewport, scale);
 
         const zoomTransform = zoomIdentity.translate(translate.x, translate.y).scale(scale);
 
-        this.paperSelection.interrupt(transitionName);
+        this.paperSelection.interrupt(FIT_TRANSITION_NAME);
 
-        (isVisualTesting ? this.paperSelection : this.paperSelection.transition(transitionName).duration(750)).call(
+        (isVisualTesting ? this.paperSelection : this.paperSelection.transition(FIT_TRANSITION_NAME).duration(750)).call(
             this.zoomBehavior.transform,
             zoomTransform,
         );
@@ -152,8 +153,11 @@ export class PanZoomPlugin {
         }
     }
 
-    private initMove(): void {
+    private initMove<E extends ZoomedElementBaseType, D>(e: D3ZoomEvent<E, D>): void {
+        if (!e.sourceEvent) return;
+
         this.globalCursor.enable("move");
+        this.paperSelection.interrupt(FIT_TRANSITION_NAME);
     }
 
     private cleanup() {
