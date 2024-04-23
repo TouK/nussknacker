@@ -35,10 +35,10 @@ trait CustomFicusInstances
     with URIExtensions {
 
   implicit val urlValueReader: ValueReader[URL] =
-    javaURIReader.map(uri => uri.withFileSchemeDefault.toURL)
+    URIReaders.javaURIReader.map(uri => uri.withFileSchemeDefault.toURL)
 
-  implicit val uuidValueReader: ValueReader[UUID] = ValueReader[String]
-    .map(value => UUID.fromString(value))
+  implicit val uuidValueReader: ValueReader[UUID] =
+    StringReader.stringValueReader.map(value => UUID.fromString(value))
 
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
 
