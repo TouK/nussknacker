@@ -74,16 +74,16 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
 
-  val defaultGlobalKafkaConfigPath                              = "kafka"
+  val DefaultGlobalKafkaConfigPath                              = "kafka"
   val DefaultForceLatestReadPath                                = "forceLatestRead"
   val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
   val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 
-  def parseConfigOpt(config: Config, path: String = defaultGlobalKafkaConfigPath): Option[KafkaConfig] = {
+  def parseConfigOpt(config: Config, path: String = DefaultGlobalKafkaConfigPath): Option[KafkaConfig] = {
     config.getAs[KafkaConfig](path)
   }
 
-  def parseConfig(config: Config, path: String = defaultGlobalKafkaConfigPath): KafkaConfig = {
+  def parseConfig(config: Config, path: String = DefaultGlobalKafkaConfigPath): KafkaConfig = {
     config.as[KafkaConfig](path)
   }
 
