@@ -18,6 +18,8 @@ import { getProcessName } from "../graph/node-modal/NodeDetailsContent/selectors
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { getValidationErrorsForField } from "../graph/node-modal/editors/Validators";
+import { getFeatureSettings } from "../../reducers/selectors/settings";
+import CommentInput from "../comment/CommentInput";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -99,10 +101,17 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const action = props.data.meta;
     const [validationError, setValidationError] = useState("");
 
+    // TODO: Further changes:
+    //  - rename deploymentCommentSettings (see also DeploymentComment, it serves as a comment validator for all actions)
+    //  - provide better dialog for actions (e.g. GenericActionDialog) with action comment and action parameters
+    const [comment, setComment] = useState("");
+    const featureSettings = useSelector(getFeatureSettings);
+    const deploymentCommentSettings = featureSettings.deploymentCommentSettings;
+
     const [value, setValue] = useState<UnknownRecord>();
 
     const confirm = useCallback(async () => {
-        await HttpService.customAction(processName, action.name, value).then((response) => {
+        await HttpService.customAction(processName, action.name, value, comment).then((response) => {
             if (response.isSuccess) {
                 dispatch(loadProcessState(processName));
                 props.close();
@@ -124,10 +133,22 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     return (
         <WindowContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
-                <CustomActionForm action={action} value={value} onChange={setValue} />
+                <CommentInput
+                    onChange={(e) => setComment(e.target.value)}
+                    value={comment}
+                    defaultValue={deploymentCommentSettings?.exampleComment}
+                    className={cx(
+                        css({
+                            minWidth: 600,
+                            minHeight: 80,
+                        }),
+                    )}
+                    autoFocus
+                />
                 <FormHelperText title={validationError} error>
                     {validationError}
                 </FormHelperText>
+                <CustomActionForm action={action} value={value} onChange={setValue} />
             </div>
         </WindowContent>
     );
