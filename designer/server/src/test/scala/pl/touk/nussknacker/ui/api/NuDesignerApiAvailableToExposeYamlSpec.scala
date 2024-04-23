@@ -1,15 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import com.networknt.schema._
-import io.circe.Json
 import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
-import org.scalactic.anyvals.NonEmptyList
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.test.utils.OpenAPIExamplesValidator
+import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator}
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
@@ -51,15 +48,6 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
   }
 
 }
-
-final case class InvalidExample(
-    example: Json,
-    resolvedSchema: Json,
-    operationId: String,
-    isRequest: Boolean,
-    exampleId: String,
-    errors: NonEmptyList[ValidationMessage]
-)
 
 object NuDesignerApiAvailableToExpose {
 

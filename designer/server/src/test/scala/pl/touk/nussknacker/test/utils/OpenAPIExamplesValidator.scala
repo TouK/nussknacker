@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.test.utils
 
-import com.networknt.schema.{InputFormat, JsonSchemaFactory}
+import com.networknt.schema.{InputFormat, JsonSchemaFactory, ValidationMessage}
 import io.circe.yaml.{parser => YamlParser}
 import io.circe.{ACursor, Json}
 import org.scalactic.anyvals.NonEmptyList
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.TapirJsonSchemaFactory
-import pl.touk.nussknacker.ui.api.InvalidExample
 
 import scala.jdk.CollectionConverters._
 
@@ -107,6 +106,15 @@ class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
   }
 
 }
+
+final case class InvalidExample(
+    example: Json,
+    resolvedSchema: Json,
+    operationId: String,
+    isRequest: Boolean,
+    exampleId: String,
+    errors: NonEmptyList[ValidationMessage]
+)
 
 object OpenAPIExamplesValidator {
 
