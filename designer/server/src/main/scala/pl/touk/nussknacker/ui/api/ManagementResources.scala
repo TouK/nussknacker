@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.deployment.{
   CancelScenarioCommand,
+  CommonCommandData,
   CustomActionCommand,
   DeploymentManagerDispatcher,
   DeploymentService,
@@ -123,18 +124,16 @@ class ManagementResources(
         } ~
         path("deploy" / ProcessNameSegment) { processName =>
           (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) {
-            (processId, comment, savepointPath) =>
-              canDeploy(processId) {
+            (processIdWithName, comment, savepointPath) =>
+              canDeploy(processIdWithName) {
                 complete {
                   deploymentService
                     .processCommand(
                       RunDeploymentCommand(
-                        processId,
-                        Some(savepointPath),
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
-                        comment.map(ApiCallComment(_)),
-                        NodesDeploymentData.empty,
-                        user
+                        commonData = CommonCommandData(processIdWithName, comment.map(ApiCallComment(_)), user),
+                        nodesDeploymentData = NodesDeploymentData.empty,
+                        savepointPath = Some(savepointPath)
                       )
                     )
                     .map(_ => ())
@@ -147,18 +146,16 @@ class ManagementResources(
     pathPrefix("processManagement") {
 
       path("deploy" / ProcessNameSegment) { processName =>
-        (post & processId(processName) & entity(as[Option[String]])) { (processId, comment) =>
-          canDeploy(processId) {
+        (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+          canDeploy(processIdWithName) {
             complete {
               measureTime("deployment", metricRegistry) {
                 deploymentService
                   .processCommand(
                     RunDeploymentCommand(
-                      processId,
-                      None,
-                      comment.map(UserComment),
-                      NodesDeploymentData.empty,
-                      user
+                      commonData = CommonCommandData(processIdWithName, comment.map(UserComment), user),
+                      nodesDeploymentData = NodesDeploymentData.empty,
+                      savepointPath = None
                     )
                   )
                   .map(_ => ())
@@ -168,11 +165,15 @@ class ManagementResources(
         }
       } ~
         path("cancel" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[Option[String]])) { (processId, comment) =>
-            canDeploy(processId) {
+          (post & processId(processName) & entity(as[Option[String]])) { (processIdWithName, comment) =>
+            canDeploy(processIdWithName) {
               complete {
                 measureTime("cancel", metricRegistry) {
-                  deploymentService.processCommand(CancelScenarioCommand(processId, comment.map(UserComment), user))
+                  deploymentService.processCommand(
+                    CancelScenarioCommand(commonData =
+                      CommonCommandData(processIdWithName, comment.map(UserComment), user)
+                    )
+                  )
                 }
               }
             }
@@ -266,11 +267,15 @@ class ManagementResources(
           }
         } ~
         path("customAction" / ProcessNameSegment) { processName =>
-          (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+          (post & processId(processName) & entity(as[CustomActionRequest])) { (processIdWithName, req) =>
             complete {
               deploymentService
                 .processCommand(
-                  CustomActionCommand(req.actionName, process, req.comment.map(UserComment), req.params, user)
+                  CustomActionCommand(
+                    commonData = CommonCommandData(processIdWithName, req.comment.map(UserComment), user),
+                    actionName = req.actionName,
+                    params = req.params
+                  )
                 )
                 .flatMap(actionResult =>
                   toHttpResponse(CustomActionResponse(isSuccess = true, actionResult.msg))(StatusCodes.OK)

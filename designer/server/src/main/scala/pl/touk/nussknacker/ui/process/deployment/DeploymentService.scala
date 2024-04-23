@@ -71,8 +71,9 @@ class DeploymentService(
   }
 
   private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
-    import command._
-    val actionName = ScenarioActionName.Cancel
+    import command.commonData._
+    val actionName: ScenarioActionName    = ScenarioActionName.Cancel
+    val actionParams: Map[String, String] = Map.empty
 
     for {
       // 1. common for all commands/actions
@@ -83,14 +84,14 @@ class DeploymentService(
       // TODO: This inconsistent action-state handling needs a fix.
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[Unit](
-        processId,
+        processIdWithName,
         actionName,
-        Map.empty,
+        actionParams,
         p => p.lastDeployedAction.map(_.processVersionId),
         _ => None
       )
       // 2. command specific section
-      dmCommand = DMCancelScenarioCommand(processId.name, user.toManagerUser)
+      dmCommand = DMCancelScenarioCommand(processIdWithName.name, user.toManagerUser)
       // 3. common for all commands/actions
       actionResult <- runActionAndHandleResults(
         actionName,
@@ -105,16 +106,17 @@ class DeploymentService(
   }
 
   private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
-    import command._
-    val actionName = ScenarioActionName.Deploy
+    import command.commonData._
+    val actionName: ScenarioActionName    = ScenarioActionName.Deploy
+    val actionParams: Map[String, String] = Map.empty
 
     for {
       // 1. common for all commands/actions
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
-        processId,
+        processIdWithName,
         actionName,
-        Map.empty,
+        actionParams,
         p => Some(p.processVersionId),
         p => Some(p.processingType)
       )
@@ -130,7 +132,7 @@ class DeploymentService(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
         deployedScenarioData.resolvedScenario,
-        savepointPath
+        command.savepointPath
       )
       // TODO: move validateBeforeDeploy before creating an action
       actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
@@ -630,13 +632,15 @@ class DeploymentService(
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
   //       - better comment validation
   private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
-    import command._
+    import command.commonData._
+    val actionName: ScenarioActionName    = command.actionName
+    val actionParams: Map[String, String] = command.params
     for {
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
         processIdWithName,
         actionName,
-        params,
+        actionParams,
         p => Some(p.processVersionId),
         _ => None
       )
@@ -645,7 +649,7 @@ class DeploymentService(
         ctx.latestScenarioDetails.toEngineProcessVersion,
         ctx.latestScenarioDetails.json,
         user.toManagerUser,
-        params
+        actionParams
       )
       actionResult <- runActionAndHandleResults(
         actionName,
