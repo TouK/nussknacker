@@ -35,7 +35,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.time.Duration
@@ -46,7 +45,7 @@ class FlinkKafkaSource[T](
     preparedTopics: List[PreparedKafkaTopic],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
-    passedAssigner: Option[TimestampWatermarkHandler[T]],
+    passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
     val formatter: RecordFormatter,
     override val contextInitializer: ContextInitializer[T],
     testParametersInfo: KafkaTestParametersInfo,
@@ -111,13 +110,12 @@ class FlinkKafkaSource[T](
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = Some(
-    passedAssigner.getOrElse(
-      new StandardTimestampWatermarkHandler[T](
-        WatermarkStrategy
-          .forBoundedOutOfOrderness(
-            Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
-          )
+  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
+    Some(
+      StandardTimestampWatermarkHandler.boundedOutOfOrderness(
+        extract = None,
+        maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
+        idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
       )
     )
   )
@@ -133,13 +131,9 @@ class FlinkKafkaSource[T](
     deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
   }
 
-  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
-    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
-    if (kafkaConfig.useNamingStrategyForConsumerGroupId) {
-      namingStrategy.prepareName(baseName)
-    } else {
-      baseName
-    }
+  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {
+    case Some(overridden) => overridden
+    case None             => ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
   }
 
 }
@@ -212,8 +206,4 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     TypeInformation.of(classOf[ConsumerRecord[K, V]])
   }
 
-}
-
-object FlinkKafkaSource {
-  val defaultMaxOutOfOrdernessMillis = 60000
 }
