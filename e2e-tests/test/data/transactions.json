@@ -1,3 +1,0 @@
-{
-  "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"clientId\": {\n      \"type\": \"string\"\n    },\n    \"amount\": {\n      \"type\": \"integer\"\n    }\n  },\n  \"required\": [\n    \"clientId\",\n    \"amount\"\n  ]\n}", "schemaType": "JSON"
-}
