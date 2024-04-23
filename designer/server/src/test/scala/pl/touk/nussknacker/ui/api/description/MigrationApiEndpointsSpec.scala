@@ -11,7 +11,6 @@ class MigrationApiEndpointsSpec extends AnyFreeSpecLike with Matchers {
   "all subclasses of MigrateScenarioRequestDto" - {
     "contain version field of type Int" in {
       val subClasses = findSubclassesOf[MigrateScenarioRequestDto](
-        classOf[MigrateScenarioRequestDto],
         "pl.touk.nussknacker.ui.api.description"
       )
       val actual   = allSubclassesContainVersionField[MigrateScenarioRequestDto](subClasses)

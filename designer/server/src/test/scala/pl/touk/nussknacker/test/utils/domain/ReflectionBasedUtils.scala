@@ -4,11 +4,12 @@ import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
 
 import scala.jdk.CollectionConverters._
+import scala.reflect.{ClassTag, classTag}
 
 object ReflectionBasedUtils {
 
-  def findSubclassesOf[T](clazz: Class[T], packageName: String): List[Class[_ <: T]] = {
-    val baseClass = clazz
+  def findSubclassesOf[T: ClassTag](packageName: String): List[Class[_ <: T]] = {
+    val baseClass = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     val reflections = new Reflections(
       new ConfigurationBuilder().forPackages(baseClass.getPackageName, packageName)
     )

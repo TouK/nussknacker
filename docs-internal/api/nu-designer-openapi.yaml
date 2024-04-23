@@ -712,7 +712,7 @@ paths:
               $ref: '#/components/schemas/MigrateScenarioRequestDto'
             examples:
               Example:
-                summary: example of migration request between environments
+                summary: Migrate given scenario to current Nu instance
                 value:
                   version: 1
                   sourceEnvironmentId: testEnv
@@ -769,12 +769,6 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
-        '500':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
       security:
       - {}
       - httpAuth: []
@@ -797,6 +791,10 @@ paths:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
         '403':
           description: ''
           content:

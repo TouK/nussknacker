@@ -93,25 +93,25 @@ class ApiAdapterServiceSpec extends AnyFlatSpec with Matchers {
 sealed trait TestVersionedApi extends VersionedData
 
 case class TestVersionedApiV1(version: Int, foo: String, bar: List[String]) extends TestVersionedApi {
-  override def currentVersion(): Int = version
+  override val currentVersion: Int = version
 }
 
 //add description field
 case class TestVersionedApiV2(version: Int, foo: String, bar: List[String], description: String)
     extends TestVersionedApi {
-  override def currentVersion(): Int = version
+  override val currentVersion: Int = version
 }
 
 //making foo optional
 case class TestVersionedApiV3(version: Int, foo: Option[String], bar: List[String], description: String)
     extends TestVersionedApi {
-  override def currentVersion(): Int = version
+  override val currentVersion: Int = version
 }
 
 //change bar type from List[String] to List[Int] and set foo to None
 case class TestVersionedApiV4(version: Int, foo: Option[String], bar: List[Int], description: String)
     extends TestVersionedApi {
-  override def currentVersion(): Int = version
+  override val currentVersion: Int = version
 }
 
 object TestVersionedApiAdapters {

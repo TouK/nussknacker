@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
@@ -45,15 +46,7 @@ object NuDesignerApiAvailableToExpose {
   }
 
   private def findApiEndpointsClasses() = {
-    val baseEndpointDefinitionsClass = classOf[BaseEndpointDefinitions]
-    val reflections = new Reflections(
-      new ConfigurationBuilder().forPackages(baseEndpointDefinitionsClass.getPackageName, "pl.touk.nussknacker.ui.api")
-    )
-    reflections
-      .getSubTypesOf(baseEndpointDefinitionsClass)
-      .asScala
-      .toList
-      .sortBy(_.getName)
+    ReflectionBasedUtils.findSubclassesOf[BaseEndpointDefinitions]("pl.touk.nussknacker.ui.api")
   }
 
   private def findEndpointsInClass(clazz: Class[_ <: BaseEndpointDefinitions]) = {
