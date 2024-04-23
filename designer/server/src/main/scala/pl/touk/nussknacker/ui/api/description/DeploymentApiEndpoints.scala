@@ -14,14 +14,10 @@ import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.Deploy
   DeploymentCommentError,
   NoScenario
 }
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{
-  DeploymentError,
-  DeploymentRequest,
-  RequestedDeploymentId
-}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{DeploymentError, DeploymentRequest}
+import pl.touk.nussknacker.ui.process.newdeployment.NewDeploymentId
 import pl.touk.nussknacker.ui.process.repository.ApiCallComment
 import sttp.model.StatusCode
-import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.{Example, Info}
 import sttp.tapir._
 import sttp.tapir.derevo.schema
@@ -31,18 +27,18 @@ import java.util.UUID
 
 class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  private val deploymentIdPathCapture = path[RequestedDeploymentId]("deploymentId")
+  private val deploymentIdPathCapture = path[NewDeploymentId]("deploymentId")
     .copy(info =
       Info
-        .empty[RequestedDeploymentId]
+        .empty[NewDeploymentId]
         .description(
           "Identifier in the UUID format that will be used for the verification of deployment's status"
         )
-        .example(RequestedDeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298")))
+        .example(NewDeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298")))
     )
 
   lazy val requestScenarioDeploymentEndpoint
-      : SecuredEndpoint[(RequestedDeploymentId, DeploymentRequest), DeploymentError, Unit, Any] =
+      : SecuredEndpoint[(NewDeploymentId, DeploymentRequest), DeploymentError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Service allowing to request the deployment of a scenario")
       .put
@@ -88,7 +84,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
-  lazy val checkDeploymentStatusEndpoint: SecuredEndpoint[RequestedDeploymentId, DeploymentError, StatusName, Any] =
+  lazy val checkDeploymentStatusEndpoint: SecuredEndpoint[NewDeploymentId, DeploymentError, StatusName, Any] =
     baseNuApiEndpoint
       .summary("Service allowing to check the status of a deployment")
       .get
@@ -162,19 +158,6 @@ object DeploymentApiEndpoints {
           Mapping.from[String, DeploymentCommentError](deserializationNotSupportedException)(_.message)
         )
       }
-
-    }
-
-    final case class RequestedDeploymentId(value: UUID) {
-      override def toString: String = value.toString
-    }
-
-    object RequestedDeploymentId {
-
-      def generate: RequestedDeploymentId = RequestedDeploymentId(UUID.randomUUID())
-
-      implicit val deploymentIdCodec: PlainCodec[RequestedDeploymentId] =
-        Codec.uuid.map(RequestedDeploymentId(_))(_.value)
 
     }
 
