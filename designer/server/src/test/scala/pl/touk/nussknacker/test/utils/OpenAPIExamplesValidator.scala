@@ -1,19 +1,18 @@
 package pl.touk.nussknacker.test.utils
 
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, SpecVersion}
+import com.networknt.schema.{InputFormat, JsonSchemaFactory}
 import io.circe.yaml.{parser => YamlParser}
 import io.circe.{ACursor, Json}
 import org.scalactic.anyvals.NonEmptyList
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.test.TapirJsonSchemaFactory
 import pl.touk.nussknacker.ui.api.InvalidExample
 
 import scala.jdk.CollectionConverters._
 
-class OpenAPIExamplesValidator private(openAPIVersion: SpecVersion.VersionFlag) {
+class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
 
   import OpenAPIExamplesValidator._
-
-  private val schemaFactory = JsonSchemaFactory.getInstance(openAPIVersion)
 
   def validateExamples(specYaml: String): List[InvalidExample] = {
     val specJson = YamlParser.parse(specYaml).toOption.get
@@ -107,14 +106,11 @@ class OpenAPIExamplesValidator private(openAPIVersion: SpecVersion.VersionFlag) 
     resolveNested(topLevel)
   }
 
-
 }
 
 object OpenAPIExamplesValidator {
 
-  // Regarding to Tapir's MetaSchemaDraft04, tapir is probably compatible with V4 instead of
-  // the default for OpenAPI 3.1.0 (V202012) (https://www.openapis.org/blog/2021/02/18/openapi-specification-3-1-released)
-  val forTapir = new OpenAPIExamplesValidator(SpecVersion.VersionFlag.V4)
+  val forTapir = new OpenAPIExamplesValidator(TapirJsonSchemaFactory.instance)
 
   private implicit class ACursorExt(aCursor: ACursor) {
     def focusObjectFields: List[(String, Json)] = aCursor.focus.flatMap(_.asObject).map(_.toList).getOrElse(List.empty)

@@ -1109,7 +1109,8 @@ lazy val testUtils = (project in utils("test-utils"))
         "io.circe"                      %% "circe-parser"            % circeV,
         "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
         "com.lihaoyi"                   %% "ujson"                   % "3.1.2",
-        "com.github.erosb"               % "everit-json-schema"      % everitSchemaV exclude ("commons-logging", "commons-logging"),
+        // This lib produces more descriptive errors during validation than everit
+        "com.networknt"                  % "json-schema-validator"   % "1.4.0",
         "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % "0.7.4",
@@ -1956,7 +1957,6 @@ lazy val designer = (project in file("designer/server"))
         "com.github.erosb"               % "everit-json-schema"              % everitSchemaV exclude ("commons-logging", "commons-logging"),
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
         "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
-        "com.networknt"                  % "json-schema-validator"           % "1.4.0"              % Test,
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
       ) ++ forScalaVersion(
         scalaVersion.value,
