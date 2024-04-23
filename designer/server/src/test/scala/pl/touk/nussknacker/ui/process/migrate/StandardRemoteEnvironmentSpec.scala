@@ -131,7 +131,7 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest.currentVersion() shouldBe remoteScenarioDescriptionVersion
+          migrateScenarioRequest.currentVersion shouldBe remoteScenarioDescriptionVersion
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -155,7 +155,7 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest.currentVersion() shouldBe localScenarioDescriptionVersion
+          migrateScenarioRequest.currentVersion shouldBe localScenarioDescriptionVersion
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }
@@ -180,7 +180,7 @@ class StandardRemoteEnvironmentSpec
       res shouldBe Right(())
       remoteEnvironment.lastlySentMigrateScenarioRequest match {
         case Some(migrateScenarioRequest) =>
-          migrateScenarioRequest.currentVersion() shouldBe localScenarioDescriptionVersion
+          migrateScenarioRequest.currentVersion shouldBe localScenarioDescriptionVersion
         case _ => fail("lastly sent migrate scenario request should be non empty")
       }
     }

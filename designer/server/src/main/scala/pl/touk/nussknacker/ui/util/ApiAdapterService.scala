@@ -19,7 +19,7 @@ trait ApiAdapterService[D <: VersionedData] {
 
   @tailrec
   private def adaptN(data: D, signedNoOfVersionsToApply: Int): Either[ApiAdapterServiceError, D] = {
-    val currentVersion = data.currentVersion()
+    val currentVersion = data.currentVersion
     val adapters       = getAdapters
 
     signedNoOfVersionsToApply match {
