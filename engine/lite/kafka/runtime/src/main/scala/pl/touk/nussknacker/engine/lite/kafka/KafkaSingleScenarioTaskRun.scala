@@ -55,11 +55,7 @@ class KafkaSingleScenarioTaskRun(
     extends Task
     with LazyLogging {
 
-  private val groupId = if (engineConfig.kafka.useNamingStrategyForConsumerGroupId) {
-    namingStrategy.prepareName(metaData.name.value)
-  } else {
-    metaData.name.value
-  }
+  private val groupId = namingStrategy.prepareName(metaData.name.value)
 
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
   private var producer: KafkaProducerRecordsHandler             = _

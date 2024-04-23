@@ -21,13 +21,12 @@ Pay special attention to the concept of event time and watermarks, see also [doc
 
 ### Integration with Apache Kafka
 
-There is important information in the documentation of Flink Kafka connector (which is used internally by all Nussknacker Kafka sources and sinks): [https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/connectors/datastream/kafka/#kafka-consumers-and-fault-tolerance](https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/connectors/datastream/kafka/#kafka-consumers-and-fault-tolerance).
+Nussknacker uses [Kafka connector](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/) 
+for integration with kafka. It's especially important to understand Kafka fault tolerance which you can read about in
+[this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#fault-tolerance).
 
 In particular, one must not forget that the Flink connector (when checkpoints are enabled):
-
-
-
-* Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct .
+* Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct.
 * Ignore offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
 
 ## Nussknacker and Flink cluster
