@@ -1,14 +1,19 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.test.utils
 
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, SpecVersion}
-import io.circe.{ACursor, Json}
 import io.circe.yaml.{parser => YamlParser}
+import io.circe.{ACursor, Json}
 import org.scalactic.anyvals.NonEmptyList
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.ui.api.InvalidExample
 
 import scala.jdk.CollectionConverters._
 
-object OpenAPIExamplesValidator {
+class OpenAPIExamplesValidator private(openAPIVersion: SpecVersion.VersionFlag) {
+
+  import OpenAPIExamplesValidator._
+
+  private val schemaFactory = JsonSchemaFactory.getInstance(openAPIVersion)
 
   def validateExamples(specYaml: String): List[InvalidExample] = {
     val specJson = YamlParser.parse(specYaml).toOption.get
@@ -51,7 +56,7 @@ object OpenAPIExamplesValidator {
     for {
       schema <- mediaType.hcursor.downField("schema").focus.toList
       resolvedSchema = resolveSchemaReferences(schema, componentsSchemas)
-      jsonSchema     = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(resolvedSchema.spaces2)
+      jsonSchema     = schemaFactory.getSchema(resolvedSchema.spaces2)
       (exampleId, example) <- mediaType.hcursor.downField("examples").focusObjectFields
       exampleValue         <- example.hcursor.downField("value").focus.toList
       invalidJson <- NonEmptyList
@@ -101,6 +106,15 @@ object OpenAPIExamplesValidator {
 
     resolveNested(topLevel)
   }
+
+
+}
+
+object OpenAPIExamplesValidator {
+
+  // Regarding to Tapir's MetaSchemaDraft04, tapir is probably compatible with V4 instead of
+  // the default for OpenAPI 3.1.0 (V202012) (https://www.openapis.org/blog/2021/02/18/openapi-specification-3-1-released)
+  val forTapir = new OpenAPIExamplesValidator(SpecVersion.VersionFlag.V4)
 
   private implicit class ACursorExt(aCursor: ACursor) {
     def focusObjectFields: List[(String, Json)] = aCursor.focus.flatMap(_.asObject).map(_.toList).getOrElse(List.empty)

@@ -9,6 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.test.utils.OpenAPIExamplesValidator
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
@@ -28,7 +29,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints should have examples matching schemas") {
     val generatedSpec            = NuDesignerApiAvailableToExpose.generateOpenApiYaml
-    val examplesValidationResult = OpenAPIExamplesValidator.validateExamples(generatedSpec)
+    val examplesValidationResult = OpenAPIExamplesValidator.forTapir.validateExamples(generatedSpec)
     val clue = examplesValidationResult
       .map { case InvalidExample(_, _, operationId, isRequest, exampleId, errors) =>
         errors
@@ -51,7 +52,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
 }
 
-case class InvalidExample(
+final case class InvalidExample(
     example: Json,
     resolvedSchema: Json,
     operationId: String,
