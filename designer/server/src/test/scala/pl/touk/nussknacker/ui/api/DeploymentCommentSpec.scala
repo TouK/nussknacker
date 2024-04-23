@@ -7,13 +7,13 @@ import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, Deploy
 
 class DeploymentCommentSpec extends AnyFunSuite with Matchers {
 
-  private val mockDeploymentCommentSettings: DeploymentCommentSettings = DeploymentCommentSettings(
+  private val mockDeploymentCommentSettings: DeploymentCommentSettings = DeploymentCommentSettings.unsafe(
     validationPattern = "(issues/[0-9]*)",
     exampleComment = Some("issues/1234")
   )
 
   private val mockDeploymentCommentSettingsWithoutExampleComment: DeploymentCommentSettings =
-    DeploymentCommentSettings(
+    DeploymentCommentSettings.unsafe(
       validationPattern = "(issues/[0-9]*)",
       exampleComment = None
     )
@@ -24,6 +24,16 @@ class DeploymentCommentSpec extends AnyFunSuite with Matchers {
 
   private val emptyValidationPattern    = ""
   private val nonEmptyValidationPattern = "nonEmpty"
+
+  test("DeploymentCommentSettings validation, with empty validationPattern") {
+    DeploymentCommentSettings.create(emptyValidationPattern, None) shouldEqual Invalid(
+      EmptyDeploymentCommentSettingsError("Field validationPattern cannot be empty.")
+    )
+  }
+
+  test("DeploymentCommentSettings validation, with non empty validationPattern") {
+    DeploymentCommentSettings.create(nonEmptyValidationPattern, None) shouldEqual Valid(_: DeploymentCommentSettings)
+  }
 
   test("Comment not required, should pass validation for any comment") {
     DeploymentComment.createDeploymentComment(Some(validComment), None) shouldEqual Valid(_: DeploymentComment)
