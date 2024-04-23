@@ -95,14 +95,17 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
 object MigrationApiEndpoints {
 
   object Dtos {
+    /*
+     TODO: maybe it'd be better to move it to the MigrationService companion object? According to the rule which says
+       the infrastructure layer should have no access to the core/domain layer
+     */
     sealed trait MigrationError
 
     object MigrationError {
       final case class InvalidScenario(errors: ValidationErrors) extends MigrationError
       final case class CannotMigrateArchivedScenario(processName: ProcessName, environment: String)
           extends MigrationError
-      final case class InsufficientPermission(user: LoggedUser)                            extends MigrationError
-      final case class MigrationApiAdapter(apiAdapterServiceError: ApiAdapterServiceError) extends MigrationError
+      final case class InsufficientPermission(user: LoggedUser) extends MigrationError
 
       implicit val invalidScenarioErrorCodec: Codec[String, InvalidScenario, CodecFormat.TextPlain] =
         Codec.string.map(
@@ -135,6 +138,15 @@ object MigrationApiEndpoints {
             s"The supplied user [${user.username}] is not authorized to access this resource"
           })
         )
+
+      def from(nuDesignerError: NuDesignerError)(implicit loggedUser: LoggedUser): MigrationError =
+        nuDesignerError match {
+          case _: UnauthorizedError => MigrationError.InsufficientPermission(loggedUser)
+          case _ @MigrationToArchivedError(processName, environment) =>
+            MigrationError.CannotMigrateArchivedScenario(processName, environment)
+          case _ @MigrationValidationError(errors) => MigrationError.InvalidScenario(errors)
+          case nuDesignerError: NuDesignerError    => throw new IllegalStateException(nuDesignerError.getMessage)
+        }
 
     }
 
