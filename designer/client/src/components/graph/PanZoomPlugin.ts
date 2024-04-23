@@ -92,11 +92,12 @@ export class PanZoomPlugin {
 
         const zoomTransform = zoomIdentity.translate(translate.x, translate.y).scale(scale);
 
-        this.paperSelection
-            .interrupt(transitionName)
-            .transition(transitionName)
-            .duration(isVisualTesting ? 0 : 750)
-            .call(this.zoomBehavior.transform, zoomTransform);
+        this.paperSelection.interrupt(transitionName);
+
+        (isVisualTesting ? this.paperSelection : this.paperSelection.transition(transitionName).duration(750)).call(
+            this.zoomBehavior.transform,
+            zoomTransform,
+        );
     }
 
     zoomIn(): void {
