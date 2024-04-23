@@ -5,9 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import pl.touk.nussknacker.ui.util.ApiVersion
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -20,11 +20,11 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV1,
   MigrateScenarioRequestDtoV2
 }
+import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ApiVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

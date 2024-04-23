@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.ui.util
+package pl.touk.nussknacker.ui.api.utils
 
 import derevo.circe._
 import derevo.derive
+import sttp.tapir.derevo.schema
 
 //TODO: Try with @derive(schema) as well
-@derive(encoder, decoder)
+@derive(encoder, decoder, schema)
 final case class ApiVersion(version: Int)

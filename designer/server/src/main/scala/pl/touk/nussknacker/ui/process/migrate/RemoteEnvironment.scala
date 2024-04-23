@@ -21,15 +21,11 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
+import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
-import pl.touk.nussknacker.ui.util.{
-  ApiAdapterServiceError,
-  ApiVersion,
-  OutOfRangeAdapterRequestError,
-  ScenarioGraphComparator
-}
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder

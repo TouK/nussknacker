@@ -21,10 +21,11 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.TapirCodecs.ApiVersion._
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos
+import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.migrate.{MigrationToArchivedError, MigrationValidationError}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, ApiVersion, OutOfRangeAdapterRequestError}
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError}
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._

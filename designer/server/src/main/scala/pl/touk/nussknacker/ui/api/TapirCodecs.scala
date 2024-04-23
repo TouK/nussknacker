@@ -14,8 +14,8 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDtoV1,
   MigrateScenarioRequestDtoV2
 }
+import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
-import pl.touk.nussknacker.ui.util.ApiVersion
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
 import sttp.tapir.{Codec, CodecFormat, DecodeResult, Schema}
