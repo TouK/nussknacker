@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.kafka.IdlenessConfig.DefaultDuration
+import pl.touk.nussknacker.engine.kafka.KafkaConfig._
 
 import scala.concurrent.duration._
 
@@ -26,7 +28,7 @@ case class KafkaConfig(
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
     kafkaAddress: Option[String] = None,
-    idlenessConfig: Option[IdlenessConfig] = None
+    idleTimeout: Option[IdlenessConfig] = None
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -36,18 +38,18 @@ case class KafkaConfig(
   )
 
   def forceLatestRead: Option[Boolean] =
-    kafkaEspProperties.flatMap(_.get(KafkaEspPropertiesConfig.forceLatestReadPath)).map(_.toBoolean)
+    kafkaEspProperties.flatMap(_.get(DefaultForceLatestReadPath)).map(_.toBoolean)
 
   def defaultMaxOutOfOrdernessMillis: java.time.Duration =
     kafkaEspProperties
-      .flatMap(_.get(KafkaEspPropertiesConfig.defaultMaxOutOfOrdernessMillisPath))
+      .flatMap(_.get(DefaultMaxOutOfOrdernessMillisPath))
       .map(max => java.time.Duration.ofMillis(max.toLong))
-      .getOrElse(KafkaEspPropertiesConfig.defaultMaxOutOfOrdernessMillisDefault)
+      .getOrElse(DefaultMaxOutOfOrdernessMillisDefault)
 
-  def idleTimeout: Option[java.time.Duration] = {
-    val finalIdleConfig = idlenessConfig.getOrElse(IdlenessConfig.default)
-    if (finalIdleConfig.enableIdleTimeout) {
-      Some(java.time.Duration.ofMillis(finalIdleConfig.idleTimeoutDuration.toMillis))
+  def idleTimeoutDuration: Option[java.time.Duration] = {
+    val finalIdleConfig = idleTimeout.getOrElse(IdlenessConfig.DefaultConfig)
+    if (finalIdleConfig.enabled) {
+      Some(java.time.Duration.ofMillis(finalIdleConfig.duration.toMillis))
     } else {
       None
     }
@@ -58,12 +60,6 @@ case class KafkaConfig(
     .get("bootstrap.servers")
     .orElse(kafkaAddress)
 
-}
-
-private object KafkaEspPropertiesConfig {
-  val forceLatestReadPath                   = "forceLatestRead"
-  val defaultMaxOutOfOrdernessMillisPath    = "defaultMaxOutOfOrdernessMillis"
-  val defaultMaxOutOfOrdernessMillisDefault = java.time.Duration.ofMillis(60000)
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
@@ -77,9 +73,11 @@ object KafkaConfig {
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
-  import TopicsExistenceValidationConfig._
 
-  val defaultGlobalKafkaConfigPath = "kafka"
+  val defaultGlobalKafkaConfigPath                              = "kafka"
+  val DefaultForceLatestReadPath                                = "forceLatestRead"
+  val DefaultMaxOutOfOrdernessMillisPath                        = "defaultMaxOutOfOrdernessMillis"
+  val DefaultMaxOutOfOrdernessMillisDefault: java.time.Duration = java.time.Duration.ofMillis(60000)
 
   def parseConfigOpt(config: Config, path: String = defaultGlobalKafkaConfigPath): Option[KafkaConfig] = {
     config.getAs[KafkaConfig](path)
@@ -113,8 +111,9 @@ object CachedTopicsExistenceValidatorConfig {
 
 }
 
-case class IdlenessConfig(enableIdleTimeout: Boolean, idleTimeoutDuration: FiniteDuration)
+case class IdlenessConfig(enabled: Boolean, duration: FiniteDuration = DefaultDuration)
 
 object IdlenessConfig {
-  val default: IdlenessConfig = IdlenessConfig(enableIdleTimeout = true, idleTimeoutDuration = 3 minutes)
+  val DefaultDuration: FiniteDuration = 3 minutes
+  val DefaultConfig: IdlenessConfig   = IdlenessConfig(enabled = true, duration = DefaultDuration)
 }

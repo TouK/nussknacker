@@ -162,7 +162,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
     StandardTimestampWatermarkHandler.boundedOutOfOrderness(
       Some(extract),
       kafkaConfig.defaultMaxOutOfOrdernessMillis,
-      kafkaConfig.idleTimeout
+      kafkaConfig.idleTimeoutDuration
     )
   }
 

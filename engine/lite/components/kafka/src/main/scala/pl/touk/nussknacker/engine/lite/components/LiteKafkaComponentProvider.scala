@@ -40,7 +40,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
-    if (KafkaConfig.parseConfig(dependencies.config).idlenessConfig.isDefined) {
+    if (KafkaConfig.parseConfig(dependencies.config).idleTimeout.isDefined) {
       throw new IllegalArgumentException(
         "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
           "Please remove the idleness config from your Lite Kafka sources config."

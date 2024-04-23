@@ -115,7 +115,7 @@ class FlinkKafkaSource[T](
       StandardTimestampWatermarkHandler.boundedOutOfOrderness(
         extract = None,
         maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
-        idlenessTimeoutDuration = kafkaConfig.idleTimeout
+        idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
       )
     )
   )
