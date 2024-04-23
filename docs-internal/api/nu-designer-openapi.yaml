@@ -2247,7 +2247,7 @@ components:
       type: object
       properties:
         scenarioName:
-          $ref: '#/components/schemas/ProcessName'
+          type: string
         nodesDeploymentData:
           $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
         comment:

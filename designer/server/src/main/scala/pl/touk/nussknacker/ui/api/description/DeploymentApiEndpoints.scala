@@ -118,7 +118,7 @@ object DeploymentApiEndpoints {
 
   object Dtos {
 
-    implicit lazy val scenarioNameSchema: Schema[ProcessName] = Schema.derived
+    implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string[ProcessName]
 
     // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
