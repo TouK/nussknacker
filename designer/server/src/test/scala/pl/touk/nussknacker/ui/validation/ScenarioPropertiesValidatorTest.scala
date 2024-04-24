@@ -5,6 +5,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.TestAdditionalUIConfigProvider
+import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
 class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
@@ -43,8 +46,15 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
         editor = Some(FixedValuesParameterEditor(possibleValues)),
         validators = Some(List(FixedValuesValidator(possibleValues))),
         label = Some(label)
+      ),
+      TestAdditionalUIConfigProvider.scenarioPropertyName -> ScenarioPropertyConfig(
+        defaultValue = None,
+        editor = None,
+        validators = None,
+        label = Some(label)
       )
-    )
+    ),
+    new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify)
   )
 
   test("validate non empty config with required property") {
@@ -175,6 +185,37 @@ class ScenarioPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val result = validator.validate(
       Map(
         optFixedFieldName -> "some text"
+      ).toList
+    )
+
+    result.errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "InvalidPropertyFixedValue",
+              _,
+              _,
+              Some(_),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            ),
+            NodeValidationError(
+              "MissingRequiredProperty",
+              _,
+              _,
+              Some(_),
+              NodeValidationErrorType.SaveAllowed,
+              None
+            )
+          ) =>
+    }
+  }
+
+  test(
+    "validate non empty config with fixed value property with wrong value - validator from additional ui config provider"
+  ) {
+    val result = validator.validate(
+      Map(
+        TestAdditionalUIConfigProvider.scenarioPropertyName -> "some text"
       ).toList
     )
 

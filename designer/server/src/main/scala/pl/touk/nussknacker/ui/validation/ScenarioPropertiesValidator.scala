@@ -11,12 +11,14 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.scenarioproperty.ScenarioPropertyValidatorDeterminerChain
 
 import scala.util.Try
 
 class ScenarioPropertiesValidator(
-    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]
+    scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
+    scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer
 ) {
 
   import cats.implicits._
@@ -26,10 +28,13 @@ class ScenarioPropertiesValidator(
   type PropertyConfig = Map[String, ScenarioPropertyConfig]
 
   def validate(scenarioProperties: List[(String, String)]): ValidationResult = {
+    val finalizedScenarioPropertiesConfig =
+      scenarioPropertiesConfigFinalizer.finalizeScenarioProperties(scenarioPropertiesConfig)
+
     val validated = (
-      getConfiguredValidationsResults(scenarioPropertiesConfig, scenarioProperties),
-      getMissingRequiredPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties),
-      getUnknownPropertyValidationResults(scenarioPropertiesConfig, scenarioProperties)
+      getConfiguredValidationsResults(finalizedScenarioPropertiesConfig, scenarioProperties),
+      getMissingRequiredPropertyValidationResults(finalizedScenarioPropertiesConfig, scenarioProperties),
+      getUnknownPropertyValidationResults(finalizedScenarioPropertiesConfig, scenarioProperties)
     )
       .mapN { (_, _, _) => () }
 

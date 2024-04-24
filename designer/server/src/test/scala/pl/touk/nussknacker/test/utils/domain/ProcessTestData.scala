@@ -27,7 +27,12 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.scenariodetails.{ScenarioParameters, ScenarioWithDetailsForMigrations}
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
-import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.mock.{
+  StubFragmentRepository,
+  StubModelDataWithModelDefinition,
+  TestAdditionalUIConfigProvider
+}
+import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateScenarioCommand
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
@@ -138,6 +143,8 @@ object ProcessTestData {
     processingType = Streaming.stringify,
     validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition())),
     scenarioProperties = Map.empty,
+    scenarioPropertiesConfigFinalizer =
+      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
@@ -146,6 +153,8 @@ object ProcessTestData {
     processingType = Streaming.stringify,
     validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinitionWithDicts(dictionaries))),
     scenarioProperties = Map.empty,
+    scenarioPropertiesConfigFinalizer =
+      new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
     additionalValidators = List.empty,
     fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
   )
