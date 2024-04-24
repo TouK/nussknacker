@@ -203,7 +203,7 @@ class ScenarioStatisticsTest
   }
 
   test("should determine query params with version and source ") {
-    val params = new UsageStatisticsReportsSettingsDeterminer(
+    val params = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
@@ -269,7 +269,7 @@ class ScenarioStatisticsTest
       scenarioId = None
     )
 
-    val params = new UsageStatisticsReportsSettingsDeterminer(
+    val params = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
@@ -278,36 +278,36 @@ class ScenarioStatisticsTest
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
-      AuthorsCount         -> "1",
-      AttachmentsTotal     -> "1",
-      AttachmentsAverage   -> "1",
-      CategoriesCount      -> "1",
-      CommentsTotal        -> "1",
-      CommentsAverage      -> "1",
-      VersionsMedian       -> "2",
-      VersionsMax          -> "2",
-      VersionsMin          -> "2",
-      VersionsAverage      -> "2",
-      UptimeAverage        -> "0",
-      UptimeMax            -> "0",
-      UptimeMin            -> "0",
-      ComponentsCount      -> "1",
-      FragmentsUsedMedian  -> "1",
-      FragmentsUsedAverage -> "1",
-      NodesMedian          -> "3",
-      NodesAverage         -> "2",
-      NodesMax             -> "2",
-      NodesMin             -> "4",
-      ScenarioCount        -> "3",
-      FragmentCount        -> "1",
-      UnboundedStreamCount -> "3",
-      BoundedStreamCount   -> "0",
-      RequestResponseCount -> "1",
-      FlinkDMCount         -> "3",
-      LiteK8sDMCount       -> "1",
-      LiteEmbeddedDMCount  -> "0",
-      UnknownDMCount       -> "0",
-      ActiveCount          -> "2",
+      AuthorsCount           -> "1",
+      AttachmentsTotal       -> "1",
+      AttachmentsAverage     -> "1",
+      CategoriesCount        -> "1",
+      CommentsTotal          -> "1",
+      CommentsAverage        -> "1",
+      VersionsMedian         -> "2",
+      VersionsMax            -> "2",
+      VersionsMin            -> "2",
+      VersionsAverage        -> "2",
+      UptimeInSecondsAverage -> "0",
+      UptimeInSecondsMax     -> "0",
+      UptimeInSecondsMin     -> "0",
+      ComponentsCount        -> "1",
+      FragmentsUsedMedian    -> "1",
+      FragmentsUsedAverage   -> "1",
+      NodesMedian            -> "3",
+      NodesAverage           -> "2",
+      NodesMax               -> "2",
+      NodesMin               -> "4",
+      ScenarioCount          -> "3",
+      FragmentCount          -> "1",
+      UnboundedStreamCount   -> "3",
+      BoundedStreamCount     -> "0",
+      RequestResponseCount   -> "1",
+      FlinkDMCount           -> "3",
+      LiteK8sDMCount         -> "1",
+      LiteEmbeddedDMCount    -> "0",
+      UnknownDMCount         -> "0",
+      ActiveCount            -> "2",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }

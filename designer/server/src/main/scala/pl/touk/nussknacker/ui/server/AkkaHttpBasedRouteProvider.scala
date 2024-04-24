@@ -62,7 +62,7 @@ import pl.touk.nussknacker.ui.services.{
   MigrationApiHttpService,
   NuDesignerExposedApiHttpService
 }
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -401,7 +401,7 @@ class AkkaHttpBasedRouteProvider(
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
       val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
-      val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
+      val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsService(
         usageStatisticsReportsConfig,
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),

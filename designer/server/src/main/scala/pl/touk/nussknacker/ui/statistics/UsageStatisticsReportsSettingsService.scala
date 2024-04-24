@@ -17,7 +17,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, Pro
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer.{
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.{
   nuFingerprintFileName,
   prepareUrlString,
   toURL
@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
+object UsageStatisticsReportsSettingsService extends LazyLogging {
 
   private val nuFingerprintFileName = new FileName("nussknacker.fingerprint")
 
@@ -40,7 +40,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
       componentService: ComponentService
-  )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsDeterminer = {
+  )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
       //       given user has no access rights.
@@ -85,7 +85,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
         .map(Right(_))
     }
 
-    new UsageStatisticsReportsSettingsDeterminer(
+    new UsageStatisticsReportsSettingsService(
       config,
       fingerprintService,
       fetchNonArchivedScenarioParameters,
@@ -116,7 +116,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
       .mkString("https://stats.nussknacker.io/?", "&", "")
   }
 
-  private def toURL(urlString: String): Either[StatisticError, Option[URL]] =
+  private[statistics] def toURL(urlString: String): Either[StatisticError, Option[URL]] =
     Try(new URI(urlString).toURL) match {
       case Failure(ex) => {
         logger.warn(s"Exception occurred while creating URL from string: [$urlString]", ex)
@@ -127,7 +127,7 @@ object UsageStatisticsReportsSettingsDeterminer extends LazyLogging {
 
 }
 
-class UsageStatisticsReportsSettingsDeterminer(
+class UsageStatisticsReportsSettingsService(
     config: UsageStatisticsReportsConfig,
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
