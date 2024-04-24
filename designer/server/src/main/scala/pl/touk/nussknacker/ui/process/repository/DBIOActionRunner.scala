@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.EitherT
-import cats.~>
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner.TransactionRollbackException
 import slick.jdbc.JdbcProfile
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.higherKinds
 
@@ -22,12 +23,20 @@ class DBIOActionRunner(dbRef: DbRef) {
     dbRef.db.run(action)
 
   def runInTransactionE[Error, T](action: EitherT[DB, Error, T]): EitherT[Future, Error, T] =
-    action.mapK(new ~>[DB, Future] {
-      override def apply[A](fa: DB[A]): Future[A] = runInTransaction(fa)
-    })
+    EitherT(
+      runInTransaction(action.value.map(_.fold(err => throw TransactionRollbackException(err), Right(_))))
+        .recover { case TransactionRollbackException(error: Error @unchecked) =>
+          Left(error)
+        }
+    )
 
 }
 
 object DBIOActionRunner {
+
   def apply(db: DbRef): DBIOActionRunner = new DBIOActionRunner(db)
+
+  private final case class TransactionRollbackException[Error](error: Error)
+      extends Exception(s"Business error occurred: $error")
+
 }
