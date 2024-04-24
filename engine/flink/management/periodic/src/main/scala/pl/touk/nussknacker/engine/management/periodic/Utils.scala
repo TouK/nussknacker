@@ -13,8 +13,8 @@ object Utils extends LazyLogging {
 
   private val GracefulStopTimeout    = 5 seconds
   private val ActorResolutionTimeout = 5 seconds
-  private val ActorResolutionPause   = 500 milliseconds
-  private val ActorResolutionRetries = 5
+  private val ActorResolutionPause   = 50 milliseconds
+  private val ActorResolutionRetries = 50
 
   def runSafely(action: => Unit): Unit = try {
     action
