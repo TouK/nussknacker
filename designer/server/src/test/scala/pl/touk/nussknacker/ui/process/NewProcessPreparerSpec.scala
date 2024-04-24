@@ -38,7 +38,7 @@ class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
     val emptyProcess = preparer.prepareEmptyProcess(ProcessName("processId1"), isFragment = false)
 
     emptyProcess.metaData.additionalFields.properties should contain(
-      TestAdditionalUIConfigProvider.scenarioPropertyName -> "defaultOverride"
+      TestAdditionalUIConfigProvider.scenarioPropertyName -> "defaultValueOverride"
     )
   }
 

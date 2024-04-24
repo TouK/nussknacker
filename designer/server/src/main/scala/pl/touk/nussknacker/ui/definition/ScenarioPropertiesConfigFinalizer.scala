@@ -12,12 +12,7 @@ class ScenarioPropertiesConfigFinalizer(
   def finalizeScenarioProperties(
       scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig],
   ): Map[String, ScenarioPropertyConfig] = {
-    additionalUIConfigProvider
-      .getScenarioPropertiesUIConfigs(processingType)
-      .filter { case (propertyName, _) =>
-        // configs from additionalUIConfigProvider should only override existing configs, not create new ones
-        scenarioPropertiesConfig.contains(propertyName)
-      } |+| scenarioPropertiesConfig
+    additionalUIConfigProvider.getScenarioPropertiesUIConfigs(processingType) |+| scenarioPropertiesConfig
   }
 
 }
