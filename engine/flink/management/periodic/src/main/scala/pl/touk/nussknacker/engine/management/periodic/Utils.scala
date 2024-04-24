@@ -6,13 +6,15 @@ import com.typesafe.scalalogging.LazyLogging
 
 import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object Utils extends LazyLogging {
 
-  private val GracefulStopTimeout         = 5 seconds
-  private val ActorResolutionTimeout      = 5 seconds
-  private val TotalActorResolutionTimeout = 16 seconds
+  private val GracefulStopTimeout    = 5 seconds
+  private val ActorResolutionTimeout = 5 seconds
+  private val ActorResolutionPause   = 500 milliseconds
+  private val ActorResolutionRetries = 5
 
   def runSafely(action: => Unit): Unit = try {
     action
@@ -21,52 +23,43 @@ object Utils extends LazyLogging {
   }
 
   def gracefulStopActor(actorRef: ActorRef, actorSystem: ActorSystem): Unit = {
+    import actorSystem.dispatcher
     logger.info(s"Gracefully stopping $actorRef")
 
-    try {
-      Await.result(
-        gracefulStop(actorRef, GracefulStopTimeout),
-        GracefulStopTimeout + (1 second)
+    val gracefulStopFuture = for {
+      _ <- gracefulStop(actorRef, GracefulStopTimeout)
+      _ <- waitUntilActorNameIsFree( // this step is necessary because gracefulStop does not guarantee that the supervisor is notified of the name being freed
+        actorRef.path,
+        actorSystem
       )
-    } catch {
-      case _: AskTimeoutException | _: TimeoutException =>
-        throw new IllegalStateException(s"Failed to gracefully stop actor $actorRef within timeout")
-    }
+    } yield {}
 
-    logger.info(s"Gracefully stopped $actorRef, waiting for it's name to be freed")
+    Await.result(
+      gracefulStopFuture,
+      GracefulStopTimeout + ActorResolutionRetries * (ActorResolutionTimeout + ActorResolutionPause) + (1 second)
+    )
 
-    try {
-      Await.result(
-        waitUntilActorNameIsFree(actorRef.path, actorSystem),
-        TotalActorResolutionTimeout
-      )
-    } catch {
-      case _: TimeoutException =>
-        throw new IllegalStateException(s"Failed to free actor path ${actorRef.path} within timeout")
-    }
-
-    logger.info(s"$actorRef is stopped and it's name is free")
+    logger.info(s"Gracefully stopped $actorRef")
   }
 
-  private def waitUntilActorNameIsFree(actorPath: ActorPath, actorSystem: ActorSystem): Future[Unit] = {
-    import actorSystem.dispatcher
+  private def waitUntilActorNameIsFree(actorPath: ActorPath, actorSystem: ActorSystem)(implicit e: ExecutionContext) = {
+    retry
+      .Pause(ActorResolutionRetries, ActorResolutionPause)
+      .apply { () =>
+        val actorResolutionFuture =
+          actorSystem
+            .actorSelection(actorPath)
+            .resolveOne(ActorResolutionTimeout)
+            .map(_ => Left(s"Actor path $actorPath is still taken"))
 
-    def waitLoop(): Future[Unit] = {
-      val actorResolutionFuture =
-        actorSystem.actorSelection(actorPath).resolveOne(ActorResolutionTimeout).map(_ => false)
-
-      actorResolutionFuture
-        .recover { case _: ActorNotFound => true }
-        .flatMap {
-          case true  => Future.successful(())
-          case false =>
-            // name is still taken, retry until it's free
-            Thread.sleep(500)
-            waitLoop()
+        actorResolutionFuture.recover { case _: ActorNotFound =>
+          Right(s"Actor path $actorPath is free")
         }
-    }
-
-    waitLoop()
+      }
+      .map {
+        case Left(_)  => throw new IllegalStateException(s"Failed to free actor path $actorPath within allowed retries")
+        case Right(_) => ()
+      }
   }
 
 }
