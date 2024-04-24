@@ -5,10 +5,11 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.newdeployment.NewDeploymentId
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentIdNG
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -33,7 +34,7 @@ class DeploymentApiHttpServiceBusinessSpec
   "The deployment requesting endpoint" - {
     "authenticated as user with deploy access should" - {
       "return accepted status code and run deployment that will process input files" in {
-        val requestedDeploymentId = NewDeploymentId.generate
+        val requestedDeploymentId = DeploymentIdNG.generate
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -44,12 +45,12 @@ class DeploymentApiHttpServiceBusinessSpec
           .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
           .Then()
           .statusCode(202)
-//          .verifyApplicationState {
-//            waitForDeploymentStatusMatches(scenarioName, requestedDeploymentId, SimpleStateStatus.Finished)
-//          }
-//          .verifyExternalState {
-//            outputTransactionSummaryContainsExpectedResult()
-//          }
+          .verifyApplicationState {
+            waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+          }
+          .verifyExternalState {
+            outputTransactionSummaryContainsExpectedResult()
+          }
       }
     }
 
@@ -61,7 +62,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentIdNG.generate}")
           .Then()
           .statusCode(401)
       }
@@ -76,7 +77,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthUnknownUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentIdNG.generate}")
           .Then()
           .statusCode(401)
       }
@@ -91,7 +92,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthNoPermUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentIdNG.generate}")
           .Then()
           .statusCode(403)
       }
@@ -106,7 +107,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthWriter()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentIdNG.generate}")
           .Then()
           .statusCode(403)
       }

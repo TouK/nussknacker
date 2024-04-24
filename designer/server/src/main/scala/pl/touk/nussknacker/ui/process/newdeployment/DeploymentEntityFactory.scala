@@ -11,11 +11,11 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
 
   import profile.api._
 
-  val deploymentsTable: LTableQuery[DeploymentsEntity] = TableQuery(new DeploymentsEntity(_))
+  lazy val deploymentsTable: LTableQuery[DeploymentsEntity] = TableQuery(new DeploymentsEntity(_))
 
   class DeploymentsEntity(tag: Tag) extends Table[DeploymentEntityData](tag, "deployments") {
 
-    def id: Rep[NewDeploymentId] = column[NewDeploymentId]("id", O.PrimaryKey)
+    def id: Rep[DeploymentIdNG] = column[DeploymentIdNG]("id", O.PrimaryKey)
 
     // We currently need a foreign key to scenarios to fetch deployment status - it might change in the future
     def scenarioId: Rep[ProcessId] = column[ProcessId]("scenario_id")
@@ -24,7 +24,7 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
       (id, scenarioId) <> (DeploymentEntityData.apply _ tupled, DeploymentEntityData.unapply)
 
     private def scenarios_fk: ForeignKeyQuery[ProcessEntityFactory#ProcessEntity, ProcessEntityData] =
-      foreignKey("scenarios-deployments-fk", scenarioId, processesTable)(
+      foreignKey("deployments_scenarios_fk", scenarioId, processesTable)(
         _.id,
         onUpdate = ForeignKeyAction.Cascade,
         onDelete = ForeignKeyAction.NoAction
@@ -32,13 +32,13 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
 
   }
 
-  protected implicit def deploymentIdMapping: BaseColumnType[NewDeploymentId] =
-    MappedColumnType.base[NewDeploymentId, UUID](_.value, NewDeploymentId.apply)
+  protected implicit def deploymentIdMapping: BaseColumnType[DeploymentIdNG] =
+    MappedColumnType.base[DeploymentIdNG, UUID](_.value, DeploymentIdNG.apply)
 
 }
 
 object DeploymentEntityFactory {
 
-  final case class DeploymentEntityData(id: NewDeploymentId, scenarioId: ProcessId)
+  final case class DeploymentEntityData(id: DeploymentIdNG, scenarioId: ProcessId)
 
 }

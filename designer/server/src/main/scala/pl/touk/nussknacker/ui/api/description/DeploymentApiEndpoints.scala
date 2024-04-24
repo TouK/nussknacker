@@ -9,13 +9,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
-  DeploymentCommentError,
-  NoScenario
-}
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.{DeploymentError, DeploymentRequest}
-import pl.touk.nussknacker.ui.process.newdeployment.NewDeploymentId
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.RunDeploymentRequest
+import pl.touk.nussknacker.ui.error._
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentIdNG
 import pl.touk.nussknacker.ui.process.repository.ApiCallComment
 import sttp.model.StatusCode
 import sttp.tapir.EndpointIO.{Example, Info}
@@ -27,28 +23,30 @@ import java.util.UUID
 
 class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  private val deploymentIdPathCapture = path[NewDeploymentId]("deploymentId")
+  private val exampleDeploymentId = DeploymentIdNG(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298"))
+
+  private val deploymentIdPathCapture = path[DeploymentIdNG]("deploymentId")
     .copy(info =
       Info
-        .empty[NewDeploymentId]
+        .empty[DeploymentIdNG]
         .description(
           "Identifier in the UUID format that will be used for the verification of deployment's status"
         )
-        .example(NewDeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298")))
+        .example(exampleDeploymentId)
     )
 
-  lazy val requestScenarioDeploymentEndpoint
-      : SecuredEndpoint[(NewDeploymentId, DeploymentRequest), DeploymentError, Unit, Any] =
+  lazy val runDeploymentEndpoint
+      : SecuredEndpoint[(DeploymentIdNG, RunDeploymentRequest), RunDeploymentError, Unit, Any] =
     baseNuApiEndpoint
-      .summary("Service allowing to request the deployment of a scenario")
+      .summary("Run the deployment of a scenario")
       .put
       .in(
         "deployments" / deploymentIdPathCapture
       )
       .in(
-        jsonBody[DeploymentRequest]
+        jsonBody[RunDeploymentRequest]
           .example(
-            DeploymentRequest(
+            RunDeploymentRequest(
               scenarioName = ProcessName("scenario1"),
               NodesDeploymentData(
                 Map(NodeId("sourceNodeId1") -> SqlFilteringExpression("field1 = 'value'"))
@@ -59,24 +57,24 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .out(statusCode(StatusCode.Accepted))
       .errorOut(
-        oneOf[DeploymentError](
+        oneOf[RunDeploymentError](
           oneOfVariantFromMatchType(
-            StatusCode.NotFound,
-            plainBody[NoScenario]
+            StatusCode.BadRequest,
+            plainBody[ScenarioNotFoundError]
               .example(
                 Example.of(
-                  summary = Some("No scenario {scenarioName} found"),
-                  value = NoScenario(ProcessName("'example scenario'"))
+                  summary = Some("Scenario {scenarioName} not found"),
+                  value = ScenarioNotFoundError(ProcessName("'example scenario'"))
                 )
               )
           ),
           oneOfVariantFromMatchType(
             StatusCode.BadRequest,
-            plainBody[DeploymentCommentError]
+            plainBody[CommentValidationErrorNG]
               .example(
                 Example.of(
                   summary = Some("Comment is required"),
-                  value = DeploymentCommentError("Comment is required.")
+                  value = CommentValidationErrorNG("Comment is required.")
                 )
               )
           )
@@ -84,26 +82,29 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
-  lazy val checkDeploymentStatusEndpoint: SecuredEndpoint[NewDeploymentId, DeploymentError, StatusName, Any] =
+  lazy val getDeploymentStatusEndpoint: SecuredEndpoint[DeploymentIdNG, GetDeploymentStatusError, StatusName, Any] =
     baseNuApiEndpoint
-      .summary("Service allowing to check the status of a deployment")
+      .summary("Get status of a deployment")
       .get
       .in(
         "deployments" / deploymentIdPathCapture / "status"
       )
       .out(statusCode(StatusCode.Ok).and(stringBody))
       .errorOut(
-        oneOf[DeploymentError](
-          oneOfVariantFromMatchType(
+        oneOf[GetDeploymentStatusError](
+          oneOfVariantValueMatcher[DeploymentNotFoundError](
             StatusCode.NotFound,
-            plainBody[NoScenario]
+            plainBody[DeploymentNotFoundError]
               .example(
                 Example.of(
-                  summary = Some("No scenario {scenarioName} found"),
-                  value = NoScenario(ProcessName("'example scenario'"))
+                  summary = Some("No deployment {deploymentId} found"),
+                  value = DeploymentNotFoundError(exampleDeploymentId)
                 )
               )
-          )
+          ) {
+            // MatchType macro used in oneOfVariantFromMatchType doesn't work for this case
+            case DeploymentNotFoundError(_) => true
+          }
         )
       )
       .withSecurity(auth)
@@ -118,7 +119,7 @@ object DeploymentApiEndpoints {
 
     // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
-    final case class DeploymentRequest(
+    final case class RunDeploymentRequest(
         scenarioName: ProcessName,
         nodesDeploymentData: NodesDeploymentData,
         comment: Option[ApiCallComment]
@@ -131,35 +132,6 @@ object DeploymentApiEndpoints {
       .map[NodesDeploymentData]((map: Map[NodeId, NodeDeploymentData]) => Some(NodesDeploymentData(map)))(
         _.dataByNodeId
       )
-
-    sealed trait DeploymentError
-
-    object DeploymentError {
-
-      final case class NoScenario(scenarioName: ProcessName) extends DeploymentError
-
-      final case object NoPermission extends DeploymentError with CustomAuthorizationError
-
-      final case class DeploymentCommentError(message: String) extends DeploymentError
-
-      private def deserializationNotSupportedException =
-        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
-      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
-            s"No scenario ${e.scenarioName} found"
-          )
-        )
-      }
-
-      implicit val deploymentCommentErrorCodec: Codec[String, DeploymentCommentError, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, DeploymentCommentError](deserializationNotSupportedException)(_.message)
-        )
-      }
-
-    }
 
   }
 

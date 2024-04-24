@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import db.util.DBIOActionInstances.DB
+import cats.data.EitherT
+import cats.~>
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.ui.db.DbRef
 import slick.jdbc.JdbcProfile
 
@@ -18,6 +20,12 @@ class DBIOActionRunner(dbRef: DbRef) {
 
   def run[T](action: DB[T]): Future[T] =
     dbRef.db.run(action)
+
+  def runInTransactionE[Error, T](action: EitherT[DB, Error, T]): EitherT[Future, Error, T] =
+    action.mapK(new ~>[DB, Future] {
+      override def apply[A](fa: DB[A]): Future[A] = runInTransaction(fa)
+    })
+
 }
 
 object DBIOActionRunner {

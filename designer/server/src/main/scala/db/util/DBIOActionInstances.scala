@@ -10,6 +10,14 @@ object DBIOActionInstances {
 
   type DB[A] = DBIOAction[A, NoStream, Effect.All]
 
+  val DB = DBIOAction
+
+  // Monadic transformations are complicated when we have to deal with different set of effects, sometimes the effect
+  // is "unknown" (e.g. DB.successful returns just Effect)
+  def toEffectAll[R](db: DBIOAction[R, NoStream, _]): DB[R] = {
+    db.asInstanceOf[DB[R]]
+  }
+
   implicit def dbMonad(implicit ec: ExecutionContext): Monad[DB] = new Monad[DB] {
 
     override def pure[A](x: A) = dbio.DBIO.successful(x)

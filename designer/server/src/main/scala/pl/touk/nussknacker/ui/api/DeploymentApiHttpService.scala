@@ -1,79 +1,49 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.data.EitherT
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
-  DeploymentCommentError,
-  NoPermission,
-  NoScenario
-}
-import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
-import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, RunDeploymentCommand}
-import pl.touk.nussknacker.ui.process.repository.CommentValidationError
+import pl.touk.nussknacker.ui.error.{GetDeploymentStatusError, RunDeploymentError}
+import pl.touk.nussknacker.ui.process.deployment.RunDeploymentCommandNG
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentServiceNG
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class DeploymentApiHttpService(
     authenticator: AuthenticationResources,
-    override protected val scenarioService: ProcessService,
-    deploymentService: DeploymentService
-)(override protected implicit val executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
-    with ScenarioHttpServiceExtensions {
-
-  override protected type BusinessErrorType = DeploymentError
-  override protected def noScenarioError(scenarioName: ProcessName): DeploymentError = NoScenario(scenarioName)
-  override protected def noPermissionError: NoPermission.type                        = NoPermission
+    deploymentService: DeploymentServiceNG
+)(implicit executionContext: ExecutionContext)
+    extends BaseHttpService(authenticator) {
 
   private val endpoints = new DeploymentApiEndpoints(authenticator.authenticationMethod())
 
   expose {
-    endpoints.requestScenarioDeploymentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[DeploymentError])
+    endpoints.runDeploymentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[RunDeploymentError])
       .serverLogicEitherT { implicit loggedUser =>
-        // FIXME: use deploymentId
         { case (deploymentId, request) =>
-          for {
-            // TODO reuse fetched scenario inside DeploymentService.deployProcessAsync
-            scenarioDetails <- getScenarioWithDetailsByName(request.scenarioName)
-            _ <- EitherT.fromEither[Future](
-              Either.cond(loggedUser.can(scenarioDetails.processCategory, Permission.Deploy), (), NoPermission)
+          deploymentService
+            .processCommand(
+              RunDeploymentCommandNG(
+                id = deploymentId,
+                scenarioName = request.scenarioName,
+                nodesDeploymentData = request.nodesDeploymentData,
+                comment = request.comment,
+                user = loggedUser
+              )
             )
-            _ <- eitherifyErrors(
-              deploymentService
-                .processCommand(
-                  RunDeploymentCommand(
-                    scenarioDetails.idWithNameUnsafe,
-                    savepointPath = None,
-                    comment = request.comment,
-                    nodesDeploymentData = request.nodesDeploymentData,
-                    user = loggedUser
-                  )
-                )
-            )
-          } yield ()
+            .map(_.map(_ => ()))
         }
       }
   }
 
   expose {
-    endpoints.checkDeploymentStatusEndpoint
-      .serverSecurityLogic(authorizeKnownUser[DeploymentError])
+    endpoints.getDeploymentStatusEndpoint
+      .serverSecurityLogic(authorizeKnownUser[GetDeploymentStatusError])
       .serverLogicEitherT { implicit loggedUser =>
-        // FIXME: use deploymentId
         { deploymentId =>
-          ???
+          deploymentService.getDeploymentStatus(deploymentId)
         }
       }
-  }
-
-  override protected def handleOtherErrors: PartialFunction[Throwable, DeploymentError] = {
-    case CommentValidationError(message) => DeploymentCommentError(message)
   }
 
 }

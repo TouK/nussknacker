@@ -13,6 +13,7 @@ import org.scalatest.time.{Seconds, Span}
 import org.testcontainers.containers.BindMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithFlinkContainersDeploymentManager
 }
-import pl.touk.nussknacker.ui.process.newdeployment.NewDeploymentId
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentIdNG
 
 import java.nio.file.Files
 import scala.jdk.CollectionConverters._
@@ -37,7 +38,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
 
   protected val sourceNodeId = "fooSourceNodeId"
 
-  protected val scenario = ScenarioBuilder
+  protected val scenario: CanonicalProcess = ScenarioBuilder
     .streaming(scenarioName)
     .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
     .customNode(
@@ -110,7 +111,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   }
 
   protected def waitForDeploymentStatusMatches(
-      requestedDeploymentId: NewDeploymentId,
+      requestedDeploymentId: DeploymentIdNG,
       expectedStatus: StateStatus
   ): Unit = {
     // A little bit longer interval than default to avoid too many log entries of requests

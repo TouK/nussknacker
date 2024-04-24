@@ -52,6 +52,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentServiceNG}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
@@ -327,8 +328,13 @@ class AkkaHttpBasedRouteProvider(
           )
         }
       )
-      val deploymentHttpService =
-        new DeploymentApiHttpService(authenticationResources, processService, deploymentService)
+      val deploymentHttpService = {
+        val scenarioRepository   = new ScenarioRepository(dbRef)
+        val deploymentRepository = new DeploymentRepository(dbRef)
+        val deploymentServiceNG =
+          new DeploymentServiceNG(scenarioRepository, deploymentRepository, deploymentService, dbioRunner)
+        new DeploymentApiHttpService(authenticationResources, deploymentServiceNG)
+      }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 

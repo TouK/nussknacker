@@ -6,10 +6,11 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.newdeployment.NewDeploymentId
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentIdNG
 
 class DeploymentApiHttpServiceDeploymentCommentSpec
     extends AnyFreeSpecLike
@@ -47,7 +48,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
                          |    "$sourceNodeId": "`date` = '2024-01-01'"
                          |  }
                          |}""".stripMargin)
-            .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentIdNG.generate}")
             .Then()
             .statusCode(400)
         }
@@ -68,7 +69,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
                          |  },
                          |  "comment": "deployment comment not matching configured pattern"
                          |}""".stripMargin)
-            .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentIdNG.generate}")
             .Then()
             .statusCode(400)
         }
@@ -76,7 +77,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
 
       "When matching deployment comment is passed should" - {
         "return accepted status code and run deployment that will process input files" in {
-          val requestedDeploymentId = NewDeploymentId.generate
+          val requestedDeploymentId = DeploymentIdNG.generate
           given()
             .applicationState {
               createSavedScenario(scenario)
@@ -93,12 +94,12 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
             .Then()
             .statusCode(202)
-//            .verifyApplicationState {
-//              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
-//            }
-//            .verifyExternalState {
-//              outputTransactionSummaryContainsExpectedResult()
-//            }
+            .verifyApplicationState {
+              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+            }
+            .verifyExternalState {
+              outputTransactionSummaryContainsExpectedResult()
+            }
         }
       }
     }
