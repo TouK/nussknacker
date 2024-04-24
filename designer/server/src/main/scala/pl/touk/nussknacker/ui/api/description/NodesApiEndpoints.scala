@@ -594,7 +594,6 @@ object NodesApiEndpoints {
       implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
     }
 
-    implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
@@ -1316,6 +1315,8 @@ object NodesApiEndpoints {
       }
 
     }
+
+    implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
 
     @derive(schema, encoder, decoder)
     final case class PropertiesValidationRequestDto(

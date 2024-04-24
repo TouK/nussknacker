@@ -3,7 +3,7 @@ import { Typography, useTheme } from "@mui/material";
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
 import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
-import { NodeInput } from "../../withFocus";
+import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { Icon } from "./ToolbarButtonStyled";
 
@@ -12,9 +12,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
     ref,
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
-    const {
-        custom: { colors },
-    } = useTheme();
+    const { palette } = useTheme();
 
     const margin = 2;
     const width = (variant === ButtonsVariant.small ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE) - 2 * margin;
@@ -34,16 +32,13 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         height: "fit-content",
         outline: "none",
 
-        borderColor: hasError ? colors.error : "transparent",
-        ":focus": {
-            borderColor: colors.cobalt,
-        },
+        borderColor: hasError ? palette.error.main : "transparent",
 
-        color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
+        color: hasError ? palette.error.main : isActive ? palette.success.main : palette.text.secondary,
 
-        backgroundColor: colors.primaryBackground,
+        backgroundColor: palette.background.paper,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
+            backgroundColor: disabled ? "inherit" : palette.action.hover,
         },
     });
 

@@ -62,8 +62,8 @@ describe("Auto Screenshot Change Docs -", () => {
     it("basic components - choice", () => {
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsChoice#0");
-        cy.layoutScenario();
         cy.get("[title='toggle left panel']").click();
+        cy.layoutScenario();
         cy.get("[title='toggle right panel']").click();
         takeGraphScreenshot();
 
@@ -148,7 +148,7 @@ describe("Auto Screenshot Change Docs -", () => {
 
 const projectRoot = path.join(Cypress.config("fileServerFolder"), "../..");
 const snapshotOptions = {
-    maxDiffThreshold: 0.02,
+    maxDiffThreshold: 0.009,
     imagesPath: path.join(projectRoot, "docs/autoScreenshotChangeDocs"),
 };
 

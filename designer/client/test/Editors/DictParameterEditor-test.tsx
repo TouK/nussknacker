@@ -7,6 +7,7 @@ import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
 import { DictParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DictParameterEditor";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
+import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 jest.mock("react-i18next", () => ({
     useTranslation: () => ({
@@ -72,7 +73,7 @@ describe(DictParameterEditor.name, () => {
             </ComponentWrapper>,
         );
 
-        expect(screen.getByRole("combobox")).toHaveClass("node-input-with-error");
+        expect(screen.getByRole("combobox")).toHaveClass(nodeInputWithError);
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });
 
@@ -92,7 +93,7 @@ describe(DictParameterEditor.name, () => {
             </ComponentWrapper>,
         );
 
-        expect(screen.getByRole("combobox")).not.toHaveClass("node-input-with-error");
+        expect(screen.getByRole("combobox")).not.toHaveClass(nodeInputWithError);
         expect(screen.queryByText("validation error")).not.toBeInTheDocument();
     });
 });

@@ -10,6 +10,7 @@ import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
 import { FormControl, FormLabel } from "@mui/material";
 import ErrorBoundary from "../../../common/ErrorBoundary";
+import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -46,7 +47,7 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
                 {...props}
                 ref={ref}
                 editorConfig={param?.editor}
-                className={`${valueClassName ? valueClassName : "node-value"}`}
+                className={`${valueClassName ? valueClassName : nodeValue}`}
                 fieldErrors={fieldErrors}
                 formatter={formatter}
                 expressionInfo={validationLabelInfo}

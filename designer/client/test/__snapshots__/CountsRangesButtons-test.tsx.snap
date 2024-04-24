@@ -1,74 +1,59 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CountsRangesButtons tests should render buttons 1`] = `
-.emotion-0:focus,
-.emotion-0:active:focus {
-  outline: none;
-  border-color: #1A1A1A;
-  box-shadow: 0 0 0 1px #1A1A1A;
-}
-
-.emotion-1 {
-  border: 1px solid #666666;
+.emotion-0 {
+  font-family: Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.75;
+  text-transform: capitalize;
   border-radius: 0;
-  background-color: #4D4D4D;
-  color: #CCCCCC;
-  -webkit-transition: #4D4D4D 0.2s;
-  transition: #4D4D4D 0.2s;
+  background-color: #242F3E;
+  -webkit-transition: #242F3E 0.2s;
+  transition: #242F3E 0.2s;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   min-width: 80px;
-  font-size: 12px;
   padding: 5px;
-  font-weight: 400;
   margin: 10px;
 }
 
-.emotion-1:disabled,
-.emotion-1.disabled {
+.emotion-0:disabled,
+.emotion-0.disabled {
   opacity: 0.3;
   cursor: not-allowed!important;
 }
 
-.emotion-1:not(:disabled):hover,
-.emotion-1:not(.disabled):hover {
-  background-color: #666666;
-}
-
-.emotion-5 {
-  border: 1px solid #666666;
+.emotion-2 {
+  font-family: Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.75;
+  text-transform: capitalize;
   border-radius: 0;
-  background-color: #4D4D4D;
-  color: #CCCCCC;
-  -webkit-transition: #4D4D4D 0.2s;
-  transition: #4D4D4D 0.2s;
+  background-color: #242F3E;
+  -webkit-transition: #242F3E 0.2s;
+  transition: #242F3E 0.2s;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   width: 100%;
-  font-size: 12px;
   padding: 5px;
-  font-weight: 400;
   margin: 10px;
 }
 
-.emotion-5:disabled,
-.emotion-5.disabled {
+.emotion-2:disabled,
+.emotion-2.disabled {
   opacity: 0.3;
   cursor: not-allowed!important;
 }
 
-.emotion-5:not(:disabled):hover,
-.emotion-5:not(.disabled):hover {
-  background-color: #666666;
-}
-
 <div>
   <button
-    class="emotion-0 emotion-1"
+    class="emotion-0"
     style="flex: 1;"
     title="range1"
     type="button"
@@ -76,7 +61,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
     range1
   </button>
   <button
-    class="emotion-0 emotion-1"
+    class="emotion-0"
     style="flex: 1;"
     title="range2"
     type="button"
@@ -90,7 +75,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
       style="position: relative; width: 100%; height: 100%; display: flex;"
     >
       <button
-        class="emotion-0 emotion-5"
+        class="emotion-2"
         style="flex: 1;"
         type="button"
       >

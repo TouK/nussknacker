@@ -20,6 +20,7 @@ import { FormControl } from "@mui/material";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 export type GenericActionLayout = {
     name: string;
@@ -90,7 +91,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                 <ErrorBoundary>
                                     <Editor
                                         editorConfig={param?.editor}
-                                        className={"node-value"}
+                                        className={nodeValue}
                                         fieldErrors={getValidationErrorsForField(errors, fieldName)}
                                         formatter={formatter}
                                         expressionInfo={null}

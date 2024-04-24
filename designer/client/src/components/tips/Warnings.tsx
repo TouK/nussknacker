@@ -15,15 +15,13 @@ interface Warning {
     key: string;
 }
 
-const StyledWarningIcon = styled(WarningIcon)(
-    ({ theme }) => `
-    width: 16px;
-    height: 16px;
-    align-self: flex-start;
-    margin-right: 5px;
-    color: ${theme.custom.colors.warning};
-`,
-);
+const StyledWarningIcon = styled(WarningIcon)(({ theme }) => ({
+    width: "16px",
+    height: "16px",
+    alignSelf: "flex-start",
+    marginRight: "5px",
+    color: theme.palette.warning.main,
+}));
 
 interface WarningsProps {
     warnings: Warning[];

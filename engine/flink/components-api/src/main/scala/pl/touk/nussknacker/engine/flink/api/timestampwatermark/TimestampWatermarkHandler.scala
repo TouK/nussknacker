@@ -45,16 +45,24 @@ object StandardTimestampWatermarkHandler {
       assigner: SimpleSerializableTimestampAssigner[T],
       maxOutOfOrderness: Duration
   ): TimestampWatermarkHandler[T] = {
-    boundedOutOfOrderness(toAssigner(assigner), maxOutOfOrderness)
+    boundedOutOfOrderness(Some(toAssigner(assigner)), maxOutOfOrderness, None)
   }
 
   def boundedOutOfOrderness[T](
-      extract: SerializableTimestampAssigner[T],
-      maxOutOfOrderness: Duration
+      extract: Option[SerializableTimestampAssigner[T]],
+      maxOutOfOrderness: Duration,
+      idlenessTimeoutDuration: Option[Duration]
   ): TimestampWatermarkHandler[T] = {
-    new StandardTimestampWatermarkHandler(
-      WatermarkStrategy.forBoundedOutOfOrderness(maxOutOfOrderness).withTimestampAssigner(extract)
-    )
+    val strategyWithLateness = WatermarkStrategy.forBoundedOutOfOrderness[T](maxOutOfOrderness)
+    val strategyWithOptIdleness = idlenessTimeoutDuration match {
+      case Some(duration) => strategyWithLateness.withIdleness(duration)
+      case None           => strategyWithLateness
+    }
+    val finalStrategyWithOptAssigner = extract match {
+      case Some(assigner) => strategyWithOptIdleness.withTimestampAssigner(assigner)
+      case None           => strategyWithOptIdleness
+    }
+    new StandardTimestampWatermarkHandler(finalStrategyWithOptAssigner)
   }
 
   def afterEachEvent[T](assigner: SimpleSerializableTimestampAssigner[T]): TimestampWatermarkHandler[T] = {

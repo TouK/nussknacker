@@ -43,8 +43,8 @@ export function QuickFilter<F extends Record<string, any>>({
                         },
                     }}
                     startAdornment={
-                        <InputAdornment position="start">
-                            <Search sx={{ marginTop: "3px", opacity: 0.5 }} />
+                        <InputAdornment sx={(theme) => ({ color: theme.palette.text.secondary })} position="start">
+                            <Search sx={{ marginTop: "3px" }} />
                         </InputAdornment>
                     }
                 />

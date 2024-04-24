@@ -1,4 +1,3 @@
-import { css } from "@emotion/css";
 import update from "immutability-helper";
 import { cloneDeep } from "lodash";
 import React, { useCallback, useRef } from "react";
@@ -7,6 +6,7 @@ import { DragHandle, DragHandlerContext } from "./DragHandle";
 import { DropTarget } from "./DropTarget";
 import { FakeFormWindow } from "./FakeFormWindow";
 import { ItemsProps } from "./Items";
+import { alpha, Box } from "@mui/material";
 
 interface DndListProps<I> extends ItemsProps<I> {
     disabled?: boolean;
@@ -36,13 +36,13 @@ export function DndItems<I>(props: DndListProps<I>): JSX.Element {
 
     const renderDraggable: DraggableChildrenFn = useCallback(
         (p, s, r) => (
-            <div
+            <Box
                 {...p.draggableProps}
                 ref={p.innerRef}
-                className={css({
+                sx={(theme) => ({
                     display: "grid",
                     gridTemplateColumns: "1fr auto",
-                    filter: s.isDragging ? "drop-shadow(0px 2px 6px rgba(0, 0, 0, .5))" : "none",
+                    filter: s.isDragging ? `drop-shadow(0px 2px 6px ${alpha(theme.palette.common.black, 0.5)})` : "none",
                 })}
                 data-testid={`draggable:${r.source.index}`}
             >
@@ -50,7 +50,7 @@ export function DndItems<I>(props: DndListProps<I>): JSX.Element {
                     {items[r.source.index].el}
                     {!disabled && <DragHandle active={s.isDragging} />}
                 </DragHandlerContext.Provider>
-            </div>
+            </Box>
         ),
         [disabled, items],
     );

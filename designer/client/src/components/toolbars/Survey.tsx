@@ -31,14 +31,26 @@ function Survey(props: ToolbarPanelProps) {
     }
 
     return (
-        <ToolbarWrapper {...props} onClose={hideSurvey} color={theme.palette.success.dark}>
+        <ToolbarWrapper {...props} disableCollapse color={theme.palette.primary.main}>
             <Stack p={1} spacing={0.5}>
-                <Typography variant="body2">{survey.text}</Typography>
+                <Typography color={theme.palette.getContrastText(theme.palette.primary.main)} variant="body2">
+                    {survey.text}
+                </Typography>
                 <Stack direction="row" spacing={1}>
-                    <Button size="small" variant="text" onClick={onOpen}>
+                    <Button
+                        size="small"
+                        sx={(theme) => ({ color: theme.palette.getContrastText(theme.palette.primary.main) })}
+                        variant="text"
+                        onClick={onOpen}
+                    >
                         {t("panels.survey.ok", "let's go!")}
                     </Button>
-                    <Button size="small" variant="text" onClick={hideSurvey}>
+                    <Button
+                        size="small"
+                        sx={(theme) => ({ color: theme.palette.getContrastText(theme.palette.primary.main) })}
+                        variant="text"
+                        onClick={hideSurvey}
+                    >
                         {t("panels.survey.no", "close")}
                     </Button>
                 </Stack>

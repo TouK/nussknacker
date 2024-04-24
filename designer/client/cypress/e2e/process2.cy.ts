@@ -2,11 +2,17 @@ describe("Process view", () => {
     const seed = "process";
 
     before(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
+        cy.deleteAllTestProcesses({
+            filter: seed,
+            force: true,
+        });
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
+        cy.deleteAllTestProcesses({
+            filter: seed,
+            force: true,
+        });
     });
 
     beforeEach(() => {
@@ -37,5 +43,16 @@ describe("Process view", () => {
         cy.get("[data-testid=window]")
             .contains(/^source$/i)
             .should("be.visible");
+        cy.get("[data-testid=window]")
+            .contains(/^cancel$/i)
+            .click();
+        cy.get("#nk-graph-main").click();
+        cy.realPress(["Meta", "F"]);
+        cy.get("[data-testid=search-panel] input").should("be.visible").should("be.focused");
+        cy.realType("source");
+        cy.wait(750); //wait for animation
+        cy.getNode("enricher")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
     });
 });

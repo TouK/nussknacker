@@ -5,6 +5,7 @@ import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
 import type { Ace } from "ace-builds";
 import ace from "ace-builds/src-noconflict/ace";
+import { Divider } from "@mui/material";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
 
@@ -55,7 +56,7 @@ const DocHTML = ({ description, parameters, methodName, refClazz }: ExpressionSu
             <b>
                 {ProcessUtils.humanReadableType(refClazz)} {methodName}({paramsSignature})
             </b>
-            <hr />
+            <Divider />
             <p>{description}</p>
         </div>
     );

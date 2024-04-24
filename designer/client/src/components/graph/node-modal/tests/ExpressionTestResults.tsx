@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useRef, useState } from "react";
+import React, { PropsWithChildren, useRef, useState } from "react";
 import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
@@ -25,10 +25,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
             {props.children}
             <FormControl>
                 <FormLabel>
-                    <NodeTip
-                        title={"Value evaluated in test case"}
-                        icon={<InfoIcon sx={(theme) => ({ color: theme.custom.colors.info, alignSelf: "center" })} />}
-                    />
+                    <NodeTip title={"Value evaluated in test case"} icon={<InfoIcon sx={(theme) => ({ alignSelf: "center" })} />} />
                     {testValue.pretty && !fitsMaxHeight ? (
                         <PrettyIconComponent sx={{ cursor: "pointer" }} onClick={() => setCollapsedTestResults((s) => !s)} />
                     ) : null}

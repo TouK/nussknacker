@@ -64,8 +64,8 @@ describe("Compare versions", () => {
 
         // Open the compare dialog and select values to compare
         cy.contains(/^compare$/i).click();
-        cy.get("[data-testid=window]").get("#otherVersion").select(1);
-        cy.get("[data-testid=window]").get("#differentVersion").select(1);
+        cy.get("[data-testid=window]").get("#otherVersion input").select(1);
+        cy.get("[data-testid=window]").get("#differentVersion input").select(1);
 
         // Check current value for changed fragment parameter
         cy.get("[data-testid=window]")
