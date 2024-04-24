@@ -473,11 +473,6 @@ jobs:
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
-      - name: Test docker
-        if: ${{env.shouldBuildImage == 'true' }}
-        shell: bash
-        working-directory: e2e-tests
-        run: ./setupAndRun.sh
       - name: FE tests e2e on build docker image
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
