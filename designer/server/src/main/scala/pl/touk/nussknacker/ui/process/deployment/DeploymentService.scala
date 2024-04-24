@@ -283,8 +283,7 @@ class DeploymentService(
     actionsDefinedInState ++ actionsDefinedInCustomActions
   }
 
-  // TODO: rename CustomActionDefinition to ScenarioActionDefinition
-  // TODO: provide better action definitions for deploy and cancel, with better properties to draw proper action form.
+  // TODO: provide better action definitions for deploy and cancel, not as CustomACtion
   private def getActionDefinitions(
       processingType: ProcessingType
   )(implicit user: LoggedUser): List[CustomActionDefinition] = {
