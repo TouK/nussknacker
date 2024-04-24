@@ -24,7 +24,7 @@ function GenerateButton(props: Props) {
             name={t("panels.actions.test-generate.button.name", "generate file")}
             title={t("panels.actions.test-generate.button.title", "generate test data file")}
             icon={<Icon />}
-            disabled={false}
+            disabled={!available}
             onClick={() =>
                 open({
                     kind: WindowKind.generateTestData,
