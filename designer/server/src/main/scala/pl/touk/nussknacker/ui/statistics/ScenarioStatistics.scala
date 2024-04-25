@@ -60,15 +60,15 @@ object ScenarioStatistics {
       val uptimeStatsMap = {
         if (sortedUptimes.isEmpty) {
           Map(
-            UptimeAverage -> 0,
-            UptimeMax     -> 0,
-            UptimeMin     -> 0,
+            UptimeInSecondsAverage -> 0,
+            UptimeInSecondsMax     -> 0,
+            UptimeInSecondsMin     -> 0,
           )
         } else {
           Map(
-            UptimeAverage -> calculateAverage(sortedUptimes),
-            UptimeMax     -> getMax(sortedUptimes),
-            UptimeMin     -> getMin(sortedUptimes)
+            UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
+            UptimeInSecondsMax     -> getMax(sortedUptimes),
+            UptimeInSecondsMin     -> getMin(sortedUptimes)
           )
         }
       }
@@ -180,33 +180,33 @@ sealed abstract class StatisticKey(val name: String) {
   override def toString: String = name
 }
 
-case object AuthorsCount         extends StatisticKey("a_n")
-case object CategoriesCount      extends StatisticKey("c")
-case object ComponentsCount      extends StatisticKey("c_n")
-case object VersionsMedian       extends StatisticKey("v_m")
-case object AttachmentsTotal     extends StatisticKey("a_t")
-case object AttachmentsAverage   extends StatisticKey("a_v")
-case object VersionsMax          extends StatisticKey("v_ma")
-case object VersionsMin          extends StatisticKey("v_mi")
-case object VersionsAverage      extends StatisticKey("v_v")
-case object UptimeAverage        extends StatisticKey("u_v")
-case object UptimeMax            extends StatisticKey("u_ma")
-case object UptimeMin            extends StatisticKey("u_mi")
-case object CommentsAverage      extends StatisticKey("c_v")
-case object CommentsTotal        extends StatisticKey("c_t")
-case object FragmentsUsedMedian  extends StatisticKey("f_m")
-case object FragmentsUsedAverage extends StatisticKey("f_v")
-case object NodesMedian          extends StatisticKey("n_m")
-case object NodesAverage         extends StatisticKey("n_v")
-case object NodesMax             extends StatisticKey("n_ma")
-case object NodesMin             extends StatisticKey("n_mi")
-case object ScenarioCount        extends StatisticKey("s_s")
-case object FragmentCount        extends StatisticKey("s_f")
-case object UnboundedStreamCount extends StatisticKey("s_pm_s")
-case object BoundedStreamCount   extends StatisticKey("s_pm_b")
-case object RequestResponseCount extends StatisticKey("s_pm_rr")
-case object FlinkDMCount         extends StatisticKey("s_dm_f")
-case object LiteK8sDMCount       extends StatisticKey("s_dm_l")
-case object LiteEmbeddedDMCount  extends StatisticKey("s_dm_e")
-case object UnknownDMCount       extends StatisticKey("s_dm_c")
-case object ActiveCount          extends StatisticKey("s_a")
+case object AuthorsCount           extends StatisticKey("a_n")
+case object CategoriesCount        extends StatisticKey("c")
+case object ComponentsCount        extends StatisticKey("c_n")
+case object VersionsMedian         extends StatisticKey("v_m")
+case object AttachmentsTotal       extends StatisticKey("a_t")
+case object AttachmentsAverage     extends StatisticKey("a_v")
+case object VersionsMax            extends StatisticKey("v_ma")
+case object VersionsMin            extends StatisticKey("v_mi")
+case object VersionsAverage        extends StatisticKey("v_v")
+case object UptimeInSecondsAverage extends StatisticKey("u_v")
+case object UptimeInSecondsMax     extends StatisticKey("u_ma")
+case object UptimeInSecondsMin     extends StatisticKey("u_mi")
+case object CommentsAverage        extends StatisticKey("c_v")
+case object CommentsTotal          extends StatisticKey("c_t")
+case object FragmentsUsedMedian    extends StatisticKey("f_m")
+case object FragmentsUsedAverage   extends StatisticKey("f_v")
+case object NodesMedian            extends StatisticKey("n_m")
+case object NodesAverage           extends StatisticKey("n_v")
+case object NodesMax               extends StatisticKey("n_ma")
+case object NodesMin               extends StatisticKey("n_mi")
+case object ScenarioCount          extends StatisticKey("s_s")
+case object FragmentCount          extends StatisticKey("s_f")
+case object UnboundedStreamCount   extends StatisticKey("s_pm_s")
+case object BoundedStreamCount     extends StatisticKey("s_pm_b")
+case object RequestResponseCount   extends StatisticKey("s_pm_rr")
+case object FlinkDMCount           extends StatisticKey("s_dm_f")
+case object LiteK8sDMCount         extends StatisticKey("s_dm_l")
+case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
+case object UnknownDMCount         extends StatisticKey("s_dm_c")
+case object ActiveCount            extends StatisticKey("s_a")
