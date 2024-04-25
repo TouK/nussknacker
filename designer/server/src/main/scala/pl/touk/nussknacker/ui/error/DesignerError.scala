@@ -14,23 +14,25 @@ sealed trait DesignerError
 
 sealed trait RunDeploymentError extends DesignerError
 
+sealed trait BadRequestRunDeploymentError extends RunDeploymentError
+
 sealed trait GetDeploymentStatusError extends DesignerError
 
-final case class ScenarioNotFoundError(scenarioName: ProcessName) extends RunDeploymentError
+final case class ScenarioNotFoundError(scenarioName: ProcessName) extends BadRequestRunDeploymentError
 
 final case class DeploymentNotFoundError(id: DeploymentIdNG) extends GetDeploymentStatusError
 
 case object NoPermissionError extends RunDeploymentError with GetDeploymentStatusError with CustomAuthorizationError
 
-final case class CommentValidationErrorNG(message: String) extends RunDeploymentError
+final case class CommentValidationErrorNG(message: String) extends BadRequestRunDeploymentError
 
 object DesignerError {
 
-  implicit def scenarioNotFoundErrorCodec: Codec[String, ScenarioNotFoundError, CodecFormat.TextPlain] =
-    codec[ScenarioNotFoundError](err => s"Scenario ${err.scenarioName} not found")
-
-  implicit def commentValidationErrorCodec: Codec[String, CommentValidationErrorNG, CodecFormat.TextPlain] =
-    codec[CommentValidationErrorNG](_.message)
+  implicit def badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
+    codec[BadRequestRunDeploymentError] {
+      case CommentValidationErrorNG(message)   => message
+      case ScenarioNotFoundError(scenarioName) => s"Scenario $scenarioName not found"
+    }
 
   implicit def deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =
     codec[DeploymentNotFoundError](err => s"Deployment ${err.id} not found")

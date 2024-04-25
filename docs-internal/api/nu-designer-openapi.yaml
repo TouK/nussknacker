@@ -499,7 +499,7 @@ paths:
       - httpAuth: []
   /api/deployments/{deploymentId}/status:
     get:
-      summary: Service allowing to check the status of a deployment
+      summary: Get status of a deployment
       operationId: getApiDeploymentsDeploymentidStatus
       parameters:
       - name: deploymentId
@@ -553,14 +553,14 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
+                  summary: No deployment {deploymentId} found
+                  value: Deployment a9a1e269-0b71-4582-a948-603482d27298 not found
       security:
       - {}
       - httpAuth: []
   /api/deployments/{deploymentId}:
     put:
-      summary: Service allowing to request the deployment of a scenario
+      summary: Run the deployment of a scenario
       operationId: putApiDeploymentsDeploymentid
       parameters:
       - name: deploymentId
@@ -576,7 +576,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DeploymentRequest'
+              $ref: '#/components/schemas/RunDeploymentRequest'
             example:
               scenarioName: scenario1
               nodesDeploymentData:
@@ -592,7 +592,10 @@ paths:
               schema:
                 type: string
               examples:
-                Example:
+                Example0:
+                  summary: Scenario {scenarioName} not found
+                  value: Scenario 'example scenario' not found
+                Example1:
                   summary: Comment is required
                   value: Comment is required.
         '401':
@@ -616,16 +619,6 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
       security:
       - {}
       - httpAuth: []
@@ -2240,20 +2233,6 @@ components:
       type: object
     DateTimeParameterEditor:
       type: object
-    DeploymentRequest:
-      required:
-      - scenarioName
-      - nodesDeploymentData
-      type: object
-      properties:
-        scenarioName:
-          type: string
-        nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
-        comment:
-          type:
-          - string
-          - 'null'
     Dict:
       required:
       - id
@@ -3311,6 +3290,20 @@ components:
           type: string
     RawParameterEditor:
       type: object
+    RunDeploymentRequest:
+      required:
+      - scenarioName
+      - nodesDeploymentData
+      type: object
+      properties:
+        scenarioName:
+          type: string
+        nodesDeploymentData:
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+        comment:
+          type:
+          - string
+          - 'null'
     ScenarioActivity:
       type: object
       properties:

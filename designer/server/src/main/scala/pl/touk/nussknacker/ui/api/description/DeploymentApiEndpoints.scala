@@ -60,21 +60,17 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
         oneOf[RunDeploymentError](
           oneOfVariantFromMatchType(
             StatusCode.BadRequest,
-            plainBody[ScenarioNotFoundError]
-              .example(
-                Example.of(
-                  summary = Some("Scenario {scenarioName} not found"),
-                  value = ScenarioNotFoundError(ProcessName("'example scenario'"))
-                )
-              )
-          ),
-          oneOfVariantFromMatchType(
-            StatusCode.BadRequest,
-            plainBody[CommentValidationErrorNG]
-              .example(
-                Example.of(
-                  summary = Some("Comment is required"),
-                  value = CommentValidationErrorNG("Comment is required.")
+            plainBody[BadRequestRunDeploymentError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Scenario {scenarioName} not found"),
+                    value = ScenarioNotFoundError(ProcessName("'example scenario'"))
+                  ),
+                  Example.of(
+                    summary = Some("Comment is required"),
+                    value = CommentValidationErrorNG("Comment is required.")
+                  )
                 )
               )
           )
