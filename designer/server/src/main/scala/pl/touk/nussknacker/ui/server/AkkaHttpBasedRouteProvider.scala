@@ -401,7 +401,7 @@ class AkkaHttpBasedRouteProvider(
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
       val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
-      val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsService(
+      val usageStatisticsReportsSettingsService = UsageStatisticsReportsSettingsService(
         usageStatisticsReportsConfig,
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
@@ -412,7 +412,7 @@ class AkkaHttpBasedRouteProvider(
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authenticationResources,
-        usageStatisticsReportsSettingsDeterminer
+        usageStatisticsReportsSettingsService
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
