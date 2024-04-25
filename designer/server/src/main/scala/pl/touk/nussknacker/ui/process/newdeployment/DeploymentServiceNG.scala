@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.data.EitherT
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.security.Permission
@@ -24,6 +24,8 @@ import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.Depl
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, ScenarioRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.sql.Timestamp
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: we should replace DeploymentService by this class after we split Deployments and Activities
@@ -32,7 +34,8 @@ class DeploymentServiceNG(
     deploymentRepository: DeploymentRepository,
     // TODO: we shouldn't call legacy service, instead we should new service from the legacy one
     legacyDeploymentService: DeploymentService,
-    dbioRunner: DBIOActionRunner
+    dbioRunner: DBIOActionRunner,
+    clock: Clock
 )(implicit ec: ExecutionContext) {
 
   def processCommand(
@@ -53,7 +56,9 @@ class DeploymentServiceNG(
         _ <- EitherT.fromEither(
           Either.cond(command.user.can(scenarioMetadata.processCategory, Permission.Deploy), (), NoPermissionError)
         )
-        _ <- deploymentRepository.saveDeployment(DeploymentEntityData(command.id, scenarioMetadata.id))
+        _ <- deploymentRepository.saveDeployment(
+          DeploymentEntityData(command.id, scenarioMetadata.id, Timestamp.from(clock.instant()), command.user.id)
+        )
         // TODO: Currently it doesn't use our deploymentId. Instead, it uses action id
         runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)
       } yield runResult

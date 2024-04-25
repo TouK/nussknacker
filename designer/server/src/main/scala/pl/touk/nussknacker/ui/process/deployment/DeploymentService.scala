@@ -104,7 +104,7 @@ class DeploymentService(
         dispatcher
           .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
           .processCommand(dmCommand)
-      }.map(_ => ())
+      }.void
     } yield ()
   }
 

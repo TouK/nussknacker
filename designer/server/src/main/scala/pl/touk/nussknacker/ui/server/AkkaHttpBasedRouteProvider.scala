@@ -72,6 +72,7 @@ import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UI
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
+import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -332,7 +333,13 @@ class AkkaHttpBasedRouteProvider(
         val scenarioRepository   = new ScenarioRepository(dbRef)
         val deploymentRepository = new DeploymentRepository(dbRef)
         val deploymentServiceNG =
-          new DeploymentServiceNG(scenarioRepository, deploymentRepository, deploymentService, dbioRunner)
+          new DeploymentServiceNG(
+            scenarioRepository,
+            deploymentRepository,
+            deploymentService,
+            dbioRunner,
+            Clock.systemDefaultZone()
+          )
         new DeploymentApiHttpService(authenticationResources, deploymentServiceNG)
       }
 

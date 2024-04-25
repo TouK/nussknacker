@@ -16,7 +16,7 @@ class DeploymentRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends 
 
   import profile.api._
 
-  // FIXME: error when constraint violated
+  // TODO: handle constraint violated
   def saveDeployment(deployment: DeploymentEntityData): EitherT[DB, Nothing, Unit] = {
     EitherT.right(toEffectAll(deploymentsTable += deployment)).map(_ => ())
   }
