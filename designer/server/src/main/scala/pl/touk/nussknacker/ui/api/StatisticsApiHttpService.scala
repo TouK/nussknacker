@@ -7,13 +7,13 @@ import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
   StatisticUrlResponseDto
 }
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService
 
 import scala.concurrent.ExecutionContext
 
 class StatisticsApiHttpService(
     authenticator: AuthenticationResources,
-    determiner: UsageStatisticsReportsSettingsDeterminer
+    usageStatisticsReportsSettingsService: UsageStatisticsReportsSettingsService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authenticator) {
 
@@ -23,7 +23,7 @@ class StatisticsApiHttpService(
     endpoints.statisticUsageEndpoint
       .serverSecurityLogic(authorizeKnownUser[StatisticError])
       .serverLogic { _ => _ =>
-        determiner
+        usageStatisticsReportsSettingsService
           .prepareStatisticsUrl()
           .map {
             case Left(_)         => businessError(CannotGenerateStatisticError)
