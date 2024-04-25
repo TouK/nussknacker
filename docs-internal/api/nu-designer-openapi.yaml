@@ -1801,6 +1801,51 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/statistic:
+    post:
+      tags:
+      - Statistics
+      summary: Register statistics service
+      operationId: postApiStatistic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterStatisticsRequestDto'
+        required: true
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - {}
+      - httpAuth: []
   /api/statistic/usage:
     get:
       tags:
@@ -3247,6 +3292,13 @@ components:
           type: string
     RawParameterEditor:
       type: object
+    RegisterStatisticsRequestDto:
+      type: object
+      properties:
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatisticDto'
     ScenarioActivity:
       type: object
       properties:
@@ -3350,6 +3402,68 @@ components:
       type: object
     SqlParameterEditor:
       type: object
+    StatisticDto:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/StatisticName'
+        value:
+          type: integer
+          format: int64
+    StatisticName:
+      type: string
+      enum:
+      - SCENARIO_FILTER
+      - SEARCH_SCENARIO
+      - COMPONENTS_LIST
+      - SEARCH_COMPONENTS
+      - SEARCH_COMPONENTS_WITH_GROUP
+      - SEARCH_COMPONENTS_WITH_PROCESSING_MODE
+      - SEARCH_COMPONENTS_WITH_CATEGORY
+      - SEARCH_COMPONENTS_WITH_MULTIPLE_CATEGORIES
+      - SEARCH_COMPONENTS_WITH_USAGES
+      - SEARCH_COMPONENTS_USAGES_LIST
+      - SEARCH_COMPONENTS_USAGES_LIST_WITH_STATUS
+      - SEARCH_COMPONENTS_USAGES_LIST_WITH_CATEGORY
+      - SEARCH_COMPONENTS_USAGES_LIST_WITH_AUTHOR
+      - SEARCH_COMPONENTS_USAGES_LIST_WITH_OTHER
+      - GO_TO_SCENARIO_FROM_COMPONENTS_USAGES_LIST
+      - GLOBAL_METRICS
+      - ACTION_DEPLOY
+      - ACTION_METRICS
+      - VIEW_ZOOM_IN
+      - VIEW_RESET
+      - EDIT_UNDO
+      - EDIT_REDO
+      - EDIT_COPY
+      - EDIT_PASTE
+      - EDIT_DELETE
+      - EDIT_LAYOUT
+      - SCENARIO_PROPERTIES
+      - SCENARIO_COMPARE
+      - SCENARIO_MIGRATE
+      - SCENARIO_IMPORT
+      - SCENARIO_JSON
+      - SCENARIO_PDF
+      - SCENARIO_ARCHIVE
+      - TEST_GENERATED
+      - TEST_ADHOC
+      - TEST_FROM_FILE
+      - TEST_GENERATE_FILE
+      - TEST_HIDE
+      - MORE_SCENARIO_DETAILS
+      - ROLL_UP_PANEL
+      - EXPAND_PANEL
+      - MOVE_PANEL
+      - SEARCH_NODES_IN_SCENARIO
+      - SEARCH_COMPONENTS_IN_SCENARIO
+      - SWITCH_TO_OLDER_VERSION
+      - SWITCH_TO_NEWER_VERSION
+      - FIRED_KEY_STROKE
+      - NODE_DOCUMENTATION
     StatisticUrlResponseDto:
       type: object
       properties:
