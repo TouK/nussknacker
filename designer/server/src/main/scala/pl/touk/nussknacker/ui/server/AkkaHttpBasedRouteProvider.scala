@@ -126,6 +126,7 @@ class AkkaHttpBasedRouteProvider(
           processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
         )
@@ -200,7 +201,8 @@ class AkkaHttpBasedRouteProvider(
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
-          processingTypeData.deploymentData.scenarioPropertiesConfig
+          processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
         )
       }
 
