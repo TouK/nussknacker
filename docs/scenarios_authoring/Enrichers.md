@@ -51,14 +51,16 @@ This component allows the user to match input to a pre-defined result. Please be
 - Description: user-defined description of the particular component. 
 
 The component has two main elements: _Decision Table_ which is a user-defined table of values and _Match condition_ - a SpEL expression which Nu will use to match the input to the table values.
+
+First let's look at our input: it's a simple model of car data that consists of engine status, controls status and car mileage and name.![alt_text](img/decisionTableValues.png "basic decision table")
  
-First we have to define a fixed-value decision table. We will use a simple car mechanic concept - a decision table that helps to define whether a car should be serviced. The blue columns represent our input values and the red one is our decision column.
+Now we have to define a fixed-value decision table. We will use a simple car mechanic concept - a decision table that helps to define whether a car should be serviced. The blue columns represent our input values and the red one is our decision column.
 ![alt_text](img/decisionTableValues.png "basic decision table")
 
-We now need to define a condition that will match our input data with the table rows. In our case the input is a tuple (engine\_status, controls\_status, car\_id). We want to match when the values are equal to the row values. The relevant expression is:
+We now need to define a condition that will match our input data with the table rows. In our case the input is a tuple (engine\_status, controls\_status, mileage, car\_id). We want to match when the boolean values are equal to the row values. We also decide we want the car mileage to be higher than the specific threshold. Remember that #Row variable in the expression allows us to interact with the defined table. The relevant expression is:
 ![alt_text](img/decisionTableExpression.png "Expression matching input with rows.")
 
-The output from the component will be a list of matched *whole* rows (of type record). So, in our case, if one of inputs is (True, True, "myCar"), then the output would be a list consisting of a single recordList[(True, True, True)]. If you want to only get the _result columns_, then you need to transform the data afterwards with a different component.
+The output from the component will be a list of matched *whole* rows (of type record). So, in our case, if one of inputs is (True, True, 60, "myCar"), then the output would be a list consisting of a single recordList[(True, True, 50, True)]. If you want to only get the _result columns_, then you need to transform the data afterwards with a different component.
 
 You can add as many input and result columns as you would like. The _Match condition_ is a fully functioning expression, so you can be quite flexible with it. You could omit some of the checks on the input rows. In our example, we could check for engine control only with *#engine = #ROW.Engine_starts*. It is also up to you which columns you define as input and which as output, you can treat them completely differently in two components that have the same table definition.
 
