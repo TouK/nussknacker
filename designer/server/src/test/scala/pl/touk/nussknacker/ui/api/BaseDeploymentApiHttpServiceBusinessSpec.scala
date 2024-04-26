@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
+import org.hamcrest.Matchers.{anyOf, equalTo}
 import org.scalatest.Suite
 import org.scalatest.concurrent.Eventually
 import org.scalatest.concurrent.PatienceConfiguration.Interval
@@ -116,14 +117,21 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   ): Unit = {
     // A little bit longer interval than default to avoid too many log entries of requests
     eventually(Interval(Span(2, Seconds))) {
-      given()
-        .when()
-        .basicAuthAdmin()
-        .get(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId/status")
-        .Then()
-        .statusCode(200)
-        .equalsPlainBody(expectedStatus.name)
+      checkDeploymentStatusMatches(requestedDeploymentId, expectedStatus)
     }
+  }
+
+  protected def checkDeploymentStatusMatches(
+      requestedDeploymentId: NewDeploymentId,
+      expectedStatuses: StateStatus*
+  ): Unit = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .get(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId/status")
+      .Then()
+      .statusCode(200)
+      .body(anyOf(expectedStatuses.map(status => equalTo[String](status.name)): _*))
   }
 
   protected def outputTransactionSummaryContainsExpectedResult(): Unit = {
