@@ -20,6 +20,7 @@ import ErrorBoundary from "../common/ErrorBoundary";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
+import { NodeDocs } from "../graph/node-modal/nodeDetails/SubHeader";
 
 export type GenericActionLayout = {
     name: string;
@@ -138,17 +139,21 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
     );
 }
 
-export function GenericActionDialog(
+function GenericActionDialog(
     props: WindowContentProps<
         WindowKind,
         {
-            Icon: ElementType;
             action: GenericAction;
+            Icon: ElementType;
+            docs?: {
+                url: string;
+                label?: string;
+            };
         }
     >,
 ): JSX.Element {
     const { t } = useTranslation();
-    const { action, Icon } = props.data.meta;
+    const { action, Icon, docs } = props.data.meta;
     const [value, setValue] = useState(() =>
         (action?.parameters || []).reduce(
             (obj, param) => ({
@@ -185,7 +190,12 @@ export function GenericActionDialog(
     );
 
     return (
-        <WindowContent {...props} buttons={buttons} icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />}>
+        <WindowContent
+            {...props}
+            buttons={buttons}
+            icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />}
+            subheader={<NodeDocs name={docs?.label} href={docs?.url} />}
+        >
             <Box sx={{ minWidth: 600 }}>
                 <GenericActionForm action={action} errors={validationErrors} value={value} setValue={setValue} />
             </Box>
