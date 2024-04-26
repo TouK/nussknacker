@@ -88,59 +88,64 @@ object StatisticsApiEndpoints {
     final case class RegisterStatisticsRequestDto private (statistics: List[StatisticDto])
 
     @derive(encoder, decoder, schema)
-    final case class StatisticDto private (name: StatisticName, value: Long)
+    final case class StatisticDto private (name: StatisticName)
 
     sealed trait StatisticName extends EnumEntry with UpperSnakecase
 
     object StatisticName extends Enum[StatisticName] with CirceEnum[StatisticName] {
-      case object ScenarioFilter                         extends StatisticName
-      case object SearchScenario                         extends StatisticName
-      case object ComponentsList                         extends StatisticName
-      case object SearchComponents                       extends StatisticName
-      case object SearchComponentsWithGroup              extends StatisticName
-      case object SearchComponentsWithProcessingMode     extends StatisticName
-      case object SearchComponentsWithCategory           extends StatisticName
-      case object SearchComponentsWithMultipleCategories extends StatisticName
-      case object SearchComponentsWithUsages             extends StatisticName
-      case object SearchComponentsUsagesList             extends StatisticName
-      case object SearchComponentsUsagesListWithStatus   extends StatisticName
-      case object SearchComponentsUsagesListWithCategory extends StatisticName
-      case object SearchComponentsUsagesListWithAuthor   extends StatisticName
-      case object SearchComponentsUsagesListWithOther    extends StatisticName
-      case object GoToScenarioFromComponentsUsagesList   extends StatisticName
-      case object GlobalMetrics                          extends StatisticName
-      case object ActionDeploy                           extends StatisticName
-      case object ActionMetrics                          extends StatisticName
-      case object ViewZoomIn                             extends StatisticName
-      case object ViewReset                              extends StatisticName
-      case object EditUndo                               extends StatisticName
-      case object EditRedo                               extends StatisticName
-      case object EditCopy                               extends StatisticName
-      case object EditPaste                              extends StatisticName
-      case object EditDelete                             extends StatisticName
-      case object EditLayout                             extends StatisticName
-      case object ScenarioProperties                     extends StatisticName
-      case object ScenarioCompare                        extends StatisticName
-      case object ScenarioMigrate                        extends StatisticName
-      case object ScenarioImport                         extends StatisticName
-      case object ScenarioJson                           extends StatisticName
-      case object ScenarioPdf                            extends StatisticName
-      case object ScenarioArchive                        extends StatisticName
-      case object TestGenerated                          extends StatisticName
-      case object TestAdhoc                              extends StatisticName
-      case object TestFromFile                           extends StatisticName
-      case object TestGenerateFile                       extends StatisticName
-      case object TestHide                               extends StatisticName
-      case object MoreScenarioDetails                    extends StatisticName
-      case object RollUpPanel                            extends StatisticName
-      case object ExpandPanel                            extends StatisticName
-      case object MovePanel                              extends StatisticName
-      case object SearchNodesInScenario                  extends StatisticName
-      case object SearchComponentsInScenario             extends StatisticName
-      case object SwitchToOlderVersion                   extends StatisticName
-      case object SwitchToNewerVersion                   extends StatisticName
-      case object FiredKeyStroke                         extends StatisticName
-      case object NodeDocumentation                      extends StatisticName
+      case object SearchScenarioByName                 extends StatisticName
+      case object SearchScenarioByStatus               extends StatisticName
+      case object SearchScenarioByProcessingMode       extends StatisticName
+      case object SearchScenarioByCategory             extends StatisticName
+      case object SearchScenarioByAuthor               extends StatisticName
+      case object SearchScenarioByOther                extends StatisticName
+      case object SearchScenarioWithSort               extends StatisticName
+      case object SearchComponentsByName               extends StatisticName
+      case object SearchComponentsByGroup              extends StatisticName
+      case object SearchComponentsByProcessingMode     extends StatisticName
+      case object SearchComponentsByCategory           extends StatisticName
+      case object SearchComponentsByMultipleCategories extends StatisticName
+      case object SearchComponentsByUsages             extends StatisticName
+      case object ClickComponentUsages                 extends StatisticName
+      case object SearchComponentUsagesByName          extends StatisticName
+      case object SearchComponentUsagesByStatus        extends StatisticName
+      case object SearchComponentUsagesByCategory      extends StatisticName
+      case object SearchComponentUsagesByAuthor        extends StatisticName
+      case object SearchComponentUsagesByOther         extends StatisticName
+      case object ClickScenarioFromComponentUsages     extends StatisticName
+      case object ClickGlobalMetrics                   extends StatisticName
+      case object ClickActionDeploy                    extends StatisticName
+      case object ClickActionMetrics                   extends StatisticName
+      case object ClickViewZoomIn                      extends StatisticName
+      case object ClickViewReset                       extends StatisticName
+      case object ClickClickEditUndo                   extends StatisticName
+      case object ClickEditRedo                        extends StatisticName
+      case object ClickEditCopy                        extends StatisticName
+      case object ClickEditPaste                       extends StatisticName
+      case object ClickEditDelete                      extends StatisticName
+      case object ClickEditLayout                      extends StatisticName
+      case object ClickScenarioProperties              extends StatisticName
+      case object ClickScenarioCompare                 extends StatisticName
+      case object ClickScenarioMigrate                 extends StatisticName
+      case object ClickScenarioImport                  extends StatisticName
+      case object ClickScenarioJson                    extends StatisticName
+      case object ClickScenarioPdf                     extends StatisticName
+      case object ClickScenarioArchive                 extends StatisticName
+      case object ClickTestGenerated                   extends StatisticName
+      case object ClickTestAdhoc                       extends StatisticName
+      case object ClickTestFromFile                    extends StatisticName
+      case object ClickTestGenerateFile                extends StatisticName
+      case object ClickTestHide                        extends StatisticName
+      case object ClickMoreScenarioDetails             extends StatisticName
+      case object ClickRollUpPanel                     extends StatisticName
+      case object ClickExpandPanel                     extends StatisticName
+      case object MovePanel                            extends StatisticName
+      case object SearchNodesInScenario                extends StatisticName
+      case object SearchComponentsInScenario           extends StatisticName
+      case object ClickOlderVersion                    extends StatisticName
+      case object ClickNewerVersion                    extends StatisticName
+      case object FiredKeyStroke                       extends StatisticName
+      case object ClickNodeDocumentation               extends StatisticName
 
       override def values = findValues
     }
