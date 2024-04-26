@@ -1,12 +1,9 @@
 package pl.touk.nussknacker.ui.statistics
 
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
-import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -22,21 +19,16 @@ import scala.concurrent.Future
 class UsageStatisticsReportsSettingsDeterminerTest
     extends AnyFunSuite
     with Matchers
-    with EitherValues
+    with OptionValues
     with PatientScalaFutures
     with TableDrivenPropertyChecks {
 
   private val sampleFingerprint = "fooFingerprint"
-
-  private val mockedFingerprintService: FingerprintService = mock[FingerprintService](
-    new Answer[Future[Either[StatisticError, Fingerprint]]] {
-      override def answer(invocation: InvocationOnMock): Future[Either[StatisticError, Fingerprint]] =
-        Future.successful(Right(new Fingerprint(sampleFingerprint)))
-    }
-  )
+  private val fingerprintSupplier = (_: UsageStatisticsReportsConfig, _: FileName) =>
+    Future.successful(new Fingerprint(sampleFingerprint))
 
   test("should generate correct url with encoded params") {
-    UsageStatisticsReportsSettingsDeterminer.prepareUrlString(
+    UsageStatisticsReportsSettingsDeterminer.prepareUrl(
       ListMap("f" -> "a b", "v" -> "1.6.5-a&b=c")
     ) shouldBe "https://stats.nussknacker.io/?f=a+b&v=1.6.5-a%26b%3Dc"
   }
@@ -44,9 +36,9 @@ class UsageStatisticsReportsSettingsDeterminerTest
   test("should determine query params with version and source ") {
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      mockedFingerprintService,
-      () => Future.successful(Right(List.empty))
-    ).determineQueryParams().value.futureValue.value
+      fingerprintSupplier,
+      () => Future.successful(List.empty)
+    ).determineQueryParams().futureValue
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
     params should contain("version" -> BuildInfo.version)
@@ -201,9 +193,9 @@ class UsageStatisticsReportsSettingsDeterminerTest
 
     val params = new UsageStatisticsReportsSettingsDeterminer(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      mockedFingerprintService,
-      () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario)))
-    ).determineQueryParams().value.futureValue.value
+      fingerprintSupplier,
+      () => Future.successful(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))
+    ).determineQueryParams().futureValue
 
     val expectedStats = Map(
       "s_s"     -> "3",
