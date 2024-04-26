@@ -294,6 +294,7 @@ describe("Fragment", () => {
             .should("be.visible");
 
         cy.get("[data-testid=window]").find("section").scrollTo("bottom");
+        cy.wait(200);
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
