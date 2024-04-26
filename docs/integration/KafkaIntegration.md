@@ -65,7 +65,7 @@ kafkaConfig {
     "security.protocol": "SASL_SSL"
     "sasl.mechanism": "PLAIN"
     "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"some_user\" password=\"some_user\";"
-    }
+  }
 }
 ```
 
