@@ -62,9 +62,15 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 }
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
-import pl.touk.nussknacker.test.mock.{StubFragmentRepository, StubModelDataWithModelDefinition}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.mock.{
+  StubFragmentRepository,
+  StubModelDataWithModelDefinition,
+  TestAdditionalUIConfigProvider
+}
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
@@ -295,7 +301,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("not allow required scenario fields") {
+  test("validate missing required scenario properties") {
     val processValidator = TestFactory.processValidator.withScenarioPropertiesConfig(
       Map(
         "field1" -> ScenarioPropertyConfig(
@@ -343,6 +349,39 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               _,
               _,
               Some("field1"),
+              ValidationResults.NodeValidationErrorType.SaveAllowed,
+              _
+            )
+          ) =>
+    }
+  }
+
+  test("validate scenario properties according to validators from additional config provider") {
+    val processValidator =
+      TestFactory.processValidator.withScenarioPropertiesConfig(FlinkStreamingPropertiesConfig.properties)
+
+    def validate(scenarioGraph: ScenarioGraph) =
+      processValidator.validate(scenarioGraph, ProcessTestData.sampleProcessName, isFragment = false)
+
+    validate(
+      validScenarioGraphWithFields(
+        Map(
+          TestAdditionalUIConfigProvider.scenarioPropertyName -> TestAdditionalUIConfigProvider.scenarioPropertyPossibleValues.head.expression
+        )
+      )
+    ) shouldBe withoutErrorsAndWarnings
+
+    validate(
+      validScenarioGraphWithFields(
+        Map(TestAdditionalUIConfigProvider.scenarioPropertyName -> "some value not in possible values")
+      )
+    ).errors.processPropertiesErrors should matchPattern {
+      case List(
+            NodeValidationError(
+              "InvalidPropertyFixedValue",
+              _,
+              _,
+              Some(TestAdditionalUIConfigProvider.scenarioPropertyName),
               ValidationResults.NodeValidationErrorType.SaveAllowed,
               _
             )
@@ -1044,6 +1083,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ),
       scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
@@ -1094,6 +1135,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ),
       scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
@@ -1134,6 +1177,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ),
       scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
@@ -1189,6 +1234,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
         )
       ),
       scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
       additionalValidators = List.empty,
       fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
     )
@@ -2034,6 +2081,8 @@ private object UIProcessValidatorSpec {
       processingType = "Streaming",
       validator = ProcessValidator.default(new StubModelDataWithModelDefinition(modelDefinition, execConfig)),
       scenarioProperties = FlinkStreamingPropertiesConfig.properties,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, "Streaming"),
       additionalValidators = List(SampleCustomProcessValidator),
       fragmentResolver = new FragmentResolver(
         new StubFragmentRepository(
