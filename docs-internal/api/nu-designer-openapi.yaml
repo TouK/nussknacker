@@ -2156,6 +2156,10 @@ components:
       properties:
         actionName:
           type: string
+        comment:
+          type:
+          - string
+          - 'null'
         params:
           $ref: '#/components/schemas/Map_String'
     CustomActionValidationDto:
