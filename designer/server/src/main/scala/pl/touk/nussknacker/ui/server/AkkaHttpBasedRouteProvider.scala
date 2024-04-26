@@ -50,6 +50,7 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.newactivity.{ActivityService, CommentRepository}
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
   DefaultProcessingTypeActionService,
@@ -65,6 +66,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, Deplo
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
@@ -342,17 +344,29 @@ class AkkaHttpBasedRouteProvider(
         }
       )
       val deploymentHttpService = {
-        val scenarioMetadataRepository = new ScenarioMetadataRepository(dbRef)
-        val deploymentRepository       = new DeploymentRepository(dbRef)
+        val scenarioMetadataRepository     = new ScenarioMetadataRepository(dbRef)
+        val scenarioGraphVersionRepository = new ScenarioGraphVersionRepository(dbRef)
+        val scenarioGraphVersionService =
+          new ScenarioGraphVersionService(scenarioGraphVersionRepository, processValidator, scenarioResolver)
+        val deploymentRepository = new DeploymentRepository(dbRef)
         val deploymentService =
           new DeploymentService(
             scenarioMetadataRepository,
+            scenarioGraphVersionService,
             deploymentRepository,
-            legacyDeploymentService,
+            dmDispatcher,
             dbioRunner,
             Clock.systemDefaultZone()
           )
-        new DeploymentApiHttpService(authenticationResources, deploymentService)
+        val commentRepository = new CommentRepository(dbRef)
+        val activityService =
+          new ActivityService(
+            featureTogglesConfig.deploymentCommentSettings,
+            commentRepository,
+            deploymentService,
+            dbioRunner
+          )
+        new DeploymentApiHttpService(authenticationResources, activityService, deploymentService)
       }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
