@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.config
 
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
@@ -43,7 +44,7 @@ object FeatureTogglesConfig extends LazyLogging {
 
     val remoteEnvironment         = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings           = parseOptionalConfig[CommentSettings](config, "commentSettings")
-    val deploymentCommentSettings = parseOptionalConfig[DeploymentCommentSettings](config, "deploymentCommentSettings")
+    val deploymentCommentSettings = parseDeploymentCommentSettings(config)
     val scenarioStateTimeout      = parseOptionalConfig[FiniteDuration](config, "scenarioStateTimeout")
     val surveySettings            = parseOptionalConfig[SurveySettings](config, "surveySettings")
 
@@ -69,6 +70,21 @@ object FeatureTogglesConfig extends LazyLogging {
       enableConfigEndpoint = enableConfigEndpoint,
       redirectAfterArchive = redirectAfterArchive,
     )
+  }
+
+  private def parseDeploymentCommentSettings(config: Config): Option[DeploymentCommentSettings] = {
+    val rootPath = "deploymentCommentSettings"
+    if (config.hasPath(rootPath)) {
+      val settingConfig     = config.getConfig(rootPath)
+      val validationPattern = settingConfig.as[String](s"validationPattern")
+      val exampleComment    = settingConfig.getAs[String](s"exampleComment")
+      DeploymentCommentSettings.create(validationPattern, exampleComment) match {
+        case Valid(settings) => Some(settings)
+        case Invalid(e)      => throw e
+      }
+    } else {
+      None
+    }
   }
 
 }
