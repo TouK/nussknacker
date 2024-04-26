@@ -16,7 +16,7 @@ import { ToolbarButtonProps } from "../../types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { TestFormParameters } from "../../../../common/TestResultUtils";
 import { testProcessWithParameters } from "../../../../actions/nk/displayTestResults";
-import { GenericActionParameters } from "../../../modals/GenericActionDialog";
+import { GenericAction, GenericActionParameters, GenericActionWindowData } from "../../../modals/GenericActionDialog";
 import { Expression } from "../../../../types";
 import { SourceWithParametersTest } from "../../../../http/HttpService";
 import { getFindAvailableVariables } from "../../../graph/node-modal/NodeDetailsContent/selectors";
@@ -39,10 +39,10 @@ function TestWithFormButton(props: Props) {
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
 
-    const isAvailable = () => !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canTestWithForm;
+    const isAvailable = () => !disabled && processIsLatestVersion && testCapabilities?.canTestWithForm;
 
     const [available, setAvailable] = useState(isAvailable);
-    const [action, setAction] = useState(null);
+    const [action, setAction] = useState<GenericAction>(null);
     const [selectedSource, setSelectedSource] = useState(head(testFormParameters)?.sourceId);
     const [sourceParameters, setSourceParameters] = useState(updateParametersFromTestForm());
     const variableTypes = useMemo(() => findAvailableVariables?.(selectedSource), [findAvailableVariables, selectedSource]);
@@ -133,14 +133,20 @@ function TestWithFormButton(props: Props) {
 
     const onButtonClick = useCallback(() => {
         const sourcesFound = Object.keys(sourceParameters).length;
-        if (sourcesFound > 1) inform({ text: `Testing with form support only one source - found ${sourcesFound}.` });
-        else
-            open({
+
+        if (sourcesFound > 1) {
+            inform({ text: `Testing with form support only one source - found ${sourcesFound}.` });
+        } else {
+            open<GenericActionWindowData>({
                 title: t("dialog.title.testWithForm", "Test scenario"),
                 isResizable: true,
                 kind: WindowKind.genericAction,
-                meta: { Icon, action },
+                meta: {
+                    Icon,
+                    action,
+                },
             });
+        }
     }, [action, sourceParameters]);
 
     return (

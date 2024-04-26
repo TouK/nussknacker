@@ -37,7 +37,7 @@ export interface GenericActionParameters {
     onParamUpdate?: (name: string) => (value: any) => void;
 }
 
-interface GenericAction extends GenericActionParameters {
+export interface GenericAction extends GenericActionParameters {
     layout: GenericActionLayout;
     variableTypes: VariableTypes;
     onConfirmAction: (parmValues) => void;
@@ -139,19 +139,16 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
     );
 }
 
-function GenericActionDialog(
-    props: WindowContentProps<
-        WindowKind,
-        {
-            action: GenericAction;
-            Icon: ElementType;
-            docs?: {
-                url: string;
-                label?: string;
-            };
-        }
-    >,
-): JSX.Element {
+export type GenericActionWindowData = {
+    action: GenericAction;
+    Icon: ElementType;
+    docs?: {
+        url: string;
+        label?: string;
+    };
+};
+
+function GenericActionDialog(props: WindowContentProps<WindowKind, GenericActionWindowData>): JSX.Element {
     const { t } = useTranslation();
     const { action, Icon, docs } = props.data.meta;
     const [value, setValue] = useState(() =>
