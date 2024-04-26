@@ -259,7 +259,7 @@ class ManagementApiHttpServiceBusinessSpec
           .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$wrongScenarioName/validation")
           .Then()
           .statusCode(404)
-          .equalsPlainBody(s"Couldn't find $wrongScenarioName when trying to validate action".stripMargin)
+          .equalsPlainBody(s"Couldn't find scenario $wrongScenarioName".stripMargin)
       }
 
       "non existing action" in {
@@ -283,7 +283,7 @@ class ManagementApiHttpServiceBusinessSpec
           .Then()
           .statusCode(404)
           .equalsPlainBody(
-            s"Couldn't find definition of action non-existing for scenario $exampleScenarioName when trying to validate".stripMargin
+            s"Couldn't find definition of action non-existing for scenario $exampleScenarioName".stripMargin
           )
       }
     }

@@ -56,7 +56,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
         CustomActionParameter("mandatoryString", StringParameterEditor, List(MandatoryParameterValidator)),
         CustomActionParameter("paramInt", StringParameterEditor, List(LiteralIntegerValidator)),
         CustomActionParameter("paramDate", DateParameterEditor, Nil),
-        CustomActionParameter("comment", TextareaParameterEditor, Nil),
       )
     )
 
