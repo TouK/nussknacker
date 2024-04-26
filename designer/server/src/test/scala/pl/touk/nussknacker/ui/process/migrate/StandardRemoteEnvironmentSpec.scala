@@ -17,10 +17,10 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestProcessUtil}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.NuDesignerError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
+  ApiVersion,
   MigrateScenarioRequestDtoV1,
   MigrateScenarioRequestDtoV2
 }
-import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter

@@ -9,11 +9,11 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrationError
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
+import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
@@ -49,7 +49,7 @@ class MigrationService(
 
   def migrate(
       migrateScenarioData: MigrateScenarioData
-  )(implicit loggedUser: LoggedUser): EitherT[Future, MigrationError, Unit] = {
+  )(implicit loggedUser: LoggedUser): Future[Either[MigrationError, Unit]] = {
 
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = migrateScenarioData.currentVersion
@@ -62,17 +62,9 @@ class MigrationService(
 
     liftedMigrateScenarioRequestE match {
       case Left(apiAdapterServiceError) =>
-        throw new IllegalStateException(apiAdapterServiceError match {
-          case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
-            signedNoOfVersionsLeftToApply match {
-              case n if n >= 0 =>
-                s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
-              case _ =>
-                s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
-            }
-        })
+        throw illegalStateDueToApiAdapterServiceError(apiAdapterServiceError)
       case Right(currentMigrateScenarioRequest: CurrentMigrateScenarioData) =>
-        EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
+        migrateCurrentScenarioDescription(currentMigrateScenarioRequest)
       case _ =>
         throw new IllegalStateException(
           "Migration API adapter service lifted up remote migration request not to its newest local version"
@@ -291,6 +283,46 @@ class MigrationService(
           notifyListener(OnSaved(response.id, response.versionId))
           Right(())
       }
+  }
+
+  private def illegalStateDueToApiAdapterServiceError(error: ApiAdapterServiceError) = {
+    new IllegalStateException(error match {
+      case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+        signedNoOfVersionsLeftToApply match {
+          case n if n >= 0 =>
+            s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
+          case _ =>
+            s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
+        }
+    })
+  }
+
+}
+
+object MigrationService {
+  sealed trait MigrationError
+
+  object MigrationError {
+    final case class InvalidScenario(errors: ValidationErrors)                                    extends MigrationError
+    final case class CannotMigrateArchivedScenario(processName: ProcessName, environment: String) extends MigrationError
+    final case class InsufficientPermission(user: LoggedUser)                                     extends MigrationError
+
+    case object CannotTransformMigrateScenarioRequestIntoMigrationDomain extends MigrationError
+
+    private[MigrationService] def from(
+        nuDesignerError: NuDesignerError
+    )(implicit loggedUser: LoggedUser): MigrationError =
+      nuDesignerError match {
+        case _: UnauthorizedError =>
+          MigrationError.InsufficientPermission(loggedUser)
+        case _ @MigrationToArchivedError(processName, environment) =>
+          MigrationError.CannotMigrateArchivedScenario(processName, environment)
+        case _ @MigrationValidationError(errors) =>
+          MigrationError.InvalidScenario(errors)
+        case nuDesignerError: NuDesignerError =>
+          throw new IllegalStateException(nuDesignerError.getMessage)
+      }
+
   }
 
 }

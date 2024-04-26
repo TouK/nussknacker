@@ -1,20 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.implicits.{toFunctorOps, toTraverseOps}
-import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder}
 import cats.implicits.toTraverseOps
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
-  MigrateScenarioRequestDto,
-  MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2
-}
-import pl.touk.nussknacker.ui.api.utils.ApiVersion
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
@@ -123,36 +114,6 @@ object TapirCodecs {
 
   object ProcessNameCodec {
     implicit val processNameSchema: Schema[ProcessName] = Schema.string
-  }
-
-  object MigrateScenarioRequestCodec {
-
-    import ProcessNameCodec._
-    import EngineSetupNameCodec._
-    import ScenarioGraphCodec._
-    import ProcessingModeCodec._
-
-    implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.derived
-    implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
-
-    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequestDto] = Schema.derived
-
-    implicit val migrateScenarioRequestDtoEncoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
-      case v1: MigrateScenarioRequestDtoV1 => v1.asJson
-      case v2: MigrateScenarioRequestDtoV2 => v2.asJson
-    }
-
-    implicit val migrateScenarioRequestDtoDecoder: Decoder[MigrateScenarioRequestDto] = Decoder.instance { cursor =>
-      cursor.downField("version").as[Int].flatMap {
-        case 1 => cursor.as[MigrateScenarioRequestDtoV1]
-        case 2 => cursor.as[MigrateScenarioRequestDtoV2]
-      }
-    }
-
-  }
-
-  object ApiVersion {
-    implicit val apiVersionSchema: Schema[ApiVersion] = Schema.derived
   }
 
   object URLCodec {

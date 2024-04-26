@@ -343,7 +343,8 @@ val cronParserV               = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.6"
 val sttpV                     = "3.8.15"
-val tapirV                    = "1.9.11"
+val tapirV                    = "1.10.5"
+val openapiCirceYamlV         = "0.9.0"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
 val jmxPrometheusJavaagentV   = "0.18.0"
@@ -1104,7 +1105,7 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.github.erosb"               % "everit-json-schema"      % everitSchemaV exclude ("commons-logging", "commons-logging"),
         "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
-        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % "0.7.4",
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % openapiCirceYamlV,
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
@@ -1924,7 +1925,7 @@ lazy val designer = (project in file("designer/server"))
         "org.apache.xmlgraphics"         % "fop"                             % "2.8" exclude ("commons-logging", "commons-logging"),
         "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
-        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % "0.7.4",
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
         "com.softwaremill.sttp.tapir"   %% "tapir-akka-http-server"          % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-core"                      % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-derevo"                    % tapirV,

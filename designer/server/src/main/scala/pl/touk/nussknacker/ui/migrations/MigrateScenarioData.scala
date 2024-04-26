@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
   MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2,
-  MigrationError
+  MigrateScenarioRequestDtoV2
 }
+import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.util.VersionedData
 
 sealed trait MigrateScenarioData extends VersionedData
@@ -66,7 +66,7 @@ object MigrateScenarioData {
             isFragment
           )
         )
-      case _ => Left(MigrationError.CannotTransformMigrateScenarioRequestIntoMigrationDomain(migrateScenarioRequestDto))
+      case _ => Left(MigrationError.CannotTransformMigrateScenarioRequestIntoMigrationDomain)
     }
 
   def fromDomain(migrateScenarioRequest: MigrateScenarioData): MigrateScenarioRequestDto =
