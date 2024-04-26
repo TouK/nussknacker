@@ -1,5 +1,5 @@
 import { css } from "@emotion/css";
-import { DefaultComponents as Window, WindowButtonProps, WindowContentProps } from "@touk/window-manager";
+import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,11 +19,9 @@ import ErrorBoundary from "../../../common/ErrorBoundary";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
-import { NodeDetailsModalHeader } from "../nodeDetails/NodeDetailsModalHeader";
+import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import { DefaultContentProps } from "@touk/window-manager/cjs/components/window/DefaultContent";
-import { styled } from "@mui/material";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -32,16 +30,6 @@ function mergeQuery(changes: Record<string, string[]>) {
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType; scenario: Scenario }> {
     readOnly?: boolean;
 }
-
-const StyledHeader = styled(Window.Header)(({ isMaximized, isStatic }) => {
-    const draggable = !(isMaximized || isStatic);
-    return {
-        cursor: draggable ? "grab" : "inherit",
-        ":active": {
-            cursor: draggable ? "grabbing" : "inherit",
-        },
-    };
-});
 
 export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const scenarioFromGlobalStore = useSelector(getScenario);
@@ -115,14 +103,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         [applyButtonData, cancelButtonData, openFragmentButtonData],
     );
 
-    const components = useMemo<DefaultContentProps["components"]>(
-        () => ({
-            Header: StyledHeader,
-            HeaderTitle: () => <NodeDetailsModalHeader node={node} />,
-        }),
-        [node],
-    );
-
     useEffect(() => {
         mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
         return () => {
@@ -138,8 +118,10 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return (
         <WindowContent
             {...props}
+            title={getNodeDetailsModalTitle(node)}
             buttons={buttons}
-            components={components}
+            icon={<NodeDetailsModalIcon node={node} />}
+            subheader={<NodeDetailsModalSubheader node={node} />}
             classnames={{
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
