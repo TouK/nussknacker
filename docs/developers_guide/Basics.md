@@ -86,7 +86,7 @@ that can be used to scenario execution.
 ![Modules architecture](./img/modeles-architecture.png)
 
 Your code should depend only on `nussknacker-xxx-api` or `nussknacker-xxx-components-utils`/`nussknacker-xxx-extensions-utils` packages and not on implementation modules, like
-`nussknacker-scenario-compiler`, `nussknacker-flink-executor`, `nussknacker-lite-runtime` or other `internal` modules. They should only be needed in `test` scope.
+`nussknacker-interpreter`, `nussknacker-flink-executor`, `nussknacker-lite-runtime` or other `internal` modules. They should only be needed in `test` scope.
 
 **If you find you need to depend on those modules, please bear in mind that they contain implementation details and their API should not be considered stable.**
             

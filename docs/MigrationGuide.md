@@ -55,7 +55,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
   * "Basic Decision Table" -> "Decision Table"
   * "Expression" -> "Match condition"
-* [#5881](https://github.com/TouK/nussknacker/pull/5881) `nussknacker-interpreter` module was renamed to `nussknacker-scenario-compiler`
 
 ## In version 1.14.0
 

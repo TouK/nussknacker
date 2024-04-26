@@ -614,7 +614,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
   )
   .dependsOn(
     deploymentManagerApi % Provided,
-    scenarioCompiler     % Provided,
+    interpreter          % Provided,
     componentsApi        % Provided,
     httpUtils            % Provided,
     flinkScalaUtils      % Provided,
@@ -646,7 +646,7 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
   .dependsOn(
     flinkDeploymentManager,
     deploymentManagerApi % Provided,
-    scenarioCompiler     % Provided,
+    interpreter          % Provided,
     componentsApi        % Provided,
     httpUtils            % Provided,
     testUtils            % Test
@@ -677,7 +677,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model"))
     liteComponentsApi,
     componentsUtils      % Provided,
     // TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
-    scenarioCompiler     % Provided,
+    interpreter          % Provided,
     flinkExecutor        % Test,
     flinkTestUtils       % Test,
     kafkaTestUtils       % Test
@@ -793,12 +793,12 @@ lazy val flinkExecutor = (project in flink("executor"))
         )
     }.toList,
   )
-  .dependsOn(flinkComponentsUtils, scenarioCompiler, flinkExtensionsApi, flinkTestUtils % Test)
+  .dependsOn(flinkComponentsUtils, interpreter, flinkExtensionsApi, flinkTestUtils % Test)
 
-lazy val scenarioCompiler = (project in file("scenario-compiler"))
+lazy val interpreter = (project in file("interpreter"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-scenario-compiler",
+    name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
         "org.typelevel"          %% "cats-effect"                   % catsEffectV,
@@ -839,7 +839,7 @@ lazy val benchmarks = (project in file("benchmarks"))
   .dependsOn(
     designer,
     extensionsApi,
-    scenarioCompiler,
+    interpreter,
     flinkSchemedKafkaComponentsUtils,
     flinkExecutor,
     flinkBaseComponents,
@@ -918,13 +918,7 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
       )
     },
   )
-  .dependsOn(
-    componentsUtils  % Provided,
-    kafkaComponentsUtils,
-    scenarioCompiler % Test,
-    kafkaTestUtils   % Test,
-    jsonUtils
-  )
+  .dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % Test, kafkaTestUtils % Test, jsonUtils)
 
 lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-components-utils"))
   .settings(commonSettings)
@@ -1008,7 +1002,7 @@ lazy val componentsTestkit = (project in utils("components-testkit"))
   .settings(
     name := "nussknacker-components-testkit",
   )
-  .dependsOn(componentsApi, scenarioApi, commonUtils, testUtils, scenarioCompiler)
+  .dependsOn(componentsApi, scenarioApi, commonUtils, testUtils, interpreter)
 
 //this should be only added in scope test - 'module % Test'
 lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
@@ -1087,7 +1081,7 @@ lazy val defaultHelpers = (project in utils("default-helpers"))
   .settings(
     name := "nussknacker-default-helpers"
   )
-  .dependsOn(mathUtils, testUtils % Test, scenarioCompiler % Test)
+  .dependsOn(mathUtils, testUtils % Test, interpreter % Test)
 
 lazy val testUtils = (project in utils("test-utils"))
   .settings(commonSettings)
@@ -1195,7 +1189,7 @@ lazy val flinkTestUtils = (project in flink("test-utils"))
       ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   )
-  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, componentsUtils, scenarioCompiler)
+  .dependsOn(testUtils, flinkComponentsUtils, flinkExtensionsApi, componentsUtils, interpreter)
 
 lazy val requestResponseComponentsUtils = (project in lite("request-response/components-utils"))
   .settings(commonSettings)
@@ -1309,7 +1303,7 @@ lazy val liteEngineRuntime = (project in lite("runtime"))
       )
     },
   )
-  .dependsOn(liteComponentsApi, scenarioCompiler, testUtils % Test)
+  .dependsOn(liteComponentsApi, interpreter, testUtils % Test)
 
 lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration-test"))
   .configs(IntegrationTest)
@@ -1329,7 +1323,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
     )
   )
   .dependsOn(
-    scenarioCompiler            % IntegrationTest,
+    interpreter                 % IntegrationTest,
     schemedKafkaComponentsUtils % IntegrationTest,
     testUtils                   % IntegrationTest,
     kafkaTestUtils              % IntegrationTest,
@@ -1962,7 +1956,7 @@ lazy val designer = (project in file("designer/server"))
     }
   )
   .dependsOn(
-    scenarioCompiler,
+    interpreter,
     processReports,
     security,
     deploymentManagerApi,
@@ -2035,7 +2029,7 @@ lazy val modules = List[ProjectReference](
   devPeriodicDM,
   defaultModel,
   openapiComponents,
-  scenarioCompiler,
+  interpreter,
   benchmarks,
   kafkaUtils,
   kafkaComponentsUtils,
