@@ -20,8 +20,7 @@ import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.TapirCodecs.MigrateScenarioRequestCodec._
-import pl.touk.nussknacker.ui.api.utils.ApiVersion
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV2, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
@@ -246,6 +245,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       case Left(apiAdapterServiceError) =>
         EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
       case Right(transformedMigrateScenarioRequest) =>
+        import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
         val dto = MigrateScenarioData.fromDomain(transformedMigrateScenarioRequest)
         EitherT(
           invokeForSuccess(
@@ -268,6 +268,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchRemoteMigrationScenarioDescriptionVersionAux(implicit ec: ExecutionContext): Future[ApiVersion] = {
+    // TODO: let's use client created from Tapir endpoints instead
     invoke[ApiVersion](
       HttpMethods.GET,
       List("migration", "scenario", "description", "version"),
