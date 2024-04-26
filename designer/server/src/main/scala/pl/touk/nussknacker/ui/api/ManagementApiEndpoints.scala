@@ -78,7 +78,7 @@ object ManagementApiEndpoints {
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
       Codec.string.map(
         Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
-          s"Couldn't find ${e.scenarioName} when trying to validate action"
+          s"Couldn't find scenario ${e.scenarioName}"
         )
       )
     }
@@ -86,7 +86,7 @@ object ManagementApiEndpoints {
     implicit val noActionDefinitionCodec: Codec[String, NoActionDefinition, CodecFormat.TextPlain] = {
       Codec.string.map(
         Mapping.from[String, NoActionDefinition](deserializationNotSupportedException)(e =>
-          s"Couldn't find definition of action ${e.actionName} for scenario ${e.scenarioName} when trying to validate"
+          s"Couldn't find definition of action ${e.actionName} for scenario ${e.scenarioName}"
         )
       )
     }
