@@ -139,7 +139,7 @@ function TestWithFormButton(props: Props) {
                 title: t("dialog.title.testWithForm", "Test scenario"),
                 isResizable: true,
                 kind: WindowKind.genericAction,
-                meta: action,
+                meta: { Icon, action },
             });
     }, [action, sourceParameters]);
 

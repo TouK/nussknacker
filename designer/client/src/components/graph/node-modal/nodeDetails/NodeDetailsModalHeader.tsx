@@ -6,10 +6,9 @@ import { getProcessDefinitionData } from "../../../../reducers/selectors/setting
 import { NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import ProcessUtils from "../../../../common/ProcessUtils";
-import { IconStyled, ModalHeader } from "./NodeDetailsStyled";
+import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";
 import { NodeDocs } from "./SubHeader";
 import { IconModalTitle } from "./IconModalTitle";
-import { useTheme } from "@mui/material";
 import { useComponentIcon } from "../../../toolbars/creator/ComponentIcon";
 
 const nodeClassProperties = [`service.id`, `ref.typ`, `nodeType`, `ref.id`];
@@ -29,7 +28,7 @@ type IconModalHeaderProps = PropsWithChildren<{
     className?: string;
 }>;
 
-function IconModalHeader({ subheader, className, ...props }: IconModalHeaderProps) {
+export function IconModalHeader({ subheader, className, ...props }: IconModalHeaderProps) {
     return (
         <ModalHeader className={className}>
             <IconModalTitle
@@ -44,26 +43,22 @@ function IconModalHeader({ subheader, className, ...props }: IconModalHeaderProp
     );
 }
 
-export const NodeDetailsModalHeader = ({ node, ...props }: { node: NodeType; className?: string }): ReactElement => {
+export const getNodeDetailsModalTitle = (node: NodeType): string => {
+    const { name } = getNodeAttributes(node);
+    const variableLanguage = node?.value?.language;
+    return (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + name;
+};
+
+export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactElement => {
     const { components = {} } = useSelector(getProcessDefinitionData);
 
     const docsUrl = useMemo(() => ProcessUtils.extractComponentDefinition(node, components)?.docsUrl, [components, node]);
-    const { name } = getNodeAttributes(node);
-    const variableLanguage = node?.value?.language;
     const nodeClass = findNodeClass(node);
 
-    const header = (isEmpty(variableLanguage) ? "" : `${variableLanguage} `) + name;
-    const src = useComponentIcon(node);
-    const theme = useTheme();
-    const backgroundColor = theme.palette.custom.nodes[NodeUtils.nodeType(node)].fill;
+    return <NodeDocs name={nodeClass} href={docsUrl} />;
+};
 
-    return (
-        <IconModalHeader
-            startIcon={<IconStyled src={src} sx={{ backgroundColor }} />}
-            subheader={<NodeDocs name={nodeClass} href={docsUrl} />}
-            {...props}
-        >
-            {header}
-        </IconModalHeader>
-    );
+export const NodeDetailsModalIcon = ({ node }: { node: NodeType }): ReactElement => {
+    const src = useComponentIcon(node);
+    return <WindowHeaderIconStyled src={src} sx={{ backgroundColor: (t) => t.palette.custom.getNodeStyles(node).fill }} />;
 };

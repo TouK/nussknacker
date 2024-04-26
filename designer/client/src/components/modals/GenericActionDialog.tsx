@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { ElementType, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
@@ -19,6 +19,7 @@ import { Box, FormControl } from "@mui/material";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 import { nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
 
 export type GenericActionLayout = {
     name: string;
@@ -137,9 +138,17 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
     );
 }
 
-export function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction>): JSX.Element {
+export function GenericActionDialog(
+    props: WindowContentProps<
+        WindowKind,
+        {
+            Icon: ElementType;
+            action: GenericAction;
+        }
+    >,
+): JSX.Element {
     const { t } = useTranslation();
-    const action = props.data.meta;
+    const { action, Icon } = props.data.meta;
     const [value, setValue] = useState(() =>
         (action?.parameters || []).reduce(
             (obj, param) => ({
@@ -175,15 +184,8 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
         [cancelText, confirm, confirmText, isValid, props, t],
     );
 
-    const components = useMemo(
-        () => ({
-            // HeaderTitle: () => <NodeDetailsModalHeader node={node} />,
-        }),
-        [],
-    );
-
     return (
-        <WindowContent {...props} buttons={buttons} components={components}>
+        <WindowContent {...props} buttons={buttons} icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />}>
             <Box sx={{ minWidth: 600 }}>
                 <GenericActionForm action={action} errors={validationErrors} value={value} setValue={setValue} />
             </Box>

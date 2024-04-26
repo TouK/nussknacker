@@ -1,5 +1,4 @@
 import { WindowContentProps } from "@touk/window-manager";
-import { DebugButtons } from "@touk/window-manager/cjs/debug";
 import React from "react";
 import { Debug } from "../containers/Debug";
 import { WindowContent } from "./WindowContent";
@@ -85,7 +84,6 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return (
                 <WindowContent {...props}>
                     <Debug data={props.data} />
-                    <DebugButtons currentId={props.data.id} />
                 </WindowContent>
             );
     }
