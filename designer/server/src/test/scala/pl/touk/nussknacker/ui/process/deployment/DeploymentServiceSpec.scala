@@ -24,6 +24,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
+import pl.touk.nussknacker.ui.error.CommentValidationErrorNG
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{
@@ -32,16 +33,12 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{
-  CommentValidationError,
-  DBIOActionRunner,
-  DeploymentComment,
-  UserComment
-}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment, UserComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
+import java.time.{Clock, Instant, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
@@ -73,6 +70,8 @@ class DeploymentServiceSpec
   private val writeProcessRepository                   = newWriteProcessRepository(testDbRef)
   private val actionRepository                         = newActionProcessRepository(testDbRef)
   private val activityRepository                       = newProcessActivityRepository(testDbRef)
+  private val deploymentRepository                     = newDeploymentRepository(testDbRef)
+  private val scenarioRepository                       = newScenarioRepository(testDbRef)
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] =
     new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
@@ -97,19 +96,19 @@ class DeploymentServiceSpec
 
   private val deploymentCommentSettings = None
 
-  private val deploymentService = createDeploymentService(None)
+  private val (deploymentService, legacyDeploymentService) = createDeploymentService()
 
   deploymentManager = new MockDeploymentManager(
     SimpleStateStatus.Running,
     DefaultProcessingTypeDeployedScenariosProvider(testDbRef, "streaming"),
-    new DefaultProcessingTypeActionService("streaming", deploymentService)
+    new DefaultProcessingTypeActionService("streaming", legacyDeploymentService)
   )
 
   private def createDeploymentService(
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = deploymentCommentSettings,
   ) = {
-    new DeploymentService(
+    val legacyDeploymentService = new DeploymentService(
       dmDispatcher,
       fetchingProcessRepository,
       actionRepository,
@@ -120,32 +119,35 @@ class DeploymentServiceSpec
       scenarioStateTimeout,
       deploymentCommentSettings
     )
+    val deploymentService = new NewDeploymentService(
+      scenarioRepository,
+      deploymentRepository,
+      legacyDeploymentService,
+      dbioRunner,
+      Clock.fixed(Instant.ofEpochMilli(0), ZoneOffset.UTC)
+    )
+    (deploymentService, legacyDeploymentService)
   }
 
   // TODO: temporary step - we would like to extract the validation and the comment validation tests to external validators
   private def createDeploymentServiceWithCommentSettings = {
     val commentSettings = DeploymentCommentSettings.unsafe(".+", Option("sampleComment"))
-    val deploymentServiceWithCommentSettings =
-      createDeploymentService(deploymentCommentSettings = Some(commentSettings))
-    deploymentServiceWithCommentSettings
+    createDeploymentService(deploymentCommentSettings = Some(commentSettings))
   }
 
   test("should return error when trying to deploy without comment when comment is required") {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
+    val (deploymentServiceWithCommentSettings, _) = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
-    val result =
-      deploymentServiceWithCommentSettings
-        .processCommand(
-          RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
-        )
-        .failed
-        .futureValue
+    val result = deploymentServiceWithCommentSettings
+      .processCommand(
+        NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+      )
+      .futureValue
 
-    result shouldBe a[CommentValidationError]
-    result.getMessage.trim shouldBe "Comment is required."
+    result.leftValue shouldBe a[CommentValidationErrorNG]
 
     eventually {
       val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
@@ -154,17 +156,17 @@ class DeploymentServiceSpec
   }
 
   test("should not deploy without comment when comment is required") {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
+    val (deploymentServiceWithCommentSettings, legacyDeploymentService) = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+      NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
     )
 
     eventually {
-      val status = deploymentServiceWithCommentSettings
+      val status = legacyDeploymentService
         .getProcessState(processIdWithName)
         .futureValue
         .status
@@ -181,21 +183,23 @@ class DeploymentServiceSpec
   }
 
   test("should pass when having an ok comment") {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
+    val (deploymentServiceWithCommentSettings, legacyDeploymentService) = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(
-        CommonCommandData(processIdWithName, Some(UserComment("samplePattern")), user),
-        None,
-        NodesDeploymentData.empty
+      NewRunDeploymentCommand(
+        NewDeploymentId.generate,
+        processName,
+        NodesDeploymentData.empty,
+        user,
+        Some(UserComment("samplePattern"))
       )
     )
 
     eventually {
-      deploymentServiceWithCommentSettings
+      legacyDeploymentService
         .getProcessState(processIdWithName)
         .futureValue
         .status shouldBe SimpleStateStatus.Running
@@ -203,19 +207,19 @@ class DeploymentServiceSpec
   }
 
   test("should not cancel a deployed process without cancel comment when comment is required") {
-    val deploymentServiceWithCommentSettings = createDeploymentServiceWithCommentSettings
+    val (_, legacyDeploymentService) = createDeploymentServiceWithCommentSettings
 
     val processName: ProcessName = generateProcessName
     val (processIdWithName, _)   = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForCancelFinish {
-      deploymentServiceWithCommentSettings
+      legacyDeploymentService
         .processCommand(CancelScenarioCommand(CommonCommandData(processIdWithName, None, user)))
         .failed
         .futureValue
 
       eventually {
-        val status = deploymentServiceWithCommentSettings
+        val status = legacyDeploymentService
           .getProcessState(processIdWithName)
           .futureValue
           .status
@@ -239,17 +243,17 @@ class DeploymentServiceSpec
     deploymentManager.withWaitForDeployFinish(processName) {
       deploymentService
         .processCommand(
-          RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+          NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
         )
         .futureValue
-      deploymentService
+      legacyDeploymentService
         .getProcessState(processIdWithName)
         .futureValue
         .status shouldBe SimpleStateStatus.DuringDeploy
     }
 
     eventually {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(processIdWithName)
         .futureValue
         .status shouldBe SimpleStateStatus.Running
@@ -261,9 +265,9 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForCancelFinish {
-      deploymentService.processCommand(CancelScenarioCommand(CommonCommandData(processId, None, user)))
+      legacyDeploymentService.processCommand(CancelScenarioCommand(CommonCommandData(processId, None, user)))
       eventually {
-        deploymentService
+        legacyDeploymentService
           .getProcessState(processId)
           .futureValue
           .status shouldBe SimpleStateStatus.DuringCancel
@@ -276,7 +280,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, actionId)    = prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentService.markActionExecutionFinished("streaming", actionId).futureValue
+    legacyDeploymentService.markActionExecutionFinished("streaming", actionId).futureValue
     eventually {
       val action =
         actionRepository.getFinishedProcessActions(processId.id, Some(Set(ScenarioActionName.Deploy))).dbioActionValues
@@ -292,7 +296,7 @@ class DeploymentServiceSpec
     val (processId, deployActionId) = prepareDeployedProcess(processName).dbioActionValues
 
     checkIsFollowingDeploy(
-      deploymentService.getProcessState(processId).futureValue,
+      legacyDeploymentService.getProcessState(processId).futureValue,
       expected = true
     )
     fetchingProcessRepository
@@ -305,11 +309,11 @@ class DeploymentServiceSpec
       // we simulate what happens when retrieveStatus is called multiple times to check only one comment is added
       (1 to 5).foreach { _ =>
         checkIsFollowingDeploy(
-          deploymentService.getProcessState(processId).futureValue,
+          legacyDeploymentService.getProcessState(processId).futureValue,
           expected = false
         )
       }
-      val finishedStatus = deploymentService.getProcessState(processId).futureValue
+      val finishedStatus = legacyDeploymentService.getProcessState(processId).futureValue
       finishedStatus.status shouldBe SimpleStateStatus.Finished
       finishedStatus.allowedActions shouldBe List(
         ScenarioActionName.Deploy,
@@ -329,12 +333,12 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       val stateAfterJobRetention =
-        deploymentService.getProcessState(processId).futureValue
+        legacyDeploymentService.getProcessState(processId).futureValue
       stateAfterJobRetention.status shouldBe SimpleStateStatus.Finished
     }
 
     archiveProcess(processId).dbioActionValues
-    deploymentService
+    legacyDeploymentService
       .getProcessState(processId)
       .futureValue
       .status shouldBe SimpleStateStatus.Finished
@@ -350,7 +354,7 @@ class DeploymentServiceSpec
         .dbioActionValues
         .flatMap(_.lastStateAction)
         .map(_.actionName) shouldBe expectedAction
-      deploymentService.getProcessState(processIdWithName).futureValue.status shouldBe expectedStatus
+      legacyDeploymentService.getProcessState(processIdWithName).futureValue.status shouldBe expectedStatus
     }
 
     deploymentManager.withEmptyProcessState(processName) {
@@ -359,7 +363,7 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+            NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
           )
           .futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
@@ -381,7 +385,7 @@ class DeploymentServiceSpec
       val result =
         deploymentService
           .processCommand(
-            RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+            NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
           )
           .failed
           .futureValue
@@ -394,7 +398,10 @@ class DeploymentServiceSpec
       listener.events shouldBe Symbol("empty")
       // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
       eventually {
-        deploymentService.getProcessState(processIdWithName).futureValue.status shouldBe SimpleStateStatus.NotDeployed
+        legacyDeploymentService
+          .getProcessState(processIdWithName)
+          .futureValue
+          .status shouldBe SimpleStateStatus.NotDeployed
       }
     }
   }
@@ -404,7 +411,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(processId)
         .futureValue
         .status shouldBe SimpleStateStatus.Canceled
@@ -422,7 +429,7 @@ class DeploymentServiceSpec
       .lastStateAction should not be None
 
     deploymentManager.withEmptyProcessState(processName) {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(processId)
         .futureValue
         .status shouldBe SimpleStateStatus.Canceled
@@ -447,7 +454,7 @@ class DeploymentServiceSpec
       .lastStateAction should not be None
 
     deploymentManager.withEmptyProcessState(processName) {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(processId)
         .futureValue
         .status shouldBe SimpleStateStatus.Canceled
@@ -466,7 +473,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
@@ -481,7 +488,7 @@ class DeploymentServiceSpec
     val processId                = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
@@ -491,7 +498,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringCancel) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       state.status shouldBe SimpleStateStatus.DuringCancel
     }
@@ -505,7 +512,7 @@ class DeploymentServiceSpec
       StatusDetails(SimpleStateStatus.Restarting, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessStates(processName, List(state)) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       state.status shouldBe SimpleStateStatus.Restarting
       state.allowedActions shouldBe List(ScenarioActionName.Cancel)
@@ -518,7 +525,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
@@ -533,7 +540,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
@@ -557,7 +564,7 @@ class DeploymentServiceSpec
     )
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, version) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
       state.status shouldBe expectedStatus
@@ -582,7 +589,7 @@ class DeploymentServiceSpec
 
     // FIXME: doesnt check recover from failed verifications ???
     deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.Failed, version) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       state.status shouldBe ProblemStateStatus.Failed
       state.allowedActions shouldBe List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
@@ -594,7 +601,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, Option.empty) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
@@ -610,7 +617,7 @@ class DeploymentServiceSpec
 
     // FIXME: doesnt check recover from failed future of findJobStatus ???
     deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.FailedToGet, Option.empty) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
 
       val expectedStatus = ProblemStateStatus.FailedToGet
       state.status shouldBe expectedStatus
@@ -630,7 +637,7 @@ class DeploymentServiceSpec
       .lastStateAction shouldBe None
 
     deploymentManager.withEmptyProcessState(processName) {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(ProcessIdWithName(processId.id, processName))
         .futureValue
         .status shouldBe SimpleStateStatus.NotDeployed
@@ -652,7 +659,7 @@ class DeploymentServiceSpec
       .lastStateAction shouldBe None
 
     deploymentManager.withEmptyProcessState(processName) {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(processId)
         .futureValue
         .status shouldBe SimpleStateStatus.NotDeployed
@@ -674,7 +681,7 @@ class DeploymentServiceSpec
       .lastStateAction shouldBe None
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      deploymentService
+      legacyDeploymentService
         .getProcessState(ProcessIdWithName(processId.id, processName))
         .futureValue
         .status shouldBe SimpleStateStatus.NotDeployed
@@ -690,7 +697,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
-    val state = deploymentService.getProcessState(processId).futureValue
+    val state = legacyDeploymentService.getProcessState(processId).futureValue
     state.status shouldBe SimpleStateStatus.NotDeployed
   }
 
@@ -701,7 +708,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
@@ -710,7 +717,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
-    val state = deploymentService.getProcessState(processId).futureValue
+    val state = legacyDeploymentService.getProcessState(processId).futureValue
     state.status shouldBe SimpleStateStatus.Canceled
   }
 
@@ -719,7 +726,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
       state.status shouldBe SimpleStateStatus.Canceled
     }
   }
@@ -728,7 +735,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = preparedUnArchivedProcess(processName, None).dbioActionValues
 
-    val state = deploymentService.getProcessState(processId).futureValue
+    val state = legacyDeploymentService.getProcessState(processId).futureValue
     state.status shouldBe SimpleStateStatus.NotDeployed
   }
 
@@ -739,7 +746,7 @@ class DeploymentServiceSpec
       .addInProgressAction(processId.id, ScenarioActionName.Deploy, Some(VersionId(1)), None)
       .dbioActionValues
 
-    val state = deploymentService.getProcessState(processId).futureValue
+    val state = legacyDeploymentService.getProcessState(processId).futureValue
     state.status shouldBe SimpleStateStatus.DuringDeploy
   }
 
@@ -750,7 +757,7 @@ class DeploymentServiceSpec
       .fetchLatestProcessesDetails[Unit](ScenarioQuery.empty)
       .dbioActionValues
 
-    val processesDetailsWithState = deploymentService
+    val processesDetailsWithState = legacyDeploymentService
       .enrichDetailsWithProcessState(
         processesDetails
           .map(
@@ -771,7 +778,7 @@ class DeploymentServiceSpec
 
     val statesBasedOnNotCachedInProgressActionTypes =
       processesDetails
-        .map(pd => Option(pd).filterNot(_.isFragment).map(deploymentService.getProcessState).sequence)
+        .map(pd => Option(pd).filterNot(_.isFragment).map(legacyDeploymentService.getProcessState).sequence)
         .sequence
         .futureValue
 
@@ -785,7 +792,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, None).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
@@ -794,7 +801,7 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
 
-    val state = deploymentService.getProcessState(processId).futureValue
+    val state = legacyDeploymentService.getProcessState(processId).futureValue
     state.status shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
   }
 
@@ -803,7 +810,7 @@ class DeploymentServiceSpec
     val (processId, _)           = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
-      val state = deploymentService.getProcessState(processId).futureValue
+      val state = legacyDeploymentService.getProcessState(processId).futureValue
       state.status shouldBe SimpleStateStatus.Canceled
     }
   }
@@ -813,7 +820,7 @@ class DeploymentServiceSpec
     val (processId, _)           = preparedUnArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
-      val state          = deploymentService.getProcessState(processId).futureValue
+      val state          = legacyDeploymentService.getProcessState(processId).futureValue
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
@@ -828,20 +835,20 @@ class DeploymentServiceSpec
 
     deploymentManager.withEmptyProcessState(processName) {
       val initialStatus = SimpleStateStatus.NotDeployed
-      deploymentService.getProcessState(processIdWithName).futureValue.status shouldBe initialStatus
+      legacyDeploymentService.getProcessState(processIdWithName).futureValue.status shouldBe initialStatus
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+            NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
           )
           .futureValue
-        deploymentService
+        legacyDeploymentService
           .getProcessState(processIdWithName)
           .futureValue
           .status shouldBe SimpleStateStatus.DuringDeploy
 
-        deploymentService.invalidateInProgressActions()
-        deploymentService.getProcessState(processIdWithName).futureValue.status shouldBe initialStatus
+        legacyDeploymentService.invalidateInProgressActions()
+        legacyDeploymentService.getProcessState(processIdWithName).futureValue.status shouldBe initialStatus
       }
     }
   }
@@ -850,12 +857,12 @@ class DeploymentServiceSpec
     val processName: ProcessName = generateProcessName
     val (processId, _)           = prepareDeployedProcess(processName).dbioActionValues
 
-    val timeout            = 1.second
-    val serviceWithTimeout = createDeploymentService(Some(timeout))
+    val timeout                                       = 1.second
+    val (serviceWithTimeout, legacyDeploymentService) = createDeploymentService(Some(timeout))
 
     val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
     deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
-      val status = serviceWithTimeout
+      val status = legacyDeploymentService
         .getProcessState(processId)
         .futureValueEnsuringInnerException(durationLongerThanTimeout)
         .status
@@ -868,7 +875,7 @@ class DeploymentServiceSpec
     val id                       = prepareFragment(processName).dbioActionValues
 
     assertThrowsWithParent[FragmentStateException] {
-      deploymentService.getProcessState(id).futureValue
+      legacyDeploymentService.getProcessState(id).futureValue
     }
   }
 
@@ -880,7 +887,7 @@ class DeploymentServiceSpec
     val wrongParams              = Map("testParam" -> "")
 
     val result =
-      deploymentService
+      legacyDeploymentService
         .processCommand(CustomActionCommand(CommonCommandData(processIdWithName, None, user), actionName, wrongParams))
         .failed
         .futureValue
@@ -896,7 +903,7 @@ class DeploymentServiceSpec
     val comment                  = UserComment("not empty comment")
 
     val result =
-      deploymentService
+      legacyDeploymentService
         .processCommand(
           CustomActionCommand(CommonCommandData(processIdWithName, Some(comment), user), actionName, Map.empty)
         )
