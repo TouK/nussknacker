@@ -163,7 +163,16 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
                   FragmentUsageOutput(id, name, Some(FragmentOutputVarDefinition(outputName, fields)), add)
                 ) :: nodes
               )
-            case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
+            case _ =>
+              // Fragment that expects output but has no output attached to it
+              // this results in InvalidTailOfBranch later, here we let it through to type the fragment
+              validBranches(
+                List(
+                  FlatNode(
+                    FragmentUsageOutput(id, name, None /*Some(FragmentOutputVarDefinition("dummy", fields))*/, add)
+                  )
+                )
+              )
           }
         }
       },
@@ -179,7 +188,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
     (l: List[CanonicalNode]) =>
       l.map(iterateOverCanonical(action, dataAction)).sequence[ValidatedWithBranches, CanonicalBranch].map(_.flatten)
 
-  // lifts partial action to total function with defult actions
+  // lifts partial action to total function with default actions
   private def iterateOverCanonical(
       action: PartialFunction[CanonicalNode, ValidatedWithBranches[CanonicalBranch]],
       dataAction: NodeDataFun
