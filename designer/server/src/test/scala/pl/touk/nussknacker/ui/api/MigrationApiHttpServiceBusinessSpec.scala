@@ -5,6 +5,7 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.response.ValidatableResponse
 import org.hamcrest.Matchers._
+import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -13,7 +14,12 @@ import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConf
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLogging,
+  VeryPatientScalaFutures
+}
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ApiAdapter
@@ -27,7 +33,9 @@ class MigrationApiHttpServiceBusinessSpec
     with WithMockableDeploymentManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLogging
+    with Eventually
+    with VeryPatientScalaFutures {
 
   val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = MigrationApiAdapters.adapters
 
@@ -56,17 +64,19 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-          verifyScenarioAfterMigration(
-            exampleProcessName.value,
-            processVersionId = 2,
-            isFragment = false,
-            modifiedBy = "Remote[remoteUser]",
-            createdBy = "Remote[remoteUser]",
-            modelVersion = 0,
-            historyProcessVersions = List(1, 2),
-            scenarioGraphNodeIds = List("sink", "source")
-          )
+          eventually {
+            verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+            verifyScenarioAfterMigration(
+              exampleProcessName.value,
+              processVersionId = 2,
+              isFragment = false,
+              modifiedBy = "Remote[remoteUser]",
+              createdBy = "Remote[remoteUser]",
+              modelVersion = 0,
+              historyProcessVersions = List(1, 2),
+              scenarioGraphNodeIds = List("sink", "source")
+            )
+          }
         }
     }
     "migrate scenario and add update comment when scenario exists on target environment" in {
@@ -81,17 +91,19 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-          verifyScenarioAfterMigration(
-            exampleProcessName.value,
-            processVersionId = 2,
-            isFragment = false,
-            modifiedBy = "Remote[remoteUser]",
-            createdBy = "admin",
-            modelVersion = 0,
-            historyProcessVersions = List(1, 2),
-            scenarioGraphNodeIds = List("sink2", "source2")
-          )
+          eventually {
+            verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+            verifyScenarioAfterMigration(
+              exampleProcessName.value,
+              processVersionId = 2,
+              isFragment = false,
+              modifiedBy = "Remote[remoteUser]",
+              createdBy = "admin",
+              modelVersion = 0,
+              historyProcessVersions = List(1, 2),
+              scenarioGraphNodeIds = List("sink2", "source2")
+            )
+          }
         }
     }
 
@@ -134,17 +146,19 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-          verifyScenarioAfterMigration(
-            validFragment.name.value,
-            processVersionId = 2,
-            isFragment = true,
-            modifiedBy = "Remote[remoteUser]",
-            createdBy = "admin",
-            modelVersion = 0,
-            historyProcessVersions = List(1, 2),
-            scenarioGraphNodeIds = List("sink2", "csv-source-lite")
-          )
+          eventually {
+            verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+            verifyScenarioAfterMigration(
+              validFragment.name.value,
+              processVersionId = 2,
+              isFragment = true,
+              modifiedBy = "Remote[remoteUser]",
+              createdBy = "admin",
+              modelVersion = 0,
+              historyProcessVersions = List(1, 2),
+              scenarioGraphNodeIds = List("sink2", "csv-source-lite")
+            )
+          }
         }
     }
     "migrate fragment and add update comment when fragment does not exist in target environment" in {
@@ -156,17 +170,19 @@ class MigrationApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .verifyApplicationState {
-          verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
-          verifyScenarioAfterMigration(
-            validFragment.name.value,
-            processVersionId = 2,
-            isFragment = true,
-            modifiedBy = "Remote[remoteUser]",
-            createdBy = "Remote[remoteUser]",
-            modelVersion = 0,
-            historyProcessVersions = List(1, 2),
-            scenarioGraphNodeIds = List("sink", "csv-source-lite")
-          )
+          eventually {
+            verifyCommentExists(validFragment.name.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
+            verifyScenarioAfterMigration(
+              validFragment.name.value,
+              processVersionId = 2,
+              isFragment = true,
+              modifiedBy = "Remote[remoteUser]",
+              createdBy = "Remote[remoteUser]",
+              modelVersion = 0,
+              historyProcessVersions = List(1, 2),
+              scenarioGraphNodeIds = List("sink", "csv-source-lite")
+            )
+          }
         }
     }
   }

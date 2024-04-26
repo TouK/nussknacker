@@ -26,7 +26,7 @@ class MigrationApiHttpService(
       .serverLogicEitherT { implicit loggedUser => req: MigrateScenarioRequestDto =>
         EitherT
           .fromEither[Future](MigrateScenarioData.toDomain(req))
-          .map(migrationService.migrate(_))
+          .flatMapF(migrationService.migrate(_))
       }
   }
 

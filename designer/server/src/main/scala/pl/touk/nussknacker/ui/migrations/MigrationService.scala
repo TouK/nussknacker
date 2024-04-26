@@ -49,7 +49,7 @@ class MigrationService(
 
   def migrate(
       migrateScenarioData: MigrateScenarioData
-  )(implicit loggedUser: LoggedUser): EitherT[Future, MigrationError, Unit] = {
+  )(implicit loggedUser: LoggedUser): Future[Either[MigrationError, Unit]] = {
 
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = migrateScenarioData.currentVersion
@@ -64,7 +64,7 @@ class MigrationService(
       case Left(apiAdapterServiceError) =>
         throw illegalStateDueToApiAdapterServiceError(apiAdapterServiceError)
       case Right(currentMigrateScenarioRequest: CurrentMigrateScenarioData) =>
-        EitherT(migrateCurrentScenarioDescription(currentMigrateScenarioRequest))
+        migrateCurrentScenarioDescription(currentMigrateScenarioRequest)
       case _ =>
         throw new IllegalStateException(
           "Migration API adapter service lifted up remote migration request not to its newest local version"
