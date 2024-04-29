@@ -2,6 +2,7 @@ import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Variable } from "../../../../common/TestResultUtils";
 import { cx } from "@emotion/css";
 import { nodeInput, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { styled } from "@mui/material";
 
 interface Props {
     value: Variable;
@@ -12,6 +13,14 @@ function prettyPrint(obj: unknown) {
     return JSON.stringify(obj, null, 2);
 }
 
+const FadeOut = styled("div")({
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    height: "4em",
+    backgroundImage: "linear-gradient(rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 1) 100%)",
+});
+
 export default forwardRef<HTMLTextAreaElement, Props>(function TestValue(props: Props, ref: React.Ref<HTMLTextAreaElement>) {
     const { value, shouldHideTestResults } = props;
     return (
@@ -20,7 +29,7 @@ export default forwardRef<HTMLTextAreaElement, Props>(function TestValue(props: 
             <ReadonlyTextarea ref={ref} value={prettyPrint(value?.pretty)} />
             {shouldHideTestResults ? (
                 <div style={{ position: "relative" }}>
-                    <div className="fadeout" />
+                    <FadeOut />
                 </div>
             ) : null}
         </div>
