@@ -2,13 +2,16 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import enumeratum.EnumEntry.UpperSnakecase
+import enumeratum.{CirceEnum, Enum, EnumEntry}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.TapirCodecs
-import sttp.model.StatusCode.{InternalServerError, Ok}
+import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
+import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
@@ -16,7 +19,6 @@ import java.net.{URI, URL}
 
 class StatisticsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  import StatisticsApiEndpoints.Dtos.StatisticError._
   import StatisticsApiEndpoints.Dtos._
 
   lazy val statisticUsageEndpoint: SecuredEndpoint[Unit, StatisticError, StatisticUrlResponseDto, Any] =
@@ -63,6 +65,15 @@ class StatisticsApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
+  lazy val registerStatisticsEndpoint: SecuredEndpoint[RegisterStatisticsRequestDto, Unit, Unit, Any] =
+    baseNuApiEndpoint
+      .summary("Register statistics service")
+      .tag("Statistics")
+      .post
+      .in("statistic" and jsonBody[RegisterStatisticsRequestDto])
+      .out(statusCode(NoContent))
+      .withSecurity(auth)
+
 }
 
 object StatisticsApiEndpoints {
@@ -72,6 +83,72 @@ object StatisticsApiEndpoints {
 
     @derive(encoder, decoder, schema)
     final case class StatisticUrlResponseDto private (urls: List[URL])
+
+    @derive(encoder, decoder, schema)
+    final case class RegisterStatisticsRequestDto private (statistics: List[StatisticDto])
+
+    @derive(encoder, decoder, schema)
+    final case class StatisticDto private (name: StatisticName)
+
+    sealed trait StatisticName extends EnumEntry with UpperSnakecase
+
+    object StatisticName extends Enum[StatisticName] with CirceEnum[StatisticName] {
+      case object SearchScenarioByName                 extends StatisticName
+      case object SearchScenarioByStatus               extends StatisticName
+      case object SearchScenarioByProcessingMode       extends StatisticName
+      case object SearchScenarioByCategory             extends StatisticName
+      case object SearchScenarioByAuthor               extends StatisticName
+      case object SearchScenarioByOther                extends StatisticName
+      case object SearchScenarioWithSort               extends StatisticName
+      case object SearchComponentsByName               extends StatisticName
+      case object SearchComponentsByGroup              extends StatisticName
+      case object SearchComponentsByProcessingMode     extends StatisticName
+      case object SearchComponentsByCategory           extends StatisticName
+      case object SearchComponentsByMultipleCategories extends StatisticName
+      case object SearchComponentsByUsages             extends StatisticName
+      case object ClickComponentUsages                 extends StatisticName
+      case object SearchComponentUsagesByName          extends StatisticName
+      case object SearchComponentUsagesByStatus        extends StatisticName
+      case object SearchComponentUsagesByCategory      extends StatisticName
+      case object SearchComponentUsagesByAuthor        extends StatisticName
+      case object SearchComponentUsagesByOther         extends StatisticName
+      case object ClickScenarioFromComponentUsages     extends StatisticName
+      case object ClickGlobalMetrics                   extends StatisticName
+      case object ClickActionDeploy                    extends StatisticName
+      case object ClickActionMetrics                   extends StatisticName
+      case object ClickViewZoomIn                      extends StatisticName
+      case object ClickViewReset                       extends StatisticName
+      case object ClickClickEditUndo                   extends StatisticName
+      case object ClickEditRedo                        extends StatisticName
+      case object ClickEditCopy                        extends StatisticName
+      case object ClickEditPaste                       extends StatisticName
+      case object ClickEditDelete                      extends StatisticName
+      case object ClickEditLayout                      extends StatisticName
+      case object ClickScenarioProperties              extends StatisticName
+      case object ClickScenarioCompare                 extends StatisticName
+      case object ClickScenarioMigrate                 extends StatisticName
+      case object ClickScenarioImport                  extends StatisticName
+      case object ClickScenarioJson                    extends StatisticName
+      case object ClickScenarioPdf                     extends StatisticName
+      case object ClickScenarioArchive                 extends StatisticName
+      case object ClickTestGenerated                   extends StatisticName
+      case object ClickTestAdhoc                       extends StatisticName
+      case object ClickTestFromFile                    extends StatisticName
+      case object ClickTestGenerateFile                extends StatisticName
+      case object ClickTestHide                        extends StatisticName
+      case object ClickMoreScenarioDetails             extends StatisticName
+      case object ClickRollUpPanel                     extends StatisticName
+      case object ClickExpandPanel                     extends StatisticName
+      case object MovePanel                            extends StatisticName
+      case object SearchNodesInScenario                extends StatisticName
+      case object SearchComponentsInScenario           extends StatisticName
+      case object ClickOlderVersion                    extends StatisticName
+      case object ClickNewerVersion                    extends StatisticName
+      case object FiredKeyStroke                       extends StatisticName
+      case object ClickNodeDocumentation               extends StatisticName
+
+      override def values = findValues
+    }
 
     sealed trait StatisticError
     final case object CannotGenerateStatisticError extends StatisticError

@@ -58,4 +58,33 @@ class StatisticsApiHttpServiceSecuritySpec
     }
   }
 
+  "The register statistics endpoint when" - {
+    "authenticated should" - {
+      "return NoContent" in {
+        given()
+          .when()
+          .basicAuthReader()
+          .jsonBody("""{"statistics": [{"name": "SEARCH_SCENARIO_BY_NAME"}]}""")
+          .post(s"$nuDesignerHttpAddress/api/statistic")
+          .Then()
+          .statusCode(204)
+          .equalsPlainBody("")
+      }
+    }
+
+    // todo what about anonymous user
+    "not authenticated should" - {
+      "forbid access" in {
+        given()
+          .when()
+          .basicAuthUnknownUser()
+          .jsonBody("""{"statistics": [{"name": "SEARCH_SCENARIO_BY_NAME"}]}""")
+          .post(s"$nuDesignerHttpAddress/api/statistic")
+          .Then()
+          .statusCode(401)
+          .body(equalTo("The supplied authentication is invalid"))
+      }
+    }
+  }
+
 }

@@ -1831,6 +1831,51 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/statistic:
+    post:
+      tags:
+      - Statistics
+      summary: Register statistics service
+      operationId: postApiStatistic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterStatisticsRequestDto'
+        required: true
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - {}
+      - httpAuth: []
   /api/statistic/usage:
     get:
       tags:
@@ -3434,6 +3479,14 @@ components:
     RawParameterEditor:
       title: RawParameterEditor
       type: object
+    RegisterStatisticsRequestDto:
+      title: RegisterStatisticsRequestDto
+      type: object
+      properties:
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatisticDto'
     ScenarioActivity:
       title: ScenarioActivity
       type: object
@@ -3548,6 +3601,71 @@ components:
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
+    StatisticDto:
+      title: StatisticDto
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          $ref: '#/components/schemas/StatisticName'
+    StatisticName:
+      title: StatisticName
+      type: string
+      enum:
+      - SEARCH_SCENARIO_BY_NAME
+      - SEARCH_SCENARIO_BY_STATUS
+      - SEARCH_SCENARIO_BY_PROCESSING_MODE
+      - SEARCH_SCENARIO_BY_CATEGORY
+      - SEARCH_SCENARIO_BY_AUTHOR
+      - SEARCH_SCENARIO_BY_OTHER
+      - SEARCH_SCENARIO_WITH_SORT
+      - SEARCH_COMPONENTS_BY_NAME
+      - SEARCH_COMPONENTS_BY_GROUP
+      - SEARCH_COMPONENTS_BY_PROCESSING_MODE
+      - SEARCH_COMPONENTS_BY_CATEGORY
+      - SEARCH_COMPONENTS_BY_MULTIPLE_CATEGORIES
+      - SEARCH_COMPONENTS_BY_USAGES
+      - CLICK_COMPONENT_USAGES
+      - SEARCH_COMPONENT_USAGES_BY_NAME
+      - SEARCH_COMPONENT_USAGES_BY_STATUS
+      - SEARCH_COMPONENT_USAGES_BY_CATEGORY
+      - SEARCH_COMPONENT_USAGES_BY_AUTHOR
+      - SEARCH_COMPONENT_USAGES_BY_OTHER
+      - CLICK_SCENARIO_FROM_COMPONENT_USAGES
+      - CLICK_GLOBAL_METRICS
+      - CLICK_ACTION_DEPLOY
+      - CLICK_ACTION_METRICS
+      - CLICK_VIEW_ZOOM_IN
+      - CLICK_VIEW_RESET
+      - CLICK_CLICK_EDIT_UNDO
+      - CLICK_EDIT_REDO
+      - CLICK_EDIT_COPY
+      - CLICK_EDIT_PASTE
+      - CLICK_EDIT_DELETE
+      - CLICK_EDIT_LAYOUT
+      - CLICK_SCENARIO_PROPERTIES
+      - CLICK_SCENARIO_COMPARE
+      - CLICK_SCENARIO_MIGRATE
+      - CLICK_SCENARIO_IMPORT
+      - CLICK_SCENARIO_JSON
+      - CLICK_SCENARIO_PDF
+      - CLICK_SCENARIO_ARCHIVE
+      - CLICK_TEST_GENERATED
+      - CLICK_TEST_ADHOC
+      - CLICK_TEST_FROM_FILE
+      - CLICK_TEST_GENERATE_FILE
+      - CLICK_TEST_HIDE
+      - CLICK_MORE_SCENARIO_DETAILS
+      - CLICK_ROLL_UP_PANEL
+      - CLICK_EXPAND_PANEL
+      - MOVE_PANEL
+      - SEARCH_NODES_IN_SCENARIO
+      - SEARCH_COMPONENTS_IN_SCENARIO
+      - CLICK_OLDER_VERSION
+      - CLICK_NEWER_VERSION
+      - FIRED_KEY_STROKE
+      - CLICK_NODE_DOCUMENTATION
     StatisticUrlResponseDto:
       title: StatisticUrlResponseDto
       type: object
