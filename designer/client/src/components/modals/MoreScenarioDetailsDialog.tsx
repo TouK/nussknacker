@@ -74,7 +74,7 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                         <Typography sx={{ wordWrap: "break-word" }} textAlign={"center"} variant={"subtitle2"}>
                             {scenario.name}
                         </Typography>
-                        <Box display={"flex"} flexDirection={"column"} mt={4} mb={4}>
+                        <Box display={"flex"} flexDirection={"column"} mt={3} mb={3}>
                             {displayStatus && (
                                 <ItemWrapperStyled>
                                     <ItemLabelStyled>{i18next.t("scenarioDetails.label.status", "Status")}</ItemLabelStyled>
