@@ -6,8 +6,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
-  MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2
+  MigrateScenarioRequestDtoV1
 }
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.util.VersionedData
@@ -16,7 +15,7 @@ sealed trait MigrateScenarioData extends VersionedData
 
 object MigrateScenarioData {
 
-  type CurrentMigrateScenarioData = MigrateScenarioDataV2
+  type CurrentMigrateScenarioData = MigrateScenarioDataV1
 
   def toDomain(migrateScenarioRequestDto: MigrateScenarioRequestDto): Either[MigrationError, MigrateScenarioData] =
     migrateScenarioRequestDto match {
@@ -43,7 +42,7 @@ object MigrateScenarioData {
             isFragment
           )
         )
-      case MigrateScenarioRequestDtoV2(
+      /*      case MigrateScenarioRequestDtoV2(
             2,
             sourceEnvironmentId,
             remoteUserName,
@@ -65,7 +64,7 @@ object MigrateScenarioData {
             processName,
             isFragment
           )
-        )
+        )*/
       case _ => Left(MigrationError.CannotTransformMigrateScenarioRequestIntoMigrationDomain)
     }
 
@@ -92,7 +91,7 @@ object MigrateScenarioData {
           processName,
           isFragment
         )
-      case dataV2 @ MigrateScenarioDataV2(
+      /*      case dataV2 @ MigrateScenarioDataV2(
             sourceEnvironmentId,
             remoteUserName,
             processingMode,
@@ -112,7 +111,7 @@ object MigrateScenarioData {
           scenarioGraph,
           processName,
           isFragment
-        )
+        )*/
     }
 
 }
@@ -130,6 +129,20 @@ final case class MigrateScenarioDataV1(
   override val currentVersion: Int = 1
 }
 
+/*
+
+NOTE TO DEVELOPER:
+
+When implementing MigrateScenarioRequestDtoV2:
+
+1. Review and update the parameter types and names if necessary.
+2. Consider backward compatibility with existing code.
+3. Update the encoder and decoder accordingly.
+4. Check if any adapters or converters need modification.
+5. Add any necessary documentation or comments.
+
+Remember to uncomment the class definition after implementation.
+
 final case class MigrateScenarioDataV2(
     sourceEnvironmentId: String,
     remoteUserName: String,
@@ -141,4 +154,4 @@ final case class MigrateScenarioDataV2(
     isFragment: Boolean,
 ) extends MigrateScenarioData {
   override val currentVersion: Int = 2
-}
+}*/

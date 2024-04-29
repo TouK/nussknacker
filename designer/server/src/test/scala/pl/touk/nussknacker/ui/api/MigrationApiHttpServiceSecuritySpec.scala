@@ -102,7 +102,7 @@ class MigrationApiHttpServiceSecuritySpec
   private def prepareRequestData(scenarioName: String): String =
     s"""
        |{
-       |  "version": "2",
+       |  "version": "1",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "remoteUserName": "remoteUser",
        |  "processingMode": "Unbounded-Stream",

@@ -4,7 +4,21 @@ import pl.touk.nussknacker.ui.util.ApiAdapter
 
 object MigrationApiAdapters {
 
-  case object MigrationApiAdapterV1ToV2 extends ApiAdapter[MigrateScenarioData] {
+  /*
+
+    NOTE TO DEVELOPER:
+
+    When adding adapters for new versions of MigrateScenarioData:
+
+    1. Uncomment and implement a new case object for the adapter from V1 to the new version.
+    2. Ensure the liftVersion function converts from the previous version to the new version.
+    3. Implement the downgradeVersion function to convert from the new version back to the previous version.
+    4. Update the adapters map to include the new adapter.
+    5. Test the migration adapters thoroughly for correctness.
+
+    Remember to uncomment the case object after implementation.
+
+    case object MigrationApiAdapterV1ToV2 extends ApiAdapter[MigrateScenarioData] {
 
     override def liftVersion: MigrateScenarioData => MigrateScenarioData = {
       case v1: MigrateScenarioDataV1 =>
@@ -36,8 +50,8 @@ object MigrationApiAdapters {
       case _ => throw new IllegalStateException("Expecting another value object")
     }
 
-  }
+  }*/
 
-  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map(1 -> MigrationApiAdapterV1ToV2)
+  val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = Map.empty
 
 }

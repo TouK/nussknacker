@@ -21,8 +21,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{
   MigrateScenarioRequestDto,
-  MigrateScenarioRequestDtoV1,
-  MigrateScenarioRequestDtoV2
+  MigrateScenarioRequestDtoV1
 }
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError.{
@@ -56,7 +55,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
         jsonBody[MigrateScenarioRequestDto].example(
           Example.of(
             summary = Some("Migrate given scenario to current Nu instance"),
-            value = MigrateScenarioRequestDtoV2(
+            value = MigrateScenarioRequestDtoV1(
               version = 1,
               sourceEnvironmentId = "testEnv",
               remoteUserName = "testUser",
@@ -172,6 +171,19 @@ object MigrationApiEndpoints {
         isFragment: Boolean,
     ) extends MigrateScenarioRequestDto
 
+    /*
+    NOTE TO DEVELOPER:
+
+    When implementing MigrateScenarioRequestDtoV2:
+
+    1. Review and update the parameter types and names if necessary.
+    2. Consider backward compatibility with existing code.
+    3. Update the encoder and decoder accordingly.
+    4. Check if any adapters or converters need modification.
+    5. Add any necessary documentation or comments.
+
+    Remember to uncomment the class definition after implementation.
+
     @derive(encoder, decoder)
     final case class MigrateScenarioRequestDtoV2(
         override val version: Int,
@@ -183,7 +195,7 @@ object MigrationApiEndpoints {
         scenarioGraph: ScenarioGraph,
         processName: ProcessName,
         isFragment: Boolean,
-    ) extends MigrateScenarioRequestDto
+    ) extends MigrateScenarioRequestDto*/
 
   }
 
@@ -222,7 +234,7 @@ object MigrationApiEndpoints {
         import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioGraphCodec._
         import pl.touk.nussknacker.ui.api.TapirCodecs.ProcessNameCodec._
         implicit val migrateScenarioRequestV1Schema: Schema[MigrateScenarioRequestDtoV1] = Schema.derived
-        implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
+        // implicit val migrateScenarioRequestV2Schema: Schema[MigrateScenarioRequestDtoV2] = Schema.derived
         val derived = Schema.derived[MigrateScenarioRequestDto]
         derived.schemaType match {
           case s: SchemaType.SCoproduct[_] =>
@@ -232,7 +244,7 @@ object MigrationApiEndpoints {
                 Schema.string,
                 Map(
                   "1" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV1].getSimpleName)),
-                  "2" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
+                  // "2" -> SchemaType.SRef(Schema.SName(classOf[MigrateScenarioRequestDtoV2].getSimpleName)),
                 )
               )
             )
@@ -243,13 +255,13 @@ object MigrationApiEndpoints {
 
       implicit val encoder: Encoder[MigrateScenarioRequestDto] = Encoder.instance {
         case v1: MigrateScenarioRequestDtoV1 => v1.asJson
-        case v2: MigrateScenarioRequestDtoV2 => v2.asJson
+        // case v2: MigrateScenarioRequestDtoV2 => v2.asJson
       }
 
       implicit val decoder: Decoder[MigrateScenarioRequestDto] = Decoder.instance { cursor =>
         cursor.downField("version").as[Int].flatMap {
-          case 1     => cursor.as[MigrateScenarioRequestDtoV1]
-          case 2     => cursor.as[MigrateScenarioRequestDtoV2]
+          case 1 => cursor.as[MigrateScenarioRequestDtoV1]
+          // case 2     => cursor.as[MigrateScenarioRequestDtoV2]
           case other => throw new IllegalStateException(s"Cannot decode migration request for version [$other]")
         }
       }

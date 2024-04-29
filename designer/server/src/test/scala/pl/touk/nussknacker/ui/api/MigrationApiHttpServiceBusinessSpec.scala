@@ -49,7 +49,7 @@ class MigrationApiHttpServiceBusinessSpec
         .statusCode(200)
         .body(
           "version",
-          equalTo[Int](2)
+          equalTo[Int](1)
         )
     }
   }
@@ -225,7 +225,7 @@ class MigrationApiHttpServiceBusinessSpec
   ): String =
     s"""
        |{
-       |  "version": "2",
+       |  "version": "1",
        |  "sourceEnvironmentId": "$sourceEnvironmentId",
        |  "remoteUserName": "remoteUser",
        |  "processingMode": "Unbounded-Stream",

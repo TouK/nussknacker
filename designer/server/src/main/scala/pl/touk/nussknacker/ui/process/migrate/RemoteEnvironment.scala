@@ -21,7 +21,7 @@ import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigra
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
-import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV2, MigrationApiAdapterService}
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV1, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
 import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
@@ -216,7 +216,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       remoteScenarioDescriptionVersion <- fetchRemoteMigrationScenarioDescriptionVersion
       localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
       migrateScenarioRequest: MigrateScenarioData =
-        MigrateScenarioDataV2(
+        MigrateScenarioDataV1(
           environmentId,
           loggedUser.username,
           processingMode,
