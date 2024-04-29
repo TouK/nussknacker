@@ -15,6 +15,7 @@ object MigrationApiAdapters {
     3. Implement the downgradeVersion function to convert from the new version back to the previous version.
     4. Update the adapters map to include the new adapter.
     5. Test the migration adapters thoroughly for correctness.
+    6. Update StandardRemoteEnvironmentSpec, especially the Migrate endpoint mock
 
     Remember to uncomment the case object after implementation.
 

@@ -181,6 +181,7 @@ object MigrationApiEndpoints {
     3. Update the encoder and decoder accordingly.
     4. Check if any adapters or converters need modification.
     5. Add any necessary documentation or comments.
+    6. Update StandardRemoteEnvironmentSpec, especially the Migrate endpoint mock
 
     Remember to uncomment the class definition after implementation.
 
