@@ -5,9 +5,8 @@ export const nodeInput = "node-input";
 export const nodeValue = "node-value";
 export const nodeInputWithError = "node-input-with-error";
 export const rowAceEditor = "row-ace-editor";
-
-const movableRow = `movable-row`;
-const partlyHidden = `partly-hidden`;
+export const movableRow = "movable-row";
+export const partlyHidden = "partly-hidden";
 
 export const NodeTableStyled = styled("div")(({ theme }) => ({
     fontSize: 11,

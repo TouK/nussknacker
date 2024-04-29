@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { Variable } from "../../../../common/TestResultUtils";
 import { cx } from "@emotion/css";
-import { nodeInput, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { nodeInput, nodeValue, partlyHidden } from "../NodeDetailsContent/NodeTableStyled";
 import { styled } from "@mui/material";
 
 interface Props {
@@ -24,7 +24,7 @@ const FadeOut = styled("div")({
 export default forwardRef<HTMLTextAreaElement, Props>(function TestValue(props: Props, ref: React.Ref<HTMLTextAreaElement>) {
     const { value, shouldHideTestResults } = props;
     return (
-        <div className={cx(nodeValue, shouldHideTestResults && "partly-hidden")}>
+        <div className={cx(nodeValue, shouldHideTestResults && partlyHidden)}>
             {value?.original ? <ReadonlyTextarea ref={ref} value={value.original} /> : null}
             <ReadonlyTextarea ref={ref} value={prettyPrint(value?.pretty)} />
             {shouldHideTestResults ? (
