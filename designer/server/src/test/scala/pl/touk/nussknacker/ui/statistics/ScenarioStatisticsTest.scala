@@ -22,6 +22,7 @@ import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
@@ -43,6 +44,13 @@ class ScenarioStatisticsTest
     new Answer[Future[Either[StatisticError, Fingerprint]]] {
       override def answer(invocation: InvocationOnMock): Future[Either[StatisticError, Fingerprint]] =
         Future.successful(Right(new Fingerprint(sampleFingerprint)))
+    }
+  )
+
+  private val mockedTimeSeriesDb: StatisticsDb[Future] = mock[StatisticsDb[Future]](
+    new Answer[Future[Map[String, String]]] {
+      override def answer(invocation: InvocationOnMock): Future[Map[String, String]] =
+        Future.successful(Map.empty[String, String])
     }
   )
 
@@ -208,7 +216,8 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty))
+      () => Future.successful(Right(List.empty)),
+      mockedTimeSeriesDb,
     ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
@@ -275,6 +284,7 @@ class ScenarioStatisticsTest
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       _ => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
+      mockedTimeSeriesDb,
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(

@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
@@ -39,7 +40,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
-      componentService: ComponentService
+      componentService: ComponentService,
+      statisticsDb: StatisticsDb[Future],
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
@@ -90,7 +92,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
-      fetchComponentList
+      fetchComponentList,
+      statisticsDb
     )
 
   }
@@ -134,7 +137,8 @@ class UsageStatisticsReportsSettingsService(
     fetchActivity: List[ScenarioStatisticsInputData] => Future[
       Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
     ],
-    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]]
+    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
+    statisticsDb: StatisticsDb[Future]
 )(implicit ec: ExecutionContext) {
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
@@ -160,7 +164,13 @@ class UsageStatisticsReportsSettingsService(
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
       componentList <- new EitherT(fetchComponentList())
       componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
-    } yield basicStatistics ++ scenariosStatistics ++ generalStatistics ++ activityStatistics ++ componentStatistics
+      feStatistics <- EitherT.liftF(statisticsDb.read())
+    } yield basicStatistics ++
+      scenariosStatistics ++
+      generalStatistics ++
+      activityStatistics ++
+      componentStatistics ++
+      feStatistics
   }
 
   private def determineBasicStatistics(

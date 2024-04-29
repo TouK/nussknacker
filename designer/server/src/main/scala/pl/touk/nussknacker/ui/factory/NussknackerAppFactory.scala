@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
 class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataStateFactory) extends LazyLogging {
@@ -34,8 +35,12 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       _               <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
       db              <- DbRef.create(config.resolved)
+      statisticsDb    <- StatisticsDb.create()
       server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory)(system, materializer),
+        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory, statisticsDb)(
+          system,
+          materializer
+        ),
         system
       )
       _ <- server.start(config, metricsRegistry)
