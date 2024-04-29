@@ -58,7 +58,7 @@ import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, Sc
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
@@ -107,9 +107,9 @@ class AkkaHttpBasedRouteProvider(
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
-      val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = new DbProcessActionRepository(dbRef, modelBuildInfo)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      implicit val dbioRunner: DBIOActionRunner = DBIOActionRunner(dbRef)
+      val actionRepository                      = new DbProcessActionRepository(dbRef, modelBuildInfo)
+      val processRepository                     = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
       val writeProcessRepository  = ProcessRepository.create(dbRef, migrations)
@@ -122,6 +122,7 @@ class AkkaHttpBasedRouteProvider(
           processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
         )
@@ -196,7 +197,8 @@ class AkkaHttpBasedRouteProvider(
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
-          processingTypeData.deploymentData.scenarioPropertiesConfig
+          processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
         )
       }
 
@@ -400,17 +402,19 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-      val fingerprintService           = new FingerprintService(dbioRunner, new FingerprintRepositoryImpl(dbRef))
-      val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
+      val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
+      val usageStatisticsReportsSettingsService = UsageStatisticsReportsSettingsService(
         usageStatisticsReportsConfig,
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
-        fingerprintService.fingerprint
+        fingerprintService,
+        processActivityRepository,
+        componentService
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authenticationResources,
-        usageStatisticsReportsSettingsDeterminer
+        usageStatisticsReportsSettingsService
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings

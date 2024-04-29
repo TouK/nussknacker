@@ -4,6 +4,7 @@ import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
 import { NodeType, NodeValidationError, UINodeType } from "../../../types";
+import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
@@ -38,7 +39,7 @@ export function NodeField<N extends string, V>({
     const value = get(node, fieldName, null) ?? defaultValue;
     const fieldErrors = getValidationErrorsForField(errors, fieldName);
 
-    const className = !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error";
+    const className = !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`;
     const onChange = (newValue) => setProperty(fieldName, newValue, defaultValue);
     const [isMarked] = useDiffMark();
 

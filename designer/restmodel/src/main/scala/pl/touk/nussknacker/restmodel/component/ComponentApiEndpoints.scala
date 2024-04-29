@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.restmodel.component
 
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -30,6 +31,12 @@ import java.time.Instant
 import java.util.UUID
 
 class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
+
+  implicit val scenarioNameSchema: Schema[ProcessName]              = Schema.string[ProcessName]
+  implicit val scenarioIdSchema: Schema[ProcessId]                  = Schema.schemaForLong.as[ProcessId]
+  implicit val versionIdSchema: Schema[VersionId]                   = Schema.schemaForLong.as[VersionId]
+  implicit val actionIdSchema: Schema[ProcessActionId]              = Schema.schemaForUUID.as[ProcessActionId]
+  implicit val componentGroupNameSchema: Schema[ComponentGroupName] = Schema.string[ComponentGroupName]
 
   import ComponentApiEndpoints.ComponentCodec._
 

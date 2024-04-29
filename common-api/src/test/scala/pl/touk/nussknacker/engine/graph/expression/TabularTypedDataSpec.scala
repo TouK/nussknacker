@@ -50,6 +50,11 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
               CellCoordinates(Column.Definition("C", classOf[java.lang.Object]), rowIndex = 0),
               CellCoordinates(Column.Definition("C", classOf[java.lang.Object]), rowIndex = 1),
               CellCoordinates(Column.Definition("C", classOf[java.lang.Object]), rowIndex = 2)
+            ),
+            List(
+              Column.Definition("A", classOf[java.math.BigDecimal]),
+              Column.Definition("B", classOf[java.lang.String]),
+              Column.Definition("C", classOf[java.lang.Object])
             )
           )
         )
@@ -104,6 +109,11 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
             InvalidCellValues(
               NonEmptyList.of(
                 CellCoordinates(Column.Definition("A", classOf[java.time.LocalDate]), rowIndex = 1)
+              ),
+              List(
+                Column.Definition("A", classOf[java.time.LocalDate]),
+                Column.Definition("B", classOf[java.lang.String]),
+                Column.Definition("C", classOf[java.lang.Integer]),
               )
             )
           )
@@ -127,6 +137,11 @@ class TabularTypedDataSpec extends AnyFreeSpec with Matchers {
             InvalidCellValues(
               NonEmptyList.of(
                 CellCoordinates(Column.Definition("A", classOf[java.lang.Boolean]), rowIndex = 2)
+              ),
+              List(
+                Column.Definition("A", classOf[java.lang.Boolean]),
+                Column.Definition("B", classOf[java.lang.String]),
+                Column.Definition("C", classOf[java.lang.Integer]),
               )
             )
           )

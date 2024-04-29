@@ -1845,7 +1845,7 @@ paths:
                   summary: List of statistics URLs
                   value:
                     urls:
-                    - https://stats.nussknacker.io/?fingerprint=development&s_a=0&s_dm_c=0&s_dm_e=0&s_dm_f=1&s_dm_l=0&s_f=0&s_pm_b=0&s_pm_rr=0&s_pm_s=1&s_s=1&source=sources&version=1.15.0-SNAPSHOT
+                    - https://stats.nussknacker.io/?a_n=1&a_t=0&a_v=0&c=3&c_n=82&c_t=0&c_v=0&f_m=0&f_v=0&fingerprint=development&n_m=2&n_ma=0&n_mi=2&n_v=1&s_a=0&s_dm_c=1&s_dm_e=1&s_dm_f=2&s_dm_l=0&s_f=1&s_pm_b=0&s_pm_rr=1&s_pm_s=3&s_s=3&source=sources&u_ma=0&u_mi=0&u_v=0&v_m=2&v_ma=1&v_mi=3&v_v=2&version=1.15.0-SNAPSHOT
         '401':
           description: ''
           content:
@@ -2048,6 +2048,16 @@ components:
           format: int32
         errorMessage:
           type: string
+    ColumnDefinition:
+      required:
+      - name
+      - aType
+      type: object
+      properties:
+        name:
+          type: string
+        aType:
+          type: string
     Comment:
       required:
       - id
@@ -2070,13 +2080,6 @@ components:
         createDate:
           type: string
           format: date-time
-    ComponentGroupName:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: string
     ComponentLink:
       required:
       - id
@@ -2113,7 +2116,7 @@ components:
         componentType:
           $ref: '#/components/schemas/ComponentType'
         componentGroupName:
-          $ref: '#/components/schemas/ComponentGroupName'
+          type: string
         categories:
           type: array
           items:
@@ -2151,7 +2154,7 @@ components:
       type: object
       properties:
         name:
-          $ref: '#/components/schemas/ProcessName'
+          type: string
         nodesUsagesData:
           type: array
           items:
@@ -2187,6 +2190,10 @@ components:
       properties:
         actionName:
           type: string
+        comment:
+          type:
+          - string
+          - 'null'
         params:
           $ref: '#/components/schemas/Map_String'
     CustomActionValidationDto:
@@ -3271,11 +3278,14 @@ components:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/ProcessActionId'
+          type: string
+          format: uuid
         processId:
-          $ref: '#/components/schemas/ProcessId'
+          type: integer
+          format: int64
         processVersionId:
-          $ref: '#/components/schemas/VersionId'
+          type: integer
+          format: int64
         user:
           type: string
         createdAt:
@@ -3303,14 +3313,6 @@ components:
           - 'null'
         buildInfo:
           $ref: '#/components/schemas/Map_String'
-    ProcessActionId:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: string
-          format: uuid
     ProcessActionState:
       type: string
       enum:
@@ -3332,21 +3334,6 @@ components:
           $ref: '#/components/schemas/Map_String'
         metaDataType:
           type: string
-    ProcessId:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: integer
-          format: int64
-    ProcessName:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: string
     ProcessProperties:
       required:
       - additionalFields
@@ -3363,7 +3350,7 @@ components:
         additionalFields:
           $ref: '#/components/schemas/ProcessAdditionalFields'
         name:
-          $ref: '#/components/schemas/ProcessName'
+          type: string
     RawParameterEditor:
       type: object
     ScenarioActivity:
@@ -3495,6 +3482,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CellError'
+        columnDefinitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnDefinition'
     TabularTypedDataEditor:
       type: object
     TextareaParameterEditor:
@@ -3813,14 +3804,6 @@ components:
           $ref: '#/components/schemas/NodeTypes14'
         varName:
           type: string
-    VersionId:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: integer
-          format: int64
   securitySchemes:
     httpAuth:
       type: http

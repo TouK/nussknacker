@@ -6,6 +6,7 @@ import { getUserSettings } from "../../reducers/selectors/userSettings";
 import { getProcessCategory, getSelectionState, isPristine } from "../../reducers/selectors/graph";
 import { getLoggedUser, getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { GraphProps } from "./types";
+import { useTheme } from "@mui/material";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
@@ -16,6 +17,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const loggedUser = useSelector(getLoggedUser);
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const selectionState = useSelector(getSelectionState);
+    const theme = useTheme();
 
     return (
         <Graph
@@ -28,6 +30,7 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
             loggedUser={loggedUser}
             processDefinitionData={processDefinitionData}
             selectionState={selectionState}
+            theme={theme}
         />
     );
 });

@@ -25,20 +25,6 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
     with VeryPatientScalaFutures
     with Matchers {
 
-  private val scenarioName = "batch-test"
-
-  private val sourceNodeId = "fooSourceNodeId"
-
-  private val scenario = ScenarioBuilder
-    .streaming(scenarioName)
-    .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
-    .emptySink(
-      "sink",
-      "table",
-      "Table" -> Expression.spel("'transactions_summary'"),
-      "Value" -> Expression.spel("#input")
-    )
-
   private val configuredPhrase = "foo"
 
   override def designerConfig: Config = {

@@ -1,0 +1,44 @@
+services:
+  designer:
+    container_name: cypress_e2e_designer
+    image: touk/nussknacker:${NUSSKNACKER_VERSION:-staging-latest}
+    pull_policy: ${DOCKER_PULL_OPTION:-always}
+    environment:
+      JDK_JAVA_OPTIONS: -Xmx512M
+      KAFKA_ADDRESS: redpanda:9092
+      OPENAPI_SERVICE_URL: "http://dummy:5000"
+      SQL_ENRICHER_URL: "dummy:5432"
+      KAFKA_AUTO_OFFSET_RESET: "earliest"
+      SCHEMA_REGISTRY_URL: http://redpanda:8081
+      CONFIG_FILE: /opt/nussknacker/conf/dev-application.conf
+      CONFIG_FORCE_usageStatisticsReports_enabled: "false"
+      CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type: stub
+    ports:
+      - "${BE_PORT:-8080}:8080"
+    depends_on:
+      - redpanda
+
+  redpanda:
+    container_name: cypress_e2e_redpanda
+    image: vectorized/redpanda:v23.3.12
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --reserve-memory 0M
+      - --node-id 0
+      - --set redpanda.enable_transactions=true
+      - --set redpanda.enable_idempotence=true
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
+      - --advertise-kafka-addr PLAINTEXT://redpanda:9092,OUTSIDE://localhost:3032
+    ports:
+      - "3032:3032"
+      - "3082:8081"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "curl -s http://localhost:8081/subjects || exit 1 && nc -z localhost 9092"]
+      interval: 20s
+      retries: 5
+
+networks:
+  default:
+    name: cypress_e2e_network

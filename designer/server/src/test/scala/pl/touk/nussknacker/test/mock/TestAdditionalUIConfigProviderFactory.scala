@@ -2,7 +2,7 @@ package pl.touk.nussknacker.test.mock
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component._
-import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesValidator}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import sttp.client3.SttpBackend
@@ -28,10 +28,15 @@ object TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
       )
     )
 
+  val scenarioPropertyPossibleValues: List[FixedExpressionValue] =
+    List(FixedExpressionValue("a", "a"), FixedExpressionValue("b", "b"))
+
   val scenarioPropertyConfigOverride: Map[String, ScenarioPropertyConfig] =
     Map(
       scenarioPropertyName -> ScenarioPropertyConfig.empty.copy(
-        defaultValue = Some("defaultOverride")
+        defaultValue = Some("defaultValueOverride"),
+        validators = Some(List(FixedValuesValidator(scenarioPropertyPossibleValues))),
+        label = Some("labelOverride"),
       )
     )
 

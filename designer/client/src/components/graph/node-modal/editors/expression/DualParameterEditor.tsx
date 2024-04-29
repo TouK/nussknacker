@@ -8,6 +8,7 @@ import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "../Validators";
 import ErrorBoundary from "../../../../common/ErrorBoundary";
+import { nodeValue } from "../../NodeDetailsContent/NodeTableStyled";
 
 type Props = {
     editorConfig: {
@@ -77,7 +78,7 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
     const editorProps = useMemo(
         () => ({
             ...props,
-            className: `${valueClassName ? valueClassName : "node-value"} ${showSwitch ? "switchable" : ""}`,
+            className: `${valueClassName ? valueClassName : nodeValue} ${showSwitch ? "switchable" : ""}`,
         }),
         [props, showSwitch, valueClassName],
     );

@@ -6,6 +6,7 @@ import { Graph } from "../graph/Graph";
 import { useGraph } from "../graph/GraphContext";
 import SidePanelToggleButton from "../SidePanelToggleButton";
 import { StyledCollapsibleScrollPanel } from "./CollapsibleScrollPanel";
+import { useMutationObserver } from "rooks";
 
 export enum PanelSide {
     Right = "RIGHT",
@@ -24,14 +25,30 @@ export function useSidePanelToggle(side: PanelSide) {
 }
 
 // adjust viewport for PanZoomPlugin.panToCells
-function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], isOccupied: boolean) {
+function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], inView: boolean) {
     const ref = useRef<HTMLDivElement>();
+
     const getGraph = useGraph();
+    const [isOccupied, setIsOccupied] = useState(0);
+
+    useMutationObserver(
+        ref,
+        () => {
+            const available = ref.current.getBoundingClientRect().height;
+            const used = [...ref.current.querySelectorAll(".draggable")]
+                .map((e) => e.getBoundingClientRect())
+                .reduce((value, current) => value + current.height, 0);
+            setIsOccupied(Math.min(1, Math.max(0, used / available)));
+        },
+        { childList: true, attributes: true, subtree: true },
+    );
+
     useEffect(() => {
         getGraph?.()?.adjustViewport({
-            [side]: isOccupied ? ref.current?.getBoundingClientRect().width : 0,
+            [side]: inView ? ref.current?.getBoundingClientRect().width * isOccupied : 0,
         });
-    }, [getGraph, isOccupied, side]);
+    }, [getGraph, inView, isOccupied, side]);
+
     return ref;
 }
 
@@ -54,7 +71,7 @@ export function SidePanel(props: SidePanelProps) {
     const { isOpened, onToggle } = useSidePanelToggle(side);
     const [showToggle, setShowToggle] = useState(true);
 
-    const ref = useGraphViewportAdjustment(side === PanelSide.Left ? "left" : "right", isOpened && showToggle);
+    const ref = useGraphViewportAdjustment(side === PanelSide.Left ? "left" : "right", isOpened);
 
     return (
         <SidePanelContext.Provider value={side}>

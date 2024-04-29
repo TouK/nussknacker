@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SimpleParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.CellError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
@@ -595,15 +594,16 @@ object NodesApiEndpoints {
       implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
     }
 
-    implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
 
-    implicit lazy val parameterSchema: Schema[EvaluatedParameter]              = Schema.derived
-    implicit lazy val edgeTypeSchema: Schema[EdgeType]                         = Schema.derived
-    implicit lazy val edgeSchema: Schema[Edge]                                 = Schema.derived
-    implicit lazy val cellErrorSchema: Schema[CellError]                       = Schema.derived
+    implicit lazy val parameterSchema: Schema[EvaluatedParameter] = Schema.derived
+    implicit lazy val edgeTypeSchema: Schema[EdgeType]            = Schema.derived
+    implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
+    implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
+    import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
+    implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]         = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
@@ -1315,6 +1315,8 @@ object NodesApiEndpoints {
       }
 
     }
+
+    implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
 
     @derive(schema, encoder, decoder)
     final case class PropertiesValidationRequestDto(

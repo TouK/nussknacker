@@ -1,6 +1,7 @@
 import { cyan, deepOrange, lime } from "@mui/material/colors";
 import { alpha, createTheme, Theme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
+import { getBorderColor, blendLighten } from "nussknackerUi/themeHelpers";
 
 const darkBase = createTheme({
     palette: {
@@ -56,6 +57,9 @@ export const useDefaultTheme = (parent = {}): Theme => {
                 components: {
                     MuiDataGrid: {
                         styleOverrides: {
+                            withBorderColor: ({ theme }) => ({
+                                borderColor: getBorderColor(theme),
+                            }),
                             root: {
                                 border: 0,
                             },
@@ -69,9 +73,7 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                 zIndex: root.zIndex.mobileStepper - 1,
                             },
                             columnHeadersInner: {
-                                backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } })[
-                                    root.palette.mode
-                                ],
+                                backgroundColor: blendLighten(root.palette.background.paper, 0.12),
                             },
                             cell: {
                                 "&:focus-within": {
@@ -92,6 +94,22 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                 "&.stretch": {
                                     alignItems: "stretch",
                                 },
+                            },
+                            sortIcon: ({ theme }) => ({
+                                color: theme.palette.text.secondary,
+                            }),
+                            menuIconButton: {
+                                color: "currentColor",
+                            },
+                            columnSeparator: {
+                                color: "currentColor",
+                            },
+                        },
+                    },
+                    MuiOutlinedInput: {
+                        styleOverrides: {
+                            input: {
+                                outline: "none",
                             },
                         },
                     },
@@ -115,6 +133,20 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                 "&.MuiLink-root": {
                                     cursor: "pointer",
                                 },
+                            },
+                        },
+                    },
+                    MuiListItemButton: {
+                        styleOverrides: {
+                            divider: ({ theme }) => ({
+                                borderColor: getBorderColor(theme),
+                            }),
+                        },
+                    },
+                    MuiListItemIcon: {
+                        styleOverrides: {
+                            root: {
+                                color: "currentColor",
                             },
                         },
                     },

@@ -5,25 +5,24 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.{Context, NodeId}
-import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
-  FlinkIntermediateRawSource,
-  FlinkSource,
-  FlinkSourceTestSupport
+  FlinkSourceTestSupport,
+  StandardFlinkSource,
+  StandardFlinkSourceFunctionUtils
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
@@ -36,7 +35,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
   wrapToFlinkDeserializationSchema
 }
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
-import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.time.Duration
@@ -47,30 +45,33 @@ class FlinkKafkaSource[T](
     preparedTopics: List[PreparedKafkaTopic],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
-    passedAssigner: Option[TimestampWatermarkHandler[T]],
+    passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
     val formatter: RecordFormatter,
+    override val contextInitializer: ContextInitializer[T],
     testParametersInfo: KafkaTestParametersInfo,
     overriddenConsumerGroup: Option[String] = None,
     namingStrategy: NamingStrategy
-) extends FlinkSource
-    with FlinkIntermediateRawSource[T]
+) extends StandardFlinkSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
-    with ExplicitUidInOperatorsSupport
     with TestWithParametersSupport[T] {
 
-  protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
-
+  @silent("deprecated")
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStream[Context] = {
+  ): DataStreamSource[T] = {
     val consumerGroupId = prepareConsumerGroupId(flinkNodeContext)
     val sourceFunction  = flinkSourceFunction(consumerGroupId, flinkNodeContext)
-
-    prepareSourceStream(env, flinkNodeContext, sourceFunction)
+    StandardFlinkSourceFunctionUtils.createSourceStream(
+      env = env,
+      sourceFunction = sourceFunction,
+      typeInformation = typeInformation
+    )
   }
+
+  protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
   override val typeInformation: TypeInformation[T] = {
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
@@ -109,13 +110,12 @@ class FlinkKafkaSource[T](
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
-  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = Some(
-    passedAssigner.getOrElse(
-      new StandardTimestampWatermarkHandler[T](
-        WatermarkStrategy
-          .forBoundedOutOfOrderness(
-            Duration.ofMillis(kafkaConfig.defaultMaxOutOfOrdernessMillis.getOrElse(defaultMaxOutOfOrdernessMillis))
-          )
+  override def timestampAssigner: Option[TimestampWatermarkHandler[T]] = passedAssigner.orElse(
+    Some(
+      StandardTimestampWatermarkHandler.boundedOutOfOrderness(
+        extract = None,
+        maxOutOfOrderness = kafkaConfig.defaultMaxOutOfOrdernessMillis,
+        idlenessTimeoutDuration = kafkaConfig.idleTimeoutDuration
       )
     )
   )
@@ -131,13 +131,9 @@ class FlinkKafkaSource[T](
     deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
   }
 
-  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = {
-    val baseName = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext))
-    if (kafkaConfig.useNamingStrategyForConsumerGroupId) {
-      namingStrategy.prepareName(baseName)
-    } else {
-      baseName
-    }
+  private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {
+    case Some(overridden) => overridden
+    case None             => ConsumerGroupDeterminer(kafkaConfig).consumerGroup(nodeContext)
   }
 
 }
@@ -192,6 +188,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
       deserializationSchema,
       timestampAssigner,
       formatter,
+      contextInitializer,
       testParametersInfo,
       namingStrategy = namingStrategy
     ) {
@@ -209,8 +206,4 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
     TypeInformation.of(classOf[ConsumerRecord[K, V]])
   }
 
-}
-
-object FlinkKafkaSource {
-  val defaultMaxOutOfOrdernessMillis = 60000
 }

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefin
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
+import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.definition.{
   DateParameterEditor,
@@ -31,11 +31,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(actorSystem: ActorSystem)
+class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseModelData)
     extends DeploymentManager
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
+  import pl.touk.nussknacker.engine.ModelData._
   import SimpleStateStatus._
 
   // Use these "magic" description values to simulate deployment/validation failure
@@ -55,7 +56,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
         CustomActionParameter("mandatoryString", StringParameterEditor, List(MandatoryParameterValidator)),
         CustomActionParameter("paramInt", StringParameterEditor, List(LiteralIntegerValidator)),
         CustomActionParameter("paramDate", DateParameterEditor, Nil),
-        CustomActionParameter("comment", TextareaParameterEditor, Nil),
       )
     )
 
@@ -70,6 +70,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random                                      = new scala.util.Random()
+
+  private lazy val flinkTestRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
 
@@ -103,7 +105,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     case command: DMCancelScenarioCommand  => cancelScenario(command)
     case command: DMCustomActionCommand    => invokeCustomAction(command)
     case _: DMMakeScenarioSavepointCommand => Future.successful(SavepointResult(""))
-    case _: DMTestScenarioCommand          => notImplemented
+    case DMTestScenarioCommand(_, canonicalProcess, scenarioTestData) =>
+      flinkTestRunner.test(canonicalProcess, scenarioTestData) // it's just for streaming e2e tests from file purposes
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
@@ -229,7 +232,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
-    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem))
+    Validated.valid(new DevelopmentDeploymentManager(dependencies.actorSystem, modelData))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer

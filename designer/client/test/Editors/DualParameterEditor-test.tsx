@@ -5,6 +5,7 @@ import { DualParameterEditor } from "../../src/components/graph/node-modal/edito
 import { DualEditorMode, EditorType } from "../../src/components/graph/node-modal/editors/expression/Editor";
 import { mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 describe(DualParameterEditor.name, () => {
     it("should display validation error when the field is required", () => {
@@ -27,7 +28,7 @@ describe(DualParameterEditor.name, () => {
             </NuThemeProvider>,
         );
 
-        expect(screen.getByRole("textbox")).toHaveClass("node-input-with-error");
+        expect(screen.getByRole("textbox")).toHaveClass(nodeInputWithError);
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });
 });

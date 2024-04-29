@@ -129,4 +129,8 @@ object TapirCodecs {
     implicit val urlSchemas: Schema[List[URL]] = urlSchema.asIterable[List]
   }
 
+  object ClassCodec {
+    implicit val classSchema: Schema[Class[_]] = Schema.string[Class[_]]
+  }
+
 }

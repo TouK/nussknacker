@@ -5,6 +5,8 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider.configIndependentComponents
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
 import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
@@ -42,11 +44,11 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
     ComponentDefinition(
       tableComponentName,
-      new TableSourceFactory(definition)
+      new TableSourceFactory(definition, parsedConfig.enableFlinkBatchExecutionMode)
     ) :: ComponentDefinition(
       tableComponentName,
       new TableSinkFactory(definition)
-    ) :: Nil
+    ) :: configIndependentComponents
   }
 
   private def extractTableDefinitionsFromSqlFileOrThrow(filePath: String) = {
@@ -80,9 +82,21 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
 }
 
+object FlinkTableComponentProvider {
+
+  val configIndependentComponents: List[ComponentDefinition] = List(
+    ComponentDefinition(
+      "aggregate",
+      new TableAggregationFactory()
+    )
+  )
+
+}
+
 final case class TableSqlDefinitions(
     tableDefinitions: List[TableDefinition],
     sqlStatements: List[SqlStatement]
 )
 
-final case class TableComponentProviderConfig(tableDefinitionFilePath: String)
+// TODO: remove enableFlinkBatchExecutionMode after moving execution mode setting logic to executor
+final case class TableComponentProviderConfig(tableDefinitionFilePath: String, enableFlinkBatchExecutionMode: Boolean)

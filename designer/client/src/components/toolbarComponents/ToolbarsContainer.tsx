@@ -17,8 +17,7 @@ import { DragHandlerContext } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
 import { cx } from "@emotion/css";
-import { styled } from "@mui/material";
-import { alpha } from "../../containers/theme/helpers";
+import { alpha, styled } from "@mui/material";
 import { TOOLBAR_DRAGGABLE_TYPE } from "./DragAndDropContainer";
 
 export const StyledDraggableItem = styled("div")(({ theme }) => ({
@@ -162,7 +161,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
     );
 
     return (
-        <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE} renderClone={renderDraggable}>
+        <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE}>
             {renderDroppable}
         </Droppable>
     );

@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { alpha } from "../containers/theme/helpers";
+import { alpha, Box } from "@mui/material";
 import HttpService, { AppBuildInfo } from "../http/HttpService";
 
 function useAppInfo(): AppBuildInfo {
@@ -65,15 +65,15 @@ export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
     }, [hide, startTimer, stopTimer, t]);
 
     return (
-        <div
+        <Box
             data-testid="version-info"
-            className={css({
+            sx={(theme) => ({
                 "&, div, svg": {
                     transition: "all .25s",
                 },
 
-                color: alpha("black", 0.75),
-                background: alpha("white", expanded ? 0.25 : 0),
+                color: alpha(theme.palette.getContrastText(theme.palette.background.paper), 0.75),
+                background: alpha(theme.palette.common.white, expanded ? 0.25 : 0),
                 backdropFilter: expanded ? "blur(5px)" : "none",
 
                 position: "absolute",
@@ -96,16 +96,16 @@ export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
             onMouseOver={show}
             onMouseOut={hide}
         >
-            <div
-                className={css({
+            <Box
+                sx={(theme) => ({
                     pointerEvents: "auto",
                     padding: ".5em .5em .2em .5em",
                     transform: `translateX(${expanded ? 0 : 25}%) translateY(${expanded ? 0 : 45}%) rotate(${expanded ? 0 : -15}deg)`,
-                    color: expanded ? "inherit" : alpha("black", 0.25),
+                    color: expanded ? "inherit" : alpha(theme.palette.getContrastText(theme.palette.background.paper), 0.25),
                 })}
             >
                 <Nu size="2em" />
-            </div>
+            </Box>
             <div
                 className={css({
                     transform: `translateY(${expanded ? 0 : 110}%)`,
@@ -116,6 +116,6 @@ export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
                 <div className={css({ fontWeight: "bolder" })}>{variedVersions ? `UI ${__BUILD_VERSION__}` : __BUILD_VERSION__}</div>
                 {variedVersions && <div>API {appInfo?.version}</div>}
             </div>
-        </div>
+        </Box>
     );
 }
