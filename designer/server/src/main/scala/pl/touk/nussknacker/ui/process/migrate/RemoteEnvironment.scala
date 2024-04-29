@@ -15,15 +15,16 @@ import io.circe.Decoder
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV1, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
@@ -69,6 +70,19 @@ trait RemoteEnvironment {
   ): Future[Either[NuDesignerError, List[TestMigrationResult]]]
 
 }
+
+final case class MigrationApiAdapterError(apiAdapterError: ApiAdapterServiceError)
+    extends FatalError(
+      apiAdapterError match {
+        case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+          signedNoOfVersionsLeftToApply match {
+            case n if n >= 0 =>
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
+            case _ =>
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
+          }
+      }
+    )
 
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String)
     extends FatalError(message)
@@ -146,9 +160,11 @@ final case class StandardRemoteEnvironmentConfig(
 )
 
 //TODO: extract interface to remote environment?
-trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
+trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment with LazyLogging {
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
+
+  private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
 
   def environmentId: String
 
@@ -195,23 +211,73 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       processName: ProcessName,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val migrateScenarioRequest: MigrateScenarioRequest =
-      MigrateScenarioRequest(
-        environmentId,
-        processingMode,
-        engineSetupName,
-        processCategory,
-        scenarioGraph,
-        processName,
-        isFragment
+
+    val result: EitherT[Future, NuDesignerError, Unit] = for {
+      remoteScenarioDescriptionVersion <- fetchRemoteMigrationScenarioDescriptionVersion
+      localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
+      migrateScenarioRequest: MigrateScenarioData =
+        MigrateScenarioDataV1(
+          environmentId,
+          loggedUser.username,
+          processingMode,
+          engineSetupName,
+          processCategory,
+          scenarioGraph,
+          processName,
+          isFragment
+        )
+      versionsDifference = localScenarioDescriptionVersion - remoteScenarioDescriptionVersion
+      transformedMigrateScenarioRequestE =
+        if (versionsDifference > 0)
+          migrationApiAdapterService.adaptDown(migrateScenarioRequest, versionsDifference)
+        else
+          Right(migrateScenarioRequest)
+      _ <- handleTransformedMigrateScenarioRequest(transformedMigrateScenarioRequestE)
+    } yield ()
+
+    result.value
+  }
+
+  private def handleTransformedMigrateScenarioRequest(
+      transformedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData]
+  )(implicit ec: ExecutionContext): EitherT[Future, NuDesignerError, Unit] = {
+    transformedMigrateScenarioRequestE match {
+      case Left(apiAdapterServiceError) =>
+        EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
+      case Right(transformedMigrateScenarioRequest) =>
+        import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
+        val dto = MigrateScenarioData.fromDomain(transformedMigrateScenarioRequest)
+        EitherT(
+          invokeForSuccess(
+            HttpMethods.POST,
+            List("migrate"),
+            Query.Empty,
+            HttpEntity(dto.asJson.noSpaces),
+            List()
+          )
+        )
+    }
+  }
+
+  private def fetchRemoteMigrationScenarioDescriptionVersion(implicit ec: ExecutionContext) = {
+    EitherT(
+      fetchRemoteMigrationScenarioDescriptionVersionAux.map[Either[NuDesignerError, Int]](apiVersion =>
+        Right(apiVersion.version)
       )
-    invokeForSuccess(
-      HttpMethods.POST,
-      List("migrate"),
-      Query.Empty,
-      HttpEntity(migrateScenarioRequest.asJson.noSpaces),
-      List.empty
     )
+  }
+
+  private def fetchRemoteMigrationScenarioDescriptionVersionAux(implicit ec: ExecutionContext): Future[ApiVersion] = {
+    // TODO: let's use client created from Tapir endpoints instead
+    invoke[ApiVersion](
+      HttpMethods.GET,
+      List("migration", "scenario", "description", "version"),
+      Query.Empty,
+      requestEntity = HttpEntity.Empty,
+      headers = Seq.empty
+    ) { res =>
+      Unmarshal(res.entity).to[ApiVersion]
+    }
   }
 
   // We need to be cautious when choosing maxParallelism of batchingExecutionContext as validation may call external systems and we don't want to overwhelm them with requests
