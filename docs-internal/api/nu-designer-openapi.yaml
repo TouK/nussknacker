@@ -3480,6 +3480,7 @@ components:
       title: RawParameterEditor
       type: object
     RegisterStatisticsRequestDto:
+      title: RegisterStatisticsRequestDto
       type: object
       properties:
         statistics:
@@ -3601,13 +3602,15 @@ components:
       title: SqlParameterEditor
       type: object
     StatisticDto:
+      title: StatisticDto
+      type: object
       required:
       - name
-      type: object
       properties:
         name:
           $ref: '#/components/schemas/StatisticName'
     StatisticName:
+      title: StatisticName
       type: string
       enum:
       - SEARCH_SCENARIO_BY_NAME
