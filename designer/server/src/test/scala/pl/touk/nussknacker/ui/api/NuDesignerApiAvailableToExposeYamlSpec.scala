@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import org.reflections.Reflections
-import org.reflections.util.ConfigurationBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator}
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
@@ -15,7 +14,6 @@ import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.{Endpoint, EndpointInput, auth}
 
 import java.lang.reflect.{Method, Modifier}
-import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 // if the test fails it probably means that you should regenerate the Nu Designer OpenAPI document
@@ -63,15 +61,7 @@ object NuDesignerApiAvailableToExpose {
   }
 
   private def findApiEndpointsClasses() = {
-    val baseEndpointDefinitionsClass = classOf[BaseEndpointDefinitions]
-    val reflections = new Reflections(
-      new ConfigurationBuilder().forPackages(baseEndpointDefinitionsClass.getPackageName, "pl.touk.nussknacker.ui.api")
-    )
-    reflections
-      .getSubTypesOf(baseEndpointDefinitionsClass)
-      .asScala
-      .toList
-      .sortBy(_.getName)
+    ReflectionBasedUtils.findSubclassesOf[BaseEndpointDefinitions]("pl.touk.nussknacker.ui.api")
   }
 
   private def findEndpointsInClass(clazz: Class[_ <: BaseEndpointDefinitions]) = {
