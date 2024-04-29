@@ -108,7 +108,15 @@ class StandardRemoteEnvironmentSpec
 
   }
 
-  /*  it should "request to migrate valid scenario when remote scenario description version is lower than local scenario description version" in {
+  /*
+
+  NOTE TO DEVELOPER:
+
+    These test cases are currently commented out. They should be enabled when MigrateScenarioRequestDtoV2 will be present
+
+    Remember to uncomment the test case(s) after review and modification.
+
+    it should "request to migrate valid scenario when remote scenario description version is lower than local scenario description version" in {
     val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
     val remoteScenarioDescriptionVersion = localScenarioDescriptionVersion - 1
     val remoteEnvironment: MockRemoteEnvironment with LastSentMigrateScenarioRequest =
@@ -264,7 +272,13 @@ class StandardRemoteEnvironmentSpec
             HttpResponse(OK, entity = entity)
           }
         case Migrate() =>
-          /*          parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
+          /*
+
+          NOTE TO DEVELOPER:
+
+          This mock code block is currently commented out. It should be enabled when MigrateScenarioRequestV2 will be prsent
+
+            parseBodyToJson(request).as[MigrateScenarioRequestDtoV2] match {
             case Right(migrateScenarioRequestDtoV2) if migrateScenarioRequestDtoV2.version == 2 =>
               lastlySentMigrateScenarioRequest = Some(
                 MigrateScenarioData.toDomain(migrateScenarioRequestDtoV2).rightValue
