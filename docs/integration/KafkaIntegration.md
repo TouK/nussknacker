@@ -58,12 +58,14 @@ to see detailed examples how those options should be translated into properties.
 credential in `JAAS` format, you should provide configuration similar to this one:
 
 ```
-kafkaProperties {
-  "schema.registry.url": "http://schemaregistry:8081"
-  "bootstrap.servers": "broker1:9092,broker2:9092"
-  "security.protocol": "SASL_SSL"
-  "sasl.mechanism": "PLAIN"
-  "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"some_user\" password=\"some_user\";"
+kafkaConfig {
+  kafkaProperties {
+    "schema.registry.url": "http://schemaregistry:8081"
+    "bootstrap.servers": "broker1:9092,broker2:9092"
+    "security.protocol": "SASL_SSL"
+    "sasl.mechanism": "PLAIN"
+    "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"some_user\" password=\"some_user\";"
+  }
 }
 ```
 
