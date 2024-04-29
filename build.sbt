@@ -1959,6 +1959,7 @@ lazy val designer = (project in file("designer/server"))
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
         "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
+        "org.questdb"                    % "questdb"                         % "7.4.2",
       ) ++ forScalaVersion(
         scalaVersion.value,
         Seq(),
