@@ -31,21 +31,20 @@ export const ParametersList = ({
 }: ParametersListProps) => (
     <>
         {parameters.map((param, index) => (
-            <div className="node-block" key={node.id + param.name + index}>
-                <ParameterExpressionField
-                    errors={errors}
-                    findAvailableVariables={findAvailableVariables}
-                    isEditMode={isEditMode}
-                    listFieldPath={getListFieldPath(index)}
-                    node={node}
-                    parameter={param}
-                    parameterDefinitions={parameterDefinitions}
-                    renderFieldLabel={renderFieldLabel}
-                    setProperty={setProperty}
-                    showSwitch={showSwitch}
-                    showValidation={showValidation}
-                />
-            </div>
+            <ParameterExpressionField
+                key={node.id + param.name + index}
+                errors={errors}
+                findAvailableVariables={findAvailableVariables}
+                isEditMode={isEditMode}
+                listFieldPath={getListFieldPath(index)}
+                node={node}
+                parameter={param}
+                parameterDefinitions={parameterDefinitions}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                showSwitch={showSwitch}
+                showValidation={showValidation}
+            />
         ))}
     </>
 );
