@@ -93,32 +93,32 @@ object StatisticsApiEndpoints {
     sealed trait StatisticName extends EnumEntry with UpperSnakecase
 
     object StatisticName extends Enum[StatisticName] with CirceEnum[StatisticName] {
-      case object SearchScenarioByName                 extends StatisticName
-      case object SearchScenarioByStatus               extends StatisticName
-      case object SearchScenarioByProcessingMode       extends StatisticName
-      case object SearchScenarioByCategory             extends StatisticName
-      case object SearchScenarioByAuthor               extends StatisticName
-      case object SearchScenarioByOther                extends StatisticName
-      case object SearchScenarioWithSort               extends StatisticName
+      case object SearchScenariosByName                extends StatisticName
+      case object FilterScenariosByStatus              extends StatisticName
+      case object FilterScenariosByProcessingMode      extends StatisticName
+      case object FilterScenariosByCategory            extends StatisticName
+      case object FilterScenariosByAuthor              extends StatisticName
+      case object FilterScenariosByOther               extends StatisticName
+      case object SortScenarios                        extends StatisticName
       case object SearchComponentsByName               extends StatisticName
-      case object SearchComponentsByGroup              extends StatisticName
-      case object SearchComponentsByProcessingMode     extends StatisticName
-      case object SearchComponentsByCategory           extends StatisticName
-      case object SearchComponentsByMultipleCategories extends StatisticName
-      case object SearchComponentsByUsages             extends StatisticName
+      case object FilterComponentsByGroup              extends StatisticName
+      case object FilterComponentsByProcessingMode     extends StatisticName
+      case object FilterComponentsByCategory           extends StatisticName
+      case object FilterComponentsByMultipleCategories extends StatisticName
+      case object FilterComponentsByUsages             extends StatisticName
       case object ClickComponentUsages                 extends StatisticName
       case object SearchComponentUsagesByName          extends StatisticName
-      case object SearchComponentUsagesByStatus        extends StatisticName
-      case object SearchComponentUsagesByCategory      extends StatisticName
-      case object SearchComponentUsagesByAuthor        extends StatisticName
-      case object SearchComponentUsagesByOther         extends StatisticName
+      case object FilterComponentUsagesByStatus        extends StatisticName
+      case object FilterComponentUsagesByCategory      extends StatisticName
+      case object FilterComponentUsagesByAuthor        extends StatisticName
+      case object FilterComponentUsagesByOther         extends StatisticName
       case object ClickScenarioFromComponentUsages     extends StatisticName
       case object ClickGlobalMetrics                   extends StatisticName
       case object ClickActionDeploy                    extends StatisticName
       case object ClickActionMetrics                   extends StatisticName
       case object ClickViewZoomIn                      extends StatisticName
       case object ClickViewReset                       extends StatisticName
-      case object ClickClickEditUndo                   extends StatisticName
+      case object ClickEditUndo                        extends StatisticName
       case object ClickEditRedo                        extends StatisticName
       case object ClickEditCopy                        extends StatisticName
       case object ClickEditPaste                       extends StatisticName
