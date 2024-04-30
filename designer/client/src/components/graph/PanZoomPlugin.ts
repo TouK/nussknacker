@@ -84,10 +84,11 @@ export class PanZoomPlugin {
         this._enabled = enabled;
     }
 
-    fitContent(content: g.Rect, updatedViewport?: Viewport): void {
+    fitContent(content: g.Rect, updatedViewport?: Viewport, predefinedScale?: number | undefined): void {
         this.viewport = updatedViewport;
 
-        const scale = Math.min(1, 0.78 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
+        const autoScaleValue = Math.min(1, 0.78 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
+        const scale = predefinedScale || autoScaleValue;
         const center = content.center();
         const translate = this.getTranslatedCenter(center, this.viewport, scale);
 

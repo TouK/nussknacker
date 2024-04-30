@@ -28,10 +28,12 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
             if (isNodeSelected(node)) {
                 openNodeWindow(node, scenario);
             } else {
+                const graph = graphGetter();
+                graph.fitToNode(node.id);
                 dispatch(resetSelection(node.id));
             }
         },
-        [dispatch, isNodeSelected, openNodeWindow, scenario],
+        [dispatch, graphGetter, isNodeSelected, openNodeWindow, scenario],
     );
     const highlightNode = useCallback((node: NodeType) => () => setHoveredNodes([node.id]), []);
     const clearHighlight = useCallback(() => setHoveredNodes((current) => (!current?.length ? current : [])), []);
@@ -44,9 +46,6 @@ export function SearchResults({ filterValues = [] }: { filter?: string; filterVa
             clearHighlight();
             return;
         }
-
-        const nodeIds = nodes.map((n) => n.node.id);
-        graph.fitToNodes(nodeIds);
 
         nodes.forEach(({ node, edges }) => {
             graph.highlightNode(node.id, nodeFound);
