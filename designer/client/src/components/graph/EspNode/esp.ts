@@ -6,8 +6,8 @@ import { getRoundedRectPath } from "./getRoundedRectPath";
 import { NodeType } from "../../../types";
 import { blendLighten, getBorderColor, getNodeBorderColor } from "../../../containers/theme/helpers";
 
-export const RECT_WIDTH = 232;
-export const RECT_HEIGHT = 48;
+export const RECT_WIDTH = 300;
+export const RECT_HEIGHT = 60;
 export const BORDER_RADIUS = 3;
 export const MARGIN_TOP = 7;
 export const CONTENT_PADDING = 10;

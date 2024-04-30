@@ -109,12 +109,15 @@ export const selectStyled = (theme: Theme) => {
 
     const dropdownIndicator = (base: CSSObjectWithLabel) => css`
         ${base};
-        color: currentColor;
+        color: ${theme.palette.text.secondary};
+        :hover {
+            color: ${theme.palette.text.secondary};
+        }
     `;
 
     const indicatorSeparator = (base: CSSObjectWithLabel) => css`
         ${base};
-        background-color: currentColor;
+        background-color: ${theme.palette.text.secondary};
     `;
 
     return {
