@@ -51,15 +51,18 @@ This component allows the user to match input to a pre-defined result. Please be
 
 The component has two main elements: _Decision Table_ which is a user-defined table of values and _Match condition_ - a SpEL expression which Nu will use to match the input to the table values.
 
-First let's look at our input: it's a simple model of car data that consists of engine status, controls status and car mileage and name.![alt_text](img/decisionTableValues.png "basic decision table")
- 
-Now we have to define a fixed-value decision table. We will use a simple car mechanic concept - a decision table that helps to define whether a car should be serviced. The blue columns represent our input values and the red one is our decision column.
-![alt_text](img/decisionTableValues.png "basic decision table")
+We will present how to use the component with a simple business example. Consider a telecom that wants to send offers based on the data of a specific customer.
 
-We now need to define a condition that will match our input data with the table rows. In our case the input is a tuple (engine\_status, controls\_status, mileage, car\_id). We want to match when the boolean values are equal to the row values. We also decide we want the car mileage to be higher than the specific threshold. Remember that #Row variable in the expression allows us to interact with the defined table. The relevant expression is:
+First let's look at our input: In the example we use [Response-Request](https://nussknacker.io/documentation/docs/scenarios_authoring/RRDataSourcesAndSinks/) mode, so we need to define an input schema.  it's a simple model - the customer has a name, age and gender - all of type String. We also define a boolean flag "isBigSpender" to better filter offers for the customer.![alt_text](img/decisionTableValues.png "basic decision table")
+ 
+Now we have to define a fixed-value decision table. We use two MinAge and MaxAge columns to define the age intervals for our customers. Then we add the values for the rest and appropriate data plans. The blue columns represent our input values and the red one is our decision column.
+![alt_text](img/decisionTableMobile.png "basic decision table")
+
+We now need to define a condition that will match our input data with the table rows. In our case the input is of form {name, age, gender, isBigSpender}. First we want to match to the specified age interval. _#input.age > #ROW.MinAge && #input.age <= #ROW.MaxAge_ will take care of that. Now we need to match the gender string and the boolean flag. _input.gender == (#ROW.Gender ?: true) && #input.isBigSpender == (#ROW.IsBigSpender ?: true)_ is the relevant expression.  Remember that #Row variable in the expression allows us to interact with the defined table. The whole expression is:
 ![alt_text](img/decisionTableExpression.png "Expression matching input with rows.")
 
-The output from the component will be a list of matched *whole* rows (of type record). So, in our case, if one of inputs is (True, True, 60, "myCar"), then the output would be a list consisting of a single recordList[(True, True, 50, True)]. If you want to only get the _result columns_, then you need to transform the data afterwards with a different component.
+The output from the component will be a list of matched *whole* rows (of type record). So, in our case, if one of inputs is ("Andrzej Podolski", "Male", true, 45), then the output would be a list consisting of a single recordList[(31, 50, "Male", true, "Family Package")]. If you want to only get the _result columns_, then you need to transform the data afterwards with a different component.
+![alt_text](img/decisionTableOutput.png "Sample input and matched output from the decision table.")
 
 You can add as many input and result columns as you would like. The _Match condition_ is a fully functioning expression, so you can be quite flexible with it. You could omit some of the checks on the input rows. In our example, we could check for engine control only with *#engine = #ROW.Engine_starts*. It is also up to you which columns you define as input and which as output, you can treat them completely differently in two components that have the same table definition.
 
