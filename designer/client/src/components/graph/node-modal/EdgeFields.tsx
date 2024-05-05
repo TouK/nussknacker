@@ -14,7 +14,7 @@ import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
 import { FieldError } from "./editors/Validators";
 import { TypeSelect } from "./fragment-input-definition/TypeSelect";
-import { movableRow, nodeValue } from "./NodeDetailsContent/NodeTableStyled";
+import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     index: number;
@@ -114,7 +114,6 @@ export function EdgeFields(props: Props): JSX.Element {
             uuid={edge._id}
             index={index}
             className={cx(
-                movableRow,
                 css({
                     "&&&&": {
                         display: "grid",

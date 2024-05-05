@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import HttpService from "../../../http/HttpService";
-import ReactMarkdown from "react-markdown/with-html";
+import Markdown from "markdown-to-jsx";
 import { useDebounce } from "use-debounce";
 import { NodeType } from "../../../types";
 import { useSelector } from "react-redux";
@@ -22,7 +22,7 @@ interface MarkdownAdditionalInfo {
     content: string;
 }
 
-const ReactMarkdownStyled = styled(ReactMarkdown)(({ theme }) => ({
+export const MarkdownStyled = styled(Markdown)(({ theme }) => ({
     ...theme.typography.body2,
     marginTop: theme.spacing(1.5),
     marginBottom: theme.spacing(1.25),
@@ -84,7 +84,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
         case "MarkdownAdditionalInfo": {
             // eslint-disable-next-line i18next/no-literal-string
             const linkTarget = "_blank";
-            return <ReactMarkdownStyled linkTarget={linkTarget}>{additionalInfo.content}</ReactMarkdownStyled>;
+            return <MarkdownStyled linkTarget={linkTarget}>{additionalInfo.content}</MarkdownStyled>;
         }
         default:
             // eslint-disable-next-line i18next/no-literal-string

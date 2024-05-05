@@ -39,7 +39,7 @@ export const NodeTableStyled = styled("div")(({ theme }) => ({
             display: "block",
             position: "relative",
             cursor: "pointer",
-            "-moz-appearance": "none",
+            MozAppearance: "none",
             border: 0,
             marginTop: 7,
             marginBottom: 7,

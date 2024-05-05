@@ -19,7 +19,7 @@ const CompareVersionsDialog = loadable(() => import("../components/modals/Compar
 const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const GenericActionDialog = loadable(() => import("../components/modals/GenericActionDialog"), {
+const GenericActionDialog = loadable(() => import("../components/modals/GenericAction/GenericActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {

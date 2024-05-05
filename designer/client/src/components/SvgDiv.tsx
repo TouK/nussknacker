@@ -1,6 +1,6 @@
 import React, { ComponentType, DetailedHTMLProps, HTMLAttributes } from "react";
 import loadable from "@loadable/component";
-import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import { ErrorBoundary } from "react-error-boundary";
 import { styled } from "@mui/material";
 import { absoluteBePath } from "../common/UrlUtils";
 
@@ -40,11 +40,13 @@ const Flex = styled("div")({
 
 export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
     src: string;
-    FallbackComponent?: ComponentType<FallbackProps>;
+    FallbackComponent?: ComponentType<{
+        className?: string;
+    }>;
 }
 
 export const InlineSvg = ({ FallbackComponent, src, id, ...rest }: InlineSvgProps): JSX.Element => (
-    <ErrorBoundary FallbackComponent={FallbackComponent}>
+    <ErrorBoundary FallbackComponent={() => <FallbackComponent {...rest} />}>
         <AsyncSvg src={src}>
             {(__html) => <Flex {...rest} dangerouslySetInnerHTML={{ __html: id ? __html.replace("<svg ", `<svg id="${id}"`) : __html }} />}
         </AsyncSvg>
