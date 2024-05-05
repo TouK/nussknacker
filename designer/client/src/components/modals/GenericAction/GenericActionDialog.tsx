@@ -11,7 +11,7 @@ import { MarkdownForm } from "./MarkdownForm";
 import { isEmpty, omitBy } from "lodash";
 import { ActionValues, GenericActionFormContext } from "./GenericActionFormContext";
 import { Box } from "@mui/material";
-import { useGenericActionValidation } from "./UseGenericActionValidation";
+import { useGenericActionValidation } from "./useGenericActionValidation";
 
 type DocsLink = {
     url: string;
