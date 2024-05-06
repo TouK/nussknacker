@@ -6,24 +6,21 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MismatchParameter
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
-import pl.touk.nussknacker.engine.api.deployment.DMCustomActionCommand
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.restmodel.CustomActionRequest
 
 //TODO: consider unifying this with ScenarioPropertiesValidator as the logic is very similar (possibly identical)
-class CustomActionValidator(allowedAction: CustomActionDefinition) {
+class CustomActionValidator(actionDefinition: CustomActionDefinition) {
 
   def validateCustomActionParams(
-      request: CustomActionRequest
+      params: Map[String, String]
   ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
 
-    implicit val nodeId: NodeId = NodeId(allowedAction.actionName.value)
-    val customActionParams      = allowedAction.parameters
+    implicit val nodeId: NodeId = NodeId(actionDefinition.actionName.value)
 
-    val missingParams = checkForMissingParams(request.params, customActionParams)
-    val checkedParams = validateParams(request.params, customActionParams)
+    val missingParams = checkForMissingParams(params, actionDefinition.parameters)
+    val checkedParams = validateParams(params, actionDefinition.parameters)
 
     missingParams.combine(checkedParams)
   }
@@ -77,21 +74,6 @@ class CustomActionValidator(allowedAction: CustomActionDefinition) {
       }
       .traverse(_.toValidatedNel)
       .map(_ => ())
-  }
-
-  def validateCustomActionParams(
-      command: DMCustomActionCommand
-  ): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    this.validateCustomActionParams(
-      fromCommand(command)
-    )
-  }
-
-  private def fromCommand(customActionCommand: DMCustomActionCommand): CustomActionRequest = {
-    CustomActionRequest(
-      customActionCommand.actionName,
-      customActionCommand.params
-    )
   }
 
 }

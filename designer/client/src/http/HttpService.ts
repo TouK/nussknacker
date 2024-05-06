@@ -323,8 +323,8 @@ class HttpService {
             });
     }
 
-    customAction(processName: string, actionName: string, params: Record<string, unknown>) {
-        const data = { actionName: actionName, params: params };
+    customAction(processName: string, actionName: string, params: Record<string, unknown>, comment?: string) {
+        const data = { actionName: actionName, comment: comment, params: params };
         return api
             .post(`/processManagement/customAction/${encodeURIComponent(processName)}`, data)
             .then((res) => {

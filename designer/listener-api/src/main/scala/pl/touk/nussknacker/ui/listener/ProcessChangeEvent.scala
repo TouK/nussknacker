@@ -21,8 +21,8 @@ object ProcessChangeEvent {
   final case class OnDeleted(processId: ProcessId)    extends ProcessChangeEvent
 
   // Command and Action related events
-  // TODO: change to OnActionSuccess/OnActionFailed and use all command/action properties (not only deploymentComment)
-  final case class OnDeployActionSuccess(
+  // TODO: use all command/action properties (not only deploymentComment)
+  final case class OnActionSuccess(
       processId: ProcessId,
       version: VersionId,
       deploymentComment: Option[Comment],
@@ -30,7 +30,8 @@ object ProcessChangeEvent {
       actionName: ScenarioActionName
   ) extends ProcessChangeEvent
 
-  final case class OnDeployActionFailed(processId: ProcessId, reason: Throwable) extends ProcessChangeEvent
+  final case class OnActionFailed(processId: ProcessId, reason: Throwable, actionName: ScenarioActionName)
+      extends ProcessChangeEvent
 
   // Periodic deployment events
   final case class OnActionExecutionFinished(actionId: ProcessActionId, processId: ProcessId, version: VersionId)

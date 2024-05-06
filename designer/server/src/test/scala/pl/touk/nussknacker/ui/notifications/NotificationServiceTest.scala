@@ -21,6 +21,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{
+  CommonCommandData,
   DeploymentManagerDispatcher,
   DeploymentService,
   RunDeploymentCommand,
@@ -89,11 +90,9 @@ class NotificationServiceTest
       deploymentService
         .processCommand(
           RunDeploymentCommand(
-            processIdWithName,
-            savepointPath = None,
-            comment = None,
-            NodesDeploymentData.empty,
-            user
+            commonData = CommonCommandData(processIdWithName, None, user),
+            nodesDeploymentData = NodesDeploymentData.empty,
+            savepointPath = None
           )
         )
         .flatten
@@ -144,11 +143,9 @@ class NotificationServiceTest
       deploymentService
         .processCommand(
           RunDeploymentCommand(
-            processIdWithName,
-            savepointPath = None,
-            comment = None,
-            NodesDeploymentData.empty,
-            user
+            commonData = CommonCommandData(processIdWithName, None, user),
+            nodesDeploymentData = NodesDeploymentData.empty,
+            savepointPath = None
           )
         )
         .flatten

@@ -34,11 +34,11 @@ const fieldsSelectors: FilterSelector = [
     },
     {
         name: "paramValue",
-        selector: (node) => [node.expression, node.exprVal],
+        selector: (node) => [node.expression, node.exprVal, node.value],
     },
     {
         name: "outputValue",
-        selector: (node) => [node.outputName, node.output, node.outputVar, node.varName, node.value],
+        selector: (node) => [node.outputName, node.output, node.outputVar, node.varName],
     },
     {
         name: "paramValue",

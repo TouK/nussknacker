@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.ui.migrations
 
-import cats.data.Validated
+import cats.data.EitherT
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, ProcessingType}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioParameters
 import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.api.{AuthorizeProcess, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnSaved
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
+import pl.touk.nussknacker.ui.migrations.MigrateScenarioData.CurrentMigrateScenarioData
+import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.ProcessService.{
   CreateScenarioCommand,
@@ -25,11 +27,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserNam
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError}
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 import pl.touk.nussknacker.ui.{NuDesignerError, UnauthorizedError}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 class MigrationService(
     config: Config,
@@ -38,30 +41,63 @@ class MigrationService(
     processAuthorizer: AuthorizeProcess,
     processChangeListener: ProcessChangeListener,
     scenarioParametersService: ProcessingTypeDataProvider[_, ScenarioParametersService],
-    useLegacyCreateScenarioApi: Boolean
+    useLegacyCreateScenarioApi: Boolean,
+    migrationApiAdapterService: MigrationApiAdapterService
 )(implicit val ec: ExecutionContext) {
 
   private val passUsernameInMigration = true
 
   def migrate(
-      migrateScenarioRequest: MigrateScenarioRequest
-  )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    val sourceEnvironmentId = migrateScenarioRequest.sourceEnvironmentId
+      migrateScenarioData: MigrateScenarioData
+  )(implicit loggedUser: LoggedUser): Future[Either[MigrationError, Unit]] = {
+
+    val localScenarioDescriptionVersion  = migrationApiAdapterService.getCurrentApiVersion
+    val remoteScenarioDescriptionVersion = migrateScenarioData.currentVersion
+    val versionsDifference               = localScenarioDescriptionVersion - remoteScenarioDescriptionVersion
+
+    val liftedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData] =
+      if (versionsDifference > 0) {
+        migrationApiAdapterService.adaptUp(migrateScenarioData, versionsDifference)
+      } else Right(migrateScenarioData)
+
+    liftedMigrateScenarioRequestE match {
+      case Left(apiAdapterServiceError) =>
+        throw illegalStateDueToApiAdapterServiceError(apiAdapterServiceError)
+      case Right(currentMigrateScenarioRequest: CurrentMigrateScenarioData) =>
+        migrateCurrentScenarioDescription(currentMigrateScenarioRequest)
+      case _ =>
+        throw new IllegalStateException(
+          "Migration API adapter service lifted up remote migration request not to its newest local version"
+        )
+    }
+  }
+
+  // FIXME: Rename process to scenario everywhere it's possible
+  private def migrateCurrentScenarioDescription(
+      migrateScenarioData: CurrentMigrateScenarioData
+  )(implicit loggedUser: LoggedUser): Future[Either[MigrationError, Unit]] = {
+    val sourceEnvironmentId = migrateScenarioData.sourceEnvironmentId
     val targetEnvironmentId = config.getString("environment")
     val parameters = ScenarioParameters(
-      migrateScenarioRequest.processingMode,
-      migrateScenarioRequest.processCategory,
-      migrateScenarioRequest.engineSetupName
+      migrateScenarioData.processingMode,
+      migrateScenarioData.processCategory,
+      migrateScenarioData.engineSetupName
     )
-    val scenarioGraph     = migrateScenarioRequest.scenarioGraph
-    val processName       = migrateScenarioRequest.processName
-    val isFragment        = migrateScenarioRequest.isFragment
-    val forwardedUser     = if (passUsernameInMigration) Some(loggedUser) else None
-    val forwardedUsername = forwardedUser.map(user => RemoteUserName(user.username))
-    val updateProcessComment =
-      UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${loggedUser.username}")
+    val scenarioGraph = migrateScenarioData.scenarioGraph
+    val processName   = migrateScenarioData.processName
+    val isFragment    = migrateScenarioData.isFragment
+    val forwardedUsernameO =
+      if (passUsernameInMigration) Some(RemoteUserName(migrateScenarioData.remoteUserName)) else None
+    val updateProcessComment = {
+      forwardedUsernameO match {
+        case Some(forwardedUsername) =>
+          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by ${forwardedUsername.name}")
+        case None =>
+          UpdateProcessComment(s"Scenario migrated from $sourceEnvironmentId by Unknown user")
+      }
+    }
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsername)
+      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsernameO)
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),
@@ -69,45 +105,85 @@ class MigrationService(
       Some(parameters.engineSetupName)
     )
 
-    val future: Future[Unit] = for {
+    val result: EitherT[Future, MigrationError, Unit] = for {
+      processingType <- EitherT.fromEither[Future](processingTypeValidated.toEither).leftMap(MigrationError.from(_))
+      validationResult <-
+        validateProcessingTypeAndUIProcessResolver(scenarioGraph, processName, isFragment, processingType)
+      _ <- checkForValidationErrors(validationResult)
+      _ <- checkOrCreateAndCheckArchivedProcess(
+        processName,
+        targetEnvironmentId,
+        parameters,
+        isFragment,
+        forwardedUsernameO
+      )
+      processId <- getProcessId(processName)
+      processIdWithName = ProcessIdWithName(processId, processName)
+      _ <- checkLoggedUserCanWriteToProcess(processId)
+      _ <- checkLoggedUserCanOverrideProcess(processId, forwardedUsernameO)
+      _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
+    } yield ()
 
-      processingType <- Future.fromTry(processingTypeValidated.toEither.toTry)
+    result.value
+  }
 
-      validation <-
-        processResolver
-          .forProcessingTypeE(processingType) match {
-          case Left(e) => Future.successful[Either[NuDesignerError, ValidationResults.ValidationResult]](Left(e))
-          case Right(uiProcessResolverO) =>
-            uiProcessResolverO match {
-              case Some(uiProcessResolver) =>
-                Future.successful(
-                  FatalValidationError.renderNotAllowedAsError(
-                    uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
-                  )
-                )
-              case None =>
-                Future.successful(
-                  Left(
-                    new IllegalStateException(
-                      s"Error while providing process resolver for processing type $processingType requested by user ${loggedUser.username}"
-                    )
-                  )
-                )
-            }
-
-        }
-
-      _ <- validation match {
-        case Left(e) => Future.failed(e)
-        case Right(validationResult) =>
-          if (validationResult.errors != ValidationErrors.success)
-            Future.failed(MigrationValidationError(validationResult.errors))
-          else Future.successful(())
+  private def checkLoggedUserCanWriteToProcess(processId: ProcessId)(implicit loggedUser: LoggedUser) = {
+    EitherT
+      .liftF(processAuthorizer.check(processId, Permission.Write, loggedUser))
+      .subflatMap {
+        case true  => Right(())
+        case false => Left(new UnauthorizedError(loggedUser))
       }
+      .leftMap(MigrationError.from(_))
+  }
 
-      processIdO <- processService.getProcessId(processName)
+  private def updateProcessAndNotifyListeners(
+      updateScenarioCommand: UpdateScenarioCommand,
+      processIdWithName: ProcessIdWithName
+  )(implicit loggedUser: LoggedUser) = {
+    EitherT
+      .liftF[Future, NuDesignerError, ValidationResults.ValidationResult](
+        processService
+          .updateProcess(processIdWithName, updateScenarioCommand)
+          .withSideEffect(response =>
+            response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
+          )
+          .map(_.validationResult)
+      )
+      .leftMap(MigrationError.from(_))
+  }
 
-      _ <- processIdO match {
+  private def checkLoggedUserCanOverrideProcess(processId: ProcessId, forwardedUsername: Option[RemoteUserName])(
+      implicit loggedUser: LoggedUser
+  ) = {
+    EitherT
+      .liftF[Future, NuDesignerError, Boolean](
+        processAuthorizer
+          .check(processId, Permission.OverrideUsername, loggedUser)
+          .map(_ || forwardedUsername.isEmpty)
+      )
+      .subflatMap {
+        case true  => Right(())
+        case false => Left(new UnauthorizedError(loggedUser))
+      }
+      .leftMap(MigrationError.from(_))
+  }
+
+  private def getProcessId(processName: ProcessName): EitherT[Future, MigrationError, ProcessId] = {
+    EitherT.liftF[Future, MigrationError, ProcessId](
+      processService.getProcessIdUnsafe(processName)
+    )
+  }
+
+  private def checkOrCreateAndCheckArchivedProcess(
+      processName: ProcessName,
+      targetEnvironmentId: String,
+      parameters: ScenarioParameters,
+      isFragment: Boolean,
+      forwardedUsername: Option[RemoteUserName]
+  )(implicit loggedUser: LoggedUser) = {
+    EitherT[Future, NuDesignerError, Unit](
+      processService.getProcessId(processName).flatMap[Either[NuDesignerError, Unit]] {
         case Some(pid) =>
           val processIdWithName = ProcessIdWithName(pid, processName)
           processService
@@ -118,49 +194,51 @@ class MigrationService(
                 fetchState = true
               )
             )
-            .transformWith[Unit] {
+            .transformWith[Either[NuDesignerError, Unit]] {
               case Success(scenarioWithDetails) if scenarioWithDetails.isArchived =>
                 Future
-                  .failed(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId))
-              case Success(_) => Future.successful(())
-              case Failure(e) => Future.failed(e)
+                  .successful(Left(MigrationToArchivedError(scenarioWithDetails.name, targetEnvironmentId)))
+              case Success(_)                  => Future.successful(Right(()))
+              case Failure(e: NuDesignerError) => Future.successful(Left(e))
+              case Failure(e)                  => Future.failed(e)
             }
+
         case None =>
           createProcess(processName, parameters, isFragment, forwardedUsername, useLegacyCreateScenarioApi)
       }
+    ).leftMap(MigrationError.from(_))
+  }
 
-      processId <- processService.getProcessIdUnsafe(processName)
-      processIdWithName = ProcessIdWithName(processId, processName)
+  private def checkForValidationErrors(
+      validationResult: ValidationResults.ValidationResult
+  )(implicit loggedUser: LoggedUser): EitherT[Future, MigrationError, Unit] = {
+    EitherT
+      .cond[Future](
+        validationResult.errors == ValidationErrors.success,
+        (),
+        MigrationValidationError(validationResult.errors)
+      )
+      .leftMap(MigrationError.from(_))
+  }
 
-      canWrite <- processAuthorizer.check(processId, Permission.Write, loggedUser)
-      _        <- if (canWrite) Future.successful(()) else Future.failed(new UnauthorizedError(loggedUser))
-
-      canOverrideUsername <- processAuthorizer
-        .check(processId, Permission.OverrideUsername, loggedUser)
-        .map(_ || forwardedUsername.isEmpty)
-      _ <-
-        if (canOverrideUsername) Future.successful(Right(()))
-        else Future.failed(new UnauthorizedError(loggedUser))
-
-      _ <- processService
-        .updateProcess(processIdWithName, updateScenarioCommand)
-        .withSideEffect(response =>
-          response.processResponse.foreach(resp => notifyListener(OnSaved(resp.id, resp.versionId)))
-        )
-        .map(_.validationResult)
-
-    } yield ()
-
-    val transformedFuture: Future[Either[NuDesignerError, Unit]] =
-      future.transform[Either[NuDesignerError, Unit]] { (t: Try[Unit]) =>
-        t match {
-          case Failure(e: NuDesignerError) => Success(Left(e))
-          case Failure(e: Throwable)       => Failure(e)
-          case Success(())                 => Success(Right(()))
+  private def validateProcessingTypeAndUIProcessResolver(
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean,
+      processingType: ProcessingType
+  )(implicit loggedUser: LoggedUser) = {
+    EitherT
+      .fromEither[Future](
+        processResolver
+          .forProcessingTypeEUnsafe(processingType) match {
+          case Left(e) => Left(e)
+          case Right(uiProcessResolver) =>
+            FatalValidationError.renderNotAllowedAsError(
+              uiProcessResolver.validateBeforeUiResolving(scenarioGraph, processName, isFragment)
+            )
         }
-      }
-
-    transformedFuture
+      )
+      .leftMap(MigrationError.from(_))
   }
 
   private def notifyListener(event: ProcessChangeEvent)(implicit user: LoggedUser): Unit = {
@@ -205,6 +283,46 @@ class MigrationService(
           notifyListener(OnSaved(response.id, response.versionId))
           Right(())
       }
+  }
+
+  private def illegalStateDueToApiAdapterServiceError(error: ApiAdapterServiceError) = {
+    new IllegalStateException(error match {
+      case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+        signedNoOfVersionsLeftToApply match {
+          case n if n >= 0 =>
+            s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
+          case _ =>
+            s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
+        }
+    })
+  }
+
+}
+
+object MigrationService {
+  sealed trait MigrationError
+
+  object MigrationError {
+    final case class InvalidScenario(errors: ValidationErrors)                                    extends MigrationError
+    final case class CannotMigrateArchivedScenario(processName: ProcessName, environment: String) extends MigrationError
+    final case class InsufficientPermission(user: LoggedUser)                                     extends MigrationError
+
+    case object CannotTransformMigrateScenarioRequestIntoMigrationDomain extends MigrationError
+
+    private[MigrationService] def from(
+        nuDesignerError: NuDesignerError
+    )(implicit loggedUser: LoggedUser): MigrationError =
+      nuDesignerError match {
+        case _: UnauthorizedError =>
+          MigrationError.InsufficientPermission(loggedUser)
+        case _ @MigrationToArchivedError(processName, environment) =>
+          MigrationError.CannotMigrateArchivedScenario(processName, environment)
+        case _ @MigrationValidationError(errors) =>
+          MigrationError.InvalidScenario(errors)
+        case nuDesignerError: NuDesignerError =>
+          throw new IllegalStateException(nuDesignerError.getMessage)
+      }
+
   }
 
 }
