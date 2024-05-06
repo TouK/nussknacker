@@ -50,7 +50,7 @@ class NewDeploymentService(
         _ <- EitherT.fromEither(
           Either.cond(command.user.can(scenarioMetadata.processCategory, Permission.Deploy), (), NoPermissionError)
         )
-        _ <- EitherT.right(
+        _ <- EitherT(
           deploymentRepository.saveDeployment(
             DeploymentEntityData(command.id, scenarioMetadata.id, Timestamp.from(clock.instant()), command.user.id)
           )

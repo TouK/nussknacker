@@ -58,6 +58,16 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .out(statusCode(StatusCode.Accepted))
       .errorOut(
         oneOf[RunDeploymentError](
+          oneOfVariant[ConflictingDeploymentIdError](
+            StatusCode.Conflict,
+            plainBody[ConflictingDeploymentIdError]
+              .example(
+                Example.of(
+                  summary = Some("Deployment with id {deploymentId} already exists"),
+                  value = ConflictingDeploymentIdError(exampleDeploymentId)
+                )
+              )
+          ),
           oneOfVariantFromMatchType(
             StatusCode.BadRequest,
             plainBody[BadRequestRunDeploymentError]

@@ -619,6 +619,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Deployment with id {deploymentId} already exists
+                  value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
+                    exists
       security:
       - {}
       - httpAuth: []

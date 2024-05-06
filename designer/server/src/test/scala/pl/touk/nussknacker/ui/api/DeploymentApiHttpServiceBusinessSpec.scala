@@ -32,25 +32,45 @@ class DeploymentApiHttpServiceBusinessSpec
                                             |}""".stripMargin
 
   "The deployment requesting endpoint" - {
-    "authenticated as user with deploy access should" - {
-      "return accepted status code and run deployment that will process input files" in {
-        val requestedDeploymentId = NewDeploymentId.generate
-        given()
-          .applicationState {
-            createSavedScenario(scenario)
-          }
-          .when()
-          .basicAuthAdmin()
-          .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
-          .Then()
-          .statusCode(202)
-          .verifyApplicationState {
-            waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
-          }
-          .verifyExternalState {
-            outputTransactionSummaryContainsExpectedResult()
-          }
+    "authenticated as user with deploy access" - {
+      "when invoked once should should" - {
+        "return accepted status code and run deployment that will process input files" in {
+          val requestedDeploymentId = NewDeploymentId.generate
+          given()
+            .applicationState {
+              createSavedScenario(scenario)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
+            .Then()
+            .statusCode(202)
+            .verifyApplicationState {
+              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+            }
+            .verifyExternalState {
+              outputTransactionSummaryContainsExpectedResult()
+            }
+        }
+      }
+
+      "when invoked twice with the same deployment id should" - {
+        "return conflict status code" in {
+          val requestedDeploymentId = NewDeploymentId.generate
+          given()
+            .applicationState {
+              createSavedScenario(scenario)
+              runDeployment(requestedDeploymentId)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
+            .Then()
+            // TODO: idempotence (return 2xx when previous body is the same as requested)
+            .statusCode(409)
+        }
       }
     }
 
@@ -112,6 +132,16 @@ class DeploymentApiHttpServiceBusinessSpec
           .statusCode(403)
       }
     }
+  }
+
+  private def runDeployment(requestedDeploymentId: NewDeploymentId): Unit = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .jsonBody(correctDeploymentRequest)
+      .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
+      .Then()
+      .statusCode(202)
   }
 
 }

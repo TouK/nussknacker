@@ -18,6 +18,8 @@ sealed trait BadRequestRunDeploymentError extends RunDeploymentError
 
 sealed trait GetDeploymentStatusError extends DesignerError
 
+final case class ConflictingDeploymentIdError(id: NewDeploymentId) extends RunDeploymentError
+
 final case class ScenarioNotFoundError(scenarioName: ProcessName) extends BadRequestRunDeploymentError
 
 final case class DeploymentNotFoundError(id: NewDeploymentId) extends GetDeploymentStatusError
@@ -33,6 +35,9 @@ object DesignerError {
       case CommentValidationErrorNG(message)   => message
       case ScenarioNotFoundError(scenarioName) => s"Scenario $scenarioName not found"
     }
+
+  implicit def conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
+    codec[ConflictingDeploymentIdError](err => s"Deployment with id ${err.id} already exists")
 
   implicit def deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =
     codec[DeploymentNotFoundError](err => s"Deployment ${err.id} not found")

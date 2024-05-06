@@ -3,10 +3,11 @@ package pl.touk.nussknacker.ui.process.deployment
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
-import pl.touk.nussknacker.ui.error.DeploymentNotFoundError
+import pl.touk.nussknacker.ui.error.{ConflictingDeploymentIdError, DeploymentNotFoundError}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentEntityFactory.DeploymentEntityData
 import slick.jdbc.JdbcProfile
 
+import java.sql.SQLIntegrityConstraintViolationException
 import scala.concurrent.ExecutionContext
 
 class DeploymentRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends NuTables {
@@ -16,8 +17,14 @@ class DeploymentRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends 
   import profile.api._
 
   // TODO: handle constraint violated
-  def saveDeployment(deployment: DeploymentEntityData): DB[Unit] = {
-    toEffectAll(deploymentsTable += deployment).map(_ => ())
+  def saveDeployment(deployment: DeploymentEntityData): DB[Either[ConflictingDeploymentIdError, Unit]] = {
+    toEffectAll(deploymentsTable += deployment).asTry.map(
+      _.map(_ => Right(()))
+        .recover { case _: SQLIntegrityConstraintViolationException =>
+          Left(ConflictingDeploymentIdError(deployment.id))
+        }
+        .get
+    )
   }
 
   def getDeploymentById(id: NewDeploymentId): DB[Either[DeploymentNotFoundError, DeploymentWithScenarioMetadata]] = {
