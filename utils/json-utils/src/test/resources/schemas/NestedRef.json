@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "$defs": {
+    "IntegerOrNull": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ForwardCallRecord": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "callDuration": {
+              "$ref": "#/$defs/IntegerOrNull"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "MtSMSRecord": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "chargedParty": {
+              "$ref": "#/$defs/IntegerOrNull"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "properties": {
+    "forwardCallRecord": {
+      "$ref": "#/$defs/ForwardCallRecord"
+    },
+    "mtSMSRecord": {
+      "$ref": "#/$defs/MtSMSRecord"
+    }
+  }
+}
