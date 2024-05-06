@@ -56,7 +56,8 @@ const StyledToolbox = styled("div")(({ theme }) => ({
     ".tree-view_arrow": {
         cursor: "inherit",
         transform: "rotate(-90deg)",
-        marginRight: theme.spacing(2),
+        marginRight: 0,
+        position: "absolute",
         "&:after": {
             content: "'‹'",
         },

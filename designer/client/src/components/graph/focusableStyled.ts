@@ -117,28 +117,16 @@ const nodeStyles = (theme: Theme) => {
             )}
         }
         .${nodeFound} {
-            ${nodeHighlight(
-                theme.palette.success.dark,
-                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.2),
-            )}
+            ${nodeHighlight(theme.palette.success.main, blend(theme.palette.background.paper, theme.palette.success.main, 0.15))}
         }
         .${nodeFocused}.${nodeFound} {
-            ${nodeHighlight(
-                theme.palette.secondary.light,
-                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.dark, 0.2),
-            )}
+            ${nodeHighlight(theme.palette.secondary.light, blend(theme.palette.background.paper, theme.palette.success.main, 0.15))}
         }
         .${nodeFoundHover}.${nodeFound} {
-            ${nodeHighlight(
-                theme.palette.success.main,
-                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.3),
-            )}
+            ${nodeHighlight(theme.palette.success.main, blend(theme.palette.background.paper, theme.palette.success.main, 0.4))}
         }
         .${nodeFocused}.${nodeFoundHover}.${nodeFound} {
-            ${nodeHighlight(
-                theme.palette.secondary.light,
-                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.success.main, 0.3),
-            )}
+            ${nodeHighlight(theme.palette.secondary.light, blend(theme.palette.background.paper, theme.palette.success.main, 0.4))}
         }
     `;
 };
