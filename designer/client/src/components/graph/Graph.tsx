@@ -285,8 +285,8 @@ export class Graph extends React.Component<Props> {
         const cellsToFit = this.graph.getCells().filter((c) => c.id === nodeId);
         const area = cellsToFit?.length ? this.graph.getCellsBBox(cellsToFit) : this.processGraphPaper.getContentArea();
 
-        const withCurrentZoomValue = this.zoom > 0.6;
-        this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : 0.6);
+        const withCurrentZoomValue = this.zoom > 0.63;
+        this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : 0.63);
     };
 
     forceLayout = debounce(() => {
