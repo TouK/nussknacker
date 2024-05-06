@@ -111,7 +111,7 @@ export const selectStyled = (theme: Theme) => {
         ${base};
         color: ${theme.palette.text.secondary};
         :hover {
-            color: ${theme.palette.text.secondary};
+            color: ${theme.palette.text.secondary}; // It overwrites default react-select hover color
         }
     `;
 
