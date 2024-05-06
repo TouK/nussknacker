@@ -331,11 +331,11 @@ class AkkaHttpBasedRouteProvider(
         }
       )
       val deploymentHttpService = {
-        val scenarioRepository   = new ScenarioRepository(dbRef)
-        val deploymentRepository = new DeploymentRepository(dbRef)
+        val scenarioMetadataRepository = new ScenarioMetadataRepository(dbRef)
+        val deploymentRepository       = new DeploymentRepository(dbRef)
         val deploymentServiceNG =
           new NewDeploymentService(
-            scenarioRepository,
+            scenarioMetadataRepository,
             deploymentRepository,
             deploymentService,
             dbioRunner,

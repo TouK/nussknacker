@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.error.{
   RunDeploymentError
 }
 import pl.touk.nussknacker.ui.process.deployment.DeploymentEntityFactory.DeploymentEntityData
-import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, ScenarioRepository}
+import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, ScenarioMetadataRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.sql.Timestamp
@@ -24,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 // TODO: we should replace DeploymentService by this class after we split Deployments and Activities
 class NewDeploymentService(
-    scenariosRepository: ScenarioRepository,
+    scenarioMetadataRepository: ScenarioMetadataRepository,
     deploymentRepository: DeploymentRepository,
     // TODO: we shouldn't call legacy service, instead we should new service from the legacy one
     legacyDeploymentService: DeploymentService,
@@ -46,7 +46,7 @@ class NewDeploymentService(
   ): Future[Either[RunDeploymentError, Future[Option[ExternalDeploymentId]]]] = {
     dbioRunner.runInTransactionE(
       (for {
-        scenarioMetadata <- scenariosRepository.getScenarioMetadata(command.scenarioName)
+        scenarioMetadata <- EitherT(scenarioMetadataRepository.getScenarioMetadata(command.scenarioName))
         _ <- EitherT.fromEither(
           Either.cond(command.user.can(scenarioMetadata.processCategory, Permission.Deploy), (), NoPermissionError)
         )
