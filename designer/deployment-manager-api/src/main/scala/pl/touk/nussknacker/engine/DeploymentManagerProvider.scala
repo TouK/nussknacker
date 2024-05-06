@@ -51,6 +51,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
  * defined (like slug in request-response).
  * This currently also requires the DeploymentManagerProvider to provide its metaDataType.
  * TODO: set the defaults in one place without overriding
+ * TODO: FIX ci
  */
 final case class MetaDataInitializer(
     metadataType: MetadataType,
