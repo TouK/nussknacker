@@ -59,7 +59,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
 
     const ContentStyled = styled("div")(({ theme }) => ({
         color: theme.palette.text.primary,
-        fontSize: theme.typography.caption.fontSize,
+        fontSize: theme.typography.body1.fontSize,
         flex: 1,
         whiteSpace: "nowrap",
         display: "flex",
