@@ -5,9 +5,11 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
+import pl.touk.nussknacker.ui.process.deployment.NewDeploymentId
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -23,6 +25,7 @@ class DeploymentApiHttpServiceBusinessSpec
     with Matchers {
 
   private val correctDeploymentRequest = s"""{
+                                            |  "scenarioName": "$scenarioName",
                                             |  "nodesDeploymentData": {
                                             |    "$sourceNodeId": "`date` = '2024-01-01'"
                                             |  }
@@ -30,8 +33,8 @@ class DeploymentApiHttpServiceBusinessSpec
 
   "The deployment requesting endpoint" - {
     "authenticated as user with deploy access should" - {
-      "run deployment" in {
-        val requestedDeploymentId = "some-requested-deployment-id"
+      "return accepted status code and run deployment that will process input files" in {
+        val requestedDeploymentId = NewDeploymentId.generate
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -39,12 +42,14 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthAdmin()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId")
+          .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
           .Then()
-          // TODO (next PRs): we should return 201 and we should check status of deployment before we verify output
-          .statusCode(200)
+          .statusCode(202)
+          .verifyApplicationState {
+            waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+          }
           .verifyExternalState {
-            outputTransactionSummaryContainsResult()
+            outputTransactionSummaryContainsExpectedResult()
           }
       }
     }
@@ -57,7 +62,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -72,7 +77,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthUnknownUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -87,7 +92,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthNoPermUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
           .Then()
           .statusCode(403)
       }
@@ -102,7 +107,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthWriter()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
           .Then()
           .statusCode(403)
       }

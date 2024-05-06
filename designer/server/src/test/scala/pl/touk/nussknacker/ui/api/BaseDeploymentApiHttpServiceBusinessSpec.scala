@@ -2,27 +2,43 @@ package pl.touk.nussknacker.ui.api
 
 import com.nimbusds.jose.util.StandardCharset
 import com.typesafe.scalalogging.LazyLogging
+import io.restassured.RestAssured.`given`
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
 import org.scalatest.Suite
 import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.PatienceConfiguration.Interval
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Seconds, Span}
 import org.testcontainers.containers.BindMode
+import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.test.config.WithFlinkContainersDeploymentManager
+import pl.touk.nussknacker.test.base.it.NuItTest
+import pl.touk.nussknacker.test.config.{
+  WithBusinessCaseRestAssuredUsersExtensions,
+  WithFlinkContainersDeploymentManager
+}
+import pl.touk.nussknacker.ui.process.deployment.NewDeploymentId
 
-import scala.jdk.CollectionConverters._
 import java.nio.file.Files
+import scala.jdk.CollectionConverters._
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
-  self: Suite with LazyLogging with Matchers with Eventually =>
+  self: NuItTest
+    with Suite
+    with LazyLogging
+    with Matchers
+    with Eventually
+    with WithBusinessCaseRestAssuredUsersExtensions =>
 
   protected val scenarioName = "batch-test"
 
   protected val sourceNodeId = "fooSourceNodeId"
 
-  protected val scenario = ScenarioBuilder
+  protected val scenario: CanonicalProcess = ScenarioBuilder
     .streaming(scenarioName)
     .source(sourceNodeId, "table", "Table" -> Expression.spel("'transactions'"))
     .customNode(
@@ -94,30 +110,35 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     super.afterAll()
   }
 
-  protected def outputTransactionSummaryContainsResult(): Unit = {
-    // finished deploy doesn't mean that processing is finished
-    // TODO (next PRs): we need to wait for the job completed status instead
-    val transactionSummaryDirectories = eventually {
-      val directories = Option(outputDirectory.toFile.listFiles().filter(!_.isHidden)).toList.flatten
-      directories should have size 1
-      directories
+  protected def waitForDeploymentStatusMatches(
+      requestedDeploymentId: NewDeploymentId,
+      expectedStatus: StateStatus
+  ): Unit = {
+    // A little bit longer interval than default to avoid too many log entries of requests
+    eventually(Interval(Span(2, Seconds))) {
+      given()
+        .when()
+        .basicAuthAdmin()
+        .get(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId/status")
+        .Then()
+        .statusCode(200)
+        .equalsPlainBody(expectedStatus.name)
     }
+  }
+
+  protected def outputTransactionSummaryContainsExpectedResult(): Unit = {
+    val transactionSummaryDirectories = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
     transactionSummaryDirectories should have size 1
     val matchingPartitionDirectory = transactionSummaryDirectories.head
     matchingPartitionDirectory.getName shouldEqual "date=2024-01-01"
 
-    eventually {
-      val partitionFiles = Option(matchingPartitionDirectory.listFiles().filter(!_.isHidden)).toList.flatten
-      partitionFiles should have size 1
-      val firstFile = partitionFiles.head
+    val partitionFiles = Option(matchingPartitionDirectory.listFiles(!_.isHidden)).toList.flatten
+    partitionFiles should have size 1
+    val firstFile = partitionFiles.head
 
-      val content = FileUtils.readLines(firstFile, StandardCharset.UTF_8).asScala.toSet
+    val content = FileUtils.readLines(firstFile, StandardCharset.UTF_8).asScala.toSet
 
-      content shouldBe Set(
-        "client1,4",
-        "client2,2"
-      )
-    }
+    content shouldBe Set("client1,4", "client2,2")
   }
 
 }

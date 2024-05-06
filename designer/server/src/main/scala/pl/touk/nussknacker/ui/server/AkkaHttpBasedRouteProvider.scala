@@ -58,8 +58,8 @@ import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, Sc
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsService}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -67,6 +67,7 @@ import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UI
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
+import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -329,8 +330,19 @@ class AkkaHttpBasedRouteProvider(
           )
         }
       )
-      val deploymentHttpService =
-        new DeploymentApiHttpService(authenticationResources, processService, deploymentService)
+      val deploymentHttpService = {
+        val scenarioRepository   = new ScenarioRepository(dbRef)
+        val deploymentRepository = new DeploymentRepository(dbRef)
+        val deploymentServiceNG =
+          new NewDeploymentService(
+            scenarioRepository,
+            deploymentRepository,
+            deploymentService,
+            dbioRunner,
+            Clock.systemDefaultZone()
+          )
+        new DeploymentApiHttpService(authenticationResources, deploymentServiceNG)
+      }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
