@@ -101,6 +101,7 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
   def saveNewProcess(
       action: CreateProcessAction
   )(implicit loggedUser: LoggedUser): DB[Option[ProcessCreated]] = {
+    // TODO: we should use loggedUser.id
     val userName = action.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L),
