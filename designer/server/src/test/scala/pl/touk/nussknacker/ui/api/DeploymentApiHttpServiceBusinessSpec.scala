@@ -109,8 +109,8 @@ class DeploymentApiHttpServiceBusinessSpec
 
       "when invoked twice with different deployment id should" - {
         "return status of correct deployment" in {
-          val firstDeploymentId  = NewDeploymentId.generate
-          val secondDeploymentId = NewDeploymentId.generate
+          val firstDeploymentId  = DeploymentId.generate
+          val secondDeploymentId = DeploymentId.generate
           `given`()
             .applicationState {
               createSavedScenario(scenario)
