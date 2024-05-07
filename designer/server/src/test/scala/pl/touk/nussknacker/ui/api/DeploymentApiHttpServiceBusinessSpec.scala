@@ -14,7 +14,7 @@ import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.nio.charset.StandardCharsets
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters._
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
