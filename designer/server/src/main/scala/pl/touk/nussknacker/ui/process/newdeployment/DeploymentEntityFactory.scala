@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.newdeployment
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 

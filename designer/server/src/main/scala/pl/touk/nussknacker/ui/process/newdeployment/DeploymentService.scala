@@ -41,7 +41,7 @@ class DeploymentService(
 
   def processCommand(
       command: DeploymentCommand
-  ): Future[Either[RunDeploymentError, Future[Option[ExternalDeploymentId]]]] = {
+  ): Future[Either[RunDeploymentError, Unit]] = {
     command match {
       case command: RunDeploymentCommand =>
         runDeployment(command)
@@ -50,7 +50,7 @@ class DeploymentService(
 
   private def runDeployment(
       command: RunDeploymentCommand
-  ): Future[Either[RunDeploymentError, Future[Option[ExternalDeploymentId]]]] = {
+  ): Future[Either[RunDeploymentError, Unit]] = {
     dbioRunner.runInTransactionE(
       (for {
         scenarioMetadata <- getScenarioMetadata(command)
@@ -80,7 +80,7 @@ class DeploymentService(
   private def invokeLegacyRunDeploymentLogic(
       command: RunDeploymentCommand,
       scenarioMetadata: ProcessEntityData
-  ): EitherT[DB, RunDeploymentError, Future[Option[ExternalDeploymentId]]] = {
+  ): EitherT[DB, RunDeploymentError, Unit] = {
     EitherT(
       toEffectAll(
         DB.from(
@@ -98,7 +98,7 @@ class DeploymentService(
           )
         ).asTry
           .map(
-            _.map[Either[RunDeploymentError, Future[Option[ExternalDeploymentId]]]](Right(_))
+            _.map[Either[RunDeploymentError, Unit]](_ => Right(()))
               .recover { case CommentValidationError(msg) =>
                 Left(NewCommentValidationError(msg))
               }

@@ -31,7 +31,7 @@ class DeploymentApiHttpService(
                 user = loggedUser
               )
             )
-            .map(_.void.left.map {
+            .map(_.left.map {
               case DeploymentService.ConflictingDeploymentIdError(id)    => ConflictingDeploymentIdError(id)
               case DeploymentService.ScenarioNotFoundError(scenarioName) => ScenarioNotFoundError(scenarioName)
               case DeploymentService.NoPermissionError                   => NoPermissionError
