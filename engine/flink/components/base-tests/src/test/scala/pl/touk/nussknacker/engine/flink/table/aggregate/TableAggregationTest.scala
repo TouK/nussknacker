@@ -26,7 +26,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   import scala.jdk.CollectionConverters._
 
   private lazy val tablesDefinitionFilePath = new File(
-    "engine/flink/components/base-tests/src/test/resources/all-types/tables-definition.sql"
+    "engine/flink/components/base-tests/src/test/resources/tables/tables-definition.sql"
   ).toPath.toAbsolutePath
 
   private lazy val tableComponentProviderConfig: Config = ConfigFactory.parseString(s"""
@@ -46,18 +46,20 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     .withExtraComponents(additionalComponents)
     .build()
 
-  test("should be able to use all primitive types in aggregation component") {
+  test("should be able to aggregate by primitive types") {
     def aggregatingTypeTestingBranch(aggregateByExpr: Expression, idSuffix: String) = GraphBuilder
       .customNode(
         id = s"aggregate$idSuffix",
         outputVar = s"agg$idSuffix",
         customNodeRef = "aggregate",
-        "groupBy"     -> aggregateByExpr,
-        "aggregateBy" -> Expression.spel("#input.string"),
+        "groupBy"     -> Expression.spel("'strKey'"),
+        "aggregateBy" -> aggregateByExpr,
         "aggregator"  -> Expression.spel("'First'"),
       )
       .emptySink(s"end$idSuffix", "dead-end")
 
+    // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
+    // See: https://issues.apache.org/jira/browse/FLINK-15867
     val columnNamesExpressions: List[Expression] = List(
       "#input.string",
       "#input.boolean",
@@ -67,11 +69,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
       "#input.bigint",
       "#input.float",
       "#input.double",
-      "#input.decimal",
-      "#input.date",
-      "#input.time",
-      "#input.timestamp",
-      "#input.timestampLtz"
+      "#input.decimal"
     )
 
     val aggregatingBranches = columnNamesExpressions.zipWithIndex.map { case (expr, i) =>
@@ -86,13 +84,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         aggregatingBranches: _*
       )
 
-    val result = runner.runWithData(
-      scenario,
-      List.empty,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
-    )
-
+    val result = runner.runWithoutData(scenario)
     result.isValid shouldBe true
   }
 

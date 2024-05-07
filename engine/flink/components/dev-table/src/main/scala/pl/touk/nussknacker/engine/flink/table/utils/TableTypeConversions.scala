@@ -25,6 +25,9 @@ object TableTypeConversions {
     case _                                          => None
   }
 
+  // As of Flink 1.19, Flink SQL does not currently support TIMESTAMP WITH TIME ZONE which should get mapped to
+  // java.time.OffsetDateTime even though it appears in Flink docs and source code.
+  // See https://issues.apache.org/jira/browse/FLINK-20869
   private def classToFlinkTableType(klass: Class[_]): Option[DataType] = klass match {
     case klass if klass == classOf[String] => Some(DataTypes.STRING)
 
@@ -39,11 +42,10 @@ object TableTypeConversions {
     case klass if klass == classOf[Double] || klass == classOf[java.lang.Double] => Some(DataTypes.DOUBLE)
     case klass if klass == classOf[java.math.BigDecimal] => Some(DecimalTypeWithDefaultPrecisionAndScale)
 
-    case klass if klass == classOf[java.time.LocalDate]      => Some(DataTypes.DATE)
-    case klass if klass == classOf[java.time.LocalTime]      => Some(DataTypes.TIME)
-    case klass if klass == classOf[java.time.LocalDateTime]  => Some(DataTypes.TIMESTAMP)
-    case klass if klass == classOf[java.time.OffsetDateTime] => Some(DataTypes.TIMESTAMP_WITH_TIME_ZONE)
-    case klass if klass == classOf[java.time.Instant]        => Some(DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
+    case klass if klass == classOf[java.time.LocalDate]     => Some(DataTypes.DATE)
+    case klass if klass == classOf[java.time.LocalTime]     => Some(DataTypes.TIME)
+    case klass if klass == classOf[java.time.LocalDateTime] => Some(DataTypes.TIMESTAMP)
+    case klass if klass == classOf[java.time.Instant]       => Some(DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
 
     case _ => None
   }

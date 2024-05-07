@@ -7,11 +7,7 @@ CREATE TABLE all_types_input (
     `bigint`              BIGINT,
     `float`               FLOAT,
     `double`              DOUBLE,
-    `decimal`             DECIMAL,
-    `date`                DATE,
-    `time`                TIME,
-    `timestamp`           TIMESTAMP,
-    `timestampLtz`        TIMESTAMP_LTZ
+    `decimal`             DECIMAL
 ) WITH (
       'connector' = 'datagen',
       'number-of-rows' = '1'
