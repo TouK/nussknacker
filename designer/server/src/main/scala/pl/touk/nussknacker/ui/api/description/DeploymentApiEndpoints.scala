@@ -24,18 +24,6 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
 
   import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
 
-  private val exampleDeploymentId = DeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298"))
-
-  private val deploymentIdPathCapture = path[DeploymentId]("deploymentId")
-    .copy(info =
-      Info
-        .empty[DeploymentId]
-        .description(
-          "Identifier in the UUID format that will be used for the verification of deployment's status"
-        )
-        .example(exampleDeploymentId)
-    )
-
   lazy val runDeploymentEndpoint: SecuredEndpoint[(DeploymentId, RunDeploymentRequest), RunDeploymentError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Run the deployment of a scenario")
@@ -115,6 +103,18 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
+  private lazy val exampleDeploymentId = DeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298"))
+
+  private lazy val deploymentIdPathCapture = path[DeploymentId]("deploymentId")
+    .copy(info =
+      Info
+        .empty[DeploymentId]
+        .description(
+          "Identifier in the UUID format that will be used for the verification of deployment's status"
+        )
+        .example(exampleDeploymentId)
+    )
+
 }
 
 object DeploymentApiEndpoints {
@@ -155,27 +155,21 @@ object DeploymentApiEndpoints {
 
     case object NoPermissionError extends RunDeploymentError with GetDeploymentStatusError with CustomAuthorizationError
 
-    implicit def badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
-      codec[BadRequestRunDeploymentError] {
+    implicit val badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestRunDeploymentError] {
         case ScenarioNotFoundError(scenarioName) => s"Scenario $scenarioName not found"
         case CommentValidationErrorNG(message)   => message
       }
 
-    implicit def conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
-      codec[ConflictingDeploymentIdError](err => s"Deployment with id ${err.id} already exists")
-
-    implicit def deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =
-      codec[DeploymentNotFoundError](err => s"Deployment ${err.id} not found")
-
-    private def codec[Error](
-        toMessage: Error => String
-    ): Codec[String, Error, CodecFormat.TextPlain] =
-      Codec.string.map(
-        Mapping.from[String, Error](deserializationNotSupportedException)(toMessage)
+    implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[ConflictingDeploymentIdError](err =>
+        s"Deployment with id ${err.id} already exists"
       )
 
-    private def deserializationNotSupportedException =
-      (_: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
+    implicit val deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[DeploymentNotFoundError](err =>
+        s"Deployment ${err.id} not found"
+      )
 
   }
 

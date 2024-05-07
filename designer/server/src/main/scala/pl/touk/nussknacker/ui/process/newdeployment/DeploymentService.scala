@@ -52,8 +52,10 @@ class DeploymentService(
   ): Future[Either[RunDeploymentError, Unit]] =
     (for {
       scenarioMetadata <- getScenarioMetadata(command)
-      _ <- EitherT.fromEither[Future](
-        Either.cond(command.user.can(scenarioMetadata.processCategory, Permission.Deploy), (), NoPermissionError)
+      _ <- EitherT.cond[Future](
+        command.user.can(scenarioMetadata.processCategory, Permission.Deploy),
+        (),
+        NoPermissionError
       )
       _         <- saveDeployment(command, scenarioMetadata)
       runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)

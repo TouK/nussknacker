@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.ui.api
 
-import com.nimbusds.jose.util.StandardCharset
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
-import org.scalatest.Suite
 import org.scalatest.concurrent.Eventually
 import org.scalatest.concurrent.PatienceConfiguration.Interval
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
+import org.scalatest.{LoneElement, Suite}
 import org.testcontainers.containers.BindMode
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -23,8 +22,8 @@ import pl.touk.nussknacker.test.config.{
 }
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
+import java.io.File
 import java.nio.file.Files
-import scala.jdk.CollectionConverters._
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
@@ -32,6 +31,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     with LazyLogging
     with Matchers
     with Eventually
+    with LoneElement
     with WithBusinessCaseRestAssuredUsersExtensions =>
 
   protected val scenarioName = "batch-test"
@@ -126,19 +126,15 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     }
   }
 
-  protected def outputTransactionSummaryContainsExpectedResult(): Unit = {
+  protected def getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName(
+      expectedLonePartitionName: String
+  ): File = {
     val transactionSummaryDirectories = Option(outputDirectory.toFile.listFiles(!_.isHidden)).toList.flatten
-    transactionSummaryDirectories should have size 1
-    val matchingPartitionDirectory = transactionSummaryDirectories.head
-    matchingPartitionDirectory.getName shouldEqual "date=2024-01-01"
+    val matchingPartitionDirectory    = transactionSummaryDirectories.loneElement
+    matchingPartitionDirectory.getName shouldEqual expectedLonePartitionName
 
     val partitionFiles = Option(matchingPartitionDirectory.listFiles(!_.isHidden)).toList.flatten
-    partitionFiles should have size 1
-    val firstFile = partitionFiles.head
-
-    val content = FileUtils.readLines(firstFile, StandardCharset.UTF_8).asScala.toSet
-
-    content shouldBe Set("client1,4", "client2,2")
+    partitionFiles.loneElement
   }
 
 }

@@ -1468,30 +1468,21 @@ object NodesApiEndpoints {
       final case object NoPermission                                    extends NodesError with CustomAuthorizationError
       final case class MalformedTypingResult(msg: String)               extends NodesError
 
-      private def deserializationNotSupportedException =
-        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
-            s"No scenario ${e.scenarioName} found"
-          )
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+          s"No scenario ${e.scenarioName} found"
         )
       }
 
       implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoProcessingType](deserializationNotSupportedException)(e =>
-            s"ProcessingType type: ${e.processingType} not found"
-          )
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
+          s"ProcessingType type: ${e.processingType} not found"
         )
       }
 
       implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, MalformedTypingResult](deserializationNotSupportedException)(e =>
-            s"The request content was malformed:\n${e.msg}"
-          )
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
+          s"The request content was malformed:\n${e.msg}"
         )
       }
 

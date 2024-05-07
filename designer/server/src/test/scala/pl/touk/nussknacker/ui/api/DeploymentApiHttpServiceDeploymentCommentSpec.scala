@@ -4,6 +4,8 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.apache.commons.io.FileUtils
+import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -11,6 +13,9 @@ import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
+
+import java.nio.charset.StandardCharsets
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class DeploymentApiHttpServiceDeploymentCommentSpec
     extends AnyFreeSpecLike
@@ -23,7 +28,8 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
     with RestAssuredVerboseLogging
     with LazyLogging
     with VeryPatientScalaFutures
-    with Matchers {
+    with Matchers
+    with LoneElement {
 
   private val configuredPhrase = "foo"
 
@@ -98,7 +104,12 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
               waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
             }
             .verifyExternalState {
-              outputTransactionSummaryContainsExpectedResult()
+              val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
+              // See test/resources/transactions to figure out why these values are expected
+              FileUtils.readLines(resultFile, StandardCharsets.UTF_8).asScala.toSet shouldBe Set(
+                "client1,4",
+                "client2,2"
+              )
             }
         }
       }
