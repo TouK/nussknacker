@@ -18,6 +18,9 @@ const PlainButton = styled("button")({
     outline: "unset",
     padding: "unset",
     margin: "unset",
+    "&:focus": {
+        outline: "unset",
+    },
 });
 
 export const PlainLink = styled(TabElement)(({ theme }) => ({

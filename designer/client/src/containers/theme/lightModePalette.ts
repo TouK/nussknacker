@@ -78,7 +78,7 @@ export const lightModePalette = {
                 fill: "#A171E6",
             },
             Split: {
-                fill: "#F9C542",
+                fill: "#CC9C00",
             },
             Processor: {
                 fill: "#4583dd",

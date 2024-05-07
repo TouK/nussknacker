@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.api
 import cats.implicits.toTraverseOps
 import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.MigrateScenarioRequest
 import pl.touk.nussknacker.ui.server.HeadersSupport.{ContentDisposition, FileName}
 import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.CodecFormat.TextPlain
@@ -107,13 +107,13 @@ object TapirCodecs {
     implicit val engineSetupNameSchema: Schema[EngineSetupName] = Schema.string
   }
 
-  object ProcessNameCodec {
-    implicit val processNameSchema: Schema[ProcessName] = Schema.string
+  object ScenarioGraphCodec {
+    // FIXME: Type me properly
+    implicit val scenarioGraphSchema: Schema[ScenarioGraph] = Schema.anyObject
   }
 
-  object MigrateScenarioRequestCodec {
-    // TODO: type me properly, see: https://github.com/TouK/nussknacker/pull/5612#discussion_r1514063218
-    implicit val migrateScenarioRequestSchema: Schema[MigrateScenarioRequest] = Schema.anyObject
+  object ProcessNameCodec {
+    implicit val processNameSchema: Schema[ProcessName] = Schema.string
   }
 
   object URLCodec {
