@@ -49,81 +49,78 @@ class DeploymentService(
 
   private def runDeployment(
       command: RunDeploymentCommand
-  ): Future[Either[RunDeploymentError, Unit]] = {
-    dbioRunner.runInTransactionE(
-      (for {
-        scenarioMetadata <- getScenarioMetadata(command)
-        _ <- EitherT.fromEither(
-          Either.cond(command.user.can(scenarioMetadata.processCategory, Permission.Deploy), (), NoPermissionError)
-        )
-        _         <- saveDeployment(command, scenarioMetadata)
-        runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)
-      } yield runResult).value
-    )
-  }
+  ): Future[Either[RunDeploymentError, Unit]] =
+    (for {
+      scenarioMetadata <- getScenarioMetadata(command)
+      _ <- EitherT.fromEither[Future](
+        Either.cond(command.user.can(scenarioMetadata.processCategory, Permission.Deploy), (), NoPermissionError)
+      )
+      _         <- saveDeployment(command, scenarioMetadata)
+      runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)
+    } yield runResult).value
 
   private def getScenarioMetadata(command: RunDeploymentCommand) =
-    EitherT[DB, RunDeploymentError, ProcessEntityData](
-      scenarioMetadataRepository
-        .getScenarioMetadata(command.scenarioName)
-        .map(_.map(Right(_)).getOrElse(Left(ScenarioNotFoundError(command.scenarioName))))
+    EitherT[Future, RunDeploymentError, ProcessEntityData](
+      dbioRunner.run(
+        scenarioMetadataRepository
+          .getScenarioMetadata(command.scenarioName)
+          .map(_.map(Right(_)).getOrElse(Left(ScenarioNotFoundError(command.scenarioName))))
+      )
     )
 
   private def saveDeployment(command: RunDeploymentCommand, scenarioMetadata: ProcessEntityData) =
     EitherT(
-      deploymentRepository.saveDeployment(
-        DeploymentEntityData(command.id, scenarioMetadata.id, Timestamp.from(clock.instant()), command.user.id)
+      dbioRunner.run(
+        deploymentRepository.saveDeployment(
+          DeploymentEntityData(command.id, scenarioMetadata.id, Timestamp.from(clock.instant()), command.user.id)
+        )
       )
     ).leftMap { e => ConflictingDeploymentIdError(e.id) }
 
-  private def invokeLegacyRunDeploymentLogic(
-      command: RunDeploymentCommand,
-      scenarioMetadata: ProcessEntityData
-  ): EitherT[DB, RunDeploymentError, Unit] = {
+  private def invokeLegacyRunDeploymentLogic(command: RunDeploymentCommand, scenarioMetadata: ProcessEntityData) = {
     EitherT(
-      toEffectAll(
-        DB.from(
-          // TODO: Currently it doesn't use our deploymentId. Instead, it uses action id
-          legacyDeploymentService.processCommand(
-            LegacyRunDeploymentCommand(
-              CommonCommandData(
-                ProcessIdWithName(scenarioMetadata.id, command.scenarioName),
-                command.comment,
-                command.user
-              ),
-              savepointPath = None,
-              nodesDeploymentData = command.nodesDeploymentData,
-            )
+      // TODO: Currently it doesn't use our deploymentId. Instead, it uses action id
+      legacyDeploymentService
+        .processCommand(
+          LegacyRunDeploymentCommand(
+            CommonCommandData(
+              ProcessIdWithName(scenarioMetadata.id, command.scenarioName),
+              command.comment,
+              command.user
+            ),
+            savepointPath = None,
+            nodesDeploymentData = command.nodesDeploymentData,
           )
-        ).asTry
-          .map(
-            _.map[Either[RunDeploymentError, Unit]](_ => Right(()))
-              .recover { case CommentValidationError(msg) =>
-                Left(NewCommentValidationError(msg))
-              }
-              .get
-          )
-      )
+        )
+        .transform { result =>
+          result
+            .map[Either[RunDeploymentError, Unit]](_ => Right(()))
+            .recover { case CommentValidationError(msg) =>
+              Left(NewCommentValidationError(msg))
+            }
+        }
     )
   }
 
   def getDeploymentStatus(
       id: DeploymentId
   )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
-    dbioRunner.runInTransactionE(
-      (for {
-        deploymentWithScenarioMetadata <- EitherT[DB, GetDeploymentStatusError, DeploymentWithScenarioMetadata](
-          deploymentRepository.getDeploymentById(id)
-        )
-        DeploymentWithScenarioMetadata(_, scenarioMetadata) = deploymentWithScenarioMetadata
-        _ <- EitherT.cond(loggedUser.can(scenarioMetadata.processCategory, Permission.Read), (), NoPermissionError)
-        // TODO: We should check deployment state instead scenario state but before that we should pass correct deployment id
-        scenarioStatus <- EitherT.right[GetDeploymentStatusError](toEffectAll(DB.from {
-          implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-          legacyDeploymentService.getProcessState(ProcessIdWithName(scenarioMetadata.id, scenarioMetadata.name))
-        }))
-      } yield scenarioStatus.status.name).value
-    )
+    (for {
+      deploymentWithScenarioMetadata <- EitherT(
+        dbioRunner.run(deploymentRepository.getDeploymentById(id))
+      )
+      DeploymentWithScenarioMetadata(_, scenarioMetadata) = deploymentWithScenarioMetadata
+      _ <- EitherT.cond[Future](
+        loggedUser.can(scenarioMetadata.processCategory, Permission.Read),
+        (),
+        NoPermissionError
+      )
+      // TODO: We should check deployment state instead scenario state but before that we should pass correct deployment id
+      scenarioStatus <- EitherT.right[GetDeploymentStatusError] {
+        implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+        legacyDeploymentService.getProcessState(ProcessIdWithName(scenarioMetadata.id, scenarioMetadata.name))
+      }
+    } yield scenarioStatus.status.name).value
 
 }
 
