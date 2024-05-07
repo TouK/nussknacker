@@ -9,9 +9,8 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.RunDeploymentRequest
-import pl.touk.nussknacker.ui.error._
-import pl.touk.nussknacker.ui.process.deployment.NewDeploymentId
+import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.process.repository.ApiCallComment
 import sttp.model.StatusCode
 import sttp.tapir.EndpointIO.{Example, Info}
@@ -23,20 +22,21 @@ import java.util.UUID
 
 class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
 
-  private val exampleDeploymentId = NewDeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298"))
+  import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
 
-  private val deploymentIdPathCapture = path[NewDeploymentId]("deploymentId")
+  private val exampleDeploymentId = DeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298"))
+
+  private val deploymentIdPathCapture = path[DeploymentId]("deploymentId")
     .copy(info =
       Info
-        .empty[NewDeploymentId]
+        .empty[DeploymentId]
         .description(
           "Identifier in the UUID format that will be used for the verification of deployment's status"
         )
         .example(exampleDeploymentId)
     )
 
-  lazy val runDeploymentEndpoint
-      : SecuredEndpoint[(NewDeploymentId, RunDeploymentRequest), RunDeploymentError, Unit, Any] =
+  lazy val runDeploymentEndpoint: SecuredEndpoint[(DeploymentId, RunDeploymentRequest), RunDeploymentError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Run the deployment of a scenario")
       .put
@@ -88,7 +88,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
-  lazy val getDeploymentStatusEndpoint: SecuredEndpoint[NewDeploymentId, GetDeploymentStatusError, StatusName, Any] =
+  lazy val getDeploymentStatusEndpoint: SecuredEndpoint[DeploymentId, GetDeploymentStatusError, StatusName, Any] =
     baseNuApiEndpoint
       .summary("Get status of a deployment")
       .get
@@ -138,6 +138,44 @@ object DeploymentApiEndpoints {
       .map[NodesDeploymentData]((map: Map[NodeId, NodeDeploymentData]) => Some(NodesDeploymentData(map)))(
         _.dataByNodeId
       )
+
+    sealed trait RunDeploymentError
+
+    sealed trait BadRequestRunDeploymentError extends RunDeploymentError
+
+    final case class ConflictingDeploymentIdError(id: DeploymentId) extends RunDeploymentError
+
+    final case class ScenarioNotFoundError(scenarioName: ProcessName) extends BadRequestRunDeploymentError
+
+    final case class CommentValidationErrorNG(message: String) extends BadRequestRunDeploymentError
+
+    sealed trait GetDeploymentStatusError
+
+    final case class DeploymentNotFoundError(id: DeploymentId) extends GetDeploymentStatusError
+
+    case object NoPermissionError extends RunDeploymentError with GetDeploymentStatusError with CustomAuthorizationError
+
+    implicit def badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
+      codec[BadRequestRunDeploymentError] {
+        case ScenarioNotFoundError(scenarioName) => s"Scenario $scenarioName not found"
+        case CommentValidationErrorNG(message)   => message
+      }
+
+    implicit def conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
+      codec[ConflictingDeploymentIdError](err => s"Deployment with id ${err.id} already exists")
+
+    implicit def deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =
+      codec[DeploymentNotFoundError](err => s"Deployment ${err.id} not found")
+
+    private def codec[Error](
+        toMessage: Error => String
+    ): Codec[String, Error, CodecFormat.TextPlain] =
+      Codec.string.map(
+        Mapping.from[String, Error](deserializationNotSupportedException)(toMessage)
+      )
+
+    private def deserializationNotSupportedException =
+      (_: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
   }
 

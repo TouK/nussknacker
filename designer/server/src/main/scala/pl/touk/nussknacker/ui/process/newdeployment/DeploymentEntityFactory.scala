@@ -1,8 +1,9 @@
-package pl.touk.nussknacker.ui.process.deployment
+package pl.touk.nussknacker.ui.process.newdeployment
 
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
-import pl.touk.nussknacker.ui.process.deployment.DeploymentEntityFactory.DeploymentEntityData
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -17,7 +18,7 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
 
   class DeploymentsEntity(tag: Tag) extends Table[DeploymentEntityData](tag, "deployments") {
 
-    def id: Rep[NewDeploymentId] = column[NewDeploymentId]("id", O.PrimaryKey)
+    def id: Rep[DeploymentId] = column[DeploymentId]("id", O.PrimaryKey)
 
     // We currently need a foreign key to scenarios to fetch deployment status - it might change in the future
     def scenarioId: Rep[ProcessId] = column[ProcessId]("scenario_id", NotNull)
@@ -38,15 +39,15 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
 
   }
 
-  protected implicit def deploymentIdMapping: BaseColumnType[NewDeploymentId] =
-    MappedColumnType.base[NewDeploymentId, UUID](_.value, NewDeploymentId.apply)
+  protected implicit def deploymentIdMapping: BaseColumnType[DeploymentId] =
+    MappedColumnType.base[DeploymentId, UUID](_.value, DeploymentId.apply)
 
 }
 
 object DeploymentEntityFactory {
 
   final case class DeploymentEntityData(
-      id: NewDeploymentId,
+      id: DeploymentId,
       scenarioId: ProcessId,
       createdAt: Timestamp,
       createdBy: String

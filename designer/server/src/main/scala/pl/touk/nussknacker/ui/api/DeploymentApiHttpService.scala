@@ -2,15 +2,15 @@ package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toFunctorOps
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
-import pl.touk.nussknacker.ui.error.{GetDeploymentStatusError, RunDeploymentError}
-import pl.touk.nussknacker.ui.process.deployment.{NewDeploymentService, NewRunDeploymentCommand}
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
 import scala.concurrent.ExecutionContext
 
 class DeploymentApiHttpService(
     authenticator: AuthenticationResources,
-    deploymentService: NewDeploymentService
+    deploymentService: DeploymentService
 )(implicit executionContext: ExecutionContext)
     extends BaseHttpService(authenticator) {
 
@@ -23,7 +23,7 @@ class DeploymentApiHttpService(
         { case (deploymentId, request) =>
           deploymentService
             .processCommand(
-              NewRunDeploymentCommand(
+              RunDeploymentCommand(
                 id = deploymentId,
                 scenarioName = request.scenarioName,
                 nodesDeploymentData = request.nodesDeploymentData,
@@ -31,7 +31,12 @@ class DeploymentApiHttpService(
                 user = loggedUser
               )
             )
-            .map(_.void)
+            .map(_.void.left.map {
+              case DeploymentService.ConflictingDeploymentIdError(id)    => ConflictingDeploymentIdError(id)
+              case DeploymentService.ScenarioNotFoundError(scenarioName) => ScenarioNotFoundError(scenarioName)
+              case DeploymentService.NoPermissionError                   => NoPermissionError
+              case DeploymentService.NewCommentValidationError(message)  => CommentValidationErrorNG(message)
+            })
         }
       }
   }
@@ -41,7 +46,12 @@ class DeploymentApiHttpService(
       .serverSecurityLogic(authorizeKnownUser[GetDeploymentStatusError])
       .serverLogicFlatErrors { implicit loggedUser =>
         { deploymentId =>
-          deploymentService.getDeploymentStatus(deploymentId)
+          deploymentService
+            .getDeploymentStatus(deploymentId)
+            .map(_.left.map {
+              case DeploymentService.DeploymentNotFoundError(id) => DeploymentNotFoundError(id)
+              case DeploymentService.NoPermissionError           => NoPermissionError
+            })
         }
       }
   }

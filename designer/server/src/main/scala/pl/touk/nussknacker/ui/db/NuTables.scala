@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db
 
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentEntityFactory
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory
 import slick.jdbc.JdbcProfile
 
 trait NuTables

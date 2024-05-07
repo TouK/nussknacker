@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.deployment.NewDeploymentId
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -35,7 +35,7 @@ class DeploymentApiHttpServiceBusinessSpec
     "authenticated as user with deploy access" - {
       "when invoked once should should" - {
         "return accepted status code and run deployment that will process input files" in {
-          val requestedDeploymentId = NewDeploymentId.generate
+          val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
               createSavedScenario(scenario)
@@ -57,7 +57,7 @@ class DeploymentApiHttpServiceBusinessSpec
 
       "when invoked twice with the same deployment id should" - {
         "return conflict status code" in {
-          val requestedDeploymentId = NewDeploymentId.generate
+          val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
               createSavedScenario(scenario)
@@ -82,7 +82,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -97,7 +97,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthUnknownUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -112,7 +112,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthNoPermUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(403)
       }
@@ -127,14 +127,14 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthWriter()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(403)
       }
     }
   }
 
-  private def runDeployment(requestedDeploymentId: NewDeploymentId): Unit = {
+  private def runDeployment(requestedDeploymentId: DeploymentId): Unit = {
     given()
       .when()
       .basicAuthAdmin()

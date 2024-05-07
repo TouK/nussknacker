@@ -21,7 +21,7 @@ import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithFlinkContainersDeploymentManager
 }
-import pl.touk.nussknacker.ui.process.deployment.NewDeploymentId
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.nio.file.Files
 import scala.jdk.CollectionConverters._
@@ -111,7 +111,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   }
 
   protected def waitForDeploymentStatusMatches(
-      requestedDeploymentId: NewDeploymentId,
+      requestedDeploymentId: DeploymentId,
       expectedStatus: StateStatus
   ): Unit = {
     // A little bit longer interval than default to avoid too many log entries of requests

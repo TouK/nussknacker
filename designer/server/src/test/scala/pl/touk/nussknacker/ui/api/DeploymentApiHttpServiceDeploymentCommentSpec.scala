@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.deployment.NewDeploymentId
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 class DeploymentApiHttpServiceDeploymentCommentSpec
     extends AnyFreeSpecLike
@@ -48,7 +48,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
                          |    "$sourceNodeId": "`date` = '2024-01-01'"
                          |  }
                          |}""".stripMargin)
-            .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
             .Then()
             .statusCode(400)
         }
@@ -69,7 +69,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
                          |  },
                          |  "comment": "deployment comment not matching configured pattern"
                          |}""".stripMargin)
-            .put(s"$nuDesignerHttpAddress/api/deployments/${NewDeploymentId.generate}")
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
             .Then()
             .statusCode(400)
         }
@@ -77,7 +77,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
 
       "When matching deployment comment is passed should" - {
         "return accepted status code and run deployment that will process input files" in {
-          val requestedDeploymentId = NewDeploymentId.generate
+          val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
               createSavedScenario(scenario)
