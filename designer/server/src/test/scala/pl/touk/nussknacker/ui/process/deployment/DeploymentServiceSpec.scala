@@ -11,12 +11,16 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
-import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.{CustomActionResult, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.deployment.{
+  CustomActionResult,
+  DeploymentId => LegacyDeploymentId,
+  ExternalDeploymentId
+}
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, TestProcessChangeListener}
 import pl.touk.nussknacker.test.utils.domain.TestFactory._
@@ -24,8 +28,9 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.DBIOActionValues
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
-import pl.touk.nussknacker.ui.error.CommentValidationErrorNG
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionSuccess}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService => LegacyDeploymentService}
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentId, DeploymentService, RunDeploymentCommand}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider.noCombinedDataFun
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
@@ -33,7 +38,12 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment, UserComment}
+import pl.touk.nussknacker.ui.process.repository.{
+  CommentValidationError,
+  DBIOActionRunner,
+  DeploymentComment,
+  UserComment
+}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioWithDetailsConversions}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
@@ -108,7 +118,7 @@ class DeploymentServiceSpec
       scenarioStateTimeout: Option[FiniteDuration] = None,
       deploymentCommentSettings: Option[DeploymentCommentSettings] = deploymentCommentSettings,
   ) = {
-    val legacyDeploymentService = new DeploymentService(
+    val legacyDeploymentService = new LegacyDeploymentService(
       dmDispatcher,
       fetchingProcessRepository,
       actionRepository,
@@ -119,7 +129,7 @@ class DeploymentServiceSpec
       scenarioStateTimeout,
       deploymentCommentSettings
     )
-    val deploymentService = new NewDeploymentService(
+    val deploymentService = new DeploymentService(
       scenarioRepository,
       deploymentRepository,
       legacyDeploymentService,
@@ -143,11 +153,11 @@ class DeploymentServiceSpec
 
     val result = deploymentServiceWithCommentSettings
       .processCommand(
-        NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+        RunDeploymentCommand(DeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
       )
       .futureValue
 
-    result.leftValue shouldBe a[CommentValidationErrorNG]
+    result.leftValue shouldBe a[CommentValidationError]
 
     eventually {
       val inProgressActions = actionRepository.getInProgressActionNames(processIdWithName.id).dbioActionValues
@@ -162,7 +172,7 @@ class DeploymentServiceSpec
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+      RunDeploymentCommand(DeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
     )
 
     eventually {
@@ -189,8 +199,8 @@ class DeploymentServiceSpec
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      NewRunDeploymentCommand(
-        NewDeploymentId.generate,
+      RunDeploymentCommand(
+        DeploymentId.generate,
         processName,
         NodesDeploymentData.empty,
         user,
@@ -243,7 +253,7 @@ class DeploymentServiceSpec
     deploymentManager.withWaitForDeployFinish(processName) {
       deploymentService
         .processCommand(
-          NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+          RunDeploymentCommand(DeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
         )
         .futureValue
       legacyDeploymentService
@@ -305,7 +315,7 @@ class DeploymentServiceSpec
       .value
       .lastStateAction should not be None
 
-    deploymentManager.withProcessFinished(processName, DeploymentId.fromActionId(deployActionId)) {
+    deploymentManager.withProcessFinished(processName, LegacyDeploymentId.fromActionId(deployActionId)) {
       // we simulate what happens when retrieveStatus is called multiple times to check only one comment is added
       (1 to 5).foreach { _ =>
         checkIsFollowingDeploy(
@@ -363,7 +373,7 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+            RunDeploymentCommand(DeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
           )
           .futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
@@ -385,7 +395,7 @@ class DeploymentServiceSpec
       val result =
         deploymentService
           .processCommand(
-            NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+            RunDeploymentCommand(DeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
           )
           .failed
           .futureValue
@@ -839,7 +849,7 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            NewRunDeploymentCommand(NewDeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
+            RunDeploymentCommand(DeploymentId.generate, processName, NodesDeploymentData.empty, user, None)
           )
           .futureValue
         legacyDeploymentService

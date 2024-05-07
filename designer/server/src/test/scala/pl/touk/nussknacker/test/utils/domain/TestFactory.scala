@@ -26,8 +26,9 @@ import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentRepository, ScenarioResolver}
+import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ScenarioParametersService,
