@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.implicits.toFunctorOps
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
