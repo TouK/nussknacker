@@ -14,6 +14,7 @@ import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 import scala.jdk.CollectionConverters._
 
 class DeploymentApiHttpServiceBusinessSpec
@@ -29,6 +30,29 @@ class DeploymentApiHttpServiceBusinessSpec
     with VeryPatientScalaFutures
     with Matchers
     with LoneElement {
+
+  override protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit = {
+    val firstPartition = rootDirectory.resolve("date=2024-01-01")
+    firstPartition.toFile.mkdir()
+    FileUtils.write(
+      firstPartition.resolve("transaction-1.csv").toFile,
+      """"2024-01-01 10:00:00",client1,1
+        |"2024-01-01 10:01:00",client2,2
+        |"2024-01-01 10:02:00",client1,3
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
+    val secondPartition = rootDirectory.resolve("date=2024-01-02")
+    secondPartition.toFile.mkdir()
+    FileUtils.write(
+      secondPartition.resolve("transaction-1.csv").toFile,
+      """"2024-01-02 10:00:00",client1,1
+        |"2024-01-02 10:01:00",client2,2
+        |"2024-01-02 10:02:00",client1,3
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
+  }
 
   private val correctDeploymentRequest = s"""{
                                             |  "scenarioName": "$scenarioName",
@@ -57,7 +81,6 @@ class DeploymentApiHttpServiceBusinessSpec
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
-              // See test/resources/transactions to figure out why these values are expected
               FileUtils.readLines(resultFile, StandardCharsets.UTF_8).asScala.toSet shouldBe Set(
                 "client1,4",
                 "client2,2"
