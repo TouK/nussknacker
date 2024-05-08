@@ -107,9 +107,7 @@ class DeploymentService(
   )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
     dbioRunner.run(
       (for {
-        deploymentWithScenarioMetadata <- EitherT[DB, GetDeploymentStatusError, DeploymentWithScenarioMetadata](
-          deploymentRepository.getDeploymentById(id)
-        )
+        deploymentWithScenarioMetadata <- EitherT(deploymentRepository.getDeploymentById(id))
         DeploymentWithScenarioMetadata(_, scenarioMetadata) = deploymentWithScenarioMetadata
         _ <- EitherT.cond(loggedUser.can(scenarioMetadata.processCategory, Permission.Read), (), NoPermissionError)
         // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
