@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.deployment.{
   CommonCommandData,
@@ -53,10 +54,10 @@ class DeploymentService(
     dbioRunner.run(
       (for {
         scenarioMetadata <- getScenarioMetadata(command)
-        _ <- EitherT.cond[DB](
-          command.user.can(scenarioMetadata.processCategory, Permission.Deploy),
-          (),
-          NoPermissionError
+        _ <- checkPermission(
+          user = command.user,
+          category = scenarioMetadata.processCategory,
+          permission = Permission.Deploy
         )
         _         <- saveDeployment(command, scenarioMetadata)
         runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)
@@ -111,11 +112,18 @@ class DeploymentService(
         deploymentWithScenarioMetadata <- EitherT
           .fromOptionF(deploymentRepository.getDeploymentById(id), DeploymentNotFoundError(id))
         DeploymentWithScenarioMetadata(_, scenarioMetadata) = deploymentWithScenarioMetadata
-        _ <- EitherT.cond(loggedUser.can(scenarioMetadata.processCategory, Permission.Read), (), NoPermissionError)
+        _ <- checkPermission(
+          user = loggedUser,
+          category = scenarioMetadata.processCategory,
+          permission = Permission.Read
+        )
         // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
         scenarioState <- getScenarioStatus(scenarioMetadata)
       } yield scenarioState.status.name).value
     )
+
+  private def checkPermission(user: LoggedUser, category: String, permission: Permission) =
+    EitherT.cond[DB](user.can(category, permission), (), NoPermissionError)
 
   private def getScenarioStatus(scenarioMetadata: ProcessEntityData)(implicit loggedUser: LoggedUser) = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
