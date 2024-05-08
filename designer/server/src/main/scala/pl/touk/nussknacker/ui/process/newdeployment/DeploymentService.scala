@@ -15,7 +15,6 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand => LegacyRunDeploymentCommand
 }
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.DeploymentWithScenarioMetadata
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService._
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, ScenarioMetadataRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -23,6 +22,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.sql.Timestamp
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.higherKinds
 
 // TODO: This class is a new version of deployment.DeploymentService. The problem with the old one is that
 //       it joins multiple responsibilities like activity log (currently called "actions") and deployments management.
@@ -48,6 +48,20 @@ class DeploymentService(
       case command: RunDeploymentCommand =>
         runDeployment(command)
     }
+
+  def getDeploymentStatus(
+      id: DeploymentId
+  )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
+    (for {
+      deploymentWithScenarioMetadata <- getDeploymentById(id)
+      _ <- checkPermission[Future](
+        user = loggedUser,
+        category = deploymentWithScenarioMetadata.scenarioMetadata.processCategory,
+        permission = Permission.Read
+      )
+      // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
+      scenarioState <- getScenarioStatus(deploymentWithScenarioMetadata.scenarioMetadata)
+    } yield scenarioState.status.name).value
 
   private def runDeployment(
       command: RunDeploymentCommand
@@ -103,20 +117,6 @@ class DeploymentService(
           }
       )
     )
-
-  def getDeploymentStatus(
-      id: DeploymentId
-  )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
-    (for {
-      deploymentWithScenarioMetadata <- getDeploymentById(id)
-      _ <- checkPermission[Future](
-        user = loggedUser,
-        category = deploymentWithScenarioMetadata.scenarioMetadata.processCategory,
-        permission = Permission.Read
-      )
-      // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
-      scenarioState <- getScenarioStatus(deploymentWithScenarioMetadata.scenarioMetadata)
-    } yield scenarioState.status.name).value
 
   private def getDeploymentById(id: DeploymentId) =
     EitherT.fromOptionF(dbioRunner.run(deploymentRepository.getDeploymentById(id)), DeploymentNotFoundError(id))
