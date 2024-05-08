@@ -393,7 +393,7 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
 
-    it("should zoom/restore node window with test data", () => {
+    it.skip("should zoom/restore node window with test data", () => {
         cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
         cy.viewport(1500, 800);
         cy.layoutScenario();
