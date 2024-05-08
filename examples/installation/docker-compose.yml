@@ -23,6 +23,8 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
+      grafana:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
@@ -32,6 +34,37 @@ services:
 #      - ${BASE_PATH}/nussknacker/nussknacker.conf:/opt/nussknacker/conf/nussknacker.conf
 
   ### Nussknacker metrics-related services:
+
+  grafana:
+    image: grafana/grafana:8.4.11 # TODO: can we bump it?
+    restart: unless-stopped
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3000"]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+
+  influxdb:
+    image: influxdb:1.8.10 # todo: bump to 1.11.5?
+    restart: unless-stopped
+    hostname: influxdb
+    environment:
+      INFLUXDB_DB: nussknacker_metrics
+    healthcheck:
+      test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
+      interval: 10s
+      retries: 10
+#      INFLUXDB_DATA_QUERY_LOG_ENABLED: "false"
+#      INFLUXDB_HTTP_LOG_ENABLED: "false"
 
 
 
@@ -63,6 +96,7 @@ services:
       kafka:
         condition: service_healthy
     healthcheck:
+      # todo: verify it really works (grep)
       test: [ "CMD-SHELL", 'echo -e "GET /subjects HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" | nc localhost 8081 | grep "HTTP/1.1 200 OK" | exit 0' ]
       interval: 10s
       retries: 10
