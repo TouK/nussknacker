@@ -39,7 +39,7 @@ class DeploymentApiHttpServiceBusinessSpec
 
   "The deployment requesting endpoint" - {
     "authenticated as user with deploy access" - {
-      "when invoked once should should" - {
+      "when invoked once should" - {
         "return accepted status code and run deployment that will process input files" in {
           val requestedDeploymentId = DeploymentId.generate
           given()

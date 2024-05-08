@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.process.deployment.{
   RunDeploymentCommand => LegacyRunDeploymentCommand
 }
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.DeploymentWithScenarioMetadata
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService._
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, ScenarioMetadataRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -107,7 +108,8 @@ class DeploymentService(
   )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
     dbioRunner.run(
       (for {
-        deploymentWithScenarioMetadata <- EitherT(deploymentRepository.getDeploymentById(id))
+        deploymentWithScenarioMetadata <- EitherT
+          .fromOptionF(deploymentRepository.getDeploymentById(id), DeploymentNotFoundError(id))
         DeploymentWithScenarioMetadata(_, scenarioMetadata) = deploymentWithScenarioMetadata
         _ <- EitherT.cond(loggedUser.can(scenarioMetadata.processCategory, Permission.Read), (), NoPermissionError)
         // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id

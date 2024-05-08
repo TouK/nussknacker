@@ -4,8 +4,10 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.ConflictingDeploymentIdError
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.DeploymentNotFoundError
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.{
+  ConflictingDeploymentIdError,
+  DeploymentWithScenarioMetadata
+}
 import slick.jdbc.JdbcProfile
 
 import java.sql.SQLIntegrityConstraintViolationException
@@ -27,7 +29,7 @@ class DeploymentRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends 
     )
   }
 
-  def getDeploymentById(id: DeploymentId): DB[Either[DeploymentNotFoundError, DeploymentWithScenarioMetadata]] = {
+  def getDeploymentById(id: DeploymentId): DB[Option[DeploymentWithScenarioMetadata]] = {
     toEffectAll(
       deploymentsTable
         .filter(_.id === id)
@@ -36,7 +38,7 @@ class DeploymentRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends 
         .take(1)
         .result
         .headOption
-        .map(_.toRight(DeploymentNotFoundError(id)).map(DeploymentWithScenarioMetadata.apply _ tupled))
+        .map(_.map(DeploymentWithScenarioMetadata.apply _ tupled))
     )
   }
 
@@ -46,6 +48,6 @@ object DeploymentRepository {
 
   final case class ConflictingDeploymentIdError(id: DeploymentId)
 
-}
+  final case class DeploymentWithScenarioMetadata(deployment: DeploymentEntityData, scenarioMetadata: ProcessEntityData)
 
-case class DeploymentWithScenarioMetadata(deployment: DeploymentEntityData, scenarioMetadata: ProcessEntityData)
+}
