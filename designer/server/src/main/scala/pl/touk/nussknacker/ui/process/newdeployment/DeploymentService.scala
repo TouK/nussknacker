@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
+import cats.Applicative
 import cats.data.EitherT
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
@@ -106,31 +107,27 @@ class DeploymentService(
   def getDeploymentStatus(
       id: DeploymentId
   )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
-    dbioRunner.run(
-      (for {
-        deploymentWithScenarioMetadata <- EitherT
-          .fromOptionF(deploymentRepository.getDeploymentById(id), DeploymentNotFoundError(id))
-        _ <- checkPermission(
-          user = loggedUser,
-          category = deploymentWithScenarioMetadata.scenarioMetadata.processCategory,
-          permission = Permission.Read
-        )
-        // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
-        scenarioState <- getScenarioStatus(deploymentWithScenarioMetadata.scenarioMetadata)
-      } yield scenarioState.status.name).value
-    )
+    (for {
+      deploymentWithScenarioMetadata <- getDeploymentById(id)
+      _ <- checkPermission[Future](
+        user = loggedUser,
+        category = deploymentWithScenarioMetadata.scenarioMetadata.processCategory,
+        permission = Permission.Read
+      )
+      // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
+      scenarioState <- getScenarioStatus(deploymentWithScenarioMetadata.scenarioMetadata)
+    } yield scenarioState.status.name).value
 
-  private def checkPermission(user: LoggedUser, category: String, permission: Permission) =
-    EitherT.cond[DB](user.can(category, permission), (), NoPermissionError)
+  private def getDeploymentById(id: DeploymentId) =
+    EitherT.fromOptionF(dbioRunner.run(deploymentRepository.getDeploymentById(id)), DeploymentNotFoundError(id))
+
+  private def checkPermission[F[_]: Applicative](user: LoggedUser, category: String, permission: Permission) =
+    EitherT.cond[F](user.can(category, permission), (), NoPermissionError)
 
   private def getScenarioStatus(scenarioMetadata: ProcessEntityData)(implicit loggedUser: LoggedUser) = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     EitherT.right[GetDeploymentStatusError](
-      toEffectAll(
-        DB.from(
-          legacyDeploymentService.getProcessState(ProcessIdWithName(scenarioMetadata.id, scenarioMetadata.name))
-        )
-      )
+      legacyDeploymentService.getProcessState(ProcessIdWithName(scenarioMetadata.id, scenarioMetadata.name))
     )
   }
 
