@@ -6,10 +6,14 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.api.TapirCodecs
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment => DbAttachment, Comment => DbComment, ProcessActivity => DbProcessActivity}
-import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
+import pl.touk.nussknacker.ui.api.TapirCodecs
+import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{
+  Attachment => DbAttachment,
+  Comment => DbComment,
+  ProcessActivity => DbProcessActivity
+}
+import pl.touk.nussknacker.ui.server.HeadersSupport.FileName
 import sttp.model.StatusCode.{InternalServerError, NotFound, Ok}
 import sttp.model.{HeaderNames, MediaType}
 import sttp.tapir.EndpointIO.Example
@@ -259,22 +263,15 @@ object ScenarioActivityApiEndpoints {
       final case object NoPermission                         extends ScenarioActivityError with CustomAuthorizationError
       final case class NoComment(commentId: Long)            extends ScenarioActivityError
 
-      private def deserializationException =
-        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
-      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoScenario](deserializationException)(e => s"No scenario ${e.scenarioName} found")
+      implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] =
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+          s"No scenario ${e.scenarioName} found"
         )
-      }
 
-      implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoComment](deserializationException)(e =>
-            s"Unable to delete comment with id: ${e.commentId}"
-          )
+      implicit val noCommentCodec: Codec[String, NoComment, CodecFormat.TextPlain] =
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoComment](e =>
+          s"Unable to delete comment with id: ${e.commentId}"
         )
-      }
 
     }
 

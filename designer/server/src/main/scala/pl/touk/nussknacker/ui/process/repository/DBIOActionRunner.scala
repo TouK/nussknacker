@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.ui.db.DbRef
 import slick.jdbc.JdbcProfile
 
@@ -18,8 +18,11 @@ class DBIOActionRunner(dbRef: DbRef) {
 
   def run[T](action: DB[T]): Future[T] =
     dbRef.db.run(action)
+
 }
 
 object DBIOActionRunner {
+
   def apply(db: DbRef): DBIOActionRunner = new DBIOActionRunner(db)
+
 }
