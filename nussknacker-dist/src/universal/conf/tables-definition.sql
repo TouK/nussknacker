@@ -1,21 +1,37 @@
-CREATE TABLE transactions
+CREATE TABLE transactions_input
 (
     datetime  TIMESTAMP,
     client_id STRING,
     amount    DECIMAL(15, 2),
-    `date`    STRING
+    `date`    AS CAST('2023-01-01' AS DATE)
 ) WITH (
-      'connector' = 'datagen',
-      'number-of-rows' = '1000'
+      'connector' = 'filesystem',
+      'path' = 'file:///opt/flink/data/test-data/transactions-input',
+      'format' = 'csv'
+);
+
+CREATE TABLE transactions_faked
+(
+    datetime  TIMESTAMP,
+    client_id STRING,
+    amount    DECIMAL(15, 2)
+) WITH (
+      'connector' = 'faker',
+      'number-of-rows' = '1000',
+      'fields.datetime.expression' = '#{date.past ''10'',''DAYS''}',
+      'fields.client_id.expression' = '#{superhero.name}',
+      'fields.amount.expression' = '#{number.numberBetween ''100'',''10000000''}'
 );
 
 CREATE TABLE transactions_summary
 (
     client_id STRING,
     amount    DECIMAL(15, 2),
-    `date`    STRING
-) WITH (
-      'connector' = 'blackhole'
+    `date`    DATE
+) PARTITIONED BY (`date`) WITH (
+      'connector' = 'filesystem',
+      'path' = 'file:///opt/flink/data/test-data/transactions',
+      'format' = 'csv'
 );
 
 CREATE TABLE all_types_generated
@@ -27,17 +43,15 @@ CREATE TABLE all_types_generated
     `int`          INT,
     `bigint`       BIGINT,
     `float`        FLOAT,
-    `double` DOUBLE,
+    `double`       DOUBLE,
     `decimal`      DECIMAL,
     `date`         DATE,
     `time`         TIME,
     `timestamp`    TIMESTAMP,
     `timestampLtz` TIMESTAMP_LTZ,
-    `row`          ROW<colStr STRING,
-    colInt         INT>,
+    `row`          ROW<colStr STRING,colInt INT>,
     `array`        ARRAY<STRING>,
-    `map`          MAP<STRING,
-    STRING>,
+    `map`          MAP<STRING,STRING>,
     `multiset`     MULTISET<STRING>
 ) WITH (
       'connector' = 'datagen',

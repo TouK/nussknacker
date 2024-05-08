@@ -4,7 +4,8 @@ import org.apache.flink.table.api.DataTypes
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.table.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
 import pl.touk.nussknacker.engine.flink.table.extractor._
 
@@ -48,7 +49,7 @@ class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPrope
         tableName,
         typingResult = Typed.record(Map("someString" -> Typed[String])),
         columns = List(
-          ColumnDefinition("someString", Typed[String], DataTypes.STRING())
+          ColumnDefinition("someString", Typed[String], DataTypes.STRING(), isPhysical = true)
         )
       )
     )
@@ -115,7 +116,7 @@ object SqlTestData {
          |      'connector' = '$connector'
          |);""".stripMargin
 
-    val schemaTypingResult: TypingResult = Typed.record(
+    val schemaTypingResult: typing.TypedObjectTypingResult = Typed.record(
       Map(
         "someString"  -> Typed[String],
         "someVarChar" -> Typed[String],
@@ -127,9 +128,9 @@ object SqlTestData {
       tableName,
       schemaTypingResult,
       columns = List(
-        ColumnDefinition("someString", Typed[String], DataTypes.STRING()),
-        ColumnDefinition("someVarChar", Typed[String], DataTypes.VARCHAR(150)),
-        ColumnDefinition("someInt", Typed[Integer], DataTypes.INT()),
+        ColumnDefinition("someString", Typed[String], DataTypes.STRING(), isPhysical = true),
+        ColumnDefinition("someVarChar", Typed[String], DataTypes.VARCHAR(150), isPhysical = true),
+        ColumnDefinition("someInt", Typed[Integer], DataTypes.INT(), isPhysical = true),
       )
     )
 

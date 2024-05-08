@@ -53,7 +53,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
 
       val valueParameterTypeErrors = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.typingResult)
+        TypingResultOutputValidator.validate(_, selectedTable.typingResultWithRequiredFieldsOnly)
       ).validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
 
       FinalResults(context, valueParameterTypeErrors, Some(selectedTable))

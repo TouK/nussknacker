@@ -51,13 +51,13 @@ class TableSink(
      */
     val streamOfRows: SingleOutputStreamOperator[Row] = dataStream
       .map(valueWithContext => {
-        mapToRowUnsafe(valueWithContext.value.asInstanceOf[java.util.Map[String, Any]], tableDefinition.columns)
+        mapToRowUnsafe(valueWithContext.value.asInstanceOf[java.util.Map[String, Any]], tableDefinition.physicalColumns)
       })
 
     val inputValueTable = NestedRowConversions.buildTableFromRowStream(
       tableEnv,
       streamOfRows,
-      tableDefinition.columns.map(c => ColumnFlinkSchema(c.columnName, c.flinkDataType))
+      tableDefinition.physicalColumns.map(c => ColumnFlinkSchema(c.columnName, c.flinkDataType))
     )
 
     sqlStatements.foreach(tableEnv.executeSql)
