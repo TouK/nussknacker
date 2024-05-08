@@ -84,6 +84,16 @@ object BaseEndpointDefinitions {
 
   }
 
+  def toTextPlainCodecSerializationOnly[T](
+      toMessage: T => String
+  ): Codec[String, T, CodecFormat.TextPlain] =
+    Codec.string.map(
+      Mapping.from[String, T](deserializationNotSupportedException)(toMessage)
+    )
+
+  private def deserializationNotSupportedException =
+    (_: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
+
 }
 
 sealed trait SecurityError

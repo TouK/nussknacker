@@ -78,14 +78,8 @@ object StatisticsApiEndpoints {
 
     object StatisticError {
 
-      private def deserializationException =
-        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
-      implicit val errorCodec: Codec[String, StatisticError, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, StatisticError](deserializationException)(_ => "Statistics generation failed.")
-        )
-      }
+      implicit val errorCodec: Codec[String, StatisticError, CodecFormat.TextPlain] =
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[StatisticError](_ => "Statistics generation failed.")
 
     }
 

@@ -220,10 +220,8 @@ object MigrationApiEndpoints {
     def migrationErrorPlainBody[T <: MigrationError](
         implicit showEv: Show[MigrationError]
     ): EndpointIO.Body[String, T] = {
-      def deserializationException =
-        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
-      implicit val codec = Codec.string.map(Mapping.from[String, T](deserializationException)(showEv.show))
+      implicit val codec: Codec[String, T, CodecFormat.TextPlain] =
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[T](showEv.show)
       plainBody[T]
     }
 

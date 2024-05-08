@@ -75,6 +75,13 @@ abstract class BaseHttpService(
       endpoint: PartialEndpoint[INPUT, OUTPUT, BUSINESS_ERROR, R]
   ) {
 
+    def serverLogicFlatErrors(f: LoggedUser => INPUT => Future[Either[BUSINESS_ERROR, OUTPUT]]) =
+      endpoint.serverLogic { loggedUser: LoggedUser => input: INPUT =>
+        f(loggedUser)(input).map(toTapirResponse)
+      }
+
+    // We have EitherT variant because EitherT hasn't got covariant A and E parameters and when we when is used with serverLogicFlatErrors,
+    // we have to declare these types explicitly
     def serverLogicEitherT(f: LoggedUser => INPUT => EitherT[Future, BUSINESS_ERROR, OUTPUT]) =
       endpoint.serverLogic { loggedUser: LoggedUser => input: INPUT =>
         f(loggedUser)(input).value.map(toTapirResponse)

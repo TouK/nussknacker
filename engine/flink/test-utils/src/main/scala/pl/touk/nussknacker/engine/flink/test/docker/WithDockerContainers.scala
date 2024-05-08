@@ -7,7 +7,9 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 
 trait WithDockerContainers { self: Suite with LazyLogging =>
 
-  protected val logConsumer = new Slf4jLogConsumer(logger.underlying)
+  // dedicated method because withPrefix is mutable
+  protected def logConsumer(prefix: String): Slf4jLogConsumer =
+    new Slf4jLogConsumer(logger.underlying).withPrefix(prefix)
 
   protected val network: Network = Network.newNetwork
 
