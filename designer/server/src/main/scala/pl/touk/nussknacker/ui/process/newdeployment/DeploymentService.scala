@@ -65,10 +65,9 @@ class DeploymentService(
     )
 
   private def getScenarioMetadata(command: RunDeploymentCommand) =
-    EitherT[DB, RunDeploymentError, ProcessEntityData](
-      scenarioMetadataRepository
-        .getScenarioMetadata(command.scenarioName)
-        .map(_.map(Right(_)).getOrElse(Left(ScenarioNotFoundError(command.scenarioName))))
+    EitherT.fromOptionF(
+      scenarioMetadataRepository.getScenarioMetadata(command.scenarioName),
+      ScenarioNotFoundError(command.scenarioName)
     )
 
   private def saveDeployment(command: RunDeploymentCommand, scenarioMetadata: ProcessEntityData) =
@@ -111,14 +110,13 @@ class DeploymentService(
       (for {
         deploymentWithScenarioMetadata <- EitherT
           .fromOptionF(deploymentRepository.getDeploymentById(id), DeploymentNotFoundError(id))
-        DeploymentWithScenarioMetadata(_, scenarioMetadata) = deploymentWithScenarioMetadata
         _ <- checkPermission(
           user = loggedUser,
-          category = scenarioMetadata.processCategory,
+          category = deploymentWithScenarioMetadata.scenarioMetadata.processCategory,
           permission = Permission.Read
         )
         // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
-        scenarioState <- getScenarioStatus(scenarioMetadata)
+        scenarioState <- getScenarioStatus(deploymentWithScenarioMetadata.scenarioMetadata)
       } yield scenarioState.status.name).value
     )
 
