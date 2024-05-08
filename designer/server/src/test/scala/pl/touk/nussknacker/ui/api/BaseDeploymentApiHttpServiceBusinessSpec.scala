@@ -23,7 +23,9 @@ import pl.touk.nussknacker.test.config.{
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.io.File
-import java.nio.file.Files
+import java.nio.charset.StandardCharsets
+import java.nio.file.attribute.PosixFilePermissions
+import java.nio.file.{Files, Path}
 
 trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploymentManager {
   self: NuItTest
@@ -64,6 +66,36 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       )
     )
 
+  private lazy val inputDirectory = {
+    val rootDirectory = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions-")
+    Files.setPosixFilePermissions(rootDirectory, PosixFilePermissions.fromString("rwxr-xr-x"))
+    populateInputTransactionsDirectory(rootDirectory)
+    rootDirectory
+  }
+
+  protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit = {
+    val firstPartition = rootDirectory.resolve("date=2024-01-01")
+    firstPartition.toFile.mkdir()
+    FileUtils.write(
+      firstPartition.resolve("transaction-1.csv").toFile,
+      """"2024-01-01 10:00:00",client1,1
+        |"2024-01-01 10:01:00",client2,2
+        |"2024-01-01 10:02:00",client1,3
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
+    val secondPartition = rootDirectory.resolve("date=2024-01-02")
+    secondPartition.toFile.mkdir()
+    FileUtils.write(
+      secondPartition.resolve("transaction-1.csv").toFile,
+      """"2024-01-02 10:00:00",client1,1
+        |"2024-01-02 10:01:00",client2,2
+        |"2024-01-02 10:02:00",client1,3
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
+  }
+
   private lazy val outputDirectory =
     Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-transactions_summary-")
 
@@ -75,9 +107,9 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   )
 
   private lazy val inputTransactionsBind = FileSystemBind(
-    "designer/server/src/test/resources/transactions",
+    inputDirectory.toString,
     "/transactions",
-    BindMode.READ_ONLY
+    BindMode.READ_WRITE
   )
 
   private lazy val outputTransactionsSummaryBind = FileSystemBind(
@@ -106,6 +138,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
   }
 
   override protected def afterAll(): Unit = {
+    FileUtils.deleteQuietly(inputDirectory.toFile)
     FileUtils.deleteQuietly(outputDirectory.toFile) // it might not work because docker user can has other uid
     super.afterAll()
   }
