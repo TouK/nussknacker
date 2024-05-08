@@ -169,7 +169,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
               validBranches(
                 List(
                   FlatNode(
-                    FragmentUsageOutput(id, name, None /*Some(FragmentOutputVarDefinition("dummy", fields))*/, add)
+                    FragmentUsageOutput(id, name, None, add)
                   )
                 )
               )
