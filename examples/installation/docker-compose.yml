@@ -2,6 +2,8 @@ name: nussknacker
 
 services:
 
+  ### Nussknacker designer service
+
   designer:
     image: touk/nussknacker:latest_scala-2.12
     restart: unless-stopped
@@ -12,7 +14,7 @@ services:
       NUSSKNACKER_LOG_LEVEL: DEBUG
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005
+#      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005
     ports:
       - 8080:8080
       - 5005:5005
@@ -29,7 +31,11 @@ services:
       - nussknacker_designer_data:/opt/nussknacker/storage
 #      - ${BASE_PATH}/nussknacker/nussknacker.conf:/opt/nussknacker/conf/nussknacker.conf
 
-  ### KAFKA-related dependencies:
+  ### Nussknacker metrics-related services:
+
+
+
+  ### KAFKA-related services:
 
   kafka:
     image: bitnami/kafka:3.7.0
@@ -83,7 +89,7 @@ services:
       interval: 10s
       retries: 10
 
-  ### FLINK-related dependencies
+  ### FLINK-related services
   
 volumes:
   nussknacker_designer_data:
