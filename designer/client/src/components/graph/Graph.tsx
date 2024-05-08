@@ -282,11 +282,12 @@ export class Graph extends React.Component<Props> {
     }, 250);
 
     fitToNode = (nodeId: NodeId): void => {
-        const cellsToFit = this.graph.getCells().filter((c) => c.id === nodeId);
-        const area = cellsToFit?.length ? this.graph.getCellsBBox(cellsToFit) : this.processGraphPaper.getContentArea();
+        const cellToFit = this.graph.getCells().find((c) => c.id === nodeId);
+        const area = cellToFit ? this.graph.getCellsBBox([cellToFit]) : this.processGraphPaper.getContentArea();
 
-        const withCurrentZoomValue = this.zoom > 0.63;
-        this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : 0.63);
+        const autoZoomThreshold = 0.63;
+        const withCurrentZoomValue = this.zoom > autoZoomThreshold;
+        this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : autoZoomThreshold);
     };
 
     forceLayout = debounce(() => {
