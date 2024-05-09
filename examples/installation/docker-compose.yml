@@ -14,6 +14,8 @@ services:
       NUSSKNACKER_LOG_LEVEL: DEBUG
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      GRAFANA_URL: http://grafana:3000/grafana
+      INFLUXDB_URL: http://influxdb:8086
 #      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005
     ports:
       - 8080:8080
@@ -24,6 +26,8 @@ services:
       schema-registry:
         condition: service_healthy
       grafana:
+        condition: service_healthy
+      nginx:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
@@ -63,10 +67,19 @@ services:
       test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
       interval: 10s
       retries: 10
-#      INFLUXDB_DATA_QUERY_LOG_ENABLED: "false"
-#      INFLUXDB_HTTP_LOG_ENABLED: "false"
 
-
+  nginx:
+    image: nginx:1.17.6
+    restart: unless-stopped
+    depends_on:
+      grafana:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost" ]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
 
   ### KAFKA-related services:
 
