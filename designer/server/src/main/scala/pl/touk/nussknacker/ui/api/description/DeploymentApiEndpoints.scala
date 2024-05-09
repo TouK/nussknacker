@@ -27,6 +27,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
   lazy val runDeploymentEndpoint: SecuredEndpoint[(DeploymentId, RunDeploymentRequest), RunDeploymentError, Unit, Any] =
     baseNuApiEndpoint
       .summary("Run the deployment of a scenario")
+      .tag("Deployments")
       .put
       .in(
         "deployments" / deploymentIdPathCapture
@@ -79,6 +80,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
   lazy val getDeploymentStatusEndpoint: SecuredEndpoint[DeploymentId, GetDeploymentStatusError, StatusName, Any] =
     baseNuApiEndpoint
       .summary("Get status of a deployment")
+      .tag("Deployments")
       .get
       .in(
         "deployments" / deploymentIdPathCapture / "status"
