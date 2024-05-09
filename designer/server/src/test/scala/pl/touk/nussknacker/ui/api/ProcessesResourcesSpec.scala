@@ -1009,14 +1009,15 @@ class ProcessesResourcesSpec
             None,
             Some(
               List(
-                ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
-                ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
+                ToolbarButton(ProcessSave, None, None, None, None, None, disabled = true),
+                ToolbarButton(ProcessDeploy, None, None, None, None, None, disabled = false),
                 ToolbarButton(
                   CustomLink,
                   Some("custom"),
                   Some(s"Custom link for $processName"),
                   None,
                   Some(s"/test/${id.value}"),
+                  None,
                   disabled = false
                 )
               )
