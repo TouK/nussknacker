@@ -14659,6 +14659,111 @@
     "staticMethods": {}
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.random$"},
+    "methods": {
+      "nextBoolean": [
+        {
+          "description": "Returns an uniformly distributed boolean value",
+          "name": "nextBoolean",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "nextBooleanWithSuccessRate": [
+        {
+          "description": "Returns a boolean value with a success rate determined by the given parameter. Success rate should be between 0.0 and 1.0. For 0.0 always returns false and for 1.0 always returns true",
+          "name": "nextBooleanWithSuccessRate",
+          "signature": {
+            "noVarArgs": [
+              {"name": "successRate", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "nextDouble": [
+        {
+          "description": "Returns an uniformly distributed double value between 0.0 (inclusive) and 1.0 (exclusive)",
+          "name": "nextDouble",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed double value between fromInclusive and toExclusive",
+          "name": "nextDouble",
+          "signature": {
+            "noVarArgs": [
+              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Double"}},
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed double value between 0.0 and toExclusive",
+          "name": "nextDouble",
+          "signature": {
+            "noVarArgs": [
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Double"}}
+            ],
+            "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "nextInt": [
+        {
+          "description": "Returns an uniformly distributed integer value between fromInclusive and toExclusive",
+          "name": "nextInt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Integer"}},
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed integer value between 0 and toExclusive",
+          "name": "nextInt",
+          "signature": {
+            "noVarArgs": [
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Integer"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "nextLong": [
+        {
+          "description": "Returns an uniformly distributed long value between fromInclusive and toExclusive",
+          "name": "nextLong",
+          "signature": {
+            "noVarArgs": [
+              {"name": "fromInclusive", "refClazz": {"refClazzName": "java.lang.Long"}},
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Long"}}
+            ],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        },
+        {
+          "description": "Returns an uniformly distributed long value between 0 and toExclusive",
+          "name": "nextLong",
+          "signature": {
+            "noVarArgs": [
+              {"name": "toExclusive", "refClazz": {"refClazzName": "java.lang.Long"}}
+            ],
+            "result": {"refClazzName": "java.lang.Long"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.util$"},
     "methods": {
       "split": [
