@@ -66,10 +66,10 @@ export const lightModePalette = {
                 fill: "#1B78BC",
             },
             VariableBuilder: {
-                fill: "#FEB58A",
+                fill: "#E16AC0",
             },
             Variable: {
-                fill: "#FEB58A",
+                fill: "#E16AC0",
             },
             Enricher: {
                 fill: "#A171E6",
