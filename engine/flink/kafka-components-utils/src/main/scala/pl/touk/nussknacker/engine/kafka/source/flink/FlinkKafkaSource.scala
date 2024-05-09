@@ -127,8 +127,8 @@ class FlinkKafkaSource[T](
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): T = {
-    val flatParams = TestingParametersSupport.unflattenParameters(params)
-    deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
+    val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
+    deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(unflattenedParams)))
   }
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {

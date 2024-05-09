@@ -32,6 +32,7 @@
   [#5757](https://github.com/TouK/nussknacker/pull/5757) [#5777](https://github.com/TouK/nussknacker/pull/5777) [#5825](https://github.com/TouK/nussknacker/pull/5825)
   [#5896](https://github.com/TouK/nussknacker/pull/5896) Experimental Batch processing mode support
 * [#6031](https://github.com/TouK/nussknacker/pull/6031) Fixed duplicated components on the Components tab
+* [#6010](https://github.com/TouK/nussknacker/pull/6010) Fix ad hoc tests with schemas containing nested fields
 
 1.14.0 (21 Mar 2024)
 -------------------------
