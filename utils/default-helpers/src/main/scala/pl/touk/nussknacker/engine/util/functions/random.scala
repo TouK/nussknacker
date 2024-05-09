@@ -43,9 +43,7 @@ trait RandomUtils extends HideToString {
     ThreadLocalRandom.current().nextBoolean()
 
   @Documentation(description =
-    "Returns a boolean value with a success rate determined by the given parameter. " +
-      "Success rate should be between 0.0 and 1.0. " +
-      "For 0.0 always returns false and for 1.0 always returns true"
+    "Returns a boolean value with a success rate determined by the given parameter. Success rate should be between 0.0 and 1.0. For 0.0 always returns false and for 1.0 always returns true"
   )
   def nextBooleanWithSuccessRate(successRate: Double): Boolean =
     nextDouble < successRate
