@@ -84,8 +84,8 @@ class LiteKafkaSourceImpl[K, V](
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val flatParams = TestingParametersSupport.unflattenParameters(params)
-    formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams))
+    val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
+    formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(unflattenedParams))
   }
 
 }
