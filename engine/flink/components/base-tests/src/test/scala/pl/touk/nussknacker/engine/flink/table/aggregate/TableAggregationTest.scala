@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{TestRecord, TestRecordDecimal}
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -154,5 +154,4 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
 object TableAggregationTest {
   case class TestRecord(someKey: String, someAmount: Int)
-  case class TestRecordDecimal(someKey: String, someAmount: java.math.BigDecimal)
 }
