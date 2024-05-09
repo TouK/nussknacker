@@ -5,7 +5,9 @@ import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 
-object util extends HideToString {
+object util extends UtilFunctions
+
+trait UtilFunctions extends HideToString {
 
   @Documentation(description =
     "Generate unique identifier (https://en.wikipedia.org/wiki/Universally_unique_identifier)"
