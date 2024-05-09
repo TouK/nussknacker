@@ -1,4 +1,4 @@
-import { Box, styled, SvgIcon, Typography } from "@mui/material";
+import { Box, styled, Typography } from "@mui/material";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +9,7 @@ import moment from "moment";
 import i18next from "i18next";
 import { capitalize, startCase } from "lodash";
 import { ProcessingMode } from "../../http/HttpService";
-import NuLogoIcon from "../../assets/img/nuLogoIcon.svg";
+import NuLogoIcon from "../../assets/img/nussknacker-logo-icon.svg";
 
 const ItemWrapperStyled = styled("div")({ display: "grid", gridAutoColumns: "minmax(0, 1fr)", gridAutoFlow: "column" });
 
@@ -63,9 +63,10 @@ function MoreScenarioDetailsDialog(props: WindowContentProps<WindowKind, Props>)
                 Content: () => (
                     <Box width={"500px"} mx={"auto"} p={2}>
                         <Box display={"flex"} justifyContent={"center"} mb={2}>
-                            <SvgIcon color={"primary"} fontSize={"large"}>
-                                <NuLogoIcon />
-                            </SvgIcon>
+                            <Box
+                                component={NuLogoIcon}
+                                sx={(theme) => ({ color: theme.palette.primary.main, width: "2rem", height: "auto" })}
+                            />
                         </Box>
 
                         <Typography component={"div"} textAlign={"center"} variant={"caption"} fontWeight={"li"}>
