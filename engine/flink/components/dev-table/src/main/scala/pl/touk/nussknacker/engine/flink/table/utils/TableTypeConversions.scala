@@ -41,10 +41,11 @@ object TableTypeConversions {
     case klass if klass == classOf[Double] || klass == classOf[java.lang.Double] => Some(DataTypes.DOUBLE)
     case klass if klass == classOf[java.math.BigDecimal] => Some(DecimalTypeWithDefaultPrecisionAndScale)
 
-    case klass if klass == classOf[java.time.LocalDate]     => Some(DataTypes.DATE)
-    case klass if klass == classOf[java.time.LocalTime]     => Some(DataTypes.TIME)
-    case klass if klass == classOf[java.time.LocalDateTime] => Some(DataTypes.TIMESTAMP)
-    case klass if klass == classOf[java.time.Instant]       => Some(DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
+    case klass if klass == classOf[java.time.LocalDate]      => Some(DataTypes.DATE)
+    case klass if klass == classOf[java.time.LocalTime]      => Some(DataTypes.TIME)
+    case klass if klass == classOf[java.time.LocalDateTime]  => Some(DataTypes.TIMESTAMP)
+    case klass if klass == classOf[java.time.OffsetDateTime] => Some(DataTypes.TIMESTAMP_WITH_TIME_ZONE)
+    case klass if klass == classOf[java.time.Instant]        => Some(DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE)
 
     case _ => None
   }
