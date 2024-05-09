@@ -87,7 +87,11 @@ export class PanZoomPlugin {
     fitContent(content: g.Rect, updatedViewport?: Viewport, predefinedScale?: number | undefined): void {
         this.viewport = updatedViewport;
 
-        const autoScaleValue = Math.min(1, 0.78 / Math.max(content.width / this.viewport.width, content.height / this.viewport.height));
+        const zoomThreshold = 0.78;
+        const autoScaleValue = Math.min(
+            1,
+            zoomThreshold / Math.max(content.width / this.viewport.width, content.height / this.viewport.height),
+        );
         const scale = predefinedScale || autoScaleValue;
         const center = content.center();
         const translate = this.getTranslatedCenter(center, this.viewport, scale);
