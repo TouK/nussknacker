@@ -50,6 +50,12 @@ object TableTypeConversions {
     case _ => None
   }
 
+  // This is a temporary solution to when not given an explicit schema (like in aggregate component, treat all
+  // BigDecimals as they were DECIMAL with an arbitrary default precision and scale, since Table API requires it.
+  // The defaults:
+  // - precision (total number of digits in a number) - 38 - the maximum
+  // - scale (amount of digits to the right of the decimal place) - 8 - chosen arbitrarily as a reasonable compromise
+  // TODO: get information about precision and scale from TypingResult
   private val DecimalTypeWithDefaultPrecisionAndScale = DataTypes.DECIMAL(38, 8)
 
 }
