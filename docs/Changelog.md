@@ -26,6 +26,7 @@
 * [#5898](https://github.com/TouK/nussknacker/pull/5898) Fixed Nu runtime memory leak
 * [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 * [#5779](https://github.com/TouK/nussknacker/pull/5779) Add API versioning for migration between environments
+* [#6016](https://github.com/TouK/nussknacker/pull/6016) Add RANDOM helper
 
 1.14.0 (21 Mar 2024)
 -------------------------
