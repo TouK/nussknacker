@@ -103,6 +103,7 @@ object ToolbarButton {
     config.title.map(t => fillByScenarioData(t, scenario)),
     config.icon.map(i => fillByScenarioData(i, scenario, urlOption = true)),
     config.url.map(th => fillByScenarioData(th, scenario, urlOption = true)),
+    config.markdownContent.map(chujciwdupe => fillByScenarioData(chujciwdupe, scenario)),
     disabled = verifyCondition(config.disabled, scenario)
   )
 
@@ -115,6 +116,7 @@ final case class ToolbarButton(
     title: Option[String],
     icon: Option[String],
     url: Option[String],
+    markdownContent: Option[String],
     disabled: Boolean
 )
 

@@ -9,6 +9,7 @@ final case class ToolbarButtonConfig(
     title: Option[String],
     icon: Option[String],
     url: Option[String],
+    markdownContent: Option[String],
     hidden: Option[ToolbarCondition],
     disabled: Option[ToolbarCondition]
 ) {
