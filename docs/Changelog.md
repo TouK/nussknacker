@@ -27,6 +27,10 @@
 * [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 * [#5779](https://github.com/TouK/nussknacker/pull/5779) Add API versioning for migration between environments
 * [#6016](https://github.com/TouK/nussknacker/pull/6016) Add RANDOM helper
+* [#5595](https://github.com/TouK/nussknacker/pull/5618) [#5618](https://github.com/TouK/nussknacker/pull/5595) [#5627](https://github.com/TouK/nussknacker/pull/5627) 
+  [#5734](https://github.com/TouK/nussknacker/pull/5734) [#5653](https://github.com/TouK/nussknacker/pull/5653) [#5744](https://github.com/TouK/nussknacker/pull/5744) 
+  [#5757](https://github.com/TouK/nussknacker/pull/5757) [#5777](https://github.com/TouK/nussknacker/pull/5777) [#5825](https://github.com/TouK/nussknacker/pull/5825)
+  [#5896](https://github.com/TouK/nussknacker/pull/5896) Experimental Batch processing mode support
 
 1.14.0 (21 Mar 2024)
 -------------------------
