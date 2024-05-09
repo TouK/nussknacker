@@ -104,7 +104,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
             )
               .mapN { (nodeResolved, nextResolved, additionalResolved, _) =>
                 (
-                  replaceCanonicalList(nodeResolved, fragmentInput.id, fragmentInput.ref.outputVariableNames),
+                  replaceCanonicalList(nodeResolved, fragmentInput.ref.outputVariableNames),
                   nextResolved,
                   additionalResolved
                 )
@@ -144,7 +144,6 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
   // we replace outputs in fragment with part of parent process
   private def replaceCanonicalList(
       replacement: Map[String, CanonicalBranch],
-      parentId: String,
       outputs: Map[String, String]
   ): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals(
@@ -164,7 +163,7 @@ case class FragmentResolver(fragments: ProcessName => Option[CanonicalProcess]) 
                 ) :: nodes
               )
             case _ =>
-              // Fragment that expects output but has no output attached to it
+              // Usage of fragment that produces output but has no output attached to it in the process graph
               // this results in InvalidTailOfBranch later, here we let it through to type the fragment
               validBranches(
                 List(
