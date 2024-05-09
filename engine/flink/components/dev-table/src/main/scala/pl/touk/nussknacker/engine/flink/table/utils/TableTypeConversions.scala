@@ -16,9 +16,8 @@ object TableTypeConversions {
       )
     )
 
-  // not private for test
   @tailrec
-  private[utils] def nuTypeToFlinkTableType(nuType: TypingResult): Option[DataType] = nuType match {
+  private def nuTypeToFlinkTableType(nuType: TypingResult): Option[DataType] = nuType match {
     case typing.TypedObjectWithValue(typedClass, _) => nuTypeToFlinkTableType(typedClass)
     case typing.TypedClass(klass, _)                => classToFlinkTableType(klass)
     case typing.TypedNull                           => Some(DataTypes.NULL)
@@ -50,6 +49,6 @@ object TableTypeConversions {
     case _ => None
   }
 
-  private val DecimalTypeWithDefaultPrecisionAndScale = DataTypes.DECIMAL(10, 0)
+  private val DecimalTypeWithDefaultPrecisionAndScale = DataTypes.DECIMAL(38, 8)
 
 }
