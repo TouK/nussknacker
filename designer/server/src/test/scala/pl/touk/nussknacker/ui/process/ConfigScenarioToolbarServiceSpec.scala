@@ -222,6 +222,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("save"),
                     Some(s"/assets/${process.processId.value}/buttons/save.svg"),
                     None,
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -230,6 +231,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("metrics for process"),
                     None,
                     Some(s"/metrics/${processName(process)}"),
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -238,6 +240,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     None,
                     None,
                     Some(s"/analytics/${process.processId.value}"),
+                    None,
                     disabled = false
                   )
                 )
@@ -249,7 +252,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None,
               Some(
                 List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
+                  ToolbarButton(ProcessCancel, None, None, None, None, None, disabled = false)
                 )
               )
             )
@@ -277,6 +280,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("save"),
                     Some(s"/assets/${process.processId.value}/buttons/save.svg"),
                     None,
+                    None,
                     disabled = true
                   ),
                   ToolbarButton(
@@ -285,6 +289,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("metrics for process"),
                     None,
                     Some(s"/metrics/${processName(process)}"),
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -293,6 +298,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     None,
                     None,
                     Some(s"/analytics/${process.processId.value}"),
+                    None,
                     disabled = false
                   )
                 )
@@ -322,6 +328,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("save"),
                     Some(s"/assets/${process.processId.value}/buttons/save.svg"),
                     None,
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -330,6 +337,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("metrics for process"),
                     None,
                     Some(s"/metrics/${processName(process)}"),
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -338,6 +346,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     None,
                     None,
                     Some(s"/analytics/${process.processId.value}"),
+                    None,
                     disabled = false
                   )
                 )
@@ -349,8 +358,8 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               Some(Small),
               Some(
                 List(
-                  ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
-                  ToolbarButton(ProcessPDF, None, None, None, None, disabled = false)
+                  ToolbarButton(ProcessDeploy, None, None, None, None, None, disabled = false),
+                  ToolbarButton(ProcessPDF, None, None, None, None, None, disabled = false)
                 )
               )
             ),
@@ -360,7 +369,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None,
               Some(
                 List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
+                  ToolbarButton(ProcessCancel, None, None, None, None, None, disabled = false)
                 )
               )
             )
@@ -388,6 +397,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("save"),
                     Some(s"/assets/${process.processId.value}/buttons/save.svg"),
                     None,
+                    None,
                     disabled = true
                   ),
                   ToolbarButton(
@@ -396,6 +406,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("metrics for process"),
                     None,
                     Some(s"/metrics/${processName(process)}"),
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -404,6 +415,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     None,
                     None,
                     Some(s"/analytics/${process.processId.value}"),
+                    None,
                     disabled = true
                   )
                 )
@@ -415,7 +427,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               Some(Small),
               Some(
                 List(
-                  ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false)
+                  ToolbarButton(ProcessDeploy, None, None, None, None, None, disabled = false)
                 )
               )
             )
@@ -442,6 +454,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("save"),
                     Some(s"/assets/${process.processId.value}/buttons/save.svg"),
                     None,
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -450,6 +463,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("metrics for process"),
                     None,
                     Some(s"/metrics/${processName(process)}"),
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -458,6 +472,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     None,
                     None,
                     Some(s"/analytics/${process.processId.value}"),
+                    None,
                     disabled = false
                   )
                 )
@@ -469,7 +484,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None,
               Some(
                 List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
+                  ToolbarButton(ProcessCancel, None, None, None, None, None, disabled = false)
                 )
               )
             )
@@ -496,6 +511,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("save"),
                     Some(s"/assets/${process.processId.value}/buttons/save.svg"),
                     None,
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -504,6 +520,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     Some("metrics for process"),
                     None,
                     Some(s"/metrics/${processName(process)}"),
+                    None,
                     disabled = false
                   ),
                   ToolbarButton(
@@ -512,6 +529,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
                     None,
                     None,
                     Some(s"/analytics/${process.processId.value}"),
+                    None,
                     disabled = false
                   )
                 )
@@ -523,7 +541,7 @@ class ConfigScenarioToolbarServiceSpec extends AnyFlatSpec with Matchers {
               None,
               Some(
                 List(
-                  ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
+                  ToolbarButton(ProcessCancel, None, None, None, None, None, disabled = false)
                 )
               )
             )
