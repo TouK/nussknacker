@@ -1,22 +1,22 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
+import org.apache.flink.table.api.TableException
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
+import pl.touk.nussknacker.engine.flink.table.SpelValues._
+import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.{TestRecord, TestRecordDecimal}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
-
-import java.io.File
 
 class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -25,60 +25,24 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
   import scala.jdk.CollectionConverters._
 
-  private lazy val tablesDefinitionFilePath = new File(
-    "engine/flink/components/base-tests/src/test/resources/tables/tables-definition.sql"
-  ).toPath.toAbsolutePath
-
-  private lazy val tableComponentProviderConfig: Config = ConfigFactory.parseString(s"""
-       |{
-       |  tableDefinitionFilePath: $tablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: true
-       |}
-       |""".stripMargin)
-
-  private lazy val additionalComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
-    tableComponentProviderConfig,
-    ProcessObjectDependencies.withConfig(tableComponentProviderConfig)
-  )
+  private lazy val additionalComponents: List[ComponentDefinition] =
+    singleRecordBatchTable :: FlinkTableComponentProvider.configIndependentComponents ::: Nil
 
   private lazy val runner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExtraComponents(additionalComponents)
     .build()
 
-  test("should be able to aggregate by primitive types") {
-    def aggregatingTypeTestingBranch(aggregateByExpr: Expression, idSuffix: String) = GraphBuilder
-      .customNode(
-        id = s"aggregate$idSuffix",
-        outputVar = s"agg$idSuffix",
-        customNodeRef = "aggregate",
-        "groupBy"     -> Expression.spel("'strKey'"),
-        "aggregateBy" -> aggregateByExpr,
-        "aggregator"  -> Expression.spel("'First'"),
-      )
-      .emptySink(s"end$idSuffix", "dead-end")
-
-    // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
-    // See: https://issues.apache.org/jira/browse/FLINK-15867
-    val columnNamesExpressions: List[Expression] = List(
-      "#input.string",
-      "#input.boolean",
-      "#input.tinyInt",
-      "#input.smallInt",
-      "#input.int",
-      "#input.bigint",
-      "#input.float",
-      "#input.double",
-      "#input.decimal"
-    )
-
-    val aggregatingBranches = columnNamesExpressions.zipWithIndex.map { case (expr, i) =>
-      aggregatingTypeTestingBranch(expr, i.toString)
+  // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
+  // See: https://issues.apache.org/jira/browse/FLINK-15867
+  test("should be able to aggregate by non-time primitive types") {
+    val aggregatingBranches = nonTimePrimitives.zipWithIndex.map { case (expr, i) =>
+      aggregationTypeTestingBranch(groupByExpr = spelStr, aggregateByExpr = expr, idSuffix = i.toString)
     }
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> "'all_types_input'")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
       .split(
         "split",
         aggregatingBranches: _*
@@ -86,6 +50,60 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
     val result = runner.runWithoutData(scenario)
     result.isValid shouldBe true
+  }
+
+  test("should be able to group by primitive types") {
+    val aggregatingBranches = (nonTimePrimitives ++ tableApiSupportedTimePrimitives).zipWithIndex.map {
+      case (expr, i) =>
+        aggregationTypeTestingBranch(groupByExpr = expr, aggregateByExpr = spelStr, idSuffix = i.toString)
+    }
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
+      .split(
+        "split",
+        aggregatingBranches: _*
+      )
+
+    val result = runner.runWithoutData(scenario)
+    result.isValid shouldBe true
+  }
+
+  // TODO: remove when Flink Table API adds support for OffsetDateTime
+  test("throws exception when using not supported OffsetDateTime in aggregate") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
+      .to(aggregationTypeTestingBranch(groupByExpr = spelOffsetDateTime, aggregateByExpr = spelStr, idSuffix = ""))
+
+    assertThrows[TableException] {
+      runner.runWithoutData(scenario)
+    }
+  }
+
+  test("should round decimal to default scale when given scale above default") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", TestScenarioRunner.testDataSource)
+      .customNode(
+        id = "aggregate",
+        outputVar = "agg",
+        customNodeRef = "aggregate",
+        "groupBy"     -> "'strKey'",
+        "aggregateBy" -> "#input",
+        "aggregator"  -> "'First'",
+      )
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg")
+
+    val result = runner.runWithData(
+      scenario,
+      List(java.math.BigDecimal.valueOf(0.123456789)),
+      Boundedness.BOUNDED,
+      Some(RuntimeExecutionMode.BATCH)
+    )
+
+    result.validValue.successes shouldBe java.math.BigDecimal.valueOf(0.12345679) :: Nil
   }
 
   test("table aggregation should emit groupBy key and aggregated values as separate variables") {
@@ -120,8 +138,21 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
     )
   }
 
+  private def aggregationTypeTestingBranch(groupByExpr: Expression, aggregateByExpr: Expression, idSuffix: String) =
+    GraphBuilder
+      .customNode(
+        id = s"aggregate$idSuffix",
+        outputVar = s"agg$idSuffix",
+        customNodeRef = "aggregate",
+        "groupBy"     -> groupByExpr,
+        "aggregateBy" -> aggregateByExpr,
+        "aggregator"  -> "'First'",
+      )
+      .emptySink(s"end$idSuffix", "dead-end")
+
 }
 
 object TableAggregationTest {
   case class TestRecord(someKey: String, someAmount: Int)
+  case class TestRecordDecimal(someKey: String, someAmount: java.math.BigDecimal)
 }

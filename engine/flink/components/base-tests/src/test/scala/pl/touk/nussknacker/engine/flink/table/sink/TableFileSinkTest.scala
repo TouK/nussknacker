@@ -1,25 +1,25 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.connector.source.Boundedness
+import org.apache.commons.io.FileUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.SpelValues._
+import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
-import pl.touk.nussknacker.test.PatientScalaFutures
-import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-import scala.jdk.CollectionConverters._
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import scala.jdk.CollectionConverters._
 
 class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
 
@@ -88,7 +88,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
 
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
-    .withExtraComponents(tableComponents)
+    .withExtraComponents(singleRecordBatchTable :: tableComponents)
     .build()
 
   override protected def afterAll(): Unit = {
@@ -107,7 +107,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     result.isValid shouldBe true
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(outputDirectory1)
-    val inputFileContent = getLinesOfSingleFileInDirectoryEventually(inputDirectory)
+    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(inputDirectory)
 
     outputFileContent shouldBe inputFileContent
   }
@@ -116,34 +116,31 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val primitiveTypesRecordCsvFirstLine =
       """str,true,123,123,123,123,123.0,123.0,1,2020-12-31,10:15:00,"2020-12-31 10:15:00","2020-12-31 10:15:00Z""""
 
-    val primitiveTypesExpression = Expression.spel("""
+    val primitiveTypesExpression = Expression.spel(s"""
         |{
-        |  boolean: true,
-        |  string: "str",
-        |  tinyInt: 123.byteValue,
-        |  smallInt: 123.shortValue,
-        |  int: 123,
-        |  bigint: 123.longValue,
-        |  decimal: T(java.math.BigDecimal).ONE,
-        |  float: 123.floatValue,
-        |  double: 123.doubleValue,
-        |  date: T(java.time.LocalDate).parse("2020-12-31"),
-        |  time: T(java.time.LocalTime).parse("10:15"),
-        |  timestamp: T(java.time.LocalDateTime).parse("2020-12-31T10:15"),
-        |  timestampLtz: T(java.time.Instant).parse("2020-12-31T10:15:00Z")
+        |  boolean: $spelBoolean,
+        |  string: $spelStr,
+        |  tinyInt: $spelByte,
+        |  smallInt: $spelShort,
+        |  int: $spelInt,
+        |  bigint: $spelBigint,
+        |  decimal: $spelDecimal,
+        |  float:  $spelFloat,
+        |  double: $spelDouble,
+        |  date: $spelLocalDate,
+        |  time: $spelLocalTime,
+        |  timestamp: $spelLocalDateTime,
+        |  timestampLtz: $spelInstant
         |}
         |""".stripMargin)
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", TestScenarioRunner.testDataSource)
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
       .emptySink("end", "table", "Table" -> "'output2'", "Value" -> primitiveTypesExpression)
 
-    val result = runner.runWithData(
-      scenario = scenario,
-      data = List("ignored"),
-      boundedness = Boundedness.BOUNDED,
-      flinkExecutionMode = Some(RuntimeExecutionMode.BATCH)
+    val result = runner.runWithoutData(
+      scenario = scenario
     )
     result.isValid shouldBe true
 

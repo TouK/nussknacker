@@ -55,7 +55,7 @@ object TableTypeConversions {
   // The defaults:
   // - precision (total number of digits in a number) - 38 - the maximum
   // - scale (amount of digits to the right of the decimal place) - 8 - chosen arbitrarily as a reasonable compromise
-  // TODO: get information about precision and scale from TypingResult
+  // TODO: get information about precision and scale from TypingResult or make it configurable
   private val DecimalTypeWithDefaultPrecisionAndScale = DataTypes.DECIMAL(38, 8)
 
 }

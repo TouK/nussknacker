@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.flink.table
+package pl.touk.nussknacker.engine.flink.table.extractor
 
 import org.apache.flink.table.api.DataTypes
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.flink.table.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
-import pl.touk.nussknacker.engine.flink.table.extractor._
+import pl.touk.nussknacker.engine.flink.table._
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
 
 class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
