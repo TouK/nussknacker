@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
-import pl.touk.nussknacker.engine.util.functions.numeric.{
-  LargeFloatingNumberOperatorTypingFunction,
+import pl.touk.nussknacker.engine.util.functions.NumericUtils.{
   LargeNumberOperatorTypingFunction,
   MathOperatorTypingFunction,
   MinMaxTypingFunction,
@@ -25,7 +24,9 @@ import pl.touk.nussknacker.engine.util.functions.numeric.{
 
 import scala.util.{Success, Try}
 
-trait numeric extends MathUtils with HideToString {
+object numeric extends NumericUtils
+
+trait NumericUtils extends MathUtils with HideToString {
   @GenericType(typingFunction = classOf[MinMaxTypingFunction])
   override def min(n1: Number, n2: Number): Number = super.min(n1, n2)
 
@@ -113,7 +114,7 @@ trait numeric extends MathUtils with HideToString {
 
 }
 
-object numeric extends numeric {
+object NumericUtils {
 
   class ToNumberTypingFunction extends TypingFunction {
 
