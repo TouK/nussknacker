@@ -14,21 +14,22 @@ services:
       NUSSKNACKER_LOG_LEVEL: DEBUG
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      GRAFANA_URL: http://grafana:3000/grafana
+#      GRAFANA_URL: http://grafana:3000/grafana
       INFLUXDB_URL: http://influxdb:8086
 #      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005
-    ports:
-      - 8080:8080
-      - 5005:5005
+      FLINK_REST_URL: http://flink-jobmanager:8081
+      FLINK_QUERYABLE_STATE_PROXY_URL: flink-taskmanager:9069
     depends_on:
+      grafana:
+        condition: service_healthy
       kafka:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
-      grafana:
+      flink-jobmanager:
         condition: service_healthy
-      nginx:
-        condition: service_healthy
+      flink-taskmanager:
+        condition: service_started
     healthcheck:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
@@ -71,15 +72,20 @@ services:
   nginx:
     image: nginx:1.17.6
     restart: unless-stopped
+    ports:
+      - 8080:80
     depends_on:
       grafana:
         condition: service_healthy
+      designer:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost" ]
+      test: ["CMD", "service", "nginx", "status"]
       interval: 10s
       retries: 10
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/additional:/etc/nginx/additional
 
   ### KAFKA-related services:
 
@@ -119,6 +125,9 @@ services:
     restart: unless-stopped
     environment:
       AKHQ_CONFIGURATION: |
+        micronaut:
+          server:
+            context-path: /akhq
         akhq:
           connections:
             nussknacker-kafka:
@@ -126,8 +135,6 @@ services:
                 bootstrap.servers: "kafka:9092"
               schema-registry:
                 url: "http://schema-registry:8081"
-    ports:
-      - "8081:8080"
     depends_on:
       kafka:
         condition: service_healthy
@@ -137,7 +144,28 @@ services:
       retries: 10
 
   ### FLINK-related services
-  
+
+  flink-jobmanager:
+    image: apache/flink:1.18.1-scala_2.12-java11
+    restart: unless-stopped
+    command: jobmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
+      interval: 10s
+      retries: 10
+
+  flink-taskmanager:
+    image: apache/flink:1.18.1-scala_2.12-java11
+    restart: unless-stopped
+    command: taskmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+
 volumes:
   nussknacker_designer_data:
     name: nussknacker_designer_data
