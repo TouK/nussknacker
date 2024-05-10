@@ -34,7 +34,7 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
     );
 
     return (
-        <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
+        <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT" trackingEvent={"SEARCH_COMPONENT_USAGES_BY_NAME"}>
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
                     <StatusOptionsStack options={filterableValues["STATUS"]} withArchived={false} />

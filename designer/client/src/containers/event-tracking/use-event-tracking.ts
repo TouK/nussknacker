@@ -1,4 +1,6 @@
+import { debounce } from "lodash";
 import httpService from "../../http/HttpService";
+import { useCallback } from "react";
 
 export type EventTrackingType =
     | "SEARCH_SCENARIOS_BY_NAME"
@@ -55,9 +57,20 @@ export type EventTrackingType =
     | "FIRED_KEY_STROKE"
     | "CLICK_NODE_DOCUMENTATION";
 
+type TrackEvent = { type: EventTrackingType };
 export const useEventTracking = () => {
-    const trackEvent = async ({ type }: { type: EventTrackingType }) => {
+    const trackEvent = async ({ type }: TrackEvent) => {
         await httpService.sendStatistics([{ name: type }]);
     };
-    return { trackEvent };
+
+    const trackEventWithDebounce = useCallback(
+        debounce(
+            (event: TrackEvent) => trackEvent(event),
+
+            1500,
+        ),
+        [],
+    );
+
+    return { trackEvent, trackEventWithDebounce };
 };

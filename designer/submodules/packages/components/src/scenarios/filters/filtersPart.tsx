@@ -72,7 +72,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
 
     return (
         <>
-            <QuickFilter<ScenariosFiltersModel> isLoading={isLoading} filter="NAME">
+            <QuickFilter<ScenariosFiltersModel> isLoading={isLoading} filter="NAME" trackingEvent={"SEARCH_SCENARIOS_BY_NAME"}>
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                     <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
                         <StatusOptionsStack options={filterableValues.status} withArchived={true} />

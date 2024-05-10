@@ -97,7 +97,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
     const { withTrackFilterSelect } = useTrackFilterSelect();
 
     return (
-        <QuickFilter<ComponentsFiltersModel> isLoading={isLoading} filter="NAME">
+        <QuickFilter<ComponentsFiltersModel> isLoading={isLoading} filter="NAME" trackingEvent={"SEARCH_COMPONENTS_BY_NAME"}>
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter("GROUP", true).length}>
                     <SimpleOptionsStack
