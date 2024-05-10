@@ -113,7 +113,7 @@ object StatisticsApiEndpoints {
       case object FilterComponentUsagesByAuthor        extends StatisticName
       case object FilterComponentUsagesByOther         extends StatisticName
       case object ClickScenarioFromComponentUsages     extends StatisticName
-      case object ClickGlobalMetrics                   extends StatisticName
+      case object ClickGlobalMetricsTab                extends StatisticName
       case object ClickActionDeploy                    extends StatisticName
       case object ClickActionMetrics                   extends StatisticName
       case object ClickViewZoomIn                      extends StatisticName
@@ -146,6 +146,7 @@ object StatisticsApiEndpoints {
       case object ClickNewerVersion                    extends StatisticName
       case object FiredKeyStroke                       extends StatisticName
       case object ClickNodeDocumentation               extends StatisticName
+      case object ClickComponentsTab                   extends StatisticName
 
       override def values = findValues
     }
