@@ -19,7 +19,7 @@ import ErrorBoundary from "../../../common/ErrorBoundary";
 import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
 import { applyIdFromFakeName } from "../IdField";
-import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
+import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
 
@@ -103,11 +103,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         [applyButtonData, cancelButtonData, openFragmentButtonData],
     );
 
-    const components = useMemo(() => {
-        const HeaderTitle = () => <NodeDetailsModalHeader node={node} />;
-        return { HeaderTitle };
-    }, [node]);
-
     useEffect(() => {
         mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
         return () => {
@@ -123,8 +118,10 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return (
         <WindowContent
             {...props}
+            title={getNodeDetailsModalTitle(node)}
             buttons={buttons}
-            components={components}
+            icon={<NodeDetailsModalIcon node={node} />}
+            subheader={<NodeDetailsModalSubheader node={node} />}
             classnames={{
                 content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}

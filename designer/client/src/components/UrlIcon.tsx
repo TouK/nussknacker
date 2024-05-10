@@ -16,7 +16,7 @@ function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallba
     }, [src]);
 
     if (error && FallbackComponent) {
-        return <FallbackComponent />;
+        return <FallbackComponent {...props} />;
     }
 
     return <img onError={() => setError(true)} src={src && absoluteBePath(src)} {...props} />;

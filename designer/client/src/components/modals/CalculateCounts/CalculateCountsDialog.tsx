@@ -11,6 +11,8 @@ import { PickerInput } from "./Picker";
 import { CalculateCountsForm } from "./CalculateCountsForm";
 import moment from "moment";
 import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
+import Icon from "../../../assets/img/toolbarButtons/counts.svg";
+import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 
 export type State = {
     from: PickerInput;
@@ -61,6 +63,7 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
         <WindowContent
             buttons={buttons}
             title={t("calculateCounts.title", "counts")}
+            icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />}
             classnames={{
                 content: cx(
                     "modalContentDark",

@@ -1,17 +1,23 @@
-import { css, cx } from "@emotion/css";
+import { css } from "@emotion/css";
 import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
-import React, { PropsWithChildren, useMemo } from "react";
-import { getWindowColors } from "./getWindowColors";
+import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { LoadingButton } from "./LoadingButton";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 import { useTheme } from "@mui/material";
+import { StyledHeader } from "../components/graph/node-modal/node/StyledHeader";
+import { IconModalHeader } from "../components/graph/node-modal/nodeDetails/NodeDetailsModalHeader";
 
-export function WindowContent({ children, ...props }: PropsWithChildren<DefaultContentProps>): JSX.Element {
+type WindowContentProps = DefaultContentProps &
+    PropsWithChildren<{
+        icon?: ReactElement;
+        subheader?: ReactElement;
+    }>;
+
+export function WindowContent({ children, icon, subheader, ...props }: WindowContentProps): JSX.Element {
     const theme = useTheme();
 
     const classnames = useMemo(
         () => ({
-            header: cx(getWindowColors(props.data.kind, theme)),
             footer: css({
                 justifyContent: "flex-end",
             }),
@@ -20,8 +26,10 @@ export function WindowContent({ children, ...props }: PropsWithChildren<DefaultC
         [props.classnames, props.data.kind, theme],
     );
 
-    const components = useMemo(
+    const components = useMemo<DefaultContentProps["components"]>(
         () => ({
+            Header: StyledHeader,
+            HeaderTitle: (headerProps) => <IconModalHeader {...headerProps} startIcon={icon} subheader={subheader} />,
             FooterButton: LoadingButton,
             ...props.components,
         }),

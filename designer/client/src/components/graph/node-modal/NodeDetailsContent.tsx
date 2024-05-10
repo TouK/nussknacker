@@ -35,7 +35,7 @@ export const NodeDetailsContent = ({
     const [userSettings] = useUserSettings();
 
     return (
-        <NodeTable editable={!!onChange}>
+        <NodeTable>
             <NodeErrors errors={diagramStructureErrors} message="Node has errors" />
             <TestResultsWrapper nodeId={node.id} showTestResults={showTestResults}>
                 <NodeTypeDetailsContent

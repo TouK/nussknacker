@@ -32,8 +32,12 @@ import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
 import { ToolbarButton, ToolbarButtonTypes } from "./types";
 
+export type PropsOfButton<T> = ToolbarButton & {
+    type: T;
+};
+
 type ToolbarButtonsMap = {
-    [T in ToolbarButtonTypes]: ComponentType<ToolbarButton & { type: T }>;
+    [T in ToolbarButtonTypes]: ComponentType<PropsOfButton<T>>;
 };
 
 export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
@@ -64,6 +68,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.testHide]: HideButton,
     [CustomButtonTypes.customAction]: ActionButton,
     [CustomButtonTypes.customLink]: LinkButton,
-    [BuiltinButtonTypes.testWithForm]: TestWithFormButton,
+    [CustomButtonTypes.testWithForm]: TestWithFormButton,
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
 };

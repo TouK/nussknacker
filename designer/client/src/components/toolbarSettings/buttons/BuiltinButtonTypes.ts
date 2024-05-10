@@ -20,7 +20,6 @@ export enum BuiltinButtonTypes {
     testFromFile = "test-from-file",
     testGenerate = "test-generate",
     generateAndTest = "generate-and-test",
-    testWithForm = "test-with-form",
     testCounts = "test-counts",
     testHide = "test-hide",
     viewZoomIn = "view-zoom-in",

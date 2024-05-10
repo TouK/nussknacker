@@ -53,7 +53,7 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     });
 
     const imageColors = css({
-        background: theme.palette.custom.nodes[node?.type]?.fill,
+        background: theme.palette.custom.getNodeStyles(node)?.fill,
         color: theme.palette.common.white,
     });
 

@@ -37,7 +37,7 @@ const standardPalette: PaletteOptions = {
 };
 
 // It's for a testing purpose only, to check if all color relations are added. We don't support light mode yet
-export const lightModePalette = {
+export const lightModePalette: PaletteOptions = {
     ...standardPalette,
     custom: {
         environmentAlert: {

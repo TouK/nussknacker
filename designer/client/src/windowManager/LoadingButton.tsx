@@ -9,7 +9,7 @@ export enum LoadingButtonTypes {
 }
 
 export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
-    const { classname, action, title, disabled } = props;
+    const { className, action, title, disabled } = props;
     const [loading, setLoading] = useState(false);
     const onClick = useCallback(async () => {
         setLoading(true);
@@ -24,14 +24,14 @@ export const LoadingButton = (props: FooterButtonProps): JSX.Element => {
     return (
         <MuiLoadingButton
             color={
-                classname === LoadingButtonTypes.secondaryButton || classname === LoadingButtonTypes.tertiaryButton ? "inherit" : "primary"
+                className === LoadingButtonTypes.secondaryButton || className === LoadingButtonTypes.tertiaryButton ? "inherit" : "primary"
             }
             disabled={disabled}
             onClick={onClick}
             variant={
-                classname === LoadingButtonTypes.secondaryButton
+                className === LoadingButtonTypes.secondaryButton
                     ? "outlined"
-                    : classname === LoadingButtonTypes.tertiaryButton
+                    : className === LoadingButtonTypes.tertiaryButton
                     ? "text"
                     : "contained"
             }

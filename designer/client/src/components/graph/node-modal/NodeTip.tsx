@@ -1,10 +1,15 @@
 import React, { ReactElement } from "react";
-import { cx } from "@emotion/css";
+import { styled } from "@mui/material";
 
-export default function NodeTip({ className, icon, title }: { className?: string; icon: ReactElement; title: string }) {
-    return (
-        <div className={cx("node-tip", className)} title={title}>
-            {icon}
-        </div>
-    );
+const Tip = styled("div")({
+    width: 24,
+    height: 24,
+    svg: {
+        // disable svg <title> behavior
+        pointerEvents: "none",
+    },
+});
+
+export default function NodeTip({ icon, ...props }: { className?: string; icon: ReactElement; title: string }) {
+    return <Tip {...props}>{icon}</Tip>;
 }

@@ -1,5 +1,4 @@
 import { WindowContentProps } from "@touk/window-manager";
-import { DebugButtons } from "@touk/window-manager/cjs/debug";
 import React from "react";
 import { Debug } from "../containers/Debug";
 import { WindowContent } from "./WindowContent";
@@ -20,7 +19,7 @@ const CompareVersionsDialog = loadable(() => import("../components/modals/Compar
 const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const GenericActionDialog = loadable(() => import("../components/modals/GenericActionDialog"), {
+const GenericActionDialog = loadable(() => import("../components/modals/GenericAction/GenericActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
@@ -85,7 +84,6 @@ const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
             return (
                 <WindowContent {...props}>
                     <Debug data={props.data} />
-                    <DebugButtons currentId={props.data.id} />
                 </WindowContent>
             );
     }
