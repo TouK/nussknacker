@@ -7,7 +7,7 @@ export interface FiltersParams<V extends string = string, T = string> {
     label: string;
     options?: T[];
     value?: V[];
-    onChange?: (value: V[]) => void;
+    onChange?: (value: V[], isChecked: boolean) => void;
 }
 
 export function ProcessingModeStack(
@@ -18,7 +18,8 @@ export function ProcessingModeStack(
         <OptionsStack {...props}>
             {options.map((option) => {
                 const isSelected = value.includes(option.name);
-                const onClick = (checked: boolean) => onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name));
+                const onClick = (checked: boolean) =>
+                    onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name), checked);
                 return (
                     <FilterListItem
                         key={option.name}

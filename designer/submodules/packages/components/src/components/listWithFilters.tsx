@@ -15,15 +15,21 @@ import { OptionsStack } from "../scenarios/filters/optionsStack";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
 import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
 import { processingModeItems } from "../scenarios/list/processingMode";
+import { useTrackFilterSelect } from "../common/hooks/useTrackFilterSet";
+import { useEventTracking } from "nussknackerUi/eventTracking";
 
 function CountFilterItem({ count }: { count: number }) {
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { trackEvent } = useEventTracking();
+
     return (
         <FilterListItem
             checked={getFilter("USAGES", true).includes(count)}
             onChange={(checked) => {
                 const current = getFilter("USAGES", true);
                 if (checked) {
+                    trackEvent({ type: "FILTER_COMPONENTS_BY_USAGES" });
+
                     if (count > 0) {
                         return setFilter("USAGES", [...current.filter((n) => n < 0 && Math.abs(n) > count), count]);
                     }
@@ -88,6 +94,8 @@ export function UsagesOptionsStack(): JSX.Element {
 export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolean; filterableValues }) {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+    const { withTrackFilterSelect } = useTrackFilterSelect();
+
     return (
         <QuickFilter<ComponentsFiltersModel> isLoading={isLoading} filter="NAME">
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
@@ -96,7 +104,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         label={t("table.filter.GROUP", "Group")}
                         options={filterableValues["componentGroupName"]}
                         value={getFilter("GROUP", true)}
-                        onChange={setFilter("GROUP")}
+                        onChange={withTrackFilterSelect({ type: "FILTER_COMPONENTS_BY_GROUP" }, setFilter("GROUP"))}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")} count={getFilter("PROCESSING_MODE", true).length}>
@@ -104,7 +112,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
                         options={filterableValues.processingModes}
                         value={getFilter("PROCESSING_MODE", true)}
-                        onChange={setFilter("PROCESSING_MODE")}
+                        onChange={withTrackFilterSelect({ type: "FILTER_COMPONENTS_BY_PROCESSING_MODE" }, setFilter("PROCESSING_MODE"))}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
@@ -112,7 +120,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         label={t("table.filter.CATEGORY", "Category")}
                         options={filterableValues["categories"]}
                         value={getFilter("CATEGORY", true)}
-                        onChange={setFilter("CATEGORY")}
+                        onChange={withTrackFilterSelect({ type: "FILTER_COMPONENTS_BY_CATEGORY" }, setFilter("CATEGORY"))}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.USAGE", "Usages")} count={getFilter("USAGES", true).length}>

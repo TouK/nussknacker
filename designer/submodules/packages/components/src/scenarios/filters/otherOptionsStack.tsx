@@ -1,5 +1,5 @@
-import { NuIcon, useFilterContext } from "../../common";
-import React from "react";
+import { useFilterContext } from "../../common";
+import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
 import { FilterListItem, FilterListItemSwitch } from "./filterListItem";
@@ -9,12 +9,20 @@ import { xor } from "lodash";
 import { FilterListItemLabel } from "./filterListItemLabel";
 import ScanarioIcon from "../../assets/icons/scenario.svg";
 import FragmentIcon from "../../assets/icons/fragment.svg";
+import { useTrackFilterSelect } from "../../common/hooks/useTrackFilterSet";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["TYPE"];
     const getTypeFilter = () => getFilter("TYPE", true);
+    const { withTrackFilterSelect } = useTrackFilterSelect();
+
+    const handleOtherFilterChange = useCallback(
+        (checked: boolean, filter: keyof ScenariosFiltersModel, filterTypes: ScenariosFiltersModelType[]) =>
+            withTrackFilterSelect({ type: "FILTER_SCENARIOS_BY_OTHER" }, setFilter(filter))(xor(filterTypes, getTypeFilter()), checked),
+        [getTypeFilter, setFilter, withTrackFilterSelect],
+    );
 
     return (
         <OptionsStack
@@ -29,7 +37,7 @@ export function OtherOptionsStack(): JSX.Element {
             <FilterListItem
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
-                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
+                onChange={(checked) => handleOtherFilterChange(checked, "TYPE", [ScenariosFiltersModelType.SCENARIOS])}
                 label={
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                         <span>{t("table.filter.SCENARIOS", "Scenarios")}</span>
@@ -40,7 +48,7 @@ export function OtherOptionsStack(): JSX.Element {
             <FilterListItem
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
-                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
+                onChange={(checked) => handleOtherFilterChange(checked, "TYPE", [ScenariosFiltersModelType.FRAGMENTS])}
                 label={
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                         <span>{t("table.filter.FRAGMENTS", "Fragments")}</span>

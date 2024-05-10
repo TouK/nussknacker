@@ -27,6 +27,7 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
+import { EventTrackingType } from "../containers/event-tracking";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -755,6 +756,10 @@ class HttpService {
 
     fetchStatisticUsage() {
         return api.get<{ urls: string[] }>(`/statistic/usage`);
+    }
+
+    sendStatistics(statistics: { name: EventTrackingType }[]) {
+        return api.post(`/statistic`, { statistics });
     }
 
     #addInfo(message: string) {

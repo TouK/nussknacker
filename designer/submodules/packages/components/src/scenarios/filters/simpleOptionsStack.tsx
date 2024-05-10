@@ -7,7 +7,7 @@ export interface FiltersParams<V extends string = string, T = string> {
     label: string;
     options?: T[];
     value?: V[];
-    onChange?: (value: V[]) => void;
+    onChange?: (value: V[], checked?: boolean) => void;
 }
 
 export function SimpleOptionsStack(props: FiltersParams<string, { name: string; icon?: string }>): JSX.Element {
@@ -16,7 +16,8 @@ export function SimpleOptionsStack(props: FiltersParams<string, { name: string; 
         <OptionsStack {...props}>
             {options.map((option) => {
                 const isSelected = value.includes(option.name);
-                const onClick = (checked: boolean) => onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name));
+                const onClick = (checked: boolean) =>
+                    onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name), checked);
                 return (
                     <FilterListItem key={option.name} checked={isSelected} onChange={onClick} label={<FilterListItemLabel {...option} />} />
                 );
