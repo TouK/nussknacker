@@ -42,6 +42,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
 }
 
+// TODO: Rename to ScenarioMetadata
 final case class ProcessEntityData(
     id: ProcessId,
     name: ProcessName,

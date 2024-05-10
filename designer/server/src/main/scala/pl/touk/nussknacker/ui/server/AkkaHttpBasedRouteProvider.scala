@@ -49,9 +49,18 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.{
+  ActionService,
+  DefaultProcessingTypeActionService,
+  DefaultProcessingTypeDeployedScenariosProvider,
+  DeploymentManagerDispatcher,
+  DeploymentService => LegacyDeploymentService,
+  ScenarioResolver,
+  ScenarioTestExecutorServiceImpl
+}
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
@@ -67,6 +76,7 @@ import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UI
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
+import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -170,7 +180,7 @@ class AkkaHttpBasedRouteProvider(
           futureProcessRepository
         )
 
-      val deploymentService = new DeploymentService(
+      val legacyDeploymentService = new LegacyDeploymentService(
         dmDispatcher,
         processRepository,
         actionRepository,
@@ -181,9 +191,9 @@ class AkkaHttpBasedRouteProvider(
         featureTogglesConfig.scenarioStateTimeout,
         featureTogglesConfig.deploymentCommentSettings
       )
-      deploymentService.invalidateInProgressActions()
+      legacyDeploymentService.invalidateInProgressActions()
 
-      actionServiceSupplier.set(deploymentService)
+      actionServiceSupplier.set(legacyDeploymentService)
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
@@ -209,7 +219,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val processService = new DBProcessService(
-        deploymentService,
+        legacyDeploymentService,
         newProcessPreparer,
         processingTypeDataProvider.mapCombined(_.parametersService),
         processResolver,
@@ -329,8 +339,19 @@ class AkkaHttpBasedRouteProvider(
           )
         }
       )
-      val deploymentHttpService =
-        new DeploymentApiHttpService(authenticationResources, processService, deploymentService)
+      val deploymentHttpService = {
+        val scenarioMetadataRepository = new ScenarioMetadataRepository(dbRef)
+        val deploymentRepository       = new DeploymentRepository(dbRef)
+        val deploymentService =
+          new DeploymentService(
+            scenarioMetadataRepository,
+            deploymentRepository,
+            legacyDeploymentService,
+            dbioRunner,
+            Clock.systemDefaultZone()
+          )
+        new DeploymentApiHttpService(authenticationResources, deploymentService)
+      }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -338,7 +359,7 @@ class AkkaHttpBasedRouteProvider(
         val routes = List(
           new ProcessesResources(
             processService = processService,
-            processStateService = deploymentService,
+            processStateService = legacyDeploymentService,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
@@ -352,7 +373,7 @@ class AkkaHttpBasedRouteProvider(
           new ManagementResources(
             processAuthorizer,
             processService,
-            deploymentService,
+            legacyDeploymentService,
             dmDispatcher,
             metricsRegistry,
             scenarioTestService,

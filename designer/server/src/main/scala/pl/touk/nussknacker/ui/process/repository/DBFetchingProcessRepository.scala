@@ -29,6 +29,9 @@ object DBFetchingProcessRepository {
 
 }
 
+// TODO: for the operations providing a single scenario details / id / processing type, we shouldn't pass LoggedUser
+//       and do filtering on the DB side. Instead, we should return entity and check if user is authorized to access
+//       to the resource on the services side
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
     actionRepository: ProcessActionRepository
