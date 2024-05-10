@@ -499,6 +499,8 @@ paths:
       - httpAuth: []
   /api/deployments/{deploymentId}/status:
     get:
+      tags:
+      - Deployments
       summary: Get status of a deployment
       operationId: getApiDeploymentsDeploymentidStatus
       parameters:
@@ -560,6 +562,8 @@ paths:
       - httpAuth: []
   /api/deployments/{deploymentId}:
     put:
+      tags:
+      - Deployments
       summary: Run the deployment of a scenario
       operationId: putApiDeploymentsDeploymentid
       parameters:
