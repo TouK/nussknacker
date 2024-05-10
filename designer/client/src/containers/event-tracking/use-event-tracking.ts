@@ -23,7 +23,7 @@ export type EventTrackingType =
     | "FILTER_COMPONENT_USAGES_BY_AUTHOR"
     | "FILTER_COMPONENT_USAGES_BY_OTHER"
     | "CLICK_SCENARIO_FROM_COMPONENT_USAGES"
-    | "CLICK_GLOBAL_METRICS"
+    | "CLICK_GLOBAL_METRICS_TAB"
     | "CLICK_ACTION_DEPLOY"
     | "CLICK_ACTION_METRICS"
     | "CLICK_VIEW_ZOOM_IN"
@@ -55,7 +55,8 @@ export type EventTrackingType =
     | "CLICK_OLDER_VERSION"
     | "CLICK_NEWER_VERSION"
     | "FIRED_KEY_STROKE"
-    | "CLICK_NODE_DOCUMENTATION";
+    | "CLICK_NODE_DOCUMENTATION"
+    | "CLICK_COMPONENTS_TAB";
 
 type TrackEvent = { type: EventTrackingType };
 export const useEventTracking = () => {
