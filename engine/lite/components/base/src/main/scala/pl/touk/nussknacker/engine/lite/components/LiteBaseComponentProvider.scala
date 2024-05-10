@@ -38,13 +38,18 @@ object LiteBaseComponentProvider {
   def create(docsConfig: DocsConfig): List[ComponentDefinition] = {
     import docsConfig._
     List(
-      ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
-      ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
-      ComponentDefinition(
-        name = "decision-table",
-        component = DecisionTable
-      ).withRelativeDocs("BasicNodes#decisiontable")
+      ComponentDefinition("for-each", ForEachTransformer)
+        .withRelativeDocs("BasicNodes#foreach")
+        .withDesignerWideId("for-each"),
+      ComponentDefinition("union", Union)
+        .withRelativeDocs("BasicNodes#union")
+        .withDesignerWideId("union"),
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
+        .withRelativeDocs("DataSourcesAndSinks#deadend")
+        .withDesignerWideId("dead-end"),
+      ComponentDefinition(name = "decision-table", component = DecisionTable)
+        .withRelativeDocs("BasicNodes#decisiontable")
+        .withDesignerWideId("decision-table")
     )
 
   }

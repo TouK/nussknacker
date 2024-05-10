@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -50,7 +51,8 @@ class UniversalKafkaSinkFactory(
     val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
 ) extends KafkaUniversalComponentTransformer[Sink]
-    with SinkFactory {
+    with SinkFactory
+    with UnboundedStreamComponent {
 
   override type State = TransformationState
 
