@@ -10,9 +10,15 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{
+  ContextTransformation,
+  OutputVar,
+  ProcessCompilationError,
+  ValidationContext
+}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -202,7 +208,7 @@ class FullOuterJoinTransformer(
 
 }
 
-object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) {
+object FullOuterJoinTransformer extends FullOuterJoinTransformer(None) with UnboundedStreamComponent {
   val KeyFieldName = "key"
 
   val KeyParamName: ParameterName = ParameterName("key")

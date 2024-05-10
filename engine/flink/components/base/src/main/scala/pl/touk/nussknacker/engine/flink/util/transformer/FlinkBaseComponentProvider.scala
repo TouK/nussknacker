@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentProvider,
+  DesignerWideComponentId,
+  NussknackerVersion
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -31,13 +36,18 @@ object FlinkBaseComponentProvider {
     import docsConfig._
 
     List(
-      ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
-      ComponentDefinition("union", UnionTransformer).withRelativeDocs("BasicNodes#union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink)).withRelativeDocs("DataSourcesAndSinks#deadend"),
-      ComponentDefinition(
-        name = "decision-table",
-        component = DecisionTable
-      ).withRelativeDocs("BasicNodes#decisiontable")
+      ComponentDefinition("for-each", ForEachTransformer)
+        .withRelativeDocs("BasicNodes#foreach")
+        .withDesignerWideId("for-each"),
+      ComponentDefinition("union", UnionTransformer)
+        .withRelativeDocs("BasicNodes#union")
+        .withDesignerWideId("union"),
+      ComponentDefinition("dead-end", SinkFactory.noParam(EmptySink))
+        .withRelativeDocs("DataSourcesAndSinks#deadend")
+        .withDesignerWideId("dead-end"),
+      ComponentDefinition(name = "decision-table", component = DecisionTable)
+        .withRelativeDocs("BasicNodes#decisiontable")
+        .withDesignerWideId("decision-table")
     )
   }
 
