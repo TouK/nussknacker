@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
+import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
@@ -88,7 +88,7 @@ class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
     processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
-    statisticsDb: StatisticsDb[Future]
+    repository: FEStatisticsRepository[Future]
 )(implicit system: ActorSystem, materializer: Materializer)
     extends RouteProvider[Route]
     with Directives
@@ -433,13 +433,13 @@ class AkkaHttpBasedRouteProvider(
         fingerprintService,
         processActivityRepository,
         componentService,
-        statisticsDb
+        repository
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authenticationResources,
         usageStatisticsReportsSettingsService,
-        statisticsDb
+        repository
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings

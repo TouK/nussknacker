@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
-import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
+import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
@@ -41,7 +41,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
       componentService: ComponentService,
-      statisticsDb: StatisticsDb[Future],
+      statisticsRepository: FEStatisticsRepository[Future],
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
@@ -93,7 +93,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchNonArchivedScenarioParameters,
       fetchActivity,
       fetchComponentList,
-      statisticsDb
+      () => statisticsRepository.read()
     )
 
   }
@@ -138,7 +138,7 @@ class UsageStatisticsReportsSettingsService(
       Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
     ],
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
-    statisticsDb: StatisticsDb[Future]
+    fetchFeStatistics: () => Future[Map[String, Long]]
 )(implicit ec: ExecutionContext) {
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
@@ -164,13 +164,15 @@ class UsageStatisticsReportsSettingsService(
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
       componentList <- new EitherT(fetchComponentList())
       componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
-      feStatistics <- EitherT.liftF(statisticsDb.read())
+      feStatistics <- EitherT.liftF(fetchFeStatistics())
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
       activityStatistics ++
       componentStatistics ++
-      feStatistics
+      feStatistics.map { case (k, v) =>
+        k -> v.toString
+      }
   }
 
   private def determineBasicStatistics(
@@ -178,10 +180,10 @@ class UsageStatisticsReportsSettingsService(
       config: UsageStatisticsReportsConfig
   ): Map[String, String] =
     Map(
-      "fingerprint" -> fingerprint.value,
+      NuFingerprint.name -> fingerprint.value,
       // If it is not set, we assume that it is some custom build from source code
-      "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
-      "version" -> BuildInfo.version
+      NuSource.name  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
+      NuVersion.name -> BuildInfo.version
     )
 
 }

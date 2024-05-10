@@ -7,7 +7,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
-import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
+import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,7 +35,7 @@ class UsageStatisticsReportsSettingsServiceTest
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(Nil)),
       fetchActivity = (_: List[ScenarioStatisticsInputData]) => Future.successful(Right(Nil)),
       fetchComponentList = () => Future.successful(Right(Nil)),
-      statisticsDb = mock[StatisticsDb[Future]]
+      fetchFeStatistics = () => Future.successful(Map.empty[String, Long])
     )
 
     sut.prepareStatisticsUrl().futureValue shouldBe Right(None)
