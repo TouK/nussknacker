@@ -4,10 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
   CannotGenerateStatisticError,
+  RegisterStatisticsRequestDto,
   StatisticError,
   StatisticUrlResponseDto
 }
-import pl.touk.nussknacker.ui.db.timeseries.StatisticsDb
+import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService
 
@@ -16,8 +17,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class StatisticsApiHttpService(
     authenticator: AuthenticationResources,
     usageStatisticsReportsSettingsService: UsageStatisticsReportsSettingsService,
-    db: StatisticsDb[Future]
-)(implicit executionContext: ExecutionContext)
+    repository: FEStatisticsRepository[Future]
+)(implicit ec: ExecutionContext)
     extends BaseHttpService(authenticator)
     with LazyLogging {
 
@@ -40,15 +41,19 @@ class StatisticsApiHttpService(
     endpoints.registerStatisticsEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { _ => request =>
-        // todo change to groupMapReduce in scala 2.13
-        val groupedByName = request.statistics
-          .groupBy(_.name.entryName)
-          .map { case (k, v) =>
-            k -> v.size.toLong
-          }
-        db.write(groupedByName)
+        saveStatistics(request)
         Future.successful(())
       }
+  }
+
+  private def saveStatistics(request: RegisterStatisticsRequestDto): Future[Unit] = {
+    // todo change to groupMapReduce in scala 2.13
+    val groupedByName = request.statistics
+      .groupBy(_.name.entryName)
+      .map { case (k, v) =>
+        k -> v.size.toLong
+      }
+    repository.write(groupedByName)
   }
 
 }
