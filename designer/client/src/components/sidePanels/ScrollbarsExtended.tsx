@@ -1,8 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
-import { alpha, lighten, styled, Theme, useTheme } from "@mui/material";
+import { lighten, styled, Theme, useTheme } from "@mui/material";
 import { PanelSide } from "./SidePanel";
+import { blendDarken } from "../../containers/theme/helpers";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
 const CLEAN_STYLE = null;
@@ -24,7 +25,7 @@ const trackStyleProps = (side: PanelSide) => ({
 const thumbYStyleProps = (theme: Theme) => ({
     borderRadius: CLEAN_STYLE,
     cursor: CLEAN_STYLE,
-    backgroundColor: alpha(theme.palette.common.black, 0.45),
+    backgroundColor: lighten(theme.palette.background.paper, 0.4),
 });
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
@@ -34,7 +35,7 @@ const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossibl
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: isScrollPossible && lighten(theme.palette.background.paper, 0.4),
+    background: isScrollPossible && blendDarken(theme.palette.common.white, 0.75),
     pointerEvents: isScrollPossible ? "auto" : "inherit",
 }));
 

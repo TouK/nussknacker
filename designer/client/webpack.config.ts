@@ -149,7 +149,7 @@ const config: Configuration = {
             //see ./config.ts
             base: isProd ? "__publicPath__/static/" : "/",
             filename: "main.html",
-            favicon: "src/assets/img/nuLogoIcon.svg",
+            favicon: "src/assets/img/nussknacker-logo-icon.svg",
             meta: {
                 viewport: "user-scalable = no",
             },
