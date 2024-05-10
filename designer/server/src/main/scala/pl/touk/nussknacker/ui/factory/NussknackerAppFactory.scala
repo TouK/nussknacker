@@ -30,13 +30,13 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       config <- designerConfigFrom(baseUnresolvedConfig)
       system <- createActorSystem(config)
       materializer = Materializer(system)
-      _                    <- Resource.eval(IO(JavaClassVersionChecker.check()))
-      _                    <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
-      metricsRegistry      <- createGeneralPurposeMetricsRegistry()
-      db                   <- DbRef.create(config.resolved)
-      statisticsRepository <- QuestDbFEStatisticsRepository.create()
+      _                      <- Resource.eval(IO(JavaClassVersionChecker.check()))
+      _                      <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
+      metricsRegistry        <- createGeneralPurposeMetricsRegistry()
+      db                     <- DbRef.create(config.resolved)
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create()
       server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory, statisticsRepository)(
+        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory, feStatisticsRepository)(
           system,
           materializer
         ),

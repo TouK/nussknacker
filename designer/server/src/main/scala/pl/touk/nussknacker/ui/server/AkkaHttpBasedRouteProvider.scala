@@ -88,7 +88,7 @@ class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
     processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
-    repository: FEStatisticsRepository[Future]
+    feStatisticsRepository: FEStatisticsRepository[Future]
 )(implicit system: ActorSystem, materializer: Materializer)
     extends RouteProvider[Route]
     with Directives
@@ -433,13 +433,13 @@ class AkkaHttpBasedRouteProvider(
         fingerprintService,
         processActivityRepository,
         componentService,
-        repository
+        feStatisticsRepository
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authenticationResources,
         usageStatisticsReportsSettingsService,
-        repository
+        feStatisticsRepository
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
