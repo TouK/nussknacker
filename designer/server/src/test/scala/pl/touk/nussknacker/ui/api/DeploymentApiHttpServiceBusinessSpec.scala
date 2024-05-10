@@ -36,9 +36,9 @@ class DeploymentApiHttpServiceBusinessSpec
     firstPartition.toFile.mkdir()
     FileUtils.write(
       firstPartition.resolve("transaction-1.csv").toFile,
-      """"2024-01-01 10:00:00",client1,1
-        |"2024-01-01 10:01:00",client2,2
-        |"2024-01-01 10:02:00",client1,3
+      """"2024-01-01 10:00:00",client1,1.11
+        |"2024-01-01 10:01:00",client2,2.22
+        |"2024-01-01 10:02:00",client1,3.33
         |""".stripMargin,
       StandardCharsets.UTF_8
     )
@@ -46,9 +46,9 @@ class DeploymentApiHttpServiceBusinessSpec
     secondPartition.toFile.mkdir()
     FileUtils.write(
       secondPartition.resolve("transaction-1.csv").toFile,
-      """"2024-01-02 10:00:00",client1,1
-        |"2024-01-02 10:01:00",client2,2
-        |"2024-01-02 10:02:00",client1,3
+      """"2024-01-02 10:00:00",client1,1.11
+        |"2024-01-02 10:01:00",client2,2.22
+        |"2024-01-02 10:02:00",client1,3.33
         |""".stripMargin,
       StandardCharsets.UTF_8
     )
@@ -82,8 +82,8 @@ class DeploymentApiHttpServiceBusinessSpec
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
               FileUtils.readLines(resultFile, StandardCharsets.UTF_8).asScala.toSet shouldBe Set(
-                "client1,4",
-                "client2,2"
+                "client1,4.44",
+                "client2,2.22"
               )
             }
         }

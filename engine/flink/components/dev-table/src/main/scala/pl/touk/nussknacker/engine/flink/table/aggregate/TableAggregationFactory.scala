@@ -87,14 +87,16 @@ class TableAggregationFactory
         case None => List.empty
       }
 
-      FinalResults.forValidation(context, errors = aggregateByTypeErrors)(
-        _.withVariable(outName, value = aggregatorOutputType, paramName = Some(outputVarParamName)).andThen(
-          _.withVariable(
-            KeyVariableName,
-            value = groupByParam.returnType,
-            paramName = Some(ParameterName(KeyVariableName))
+      FinalResults.forValidation(context, errors = aggregateByTypeErrors)(ctx =>
+        ctx.clearVariables
+          .withVariable(outName, value = aggregatorOutputType, paramName = Some(outputVarParamName))
+          .andThen(
+            _.withVariable(
+              KeyVariableName,
+              value = groupByParam.returnType,
+              paramName = Some(ParameterName(KeyVariableName))
+            )
           )
-        )
       )
   }
 
