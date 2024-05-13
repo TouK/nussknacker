@@ -62,8 +62,6 @@ services:
     image: influxdb:1.8.10 # todo: bump to 1.11.5?
     restart: unless-stopped
     hostname: influxdb
-    environment:
-      INFLUXDB_DB: nussknacker_metrics
     healthcheck:
       test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
       interval: 10s
