@@ -127,4 +127,5 @@ There you can also find out how to build and run development version of Nussknac
 ## Legal
 
 **Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
 By using **Nussknacker** you accept the [Privacy Policy](https://github.com/TouK/nussknacker/blob/staging/PRIVACY_POLICY.md).
