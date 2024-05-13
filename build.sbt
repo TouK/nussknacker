@@ -507,7 +507,7 @@ managerArtifacts := {
 }
 
 def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
-  val devConfigFiles = Set("dev-tables-definition.sql", "dev-application.conf")
+  val devConfigFiles = Set("dev-tables-definition.sql", "dev-application.conf", "dev-oauth2-users.conf")
   files.filterNot { case (file, _) => devConfigFiles.contains(file.getName) }
 }
 
