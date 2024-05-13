@@ -5,7 +5,7 @@ datasources:
   access: proxy
   orgId: 1
   url: http://influxdb:8086
-  database: nussknacker_metrics
+  database: esp
   basicAuth: false
   withCredentials: false
   isDefault: true
