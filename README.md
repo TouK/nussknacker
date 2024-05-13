@@ -124,6 +124,8 @@ with detailed instructions how to run Nussknacker with some of the older version
 Nussknacker is an open source project - contribution is welcome. Read how to do it in [Contributing guide](CONTRIBUTING.md).
 There you can also find out how to build and run development version of Nussknacker.
 
-## License
+## Legal
 
 **Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+By using **Nussknacker** you accept the [Privacy Policy](https://github.com/TouK/nussknacker/blob/staging/PRIVACY_POLICY.md).
