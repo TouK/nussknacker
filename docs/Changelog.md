@@ -26,11 +26,13 @@
 * [#5898](https://github.com/TouK/nussknacker/pull/5898) Fixed Nu runtime memory leak
 * [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
 * [#5779](https://github.com/TouK/nussknacker/pull/5779) Add API versioning for migration between environments
+* [#6016](https://github.com/TouK/nussknacker/pull/6016) Add RANDOM helper
 * [#5595](https://github.com/TouK/nussknacker/pull/5618) [#5618](https://github.com/TouK/nussknacker/pull/5595) [#5627](https://github.com/TouK/nussknacker/pull/5627) 
   [#5734](https://github.com/TouK/nussknacker/pull/5734) [#5653](https://github.com/TouK/nussknacker/pull/5653) [#5744](https://github.com/TouK/nussknacker/pull/5744) 
   [#5757](https://github.com/TouK/nussknacker/pull/5757) [#5777](https://github.com/TouK/nussknacker/pull/5777) [#5825](https://github.com/TouK/nussknacker/pull/5825)
   [#5896](https://github.com/TouK/nussknacker/pull/5896) Experimental Batch processing mode support
 * [#6031](https://github.com/TouK/nussknacker/pull/6031) Fixed duplicated components on the Components tab
+* [#6010](https://github.com/TouK/nussknacker/pull/6010) Fix ad hoc tests with schemas containing nested fields
 * [#6044](https://github.com/TouK/nussknacker/pull/6044) Fixed json refs handling: If first parsed record was an empty record, every subsequent record was treated as an empty record 
 
 1.14.0 (21 Mar 2024)

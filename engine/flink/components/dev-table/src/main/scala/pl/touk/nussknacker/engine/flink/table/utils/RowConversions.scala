@@ -39,6 +39,7 @@ object NestedRowConversions {
   final case class ColumnFlinkSchema(columnName: String, flinkDataType: DataType)
 
   // TODO: avoid this step by mapping DataStream directly without this intermediate table with nested row
+  // TODO: infer schema from row and try to cast types to the desired schema
   def buildTableFromRowStream(
       tableEnv: StreamTableEnvironment,
       streamOfRows: SingleOutputStreamOperator[Row],
