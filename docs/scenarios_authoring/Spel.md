@@ -274,6 +274,7 @@ Nussknacker comes with the following helpers:
 | `DATE_FORMAT` | Date formatting/parsing operations             |
 | `GEO`         | Simple distance measurements                   |
 | `NUMERIC`     | Number parsing                                 |
+| `RANDOM`      | Random value generators                        |
 | `UTIL`        | Various utilities (e.g. identifier generation) |
 
 
