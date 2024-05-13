@@ -2,7 +2,7 @@ CREATE TABLE transactions
 (
     datetime  TIMESTAMP,
     client_id STRING,
-    amount    INT,
+    amount    DECIMAL(15,2),
     `date`    STRING
 ) PARTITIONED BY (`date`) WITH (
       'connector' = 'filesystem',
@@ -13,7 +13,7 @@ CREATE TABLE transactions
 CREATE TABLE transactions_summary
 (
     client_id STRING,
-    amount    INT,
+    amount    DECIMAL(15,2),
     `date`    STRING
 ) PARTITIONED BY (`date`) WITH (
       'connector' = 'filesystem',

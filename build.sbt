@@ -506,24 +506,38 @@ managerArtifacts := {
   )
 }
 
+def filterDevConfigArtifacts(files: Seq[(File, String)]) = {
+  val devConfigFiles = Set("dev-tables-definition.sql", "dev-application.conf")
+  files.filterNot { case (file, _) => devConfigFiles.contains(file.getName) }
+}
+
 lazy val dist = sbt
   .Project("dist", file("nussknacker-dist"))
   .settings(commonSettings)
   .enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging)
   .settings(
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
-    Universal / mappings ++= (root / managerArtifacts).value
-      ++ (root / componentArtifacts).value
-      ++ (if (addDevArtifacts)
-            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
-          else Nil)
-      ++ (if (addDevArtifacts) (root / devArtifacts).value: @sbtUnchecked
-          else (root / modelArtifacts).value: @sbtUnchecked)
-      ++ (flinkExecutor / additionalBundledArtifacts).value,
+    Universal / mappings                     := {
+      val universalMappingsWithDevConfigFilter =
+        if (addDevArtifacts) (Universal / mappings).value
+        else filterDevConfigArtifacts((Universal / mappings).value)
+
+      universalMappingsWithDevConfigFilter ++
+        (root / managerArtifacts).value ++
+        (root / componentArtifacts).value ++
+        (if (addDevArtifacts)
+           Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
+         else Nil) ++
+        (if (addDevArtifacts) (root / devArtifacts).value: @sbtUnchecked
+         else (root / modelArtifacts).value: @sbtUnchecked) ++
+        (flinkExecutor / additionalBundledArtifacts).value
+    },
     Universal / packageZipTarball / mappings := {
-      val universalMappings = (Universal / mappings).value
+      val universalMappingsWithDevConfigFilter =
+        if (addDevArtifacts) (Universal / mappings).value
+        else filterDevConfigArtifacts((Universal / mappings).value)
       // we don't want docker-* stuff in .tgz
-      universalMappings filterNot { case (file, _) =>
+      universalMappingsWithDevConfigFilter filterNot { case (file, _) =>
         file.getName.startsWith("docker-") || file.getName.contains("entrypoint.sh")
       }
     },
@@ -1763,7 +1777,8 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
     name := "nussknacker-flink-base-components-tests",
     libraryDependencies ++= Seq(
       "org.apache.flink" % "flink-connector-files" % flinkV % Test,
-      "org.apache.flink" % "flink-csv"             % flinkV % Test
+      "org.apache.flink" % "flink-csv"             % flinkV % Test,
+      "org.apache.flink" % "flink-json"            % flinkV % Test
     )
   )
   .dependsOn(
