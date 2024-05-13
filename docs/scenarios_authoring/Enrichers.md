@@ -56,15 +56,18 @@ We will present how to use the component with a simple business example. Conside
 First let's look at our input: In the example we use [Response-Request](https://nussknacker.io/documentation/docs/scenarios_authoring/RRDataSourcesAndSinks/) mode, so we need to define an input schema.  it's a simple model - the customer has a name, age and gender - all of type String. We also define a boolean flag "isBigSpender" to better filter offers for the customer.![alt_text](img/decisionTableValues.png "basic decision table")
  
 Now we have to define a fixed-value decision table. We use two MinAge and MaxAge columns to define the age intervals for our customers. Then we add the values for the rest and appropriate data plans. The blue columns represent our input values and the red one is our decision column.
-![alt_text](img/decisionTableMobile.png "basic decision table")
+![alt_text](img/decisionTableMobile.png "Basic decision table.")
 
-We now need to define a condition that will match our input data with the table rows. In our case the input is of form {name, age, gender, isBigSpender}. First we want to match to the specified age interval. _#input.age > #ROW.MinAge && #input.age <= #ROW.MaxAge_ will take care of that. Now we need to match the gender string and the boolean flag. _input.gender == (#ROW.Gender ?: true) && #input.isBigSpender == (#ROW.IsBigSpender ?: true)_ is the relevant expression.  Remember that #Row variable in the expression allows us to interact with the defined table. The whole expression is:
+We now need to define a condition that will match our input data with the table rows. In our case the input is of form {name, age, gender, isBigSpender}. First we want to match to the specified age interval. _#input.age > #ROW.MinAge && #input.age <= #ROW.MaxAge_ will take care of that. Now we need to match the gender string. _(#ROW.Gender != null ? #input.gender == #ROW.Gender : true)_ - we have some empty cases defined in the table. An empty case is a considered a "whatever" business case and is a null in the nussknacker logic. We first need to check for the empty cases with != null and then either match the rows with input or just return true for an empty case. This might seem a bit complicated at first glance, but turns out to be straightforward when analysed. Similarly, for the boolean isBigSpender flag. _input.gender == (#ROW.Gender ?: true) && #input.isBigSpender == (#ROW.IsBigSpender ?: true)_ is the relevant expression.  Remember that #Row variable in the expression allows us to interact with the defined table. The whole expression is:
 ![alt_text](img/decisionTableExpression.png "Expression matching input with rows.")
 
 The output from the component will be a list of matched *whole* rows (of type record). So, in our case, if one of inputs is ("Andrzej Podolski", "Male", true, 45), then the output would be a list consisting of a single recordList[(31, 50, "Male", true, "Family Package")]. If you want to only get the _result columns_, then you need to transform the data afterwards with a different component.
 ![alt_text](img/decisionTableOutput.png "Sample input and matched output from the decision table.")
 
-You can add as many input and result columns as you would like. The _Match condition_ is a fully functioning expression, so you can be quite flexible with it. You could omit some of the checks on the input rows. In our example, we could check for engine control only with *#engine = #ROW.Engine_starts*. It is also up to you which columns you define as input and which as output, you can treat them completely differently in two components that have the same table definition.
+A simple scenario could look like this:
+![alt_text](img/decisionTableSample.png "Sample scenarion using decision table component.")
+
+You can add as many input and result columns as you would like. The _Match condition_ is a fully functioning expression, so you can be quite flexible with it. You could omit some of the checks on the input rows. In our example, we could only check for age. It is also up to you which columns you define as input and which as output, you can treat them completely differently in two components that have the same table definition.
 
   
 ## OpenAPI enricher
