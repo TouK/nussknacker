@@ -311,28 +311,47 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("handle refs") {
-
-    val schema       = JsonSchemaBuilder.loadSchemaFromResource("/schemas/NestedRef.json")
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "$defs": {
+        |    "SomeRef": {
+        |      "anyOf": [
+        |        {
+        |          "type": "integer"
+        |        },
+        |        {
+        |          "type": "null"
+        |        }
+        |      ],
+        |      "default": null
+        |    }
+        |  },
+        |  "properties": {
+        |    "field": {
+        |      "$ref": "#/$defs/SomeRef"
+        |    }
+        |  }
+        |}""".stripMargin
+    )
     val deserializer = new CirceJsonDeserializer(schema)
 
-    val expecetdFCR = Map("callDuration" -> 38L).asJava
-    val expectedMSR = Map("chargedParty" -> 123L).asJava
     forAll(
       Table(
         ("json", "expected"),
-        ("{}", Map("forwardCallRecord" -> null, "mtSMSRecord" -> null).asJava),
         (
-          """{"forwardCallRecord":{"callDuration":38}}""",
-          Map("forwardCallRecord" -> expecetdFCR, "mtSMSRecord" -> null).asJava
+          "{}",
+//          Map.empty.asJava
+          Map("field" -> null).asJava
         ),
         (
-          """{"mtSMSRecord":{"chargedParty":123}}""",
-          Map("forwardCallRecord" -> null, "mtSMSRecord" -> expectedMSR).asJava
+          """{"field": null}""",
+          Map("field" -> null).asJava
         ),
         (
-          """{"forwardCallRecord":{"callDuration":38},"mtSMSRecord":{"chargedParty":123}}""",
-          Map("forwardCallRecord" -> expecetdFCR, "mtSMSRecord" -> expectedMSR).asJava
-        ),
+          """{"field": 123}""",
+          Map("field" -> 123L).asJava
+        )
       )
     ) { (json, expected) =>
       val result = deserializer.deserialize(json)
