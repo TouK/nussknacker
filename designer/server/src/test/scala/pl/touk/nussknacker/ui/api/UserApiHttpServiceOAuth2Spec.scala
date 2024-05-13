@@ -26,7 +26,7 @@ class UserApiHttpServiceOAuth2Spec
     with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
-  private implicit val clock: Clock = Clock.systemUTC()
+//  private implicit val clock: Clock = Clock.systemUTC()
 
   private lazy val configuredSymmetricKey = "fooKey"
 
@@ -75,7 +75,7 @@ class UserApiHttpServiceOAuth2Spec
               JwtClaim()
                 .about("jwtUserId")
                 .to(configuredAudience)
-                .expiresIn(180),
+                .expiresIn(180)(clock),
               configuredSymmetricKey,
               JwtAlgorithm.HS256
             )

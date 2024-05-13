@@ -1,0 +1,7 @@
+{
+ "statistics": [
+  {"name": "SEARCH_SCENARIOS_BY_NAME"},
+  {"name": "FILTER_SCENARIOS_BY_STATUS"},
+  {"name": "SEARCH_SCENARIOS_BY_NAME"}
+ ]
+}
