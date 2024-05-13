@@ -31,6 +31,7 @@
   [#5757](https://github.com/TouK/nussknacker/pull/5757) [#5777](https://github.com/TouK/nussknacker/pull/5777) [#5825](https://github.com/TouK/nussknacker/pull/5825)
   [#5896](https://github.com/TouK/nussknacker/pull/5896) Experimental Batch processing mode support
 * [#6031](https://github.com/TouK/nussknacker/pull/6031) Fixed duplicated components on the Components tab
+* [#6044](https://github.com/TouK/nussknacker/pull/6044) Fixed json refs handling: If first parsed record was an empty record, every subsequent record was treated as an empty record 
 
 1.14.0 (21 Mar 2024)
 -------------------------
