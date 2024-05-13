@@ -3,11 +3,19 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.apache.commons.io.FileUtils
+import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
+import scala.jdk.CollectionConverters._
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -20,32 +28,83 @@ class DeploymentApiHttpServiceBusinessSpec
     with RestAssuredVerboseLogging
     with LazyLogging
     with VeryPatientScalaFutures
-    with Matchers {
+    with Matchers
+    with LoneElement {
+
+  override protected def populateInputTransactionsDirectory(rootDirectory: Path): Unit = {
+    val firstPartition = rootDirectory.resolve("date=2024-01-01")
+    firstPartition.toFile.mkdir()
+    FileUtils.write(
+      firstPartition.resolve("transaction-1.csv").toFile,
+      """"2024-01-01 10:00:00",client1,1.11
+        |"2024-01-01 10:01:00",client2,2.22
+        |"2024-01-01 10:02:00",client1,3.33
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
+    val secondPartition = rootDirectory.resolve("date=2024-01-02")
+    secondPartition.toFile.mkdir()
+    FileUtils.write(
+      secondPartition.resolve("transaction-1.csv").toFile,
+      """"2024-01-02 10:00:00",client1,1.11
+        |"2024-01-02 10:01:00",client2,2.22
+        |"2024-01-02 10:02:00",client1,3.33
+        |""".stripMargin,
+      StandardCharsets.UTF_8
+    )
+  }
 
   private val correctDeploymentRequest = s"""{
+                                            |  "scenarioName": "$scenarioName",
                                             |  "nodesDeploymentData": {
                                             |    "$sourceNodeId": "`date` = '2024-01-01'"
                                             |  }
                                             |}""".stripMargin
 
   "The deployment requesting endpoint" - {
-    "authenticated as user with deploy access should" - {
-      "run deployment" in {
-        val requestedDeploymentId = "some-requested-deployment-id"
-        given()
-          .applicationState {
-            createSavedScenario(scenario)
-          }
-          .when()
-          .basicAuthAdmin()
-          .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/$requestedDeploymentId")
-          .Then()
-          // TODO (next PRs): we should return 201 and we should check status of deployment before we verify output
-          .statusCode(200)
-          .verifyExternalState {
-            outputTransactionSummaryContainsResult()
-          }
+    "authenticated as user with deploy access" - {
+      "when invoked once should" - {
+        "return accepted status code and run deployment that will process input files" in {
+          val requestedDeploymentId = DeploymentId.generate
+          given()
+            .applicationState {
+              createSavedScenario(scenario)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
+            .Then()
+            .statusCode(202)
+            .verifyApplicationState {
+              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+            }
+            .verifyExternalState {
+              val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
+              FileUtils.readLines(resultFile, StandardCharsets.UTF_8).asScala.toSet shouldBe Set(
+                "client1,4.44",
+                "client2,2.22"
+              )
+            }
+        }
+      }
+
+      "when invoked twice with the same deployment id should" - {
+        "return conflict status code" in {
+          val requestedDeploymentId = DeploymentId.generate
+          given()
+            .applicationState {
+              createSavedScenario(scenario)
+              runDeployment(requestedDeploymentId)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
+            .Then()
+            // TODO: idempotence (return 2xx when previous body is the same as requested)
+            .statusCode(409)
+        }
       }
     }
 
@@ -57,7 +116,7 @@ class DeploymentApiHttpServiceBusinessSpec
           }
           .when()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -72,7 +131,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthUnknownUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(401)
       }
@@ -87,7 +146,7 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthNoPermUser()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(403)
       }
@@ -102,11 +161,21 @@ class DeploymentApiHttpServiceBusinessSpec
           .when()
           .basicAuthWriter()
           .jsonBody(correctDeploymentRequest)
-          .put(s"$nuDesignerHttpAddress/api/scenarios/$scenarioName/deployments/foo-deployment-id")
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
           .Then()
           .statusCode(403)
       }
     }
+  }
+
+  private def runDeployment(requestedDeploymentId: DeploymentId): Unit = {
+    given()
+      .when()
+      .basicAuthAdmin()
+      .jsonBody(correctDeploymentRequest)
+      .put(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId")
+      .Then()
+      .statusCode(202)
   }
 
 }

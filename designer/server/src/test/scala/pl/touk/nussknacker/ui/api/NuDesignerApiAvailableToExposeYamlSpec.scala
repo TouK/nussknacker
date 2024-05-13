@@ -2,10 +2,11 @@ package pl.touk.nussknacker.ui.api
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
-import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator}
+import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
 import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
@@ -43,6 +44,75 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
     val currentNuDesignerOpenApiYamlContent =
       (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
     NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
+  }
+
+  test("API enum compatibility test") {
+    val data = Table(
+      ("enumName", "enumValues"),
+      (
+        "StatisticName",
+        Set(
+          "SEARCH_SCENARIOS_BY_NAME",
+          "FILTER_SCENARIOS_BY_STATUS",
+          "FILTER_SCENARIOS_BY_PROCESSING_MODE",
+          "FILTER_SCENARIOS_BY_CATEGORY",
+          "FILTER_SCENARIOS_BY_AUTHOR",
+          "FILTER_SCENARIOS_BY_OTHER",
+          "SORT_SCENARIOS",
+          "SEARCH_COMPONENTS_BY_NAME",
+          "FILTER_COMPONENTS_BY_GROUP",
+          "FILTER_COMPONENTS_BY_PROCESSING_MODE",
+          "FILTER_COMPONENTS_BY_CATEGORY",
+          "FILTER_COMPONENTS_BY_MULTIPLE_CATEGORIES",
+          "FILTER_COMPONENTS_BY_USAGES",
+          "CLICK_COMPONENT_USAGES",
+          "SEARCH_COMPONENT_USAGES_BY_NAME",
+          "FILTER_COMPONENT_USAGES_BY_STATUS",
+          "FILTER_COMPONENT_USAGES_BY_CATEGORY",
+          "FILTER_COMPONENT_USAGES_BY_AUTHOR",
+          "FILTER_COMPONENT_USAGES_BY_OTHER",
+          "CLICK_SCENARIO_FROM_COMPONENT_USAGES",
+          "CLICK_GLOBAL_METRICS",
+          "CLICK_ACTION_DEPLOY",
+          "CLICK_ACTION_METRICS",
+          "CLICK_VIEW_ZOOM_IN",
+          "CLICK_VIEW_RESET",
+          "CLICK_EDIT_UNDO",
+          "CLICK_EDIT_REDO",
+          "CLICK_EDIT_COPY",
+          "CLICK_EDIT_PASTE",
+          "CLICK_EDIT_DELETE",
+          "CLICK_EDIT_LAYOUT",
+          "CLICK_SCENARIO_PROPERTIES",
+          "CLICK_SCENARIO_COMPARE",
+          "CLICK_SCENARIO_MIGRATE",
+          "CLICK_SCENARIO_IMPORT",
+          "CLICK_SCENARIO_JSON",
+          "CLICK_SCENARIO_PDF",
+          "CLICK_SCENARIO_ARCHIVE",
+          "CLICK_TEST_GENERATED",
+          "CLICK_TEST_ADHOC",
+          "CLICK_TEST_FROM_FILE",
+          "CLICK_TEST_GENERATE_FILE",
+          "CLICK_TEST_HIDE",
+          "CLICK_MORE_SCENARIO_DETAILS",
+          "CLICK_ROLL_UP_PANEL",
+          "CLICK_EXPAND_PANEL",
+          "MOVE_PANEL",
+          "SEARCH_NODES_IN_SCENARIO",
+          "SEARCH_COMPONENTS_IN_SCENARIO",
+          "CLICK_OLDER_VERSION",
+          "CLICK_NEWER_VERSION",
+          "FIRED_KEY_STROKE",
+          "CLICK_NODE_DOCUMENTATION"
+        )
+      ),
+    )
+    val generatedSpec = NuDesignerApiAvailableToExpose.generateOpenApiYaml
+
+    forAll(data) { (enumName, enumValues) =>
+      OpenAPISchemaComponents.enumValues(generatedSpec, enumName) shouldBe enumValues
+    }
   }
 
 }

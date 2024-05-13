@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.db
 
 import pl.touk.nussknacker.ui.db.entity._
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory
 import slick.jdbc.JdbcProfile
 
 trait NuTables
@@ -10,7 +11,8 @@ trait NuTables
     with EnvironmentsEntityFactory
     with ProcessActionEntityFactory
     with TagsEntityFactory
-    with AttachmentEntityFactory {
+    with AttachmentEntityFactory
+    with DeploymentEntityFactory {
   protected val profile: JdbcProfile
 
 }

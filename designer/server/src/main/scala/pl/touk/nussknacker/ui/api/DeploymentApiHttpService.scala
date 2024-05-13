@@ -1,68 +1,58 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.data.EitherT
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError
-import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.DeploymentError.{
-  DeploymentCommentError,
-  NoPermission,
-  NoScenario
-}
-import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
-import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.deployment.{CommonCommandData, DeploymentService, RunDeploymentCommand}
-import pl.touk.nussknacker.ui.process.repository.CommentValidationError
+import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class DeploymentApiHttpService(
     authenticator: AuthenticationResources,
-    override protected val scenarioService: ProcessService,
     deploymentService: DeploymentService
-)(override protected implicit val executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
-    with ScenarioHttpServiceExtensions {
-
-  override protected type BusinessErrorType = DeploymentError
-  override protected def noScenarioError(scenarioName: ProcessName): DeploymentError = NoScenario(scenarioName)
-  override protected def noPermissionError: NoPermission.type                        = NoPermission
+)(implicit executionContext: ExecutionContext)
+    extends BaseHttpService(authenticator) {
 
   private val endpoints = new DeploymentApiEndpoints(authenticator.authenticationMethod())
 
   expose {
-    endpoints.requestScenarioDeploymentEndpoint
-      .serverSecurityLogic(authorizeKnownUser[DeploymentError])
-      .serverLogicEitherT { implicit loggedUser =>
-        // TODO (next PRs): use params
-        { case (scenarioName, deploymentId, request) =>
-          for {
-            // TODO (next PRs) reuse fetched scenario inside DeploymentService.deployProcessAsync
-            scenarioDetails <- getScenarioWithDetailsByName(scenarioName)
-            _ <- EitherT.fromEither[Future](
-              Either.cond(loggedUser.can(scenarioDetails.processCategory, Permission.Deploy), (), NoPermission)
+    endpoints.runDeploymentEndpoint
+      .serverSecurityLogic(authorizeKnownUser[RunDeploymentError])
+      .serverLogicFlatErrors { implicit loggedUser =>
+        { case (deploymentId, request) =>
+          deploymentService
+            .processCommand(
+              RunDeploymentCommand(
+                id = deploymentId,
+                scenarioName = request.scenarioName,
+                nodesDeploymentData = request.nodesDeploymentData,
+                comment = request.comment,
+                user = loggedUser
+              )
             )
-            // TODO (next PRs): Currently it is done sync, but eventually we should make it async and add an endpoint for deployment status verification
-            _ <- eitherifyErrors(
-              deploymentService
-                .processCommand(
-                  RunDeploymentCommand(
-                    commonData = CommonCommandData(scenarioDetails.idWithNameUnsafe, request.comment, loggedUser),
-                    savepointPath = None,
-                    nodesDeploymentData = request.nodesDeploymentData,
-                  )
-                )
-                .flatten
-            )
-          } yield ()
+            .map(_.left.map {
+              case DeploymentService.ConflictingDeploymentIdError(id)    => ConflictingDeploymentIdError(id)
+              case DeploymentService.ScenarioNotFoundError(scenarioName) => ScenarioNotFoundError(scenarioName)
+              case DeploymentService.NoPermissionError                   => NoPermissionError
+              case DeploymentService.NewCommentValidationError(message)  => CommentValidationErrorNG(message)
+            })
         }
       }
   }
 
-  override protected def handleOtherErrors: PartialFunction[Throwable, DeploymentError] = {
-    case CommentValidationError(message) => DeploymentCommentError(message)
+  expose {
+    endpoints.getDeploymentStatusEndpoint
+      .serverSecurityLogic(authorizeKnownUser[GetDeploymentStatusError])
+      .serverLogicFlatErrors { implicit loggedUser =>
+        { deploymentId =>
+          deploymentService
+            .getDeploymentStatus(deploymentId)
+            .map(_.left.map {
+              case DeploymentService.DeploymentNotFoundError(id) => DeploymentNotFoundError(id)
+              case DeploymentService.NoPermissionError           => NoPermissionError
+            })
+        }
+      }
   }
 
 }

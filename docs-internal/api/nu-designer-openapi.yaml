@@ -497,43 +497,35 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarios/{scenarioName}/deployments/{deploymentId}:
-    put:
-      summary: Service allowing to request the deployment of a scenario
-      operationId: putApiScenariosScenarionameDeploymentsDeploymentid
+  /api/deployments/{deploymentId}/status:
+    get:
+      tags:
+      - Deployments
+      summary: Get status of a deployment
+      operationId: getApiDeploymentsDeploymentidStatus
       parameters:
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
       - name: deploymentId
         in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeploymentRequest'
-            example:
-              nodesDeploymentData:
-                sourceNodeId1: field1 = 'value'
-        required: true
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
       responses:
         '200':
-          description: ''
-        '400':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: Comment is required
-                  value: Comment is required.
+        '400':
+          description: 'Invalid value for: path parameter deploymentId'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -563,8 +555,85 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
+                  summary: No deployment {deploymentId} found
+                  value: Deployment a9a1e269-0b71-4582-a948-603482d27298 not found
+      security:
+      - {}
+      - httpAuth: []
+  /api/deployments/{deploymentId}:
+    put:
+      tags:
+      - Deployments
+      summary: Run the deployment of a scenario
+      operationId: putApiDeploymentsDeploymentid
+      parameters:
+      - name: deploymentId
+        in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunDeploymentRequest'
+            example:
+              scenarioName: scenario1
+              nodesDeploymentData:
+                sourceNodeId1: field1 = 'value'
+        required: true
+      responses:
+        '202':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Scenario {scenarioName} not found
+                  value: Scenario 'example scenario' not found
+                Example1:
+                  summary: Comment is required
+                  value: Comment is required.
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Deployment with id {deploymentId} already exists
+                  value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
+                    exists
       security:
       - {}
       - httpAuth: []
@@ -1831,6 +1900,51 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/statistic:
+    post:
+      tags:
+      - Statistics
+      summary: Register statistics service
+      operationId: postApiStatistic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterStatisticsRequestDto'
+        required: true
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - {}
+      - httpAuth: []
   /api/statistic/usage:
     get:
       tags:
@@ -2242,18 +2356,6 @@ components:
     DateTimeParameterEditor:
       title: DateTimeParameterEditor
       type: object
-    DeploymentRequest:
-      title: DeploymentRequest
-      type: object
-      required:
-      - nodesDeploymentData
-      properties:
-        nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
-        comment:
-          type:
-          - string
-          - 'null'
     Dict:
       title: Dict
       type: object
@@ -3434,6 +3536,29 @@ components:
     RawParameterEditor:
       title: RawParameterEditor
       type: object
+    RegisterStatisticsRequestDto:
+      title: RegisterStatisticsRequestDto
+      type: object
+      properties:
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatisticDto'
+    RunDeploymentRequest:
+      title: RunDeploymentRequest
+      type: object
+      required:
+      - scenarioName
+      - nodesDeploymentData
+      properties:
+        scenarioName:
+          type: string
+        nodesDeploymentData:
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+        comment:
+          type:
+          - string
+          - 'null'
     ScenarioActivity:
       title: ScenarioActivity
       type: object
@@ -3548,6 +3673,71 @@ components:
     SqlParameterEditor:
       title: SqlParameterEditor
       type: object
+    StatisticDto:
+      title: StatisticDto
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          $ref: '#/components/schemas/StatisticName'
+    StatisticName:
+      title: StatisticName
+      type: string
+      enum:
+      - SEARCH_SCENARIOS_BY_NAME
+      - FILTER_SCENARIOS_BY_STATUS
+      - FILTER_SCENARIOS_BY_PROCESSING_MODE
+      - FILTER_SCENARIOS_BY_CATEGORY
+      - FILTER_SCENARIOS_BY_AUTHOR
+      - FILTER_SCENARIOS_BY_OTHER
+      - SORT_SCENARIOS
+      - SEARCH_COMPONENTS_BY_NAME
+      - FILTER_COMPONENTS_BY_GROUP
+      - FILTER_COMPONENTS_BY_PROCESSING_MODE
+      - FILTER_COMPONENTS_BY_CATEGORY
+      - FILTER_COMPONENTS_BY_MULTIPLE_CATEGORIES
+      - FILTER_COMPONENTS_BY_USAGES
+      - CLICK_COMPONENT_USAGES
+      - SEARCH_COMPONENT_USAGES_BY_NAME
+      - FILTER_COMPONENT_USAGES_BY_STATUS
+      - FILTER_COMPONENT_USAGES_BY_CATEGORY
+      - FILTER_COMPONENT_USAGES_BY_AUTHOR
+      - FILTER_COMPONENT_USAGES_BY_OTHER
+      - CLICK_SCENARIO_FROM_COMPONENT_USAGES
+      - CLICK_GLOBAL_METRICS
+      - CLICK_ACTION_DEPLOY
+      - CLICK_ACTION_METRICS
+      - CLICK_VIEW_ZOOM_IN
+      - CLICK_VIEW_RESET
+      - CLICK_EDIT_UNDO
+      - CLICK_EDIT_REDO
+      - CLICK_EDIT_COPY
+      - CLICK_EDIT_PASTE
+      - CLICK_EDIT_DELETE
+      - CLICK_EDIT_LAYOUT
+      - CLICK_SCENARIO_PROPERTIES
+      - CLICK_SCENARIO_COMPARE
+      - CLICK_SCENARIO_MIGRATE
+      - CLICK_SCENARIO_IMPORT
+      - CLICK_SCENARIO_JSON
+      - CLICK_SCENARIO_PDF
+      - CLICK_SCENARIO_ARCHIVE
+      - CLICK_TEST_GENERATED
+      - CLICK_TEST_ADHOC
+      - CLICK_TEST_FROM_FILE
+      - CLICK_TEST_GENERATE_FILE
+      - CLICK_TEST_HIDE
+      - CLICK_MORE_SCENARIO_DETAILS
+      - CLICK_ROLL_UP_PANEL
+      - CLICK_EXPAND_PANEL
+      - MOVE_PANEL
+      - SEARCH_NODES_IN_SCENARIO
+      - SEARCH_COMPONENTS_IN_SCENARIO
+      - CLICK_OLDER_VERSION
+      - CLICK_NEWER_VERSION
+      - FIRED_KEY_STROKE
+      - CLICK_NODE_DOCUMENTATION
     StatisticUrlResponseDto:
       title: StatisticUrlResponseDto
       type: object

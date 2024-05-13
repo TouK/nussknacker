@@ -43,6 +43,7 @@ import scala.util.{Failure, Success}
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
 // will be executed in given state. It sends notifications about finished actions.
 // Also thanks to it we are able to check if state on remote engine is the same as persisted state.
+// TODO: This class will be replaced by DeploymentService from newdeployment package, see docs there
 class DeploymentService(
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],

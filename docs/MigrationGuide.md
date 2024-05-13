@@ -80,6 +80,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
 * [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
   allowing for disabling namespaced Kafka consumer groups
+* [#5914](https://github.com/TouK/nussknacker/pull/5914) Removed dev-specific configuration files `dev-application.conf` 
+  and `dev-tables-definition.sql` from public distribution artifacts
 
 ## In version 1.14.0
 

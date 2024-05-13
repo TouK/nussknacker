@@ -14,7 +14,11 @@ import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-object collection extends HideToString {
+object collection extends CollectionUtils
+
+trait CollectionUtils extends HideToString {
+
+  import CollectionUtils._
 
   @Documentation(description = "Concatenates two lists")
   @GenericType(typingFunction = classOf[ListAdditionTyping])
@@ -187,6 +191,9 @@ object collection extends HideToString {
       throw new java.lang.ClassCastException("Provided value is not comparable: " + element)
     }
 
+}
+
+object CollectionUtils {
   private val unknownMapType = Typed.fromDetailedType[java.util.Map[Any, Any]]
   private val numberType     = Typed.fromDetailedType[java.lang.Number]
 

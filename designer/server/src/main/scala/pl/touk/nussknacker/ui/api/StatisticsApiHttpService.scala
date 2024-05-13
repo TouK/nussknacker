@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class StatisticsApiHttpService(
     authenticator: AuthenticationResources,
@@ -29,6 +29,14 @@ class StatisticsApiHttpService(
             case Left(_)         => businessError(CannotGenerateStatisticError)
             case Right(maybeUrl) => success(StatisticUrlResponseDto(maybeUrl.toList))
           }
+      }
+  }
+
+  expose {
+    endpoints.registerStatisticsEndpoint
+      .serverSecurityLogic(authorizeKnownUser[Unit])
+      .serverLogicSuccess { _ => _ =>
+        Future.successful(())
       }
   }
 

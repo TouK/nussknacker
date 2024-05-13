@@ -24,30 +24,36 @@ class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
     for {
       (_, pathItem)  <- specJson.hcursor.downField("paths").focusObjectFields
       (_, operation) <- pathItem.asObject.map(_.toList).getOrElse(List.empty)
-      invalidExample <- validateRequestExample(operation, componentsSchemas) :::
-        validateResponsesExamples(operation, componentsSchemas)
+      operationId = operation.hcursor.downField("operationId").as[String].toTry.get
+      invalidExample <- validateRequestExample(operation, operationId, componentsSchemas) :::
+        validateResponsesExamples(operation, operationId, componentsSchemas)
     } yield invalidExample
   }
 
-  private def validateRequestExample(operation: Json, componentsSchemas: Map[String, Json]): List[InvalidExample] =
+  private def validateRequestExample(
+      operation: Json,
+      operationId: String,
+      componentsSchemas: Map[String, Json]
+  ): List[InvalidExample] =
     for {
       (_, mediaType) <- operation.hcursor.downField("requestBody").downField("content").focusObjectFields
-      exampleJson    <- validateMediaTypeExamples(mediaType, operation, isRequest = true, componentsSchemas)
+      exampleJson    <- validateMediaTypeExamples(mediaType, operationId, isRequest = true, componentsSchemas)
     } yield exampleJson
 
   private def validateResponsesExamples(
       operation: Json,
+      operationId: String,
       componentsSchemas: Map[String, Json]
   ): List[InvalidExample] =
     for {
       (_, response)  <- operation.hcursor.downField("responses").focusObjectFields
       (_, mediaType) <- response.hcursor.downField("content").focusObjectFields
-      exampleJson    <- validateMediaTypeExamples(mediaType, operation, isRequest = false, componentsSchemas)
+      exampleJson    <- validateMediaTypeExamples(mediaType, operationId, isRequest = false, componentsSchemas)
     } yield exampleJson
 
   private def validateMediaTypeExamples(
       mediaType: Json,
-      operation: Json,
+      operationId: String,
       isRequest: Boolean,
       componentsSchemas: Map[String, Json]
   ): List[InvalidExample] = {
@@ -55,19 +61,14 @@ class OpenAPIExamplesValidator private (schemaFactory: JsonSchemaFactory) {
       schema <- mediaType.hcursor.downField("schema").focus.toList
       resolvedSchema = resolveSchemaReferences(schema, componentsSchemas)
       jsonSchema     = schemaFactory.getSchema(resolvedSchema.spaces2)
-      (exampleId, example) <- mediaType.hcursor.downField("examples").focusObjectFields
-      exampleValue         <- example.hcursor.downField("value").focus.toList
+      (exampleId, exampleValue) <- mediaType.hcursor.downField("example").focus.map("example" -> _).toList :::
+        mediaType.hcursor.downField("examples").focusObjectFields.flatMap { case (exampleId, exampleRoot) =>
+          exampleRoot.hcursor.downField("value").focus.toList.map(exampleId -> _)
+        }
       invalidJson <- NonEmptyList
         .from(jsonSchema.validate(exampleValue.noSpaces, InputFormat.JSON).asScala.toList)
         .map { errors =>
-          InvalidExample(
-            exampleValue,
-            resolvedSchema,
-            operation.hcursor.downField("operationId").as[String].toTry.get,
-            isRequest,
-            exampleId,
-            errors
-          )
+          InvalidExample(exampleValue, resolvedSchema, operationId, isRequest, exampleId, errors)
         }
         .toList
     } yield invalidJson
