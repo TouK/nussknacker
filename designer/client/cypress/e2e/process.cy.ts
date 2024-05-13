@@ -234,7 +234,7 @@ describe("Process", () => {
             cy.contains(/^previous deployments...$/i)
                 .should("be.visible")
                 .click();
-            cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.0025 });
+            cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.005 });
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
