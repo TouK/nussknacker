@@ -152,6 +152,8 @@ object StatisticsApiEndpoints {
       case object ClickScenarioCancel                  extends StatisticName
       case object ClickScenarioArchiveToggle           extends StatisticName
       case object ClickScenarioUnarchive               extends StatisticName
+      case object ClickScenarioCustomAction            extends StatisticName
+      case object ClickScenarioCustomLink              extends StatisticName
 
       override def values = findValues
     }
