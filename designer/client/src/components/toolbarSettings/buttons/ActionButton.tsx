@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { getProcessName } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
 import { getCustomActions } from "../../../reducers/selectors/settings";
-import CustomActionButton from "../../toolbars/scenarioDetails/buttons/CustomActionButton";
+import CustomActionButton from "../../toolbars/scenarioActions/buttons/CustomActionButton";
 
 export interface ActionButtonProps {
     name: string;

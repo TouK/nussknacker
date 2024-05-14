@@ -9,7 +9,7 @@ import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { VersionsPanel } from "../toolbars/VersionsPanel";
 import loadable from "@loadable/component";
-import ProcessActions from "../toolbars/actions/ProcessActions";
+import ProcessActions from "../toolbars/scenarioActions/ProcessActions";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {

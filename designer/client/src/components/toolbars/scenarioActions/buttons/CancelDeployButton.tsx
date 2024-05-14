@@ -6,7 +6,7 @@ import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { useWindows, WindowKind } from "../../../../windowManager";
+import { WindowKind, useWindows } from "../../../../windowManager";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
@@ -22,11 +22,11 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
 
     const { open } = useWindows();
     const action = (p, c) => HttpService.cancel(p, c).finally(() => dispatch(loadProcessState(processName)));
-    const message = t("panels.actions.deploy-cancel.dialog", "Cancel scenario {{name}}", { name: processName });
+    const message = t("panels.actions.deploy-canel.dialog", "Cancel scenario {{name}}", { name: processName });
 
     return (
         <ToolbarButton
-            name={t("panels.actions.deploy-cancel.button", "cancel")}
+            name={t("panels.actions.deploy-canel.button", "cancel")}
             disabled={!available}
             icon={<Icon />}
             onClick={() =>
