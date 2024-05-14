@@ -147,6 +147,11 @@ object StatisticsApiEndpoints {
       case object FiredKeyStroke                       extends StatisticName
       case object ClickNodeDocumentation               extends StatisticName
       case object ClickComponentsTab                   extends StatisticName
+      case object ClickScenarioSave                    extends StatisticName
+      case object ClickTestCounts                      extends StatisticName
+      case object ClickScenarioCancel                  extends StatisticName
+      case object ClickScenarioArchiveToggle           extends StatisticName
+      case object ClickScenarioUnarchive               extends StatisticName
 
       override def values = findValues
     }
