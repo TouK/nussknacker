@@ -4,6 +4,7 @@ import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME } from "./ToolbarsContainer";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";
+import { useEventTracking } from "../../containers/event-tracking";
 
 type Props = PropsWithChildren<{
     onMove: (from: ToolbarPosition, to: ToolbarPosition) => void;
@@ -13,9 +14,11 @@ export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 
 export function DragAndDropContainer({ children, onMove }: Props) {
     const [isDragging, setIsDragging] = useState(false);
+    const { trackEvent } = useEventTracking();
 
     const onDragEnd = useCallback(
         (result: DropResult) => {
+            trackEvent({ type: "MOVE_PANEL" });
             setIsDragging(false);
             const { destination, type, reason, source } = result;
             if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
