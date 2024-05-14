@@ -33,7 +33,7 @@ class UserApiHttpServiceBusinessSpec
              |  "categoryPermissions": {
              |      "Category1": [ "Deploy", "Read", "Write" ]
              |    },
-             |  "globalPermissions": []
+             |  "globalPermissions": [ "OverrideUsername" ]
              |}""".stripMargin)
     }
     "return admin info" in {
