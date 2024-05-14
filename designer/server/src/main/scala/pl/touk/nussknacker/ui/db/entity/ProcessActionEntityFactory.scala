@@ -31,6 +31,8 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def user: Rep[String] = column[String]("user")
 
+    def impersonatedBy: Rep[Option[String]] = column[Option[String]]("impersonated_by")
+
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
     def actionName: Rep[ScenarioActionName] = column[ScenarioActionName]("action_name")
@@ -60,6 +62,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       processId,
       processVersionId,
       user,
+      impersonatedBy,
       createdAt,
       performedAt,
       actionName,
@@ -80,6 +83,7 @@ final case class ProcessActionEntityData(
     processId: ProcessId,
     processVersionId: Option[VersionId],
     user: String,
+    impersonatedBy: Option[String],
     createdAt: Timestamp,
     performedAt: Option[Timestamp],
     actionName: ScenarioActionName,

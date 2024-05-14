@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import pl.touk.nussknacker.restmodel.SecurityError
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
-import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.{AuthCredentials, Permission}
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
 import pl.touk.nussknacker.ui.security.api._
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
@@ -54,7 +54,11 @@ abstract class BaseHttpService(
         case Some(user) if user.roles.nonEmpty =>
           // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
           //       creation of another user representation based on authenticator.configuration. Shouldn't we just return the LoggedUser?
-          success(LoggedUser(user, authenticator.configuration.rules))
+          val loggedUser = LoggedUser(user, authenticator.configuration.rules)
+          user.impersonatedUser match {
+            case Some(impersonatedUser) => impersonateUser(loggedUser, impersonatedUser)
+            case None                   => success(loggedUser)
+          }
         case Some(_) =>
           securityError(AuthorizationError)
         case None =>
@@ -67,6 +71,15 @@ abstract class BaseHttpService(
   protected def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = Left(Left(error))
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
+
+  private def impersonateUser[BUSINESS_ERROR](
+      impersonatingUser: LoggedUser,
+      impersonatedUser: ImpersonatedUser
+  ): LogicResult[BUSINESS_ERROR, LoggedUser] = {
+    if (impersonatingUser.canImpersonate)
+      success(LoggedUser(impersonatingUser, impersonatedUser, authenticator.configuration.rules))
+    else securityError(AuthorizationError)
+  }
 
   private type PartialEndpoint[INPUT, OUTPUT, BUSINESS_ERROR, -R] =
     PartialServerEndpoint[_, LoggedUser, INPUT, Either[BUSINESS_ERROR, SecurityError], OUTPUT, R, Future]

@@ -522,11 +522,16 @@ class AkkaHttpBasedRouteProvider(
         } ~ pathPrefix("api") {
           authenticationResources.authenticate() { authenticatedUser =>
             authorize(authenticatedUser.roles.nonEmpty) {
-              val loggedUser = LoggedUser(
+              val rules = authenticationResources.configuration.rules
+              val userWithRoles = LoggedUser(
                 authenticatedUser = authenticatedUser,
-                rules = authenticationResources.configuration.rules
+                rules = rules
               )
-              apiResourcesWithAuthentication.map(_.securedRouteWithErrorHandling(loggedUser)).reduce(_ ~ _)
+              val impersonatedUserOpt = authenticatedUser.impersonatedUser
+              authorize((impersonatedUserOpt.nonEmpty && userWithRoles.canImpersonate) || impersonatedUserOpt.isEmpty) {
+                val loggedUser = impersonatedUserOpt.map(LoggedUser(userWithRoles, _, rules)).getOrElse(userWithRoles)
+                apiResourcesWithAuthentication.map(_.securedRouteWithErrorHandling(loggedUser)).reduce(_ ~ _)
+              }
             }
           }
         }

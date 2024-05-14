@@ -158,9 +158,7 @@ class MigrationService(
   ) = {
     EitherT
       .liftF[Future, NuDesignerError, Boolean](
-        processAuthorizer
-          .check(processId, Permission.OverrideUsername, loggedUser)
-          .map(_ || forwardedUsername.isEmpty)
+        Future.successful(loggedUser.canImpersonate)
       )
       .subflatMap {
         case true  => Right(())

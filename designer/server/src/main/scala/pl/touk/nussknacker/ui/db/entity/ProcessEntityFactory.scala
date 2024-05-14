@@ -33,8 +33,21 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
+    def impersonatedBy: Rep[Option[String]] = column[Option[String]]("impersonated_by")
+
     def * : ProvenShape[ProcessEntityData] =
-      (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
+      (
+        id,
+        name,
+        description,
+        processCategory,
+        processingType,
+        isFragment,
+        isArchived,
+        createdAt,
+        createdBy,
+        impersonatedBy
+      ) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
 
@@ -52,5 +65,6 @@ final case class ProcessEntityData(
     isFragment: Boolean,
     isArchived: Boolean,
     createdAt: Timestamp,
-    createdBy: String
+    createdBy: String,
+    impersonatedBy: Option[String]
 )

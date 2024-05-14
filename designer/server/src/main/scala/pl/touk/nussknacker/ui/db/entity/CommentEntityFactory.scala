@@ -32,7 +32,9 @@ trait CommentEntityFactory extends BaseEntityFactory {
 
     def user: Rep[String] = column[String]("user", NotNull)
 
-    override def * = (id, processId, processVersionId, content, user, createDate) <> (
+    def impersonatedBy: Rep[Option[String]] = column[Option[String]]("impersonated_by")
+
+    override def * = (id, processId, processVersionId, content, user, impersonatedBy, createDate) <> (
       CommentEntityData.apply _ tupled, CommentEntityData.unapply
     )
 
@@ -46,6 +48,7 @@ final case class CommentEntityData(
     processVersionId: VersionId,
     content: String,
     user: String,
+    impersonatedBy: Option[String],
     createDate: Timestamp
 ) {
   val createDateTime: Instant = createDate.toInstant
@@ -75,6 +78,7 @@ trait CommentActions {
             processVersionId = processVersionId,
             content = c.value,
             user = loggedUser.username,
+            impersonatedBy = loggedUser.impersonatedBy.map(_.username),
             createDate = Timestamp.from(Instant.now())
           )
           _ <- commentsTable += entityData
