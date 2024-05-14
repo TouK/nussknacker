@@ -139,6 +139,7 @@ object StatisticsApiEndpoints {
       case object ClickMoreScenarioDetails             extends StatisticName
       case object ClickRollUpPanel                     extends StatisticName
       case object ClickExpandPanel                     extends StatisticName
+      case object ClickCollapsePanel                   extends StatisticName
       case object MovePanel                            extends StatisticName
       case object SearchNodesInScenario                extends StatisticName
       case object SearchComponentsInScenario           extends StatisticName

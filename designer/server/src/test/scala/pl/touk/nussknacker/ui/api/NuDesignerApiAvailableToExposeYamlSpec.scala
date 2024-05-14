@@ -98,6 +98,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_MORE_SCENARIO_DETAILS",
           "CLICK_ROLL_UP_PANEL",
           "CLICK_EXPAND_PANEL",
+          "CLICK_COLLAPSE_PANEL",
           "MOVE_PANEL",
           "SEARCH_NODES_IN_SCENARIO",
           "SEARCH_COMPONENTS_IN_SCENARIO",
