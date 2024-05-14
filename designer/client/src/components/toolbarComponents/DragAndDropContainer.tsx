@@ -27,7 +27,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
                 onMove(from, to);
             }
         },
-        [onMove],
+        [onMove, trackEvent],
     );
 
     const onDragStart = useCallback(() => {
