@@ -139,6 +139,7 @@ object StatisticsApiEndpoints {
       case object ClickMoreScenarioDetails             extends StatisticName
       case object ClickRollUpPanel                     extends StatisticName
       case object ClickExpandPanel                     extends StatisticName
+      case object ClickCollapsePanel                   extends StatisticName
       case object MovePanel                            extends StatisticName
       case object SearchNodesInScenario                extends StatisticName
       case object SearchComponentsInScenario           extends StatisticName
@@ -152,6 +153,8 @@ object StatisticsApiEndpoints {
       case object ClickScenarioCancel                  extends StatisticName
       case object ClickScenarioArchiveToggle           extends StatisticName
       case object ClickScenarioUnarchive               extends StatisticName
+      case object ClickScenarioCustomAction            extends StatisticName
+      case object ClickScenarioCustomLink              extends StatisticName
 
       override def values = findValues
     }
