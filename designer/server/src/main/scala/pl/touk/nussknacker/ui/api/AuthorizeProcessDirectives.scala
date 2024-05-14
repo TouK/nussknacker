@@ -32,7 +32,7 @@ trait AuthorizeProcessDirectives {
   def canOverrideUsername(category: String, remoteUserName: Option[RemoteUserName])(
       implicit loggedUser: LoggedUser
   ): Directive0 = {
-    Directives.authorize(remoteUserName.isEmpty || loggedUser.can(category, Permission.OverrideUsername))
+    Directives.authorize(remoteUserName.isEmpty || loggedUser.can(category, Permission.Impersonate))
   }
 
   def canOverrideUsername(
@@ -40,16 +40,12 @@ trait AuthorizeProcessDirectives {
       remoteUserName: Option[RemoteUserName]
   )(implicit executionContext: ExecutionContext, loggedUser: LoggedUser): Directive0 = {
     Directives.authorizeAsync(
-      processAuthorizer.check(processId, Permission.OverrideUsername, loggedUser).map(_ || remoteUserName.isEmpty)
+      processAuthorizer.check(processId, Permission.Impersonate, loggedUser).map(_ || remoteUserName.isEmpty)
     )
   }
 
   private def canInProcess(processId: ProcessId, permission: Permission, user: LoggedUser): Directive0 = {
     Directives.authorizeAsync(_ => processAuthorizer.check(processId, permission, user))
-  }
-
-  def hasAdminPermission(loggedUser: LoggedUser): Directive0 = {
-    Directives.authorize(loggedUser.isAdmin)
   }
 
   private def hasUserPermissionInProcess(

@@ -5,6 +5,7 @@ import pl.touk.nussknacker.restmodel.SecurityError
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
+import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 import pl.touk.nussknacker.ui.security.api._
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
@@ -12,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(
-    authenticator: AuthenticationResources
+    authenticationManager: AuthenticationManager
 )(implicit executionContext: ExecutionContext) {
 
   // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
@@ -41,6 +42,7 @@ abstract class BaseHttpService(
       .map {
         case right @ Right(AdminUser(_, _)) => right
         case Right(_: CommonUser)           => securityError(AuthorizationError)
+        case Right(_: ImpersonatedUser)     => securityError(AuthorizationError)
         case error @ Left(_)                => error
       }
   }
@@ -48,13 +50,20 @@ abstract class BaseHttpService(
   protected def authorizeKnownUser[BUSINESS_ERROR](
       credentials: AuthCredentials
   ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
-    authenticator
+    authenticationManager
       .authenticate(credentials)
       .map {
         case Some(user) if user.roles.nonEmpty =>
           // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
           //       creation of another user representation based on authenticator.configuration. Shouldn't we just return the LoggedUser?
-          success(LoggedUser(user, authenticator.configuration.rules))
+          LoggedUser.create(
+            user,
+            authenticationManager.authenticationRules,
+            authenticationManager.isAdminImpersonationPossible
+          ) match {
+            case Right(loggedUser)             => success(loggedUser)
+            case Left(ImpersonationNotAllowed) => securityError(AuthorizationError)
+          }
         case Some(_) =>
           securityError(AuthorizationError)
         case None =>

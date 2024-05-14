@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -119,7 +119,15 @@ class DBProcessRepository(
       isFragment = action.isFragment,
       isArchived = false,
       createdAt = Timestamp.from(now),
-      createdBy = userName
+      createdBy = userName,
+      impersonatedByIdentity = loggedUser match {
+        case _: RealLoggedUser   => None
+        case u: ImpersonatedUser => Some(u.impersonatingUser.id)
+      },
+      impersonatedByUsername = loggedUser match {
+        case _: RealLoggedUser   => None
+        case u: ImpersonatedUser => Some(u.impersonatingUser.username)
+      }
     )
 
     val insertNew =

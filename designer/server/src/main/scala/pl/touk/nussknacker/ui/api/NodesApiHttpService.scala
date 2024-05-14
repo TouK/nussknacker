@@ -37,14 +37,14 @@ import pl.touk.nussknacker.ui.api.utils.ScenarioHttpServiceExtensions
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationManager, LoggedUser}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UIProcessValidator}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class NodesApiHttpService(
-    authenticator: AuthenticationResources,
+    authenticationManager: AuthenticationManager,
     processingTypeToConfig: ProcessingTypeDataProvider[ModelData, _],
     processingTypeToProcessValidator: ProcessingTypeDataProvider[UIProcessValidator, _],
     processingTypeToNodeValidator: ProcessingTypeDataProvider[NodeValidator, _],
@@ -52,7 +52,7 @@ class NodesApiHttpService(
     processingTypeToParametersValidator: ProcessingTypeDataProvider[ParametersValidator, _],
     protected override val scenarioService: ProcessService
 )(override protected implicit val executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authenticationManager)
     with ScenarioHttpServiceExtensions
     with LazyLogging {
 
@@ -60,7 +60,7 @@ class NodesApiHttpService(
   override protected def noScenarioError(scenarioName: ProcessName): NodesError      = NoScenario(scenarioName)
   override protected def noPermissionError: NodesError with CustomAuthorizationError = NoPermission
 
-  private val nodesApiEndpoints = new NodesApiEndpoints(authenticator.authenticationMethod())
+  private val nodesApiEndpoints = new NodesApiEndpoints(authenticationManager.authenticationEndpointInput())
 
   private val additionalInfoProviders = new AdditionalInfoProviders(processingTypeToConfig)
 

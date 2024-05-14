@@ -141,8 +141,7 @@ have one.
 
 Currently supported permissions:
 
-* AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components
-  functionality).
+* Impersonate - Enables technical user to impersonate a business user and act on their behalf with their permissions.
 
 ### Common configuration parameters
 

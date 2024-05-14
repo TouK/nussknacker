@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.db.entity.CommentEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.jdbc.JdbcProfile
 
 import java.sql.Timestamp
@@ -32,6 +32,14 @@ class CommentRepository(protected val dbRef: DbRef)(implicit ec: ExecutionContex
         processVersionId = scenarioGraphVersionId,
         content = comment.value,
         user = user.username,
+        impersonatedByIdentity = user match {
+          case _: RealLoggedUser   => None
+          case u: ImpersonatedUser => Some(u.impersonatingUser.id)
+        },
+        impersonatedByUsername = user match {
+          case _: RealLoggedUser   => None
+          case u: ImpersonatedUser => Some(u.impersonatingUser.username)
+        },
         createDate = Timestamp.from(Instant.now())
       )
       _ <- commentsTable += entityData

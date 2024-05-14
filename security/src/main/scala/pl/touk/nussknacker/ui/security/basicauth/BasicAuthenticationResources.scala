@@ -14,8 +14,7 @@ class BasicAuthenticationResources(
     override val configuration: BasicAuthenticationConfiguration
 )(
     implicit executionContext: ExecutionContext
-) extends AuthenticationResources
-    with AnonymousAccess {
+) extends AuthenticationResources {
 
   override type CONFIG = BasicAuthenticationConfiguration
 
@@ -23,18 +22,16 @@ class BasicAuthenticationResources(
 
   override protected val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.Browser
 
-  override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] =
+  override def authenticate(): AuthenticationDirective[AuthenticatedUser] =
     SecurityDirectives.authenticateBasicAsync(
       authenticator = authenticator,
       realm = realm
     )
 
-  override protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authenticator.authenticate(credentials)
+  override def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(authCredentials)
   }
 
-  override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
+  override def authenticationMethod(): EndpointInput[Credentials] =
     auth.basic[Option[String]](WWWAuthenticateChallenge.basic.realm(realm))
-  }
-
 }

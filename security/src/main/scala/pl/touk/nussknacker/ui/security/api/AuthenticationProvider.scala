@@ -16,6 +16,8 @@ trait AuthenticationProvider extends NamedServiceProvider {
       sttpBackend: SttpBackend[Future, Any]
   ): AuthenticationResources
 
+  def createImpersonationContext(config: Config): ImpersonationContext
+
 }
 
 object AuthenticationProvider extends LazyLogging {

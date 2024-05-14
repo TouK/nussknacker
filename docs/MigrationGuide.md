@@ -12,6 +12,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
   * `DMValidateScenarioCommand.updateStrategy` was added
     * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
+    * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
+    * `AuthenticationManager` is now responsible for authentication. `AuthenticationResources` handles only plugin specific authentication now
+      and both anonymous access and impersonation access are handled at `AuthenticationManager` level. This leads to following changes
+      in `AuthenticationResources` API:
+        * `authenticate()` returns `AuthenticationDirective[AuthenticatedUser]` and not `Directive1[AuthenticatedUser]`
+        * `authenticate(authCredentials)` receives `PassedAuthCredentials` parameter type instead of `AuthCredentials`
+          as anonymous access is no longer part of `AuthenticationResources` logic
+        * `authenticationMethod()` returns `EndpointInput[Option[String]]` instead of `EndpointInput[AuthCredentials]`.
+          The `Option[String]` should hold the value that will be passed to the mentioned `PassedAuthCredentials`.
+    * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
+      It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
 
 ### Configuration changes
 

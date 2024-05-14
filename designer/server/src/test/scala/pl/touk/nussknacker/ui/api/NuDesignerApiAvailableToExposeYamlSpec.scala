@@ -5,9 +5,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
-import pl.touk.nussknacker.ui.security.api.AnonymousAccess
+import pl.touk.nussknacker.ui.security.accesslogic.ImpersonatedAccess
+import pl.touk.nussknacker.ui.security.api.AuthenticationManager
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
@@ -164,9 +166,10 @@ object NuDesignerApiAvailableToExpose {
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
     val basicAuth = auth
       .basic[Option[String]]()
-      .map { AnonymousAccess.optionalStringToAuthCredentialsMapping(false) }
+      .and(ImpersonatedAccess.headerEndpointInput)
+      .map(AuthenticationManager.mappedAuthenticationEndpointInput)
 
-    Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
+    Try(clazz.getConstructor(classOf[EndpointInput[PassedAuthCredentials]]))
       .map(_.newInstance(basicAuth))
       .orElse {
         Try(clazz.getDeclaredConstructor())
@@ -174,7 +177,7 @@ object NuDesignerApiAvailableToExpose {
       }
       .getOrElse(
         throw new IllegalStateException(
-          s"Class ${clazz.getName} is required to have either one parameter constructor or constructor iwhtout parameters"
+          s"Class ${clazz.getName} is required to have either one parameter constructor or constructor without parameters"
         )
       )
   }

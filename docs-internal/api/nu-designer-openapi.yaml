@@ -10,6 +10,13 @@ paths:
       summary: Show component usage
       operationId: getApiComponentsIdUsages
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: id
         in: path
         required: true
@@ -63,6 +70,12 @@ paths:
                     modifiedBy: admin
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -100,6 +113,14 @@ paths:
       - Components
       summary: Listing components
       operationId: getApiComponents
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -128,6 +149,12 @@ paths:
                     usageCount: 2
                     allowedProcessingModes:
                     - Request-Response
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -159,6 +186,13 @@ paths:
       summary: Endpoint to validate input in custom action fields
       operationId: postApiProcessmanagementCustomactionScenarionameValidation
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -178,7 +212,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomActionValidationDto'
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -263,6 +298,14 @@ paths:
       - App
       summary: Deployed processes health check service
       operationId: getApiAppHealthcheckProcessDeployment
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -275,6 +318,12 @@ paths:
                   summary: All deployed processes are healthy
                   value:
                     status: OK
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -320,6 +369,14 @@ paths:
       - App
       summary: Deployed processes validation service
       operationId: getApiAppHealthcheckProcessValidation
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -332,6 +389,12 @@ paths:
                   summary: There are no validation errors among the processes
                   value:
                     status: OK
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -377,9 +440,23 @@ paths:
       - App
       summary: Processing type data reload service
       operationId: postApiAppProcessingtypeReload
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '204':
           description: ''
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -410,6 +487,14 @@ paths:
       - App
       summary: Server configuration viewer service
       operationId: getApiAppConfig
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -430,6 +515,12 @@ paths:
                         - model/devModel.jar
                         - model/flinkExecutor.jar
                         - components/flink
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -460,6 +551,14 @@ paths:
       - App
       summary: Configured categories with their processing types service
       operationId: getApiAppConfigCategorieswithprocessingtype
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -473,6 +572,12 @@ paths:
                   value:
                     Category1: streaming
                     Category2: streaming2
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -504,6 +609,13 @@ paths:
       summary: Get status of a deployment
       operationId: getApiDeploymentsDeploymentidStatus
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: deploymentId
         in: path
         description: Identifier in the UUID format that will be used for the verification
@@ -521,7 +633,8 @@ paths:
               schema:
                 type: string
         '400':
-          description: 'Invalid value for: path parameter deploymentId'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: path parameter deploymentId'
           content:
             text/plain:
               schema:
@@ -567,6 +680,13 @@ paths:
       summary: Run the deployment of a scenario
       operationId: putApiDeploymentsDeploymentid
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: deploymentId
         in: path
         description: Identifier in the UUID format that will be used for the verification
@@ -655,6 +775,13 @@ paths:
       summary: Get list of dictionary entries matching the label pattern
       operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -680,7 +807,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/DictEntry'
         '400':
-          description: 'Invalid value for: query parameter label'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: query parameter label'
           content:
             text/plain:
               schema:
@@ -723,6 +851,13 @@ paths:
         expected type
       operationId: postApiProcessdefinitiondataProcessingtypeDicts
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -785,6 +920,14 @@ paths:
       - Migrations
       summary: Migration between environments service
       operationId: postApiMigrate
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       requestBody:
         content:
           application/json:
@@ -863,6 +1006,14 @@ paths:
       - Migrations
       summary: current version of the scenario description version being used
       operationId: getApiMigrationScenarioDescriptionVersion
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -870,6 +1021,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiVersion'
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -901,6 +1058,13 @@ paths:
       summary: Additional info for provided node
       operationId: postApiNodesScenarionameAdditionalinfo
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -951,7 +1115,8 @@ paths:
                       Results for a can be found [here](http://touk.pl?id=a)
                     type: MarkdownAdditionalInfo
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -997,6 +1162,13 @@ paths:
       summary: Validate provided Node
       operationId: postApiNodesScenarionameValidation
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1145,6 +1317,13 @@ paths:
       summary: Suggest possible variables
       operationId: postApiParametersProcessingtypeSuggestions
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -1281,6 +1460,13 @@ paths:
       summary: Validate given parameters
       operationId: postApiParametersProcessingtypeValidate
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -1406,6 +1592,13 @@ paths:
       summary: Additional info for provided properties
       operationId: postApiPropertiesScenarionameAdditionalinfo
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1446,7 +1639,8 @@ paths:
                     content: 2 threads will be used on environment '{scenarioName}'
                     type: MarkdownAdditionalInfo
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -1492,6 +1686,13 @@ paths:
       summary: Validate node properties
       operationId: postApiPropertiesScenarionameValidation
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1560,7 +1761,8 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -1605,6 +1807,14 @@ paths:
       - Notifications
       summary: Endpoint to display notifications
       operationId: getApiNotifications
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -1625,6 +1835,12 @@ paths:
                     - versions
                     - activity
                     - state
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1656,6 +1872,13 @@ paths:
       summary: Add scenario comment service
       operationId: postApiProcessesScenarionameVersionidActivityComments
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1677,8 +1900,8 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: path parameter versionId, Invalid value
-            for: body'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: path parameter versionId, Invalid value for: body'
           content:
             text/plain:
               schema:
@@ -1724,6 +1947,13 @@ paths:
       summary: Delete process comment service
       operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1739,7 +1969,8 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: path parameter commentId'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: path parameter commentId'
           content:
             text/plain:
               schema:
@@ -1795,6 +2026,13 @@ paths:
       summary: Scenario activity service
       operationId: getApiProcessesScenarionameActivity
       parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1823,6 +2061,12 @@ paths:
                       fileName: some_file.txt
                       user: test
                       createDate: '2024-01-17T14:21:17Z'
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1863,6 +2107,14 @@ paths:
       - App
       summary: Service providing available combinations of scenario's parameters
       operationId: getApiScenarioparameterscombinations
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -1887,6 +2139,12 @@ paths:
                     engineSetupErrors:
                       Flink:
                       - Invalid Flink configuration
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1917,6 +2175,14 @@ paths:
       - Statistics
       summary: Register statistics service
       operationId: postApiStatistic
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       requestBody:
         content:
           application/json:
@@ -1927,7 +2193,8 @@ paths:
         '204':
           description: ''
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -1962,6 +2229,14 @@ paths:
       - Statistics
       summary: Statistics URL service
       operationId: getApiStatisticUsage
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -1975,6 +2250,12 @@ paths:
                   value:
                     urls:
                     - https://stats.nussknacker.io/?a_n=1&a_t=0&a_v=0&c=3&c_n=82&c_t=0&c_v=0&f_m=0&f_v=0&fingerprint=development&n_m=2&n_ma=0&n_mi=2&n_v=1&s_a=0&s_dm_c=1&s_dm_e=1&s_dm_f=2&s_dm_l=0&s_f=1&s_pm_b=0&s_pm_rr=1&s_pm_s=3&s_s=3&source=sources&u_ma=0&u_mi=0&u_v=0&v_m=2&v_ma=1&v_mi=3&v_v=2&version=1.15.0-SNAPSHOT
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -2015,6 +2296,14 @@ paths:
       - User
       summary: Logged user info service
       operationId: getApiUser
+      parameters:
+      - name: Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -2046,6 +2335,12 @@ paths:
                     - Category2
                     categoryPermissions: {}
                     globalPermissions: []
+        '400':
+          description: 'Invalid value for: header Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:

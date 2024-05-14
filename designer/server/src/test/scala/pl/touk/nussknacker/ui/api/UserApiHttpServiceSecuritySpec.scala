@@ -71,6 +71,39 @@ class UserApiHttpServiceSecuritySpec
                |  "globalPermissions": []
                |}""".stripMargin)
       }
+      "impersonating user has permission to impersonate should" - {
+        "return impersonated user info" in {
+          given()
+            .when()
+            .basicAuthAllPermUser()
+            .impersonateLimitedReaderUser()
+            .get(s"$nuDesignerHttpAddress/api/user")
+            .Then()
+            .statusCode(200)
+            .equalsJsonBody(s"""{
+               |  "id": "limitedReader",
+               |  "username": "limitedReader",
+               |  "isAdmin": false,
+               |  "categories": [ "Category1" ],
+               |  "categoryPermissions": {
+               |      "Category1": [ "Read" ]
+               |    },
+               |  "globalPermissions": []
+               |}""".stripMargin)
+        }
+      }
+      "impersonating user does not have permission to impersonate should" - {
+        "forbid access" in {
+          given()
+            .when()
+            .basicAuthWriter()
+            .impersonateLimitedReaderUser()
+            .get(s"$nuDesignerHttpAddress/api/user")
+            .Then()
+            .statusCode(403)
+            .body(equalTo("The supplied authentication is not authorized to access this resource"))
+        }
+      }
     }
     "anonymous user credentials are passed directly should not authenticate the request" in {
       given()

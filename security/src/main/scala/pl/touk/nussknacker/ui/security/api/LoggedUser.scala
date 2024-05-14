@@ -2,21 +2,44 @@ package pl.touk.nussknacker.ui.security.api
 
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 import GlobalPermission.GlobalPermission
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
+import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 
 sealed trait LoggedUser {
   val id: String
   val username: String
-  val isAdmin: Boolean
   def can(category: String, permission: Permission): Boolean
 }
 
+sealed trait RealLoggedUser extends LoggedUser
+
 object LoggedUser {
+
+  def create(
+      authenticatedUser: AuthenticatedUser,
+      rules: List[ConfigRule],
+      isAdminImpersonationPossible: Boolean = false
+  ): Either[CreationError, LoggedUser] = {
+    val loggedUser = LoggedUser(authenticatedUser, rules)
+    authenticatedUser.impersonatedAuthenticationUser match {
+      case None =>
+        Right(loggedUser)
+      case Some(impersonatedUser) if loggedUser.canImpersonate =>
+        createImpersonatedUser(
+          loggedUser,
+          LoggedUser(impersonatedUser, rules),
+          isAdminImpersonationPossible
+        )
+      case Some(_) =>
+        Left(ImpersonationNotAllowed)
+    }
+  }
 
   def apply(
       authenticatedUser: AuthenticatedUser,
       rules: List[ConfigRule]
-  ): LoggedUser = {
+  ): RealLoggedUser = {
     val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
     apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
   }
@@ -27,7 +50,7 @@ object LoggedUser {
       categoryPermissions: Map[String, Set[Permission]] = Map.empty,
       globalPermissions: List[GlobalPermission] = Nil,
       isAdmin: Boolean = false
-  ): LoggedUser = {
+  ): RealLoggedUser = {
     if (isAdmin) {
       AdminUser(id, username)
     } else {
@@ -35,7 +58,7 @@ object LoggedUser {
     }
   }
 
-  def apply(id: String, username: String, rulesSet: RulesSet): LoggedUser = {
+  def apply(id: String, username: String, rulesSet: RulesSet): RealLoggedUser = {
     if (rulesSet.isAdmin) {
       LoggedUser(id = id, username = username, isAdmin = true)
     } else {
@@ -48,6 +71,39 @@ object LoggedUser {
     }
   }
 
+  private def createImpersonatedUser(
+      impersonatingUser: RealLoggedUser,
+      impersonatedLoggedUser: RealLoggedUser,
+      isAdminImpersonationPossible: Boolean
+  ): Either[CreationError, LoggedUser] =
+    if (isAdminImpersonationPossible || (!isAdminImpersonationPossible && !impersonatedLoggedUser.isAdmin))
+      Right(ImpersonatedUser(impersonatedLoggedUser, impersonatingUser))
+    else
+      Left(ImpersonationNotAllowed)
+
+  implicit class ImpersonationChecking(val user: LoggedUser) extends AnyVal {
+
+    def canImpersonate: Boolean = user match {
+      case _: AdminUser        => true
+      case _: ImpersonatedUser => false
+      case commonUser: CommonUser =>
+        commonUser.globalPermissions
+          .map(_.toLowerCase)
+          .contains(Permission.Impersonate.toString.toLowerCase)
+    }
+
+  }
+
+  implicit class isAdminChecking(val user: LoggedUser) extends AnyVal {
+
+    def isAdmin: Boolean = user match {
+      case _: AdminUser        => true
+      case _: CommonUser       => false
+      case u: ImpersonatedUser => u.impersonatedUser.isAdmin
+    }
+
+  }
+
 }
 
 final case class CommonUser(
@@ -55,20 +111,32 @@ final case class CommonUser(
     username: String,
     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
     globalPermissions: List[GlobalPermission] = Nil
-) extends LoggedUser {
-
-  def categories(permission: Permission): Set[String] = categoryPermissions.collect {
-    case (category, permissions) if permissions contains permission => category
-  }.toSet
+) extends RealLoggedUser {
 
   override def can(category: String, permission: Permission): Boolean = {
     categoryPermissions.get(category).exists(_ contains permission)
   }
 
-  override val isAdmin: Boolean = false
+  def categories(permission: Permission): Set[String] = categoryPermissions.collect {
+    case (category, permissions) if permissions contains permission => category
+  }.toSet
+
 }
 
-final case class AdminUser(id: String, username: String) extends LoggedUser {
+final case class AdminUser(id: String, username: String) extends RealLoggedUser {
   override def can(category: String, permission: Permission): Boolean = true
-  override val isAdmin: Boolean                                       = true
+}
+
+final case class ImpersonatedUser(impersonatedUser: RealLoggedUser, impersonatingUser: RealLoggedUser)
+    extends LoggedUser {
+  override val id: String                                             = impersonatedUser.id
+  override val username: String                                       = impersonatedUser.username
+  override def can(category: String, permission: Permission): Boolean = impersonatedUser.can(category, permission)
+  val impersonatedBy: RealLoggedUser                                  = impersonatingUser
+}
+
+sealed trait CreationError
+
+object CreationError {
+  case object ImpersonationNotAllowed extends CreationError
 }
