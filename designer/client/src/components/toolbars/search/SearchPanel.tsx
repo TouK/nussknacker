@@ -12,9 +12,11 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchResults } from "./SearchResults";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
+import { useEventTracking } from "../../../containers/event-tracking";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
+    const { trackEventWithDebounce } = useEventTracking();
     const dispatch = useDispatch();
     const toolbarsConfigId = useSelector(getToolbarsConfigId);
 
@@ -56,7 +58,10 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
         <ToolbarWrapper {...props} title={t("panels.search.title", "Search")} onExpand={() => searchRef.current?.focus()}>
             <SearchInputWithIcon
                 ref={searchRef}
-                onChange={setFilter}
+                onChange={(value) => {
+                    trackEventWithDebounce({ type: "SEARCH_NODES_IN_SCENARIO" });
+                    setFilter(value);
+                }}
                 onClear={clearFilter}
                 value={filter}
                 placeholder={t("panels.search.filter.placeholder", "type here to search nodes...")}
