@@ -9,6 +9,7 @@ import { useDragHandler } from "../../common/dndItems/DragHandle";
 import ErrorBoundary from "../../common/ErrorBoundary";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
+import { useEventTracking } from "../../../containers/event-tracking";
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id: string;
@@ -26,6 +27,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
     const theme = useTheme();
     const { title, children, id, onClose, onExpand, onCollapse, color = theme.palette.background.paper, disableCollapse } = props;
     const handlerProps = useDragHandler();
+    const { trackEvent } = useEventTracking();
 
     const dispatch = useDispatch();
     const toolbarsConfigId = useSelector(getToolbarsConfigId);
@@ -48,6 +50,14 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
         setIsCollapsedLocal(isCollapsedStored);
     }, [isCollapsedStored]);
 
+    const handleSetStatisticOnCollapseExpand = useCallback(() => {
+        if (isCollapsedLocal) {
+            trackEvent({ type: "CLICK_EXPAND_PANEL" });
+        } else {
+            trackEvent({ type: "CLICK_COLLAPSE_PANEL" });
+        }
+    }, [isCollapsedLocal, trackEvent]);
+
     return children ? (
         <Panel
             className={TOOLBAR_WRAPPER_CLASSNAME}
@@ -67,8 +77,16 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                 <PanelHeader
                     {...(isCollapsible ? handlerProps : {})}
                     color={color}
-                    onClick={() => toggleCollapsed()}
-                    onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}
+                    onClick={() => {
+                        toggleCollapsed();
+                        handleSetStatisticOnCollapseExpand();
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            toggleCollapsed();
+                            handleSetStatisticOnCollapseExpand();
+                        }
+                    }}
                 >
                     <Typography
                         textTransform={"uppercase"}

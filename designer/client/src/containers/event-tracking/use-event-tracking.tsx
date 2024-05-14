@@ -50,6 +50,7 @@ export type EventTrackingType =
     | "CLICK_MORE_SCENARIO_DETAILS"
     | "CLICK_ROLL_UP_PANEL"
     | "CLICK_EXPAND_PANEL"
+    | "CLICK_COLLAPSE_PANEL"
     | "MOVE_PANEL"
     | "SEARCH_NODES_IN_SCENARIO"
     | "SEARCH_COMPONENTS_IN_SCENARIO"
@@ -62,7 +63,9 @@ export type EventTrackingType =
     | "CLICK_TEST_COUNTS"
     | "CLICK_SCENARIO_CANCEL"
     | "CLICK_SCENARIO_ARCHIVE_TOGGLE"
-    | "CLICK_SCENARIO_UNARCHIVE";
+    | "CLICK_SCENARIO_UNARCHIVE"
+    | "CLICK_SCENARIO_CUSTOM_ACTION"
+    | "CLICK_SCENARIO_CUSTOM_LINK";
 
 type TrackEvent = { type: EventTrackingType };
 export const useEventTracking = () => {

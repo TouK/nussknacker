@@ -87,9 +87,11 @@ const mapToolbarButtonToStatisticsEvent = (btnType: BuiltinButtonTypes | CustomB
         case BuiltinButtonTypes.processUnarchive: {
             return "CLICK_SCENARIO_UNARCHIVE";
         }
-        case CustomButtonTypes.customAction:
+        case CustomButtonTypes.customAction: {
+            return "CLICK_SCENARIO_CUSTOM_ACTION";
+        }
         case CustomButtonTypes.customLink: {
-            return;
+            return "CLICK_SCENARIO_CUSTOM_LINK";
         }
         default: {
             const exhaustiveCheck: never = btnType;
