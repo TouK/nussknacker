@@ -8,11 +8,11 @@ import { UIParameter } from "../../../types";
 import { head } from "lodash";
 import { ActionValues } from "./GenericActionFormContext";
 
-export type SourceParamters = {
+export type SourceParameters = {
     [key: string]: GenericActionParameters;
 };
 
-export function parmsListToRecord(parameters: UIParameter[]): ActionValues {
+export function paramsListToRecord(parameters: UIParameter[]): ActionValues {
     return parameters.reduce(
         (paramObj, { defaultValue, name }) => ({
             ...paramObj,
@@ -30,9 +30,9 @@ export function useSourceParameters() {
     const sourceId = useMemo(() => head(testFormParameters)?.sourceId, [testFormParameters]);
 
     const sourceParameters = useMemo(
-        (): SourceParamters =>
+        (): SourceParameters =>
             testFormParameters.reduce((testFormObj, { parameters = [], sourceId }) => {
-                const parametersValues = parmsListToRecord(parameters);
+                const parametersValues = paramsListToRecord(parameters);
                 return {
                     ...testFormObj,
                     [sourceId]: {
@@ -61,7 +61,7 @@ export function useTestWithFormAction(): GenericAction {
     const processingType = useSelector(getProcessingType);
 
     const [storedValues, setStoredValues] = useState<ActionValues>();
-    const initialValues = useMemo(() => storedValues || parmsListToRecord(parameters), [parameters, storedValues]);
+    const initialValues = useMemo(() => storedValues || paramsListToRecord(parameters), [parameters, storedValues]);
 
     const dispatch = useDispatch();
     const scenarioName = useSelector(getProcessName);
