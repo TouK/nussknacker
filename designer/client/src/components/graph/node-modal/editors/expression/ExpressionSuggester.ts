@@ -32,12 +32,10 @@ export interface ExpressionSuggester {
 
 export enum SuggesterEvent {
     stateChange = "stateChange",
-    stateChange2 = "stateChange2",
 }
 
 type EventsMap = {
     [SuggesterEvent.stateChange]: (state: boolean) => void;
-    [SuggesterEvent.stateChange2]: (state: number) => void;
 };
 
 interface MapOfSets<Key extends string, Value extends Record<Key, any>> extends Map<Key, Set<Value[Key]>> {
