@@ -6,17 +6,21 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
+import { useEventTracking } from "../../../containers/event-tracking";
 
 export function CreatorPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
-
+    const { trackEventWithDebounce } = useEventTracking();
     const [filter, setFilter] = useState("");
     const clearFilter = useCallback(() => setFilter(""), []);
 
     return (
         <ToolbarWrapper {...props} title={t("panels.creator.title", "Creator panel")}>
             <SearchInputWithIcon
-                onChange={setFilter}
+                onChange={(filterValue) => {
+                    trackEventWithDebounce({ type: "SEARCH_COMPONENTS_IN_SCENARIO" });
+                    setFilter(filterValue);
+                }}
                 onClear={clearFilter}
                 value={filter}
                 placeholder={t("panels.creator.filter.placeholder", "type here to filter...")}
