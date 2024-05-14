@@ -3,7 +3,7 @@ import React from "react";
 import { ExpressionSuggester, ExpressionSuggestion } from "./ExpressionSuggester";
 import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
-import type { Ace } from "ace-builds";
+import { Ace } from "ace-builds";
 import ace from "ace-builds/src-noconflict/ace";
 import { Divider } from "@mui/material";
 
@@ -30,11 +30,21 @@ function isSpelTokenAllowed(iterator, modeId): boolean {
     return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate";
 }
 
-interface Editor extends Ace.Editor {
-    readonly completer: {
-        activated: boolean;
-        openPopup: (editor: Editor, prefix: string, keepPopupPosition: boolean) => void;
-    };
+declare module "ace-builds" {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace Ace {
+        interface Autocomplete {
+            base: Ace.Point;
+            editor: Ace.Editor;
+            activated: boolean;
+            openPopup: (this: Autocomplete, editor: Ace.Editor, prefix: string, keepPopupPosition: boolean) => void;
+            updateCompletions: (this: Autocomplete, keepPopupPosition: boolean, options: Ace.CompletionOptions) => void;
+        }
+
+        interface Editor {
+            readonly completer: Autocomplete;
+        }
+    }
 }
 
 interface EditSession extends Ace.EditSession {
@@ -76,7 +86,7 @@ export class CustomAceEditorCompleter implements Ace.Completer {
     public identifierRegexps = identifierRegexpsWithoutDot;
     // This is necessary to make live auto complete works after dot
     public triggerCharacters = ["."];
-    private revertOpenPopup: (() => void) | null;
+    private revertCompleterOverrides: (() => void) | null;
 
     constructor(private expressionSuggester: ExpressionSuggester) {}
 
@@ -85,44 +95,50 @@ export class CustomAceEditorCompleter implements Ace.Completer {
     }
 
     getCompletions(
-        editor: Editor,
+        editor: Ace.Editor,
         session: EditSession,
         caretPosition2d: Ace.Point,
         prefix: string,
         callback: Ace.CompleterCallback,
     ): void {
+        this.overrideCompleter(editor);
+
         const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column);
         if (!this.isTokenAllowed(iterator, session.$modeId)) {
-            callback(null, []);
+            return callback(null, []);
         }
 
         const value = editor.getValue();
-
-        this.overrideOpenPopup(editor);
 
         this.expressionSuggester.suggestionsFor(value, caretPosition2d).then((suggestions) => {
             callback(null, suggestions.map(suggestionToCompletion));
         });
     }
 
-    private overrideOpenPopup({ completer }: Editor) {
-        if (!this.revertOpenPopup) {
-            const originalFn = completer.openPopup;
+    private overrideCompleter({ completer }: Ace.Editor) {
+        if (!this.revertCompleterOverrides) {
+            const original_updateCompletions = completer.updateCompletions;
+            const triggerCharacters = this.triggerCharacters;
 
-            completer.openPopup = function (editor, prefix, keepPopupPosition) {
-                // prevent popup detach when fast switching from fully fitted completion to dotted completions
-                // this occurs when prefix is empty after entering "." at the end
-                // we could safely force some not empty prefix - backend reads whole line
-                const modifiedPrefix = keepPopupPosition && !prefix ? "." : prefix;
-                originalFn.apply(this, [editor, modifiedPrefix, keepPopupPosition]);
+            completer.updateCompletions = function (keepPopupPosition, options) {
+                const cursorPosition = this.editor.getCursorPosition();
+                const range = { start: this.base, end: cursorPosition } as Ace.Range;
+                const prefix = this.editor.session.getTextRange(range);
+
+                keepPopupPosition = triggerCharacters.some((trigger) => prefix.endsWith(trigger)) ? false : keepPopupPosition;
+
+                return original_updateCompletions.apply(this, [keepPopupPosition, options]);
             };
 
-            this.revertOpenPopup = () => {
-                completer.openPopup = originalFn;
-                this.revertOpenPopup = null;
+            this.revertCompleterOverrides = () => {
+                completer.updateCompletions = original_updateCompletions;
+                this.revertCompleterOverrides = null;
             };
         }
     }
 
-    cancel = () => this.revertOpenPopup();
+    cancel = () => {
+        this.revertCompleterOverrides();
+        this.expressionSuggester.cancel();
+    };
 }
