@@ -40,7 +40,7 @@ object DefaultServiceExecutionContextPreparer extends LazyLogging {
     }
   }
 
-  private[DefaultAsyncExecutionConfigPreparer] def close(): Unit = synchronized {
+  private[DefaultServiceExecutionContextPreparer] def close(): Unit = synchronized {
     logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)}")
     asyncExecutionContext.foreach { case (_, executorService) => executorService.shutdownNow() }
     asyncExecutionContext = None
