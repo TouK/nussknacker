@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
   StatisticError,
   StatisticUrlResponseDto
 }
-import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, WriteFEStatisticsRepository}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService
 
@@ -22,7 +22,8 @@ class StatisticsApiHttpService(
     extends BaseHttpService(authenticator)
     with LazyLogging {
 
-  private val endpoints = new StatisticsApiEndpoints(authenticator.authenticationMethod())
+  private val endpoints                = new StatisticsApiEndpoints(authenticator.authenticationMethod())
+  private val ignoringErrorsRepository = new IgnoringErrorsStatisticsRepository(repository)
 
   expose {
     endpoints.statisticUsageEndpoint
@@ -53,7 +54,19 @@ class StatisticsApiHttpService(
       .map { case (k, v) =>
         k -> v.size.toLong
       }
-    repository.write(groupedByName)
+    ignoringErrorsRepository.write(groupedByName)
+  }
+
+  private class IgnoringErrorsStatisticsRepository(repository: FEStatisticsRepository[Future])
+      extends WriteFEStatisticsRepository[Future] {
+
+    override def write(statistics: Map[String, Long]): Future[Unit] = repository
+      .write(statistics)
+      .recover { case ex: Exception =>
+        logger.warn("Exception occurred during statistics write", ex)
+        ()
+      }
+
   }
 
 }

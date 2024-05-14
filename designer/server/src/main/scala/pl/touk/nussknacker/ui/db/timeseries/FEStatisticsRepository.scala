@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.ui.db.timeseries
 
-import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-trait FEStatisticsRepository[F[_]] {
-  def write(statistics: Map[String, Long])(implicit ec: ExecutionContext): F[Unit]
-  def read()(implicit ec: ExecutionContext): F[Map[String, Long]]
+trait FEStatisticsRepository[F[_]] extends ReadFEStatisticsRepository[F] with WriteFEStatisticsRepository[F]
+
+trait ReadFEStatisticsRepository[F[_]] {
+  def read(): F[Map[String, Long]]
+}
+
+trait WriteFEStatisticsRepository[F[_]] {
+  def write(statistics: Map[String, Long]): F[Unit]
 }

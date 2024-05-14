@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -163,36 +162,33 @@ class StatisticsApiHttpServiceBusinessSpec
   ) extends BaseMatcher[ValidatableResponse]
       with LazyLogging {
 
-    override def matches(actual: Any): Boolean = extractQueryParams(queryParamsPath) match {
-      case Some(actualQueryParams) =>
-        queryParamsMatchers.forall { case (expectedKey, expectedValue) =>
-          actualQueryParams.get(expectedKey) match {
-            case Some(actualValue) if expectedValue.matches(actualValue) => true
-            case Some(actualValue) =>
-              logger.info(s"Actual: $actualValue for key: $expectedKey should be expected: $expectedValue")
-              false
-            case None =>
-              logger.info(s"QueryParam with a name: $expectedKey is not present.")
-              false
-          }
+    override def matches(actual: Any): Boolean = {
+      val actualQueryParams = extractQueryParams(queryParamsPath)
+      queryParamsMatchers.forall { case (expectedKey, expectedValue) =>
+        actualQueryParams.get(expectedKey) match {
+          case Some(actualValue) if expectedValue.matches(actualValue) => true
+          case Some(actualValue) =>
+            logger.info(s"Actual: $actualValue for key: $expectedKey should be expected: $expectedValue")
+            false
+          case None =>
+            logger.info(s"QueryParam with a name: $expectedKey is not present.")
+            false
         }
-      case None =>
-        logger.info("Cannot extract query params")
-        false
+      }
     }
 
     override def describeTo(description: Description): Unit = description.appendValue(queryParamsMatchers)
 
-    private def extractQueryParams(queryParamsPath: String): Option[Map[String, String]] =
+    private def extractQueryParams(queryParamsPath: String): Map[String, String] =
       queryParamsPath
         .split("&")
         .map(_.split("=").toList match {
-          case (key: String) :: (value: String) :: _ => Some((key, value))
-          case _                                     => None
+          case (key: String) :: (value: String) :: _ => (key, value)
+          case value =>
+            throw new IllegalArgumentException(s"Cannot parse query param with value: $value")
         })
         .toList
-        .sequence
-        .map(_.toMap)
+        .toMap
 
   }
 

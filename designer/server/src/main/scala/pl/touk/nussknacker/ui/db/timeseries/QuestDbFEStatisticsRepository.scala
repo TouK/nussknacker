@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.db.timeseries
 
+import better.files.File
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.questdb.TelemetryConfiguration
@@ -9,14 +10,14 @@ import io.questdb.cairo.{CairoEngine, CairoException, DefaultCairoConfiguration}
 import io.questdb.griffin.{SqlException, SqlExecutionContextImpl}
 import io.questdb.log.LogFactory
 import io.questdb.std.Os
-import pl.touk.nussknacker.ui.db.timeseries.QuestDbFEStatisticsRepository.{createTableQuery, dropTablesQuery}
+import pl.touk.nussknacker.ui.db.timeseries.QuestDbFEStatisticsRepository.{createTableQuery, dropTablesQuery, tableName}
 
-import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+import java.util.concurrent.{ArrayBlockingQueue, ThreadPoolExecutor, TimeUnit}
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Try, Using}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.util.{Failure, Try, Using}
 
 // TODO list:
 // 1. Writing in a single thread and polish usage of the wal2table job.
@@ -27,23 +28,24 @@ import scala.util.{Try, Using}
 // 6. Handling errors while creating the QuestDb.
 // 7. Write tests when db directory is deleted in runtime.
 // 8. Changing table definition and recreate
-private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine)
-  extends FEStatisticsRepository[Future]
+// 9. multi tenant metrics
+private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine)(
+    private implicit val ec: ExecutionContextExecutorService
+) extends FEStatisticsRepository[Future]
     with LazyLogging {
   private val ctx = new SqlExecutionContextImpl(cairoEngine, 1).`with`(AllowAllSecurityContext.INSTANCE, null)
   private val applyWal2TableJob = new ApplyWal2TableJob(cairoEngine, 1, 1)
 
   private lazy val statsWalTableWriter = {
-    cairoEngine.getWalWriter(cairoEngine.getTableTokenIfExists("statistics"))
+    cairoEngine.getWalWriter(cairoEngine.getTableTokenIfExists(tableName))
   }
 
   private lazy val recordCursorFactory = {
     cairoEngine.select(QuestDbFEStatisticsRepository.selectQuery, ctx)
   }
 
-  override def write(statistics: Map[String, Long])
-                    (implicit ec: ExecutionContext): Future[Unit] = withExceptionHandling(
-    () => {
+  override def write(statistics: Map[String, Long]): Future[Unit] = withExceptionHandling(
+    {
       statistics.foreach { entry =>
         val row = statsWalTableWriter.newRow(Os.currentTimeMicros())
         row.putStr(0, entry._1)
@@ -58,12 +60,11 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
       // This method will be run by the task.
       // TODO change to LazyList in scala 2.13
       Range.inclusive(1, 3).takeWhile(idx => applyWal2TableJob.run(1) && idx <= 3)
-    },
-    ()
+    }
   )
 
-  override def read()(implicit ec: ExecutionContext): Future[Map[String, Long]] = withExceptionHandling(
-    () => Using.resource(recordCursorFactory.getCursor(ctx)) { recordCursor =>
+  override def read(): Future[Map[String, Long]] = withExceptionHandling(
+    Using.resource(recordCursorFactory.getCursor(ctx)) { recordCursor =>
       val buffer = ArrayBuffer.empty[(String, Long)]
       val record = recordCursor.getRecord
       while (recordCursor.hasNext) {
@@ -72,38 +73,33 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
         buffer.append(name -> count)
       }
       buffer.toMap
-    },
-    Map.empty[String, Long]
+    }
   )
 
   private def close(): Unit = {
     recordCursorFactory.close()
     statsWalTableWriter.close()
     applyWal2TableJob.close()
-    cairoEngine.close()
   }
 
   private def initialize(): Unit =
     cairoEngine.ddl(createTableQuery, ctx)
 
-  private def withExceptionHandling[T](dbAction: () => T, onError: => T)(
-    implicit ec: ExecutionContext
-  ): Future[T] =
+  private def withExceptionHandling[T](dbAction: => T): Future[T] =
     Future {
-      Try(dbAction())
-        .recover {
-          case ex: CairoException if ex.isCritical =>
-            logger.warn("Critical exception - recreating table")
-            recreateTables()
-            onError
-          case ex: SqlException if ex.getMessage.contains("table does not exist") =>
-            logger.warn("Table does not exists - recreating table")
-            recreateTables()
-            onError
-          case ex =>
-            logger.warn("DB exception", ex)
-            onError
-        }.get
+      Try(dbAction).recoverWith {
+        case ex: CairoException if ex.isCritical =>
+          logger.warn("Critical exception - recreating table")
+          recreateTables()
+          Failure(ex)
+        case ex: SqlException if ex.getMessage.contains("table does not exist") =>
+          logger.warn("Table does not exists - recreating table")
+          recreateTables()
+          Failure(ex)
+        case ex =>
+          logger.warn("DB exception", ex)
+          Failure(ex)
+      }.get
     }
 
   private def recreateTables(): Unit = Try {
@@ -113,7 +109,6 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
     cairoEngine.ddl(createTableQuery, ctx)
   }.recover { case ex =>
     logger.warn("Exception occurred while tables recreate", ex)
-    ex
   }
 
 }
@@ -123,15 +118,18 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   def create(): Resource[IO, FEStatisticsRepository[Future]] =
     Resource.make(
       acquire = for {
-        repository <- IO(configureAndBuild())
-        _  <- IO(repository.initialize())
+        // todo move this ExecutorService properties to a configuration
+        executorService <- IO(new ThreadPoolExecutor(2, 4, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue[Runnable](8)))
+        ec = ExecutionContext.fromExecutorService(executorService)
+        repository <- IO(configureAndBuild(ec))
+        _          <- IO(repository.initialize())
       } yield repository
-    )(release = repository => IO(repository.close()))
+    )(release = close)
 
-  private def configureAndBuild(): QuestDbFEStatisticsRepository = {
+  private def configureAndBuild(ec: ExecutionContextExecutorService): QuestDbFEStatisticsRepository = {
     val nuDir  = createDirAndConfigureLogging()
-    val engine = new CairoEngine(new CustomCairoConfiguration(nuDir.getAbsolutePath))
-    new QuestDbFEStatisticsRepository(engine)
+    val engine = new CairoEngine(new CustomCairoConfiguration(nuDir.canonicalPath))
+    new QuestDbFEStatisticsRepository(engine)(ec)
   }
 
   private def createDirAndConfigureLogging(): File = {
@@ -142,38 +140,40 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
 
   private def createRootDirIfNotExists(): File = {
     val dir   = Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp")
-    val nuDir = new File(dir + "/nu")
-    nuDir.mkdirs()
+    val nuDir = File(dir + "/nu").createDirectoryIfNotExists()
     logger.debug("Statistics path: {}", nuDir)
     nuDir
   }
 
   private def configureLogging(rootDir: File): Unit = {
-    LogFactory.configureRootDir(rootDir.getAbsolutePath)
-    val logDir = new File(rootDir, "/conf")
-    logDir.mkdirs()
-    val logFile = new File(logDir, "log.conf")
-    logFile.createNewFile()
-    if (logFile.length() == 0) {
-      Files.write(
-        logFile.toPath,
+    rootDir
+      .createChild("conf/log.conf", createParents = true)
+      .writeText(
         """
           |writers=stdout
           |w.stdout.class=io.questdb.log.LogConsoleWriter
           |w.stdout.level=ERROR
-          |""".stripMargin.getBytes(StandardCharsets.UTF_8)
-      )
-    }
+          |""".stripMargin
+      )(Seq(StandardOpenOption.TRUNCATE_EXISTING), StandardCharsets.UTF_8)
+    LogFactory.configureRootDir(rootDir.canonicalPath)
   }
 
+  private def close(repository: QuestDbFEStatisticsRepository): IO[Unit] = IO {
+    // todo flush
+    repository.ec.shutdown()
+    repository.close()
+    repository.cairoEngine.close()
+  }
+
+  private val tableName = "fe_statistics"
   private val createTableQuery =
-    "CREATE TABLE IF NOT EXISTS statistics (name string, count long, ts timestamp) TIMESTAMP(ts) PARTITION BY DAY WAL"
+    s"CREATE TABLE IF NOT EXISTS $tableName (name string, count long, ts timestamp) TIMESTAMP(ts) PARTITION BY DAY WAL"
 
   private val selectQuery =
     s"""
        |   SELECT name,
        |          sum(count)
-       |     FROM statistics
+       |     FROM $tableName
        |    WHERE date_trunc('day', ts) = date_trunc('day', now())
        | GROUP BY name""".stripMargin
 
