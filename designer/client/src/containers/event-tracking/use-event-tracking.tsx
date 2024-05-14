@@ -1,6 +1,7 @@
+import React from "react";
 import { debounce } from "lodash";
 import httpService from "../../http/HttpService";
-import { useCallback } from "react";
+import { PropsWithChildren, useCallback } from "react";
 
 export type EventTrackingType =
     | "SEARCH_SCENARIOS_BY_NAME"
@@ -56,7 +57,12 @@ export type EventTrackingType =
     | "CLICK_NEWER_VERSION"
     | "FIRED_KEY_STROKE"
     | "CLICK_NODE_DOCUMENTATION"
-    | "CLICK_COMPONENTS_TAB";
+    | "CLICK_COMPONENTS_TAB"
+    | "CLICK_SCENARIO_SAVE"
+    | "CLICK_TEST_COUNTS"
+    | "CLICK_SCENARIO_CANCEL"
+    | "CLICK_SCENARIO_ARCHIVE_TOGGLE"
+    | "CLICK_SCENARIO_UNARCHIVE";
 
 type TrackEvent = { type: EventTrackingType };
 export const useEventTracking = () => {
@@ -73,5 +79,12 @@ export const useEventTracking = () => {
         [],
     );
 
-    return { trackEvent, trackEventWithDebounce };
+    const WithEventTracking = ({ children, event }: PropsWithChildren<{ event: TrackEvent }>) => {
+        const onClick = (event: TrackEvent) => {
+            trackEvent(event);
+        };
+
+        return <div onClick={() => onClick(event)}>{children}</div>;
+    };
+    return { trackEvent, trackEventWithDebounce, WithEventTracking };
 };
