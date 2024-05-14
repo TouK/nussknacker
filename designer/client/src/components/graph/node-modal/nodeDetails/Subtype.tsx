@@ -3,13 +3,11 @@ import { IconModalTitle } from "./IconModalTitle";
 import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
 import { getLuminance } from "@mui/system/colorManipulator";
 
-export const getColorBlend = (color: string, value: number) =>
-    getLuminance(color) > 0.5 ? blendDarken(color, value) : blendLighten(color, value);
-export const getColorBlend2 = (color: string, value: number) =>
-    getLuminance(color) < 0.5 ? blendDarken(color, value) : blendLighten(color, value);
-
 export const Subtype = styled(IconModalTitle)(({ theme }) => {
-    const backgroundColor = getColorBlend2(theme.palette.background.paper, 0.2);
+    const backgroundColor =
+        getLuminance(theme.palette.background.paper) < 0.5
+            ? blendDarken(theme.palette.background.paper, 0.2)
+            : blendLighten(theme.palette.background.paper, 0.2);
     const color = theme.palette.text.secondary;
     return {
         color,
@@ -21,7 +19,8 @@ export const Subtype = styled(IconModalTitle)(({ theme }) => {
             color: color,
             ":hover": {
                 color: theme.palette.text.primary,
-                backgroundColor: getColorBlend2(backgroundColor, 0.2),
+                backgroundColor:
+                    getLuminance(backgroundColor) < 0.5 ? blendDarken(backgroundColor, 0.2) : blendLighten(backgroundColor, 0.2),
             },
         },
     };
