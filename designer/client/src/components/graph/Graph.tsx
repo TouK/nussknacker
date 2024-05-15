@@ -35,6 +35,7 @@ import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import "./jqueryPassiveEvents";
+import { TrackEventParams } from "../../containers/event-tracking";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
@@ -52,6 +53,7 @@ type Props = GraphProps & {
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
     isPristine?: boolean;
     theme: Theme;
+    handleStatisticsEvent: (event: TrackEventParams) => void;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -371,13 +373,14 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom = new PanZoomPlugin(this.processGraphPaper, this.viewport);
 
         if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
-            const { toggleSelection, resetSelection } = this.props;
+            const { toggleSelection, resetSelection, handleStatisticsEvent } = this.props;
             new RangeSelectPlugin(this.processGraphPaper, this.props.theme);
             this.processGraphPaper
                 .on(RangeSelectEvents.START, () => {
                     this.panAndZoom.toggle(false);
                 })
                 .on(RangeSelectEvents.STOP, () => {
+                    handleStatisticsEvent({ type: "KEYBOARD_SELECT_NODES" });
                     this.panAndZoom.toggle(true);
                 })
                 .on(RangeSelectEvents.RESET, () => {

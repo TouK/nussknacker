@@ -28,6 +28,7 @@ export type EventTrackingType =
     | "CLICK_ACTION_DEPLOY"
     | "CLICK_ACTION_METRICS"
     | "CLICK_VIEW_ZOOM_IN"
+    | "CLICK_VIEW_ZOOM_OUT"
     | "CLICK_VIEW_RESET"
     | "CLICK_EDIT_UNDO"
     | "CLICK_EDIT_REDO"
@@ -65,25 +66,35 @@ export type EventTrackingType =
     | "CLICK_SCENARIO_ARCHIVE_TOGGLE"
     | "CLICK_SCENARIO_UNARCHIVE"
     | "CLICK_SCENARIO_CUSTOM_ACTION"
-    | "CLICK_SCENARIO_CUSTOM_LINK";
+    | "CLICK_SCENARIO_CUSTOM_LINK"
+    | "KEYBOARD_SELECT_NODES"
+    | "KEYBOARD_COPY_NODE"
+    | "KEYBOARD_PASTE_NODE"
+    | "KEYBOARD_CUT_NODE"
+    | "KEYBOARD_SELECT_ALL_NODES"
+    | "KEYBOARD_REDO_SCENARIO_CHANGES"
+    | "KEYBOARD_UNDO_SCENARIO_CHANGES"
+    | "KEYBOARD_DELETE_NODES"
+    | "KEYBOARD_DESELECT_ALL_NODES"
+    | "KEYBOARD_FOCUS_SEARCH_NODE_FIELD";
 
-type TrackEvent = { type: EventTrackingType };
+export const trackEvent1 = async ({ type }: TrackEventParams) => {
+    await httpService.sendStatistics([{ name: type }]);
+};
+
+export type TrackEventParams = { type: EventTrackingType };
 export const useEventTracking = () => {
-    const trackEvent = async ({ type }: TrackEvent) => {
+    const trackEvent = async ({ type }: TrackEventParams) => {
         await httpService.sendStatistics([{ name: type }]);
     };
 
     const trackEventWithDebounce = useCallback(
-        debounce(
-            (event: TrackEvent) => trackEvent(event),
-
-            1500,
-        ),
+        debounce((event: TrackEventParams) => trackEvent(event), 1500),
         [],
     );
 
-    const WithEventTracking = ({ children, event }: PropsWithChildren<{ event: TrackEvent }>) => {
-        const onClick = (event: TrackEvent) => {
+    const WithEventTracking = ({ children, event }: PropsWithChildren<{ event: TrackEventParams }>) => {
+        const onClick = (event: TrackEventParams) => {
             trackEvent(event);
         };
 

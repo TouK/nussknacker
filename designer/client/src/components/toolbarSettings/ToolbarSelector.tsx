@@ -55,7 +55,7 @@ const mapToolbarButtonToStatisticsEvent = (btnType: BuiltinButtonTypes | CustomB
             return "CLICK_VIEW_ZOOM_IN";
         }
         case BuiltinButtonTypes.viewZoomOut: {
-            return "CLICK_VIEW_ZOOM_IN";
+            return "CLICK_VIEW_ZOOM_OUT";
         }
         case BuiltinButtonTypes.testHide: {
             return "CLICK_TEST_HIDE";

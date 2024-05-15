@@ -16,7 +16,7 @@ import { useEventTracking } from "../../../containers/event-tracking";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
-    const { trackEventWithDebounce } = useEventTracking();
+    const { trackEvent, trackEventWithDebounce } = useEventTracking();
     const dispatch = useDispatch();
     const toolbarsConfigId = useSelector(getToolbarsConfigId);
 
@@ -48,6 +48,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
                     }
                     dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
                     searchRef.current.focus();
+                    trackEvent({ type: "KEYBOARD_FOCUS_SEARCH_NODE_FIELD" });
                     break;
                 }
             }
