@@ -77,6 +77,7 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
   )
 
   private def close(): Unit = {
+    // todo flush
     recordCursorFactory.close()
     statsWalTableWriter.close()
     applyWal2TableJob.close()
@@ -115,22 +116,36 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
 
 object QuestDbFEStatisticsRepository extends LazyLogging {
 
-  def create(): Resource[IO, FEStatisticsRepository[Future]] =
-    Resource.make(
-      acquire = for {
-        // todo move this ExecutorService properties to a configuration
-        executorService <- IO(new ThreadPoolExecutor(2, 4, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue[Runnable](8)))
-        ec = ExecutionContext.fromExecutorService(executorService)
-        repository <- IO(configureAndBuild(ec))
-        _          <- IO(repository.initialize())
-      } yield repository
-    )(release = close)
+  def create(): Resource[IO, FEStatisticsRepository[Future]] = for {
+    executorService <- createExecutorService()
+    cairoEngine     <- createCairoEngine()
+    repository      <- createRepository(executorService, cairoEngine)
+  } yield repository
 
-  private def configureAndBuild(ec: ExecutionContextExecutorService): QuestDbFEStatisticsRepository = {
-    val nuDir  = createDirAndConfigureLogging()
-    val engine = new CairoEngine(new CustomCairoConfiguration(nuDir.canonicalPath))
-    new QuestDbFEStatisticsRepository(engine)(ec)
-  }
+  // todo move this ExecutorService properties to a configuration
+  private def createExecutorService(): Resource[IO, ExecutionContextExecutorService] = Resource.make(
+    acquire = for {
+      executorService <- IO(new ThreadPoolExecutor(2, 4, 60L, TimeUnit.SECONDS, new ArrayBlockingQueue[Runnable](8)))
+      ec = ExecutionContext.fromExecutorService(executorService)
+    } yield ec
+  )(release = ec => IO(ec.shutdown()))
+
+  private def createCairoEngine(): Resource[IO, CairoEngine] = Resource.make(
+    acquire = IO {
+      val nuDir = createDirAndConfigureLogging()
+      new CairoEngine(new CustomCairoConfiguration(nuDir.canonicalPath))
+    }
+  )(release = engine => IO(engine.close()))
+
+  private def createRepository(
+      ec: ExecutionContextExecutorService,
+      cairoEngine: CairoEngine
+  ): Resource[IO, FEStatisticsRepository[Future]] = Resource.make(
+    acquire = for {
+      repository <- IO(new QuestDbFEStatisticsRepository(cairoEngine)(ec))
+      _          <- IO(repository.initialize())
+    } yield repository
+  )(release = repository => IO(repository.close()))
 
   private def createDirAndConfigureLogging(): File = {
     val nuDir: File = createRootDirIfNotExists()
@@ -139,8 +154,7 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   }
 
   private def createRootDirIfNotExists(): File = {
-    val dir   = Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp")
-    val nuDir = File(dir + "/nu").createDirectoryIfNotExists()
+    val nuDir = File.temp.createChild("nu", asDirectory = true)
     logger.debug("Statistics path: {}", nuDir)
     nuDir
   }
@@ -156,13 +170,6 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
           |""".stripMargin
       )(Seq(StandardOpenOption.TRUNCATE_EXISTING), StandardCharsets.UTF_8)
     LogFactory.configureRootDir(rootDir.canonicalPath)
-  }
-
-  private def close(repository: QuestDbFEStatisticsRepository): IO[Unit] = IO {
-    // todo flush
-    repository.ec.shutdown()
-    repository.close()
-    repository.cairoEngine.close()
   }
 
   private val tableName = "fe_statistics"
