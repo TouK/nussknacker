@@ -121,8 +121,6 @@ class ScenarioTestService(
     val adaptedParameters = uiSourceParameter.parameters.map { uiParameter =>
       if (CanBeSubclassDeterminer.canBeSubclassOf(uiParameter.typ, Typed.apply(classOf[String])).isValid) {
         uiParameter.copy(editor = StringParameterEditor)
-      } else if (CanBeSubclassDeterminer.canBeSubclassOf(uiParameter.typ, Typed.apply(classOf[Int])).isValid) {
-        uiParameter.copy(editor = StringParameterEditor)
       } else {
         uiParameter
       }
