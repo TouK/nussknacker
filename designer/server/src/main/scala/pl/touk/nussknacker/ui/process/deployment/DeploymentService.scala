@@ -17,11 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{
-  OnActionExecutionFinished,
-  OnDeployActionFailed,
-  OnDeployActionSuccess
-}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnActionExecutionFinished, OnActionFailed, OnActionSuccess}
 import pl.touk.nussknacker.ui.listener.{Comment, ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.ProcessStateProvider
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions._
@@ -47,6 +43,7 @@ import scala.util.{Failure, Success}
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
 // will be executed in given state. It sends notifications about finished actions.
 // Also thanks to it we are able to check if state on remote engine is the same as persisted state.
+// TODO: This class will be replaced by DeploymentService from newdeployment package, see docs there
 class DeploymentService(
     dispatcher: DeploymentManagerDispatcher,
     processRepository: FetchingProcessRepository[DB],
@@ -75,8 +72,9 @@ class DeploymentService(
   }
 
   private def cancelScenario(command: CancelScenarioCommand): Future[Unit] = {
-    import command._
-    val actionName = ScenarioActionName.Cancel
+    import command.commonData._
+    val actionName: ScenarioActionName    = ScenarioActionName.Cancel
+    val actionParams: Map[String, String] = Map.empty
 
     for {
       // 1. common for all commands/actions
@@ -85,39 +83,41 @@ class DeploymentService(
       // and deployment continues on flink, lastDeployedAction is empty. Then we allow cancel action to proceed, to cancel
       // a running job. In that case there is no deploy action and action cancel is removed.
       // TODO: This inconsistent action-state handling needs a fix.
-      _ <- validateDeploymentComment(comment)
+      validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[Unit](
-        processId,
+        processIdWithName,
         actionName,
+        actionParams,
         p => p.lastDeployedAction.map(_.processVersionId),
         _ => None
       )
       // 2. command specific section
-      deploymentComment = comment.map(DeploymentComment.unsafe)
-      dmCommand         = DMCancelScenarioCommand(processId.name, user.toManagerUser)
+      dmCommand = DMCancelScenarioCommand(processIdWithName.name, user.toManagerUser)
       // 3. common for all commands/actions
-      _ = runActionAndHandleResults(
+      actionResult <- runActionAndHandleResults(
         actionName,
-        deploymentComment,
+        validatedComment,
         ctx
       ) {
         dispatcher
           .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
           .processCommand(dmCommand)
-      }.map(_ => ())
-    } yield ()
+      }
+    } yield actionResult
   }
 
   private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
-    import command._
-    val actionName = ScenarioActionName.Deploy
+    import command.commonData._
+    val actionName: ScenarioActionName    = ScenarioActionName.Deploy
+    val actionParams: Map[String, String] = Map.empty
 
     for {
       // 1. common for all commands/actions
       validatedComment <- validateDeploymentComment(comment)
       ctx <- prepareCommandContextWithAction[CanonicalProcess](
-        processId,
+        processIdWithName,
         actionName,
+        actionParams,
         p => Some(p.processVersionId),
         p => Some(p.processingType)
       )
@@ -133,10 +133,10 @@ class DeploymentService(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
         deployedScenarioData.resolvedScenario,
-        savepointPath
+        command.savepointPath
       )
       // TODO: move validateBeforeDeploy before creating an action
-      result <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
+      actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
         case Failure(ex) =>
           removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
         case Success(_) =>
@@ -152,7 +152,7 @@ class DeploymentService(
           }
           Future.successful(deploymentFuture)
       }
-    } yield result
+    } yield actionResult
   }
 
   /**
@@ -162,28 +162,38 @@ class DeploymentService(
   private def prepareCommandContextWithAction[PS: ScenarioShapeFetchStrategy](
       processId: ProcessIdWithName,
       actionName: ScenarioActionName,
+      actionParameters: Map[String, String],
       getVersionOnWhichActionIsDone: ScenarioWithDetailsEntity[PS] => Option[VersionId],
       getBuildInfoProcessingType: ScenarioWithDetailsEntity[PS] => Option[ProcessingType]
   )(implicit user: LoggedUser): Future[CommandContext[PS]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     dbioRunner.runInTransaction(
       for {
-        // 1.1 TODO common parameter validations
-        // 1.2 lock for critical section
+        // 1.1 lock for critical section
         _ <- actionRepository.lockActionsTable
-        // 1.3. fetch scenario data
+        // 1.2. fetch scenario data
         processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[PS](processId.id)
         processDetails    <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.name))
-        // 1.4. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
+        // 1.3 fetch action definition
+        actionDefinitionOpt = getActionDefinitions(processDetails.processingType).find(_.actionName == actionName)
+        actionDefinition <- existsOrFail(
+          actionDefinitionOpt,
+          CustomActionNonExistingError(
+            s"Couldn't find definition of action ${actionName.value} for scenario ${processId.name}"
+          )
+        )
+        // 1.4. action command validation
+        _ <- validateActionParameters(actionParameters, actionDefinition)
+        // 1.5. calculate which scenario version is affected by the action: latest for deploy, deployed for cancel
         versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
         buildInfoProcessingType    = getBuildInfoProcessingType(processDetails)
-        // 1.5. check if action is performed on proper scenario (not fragment, not archived)
+        // 1.6. check if action is performed on proper scenario (not fragment, not archived)
         _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
-        // 1.6. check if action is allowed for current state
+        // 1.7. check if action is allowed for current state
         inProgressActionNames <- actionRepository.getInProgressActionNames(processDetails.processId)
         processState          <- getProcessState(processDetails, inProgressActionNames)
         _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
-        // 1.7. create new action, action is started with "in progress" state, the whole command execution can take some time
+        // 1.8. create new action, action is started with "in progress" state, the whole command execution can take some time
         actionId <- actionRepository.addInProgressAction(
           processDetails.processId,
           actionName,
@@ -274,6 +284,20 @@ class DeploymentService(
     actionsDefinedInState ++ actionsDefinedInCustomActions
   }
 
+  // TODO: provide better action definitions for deploy and cancel, not as CustomACtion
+  private def getActionDefinitions(
+      processingType: ProcessingType
+  )(implicit user: LoggedUser): List[CustomActionDefinition] = {
+    val fixedActionDefinitions = List(
+      CustomActionDefinition(ScenarioActionName.Deploy, Nil, Nil, None),
+      CustomActionDefinition(ScenarioActionName.Cancel, Nil, Nil, None)
+    )
+    val actionsDefinedInCustomActions = dispatcher
+      .deploymentManagerUnsafe(processingType)
+      .customActionsDefinitions
+    fixedActionDefinitions ++ actionsDefinedInCustomActions
+  }
+
   protected def prepareDeployedScenarioData(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
       actionId: ProcessActionId,
@@ -306,8 +330,7 @@ class DeploymentService(
       case Failure(exception) =>
         logger.error(s"Action: $actionString finished with failure", exception)
         val performedAt = clock.instant()
-        // TODO: rename to OnActionFailed
-        processChangeListener.handle(OnDeployActionFailed(ctx.latestScenarioDetails.processId, exception))
+        processChangeListener.handle(OnActionFailed(ctx.latestScenarioDetails.processId, exception, actionName))
         dbioRunner
           .runInTransaction(
             actionRepository.markActionAsFailed(
@@ -327,9 +350,8 @@ class DeploymentService(
             logger.info(s"Finishing $actionString")
             val performedAt = clock.instant()
             val comment     = deploymentComment.map(_.toComment(actionName))
-            // TODO: rename to OnActionSuccess
             processChangeListener.handle(
-              OnDeployActionSuccess(
+              OnActionSuccess(
                 ctx.latestScenarioDetails.processId,
                 versionOnWhichActionIsDone,
                 comment,
@@ -608,49 +630,45 @@ class DeploymentService(
 
   // TODO: further changes
   //       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
-  //       - see those actions in the actions table
-  //       - send notifications about finished/failed custom actions
+  //       - better comment validation
   private def processCustomAction(command: CustomActionCommand): Future[CustomActionResult] = {
-    import command._
-    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    dbioRunner.run(
-      for {
-        // Fetch and validate process details
-        processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](
-          processIdWithName.id
-        )
-        processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.name))
-        _ = checkIfCanPerformActionOnScenario(actionName, processDetails)
-        processState <- DBIOAction.from(getProcessState(processDetails))
-        manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
-        // Fetch and validate custom action details
-        actionCommand = DMCustomActionCommand(
-          actionName,
-          processDetails.toEngineProcessVersion,
-          processDetails.json,
-          user.toManagerUser,
-          params
-        )
-        customActionOpt = manager.customActionsDefinitions.find(_.actionName == actionName)
-        customAction <- existsOrFail(
-          customActionOpt,
-          CustomActionNonExistingError(
-            s"Couldn't find definition of action ${actionName.value} for scenario ${processIdWithName.name} when trying to validate"
-          )
-        )
-        _ <- validateActionCommand(actionCommand, customAction)
-        _ = checkIfCanPerformActionInState(actionName, processDetails, processState)
-        invokeActionResult <- DBIOAction.from(manager.processCommand(actionCommand))
-      } yield invokeActionResult
-    )
+    import command.commonData._
+    val actionName: ScenarioActionName    = command.actionName
+    val actionParams: Map[String, String] = command.params
+    for {
+      validatedComment <- validateDeploymentComment(comment)
+      ctx <- prepareCommandContextWithAction[CanonicalProcess](
+        processIdWithName,
+        actionName,
+        actionParams,
+        p => Some(p.processVersionId),
+        _ => None
+      )
+      dmCommand = DMCustomActionCommand(
+        actionName,
+        ctx.latestScenarioDetails.toEngineProcessVersion,
+        ctx.latestScenarioDetails.json,
+        user.toManagerUser,
+        actionParams
+      )
+      actionResult <- runActionAndHandleResults(
+        actionName,
+        validatedComment,
+        ctx
+      ) {
+        dispatcher
+          .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+          .processCommand(dmCommand)
+      }
+    } yield actionResult
   }
 
-  private def validateActionCommand(actionCommand: DMCustomActionCommand, customAction: CustomActionDefinition) = {
+  private def validateActionParameters(actionParameters: Map[String, String], customAction: CustomActionDefinition) = {
     val validator        = new CustomActionValidator(customAction)
-    val validationResult = validator.validateCustomActionParams(actionCommand)
+    val validationResult = validator.validateCustomActionParams(actionParameters)
     validationResult match {
       case Validated.Valid(_) => DBIOAction.successful(())
-      case _ => DBIOAction.failed(CustomActionValidationError(s"Validation failed for: ${actionCommand.actionName}"))
+      case _ => DBIOAction.failed(CustomActionValidationError(s"Validation failed for: ${customAction.actionName}"))
     }
   }
 

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.RestAssuredVerboseLogging
+import pl.touk.nussknacker.test.RestAssuredVerboseLoggingIfValidationFails
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
 import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
@@ -13,7 +13,7 @@ class DictApiHttpServiceSpec
     with NuItTest
     with WithSimplifiedDesignerConfig
     with WithBusinessCaseRestAssuredUsersExtensions
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLoggingIfValidationFails {
 
   "The endpoint for listing available dictionaries of expected type should" - {
     "return proper list for expected type String" in {

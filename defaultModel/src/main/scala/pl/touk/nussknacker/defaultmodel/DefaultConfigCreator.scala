@@ -17,6 +17,7 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
         "DATE"        -> anyCategory(date),
         "DATE_FORMAT" -> anyCategory(dateFormat),
         "UTIL"        -> anyCategory(util),
+        "RANDOM"      -> anyCategory(random),
       ),
       List()
     )

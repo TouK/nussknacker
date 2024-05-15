@@ -497,43 +497,35 @@ paths:
       security:
       - {}
       - httpAuth: []
-  /api/scenarios/{scenarioName}/deployments/{deploymentId}:
-    put:
-      summary: Service allowing to request the deployment of a scenario
-      operationId: putApiScenariosScenarionameDeploymentsDeploymentid
+  /api/deployments/{deploymentId}/status:
+    get:
+      tags:
+      - Deployments
+      summary: Get status of a deployment
+      operationId: getApiDeploymentsDeploymentidStatus
       parameters:
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
       - name: deploymentId
         in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
         required: true
         schema:
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeploymentRequest'
-            example:
-              nodesDeploymentData:
-                sourceNodeId1: field1 = 'value'
-        required: true
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
       responses:
         '200':
-          description: ''
-        '400':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
-              examples:
-                Example:
-                  summary: Comment is required
-                  value: Comment is required.
+        '400':
+          description: 'Invalid value for: path parameter deploymentId'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -563,8 +555,85 @@ paths:
                 type: string
               examples:
                 Example:
-                  summary: No scenario {scenarioName} found
-                  value: No scenario 'example scenario' found
+                  summary: No deployment {deploymentId} found
+                  value: Deployment a9a1e269-0b71-4582-a948-603482d27298 not found
+      security:
+      - {}
+      - httpAuth: []
+  /api/deployments/{deploymentId}:
+    put:
+      tags:
+      - Deployments
+      summary: Run the deployment of a scenario
+      operationId: putApiDeploymentsDeploymentid
+      parameters:
+      - name: deploymentId
+        in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunDeploymentRequest'
+            example:
+              scenarioName: scenario1
+              nodesDeploymentData:
+                sourceNodeId1: field1 = 'value'
+        required: true
+      responses:
+        '202':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Scenario {scenarioName} not found
+                  value: Scenario 'example scenario' not found
+                Example1:
+                  summary: Comment is required
+                  value: Comment is required.
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Deployment with id {deploymentId} already exists
+                  value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
+                    exists
       security:
       - {}
       - httpAuth: []
@@ -709,12 +778,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/MigrateScenarioRequestDto'
             examples:
               Example:
-                summary: example of migration request between environments
+                summary: Migrate given scenario to current Nu instance
                 value:
+                  version: 1
                   sourceEnvironmentId: testEnv
+                  remoteUserName: testUser
                   processingMode: Unbounded-Stream
                   engineSetupName: Flink
                   processCategory: Category1
@@ -756,6 +827,11 @@ paths:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Migration performed by user without sufficient permissions
+                  value: The supplied user [Griffin] is not authorized to access this
+                    resource
         '403':
           description: ''
           content:
@@ -767,24 +843,43 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
-        '404':
+      security:
+      - {}
+      - httpAuth: []
+  /api/migration/scenario/description/version:
+    get:
+      tags:
+      - Migrations
+      summary: current version of the scenario description version being used
+      operationId: getApiMigrationScenarioDescriptionVersion
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiVersion'
+        '401':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
-        '409':
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
-        '500':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
       security:
       - {}
       - httpAuth: []
@@ -826,7 +921,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdditionalInfo'
+                anyOf:
+                - $ref: '#/components/schemas/AdditionalInfo'
+                - type: 'null'
               examples:
                 Example:
                   summary: Additional info for node
@@ -1328,7 +1425,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdditionalInfo'
+                anyOf:
+                - $ref: '#/components/schemas/AdditionalInfo'
+                - type: 'null'
               examples:
                 Example:
                   summary: Some additional info for parameters
@@ -1801,6 +1900,51 @@ paths:
       security:
       - {}
       - httpAuth: []
+  /api/statistic:
+    post:
+      tags:
+      - Statistics
+      summary: Register statistics service
+      operationId: postApiStatistic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterStatisticsRequestDto'
+        required: true
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+      security:
+      - {}
+      - httpAuth: []
   /api/statistic/usage:
     get:
       tags:
@@ -1918,16 +2062,27 @@ paths:
 components:
   schemas:
     AdditionalInfo:
+      title: AdditionalInfo
       oneOf:
       - $ref: '#/components/schemas/MarkdownAdditionalInfo'
+    ApiVersion:
+      title: ApiVersion
+      type: object
+      required:
+      - version
+      properties:
+        version:
+          type: integer
+          format: int32
     Attachment:
+      title: Attachment
+      type: object
       required:
       - id
       - processVersionId
       - fileName
       - user
       - createDate
-      type: object
       properties:
         id:
           type: integer
@@ -1943,21 +2098,24 @@ components:
           type: string
           format: date-time
     BoolParameterEditor:
+      title: BoolParameterEditor
       type: object
     BranchEndDefinition:
+      title: BranchEndDefinition
+      type: object
       required:
       - id
       - joinId
-      type: object
       properties:
         id:
           type: string
         joinId:
           type: string
     BranchParameters:
+      title: BranchParameters
+      type: object
       required:
       - branchId
-      type: object
       properties:
         branchId:
           type: string
@@ -1966,13 +2124,14 @@ components:
           items:
             $ref: '#/components/schemas/Parameter'
     BuildInfoDto:
+      title: BuildInfoDto
+      type: object
       required:
       - name
       - gitCommit
       - buildTime
       - version
       - processingType
-      type: object
       properties:
         name:
           type: string
@@ -1985,14 +2144,15 @@ components:
         processingType:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/Map_String'
           - type: 'null'
     CaretPosition2d:
+      title: CaretPosition2d
+      type: object
       required:
       - row
       - column
-      type: object
       properties:
         row:
           type: integer
@@ -2001,11 +2161,12 @@ components:
           type: integer
           format: int32
     CellError:
+      title: CellError
+      type: object
       required:
       - columnName
       - rowIndex
       - errorMessage
-      type: object
       properties:
         columnName:
           type: string
@@ -2015,23 +2176,25 @@ components:
         errorMessage:
           type: string
     ColumnDefinition:
+      title: ColumnDefinition
+      type: object
       required:
       - name
       - aType
-      type: object
       properties:
         name:
           type: string
         aType:
           type: string
     Comment:
+      title: Comment
+      type: object
       required:
       - id
       - processVersionId
       - content
       - user
       - createDate
-      type: object
       properties:
         id:
           type: integer
@@ -2047,12 +2210,13 @@ components:
           type: string
           format: date-time
     ComponentLink:
+      title: ComponentLink
+      type: object
       required:
       - id
       - title
       - icon
       - url
-      type: object
       properties:
         id:
           type: string
@@ -2063,6 +2227,8 @@ components:
         url:
           type: string
     ComponentListElement:
+      title: ComponentListElement
+      type: object
       required:
       - id
       - name
@@ -2071,7 +2237,6 @@ components:
       - componentGroupName
       - usageCount
       - allowedProcessingModes
-      type: object
       properties:
         id:
           type: string
@@ -2099,6 +2264,7 @@ components:
           items:
             type: string
     ComponentType:
+      title: ComponentType
       type: string
       enum:
       - source
@@ -2108,6 +2274,8 @@ components:
       - fragment
       - builtin
     ComponentUsagesInScenario:
+      title: ComponentUsagesInScenario
+      type: object
       required:
       - name
       - isFragment
@@ -2117,7 +2285,6 @@ components:
       - modifiedBy
       - createdAt
       - createdBy
-      type: object
       properties:
         name:
           type: string
@@ -2143,25 +2310,32 @@ components:
         createdBy:
           type: string
         lastAction:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/ProcessAction'
           - type: 'null'
     CronParameterEditor:
+      title: CronParameterEditor
       type: object
     CustomActionRequest:
+      title: CustomActionRequest
+      type: object
       required:
       - actionName
       - params
-      type: object
       properties:
         actionName:
           type: string
+        comment:
+          type:
+          - string
+          - 'null'
         params:
           $ref: '#/components/schemas/Map_String'
     CustomActionValidationDto:
+      title: CustomActionValidationDto
+      type: object
       required:
       - validationPerformed
-      type: object
       properties:
         validationErrors:
           type: array
@@ -2170,60 +2344,56 @@ components:
         validationPerformed:
           type: boolean
     DataToRefresh:
+      title: DataToRefresh
       type: string
       enum:
       - versions
       - activity
       - state
     DateParameterEditor:
+      title: DateParameterEditor
       type: object
     DateTimeParameterEditor:
+      title: DateTimeParameterEditor
       type: object
-    DeploymentRequest:
-      required:
-      - nodesDeploymentData
-      type: object
-      properties:
-        nodesDeploymentData:
-          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
-        comment:
-          type:
-          - string
-          - 'null'
     Dict:
+      title: Dict
+      type: object
       required:
       - id
       - valueType
-      type: object
       properties:
         id:
           type: string
         valueType:
           $ref: '#/components/schemas/SingleTypingResult'
     DictDto:
+      title: DictDto
+      type: object
       required:
       - id
       - label
-      type: object
       properties:
         id:
           type: string
         label:
           type: string
     DictEntry:
+      title: DictEntry
+      type: object
       required:
       - key
       - label
-      type: object
       properties:
         key:
           type: string
         label:
           type: string
     DictListRequestDto:
+      title: DictListRequestDto
+      type: object
       required:
       - expectedType
-      type: object
       properties:
         expectedType:
           oneOf:
@@ -2236,19 +2406,21 @@ components:
           - $ref: '#/components/schemas/TypedUnion'
           - $ref: '#/components/schemas/Unknown'
     DictParameterEditor:
+      title: DictParameterEditor
+      type: object
       required:
       - dictId
-      type: object
       properties:
         dictId:
           type: string
     DisplayableUser:
+      title: DisplayableUser
+      type: object
       required:
       - id
       - username
       - isAdmin
       - categoryPermissions
-      type: object
       properties:
         id:
           type: string
@@ -2267,45 +2439,49 @@ components:
           items:
             type: string
     DualParameterEditor:
+      title: DualParameterEditor
+      type: object
       required:
       - simpleEditor
       - defaultMode
-      type: object
       properties:
         simpleEditor:
           $ref: '#/components/schemas/SimpleParameterEditor'
         defaultMode:
           type: string
     DurationParameterEditor:
+      title: DurationParameterEditor
       type: object
       properties:
         timeRangeComponents:
           type: array
           items:
+            type: object
             required:
             - name
             - duration
-            type: object
             properties:
               name:
                 type: string
               duration:
                 type: string
     Edge:
+      title: Edge
+      type: object
       required:
       - from
       - to
-      type: object
       properties:
         from:
           type: string
         to:
           type: string
         edgeType:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/EdgeType'
           - type: 'null'
     EdgeType:
+      title: EdgeType
       oneOf:
       - $ref: '#/components/schemas/FilterFalse'
       - $ref: '#/components/schemas/FilterTrue'
@@ -2313,24 +2489,27 @@ components:
       - $ref: '#/components/schemas/NextSwitch'
       - $ref: '#/components/schemas/SwitchDefault'
     ErrorDetails:
+      title: ErrorDetails
       oneOf:
       - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
     Expression:
+      title: Expression
+      type: object
       required:
       - language
       - expression
-      type: object
       properties:
         language:
           type: string
         expression:
           type: string
     ExpressionSuggestionDto:
+      title: ExpressionSuggestionDto
+      type: object
       required:
       - methodName
       - refClazz
       - fromClass
-      type: object
       properties:
         methodName:
           type: string
@@ -2355,11 +2534,12 @@ components:
           items:
             $ref: '#/components/schemas/ParameterDto'
     ExpressionSuggestionRequestDto:
+      title: ExpressionSuggestionRequestDto
+      type: object
       required:
       - expression
       - caretPosition2d
       - variableTypes
-      type: object
       properties:
         expression:
           $ref: '#/components/schemas/Expression'
@@ -2368,30 +2548,35 @@ components:
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
     Field:
+      title: Field
+      type: object
       required:
       - name
       - expression
-      type: object
       properties:
         name:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
     FilterFalse:
+      title: FilterFalse
       type: object
     FilterTrue:
+      title: FilterTrue
       type: object
     FixedExpressionValue:
+      title: FixedExpressionValue
+      type: object
       required:
       - expression
       - label
-      type: object
       properties:
         expression:
           type: string
         label:
           type: string
     FixedValuesParameterEditor:
+      title: FixedValuesParameterEditor
       type: object
       properties:
         possibleValues:
@@ -2399,25 +2584,28 @@ components:
           items:
             $ref: '#/components/schemas/FixedExpressionValue'
     FragmentClazzRef:
+      title: FragmentClazzRef
+      type: object
       required:
       - refClazzName
-      type: object
       properties:
         refClazzName:
           type: string
     FragmentOutput:
+      title: FragmentOutput
+      type: object
       required:
       - name
-      type: object
       properties:
         name:
           type: string
     FragmentParameter:
+      title: FragmentParameter
+      type: object
       required:
       - name
       - typ
       - required
-      type: object
       properties:
         name:
           type: string
@@ -2426,7 +2614,7 @@ components:
         required:
           type: boolean
         initialValue:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/FixedExpressionValue'
           - type: 'null'
         hintText:
@@ -2434,18 +2622,19 @@ components:
           - string
           - 'null'
         valueEditor:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/ParameterValueInput'
           - type: 'null'
         valueCompileTimeValidation:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
           - type: 'null'
     FragmentRef:
+      title: FragmentRef
+      type: object
       required:
       - id
       - outputVariableNames
-      type: object
       properties:
         id:
           type: string
@@ -2456,19 +2645,21 @@ components:
         outputVariableNames:
           $ref: '#/components/schemas/Map_String'
     FragmentUsageData:
+      title: FragmentUsageData
+      type: object
       required:
       - fragmentNodeId
       - nodeId
-      type: object
       properties:
         fragmentNodeId:
           type: string
         nodeId:
           type: string
     HealthCheckProcessErrorResponseDto:
+      title: HealthCheckProcessErrorResponseDto
+      type: object
       required:
       - status
-      type: object
       properties:
         status:
           $ref: '#/components/schemas/Status1'
@@ -2480,12 +2671,14 @@ components:
           type:
           - array
           - 'null'
+          uniqueItems: true
           items:
             type: string
     HealthCheckProcessSuccessResponseDto:
+      title: HealthCheckProcessSuccessResponseDto
+      type: object
       required:
       - status
-      type: object
       properties:
         status:
           $ref: '#/components/schemas/Status'
@@ -2497,15 +2690,18 @@ components:
           type:
           - array
           - 'null'
+          uniqueItems: true
           items:
             type: string
     JsonParameterEditor:
+      title: JsonParameterEditor
       type: object
     LayoutData:
+      title: LayoutData
+      type: object
       required:
       - x
       - y
-      type: object
       properties:
         x:
           type: integer
@@ -2514,50 +2710,60 @@ components:
           type: integer
           format: int64
     List_Field:
+      title: List_Field
       oneOf:
       - $ref: '#/components/schemas/Nil'
       - type: array
         items:
           $ref: '#/components/schemas/Field'
     List_FragmentParameter:
+      title: List_FragmentParameter
       oneOf:
       - $ref: '#/components/schemas/Nil'
       - type: array
         items:
           $ref: '#/components/schemas/FragmentParameter'
     Map_EngineSetupName_List_String:
+      title: Map_EngineSetupName_List_String
       type: object
       additionalProperties:
         type: array
         items:
           type: string
     Map_List_String:
+      title: Map_List_String
       type: object
       additionalProperties:
         type: array
         items:
           type: string
     Map_Map_String_String:
+      title: Map_Map_String_String
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
     Map_Map_String_TypingResultInJson:
+      title: Map_Map_String_TypingResultInJson
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_TypingResultInJson'
     Map_NodeId_NodeDeploymentData:
+      title: Map_NodeId_NodeDeploymentData
       type: object
       additionalProperties:
         type: string
     Map_String:
+      title: Map_String
       type: object
       additionalProperties:
         type: string
     Map_TypingResult:
+      title: Map_TypingResult
       type: object
       additionalProperties:
         $ref: '#/components/schemas/TypingResult'
     Map_TypingResultInJson:
+      title: Map_TypingResultInJson
       type: object
       additionalProperties:
         oneOf:
@@ -2570,44 +2776,89 @@ components:
         - $ref: '#/components/schemas/TypedUnion'
         - $ref: '#/components/schemas/Unknown'
     MarkdownAdditionalInfo:
+      title: MarkdownAdditionalInfo
+      type: object
       required:
       - content
-      type: object
       properties:
         content:
           type: string
+    MigrateScenarioRequestDto:
+      title: MigrateScenarioRequestDto
+      oneOf:
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV1'
+      discriminator:
+        propertyName: version
+        mapping:
+          '1': MigrateScenarioRequestDtoV1
+    MigrateScenarioRequestDtoV1:
+      title: MigrateScenarioRequestDtoV1
+      type: object
+      required:
+      - version
+      - sourceEnvironmentId
+      - remoteUserName
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        remoteUserName:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
     NextSwitch:
+      title: NextSwitch
+      type: object
       required:
       - condition
-      type: object
       properties:
         condition:
           $ref: '#/components/schemas/Expression'
     Nil:
+      title: Nil
       type: object
     NodeData:
+      title: NodeData
       oneOf:
       - $ref: '#/components/schemas/Variable'
       - $ref: '#/components/schemas/VariableBuilder'
       - title: BranchEndData
+        type: object
         required:
         - definition
         - type
-        type: object
         properties:
           definition:
             $ref: '#/components/schemas/BranchEndDefinition'
           type:
             $ref: '#/components/schemas/NodeTypes'
       - title: CustomNode
+        type: object
         required:
         - id
         - nodeType
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParametersTemplate:
@@ -2629,15 +2880,15 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes1'
       - title: Enricher
+        type: object
         required:
         - id
         - output
         - service
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParametersTemplate:
@@ -2653,14 +2904,14 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes2'
       - title: Filter
+        type: object
         required:
         - expression
         - id
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParametersTemplate:
@@ -2678,14 +2929,14 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes3'
       - title: FragmentInput
+        type: object
         required:
         - id
         - ref
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           id:
@@ -2705,14 +2956,14 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes4'
       - title: FragmentInputDefinition
+        type: object
         required:
         - id
         - parameters
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           id:
@@ -2722,15 +2973,15 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes5'
       - title: FragmentOutputDefinition
+        type: object
         required:
         - id
         - fields
         - outputName
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           id:
@@ -2742,14 +2993,14 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes6'
       - title: Join
+        type: object
         required:
         - id
         - nodeType
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParameters:
@@ -2775,14 +3026,14 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes7'
       - title: Processor
+        type: object
         required:
         - id
         - service
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParametersTemplate:
@@ -2800,14 +3051,14 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes8'
       - title: Sink
+        type: object
         required:
         - id
         - ref
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParametersTemplate:
@@ -2825,16 +3076,16 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes9'
       - title: Source
+        type: object
         required:
         - id
         - type
         - ref
-        type: object
         properties:
           id:
             type: string
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           type:
@@ -2846,15 +3097,15 @@ components:
           ref:
             $ref: '#/components/schemas/SourceRef'
       - title: Split
+        type: object
         required:
         - id
         - type
-        type: object
         properties:
           id:
             type: string
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           type:
@@ -2864,13 +3115,13 @@ components:
             items:
               $ref: '#/components/schemas/Parameter'
       - title: Switch
+        type: object
         required:
         - id
         - type
-        type: object
         properties:
           additionalFields:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
             - type: 'null'
           branchParametersTemplate:
@@ -2878,7 +3129,7 @@ components:
             items:
               $ref: '#/components/schemas/Parameter'
           expression:
-            oneOf:
+            anyOf:
             - $ref: '#/components/schemas/Expression'
             - type: 'null'
           exprVal:
@@ -2890,76 +3141,93 @@ components:
           type:
             $ref: '#/components/schemas/NodeTypes12'
     NodeTypes:
+      title: NodeTypes
       type: string
       enum:
       - BranchEndData
     NodeTypes1:
+      title: NodeTypes
       type: string
       enum:
       - CustomNode
     NodeTypes10:
+      title: NodeTypes
       type: string
       enum:
       - Source
     NodeTypes11:
+      title: NodeTypes
       type: string
       enum:
       - Split
     NodeTypes12:
+      title: NodeTypes
       type: string
       enum:
       - Switch
     NodeTypes13:
+      title: NodeTypes
       type: string
       enum:
       - Variable
     NodeTypes14:
+      title: NodeTypes
       type: string
       enum:
       - VariableBuilder
     NodeTypes2:
+      title: NodeTypes
       type: string
       enum:
       - Enricher
     NodeTypes3:
+      title: NodeTypes
       type: string
       enum:
       - Filter
     NodeTypes4:
+      title: NodeTypes
       type: string
       enum:
       - FragmentInput
     NodeTypes5:
+      title: NodeTypes
       type: string
       enum:
       - FragmentInputDefinition
     NodeTypes6:
+      title: NodeTypes
       type: string
       enum:
       - FragmentOutputDefinition
     NodeTypes7:
+      title: NodeTypes
       type: string
       enum:
       - Join
     NodeTypes8:
+      title: NodeTypes
       type: string
       enum:
       - Processor
     NodeTypes9:
+      title: NodeTypes
       type: string
       enum:
       - Sink
     NodeUsageData:
+      title: NodeUsageData
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
       - $ref: '#/components/schemas/ScenarioUsageData'
     NodeValidationError:
+      title: NodeValidationError
+      type: object
       required:
       - typ
       - message
       - description
       - errorType
-      type: object
       properties:
         typ:
           type: string
@@ -2974,28 +3242,30 @@ components:
         errorType:
           $ref: '#/components/schemas/NodeValidationErrorType'
         details:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/ErrorDetails'
           - type: 'null'
     NodeValidationErrorType:
+      title: NodeValidationErrorType
       type: string
       enum:
       - RenderNotAllowed
       - SaveNotAllowed
       - SaveAllowed
     NodeValidationRequestDto:
+      title: NodeValidationRequestDto
+      type: object
       required:
       - nodeData
       - processProperties
       - variableTypes
-      type: object
       properties:
         nodeData:
           $ref: '#/components/schemas/NodeData'
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
         branchVariableTypes:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
           - type: 'null'
         outgoingEdges:
@@ -3005,9 +3275,10 @@ components:
           items:
             $ref: '#/components/schemas/Edge'
     NodeValidationResultDto:
+      title: NodeValidationResultDto
+      type: object
       required:
       - validationPerformed
-      type: object
       properties:
         parameters:
           type:
@@ -3016,15 +3287,17 @@ components:
           items:
             $ref: '#/components/schemas/UIParameter'
         expressionType:
-          oneOf:
-          - $ref: '#/components/schemas/TypedClass'
-          - $ref: '#/components/schemas/TypedDict'
-          - $ref: '#/components/schemas/TypedNull'
-          - $ref: '#/components/schemas/TypedObjectTypingResult'
-          - $ref: '#/components/schemas/TypedObjectWithValue'
-          - $ref: '#/components/schemas/TypedTaggedValue'
-          - $ref: '#/components/schemas/TypedUnion'
-          - $ref: '#/components/schemas/Unknown'
+          anyOf:
+          - oneOf:
+            - $ref: '#/components/schemas/TypedClass'
+            - $ref: '#/components/schemas/TypedDict'
+            - $ref: '#/components/schemas/TypedNull'
+            - $ref: '#/components/schemas/TypedObjectTypingResult'
+            - $ref: '#/components/schemas/TypedObjectWithValue'
+            - $ref: '#/components/schemas/TypedTaggedValue'
+            - $ref: '#/components/schemas/TypedUnion'
+            - $ref: '#/components/schemas/Unknown'
+          - type: 'null'
         validationErrors:
           type: array
           items:
@@ -3032,10 +3305,11 @@ components:
         validationPerformed:
           type: boolean
     Notification:
+      title: Notification
+      type: object
       required:
       - id
       - message
-      type: object
       properties:
         id:
           type: string
@@ -3046,7 +3320,7 @@ components:
         message:
           type: string
         type:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/NotificationType'
           - type: 'null'
         toRefresh:
@@ -3054,26 +3328,29 @@ components:
           items:
             $ref: '#/components/schemas/DataToRefresh'
     NotificationType:
+      title: NotificationType
       type: string
       enum:
       - info
       - success
       - error
     Parameter:
+      title: Parameter
+      type: object
       required:
       - name
       - expression
-      type: object
       properties:
         name:
           type: string
         expression:
           $ref: '#/components/schemas/Expression'
     ParameterDto:
+      title: ParameterDto
+      type: object
       required:
       - name
       - refClazz
-      type: object
       properties:
         name:
           type: string
@@ -3088,6 +3365,7 @@ components:
           - $ref: '#/components/schemas/TypedUnion'
           - $ref: '#/components/schemas/Unknown'
     ParameterEditor:
+      title: ParameterEditor
       oneOf:
       - $ref: '#/components/schemas/BoolParameterEditor'
       - $ref: '#/components/schemas/CronParameterEditor'
@@ -3107,9 +3385,10 @@ components:
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
     ParameterValueCompileTimeValidation:
+      title: ParameterValueCompileTimeValidation
+      type: object
       required:
       - validationExpression
-      type: object
       properties:
         validationExpression:
           $ref: '#/components/schemas/Expression'
@@ -3118,13 +3397,15 @@ components:
           - string
           - 'null'
     ParameterValueInput:
+      title: ParameterValueInput
       oneOf:
       - $ref: '#/components/schemas/ValueInputWithDictEditor'
       - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
     ParametersValidationRequestDto:
+      title: ParametersValidationRequestDto
+      type: object
       required:
       - variableTypes
-      type: object
       properties:
         parameters:
           type: array
@@ -3133,9 +3414,10 @@ components:
         variableTypes:
           $ref: '#/components/schemas/Map_TypingResultInJson'
     ParametersValidationResultDto:
+      title: ParametersValidationResultDto
+      type: object
       required:
       - validationPerformed
-      type: object
       properties:
         validationErrors:
           type: array
@@ -3144,21 +3426,24 @@ components:
         validationPerformed:
           type: boolean
     PeriodParameterEditor:
+      title: PeriodParameterEditor
       type: object
       properties:
         timeRangeComponents:
           type: array
           items:
+            type: object
             required:
             - name
             - duration
-            type: object
             properties:
               name:
                 type: string
               duration:
                 type: string
     ProcessAction:
+      title: ProcessAction
+      type: object
       required:
       - id
       - processId
@@ -3169,7 +3454,6 @@ components:
       - actionName
       - state
       - buildInfo
-      type: object
       properties:
         id:
           type: string
@@ -3208,6 +3492,7 @@ components:
         buildInfo:
           $ref: '#/components/schemas/Map_String'
     ProcessActionState:
+      title: ProcessActionState
       type: string
       enum:
       - IN_PROGRESS
@@ -3215,10 +3500,11 @@ components:
       - FAILED
       - EXECUTION_FINISHED
     ProcessAdditionalFields:
+      title: ProcessAdditionalFields
+      type: object
       required:
       - properties
       - metaDataType
-      type: object
       properties:
         description:
           type:
@@ -3229,25 +3515,52 @@ components:
         metaDataType:
           type: string
     ProcessProperties:
+      title: ProcessProperties
+      type: object
       required:
       - additionalFields
-      type: object
       properties:
         additionalFields:
           $ref: '#/components/schemas/ProcessAdditionalFields'
     PropertiesValidationRequestDto:
+      title: PropertiesValidationRequestDto
+      type: object
       required:
       - additionalFields
       - name
-      type: object
       properties:
         additionalFields:
           $ref: '#/components/schemas/ProcessAdditionalFields'
         name:
           type: string
     RawParameterEditor:
+      title: RawParameterEditor
       type: object
+    RegisterStatisticsRequestDto:
+      title: RegisterStatisticsRequestDto
+      type: object
+      properties:
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatisticDto'
+    RunDeploymentRequest:
+      title: RunDeploymentRequest
+      type: object
+      required:
+      - scenarioName
+      - nodesDeploymentData
+      properties:
+        scenarioName:
+          type: string
+        nodesDeploymentData:
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+        comment:
+          type:
+          - string
+          - 'null'
     ScenarioActivity:
+      title: ScenarioActivity
       type: object
       properties:
         comments:
@@ -3259,11 +3572,12 @@ components:
           items:
             $ref: '#/components/schemas/Attachment'
     ScenarioParameters:
+      title: ScenarioParameters
+      type: object
       required:
       - processingMode
       - category
       - engineSetupName
-      type: object
       properties:
         processingMode:
           type: string
@@ -3272,9 +3586,10 @@ components:
         engineSetupName:
           type: string
     ScenarioParametersCombinationWithEngineErrors:
+      title: ScenarioParametersCombinationWithEngineErrors
+      type: object
       required:
       - engineSetupErrors
-      type: object
       properties:
         combinations:
           type: array
@@ -3283,16 +3598,18 @@ components:
         engineSetupErrors:
           $ref: '#/components/schemas/Map_EngineSetupName_List_String'
     ScenarioUsageData:
+      title: ScenarioUsageData
+      type: object
       required:
       - nodeId
-      type: object
       properties:
         nodeId:
           type: string
     ServiceRef:
+      title: ServiceRef
+      type: object
       required:
       - id
-      type: object
       properties:
         id:
           type: string
@@ -3301,6 +3618,7 @@ components:
           items:
             $ref: '#/components/schemas/Parameter'
     SimpleParameterEditor:
+      title: SimpleParameterEditor
       oneOf:
       - $ref: '#/components/schemas/BoolParameterEditor'
       - $ref: '#/components/schemas/CronParameterEditor'
@@ -3318,6 +3636,7 @@ components:
       - $ref: '#/components/schemas/TextareaParameterEditor'
       - $ref: '#/components/schemas/TimeParameterEditor'
     SingleTypingResult:
+      title: SingleTypingResult
       oneOf:
       - $ref: '#/components/schemas/TypedClass'
       - $ref: '#/components/schemas/TypedDict'
@@ -3325,9 +3644,10 @@ components:
       - $ref: '#/components/schemas/TypedObjectWithValue'
       - $ref: '#/components/schemas/TypedTaggedValue'
     SinkRef:
+      title: SinkRef
+      type: object
       required:
       - typ
-      type: object
       properties:
         typ:
           type: string
@@ -3336,9 +3656,10 @@ components:
           items:
             $ref: '#/components/schemas/Parameter'
     SourceRef:
+      title: SourceRef
+      type: object
       required:
       - typ
-      type: object
       properties:
         typ:
           type: string
@@ -3347,10 +3668,78 @@ components:
           items:
             $ref: '#/components/schemas/Parameter'
     SpelTemplateParameterEditor:
+      title: SpelTemplateParameterEditor
       type: object
     SqlParameterEditor:
+      title: SqlParameterEditor
       type: object
+    StatisticDto:
+      title: StatisticDto
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          $ref: '#/components/schemas/StatisticName'
+    StatisticName:
+      title: StatisticName
+      type: string
+      enum:
+      - SEARCH_SCENARIOS_BY_NAME
+      - FILTER_SCENARIOS_BY_STATUS
+      - FILTER_SCENARIOS_BY_PROCESSING_MODE
+      - FILTER_SCENARIOS_BY_CATEGORY
+      - FILTER_SCENARIOS_BY_AUTHOR
+      - FILTER_SCENARIOS_BY_OTHER
+      - SORT_SCENARIOS
+      - SEARCH_COMPONENTS_BY_NAME
+      - FILTER_COMPONENTS_BY_GROUP
+      - FILTER_COMPONENTS_BY_PROCESSING_MODE
+      - FILTER_COMPONENTS_BY_CATEGORY
+      - FILTER_COMPONENTS_BY_MULTIPLE_CATEGORIES
+      - FILTER_COMPONENTS_BY_USAGES
+      - CLICK_COMPONENT_USAGES
+      - SEARCH_COMPONENT_USAGES_BY_NAME
+      - FILTER_COMPONENT_USAGES_BY_STATUS
+      - FILTER_COMPONENT_USAGES_BY_CATEGORY
+      - FILTER_COMPONENT_USAGES_BY_AUTHOR
+      - FILTER_COMPONENT_USAGES_BY_OTHER
+      - CLICK_SCENARIO_FROM_COMPONENT_USAGES
+      - CLICK_GLOBAL_METRICS
+      - CLICK_ACTION_DEPLOY
+      - CLICK_ACTION_METRICS
+      - CLICK_VIEW_ZOOM_IN
+      - CLICK_VIEW_RESET
+      - CLICK_EDIT_UNDO
+      - CLICK_EDIT_REDO
+      - CLICK_EDIT_COPY
+      - CLICK_EDIT_PASTE
+      - CLICK_EDIT_DELETE
+      - CLICK_EDIT_LAYOUT
+      - CLICK_SCENARIO_PROPERTIES
+      - CLICK_SCENARIO_COMPARE
+      - CLICK_SCENARIO_MIGRATE
+      - CLICK_SCENARIO_IMPORT
+      - CLICK_SCENARIO_JSON
+      - CLICK_SCENARIO_PDF
+      - CLICK_SCENARIO_ARCHIVE
+      - CLICK_TEST_GENERATED
+      - CLICK_TEST_ADHOC
+      - CLICK_TEST_FROM_FILE
+      - CLICK_TEST_GENERATE_FILE
+      - CLICK_TEST_HIDE
+      - CLICK_MORE_SCENARIO_DETAILS
+      - CLICK_ROLL_UP_PANEL
+      - CLICK_EXPAND_PANEL
+      - MOVE_PANEL
+      - SEARCH_NODES_IN_SCENARIO
+      - SEARCH_COMPONENTS_IN_SCENARIO
+      - CLICK_OLDER_VERSION
+      - CLICK_NEWER_VERSION
+      - FIRED_KEY_STROKE
+      - CLICK_NODE_DOCUMENTATION
     StatisticUrlResponseDto:
+      title: StatisticUrlResponseDto
       type: object
       properties:
         urls:
@@ -3358,18 +3747,23 @@ components:
           items:
             type: string
     Status:
+      title: Status
       type: string
       enum:
       - OK
     Status1:
+      title: Status
       type: string
       enum:
       - ERROR
     StringParameterEditor:
+      title: StringParameterEditor
       type: object
     SwitchDefault:
+      title: SwitchDefault
       type: object
     TabularDataDefinitionParserErrorDetails:
+      title: TabularDataDefinitionParserErrorDetails
       type: object
       properties:
         cellErrors:
@@ -3381,17 +3775,20 @@ components:
           items:
             $ref: '#/components/schemas/ColumnDefinition'
     TabularTypedDataEditor:
+      title: TabularTypedDataEditor
       type: object
     TextareaParameterEditor:
+      title: TextareaParameterEditor
       type: object
     TimeParameterEditor:
+      title: TimeParameterEditor
       type: object
     TypedClass:
       title: TypedClass
+      type: object
       required:
       - type
       - refClazzName
-      type: object
       properties:
         display:
           type: string
@@ -3405,10 +3802,10 @@ components:
             $ref: '#/components/schemas/TypingResult'
     TypedDict:
       title: TypedDict
+      type: object
       required:
       - type
       - dict
-      type: object
       properties:
         display:
           type: string
@@ -3418,9 +3815,9 @@ components:
           $ref: '#/components/schemas/Dict'
     TypedNull:
       title: TypedNull
+      type: object
       required:
       - type
-      type: object
       properties:
         display:
           type: string
@@ -3434,11 +3831,11 @@ components:
             $ref: '#/components/schemas/TypingResult'
     TypedObjectTypingResult:
       title: TypedObjectTypingResult
+      type: object
       required:
       - type
       - fields
       - refClazzName
-      type: object
       properties:
         display:
           type: string
@@ -3454,11 +3851,11 @@ components:
             $ref: '#/components/schemas/TypingResult'
     TypedObjectWithValue:
       title: TypedObjectWithValue
+      type: object
       required:
       - value
       - type
       - refClazzName
-      type: object
       properties:
         value: {}
         display:
@@ -3473,10 +3870,10 @@ components:
             $ref: '#/components/schemas/TypingResult'
     TypedTaggedValue:
       title: TypedTaggedValue
+      type: object
       required:
       - tag
       - type
-      type: object
       properties:
         tag:
           type: string
@@ -3486,10 +3883,10 @@ components:
           $ref: '#/components/schemas/Types5'
     TypedUnion:
       title: TypedUnion
+      type: object
       required:
       - type
       - union
-      type: object
       properties:
         display:
           type: string
@@ -3500,38 +3897,47 @@ components:
           items:
             $ref: '#/components/schemas/TypingResult'
     Types:
+      title: Types
       type: string
       enum:
       - Unknown
     Types1:
+      title: Types
       type: string
       enum:
       - TypedClass
     Types2:
+      title: Types
       type: string
       enum:
       - TypedDict
     Types3:
+      title: Types
       type: string
       enum:
       - TypedObjectTypingResult
     Types4:
+      title: Types
       type: string
       enum:
       - TypedObjectWithValue
     Types5:
+      title: Types
       type: string
       enum:
       - TypedTaggedValue
     Types6:
+      title: Types
       type: string
       enum:
       - TypedNull
     Types7:
+      title: Types
       type: string
       enum:
       - TypedUnion
     TypingResult:
+      title: TypingResult
       oneOf:
       - $ref: '#/components/schemas/TypedClass'
       - $ref: '#/components/schemas/TypedDict'
@@ -3542,6 +3948,8 @@ components:
       - $ref: '#/components/schemas/TypedUnion'
       - $ref: '#/components/schemas/Unknown'
     UIParameter:
+      title: UIParameter
+      type: object
       required:
       - name
       - typ
@@ -3550,7 +3958,6 @@ components:
       - additionalVariables
       - branchParam
       - label
-      type: object
       properties:
         name:
           type: string
@@ -3572,6 +3979,7 @@ components:
           $ref: '#/components/schemas/Map_TypingResult'
         variablesToHide:
           type: array
+          uniqueItems: true
           items:
             type: string
         branchParam:
@@ -3583,11 +3991,12 @@ components:
         label:
           type: string
     UIValueParameterDto:
+      title: UIValueParameterDto
+      type: object
       required:
       - name
       - typ
       - expression
-      type: object
       properties:
         name:
           type: string
@@ -3605,9 +4014,9 @@ components:
           $ref: '#/components/schemas/Expression'
     Unknown:
       title: Unknown
+      type: object
       required:
       - type
-      type: object
       properties:
         display:
           type: string
@@ -3620,6 +4029,7 @@ components:
           items:
             $ref: '#/components/schemas/TypingResult'
     UserDefinedAdditionalNodeFields:
+      title: UserDefinedAdditionalNodeFields
       type: object
       properties:
         description:
@@ -3627,23 +4037,25 @@ components:
           - string
           - 'null'
         layoutData:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/LayoutData'
           - type: 'null'
     ValueInputWithDictEditor:
+      title: ValueInputWithDictEditor
+      type: object
       required:
       - dictId
       - allowOtherValue
-      type: object
       properties:
         dictId:
           type: string
         allowOtherValue:
           type: boolean
     ValueInputWithFixedValuesProvided:
+      title: ValueInputWithFixedValuesProvided
+      type: object
       required:
       - allowOtherValue
-      type: object
       properties:
         fixedValuesList:
           type: array
@@ -3653,17 +4065,17 @@ components:
           type: boolean
     Variable:
       title: Variable
+      type: object
       required:
       - id
       - type
       - varName
       - value
-      type: object
       properties:
         id:
           type: string
         additionalFields:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
           - type: 'null'
         type:
@@ -3674,14 +4086,14 @@ components:
           $ref: '#/components/schemas/Expression'
     VariableBuilder:
       title: VariableBuilder
+      type: object
       required:
       - id
       - type
       - varName
-      type: object
       properties:
         additionalFields:
-          oneOf:
+          anyOf:
           - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
           - type: 'null'
         branchParametersTemplate:

@@ -188,7 +188,11 @@ describe("Fragment", () => {
         cy.get("#nk-graph-fragment [model-id='input']").scrollIntoView().should("be.visible");
 
         cy.wait("@fragmentInputValidation");
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
+
+        cy.get("[data-testid=window]").find("section").scrollTo("bottom");
+        cy.get("[data-testid=window]").find('[id="nk-graph-fragment"]').matchImage();
 
         cy.get('[title="name_string_any_with_suggestion"]').siblings().eq(0).find('[title="Switch to expression mode"]');
         cy.get('[title="name_string_fixed"]').siblings().eq(0).contains("#meta.processName");
@@ -293,8 +297,8 @@ describe("Fragment", () => {
             .find("[data-testid='form-helper-text']")
             .should("be.visible");
 
-        cy.get("[data-testid=window]").find("section").scrollTo("bottom");
-        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
+        cy.get("[data-testid=window]").find("section").scrollTo("top");
+        cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
     });
 
     it("should open properties", () => {

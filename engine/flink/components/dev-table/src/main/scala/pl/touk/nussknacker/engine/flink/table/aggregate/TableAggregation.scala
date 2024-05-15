@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.functions.{FlatMapFunction, RuntimeContext}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream

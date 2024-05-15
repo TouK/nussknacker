@@ -12,7 +12,7 @@ import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingDesignerConfig,
   WithMockableDeploymentManager
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 
 class NotificationApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -22,7 +22,7 @@ class NotificationApiHttpServiceSecuritySpec
     with WithMockableDeploymentManager
     with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "The endpoint for getting notifications when" - {

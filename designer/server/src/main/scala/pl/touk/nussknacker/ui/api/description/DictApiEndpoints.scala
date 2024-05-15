@@ -111,30 +111,21 @@ object DictApiEndpoints {
 
     final case class MalformedTypingResult(msg: String) extends DictError
 
-    private def deserializationNotSupportedException =
-      (_: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
     implicit val noDictCodec: Codec[String, NoDict, CodecFormat.TextPlain] = {
-      Codec.string.map(
-        Mapping.from[String, NoDict](deserializationNotSupportedException)(e =>
-          s"Dictionary with id: ${e.dictId} not found"
-        )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoDict](e =>
+        s"Dictionary with id: ${e.dictId} not found"
       )
     }
 
     implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-      Codec.string.map(
-        Mapping.from[String, NoProcessingType](deserializationNotSupportedException)(e =>
-          s"Processing type: ${e.processingType} not found"
-        )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
+        s"Processing type: ${e.processingType} not found"
       )
     }
 
     implicit val malformedTypingResultCodec: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-      Codec.string.map(
-        Mapping.from[String, MalformedTypingResult](deserializationNotSupportedException)(e =>
-          s"The request content was malformed:\n${e.msg}"
-        )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
+        s"The request content was malformed:\n${e.msg}"
       )
     }
 

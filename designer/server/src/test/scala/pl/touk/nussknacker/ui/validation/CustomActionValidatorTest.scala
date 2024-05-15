@@ -48,6 +48,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
   private def customActionRequest(params: Map[String, String]) = {
     CustomActionRequest(
       testCustomActionName,
+      None,
       params
     )
   }
@@ -57,10 +58,8 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
     "testParam2" -> "validVal2"
   )
 
-  private val validRequest = customActionRequest(validTestParams)
-
   test("should pass when validating correct data") {
-    val result = defaultValidator.validateCustomActionParams(validRequest)
+    val result = defaultValidator.validateCustomActionParams(validTestParams)
     result should be(Validated.Valid(()))
   }
 
@@ -70,10 +69,9 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
       "testParam2" -> "validVal2",
       "testParam3" -> "validVal3"
     )
-    val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooManyParams)
 
     val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
-      defaultValidator.validateCustomActionParams(invalidRequestTooFewParams)
+      defaultValidator.validateCustomActionParams(invalidTestParamsTooManyParams)
     result match {
       case Validated.Invalid(_) =>
       // pass
@@ -117,10 +115,8 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
 
     val customValidator = new CustomActionValidator(mandatoryParamsAction)
 
-    val invalidRequestTooFewParams = customActionRequest(invalidTestParamsTooFewParams)
-
     val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
-      customValidator.validateCustomActionParams(invalidRequestTooFewParams)
+      customValidator.validateCustomActionParams(invalidTestParamsTooFewParams)
     result match {
       case Validated.Invalid(_) =>
       // pass
@@ -134,10 +130,9 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
       "testParam1" -> null,
       "testParam2" -> "ValidVal2"
     )
-    val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidValues)
 
     val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
-      defaultValidator.validateCustomActionParams(invalidRequestInvalidValues)
+      defaultValidator.validateCustomActionParams(invalidTestParamsInvalidValues)
     result match {
       case Validated.Invalid(_) =>
       // pass
@@ -164,9 +159,8 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
       "testParam2" -> "ValidVal2"
     )
 
-    val invalidRequestInvalidValues = customActionRequest(invalidTestParamsInvalidParamNames)
     val result: ValidatedNel[PartSubGraphCompilationError, Unit] =
-      defaultValidator.validateCustomActionParams(invalidRequestInvalidValues)
+      defaultValidator.validateCustomActionParams(invalidTestParamsInvalidParamNames)
     result match {
       case Validated.Invalid(_) =>
       // pass
@@ -187,9 +181,7 @@ class CustomActionValidatorTest extends AnyFunSuite with Matchers {
     val validator       = new CustomActionValidator(noParamsCustomAction)
     val validTestParams = Map.empty[String, String]
 
-    val validRequest = CustomActionRequest(ScenarioActionName("noparams"), validTestParams)
-
-    val result = validator.validateCustomActionParams(validRequest)
+    val result = validator.validateCustomActionParams(validTestParams)
     result should be(Validated.Valid(()))
   }
 

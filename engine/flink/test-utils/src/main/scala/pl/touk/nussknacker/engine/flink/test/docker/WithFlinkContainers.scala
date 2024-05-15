@@ -46,7 +46,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
     ).configure { self =>
       self.withNetwork(network)
       self.setNetworkAliases(asList("jobmanager"))
-      self.withLogConsumer(logConsumer.withPrefix("jobmanager"))
+      self.withLogConsumer(logConsumer(prefix = "jobmanager"))
       self.withFileSystemBind(savepointDir.toString, savepointDir.toString, BindMode.READ_WRITE)
       jobManagerExtraFSBinds.foreach { bind =>
         self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)
@@ -66,7 +66,7 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
     ).configure { self =>
       self.setNetwork(network)
       self.setNetworkAliases(asList("taskmanager"))
-      self.withLogConsumer(logConsumer.withPrefix("taskmanager"))
+      self.withLogConsumer(logConsumer(prefix = "taskmanager"))
       taskManagerExtraFSBinds.foreach { bind =>
         self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)
       }

@@ -72,22 +72,15 @@ object ManagementApiEndpoints {
     final case class NoActionDefinition(scenarioName: ProcessName, actionName: ScenarioActionName)
         extends ManagementApiError
 
-    private def deserializationNotSupportedException =
-      (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
     implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-      Codec.string.map(
-        Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
-          s"Couldn't find ${e.scenarioName} when trying to validate action"
-        )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+        s"Couldn't find scenario ${e.scenarioName}"
       )
     }
 
     implicit val noActionDefinitionCodec: Codec[String, NoActionDefinition, CodecFormat.TextPlain] = {
-      Codec.string.map(
-        Mapping.from[String, NoActionDefinition](deserializationNotSupportedException)(e =>
-          s"Couldn't find definition of action ${e.actionName} for scenario ${e.scenarioName} when trying to validate"
-        )
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoActionDefinition](e =>
+        s"Couldn't find definition of action ${e.actionName} for scenario ${e.scenarioName}"
       )
     }
 

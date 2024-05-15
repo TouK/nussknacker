@@ -20,7 +20,7 @@ import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   PatientScalaFutures,
-  RestAssuredVerboseLogging
+  RestAssuredVerboseLoggingIfValidationFails
 }
 
 class ComponentApiHttpServiceSecuritySpec
@@ -31,7 +31,7 @@ class ComponentApiHttpServiceSecuritySpec
     with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "The endpoint for getting components when" - {

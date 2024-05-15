@@ -1,6 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="NussknackerApp-postgres" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
+    <option name="ALTERNATIVE_JRE_PATH" value="corretto-11" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <envs>
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="CONSOLE_THRESHOLD_LEVEL" value="DEBUG" />
@@ -20,11 +21,11 @@
       <env name="DB_DRIVER" value="org.postgresql.Driver" />
       <env name="DB_USER" value="world" />
       <env name="DB_PASSWORD" value="world123" />
-      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/tables-definition.sql" />
+      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/dev-tables-definition.sql" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
-    <module name="nussknacker-designer" />
+    <module name="nussknacker.nussknacker-designer" />
     <option name="VM_PARAMETERS" value="-Dconfig.override_with_env_vars=true -Dnussknacker.config.locations=../../../nussknacker-dist/src/universal/conf/dev-application.conf -Dlogback.configurationFile=../../../nussknacker-dist/src/universal/conf/logback.xml" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/designer/server/work" />
     <extension name="coverage">

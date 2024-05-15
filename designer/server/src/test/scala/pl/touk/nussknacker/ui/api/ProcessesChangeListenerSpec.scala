@@ -92,7 +92,7 @@ class ProcessesChangeListenerSpec
       comment
     ) ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern {
-        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ScenarioActionName.Deploy) =>
+        case OnActionSuccess(`processId`, VersionId(1L), Some(_), _, ScenarioActionName.Deploy) =>
       }
     }
   }
@@ -102,7 +102,7 @@ class ProcessesChangeListenerSpec
 
     deploymentManager.withFailingDeployment(processName) {
       deployProcess(processName) ~> checkEventually {
-        processChangeListener.events.toArray.last should matchPattern { case OnDeployActionFailed(`processId`, _) => }
+        processChangeListener.events.toArray.last should matchPattern { case OnActionFailed(`processId`, _, _) => }
       }
     }
   }
@@ -117,7 +117,7 @@ class ProcessesChangeListenerSpec
     ) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
       head should matchPattern {
-        case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ScenarioActionName.Cancel) =>
+        case OnActionSuccess(`processId`, VersionId(1L), Some(_), _, ScenarioActionName.Cancel) =>
       }
     }
   }
