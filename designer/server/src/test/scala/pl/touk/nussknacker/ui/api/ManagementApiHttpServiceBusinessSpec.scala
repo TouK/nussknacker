@@ -13,7 +13,11 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.UUID
@@ -27,7 +31,7 @@ class ManagementApiHttpServiceBusinessSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLoggingIfValidationFails {
 
   "The endpoint for testing with parameters should" - {
     "return empty results when empty results are returned by the deployment manager" in {
