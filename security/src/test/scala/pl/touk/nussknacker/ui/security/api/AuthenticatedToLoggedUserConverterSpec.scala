@@ -38,11 +38,10 @@ class AuthenticatedToLoggedUserConverterSpec extends AnyFunSuite with Matchers {
     val userConversion = convertToLoggedUser(authenticatedUser, rules)
 
     userConversion match {
-      case Right(user) => {
+      case Right(user) =>
         user.id shouldEqual "impersonatedUserId"
         user.username shouldEqual "impersonatedUserName"
         user.impersonatedBy.nonEmpty shouldEqual true
-      }
       case Left(_) => fail("Expected a Right but got a Left")
     }
   }
