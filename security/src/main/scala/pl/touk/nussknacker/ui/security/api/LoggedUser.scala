@@ -25,21 +25,6 @@ object LoggedUser {
   }
 
   def apply(
-      loggedImpersonatingUser: LoggedUser,
-      impersonatedUser: ImpersonatedUser,
-      rules: List[ConfigRule]
-  ): LoggedUser = {
-    val impersonatedUserRules = RulesSet.getOnlyMatchingRules(impersonatedUser.roles.toList, rules)
-    CommonUser(
-      id = impersonatedUser.id,
-      username = impersonatedUser.username,
-      categoryPermissions = impersonatedUserRules.permissions,
-      globalPermissions = impersonatedUserRules.globalPermissions,
-      impersonatedBy = Some(loggedImpersonatingUser)
-    )
-  }
-
-  def apply(
       id: String,
       username: String,
       categoryPermissions: Map[String, Set[Permission]] = Map.empty,
@@ -64,6 +49,21 @@ object LoggedUser {
         globalPermissions = rulesSet.globalPermissions
       )
     }
+  }
+
+  def createImpersonatedLoggedUser(
+      loggedImpersonatingUser: LoggedUser,
+      impersonatedUser: ImpersonatedUser,
+      rules: List[ConfigRule]
+  ): LoggedUser = {
+    val impersonatedUserRules = RulesSet.getOnlyMatchingRules(impersonatedUser.roles.toList, rules)
+    CommonUser(
+      id = impersonatedUser.id,
+      username = impersonatedUser.username,
+      categoryPermissions = impersonatedUserRules.permissions,
+      globalPermissions = impersonatedUserRules.globalPermissions,
+      impersonatedBy = Some(loggedImpersonatingUser)
+    )
   }
 
 }

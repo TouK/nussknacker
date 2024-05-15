@@ -70,7 +70,7 @@ object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def apply(user: LoggedUser, allUserAccessibleCategories: Iterable[String]): DisplayableUser = user match {
-    case CommonUser(id, username, categoryPermissions, globalPermissions, impersonatedBy) =>
+    case CommonUser(id, username, categoryPermissions, globalPermissions, _) =>
       new DisplayableUser(
         id = id,
         isAdmin = false,
