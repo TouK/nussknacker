@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
@@ -39,8 +40,11 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
-      componentService: ComponentService
+      componentService: ComponentService,
+      statisticsRepository: FEStatisticsRepository[Future],
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
+    val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
+
     def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
       //       given user has no access rights.
@@ -90,7 +94,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
-      fetchComponentList
+      fetchComponentList,
+      () => ignoringErrorsFEStatisticsRepository.read()
     )
 
   }
@@ -134,7 +139,8 @@ class UsageStatisticsReportsSettingsService(
     fetchActivity: List[ScenarioStatisticsInputData] => Future[
       Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
     ],
-    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]]
+    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
+    fetchFeStatistics: () => Future[Map[String, Long]]
 )(implicit ec: ExecutionContext) {
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
@@ -160,7 +166,15 @@ class UsageStatisticsReportsSettingsService(
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
       componentList <- new EitherT(fetchComponentList())
       componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
-    } yield basicStatistics ++ scenariosStatistics ++ generalStatistics ++ activityStatistics ++ componentStatistics
+      feStatistics <- EitherT.liftF(fetchFeStatistics())
+    } yield basicStatistics ++
+      scenariosStatistics ++
+      generalStatistics ++
+      activityStatistics ++
+      componentStatistics ++
+      feStatistics.map { case (k, v) =>
+        k -> v.toString
+      }
   }
 
   private def determineBasicStatistics(
@@ -168,10 +182,10 @@ class UsageStatisticsReportsSettingsService(
       config: UsageStatisticsReportsConfig
   ): Map[String, String] =
     Map(
-      "fingerprint" -> fingerprint.value,
+      NuFingerprint.name -> fingerprint.value,
       // If it is not set, we assume that it is some custom build from source code
-      "source"  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
-      "version" -> BuildInfo.version
+      NuSource.name  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
+      NuVersion.name -> BuildInfo.version
     )
 
 }
@@ -190,3 +204,17 @@ private[statistics] case class ScenarioStatisticsInputData(
     lastDeployedAction: Option[ProcessAction],
     scenarioId: Option[ProcessId]
 )
+
+private[statistics] class IgnoringErrorsFEStatisticsRepository(repository: FEStatisticsRepository[Future])(
+    implicit ec: ExecutionContext
+) extends ReadFEStatisticsRepository[Future]
+    with LazyLogging {
+
+  override def read(): Future[Map[String, Long]] = repository
+    .read()
+    .recover { case ex: Exception =>
+      logger.warn("Exception occurred during statistics read", ex)
+      Map.empty[String, Long]
+    }
+
+}
