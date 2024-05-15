@@ -117,6 +117,7 @@ object StatisticsApiEndpoints {
       case object ClickActionDeploy                    extends StatisticName
       case object ClickActionMetrics                   extends StatisticName
       case object ClickViewZoomIn                      extends StatisticName
+      case object ClickViewZoomOut                     extends StatisticName
       case object ClickViewReset                       extends StatisticName
       case object ClickEditUndo                        extends StatisticName
       case object ClickEditRedo                        extends StatisticName
@@ -155,6 +156,16 @@ object StatisticsApiEndpoints {
       case object ClickScenarioUnarchive               extends StatisticName
       case object ClickScenarioCustomAction            extends StatisticName
       case object ClickScenarioCustomLink              extends StatisticName
+      case object KeyboardSelectNodes                  extends StatisticName
+      case object KeyboardCopyNode                     extends StatisticName
+      case object KeyboardPasteNode                    extends StatisticName
+      case object keyboardCutNode                      extends StatisticName
+      case object keyboardSelectAllNodes               extends StatisticName
+      case object KeyboardRedoScenarioChanges          extends StatisticName
+      case object KeyboardUndoScenarioChanges          extends StatisticName
+      case object KeyboardDeleteNodes                  extends StatisticName
+      case object KeyboardDeselectAllNodes             extends StatisticName
+      case object KeyboardFocusSearchNodeField         extends StatisticName
 
       override def values = findValues
     }

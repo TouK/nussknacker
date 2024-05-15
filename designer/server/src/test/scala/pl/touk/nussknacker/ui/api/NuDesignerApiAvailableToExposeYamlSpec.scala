@@ -76,6 +76,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_ACTION_DEPLOY",
           "CLICK_ACTION_METRICS",
           "CLICK_VIEW_ZOOM_IN",
+          "CLICK_VIEW_ZOOM_OUT",
           "CLICK_VIEW_RESET",
           "CLICK_EDIT_UNDO",
           "CLICK_EDIT_REDO",
@@ -113,7 +114,17 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_SCENARIO_ARCHIVE_TOGGLE",
           "CLICK_SCENARIO_UNARCHIVE",
           "CLICK_SCENARIO_CUSTOM_ACTION",
-          "CLICK_SCENARIO_CUSTOM_LINK"
+          "CLICK_SCENARIO_CUSTOM_LINK",
+          "KEYBOARD_SELECT_NODES",
+          "KEYBOARD_COPY_NODE",
+          "KEYBOARD_PASTE_NODE",
+          "KEYBOARD_CUT_NODE",
+          "KEYBOARD_SELECT_ALL_NODES",
+          "KEYBOARD_REDO_SCENARIO_CHANGES",
+          "KEYBOARD_UNDO_SCENARIO_CHANGES",
+          "KEYBOARD_DELETE_NODES",
+          "KEYBOARD_DESELECT_ALL_NODES",
+          "KEYBOARD_FOCUS_SEARCH_NODE_FIELD"
         )
       ),
     )
