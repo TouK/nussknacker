@@ -7,6 +7,7 @@
 
 1.15.0 (17 May 2024)
 -------------------------
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Add impersonate mechanism for technical users
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) [#3922](https://github.com/TouK/nussknacker/pull/5901) Libraries bump:
   * Cats 2.9.0 -> 2.10.0
