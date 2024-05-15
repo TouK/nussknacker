@@ -10,7 +10,11 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.{
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails,
+  VeryPatientScalaFutures
+}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.nio.charset.StandardCharsets
@@ -25,7 +29,7 @@ class DeploymentApiHttpServiceBusinessSpec
     with WithBatchConfigScenarioHelper
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with LazyLogging
     with VeryPatientScalaFutures
     with Matchers

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 
 class NotificationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -21,7 +21,7 @@ class NotificationApiHttpServiceBusinessSpec
     with WithMockableDeploymentManager
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "The endpoint for getting notifications should" - {

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
-  RestAssuredVerboseLogging,
+  RestAssuredVerboseLoggingIfValidationFails,
   VeryPatientScalaFutures
 }
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapters}
@@ -33,7 +33,7 @@ class MigrationApiHttpServiceBusinessSpec
     with WithMockableDeploymentManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with Eventually
     with VeryPatientScalaFutures {
 
