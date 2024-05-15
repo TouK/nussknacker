@@ -1,19 +1,30 @@
 import React, { ReactElement } from "react";
-import { MarkdownStyled } from "../../graph/node-modal/NodeAdditionalInfoBox";
 import { FormField } from "./FormField";
 import { FormFields } from "./FormFields";
+import { MarkdownStyled, MarkdownStyledProps } from "../../graph/node-modal/MarkdownStyled";
+import { PropsOf } from "@emotion/react";
+
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace JSX {
+        interface IntrinsicElements {
+            "form-fields": PropsOf<typeof FormFields>;
+            "form-field": PropsOf<typeof FormField>;
+        }
+    }
+}
 
 export function MarkdownForm({ content }: { content: string }): ReactElement {
-    const overrides = {
-        Fields: FormFields,
-        Field: FormField,
+    const components: MarkdownStyledProps["components"] = {
+        "form-fields": FormFields,
+        "form-field": FormField,
     };
 
-    const hasFields = Object.keys(overrides).some((name) => RegExp(`<${name}`).test(content));
+    const hasFields = Object.keys(components).some((name) => RegExp(`:${name}`).test(content));
 
     return (
         <>
-            <MarkdownStyled options={{ overrides }}>{content}</MarkdownStyled>
+            <MarkdownStyled components={components}>{content}</MarkdownStyled>
             {hasFields ? null : <FormFields />}
         </>
     );

@@ -23,7 +23,7 @@ export type GenericActionViewParams = {
     cancelText?: string;
     Icon?: ElementType;
     docs?: DocsLink;
-    // may contain a <Fields/> or <Field name=""> components
+    // may contain a ::form-fields or ::form-field{name=""} directives
     markdownContent?: string;
 };
 
