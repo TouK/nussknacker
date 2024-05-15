@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Scenario Deployment configuration
 
-In order to deploy scenario on the given [Engine](/about/engine), you need to configure the deployment.
+In order to deploy scenario on the given [Engine](/about/engines), you need to configure the deployment.
 
 Deployment of a scenario is managed by Designer's extension called [Deployment Manager](/about/GLOSSARY#deployment-manager).
 To enable given [Deployment Manager](/about/GLOSSARY#deployment-manager) you need to place its jar package in the Designer's classpath.
