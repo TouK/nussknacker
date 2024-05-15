@@ -62,4 +62,35 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
     authorizedUser.can("Second", Write) shouldBe true
   }
 
+  test("should map impersonated user from AuthenticatedUser to LoggedUser with permissions matching roles") {
+    val rules = List(
+      ConfigRule("Editor", categories = List("Category"), permissions = List(Read, Write)),
+      ConfigRule(
+        "TechnicalRole",
+        categories = List("Category"),
+        permissions = List(Deploy),
+        globalPermissions = List("OverrideUsername")
+      ),
+    )
+    val impersonatedUser = ImpersonatedUser("impersonatedUserId", "impersonatedUserName", Set("Editor"))
+    val loggedTechnicalUser = LoggedUser(
+      AuthenticatedUser(
+        "technicalUserId",
+        "technicalUserName",
+        Set("TechnicalRole"),
+        Some(impersonatedUser)
+      ),
+      rules
+    )
+    val loggedImpersonatedUser = LoggedUser(
+      loggedTechnicalUser,
+      impersonatedUser,
+      rules
+    )
+    loggedImpersonatedUser.can("Category", Read) shouldBe true
+    loggedImpersonatedUser.can("Category", Write) shouldBe true
+    loggedImpersonatedUser.can("Category", Deploy) shouldBe false
+    loggedImpersonatedUser.canImpersonate shouldBe false
+  }
+
 }
