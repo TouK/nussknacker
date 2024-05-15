@@ -82,7 +82,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       ),
       rules
     )
-    val loggedImpersonatedUser = LoggedUser(
+    val loggedImpersonatedUser = LoggedUser.createImpersonatedLoggedUser(
       loggedTechnicalUser,
       impersonatedUser,
       rules
