@@ -1,5 +1,10 @@
 # Changelog
 
+1.16.0 (Not released yet)
+-------------------------
+
+* [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
+
 1.15.0 (Not released yet)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
