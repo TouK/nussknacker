@@ -148,7 +148,7 @@ object ScenarioStatistics {
       LiteK8sDMCount       -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
       LiteEmbeddedDMCount  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
       UnknownDMCount       -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
-      ActiveCount          -> inputData.status.contains(SimpleStateStatus.Running),
+      ActiveScenarioCount  -> inputData.status.contains(SimpleStateStatus.Running),
     ).map { case (k, v) => (k.toString, if (v) 1 else 0) }
   }
 
@@ -209,4 +209,7 @@ case object FlinkDMCount           extends StatisticKey("s_dm_f")
 case object LiteK8sDMCount         extends StatisticKey("s_dm_l")
 case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
 case object UnknownDMCount         extends StatisticKey("s_dm_c")
-case object ActiveCount            extends StatisticKey("s_a")
+case object ActiveScenarioCount    extends StatisticKey("s_a")
+case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
+case object NuFingerprint          extends StatisticKey("fingerprint")
+case object NuVersion              extends StatisticKey("version")

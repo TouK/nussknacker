@@ -114,7 +114,6 @@ export function EdgeFields(props: Props): JSX.Element {
             uuid={edge._id}
             index={index}
             className={cx(
-                "movable-row",
                 css({
                     "&&&&": {
                         display: "grid",

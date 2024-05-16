@@ -208,7 +208,8 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty))
+      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Map.empty[String, Long]),
     ).determineQueryParams().value.futureValue.value
     params should contain("fingerprint" -> sampleFingerprint)
     params should contain("source" -> "sources")
@@ -275,6 +276,7 @@ class ScenarioStatisticsTest
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       _ => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
+      () => Future.successful(Map.empty[String, Long]),
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
@@ -307,7 +309,7 @@ class ScenarioStatisticsTest
       LiteK8sDMCount         -> "1",
       LiteEmbeddedDMCount    -> "0",
       UnknownDMCount         -> "0",
-      ActiveCount            -> "2",
+      ActiveScenarioCount    -> "2",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }
