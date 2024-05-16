@@ -5,18 +5,15 @@ services:
   ### Nussknacker designer service
 
   designer:
-    image: touk/nussknacker:latest_scala-2.12
-#    image: touk/nussknacker:1.13.2_scala-2.12
+    image: touk/nussknacker:1.14.0_scala-2.12
     restart: unless-stopped
     environment:
-#      CONFIG_FILE: ${NUSSKNACKER_CONFIG_FILE-/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/nussknacker.conf}
       JDK_JAVA_OPTIONS: -Xmx1024M
       USAGE_REPORTS_SOURCE: "example-installation-docker-compose"
       NUSSKNACKER_LOG_LEVEL: DEBUG
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
       INFLUXDB_URL: http://influxdb:8086
-#      JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005
       FLINK_REST_URL: http://flink-jobmanager:8081
       FLINK_QUERYABLE_STATE_PROXY_URL: flink-taskmanager:9069
     depends_on:
@@ -39,12 +36,10 @@ services:
     volumes_from:
       - flink-jobmanager
 
-#      - ${BASE_PATH}/nussknacker/nussknacker.conf:/opt/nussknacker/conf/nussknacker.conf
-
   ### Nussknacker metrics-related services:
 
   grafana:
-    image: grafana/grafana:8.4.11 # TODO: can we bump it?
+    image: grafana/grafana:7.5.17
     restart: unless-stopped
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -62,7 +57,7 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards
 
   influxdb:
-    image: influxdb:1.8.10 # todo: bump to 1.11.5?
+    image: influxdb:1.8.10
     restart: unless-stopped
     hostname: influxdb
     environment:
@@ -74,7 +69,7 @@ services:
       retries: 10
 
   nginx:
-    image: nginx:1.17.6
+    image: nginx:1.26.0-alpine
     restart: unless-stopped
     ports:
       - 8080:80
@@ -110,7 +105,7 @@ services:
       retries: 10
 
   schema-registry:
-    image: bitnami/schema-registry:7.2.10
+    image: bitnami/schema-registry:7.6.1
     restart: unless-stopped
     environment:
       - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
@@ -119,8 +114,7 @@ services:
       kafka:
         condition: service_healthy
     healthcheck:
-      # todo: verify it really works (grep)
-      test: [ "CMD-SHELL", 'echo -e "GET /subjects HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" | nc localhost 8081 | grep "HTTP/1.1 200 OK" | exit 0' ]
+      test: [ "CMD-SHELL", 'echo -e "GET /subjects HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" | nc localhost 8081 | grep -q "HTTP/1.1 200 OK" | exit 0' ]
       interval: 10s
       retries: 10
 
@@ -158,36 +152,6 @@ services:
     command: jobmanager
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      - |
-        FLINK_PROPERTIES=
-        taskmanager.numberOfTaskSlots: 4
-
-        state.backend: filesystem
-        state.checkpoints.dir: file:///opt/flink/data/checkpoints
-        state.savepoints.dir: file:///opt/flink/data/savepoints
-
-        #Below are base settings for rocksdb metrics, that can be used for grafana dashboards
-        state.backend.rocksdb.metrics.estimate-num-keys: true
-        state.backend.rocksdb.metrics.estimate-live-data-size: true
-        state.backend.rocksdb.metrics.cur-size-all-mem-tables: true
-        state.backend.rocksdb.metrics.size-all-mem-tables: true
-        # We can have many jobs per cluster, in such setting managed memory is not easy to tune
-        state.backend.rocksdb.memory.managed: false
-        # For frequent writes increase the value as needed. Currently RocksDB settings can only be changed per Flink cluster
-        state.backend.rocksdb.writebuffer.size: 256m
-
-        metrics.reporters: influxdb_reporter
-        metrics.reporter.influxdb_reporter.factory.class: org.apache.flink.metrics.influxdb.InfluxdbReporterFactory
-        metrics.reporter.influxdb_reporter.host: telegraf
-        metrics.reporter.influxdb_reporter.port: 8087
-        metrics.reporter.influxdb_reporter.db: esp
-        metrics.reporter.influxdb_reporter.scope.variables.excludes: tm_id;job_id;task_id;task_attempt_id;operator_id;task_attempt_num;task_name
-        metrics.scope.jm: local.<host>.jobmanagerGlobal
-        metrics.scope.jm.job: local.<host>.jobmanagerJob.<job_name>
-        metrics.scope.tm: local.<host>.taskmanagerGlobal.<tm_id>
-        metrics.scope.tm.job: local.<host>.taskmanagerJob.<tm_id>.<job_name>
-        metrics.scope.task: local.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
-        metrics.scope.operator: local.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
@@ -204,36 +168,6 @@ services:
     command: taskmanager
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      - |
-        FLINK_PROPERTIES=
-        taskmanager.numberOfTaskSlots: 4
-        
-        state.backend: filesystem
-        state.checkpoints.dir: file:///opt/flink/data/checkpoints
-        state.savepoints.dir: file:///opt/flink/data/savepoints
-        
-        #Below are base settings for rocksdb metrics, that can be used for grafana dashboards
-        state.backend.rocksdb.metrics.estimate-num-keys: true
-        state.backend.rocksdb.metrics.estimate-live-data-size: true
-        state.backend.rocksdb.metrics.cur-size-all-mem-tables: true
-        state.backend.rocksdb.metrics.size-all-mem-tables: true
-        # We can have many jobs per cluster, in such setting managed memory is not easy to tune
-        state.backend.rocksdb.memory.managed: false
-        # For frequent writes increase the value as needed. Currently RocksDB settings can only be changed per Flink cluster
-        state.backend.rocksdb.writebuffer.size: 256m
-        
-        metrics.reporters: influxdb_reporter
-        metrics.reporter.influxdb_reporter.factory.class: org.apache.flink.metrics.influxdb.InfluxdbReporterFactory
-        metrics.reporter.influxdb_reporter.host: telegraf
-        metrics.reporter.influxdb_reporter.port: 8087
-        metrics.reporter.influxdb_reporter.db: esp
-        metrics.reporter.influxdb_reporter.scope.variables.excludes: tm_id;job_id;task_id;task_attempt_id;operator_id;task_attempt_num;task_name
-        metrics.scope.jm: local.<host>.jobmanagerGlobal
-        metrics.scope.jm.job: local.<host>.jobmanagerJob.<job_name>
-        metrics.scope.tm: local.<host>.taskmanagerGlobal.<tm_id>
-        metrics.scope.tm.job: local.<host>.taskmanagerJob.<tm_id>.<job_name>
-        metrics.scope.task: local.<host>.taskmanagerTask.<tm_id>.<job_name>.<task_name>.<subtask_index>
-        metrics.scope.operator: local.<host>.taskmanagerTask.<tm_id>.<job_name>.<operator_name>.<subtask_index>
     depends_on:
       flink-jobmanager:
         condition: service_healthy
@@ -243,7 +177,7 @@ services:
       - flink-jobmanager
 
   telegraf:
-    image: telegraf:1.20.4
+    image: telegraf:1.30.2
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8087/write" ]
