@@ -1,4 +1,6 @@
-FROM apache/flink:1.17.2-scala_2.12-java11
+ARG FLINK_VERSION
+
+FROM apache/flink:${FLINK_VERSION}
 USER flink
 RUN mkdir -p /opt/flink/data
 RUN chmod -R 777 /opt/flink/data

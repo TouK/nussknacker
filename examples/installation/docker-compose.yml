@@ -36,8 +36,6 @@ services:
       retries: 10
     volumes:
       - nussknacker_designer_data:/opt/nussknacker/storage
-#      - nussknacker_flink_data:/opt/flink/data
-#      - ./designer/application.conf:/opt/nussknacker/conf/application.conf
     volumes_from:
       - flink-jobmanager
 
@@ -152,10 +150,10 @@ services:
   ### FLINK-related services
 
   flink-jobmanager:
-    image: flink:1.17.2-scala_2.12-java11
-#    build:
-#      context: ./flink/
-#    image: apache/flink:1.18.1-scala_2.12-java11
+    build:
+      context: ./flink/
+      args:
+        FLINK_VERSION: "1.17.2-scala_2.12-java11"
     restart: unless-stopped
     command: jobmanager
     environment:
@@ -194,14 +192,14 @@ services:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
       retries: 10
-#    volumes:
-#      - nussknacker_flink_data:/opt/flink/data
+    volumes:
+      - nussknacker_flink_data:/opt/flink/data
 
   flink-taskmanager:
-    image: flink:1.17.2-scala_2.12-java11
-#    build:
-#      context: ./flink/
-    #    image: apache/flink:1.18.1-scala_2.12-java11
+    build:
+      context: ./flink/
+      args:
+        FLINK_VERSION: "1.17.2-scala_2.12-java11"
     restart: unless-stopped
     command: taskmanager
     environment:
@@ -241,8 +239,6 @@ services:
         condition: service_healthy
       telegraf:
         condition: service_healthy
-#    volumes:
-#      - nussknacker_flink_data:/opt/flink/data
     volumes_from:
       - flink-jobmanager
 
