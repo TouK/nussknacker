@@ -34,6 +34,7 @@
 * [#6031](https://github.com/TouK/nussknacker/pull/6031) Fixed duplicated components on the Components tab
 * [#6010](https://github.com/TouK/nussknacker/pull/6010) Fix ad hoc tests with schemas containing nested fields
 * [#6044](https://github.com/TouK/nussknacker/pull/6044) Fixed json refs handling: If first parsed record was an empty record, every subsequent record was treated as an empty record 
+* [#5813](https://github.com/TouK/nussknacker/pull/5813) Fixed "More than one processing type ..." error during scenario creation when user has limited access to categories.
 
 1.14.0 (21 Mar 2024)
 -------------------------
