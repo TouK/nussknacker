@@ -310,4 +310,53 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     }
   }
 
+  test("handle refs") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "$defs": {
+        |    "SomeRef": {
+        |      "anyOf": [
+        |        {
+        |          "type": "integer"
+        |        },
+        |        {
+        |          "type": "null"
+        |        }
+        |      ],
+        |      "default": null
+        |    }
+        |  },
+        |  "properties": {
+        |    "field": {
+        |      "$ref": "#/$defs/SomeRef"
+        |    }
+        |  }
+        |}""".stripMargin
+    )
+    val deserializer = new CirceJsonDeserializer(schema)
+
+    forAll(
+      Table(
+        ("json", "expected"),
+        (
+          "{}",
+          Map.empty.asJava
+        ),
+        (
+          """{"field": null}""",
+          Map("field" -> null).asJava
+        ),
+        (
+          """{"field": 123}""",
+          Map("field" -> 123L).asJava
+        )
+      )
+    ) { (json, expected) =>
+      val result = deserializer.deserialize(json)
+      result shouldEqual expected
+    }
+
+  }
+
 }
