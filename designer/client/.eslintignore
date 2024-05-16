@@ -1,6 +1,6 @@
 node_modules/
 src/brace/
-test/
+/test/
 dist/
 coverage/
 types/@remote/
