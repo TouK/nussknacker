@@ -4,21 +4,50 @@ import { blendDarken, blendLighten } from "./helpers";
 import { deepmerge } from "@mui/utils";
 import { lightModePalette } from "./lightModePalette";
 import { darkModePalette } from "./darkModePalette";
-
-type ModePalette = typeof darkModePalette & typeof lightModePalette;
+import { WindowKind } from "../../windowManager";
+import { EnvironmentTagColor } from "../EnvironmentTag";
+import { NodeType } from "../../types";
+import NodeUtils from "../../components/graph/NodeUtils";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
         largeMessage: true;
     }
+
     interface FormHelperTextOwnProps {
         "data-testid"?: string;
     }
 }
 
+interface NodePalette {
+    fill: string;
+}
+
+interface WindowPalette {
+    backgroundColor: string;
+    color: string;
+}
+
+export interface CustomPalette {
+    nodes: {
+        [type: string]: NodePalette;
+    };
+    environmentAlert: {
+        [Tag in EnvironmentTagColor]: string;
+    };
+    windows: {
+        [type: string]: WindowPalette;
+        default: WindowPalette;
+    };
+}
+
 declare module "@mui/material/styles" {
     interface Palette {
-        custom?: ModePalette["custom"];
+        custom: ReturnType<typeof extendWithHelpers>;
+    }
+
+    interface PaletteOptions {
+        custom?: CustomPalette;
     }
 
     interface Theme {
@@ -41,16 +70,35 @@ const custom = {
     fontSize: 14,
 };
 
-export const getDesignTokens = (mode: PaletteMode) => {
-    const modePalette: ModePalette = mode === "light" ? lightModePalette : darkModePalette;
+const extendWithHelpers = (custom: CustomPalette) => ({
+    ...custom,
+    getNodeStyles: function (this: CustomPalette, node: NodeType) {
+        return this.nodes[NodeUtils.nodeType(node)];
+    },
+    getWindowStyles: function (this: CustomPalette, type = WindowKind.default) {
+        switch (type) {
+            case WindowKind.compareVersions:
+            case WindowKind.calculateCounts:
+                return this.windows.compareVersions;
+            case WindowKind.customAction:
+                return this.windows.customAction;
+            default:
+                return this.windows.default;
+        }
+    },
+});
+
+export function getDesignTokens(mode: PaletteMode) {
+    const modePalette = mode === "light" ? lightModePalette : darkModePalette;
 
     return {
         palette: {
             mode,
             ...modePalette,
+            custom: extendWithHelpers(modePalette.custom),
         },
     };
-};
+}
 
 const headerCommonStyles = {
     fontWeight: 500,
@@ -59,8 +107,8 @@ const headerCommonStyles = {
     marginBottom: "10px",
 };
 
-export const nuTheme = (mode: PaletteMode) =>
-    createTheme(
+export const nuTheme = (mode: PaletteMode) => {
+    return createTheme(
         deepmerge(getDesignTokens(mode), {
             typography: (palette: Palette) => ({
                 fontFamily,
@@ -100,7 +148,10 @@ export const nuTheme = (mode: PaletteMode) =>
                             marginTop: 10,
                             cursor: "pointer",
                             maxHeight: 400,
-                            ".MuiAlert-icon": { color: alpha(theme.palette.common.black, 0.54), alignSelf: "center" },
+                            ".MuiAlert-icon": {
+                                color: alpha(theme.palette.common.black, 0.54),
+                                alignSelf: "center",
+                            },
                         }),
                         standardSuccess: ({ theme }) => ({
                             backgroundColor: theme.palette.success.main,
@@ -156,7 +207,12 @@ export const nuTheme = (mode: PaletteMode) =>
                             },
                         }),
                     },
-                    variants: [{ props: { variant: "largeMessage" }, style: { fontSize: ".875rem" } }],
+                    variants: [
+                        {
+                            props: { variant: "largeMessage" },
+                            style: { fontSize: ".875rem" },
+                        },
+                    ],
                     defaultProps: {
                         "data-testid": "form-helper-text",
                     },
@@ -181,3 +237,4 @@ export const nuTheme = (mode: PaletteMode) =>
             custom,
         }),
     );
+};

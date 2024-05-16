@@ -1,12 +1,12 @@
 import { isString, memoize } from "lodash";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeType, ProcessDefinitionData } from "../../../types";
-import PropertiesSvg from "../../../assets/img/properties.svg";
 import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
+import { Icon } from "./Icon";
 
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
@@ -45,38 +45,15 @@ export const getComponentIconSrc: {
     return null;
 };
 
-interface Created extends ComponentIconProps {
-    processDefinition: ProcessDefinitionData;
-}
+export function useComponentIcon(node: NodeType) {
+    const [src, setSrc] = useState<string>(null);
+    const processDefinition = useSelector(getProcessDefinitionData);
 
-class Icon extends React.Component<Created> {
-    private icon: string;
+    useEffect(() => {
+        setSrc(getComponentIconSrc(node, processDefinition));
+    }, [node, processDefinition]);
 
-    constructor(props) {
-        super(props);
-        this.icon = getComponentIconSrc(props.node, props.processDefinition);
-    }
-
-    componentDidUpdate() {
-        this.icon = getComponentIconSrc(this.props.node, this.props.processDefinition);
-    }
-
-    render(): JSX.Element {
-        const {
-            icon,
-            props: { className },
-        } = this;
-
-        if (!icon) {
-            return <PropertiesSvg className={className} />;
-        }
-
-        return (
-            <svg className={className}>
-                <use href={icon} />
-            </svg>
-        );
-    }
+    return src;
 }
 
 export interface ComponentIconProps {
@@ -84,7 +61,7 @@ export interface ComponentIconProps {
     className?: string;
 }
 
-export const ComponentIcon = (props: ComponentIconProps) => {
-    const processDefinitionData = useSelector(getProcessDefinitionData);
-    return <Icon {...props} processDefinition={processDefinitionData} />;
+export const ComponentIcon = ({ node, ...props }: ComponentIconProps) => {
+    const src = useComponentIcon(node);
+    return <Icon src={src} {...props} />;
 };

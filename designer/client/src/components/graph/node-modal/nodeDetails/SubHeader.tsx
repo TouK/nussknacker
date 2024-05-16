@@ -1,22 +1,6 @@
 import React from "react";
-import { Theme, useTheme } from "@mui/material";
 import { Subtype } from "./Subtype";
 import { Docs } from "./Docs";
-
-import { blendDarken, blendLighten } from "../../../../containers/theme/helpers";
-import { getLuminance } from "@mui/system/colorManipulator";
-
-const SubtypeHeaderDocsLink = (theme: Theme) => ({
-    backgroundColor:
-        getLuminance(theme.palette.background.paper) > 0.5
-            ? blendDarken(theme.palette.background.paper, 0.1)
-            : blendLighten(theme.palette.background.paper, 0.1),
-    padding: "0 10px",
-    height: "30px",
-    alignItems: "center",
-    textDecoration: "none",
-    display: "flex",
-});
 
 enum HeaderType {
     SUBTYPE_DOCS,
@@ -28,33 +12,29 @@ enum HeaderType {
 const getModalHeaderType = (docsUrl?: string, nodeClass?: string) => {
     if (docsUrl && nodeClass) {
         return HeaderType.SUBTYPE_DOCS;
-    } else if (nodeClass) {
-        return HeaderType.SUBTYPE;
-    } else if (docsUrl) {
-        return HeaderType.DOCS;
-    } else {
-        return HeaderType.DEFAULT;
     }
+    if (nodeClass) {
+        return HeaderType.SUBTYPE;
+    }
+    if (docsUrl) {
+        return HeaderType.DOCS;
+    }
+    return HeaderType.DEFAULT;
 };
 
-export const NodeClassDocs = ({ nodeClass, docsUrl }: { nodeClass?: string; docsUrl?: string }) => {
-    const theme = useTheme();
+export const NodeDocs = ({ name, href, ...props }: { className?: string; name?: string; href?: string }) => {
+    const modalHeaderType = getModalHeaderType(href, name);
 
-    switch (getModalHeaderType(docsUrl, nodeClass)) {
+    switch (modalHeaderType) {
         case HeaderType.SUBTYPE_DOCS:
+        case HeaderType.DOCS:
             return (
-                <Docs docsUrl={docsUrl} style={SubtypeHeaderDocsLink(theme)}>
-                    {nodeClass}
+                <Docs href={href} {...props}>
+                    {name}
                 </Docs>
             );
         case HeaderType.SUBTYPE:
-            return <Subtype>{nodeClass}</Subtype>;
-        case HeaderType.DOCS:
-            return (
-                <Docs docsUrl={docsUrl} style={SubtypeHeaderDocsLink(theme)}>
-                    {nodeClass}
-                </Docs>
-            );
+            return <Subtype {...props}>{name}</Subtype>;
         default:
             return null;
     }

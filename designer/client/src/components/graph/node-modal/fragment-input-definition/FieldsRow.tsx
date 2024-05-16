@@ -4,7 +4,7 @@ import { NodeRow, NodeValue } from "../node/";
 import { RemoveButton } from "./buttons/RemoveButton";
 import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
-import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
+import { movableRow, nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 const StyledFieldsRow = styled(NodeRow)`
     .fieldName {
@@ -31,7 +31,7 @@ export function FieldsRow({ index, uuid, className, children }: PropsWithChildre
     const { readOnly, remove } = useFieldsContext();
     const onClick = useCallback(() => remove?.(uuid), [uuid, remove]);
     return (
-        <StyledFieldsRow className={cx("movable-row", className)} data-testid={`fieldsRow:${index}`}>
+        <StyledFieldsRow className={cx(movableRow, className)} data-testid={`fieldsRow:${index}`}>
             {children}
             {!readOnly && remove && (
                 <NodeValue className="fieldRemove">
