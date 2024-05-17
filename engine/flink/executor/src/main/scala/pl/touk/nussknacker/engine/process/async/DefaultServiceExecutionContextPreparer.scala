@@ -13,8 +13,6 @@ object DefaultServiceExecutionContextPreparer extends LazyLogging {
 
   private final var asyncExecutionContext: Option[(ProcessName, ExecutionContextExecutorService)] = None
 
-  private final val counter = new AtomicLong(0)
-
   private val executorServiceCreator: (Int, ThreadFactory) => ExecutorService =
     (workers, threadFactory) => {
       val ex =
@@ -28,8 +26,7 @@ object DefaultServiceExecutionContextPreparer extends LazyLogging {
       workers: Int,
       processName: ProcessName
   ): ServiceExecutionContext = synchronized {
-    counter.incrementAndGet()
-    logger.info(s"Creating asyncExecutor for $processName, with $workers workers, counter is ${counter.get()}")
+    logger.info(s"Creating asyncExecutor for $processName, with $workers workers")
     ServiceExecutionContext {
       asyncExecutionContext match {
         case Some((_, ec)) => ec
@@ -43,12 +40,10 @@ object DefaultServiceExecutionContextPreparer extends LazyLogging {
     }
   }
 
-  private[DefaultServiceExecutionContextPreparer] def close(): Unit = {
-    logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)} counter is ${counter.get()}")
-    if (counter.decrementAndGet() == 0) {
-      asyncExecutionContext.foreach(_._2.shutdownNow())
-      asyncExecutionContext = None
-    }
+  private[DefaultServiceExecutionContextPreparer] def close(): Unit = synchronized {
+    logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)}")
+    asyncExecutionContext.foreach { case (_, executorService) => executorService.shutdownNow() }
+    asyncExecutionContext = None
   }
 
 }
