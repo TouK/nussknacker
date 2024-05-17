@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useSelectionActions } from "../components/graph/SelectionContextProvider";
 import { useDocumentListeners } from "./useDocumentListeners";
-import { EventTrackingType, TrackEventParams, useEventTracking } from "./event-tracking";
+import { EventTrackingSelector, EventTrackingType, TrackEventParams, useEventTracking } from "./event-tracking";
 
 export const isInputTarget = (target: EventTarget): boolean => ["INPUT", "SELECT", "TEXTAREA"].includes(target?.["tagName"]);
 export const isInputEvent = (event: Event): boolean => isInputTarget(event?.target);
@@ -13,8 +13,8 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
     const { trackEvent } = useEventTracking();
 
     const eventWithStatistics = useCallback(
-        (trackEventParams: TrackEventParams, event: unknown) => {
-            trackEvent(trackEventParams);
+        ({ selector }: Omit<TrackEventParams, "event">, event: unknown) => {
+            trackEvent({ selector, event: EventTrackingType.KEYBOARD });
             return event;
         },
         [trackEvent],
@@ -24,17 +24,17 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
         () => ({
             A: (e) => {
                 if (e.ctrlKey || e.metaKey) {
-                    eventWithStatistics({ type: EventTrackingType.KeyboardSelectAllNodes }, userActions.selectAll(e));
+                    eventWithStatistics({ selector: EventTrackingSelector.SelectAllNodes }, userActions.selectAll(e));
                     e.preventDefault();
                 }
             },
             Z: (e) =>
                 (e.ctrlKey || e.metaKey) && e.shiftKey
-                    ? eventWithStatistics({ type: EventTrackingType.KeyboardRedoScenarioChanges }, userActions.redo(e))
-                    : eventWithStatistics({ type: EventTrackingType.KeyboardUndoScenarioChanges }, userActions.undo(e)),
-            DELETE: (e) => eventWithStatistics({ type: EventTrackingType.KeyboardDeleteNodes }, userActions.delete(e)),
-            BACKSPACE: (e) => eventWithStatistics({ type: EventTrackingType.KeyboardDeleteNodes }, userActions.delete(e)),
-            ESCAPE: (e) => eventWithStatistics({ type: EventTrackingType.KeyboardDeselectAllNodes }, userActions.deselectAll(e)),
+                    ? eventWithStatistics({ selector: EventTrackingSelector.RedoScenarioChanges }, userActions.redo(e))
+                    : eventWithStatistics({ selector: EventTrackingSelector.UndoScenarioChanges }, userActions.undo(e)),
+            DELETE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeleteNodes }, userActions.delete(e)),
+            BACKSPACE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeleteNodes }, userActions.delete(e)),
+            ESCAPE: (e) => eventWithStatistics({ selector: EventTrackingSelector.DeselectAllNodes }, userActions.deselectAll(e)),
         }),
         [eventWithStatistics, userActions],
     );
@@ -47,11 +47,11 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
                 return keyHandler(event);
             },
             copy: (event) =>
-                userActions.copy ? eventWithStatistics({ type: EventTrackingType.KeyboardCopyNode }, userActions.copy(event)) : null,
+                userActions.copy ? eventWithStatistics({ selector: EventTrackingSelector.CopyNode }, userActions.copy(event)) : null,
             paste: (event) =>
-                userActions.paste ? eventWithStatistics({ type: EventTrackingType.KeyboardPasteNode }, userActions.paste(event)) : null,
+                userActions.paste ? eventWithStatistics({ selector: EventTrackingSelector.PasteNode }, userActions.paste(event)) : null,
             cut: (event) =>
-                userActions.cut ? eventWithStatistics({ type: EventTrackingType.KeyboardCutNode }, userActions.cut(event)) : null,
+                userActions.cut ? eventWithStatistics({ selector: EventTrackingSelector.CutNode }, userActions.cut(event)) : null,
         }),
         [eventWithStatistics, keyHandlers, userActions],
     );

@@ -9,7 +9,7 @@ import { useDragHandler } from "../../common/dndItems/DragHandle";
 import ErrorBoundary from "../../common/ErrorBoundary";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
-import { EventTrackingType, getEventTrackingProps } from "../../../containers/event-tracking";
+import { EventTrackingSelector, EventTrackingType, getEventTrackingProps } from "../../../containers/event-tracking";
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id: string;
@@ -74,9 +74,10 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                             toggleCollapsed();
                         }
                     }}
-                    {...getEventTrackingProps(
-                        isCollapsedLocal ? { type: EventTrackingType.ClickCollapsePanel } : { type: EventTrackingType.ClickExpandPanel },
-                    )}
+                    {...getEventTrackingProps({
+                        selector: isCollapsedLocal ? EventTrackingSelector.CollapsePanel : EventTrackingSelector.ExpandPanel,
+                        event: EventTrackingType.CLICK,
+                    })}
                 >
                     <Typography
                         textTransform={"uppercase"}

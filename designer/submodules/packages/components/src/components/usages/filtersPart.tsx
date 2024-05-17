@@ -10,7 +10,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
 import { xor } from "lodash";
-import { EventTrackingType, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 interface FiltersPartProps {
     isLoading: boolean;
@@ -27,14 +27,17 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
         <QuickFilter<UsagesFiltersModel>
             isLoading={isLoading}
             filter="TEXT"
-            {...getEventTrackingProps({ type: EventTrackingType.SearchComponentUsagesByName })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.SearchComponentUsagesByName, event: EventTrackingType.SEARCH })}
         >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
                     <StatusOptionsStack
                         options={filterableValues["STATUS"]}
                         withArchived={false}
-                        {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByStatus })}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentUsagesByStatus,
+                            event: EventTrackingType.FILTER,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
@@ -43,7 +46,10 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         options={filterableValues["CATEGORY"]}
                         value={getFilter("CATEGORY", true)}
                         onChange={setFilter("CATEGORY")}
-                        {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByCategory })}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentUsagesByCategory,
+                            event: EventTrackingType.FILTER,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.AUTHOR", "Author")} count={getFilter("CREATED_BY", true).length}>
@@ -52,7 +58,10 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         options={filterableValues["CREATED_BY"]}
                         value={getFilter("CREATED_BY", true)}
                         onChange={setFilter("CREATED_BY")}
-                        {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByAuthor })}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentUsagesByAuthor,
+                            event: EventTrackingType.FILTER,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu
@@ -73,14 +82,20 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.SCENARIOS)}
                             onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
-                            {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByOther })}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                                event: EventTrackingType.FILTER,
+                            })}
                         />
                         <FilterListItem
                             color="default"
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.FRAGMENTS)}
                             onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
-                            {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByOther })}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                                event: EventTrackingType.FILTER,
+                            })}
                         />
                         <Divider />
                         <FilterListItem
@@ -88,14 +103,20 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.INDIRECT)}
                             onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.INDIRECT], getFilter("USAGE_TYPE", true)))}
                             label={t("table.filter.SHOW_INDIRECT", "Show indirect usage")}
-                            {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByOther })}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                                event: EventTrackingType.FILTER,
+                            })}
                         />
                         <FilterListItem
                             color="primary"
                             checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.DIRECT)}
                             onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.DIRECT], getFilter("USAGE_TYPE", true)))}
                             label={t("table.filter.SHOW_DIRECT", "Show direct usage")}
-                            {...getEventTrackingProps({ type: EventTrackingType.FilterComponentUsagesByOther })}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                                event: EventTrackingType.FILTER,
+                            })}
                         />
                     </OptionsStack>
                 </FilterMenu>

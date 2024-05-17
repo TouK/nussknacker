@@ -1,37 +1,44 @@
-import { EventTrackingType, removeEventSelectors } from "./helpers";
+import { EventTrackingSelector, EventTrackingType } from "./helpers";
 import { useDocumentEventListener } from "rooks";
 import { useEventTracking } from "./use-event-tracking";
+import { useSelector } from "react-redux";
+import { getFeatureSettings } from "../../reducers/selectors/settings";
 
 export const useRegisterTrackingEvents = () => {
     const { trackEvent, trackEventWithDebounce } = useEventTracking();
+    const featuresSettings = useSelector(getFeatureSettings);
+    const isEnabledForStatisticsEvent = (eventName: keyof DocumentEventMap) =>
+        featuresSettings.usageStatisticsReports.enabled ? eventName : undefined;
 
-    useDocumentEventListener("click", function (event: Event) {
+    useDocumentEventListener(isEnabledForStatisticsEvent("click"), function (event: Event) {
         const path = event.composedPath() as HTMLElement[];
         for (const element of path) {
-            const eventName = element.dataset?.statisticEvent as EventTrackingType;
+            const selector = element.dataset?.selector as EventTrackingSelector;
+            const event = element.dataset?.statisticEvent as unknown as EventTrackingType;
 
-            if (eventName?.startsWith("CLICK")) {
-                trackEvent({ type: eventName });
+            if (event === EventTrackingType.CLICK) {
+                trackEvent({ selector, event });
                 break;
             }
 
-            if (eventName?.startsWith("FILTER") || eventName?.startsWith("SORT")) {
+            if (event === EventTrackingType.FILTER || event === EventTrackingType.SORT) {
                 const selected = (element as HTMLOptionElement).selected;
                 if (selected) {
-                    trackEvent({ type: eventName });
+                    trackEvent({ selector, event });
                 }
                 break;
             }
         }
     });
 
-    useDocumentEventListener("keyup", function (event: KeyboardEvent) {
+    useDocumentEventListener(isEnabledForStatisticsEvent("keyup"), function (event: KeyboardEvent) {
         const path = event.composedPath() as HTMLElement[];
         for (const element of path) {
-            const eventName = element.dataset?.statisticEvent as EventTrackingType;
+            const selector = element.dataset?.selector as EventTrackingSelector;
+            const event = element.dataset?.statisticEvent as unknown as EventTrackingType;
 
-            if (eventName?.startsWith("SEARCH")) {
-                trackEventWithDebounce({ type: eventName });
+            if (event === EventTrackingType.SEARCH) {
+                trackEventWithDebounce({ selector, event });
                 break;
             }
         }

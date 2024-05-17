@@ -12,7 +12,7 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchResults } from "./SearchResults";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
-import { EventTrackingType, getEventTrackingProps, useEventTracking } from "../../../containers/event-tracking";
+import { EventTrackingSelector, EventTrackingType, getEventTrackingProps, useEventTracking } from "../../../containers/event-tracking";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
@@ -47,7 +47,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
                     }
                     dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
                     searchRef.current.focus();
-                    trackEvent({ type: EventTrackingType.KeyboardFocusSearchNodeField });
+                    trackEvent({ selector: EventTrackingSelector.FocusSearchNodeField, event: EventTrackingType.KEYBOARD });
                     break;
                 }
             }
@@ -62,7 +62,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
                 onClear={clearFilter}
                 value={filter}
                 placeholder={t("panels.search.filter.placeholder", "type here to search nodes...")}
-                {...getEventTrackingProps({ type: EventTrackingType.SearchNodesInScenario })}
+                {...getEventTrackingProps({ selector: EventTrackingSelector.NodesInScenario, event: EventTrackingType.SEARCH })}
             >
                 <SearchIcon isEmpty={isEmpty(filter)} />
             </SearchInputWithIcon>

@@ -35,7 +35,7 @@ import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import "./jqueryPassiveEvents";
-import { EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
+import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
@@ -380,7 +380,7 @@ export class Graph extends React.Component<Props> {
                     this.panAndZoom.toggle(false);
                 })
                 .on(RangeSelectEvents.STOP, () => {
-                    handleStatisticsEvent({ type: EventTrackingType.KeyboardRangeSelectNodes });
+                    handleStatisticsEvent({ selector: EventTrackingSelector.RangeSelectNodes, event: EventTrackingType.KEYBOARD });
                     this.panAndZoom.toggle(true);
                 })
                 .on(RangeSelectEvents.RESET, () => {

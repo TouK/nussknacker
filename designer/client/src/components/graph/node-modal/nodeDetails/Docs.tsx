@@ -2,7 +2,7 @@ import { styled, Typography } from "@mui/material";
 import React, { PropsWithChildren } from "react";
 import Icon from "../../../../assets/img/documentation.svg";
 import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
-import { EventTrackingType, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { EventTrackingSelector, EventTrackingType, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 const DocsLinkStyled = styled("a")(({ theme }) => ({
     color: `${theme.palette.text.secondary} !important`,
@@ -25,7 +25,7 @@ export const Docs = (props: PropsWithChildren<{ docsUrl: string; style?: React.C
             href={docsUrl}
             title="Documentation"
             rel="noreferrer"
-            {...getEventTrackingProps({ type: EventTrackingType.ClickNodeDocumentation })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.NodeDocumentation, event: EventTrackingType.CLICK })}
         >
             <div style={style}>
                 {children && (

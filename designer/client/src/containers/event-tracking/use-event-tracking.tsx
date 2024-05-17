@@ -1,12 +1,21 @@
 import { debounce } from "lodash";
 import httpService from "../../http/HttpService";
 import { useCallback } from "react";
-import { EventTrackingType } from "./helpers";
+import { EventTrackingSelector, EventTrackingType, getEventStatisticName } from "./helpers";
+import { useSelector } from "react-redux";
+import { getFeatureSettings } from "../../reducers/selectors/settings";
 
-export type TrackEventParams = { type: EventTrackingType };
+export type TrackEventParams = { selector: EventTrackingSelector; event: EventTrackingType };
+
 export const useEventTracking = () => {
-    const trackEvent = async ({ type }: TrackEventParams) => {
-        await httpService.sendStatistics([{ name: type }]);
+    const featuresSettings = useSelector(getFeatureSettings);
+    const areStatisticsEnabled = featuresSettings.usageStatisticsReports.enabled;
+
+    const trackEvent = async (trackEventParams: TrackEventParams) => {
+        if (!areStatisticsEnabled) {
+            return;
+        }
+        await httpService.sendStatistics([{ name: getEventStatisticName(trackEventParams) }]);
     };
 
     const trackEventWithDebounce = useCallback(

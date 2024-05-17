@@ -4,7 +4,7 @@ import { GridRenderCellParams } from "@mui/x-data-grid";
 import { Link as RouterLink } from "react-router-dom";
 import { Box } from "@mui/material";
 import { CellLink } from "./cellLink";
-import { EventTrackingType, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function UsageCountCell(props: GridRenderCellParams): JSX.Element {
     return (
@@ -14,7 +14,7 @@ export function UsageCountCell(props: GridRenderCellParams): JSX.Element {
             color="primary"
             component={RouterLink}
             to={`usages/${props.row.id}`}
-            {...getEventTrackingProps({ type: EventTrackingType.ClickComponentUsages })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ClickComponentUsages, event: EventTrackingType.CLICK })}
         >
             {!props.value ? (
                 <Box

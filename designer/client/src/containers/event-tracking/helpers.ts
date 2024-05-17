@@ -1,179 +1,188 @@
 import { TrackEventParams } from "./use-event-tracking";
 import { BuiltinButtonTypes, CustomButtonTypes } from "../../components/toolbarSettings/buttons";
 
-export const removeEventSelectors = () => {
-    const body = document.querySelector("body");
-    delete body.dataset.statisticEvent;
+const selectorName = "data-selector";
+const eventName = "data-statistic-event";
+
+export const getEventTrackingProps = ({ selector, event }: TrackEventParams) => {
+    return { [selectorName]: selector, [eventName]: event };
 };
 
-const eventSelectorName = "data-statistic-event";
-
-export const getEventTrackingProps = ({ type }: TrackEventParams) => {
-    return { [eventSelectorName]: type };
+export const getEventStatisticName = ({ selector, event }: TrackEventParams): `${EventTrackingType}_${EventTrackingSelector}` => {
+    return `${event}_${selector}`;
 };
-export enum EventTrackingType {
-    SearchScenariosByName = "SEARCH_SCENARIOS_BY_NAME",
-    FilterScenariosByStatus = "FILTER_SCENARIOS_BY_STATUS",
-    FilterScenariosByProcessingMode = "FILTER_SCENARIOS_BY_PROCESSING_MODE",
-    FilterScenariosByCategory = "FILTER_SCENARIOS_BY_CATEGORY",
-    FilterScenariosByAuthor = "FILTER_SCENARIOS_BY_AUTHOR",
-    FilterScenariosByOther = "FILTER_SCENARIOS_BY_OTHER",
-    SortScenarios = "SORT_SCENARIOS",
-    SearchComponentsByName = "SEARCH_COMPONENTS_BY_NAME",
-    FilterComponentsByGroup = "FILTER_COMPONENTS_BY_GROUP",
-    FilterComponentsByProcessingMode = "FILTER_COMPONENTS_BY_PROCESSING_MODE",
-    FilterComponentsByCategory = "FILTER_COMPONENTS_BY_CATEGORY",
-    FilterComponentsByMultipleCategories = "FILTER_COMPONENTS_BY_MULTIPLE_CATEGORIES",
-    FilterComponentsByUsages = "FILTER_COMPONENTS_BY_USAGES",
-    ClickComponentUsages = "CLICK_COMPONENT_USAGES",
-    SearchComponentUsagesByName = "SEARCH_COMPONENT_USAGES_BY_NAME",
-    FilterComponentUsagesByStatus = "FILTER_COMPONENT_USAGES_BY_STATUS",
-    FilterComponentUsagesByCategory = "FILTER_COMPONENT_USAGES_BY_CATEGORY",
-    FilterComponentUsagesByAuthor = "FILTER_COMPONENT_USAGES_BY_AUTHOR",
-    FilterComponentUsagesByOther = "FILTER_COMPONENT_USAGES_BY_OTHER",
-    ClickScenarioFromComponentUsages = "CLICK_SCENARIO_FROM_COMPONENT_USAGES",
-    ClickGlobalMetricsTab = "CLICK_GLOBAL_METRICS_TAB",
-    ClickActionDeploy = "CLICK_ACTION_DEPLOY",
-    ClickActionMetrics = "CLICK_ACTION_METRICS",
-    ClickViewZoomIn = "CLICK_VIEW_ZOOM_IN",
-    ClickViewZoomOut = "CLICK_VIEW_ZOOM_OUT",
-    ClickViewReset = "CLICK_VIEW_RESET",
-    ClickEditUndo = "CLICK_EDIT_UNDO",
-    ClickEditRedo = "CLICK_EDIT_REDO",
-    ClickEditCopy = "CLICK_EDIT_COPY",
-    ClickEditPaste = "CLICK_EDIT_PASTE",
-    ClickEditDelete = "CLICK_EDIT_DELETE",
-    ClickEditLayout = "CLICK_EDIT_LAYOUT",
-    ClickScenarioProperties = "CLICK_SCENARIO_PROPERTIES",
-    ClickScenarioCompare = "CLICK_SCENARIO_COMPARE",
-    ClickScenarioMigrate = "CLICK_SCENARIO_MIGRATE",
-    ClickScenarioImport = "CLICK_SCENARIO_IMPORT",
-    ClickScenarioJson = "CLICK_SCENARIO_JSON",
-    ClickScenarioPdf = "CLICK_SCENARIO_PDF",
-    ClickScenarioArchive = "CLICK_SCENARIO_ARCHIVE",
-    ClickTestGenerated = "CLICK_TEST_GENERATED",
-    ClickTestAdhoc = "CLICK_TEST_ADHOC",
-    ClickTestFromFile = "CLICK_TEST_FROM_FILE",
-    ClickTestGenerateFile = "CLICK_TEST_GENERATE_FILE",
-    ClickTestHide = "CLICK_TEST_HIDE",
-    ClickMoreScenarioDetails = "CLICK_MORE_SCENARIO_DETAILS",
-    ClickRollUpPanel = "CLICK_ROLL_UP_PANEL",
-    ClickExpandPanel = "CLICK_EXPAND_PANEL",
-    ClickCollapsePanel = "CLICK_COLLAPSE_PANEL",
-    MovePanel = "MOVE_PANEL",
-    SearchNodesInScenario = "SEARCH_NODES_IN_SCENARIO",
-    SearchComponentsInScenario = "SEARCH_COMPONENTS_IN_SCENARIO",
-    ClickOlderVersion = "CLICK_OLDER_VERSION",
-    ClickNewerVersion = "CLICK_NEWER_VERSION",
-    ClickNodeDocumentation = "CLICK_NODE_DOCUMENTATION",
-    ClickComponentsTab = "CLICK_COMPONENTS_TAB",
-    ClickScenarioSave = "CLICK_SCENARIO_SAVE",
-    ClickTestCounts = "CLICK_TEST_COUNTS",
-    ClickScenarioCancel = "CLICK_SCENARIO_CANCEL",
-    ClickScenarioArchiveToggle = "CLICK_SCENARIO_ARCHIVE_TOGGLE",
-    ClickScenarioUnarchive = "CLICK_SCENARIO_UNARCHIVE",
-    ClickScenarioCustomAction = "CLICK_SCENARIO_CUSTOM_ACTION",
-    ClickScenarioCustomLink = "CLICK_SCENARIO_CUSTOM_LINK",
-    KeyboardRangeSelectNodes = "KEYBOARD_RANGE_SELECT_NODES",
-    KeyboardCopyNode = "KEYBOARD_COPY_NODE",
-    KeyboardPasteNode = "KEYBOARD_PASTE_NODE",
-    KeyboardCutNode = "KEYBOARD_CUT_NODE",
-    KeyboardSelectAllNodes = "KEYBOARD_SELECT_ALL_NODES",
-    KeyboardRedoScenarioChanges = "KEYBOARD_REDO_SCENARIO_CHANGES",
-    KeyboardUndoScenarioChanges = "KEYBOARD_UNDO_SCENARIO_CHANGES",
-    KeyboardDeleteNodes = "KEYBOARD_DELETE_NODES",
-    KeyboardDeselectAllNodes = "KEYBOARD_DESELECT_ALL_NODES",
-    KeyboardFocusSearchNodeField = "KEYBOARD_FOCUS_SEARCH_NODE_FIELD",
+
+export const enum EventTrackingType {
+    "SEARCH" = "SEARCH",
+    "FILTER" = "FILTER",
+    "SORT" = "SORT",
+    "CLICK" = "CLICK",
+    "KEYBOARD" = "KEYBOARD",
+    "MOVE" = "MOVE",
 }
 
-export const mapToolbarButtonToStatisticsEvent = (btnType: BuiltinButtonTypes | CustomButtonTypes): EventTrackingType | undefined => {
+export const enum EventTrackingSelector {
+    ScenariosByName = "SCENARIOS_BY_NAME",
+    ScenariosByStatus = "SCENARIOS_BY_STATUS",
+    ScenariosByProcessingMode = "SCENARIOS_BY_PROCESSING_MODE",
+    ScenariosByCategory = "SCENARIOS_BY_CATEGORY",
+    ScenariosByAuthor = "SCENARIOS_BY_AUTHOR",
+    ScenariosByOther = "SCENARIOS_BY_OTHER",
+    SortScenarios = "SORT_SCENARIOS",
+    ComponentsByName = "COMPONENTS_BY_NAME",
+    ComponentsByGroup = "COMPONENTS_BY_GROUP",
+    ComponentsByProcessingMode = "COMPONENTS_BY_PROCESSING_MODE",
+    ComponentsByCategory = "COMPONENTS_BY_CATEGORY",
+    ComponentsByMultipleCategories = "COMPONENTS_BY_MULTIPLE_CATEGORIES",
+    ComponentsByUsages = "COMPONENTS_BY_USAGES",
+    ComponentUsages = "COMPONENT_USAGES",
+    ComponentUsagesByName = "COMPONENT_USAGES_BY_NAME",
+    ComponentUsagesByStatus = "COMPONENT_USAGES_BY_STATUS",
+    ComponentUsagesByCategory = "COMPONENT_USAGES_BY_CATEGORY",
+    ComponentUsagesByAuthor = "COMPONENT_USAGES_BY_AUTHOR",
+    ComponentUsagesByOther = "COMPONENT_USAGES_BY_OTHER",
+    ScenarioFromComponentUsages = "SCENARIO_FROM_COMPONENT_USAGES",
+    GlobalMetricsTab = "GLOBAL_METRICS_TAB",
+    ActionDeploy = "ACTION_DEPLOY",
+    ActionMetrics = "ACTION_METRICS",
+    ViewZoomIn = "VIEW_ZOOM_IN",
+    ViewZoomOut = "VIEW_ZOOM_OUT",
+    ViewReset = "VIEW_RESET",
+    EditUndo = "EDIT_UNDO",
+    EditRedo = "EDIT_REDO",
+    EditCopy = "EDIT_COPY",
+    EditPaste = "EDIT_PASTE",
+    EditDelete = "EDIT_DELETE",
+    EditLayout = "EDIT_LAYOUT",
+    ScenarioProperties = "SCENARIO_PROPERTIES",
+    ScenarioCompare = "SCENARIO_COMPARE",
+    ScenarioMigrate = "SCENARIO_MIGRATE",
+    ScenarioImport = "SCENARIO_IMPORT",
+    ScenarioJson = "SCENARIO_JSON",
+    ScenarioPdf = "SCENARIO_PDF",
+    ScenarioArchive = "SCENARIO_ARCHIVE",
+    TestGenerated = "TEST_GENERATED",
+    TestAdhoc = "TEST_ADHOC",
+    TestFromFile = "TEST_FROM_FILE",
+    TestGenerateFile = "TEST_GENERATE_FILE",
+    TestHide = "TEST_HIDE",
+    MoreScenarioDetails = "MORE_SCENARIO_DETAILS",
+    ExpandPanel = "EXPAND_PANEL",
+    CollapsePanel = "COLLAPSE_PANEL",
+    ToolbarPanel = "TOOLBAR_PANEL",
+    NodesInScenario = "NODES_IN_SCENARIO",
+    ComponentsInScenario = "COMPONENTS_IN_SCENARIO",
+    OlderVersion = "OLDER_VERSION",
+    NewerVersion = "NEWER_VERSION",
+    NodeDocumentation = "NODE_DOCUMENTATION",
+    ComponentsTab = "COMPONENTS_TAB",
+    ScenarioSave = "SCENARIO_SAVE",
+    TestCounts = "TEST_COUNTS",
+    ScenarioCancel = "SCENARIO_CANCEL",
+    ScenarioArchiveToggle = "SCENARIO_ARCHIVE_TOGGLE",
+    ScenarioUnarchive = "SCENARIO_UNARCHIVE",
+    ScenarioCustomAction = "SCENARIO_CUSTOM_ACTION",
+    ScenarioCustomLink = "SCENARIO_CUSTOM_LINK",
+    RangeSelectNodes = "RANGE_SELECT_NODES",
+    CopyNode = "COPY_NODE",
+    PasteNode = "PASTE_NODE",
+    CutNode = "CUT_NODE",
+    SelectAllNodes = "SELECT_ALL_NODES",
+    RedoScenarioChanges = "REDO_SCENARIO_CHANGES",
+    UndoScenarioChanges = "UNDO_SCENARIO_CHANGES",
+    DeleteNodes = "DELETE_NODES",
+    DeselectAllNodes = "DESELECT_ALL_NODES",
+    FocusSearchNodeField = "FOCUS_SEARCH_NODE_FIELD",
+}
+
+export const mapToolbarButtonToStatisticsEvent = (btnType: BuiltinButtonTypes | CustomButtonTypes): EventTrackingSelector | undefined => {
     switch (btnType) {
         case BuiltinButtonTypes.editCopy: {
-            return EventTrackingType.ClickEditCopy;
+            return EventTrackingSelector.EditCopy;
         }
         case BuiltinButtonTypes.editDelete: {
-            return EventTrackingType.ClickEditDelete;
+            return EventTrackingSelector.EditDelete;
         }
         case BuiltinButtonTypes.editLayout: {
-            return EventTrackingType.ClickEditLayout;
+            return EventTrackingSelector.EditLayout;
         }
         case BuiltinButtonTypes.editPaste: {
-            return EventTrackingType.ClickEditPaste;
+            return EventTrackingSelector.EditPaste;
         }
         case BuiltinButtonTypes.editRedo: {
-            return EventTrackingType.ClickEditRedo;
+            return EventTrackingSelector.EditRedo;
         }
         case BuiltinButtonTypes.editUndo: {
-            return EventTrackingType.ClickEditUndo;
+            return EventTrackingSelector.EditUndo;
         }
         case BuiltinButtonTypes.generateAndTest: {
-            return EventTrackingType.ClickTestGenerateFile;
+            return EventTrackingSelector.TestGenerateFile;
         }
         case BuiltinButtonTypes.processJSON: {
-            return EventTrackingType.ClickScenarioJson;
+            return EventTrackingSelector.ScenarioJson;
         }
         case BuiltinButtonTypes.processArchive: {
-            return EventTrackingType.ClickScenarioArchive;
+            return EventTrackingSelector.ScenarioArchive;
         }
         case BuiltinButtonTypes.processCompare: {
-            return EventTrackingType.ClickScenarioCompare;
+            return EventTrackingSelector.ScenarioCompare;
         }
         case BuiltinButtonTypes.processDeploy: {
-            return EventTrackingType.ClickActionDeploy;
+            return EventTrackingSelector.ActionDeploy;
         }
         case BuiltinButtonTypes.processMigrate: {
-            return EventTrackingType.ClickScenarioMigrate;
+            return EventTrackingSelector.ScenarioMigrate;
         }
         case BuiltinButtonTypes.processImport: {
-            return EventTrackingType.ClickScenarioImport;
+            return EventTrackingSelector.ScenarioImport;
         }
         case BuiltinButtonTypes.processPDF: {
-            return EventTrackingType.ClickScenarioPdf;
+            return EventTrackingSelector.ScenarioPdf;
         }
         case BuiltinButtonTypes.viewReset: {
-            return EventTrackingType.ClickViewReset;
+            return EventTrackingSelector.ViewReset;
         }
         case BuiltinButtonTypes.viewZoomIn: {
-            return EventTrackingType.ClickViewZoomIn;
+            return EventTrackingSelector.ViewZoomIn;
         }
         case BuiltinButtonTypes.viewZoomOut: {
-            return EventTrackingType.ClickViewZoomOut;
+            return EventTrackingSelector.ViewZoomOut;
         }
         case BuiltinButtonTypes.testHide: {
-            return EventTrackingType.ClickTestHide;
+            return EventTrackingSelector.TestHide;
         }
         case BuiltinButtonTypes.testFromFile: {
-            return EventTrackingType.ClickTestFromFile;
+            return EventTrackingSelector.TestFromFile;
         }
         case BuiltinButtonTypes.processProperties: {
-            return EventTrackingType.ClickScenarioProperties;
+            return EventTrackingSelector.ScenarioProperties;
         }
         case BuiltinButtonTypes.testGenerate: {
-            return EventTrackingType.ClickTestGenerated;
+            return EventTrackingSelector.TestGenerated;
         }
         case BuiltinButtonTypes.testWithForm: {
-            return EventTrackingType.ClickTestAdhoc;
+            return EventTrackingSelector.TestAdhoc;
         }
         case BuiltinButtonTypes.processSave: {
-            return EventTrackingType.ClickScenarioSave;
+            return EventTrackingSelector.ScenarioSave;
         }
         case BuiltinButtonTypes.testCounts: {
-            return EventTrackingType.ClickTestCounts;
+            return EventTrackingSelector.TestCounts;
         }
         case BuiltinButtonTypes.processCancel: {
-            return EventTrackingType.ClickScenarioCancel;
+            return EventTrackingSelector.ScenarioCancel;
         }
         case BuiltinButtonTypes.processArchiveToggle: {
-            return EventTrackingType.ClickScenarioArchiveToggle;
+            return EventTrackingSelector.ScenarioArchiveToggle;
         }
         case BuiltinButtonTypes.processUnarchive: {
-            return EventTrackingType.ClickScenarioUnarchive;
+            return EventTrackingSelector.ScenarioUnarchive;
         }
         case CustomButtonTypes.customAction: {
-            return EventTrackingType.ClickScenarioCustomAction;
+            return EventTrackingSelector.ScenarioCustomAction;
         }
         case CustomButtonTypes.customLink: {
-            return EventTrackingType.ClickScenarioCustomLink;
+            return EventTrackingSelector.ScenarioCustomLink;
         }
         default: {
             const exhaustiveCheck: never = btnType;

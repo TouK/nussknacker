@@ -9,7 +9,7 @@ import { xor } from "lodash";
 import { FilterListItemLabel } from "./filterListItemLabel";
 import ScanarioIcon from "../../assets/icons/scenario.svg";
 import FragmentIcon from "../../assets/icons/fragment.svg";
-import { EventTrackingType, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
@@ -37,7 +37,7 @@ export function OtherOptionsStack(): JSX.Element {
                         <ScanarioIcon width={"1em"} height={"1em"} />
                     </Stack>
                 }
-                {...getEventTrackingProps({ type: EventTrackingType.FilterScenariosByOther })}
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByOther, event: EventTrackingType.FILTER })}
             />
             <FilterListItem
                 color="default"
@@ -49,7 +49,7 @@ export function OtherOptionsStack(): JSX.Element {
                         <FragmentIcon width={"1em"} height={"1em"} />
                     </Stack>
                 }
-                {...getEventTrackingProps({ type: EventTrackingType.FilterScenariosByOther })}
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByOther, event: EventTrackingType.FILTER })}
             />
         </OptionsStack>
     );
