@@ -1,6 +1,6 @@
 # Changelog
 
-1.15.0 (Not released yet)
+1.15.0 (17 May 2024)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) [#3922](https://github.com/TouK/nussknacker/pull/5901) Libraries bump:

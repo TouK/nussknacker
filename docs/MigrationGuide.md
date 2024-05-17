@@ -2,7 +2,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.15.x (Not released yet)
+## In version 1.15.0
 
 ### Code API changes
 
