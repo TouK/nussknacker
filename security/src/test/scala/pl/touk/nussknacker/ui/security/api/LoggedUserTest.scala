@@ -96,7 +96,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       case Right(user: ImpersonatedUser) =>
         user.id shouldEqual "impersonatedUserId"
         user.username shouldEqual "impersonatedUserName"
-        user.impersonatedBy.nonEmpty shouldEqual true
+        user.impersonatedBy.id shouldEqual authenticatedUser.id
       case Right(_) => fail("Expected a ImpersonatedUser")
       case Left(_)  => fail("Expected a Right but got a Left")
     }
@@ -147,7 +147,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
     )
 
     forAll(users) { (loggedUser: LoggedUser, canImpersonate: Boolean) =>
-      new ImpersonationChecking(loggedUser).canImpersonate shouldEqual canImpersonate
+      loggedUser.canImpersonate shouldEqual canImpersonate
     }
   }
 

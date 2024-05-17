@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.db.entity
 
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -78,7 +78,10 @@ trait CommentActions {
             processVersionId = processVersionId,
             content = c.value,
             user = loggedUser.username,
-            impersonatedBy = loggedUser.impersonatedBy.map(_.username),
+            impersonatedBy = loggedUser match {
+              case _: RealLoggedUser   => None
+              case u: ImpersonatedUser => Some(u.impersonatingUser.id)
+            },
             createDate = Timestamp.from(Instant.now())
           )
           _ <- commentsTable += entityData

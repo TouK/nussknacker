@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, Proc
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -213,7 +213,10 @@ class DbProcessActionRepository(
       processId = processId,
       processVersionId = processVersion,
       user = user.username, // TODO: it should be user.id not name
-      impersonatedBy = user.impersonatedBy.map(_.id),
+      impersonatedBy = user match {
+        case _: RealLoggedUser   => None
+        case u: ImpersonatedUser => Some(u.impersonatingUser.id)
+      },
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       actionName = actionName,

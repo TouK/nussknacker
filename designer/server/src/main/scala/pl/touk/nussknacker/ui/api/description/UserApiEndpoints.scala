@@ -6,7 +6,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser}
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
@@ -70,7 +70,7 @@ object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def apply(user: LoggedUser, allUserAccessibleCategories: Iterable[String]): DisplayableUser = user match {
-    case CommonUser(id, username, categoryPermissions, globalPermissions, _) =>
+    case CommonUser(id, username, categoryPermissions, globalPermissions) =>
       new DisplayableUser(
         id = id,
         isAdmin = false,
@@ -89,6 +89,21 @@ object DisplayableUser {
         categories = allUserAccessibleCategories.toList.sorted,
         categoryPermissions = Map.empty,
         globalPermissions = Nil
+      )
+    case ImpersonatedUser(impersonatedUser, impersonatingUser) =>
+      new DisplayableUser(
+        id = impersonatedUser.id,
+        isAdmin = impersonatedUser.isAdmin,
+        username = impersonatedUser.username,
+        categories = allUserAccessibleCategories.toList.sorted,
+        categoryPermissions = impersonatedUser match {
+          case u: CommonUser => u.categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted)
+          case _: AdminUser  => Map.empty
+        },
+        globalPermissions = impersonatedUser match {
+          case u: CommonUser => u.globalPermissions
+          case _: AdminUser  => Nil
+        }
       )
   }
 

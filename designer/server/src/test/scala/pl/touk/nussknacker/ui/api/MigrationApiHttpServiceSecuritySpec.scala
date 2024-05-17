@@ -7,7 +7,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
   WithAccessControlCheckingDesignerConfig,
@@ -46,6 +46,19 @@ class MigrationApiHttpServiceSecuritySpec
       "forbid access for user with limited reading permissions" in {
         given()
           .applicationState(
+            createSavedScenario(exampleScenario, Category2)
+          )
+          .when()
+          .basicAuthLimitedReader()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied user [limitedReader] is not authorized to access this resource")
+      }
+      "forbid access for user with limited writing permissions" in {
+        given()
+          .applicationState(
             createSavedScenario(exampleScenario, Category1)
           )
           .when()
@@ -55,19 +68,6 @@ class MigrationApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
-      }
-      "forbid access for user with limited writing permissions" in {
-        given()
-          .applicationState(
-            createSavedScenario(exampleScenario, Category1)
-          )
-          .when()
-          .basicAuthWriter()
-          .jsonBody(requestData)
-          .post(s"$nuDesignerHttpAddress/api/migrate")
-          .Then()
-          .statusCode(401)
-          .equalsPlainBody("The supplied user [writer] is not authorized to access this resource")
       }
     }
     "no credentials were passes should" - {

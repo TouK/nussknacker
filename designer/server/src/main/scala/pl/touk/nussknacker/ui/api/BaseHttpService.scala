@@ -43,6 +43,7 @@ abstract class BaseHttpService(
       .map {
         case right @ Right(AdminUser(_, _)) => right
         case Right(_: CommonUser)           => securityError(AuthorizationError)
+        case Right(_: ImpersonatedUser)     => securityError(AuthorizationError)
         case error @ Left(_)                => error
       }
   }

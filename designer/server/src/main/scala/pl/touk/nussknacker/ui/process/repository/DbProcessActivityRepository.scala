@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, C
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -85,7 +85,10 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
         fileName = attachmentToAdd.fileName,
         data = attachmentToAdd.data,
         user = loggedUser.username,
-        impersonatedBy = loggedUser.impersonatedBy.map(_.id),
+        impersonatedBy = loggedUser match {
+          case _: RealLoggedUser   => None
+          case u: ImpersonatedUser => Some(u.impersonatingUser.id)
+        },
         createDate = Timestamp.from(Instant.now())
       )
     } yield ()

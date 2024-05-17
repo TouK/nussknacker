@@ -9,10 +9,11 @@ import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 sealed trait LoggedUser {
   val id: String
   val username: String
-  val impersonatedBy: Option[LoggedUser]
   val isAdmin: Boolean
   def can(category: String, permission: Permission): Boolean
 }
+
+sealed trait RealLoggedUser extends LoggedUser
 
 object LoggedUser {
 
@@ -20,11 +21,10 @@ object LoggedUser {
       authenticatedUser: AuthenticatedUser,
       rules: List[ConfigRule]
   ): Either[CreationError, LoggedUser] = {
-    val loggedUser            = LoggedUser(authenticatedUser, rules)
-    val impersonationChecking = new ImpersonationChecking(loggedUser)
+    val loggedUser = LoggedUser(authenticatedUser, rules)
     authenticatedUser.impersonatedAuthenticationUser match {
       case Some(impersonatedUser) =>
-        if (impersonationChecking.canImpersonate) {
+        if (loggedUser.canImpersonate) {
           Right(
             ImpersonatedUser(
               impersonatedUser = LoggedUser(impersonatedUser, rules),
@@ -39,7 +39,7 @@ object LoggedUser {
   def apply(
       authenticatedUser: BaseAuthenticationUserInfo,
       rules: List[ConfigRule]
-  ): LoggedUser = {
+  ): RealLoggedUser = {
     val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
     apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
   }
@@ -50,7 +50,7 @@ object LoggedUser {
       categoryPermissions: Map[String, Set[Permission]] = Map.empty,
       globalPermissions: List[GlobalPermission] = Nil,
       isAdmin: Boolean = false
-  ): LoggedUser = {
+  ): RealLoggedUser = {
     if (isAdmin) {
       AdminUser(id, username)
     } else {
@@ -58,7 +58,7 @@ object LoggedUser {
     }
   }
 
-  def apply(id: String, username: String, rulesSet: RulesSet): LoggedUser = {
+  def apply(id: String, username: String, rulesSet: RulesSet): RealLoggedUser = {
     if (rulesSet.isAdmin) {
       LoggedUser(id = id, username = username, isAdmin = true)
     } else {
@@ -71,6 +71,19 @@ object LoggedUser {
     }
   }
 
+  implicit class ImpersonationChecking(val user: LoggedUser) extends AnyVal {
+
+    def canImpersonate: Boolean = user match {
+      case _: AdminUser        => true
+      case _: ImpersonatedUser => false
+      case commonUser: CommonUser =>
+        commonUser.globalPermissions
+          .map(_.toLowerCase)
+          .contains(Permission.Impersonate.toString.toLowerCase)
+    }
+
+  }
+
 }
 
 final case class CommonUser(
@@ -78,9 +91,8 @@ final case class CommonUser(
     username: String,
     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
     globalPermissions: List[GlobalPermission] = Nil
-) extends LoggedUser {
-  override val impersonatedBy: Option[LoggedUser] = None
-  override val isAdmin: Boolean                   = false
+) extends RealLoggedUser {
+  override val isAdmin: Boolean = false
 
   override def can(category: String, permission: Permission): Boolean = {
     categoryPermissions.get(category).exists(_ contains permission)
@@ -92,31 +104,18 @@ final case class CommonUser(
 
 }
 
-final case class AdminUser(id: String, username: String) extends LoggedUser {
-  override val impersonatedBy: Option[LoggedUser]                     = None
+final case class AdminUser(id: String, username: String) extends RealLoggedUser {
   override val isAdmin: Boolean                                       = true
   override def can(category: String, permission: Permission): Boolean = true
 }
 
-final case class ImpersonatedUser(impersonatedUser: LoggedUser, impersonatingUser: LoggedUser) extends LoggedUser {
+final case class ImpersonatedUser(impersonatedUser: RealLoggedUser, impersonatingUser: RealLoggedUser)
+    extends LoggedUser {
   override val id: String                                             = impersonatedUser.id
   override val username: String                                       = impersonatedUser.username
-  override val impersonatedBy: Option[LoggedUser]                     = Some(impersonatingUser)
   override val isAdmin: Boolean                                       = impersonatedUser.isAdmin
   override def can(category: String, permission: Permission): Boolean = impersonatedUser.can(category, permission)
-}
-
-final class ImpersonationChecking(val user: LoggedUser) extends AnyVal {
-
-  def canImpersonate: Boolean = user match {
-    case _: AdminUser        => true
-    case _: ImpersonatedUser => false
-    case commonUser: CommonUser =>
-      commonUser.globalPermissions
-        .map(_.toLowerCase)
-        .contains(Permission.Impersonate.toString.toLowerCase)
-  }
-
+  val impersonatedBy: RealLoggedUser                                  = impersonatingUser
 }
 
 sealed trait CreationError
