@@ -248,6 +248,9 @@ Below you can find out some hints how to achieve that:
 
 ## Docker Compose based installation example
 
+_**Note:**_ this is not a production deployment. It only shows what services are required to run Nu configured to
+create streaming mode scenarios.
+
 The code is placed in `examples/installation` directory.
 
 To run:
