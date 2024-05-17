@@ -242,3 +242,25 @@ Below you can find out some hints how to achieve that:
 - Prefer to use methods instead of member functions (def foo: (T) => R)
 - Avoid using AnyVal if the class is in API that will be used from Java
 - Prefer adding the `final` keyword to `case classes` definitions if you have no serious reason to skip it
+
+
+# Examples
+
+## Docker Compose based installation example
+
+The code is placed in `examples/installation` directory.
+
+To run:
+```bash
+docker compose up -d --build
+```
+
+Exposed UIs:
+* Nu Designer: `http://localhost:8080/`
+* Flink Dashboard: `http://localhost:8080/flink`
+* AKQH: `http://localhost:8080/akhq`
+
+To cleanup:
+```bash
+docker compose down -v
+```
