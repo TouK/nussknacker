@@ -8,15 +8,21 @@ services:
     image: touk/nussknacker:1.14.0_scala-2.12
     restart: unless-stopped
     environment:
-      JDK_JAVA_OPTIONS: -Xmx1024M
+      DB_URL: "jdbc:postgresql://postgres:5432/nu-db"
+      DB_DRIVER: "org.postgresql.Driver"
+      DB_USER: "nu"
+      DB_PASSWORD: "nupassword"
+      JDK_JAVA_OPTIONS: "-Xmx1024M"
+      NUSSKNACKER_LOG_LEVEL: "DEBUG"
+      KAFKA_ADDRESS: "kafka:9092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      INFLUXDB_URL: "http://influxdb:8086"
+      FLINK_REST_URL: "http://flink-jobmanager:8081"
+      FLINK_QUERYABLE_STATE_PROXY_URL: "flink-taskmanager:9069"
       USAGE_REPORTS_SOURCE: "example-installation-docker-compose"
-      NUSSKNACKER_LOG_LEVEL: DEBUG
-      KAFKA_ADDRESS: kafka:9092
-      SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      INFLUXDB_URL: http://influxdb:8086
-      FLINK_REST_URL: http://flink-jobmanager:8081
-      FLINK_QUERYABLE_STATE_PROXY_URL: flink-taskmanager:9069
     depends_on:
+      postgres:
+        condition: service_healthy
       grafana:
         condition: service_healthy
       kafka:
@@ -31,10 +37,22 @@ services:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
       retries: 10
-    volumes:
-      - nussknacker_designer_data:/opt/nussknacker/storage
     volumes_from:
       - flink-jobmanager
+
+  postgres:
+    image: postgres:13
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "nu-db"
+      POSTGRES_USER: "nu"
+      POSTGRES_PASSWORD: "nupassword"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U exampleuser" ]
+      interval: 10s
+      retries: 10
+    volumes:
+      - nussknacker_designer_data:/var/lib/postgresql/data
 
   ### Nussknacker metrics-related services:
 
@@ -42,9 +60,9 @@ services:
     image: grafana/grafana:7.5.17
     restart: unless-stopped
     environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:/grafana
-      - GF_SECURITY_ALLOW_EMBEDDING=true
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:/grafana"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
     depends_on:
       influxdb:
         condition: service_healthy
@@ -62,7 +80,6 @@ services:
     hostname: influxdb
     environment:
       INFLUXDB_DB: esp
-#      INFLUXDB_DB: nussknacker_metrics
     healthcheck:
       test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
       interval: 10s
@@ -93,12 +110,12 @@ services:
     restart: unless-stopped
     hostname: nu-kafka
     environment:
-      - KAFKA_CFG_NODE_ID=0
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: "controller,broker"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
     healthcheck:
       test: [ "CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list" ]
       interval: 10s
@@ -108,8 +125,8 @@ services:
     image: bitnami/schema-registry:7.6.1
     restart: unless-stopped
     environment:
-      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
-      - SCHEMA_REGISTRY_KAFKA_BROKERS=PLAINTEXT://kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+      SCHEMA_REGISTRY_KAFKA_BROKERS: "PLAINTEXT://kafka:9092"
     depends_on:
       kafka:
         condition: service_healthy
@@ -151,7 +168,7 @@ services:
     restart: unless-stopped
     command: jobmanager
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
       interval: 10s
@@ -167,7 +184,7 @@ services:
     restart: unless-stopped
     command: taskmanager
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
     depends_on:
       flink-jobmanager:
         condition: service_healthy
