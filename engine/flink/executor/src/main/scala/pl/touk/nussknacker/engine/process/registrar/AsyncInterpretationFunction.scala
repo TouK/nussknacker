@@ -37,6 +37,15 @@ private[registrar] class AsyncInterpretationFunction(
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
+
+    getRuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent(
+      "closeAsyncExecutionContext",
+      () => {
+        logger.info("User class loader release hook called - closing async execution context")
+        serviceExecutionContextPreparer.close()
+      }
+    )
+
     serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.name)
   }
 
