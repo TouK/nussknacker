@@ -14,7 +14,7 @@ import { ToolbarButtonProps } from "../../types";
 export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const cancelPossible = useSelector(isCancelPossible);
     const processName = useSelector(getProcessName);
     const capabilities = useSelector(getCapabilities);
@@ -36,6 +36,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
                     meta: { action },
                 })
             }
+            type={type}
         />
     );
 }

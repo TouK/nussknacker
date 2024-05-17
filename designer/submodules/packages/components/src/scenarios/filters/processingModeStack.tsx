@@ -13,9 +13,9 @@ export interface FiltersParams<V extends string = string, T = string> {
 export function ProcessingModeStack(
     props: FiltersParams<string, { name: string; Icon?: string; displayableName?: ReactNode }>,
 ): JSX.Element {
-    const { options = [], value = [], onChange } = props;
+    const { options = [], value = [], onChange, label, ...passProps } = props;
     return (
-        <OptionsStack {...props}>
+        <OptionsStack label={label}>
             {options.map((option) => {
                 const isSelected = value.includes(option.name);
                 const onClick = (checked: boolean) =>
@@ -31,6 +31,7 @@ export function ProcessingModeStack(
                                 <option.Icon />
                             </Stack>
                         }
+                        {...passProps}
                     />
                 );
             })}

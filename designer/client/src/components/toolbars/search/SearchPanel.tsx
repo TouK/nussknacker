@@ -12,14 +12,13 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchResults } from "./SearchResults";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
-import { useEventTracking } from "../../../containers/event-tracking";
+import { EventTrackingType, getEventTrackingProps, useEventTracking } from "../../../containers/event-tracking";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
-    const { trackEvent, trackEventWithDebounce } = useEventTracking();
     const dispatch = useDispatch();
     const toolbarsConfigId = useSelector(getToolbarsConfigId);
-
+    const { trackEvent } = useEventTracking();
     const [filter, setFilter] = useState<string>("");
     const clearFilter = useCallback(() => setFilter(""), []);
 
@@ -48,7 +47,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
                     }
                     dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
                     searchRef.current.focus();
-                    trackEvent({ type: "KEYBOARD_FOCUS_SEARCH_NODE_FIELD" });
+                    trackEvent({ type: EventTrackingType.KeyboardFocusSearchNodeField });
                     break;
                 }
             }
@@ -59,13 +58,11 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
         <ToolbarWrapper {...props} title={t("panels.search.title", "Search")} onExpand={() => searchRef.current?.focus()}>
             <SearchInputWithIcon
                 ref={searchRef}
-                onChange={(value) => {
-                    trackEventWithDebounce({ type: "SEARCH_NODES_IN_SCENARIO" });
-                    setFilter(value);
-                }}
+                onChange={setFilter}
                 onClear={clearFilter}
                 value={filter}
                 placeholder={t("panels.search.filter.placeholder", "type here to search nodes...")}
+                {...getEventTrackingProps({ type: EventTrackingType.SearchNodesInScenario })}
             >
                 <SearchIcon isEmpty={isEmpty(filter)} />
             </SearchInputWithIcon>

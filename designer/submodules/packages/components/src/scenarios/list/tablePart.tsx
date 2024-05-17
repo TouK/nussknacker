@@ -9,7 +9,7 @@ import { useDebouncedValue } from "rooks";
 import { IconButton } from "@mui/material";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import { LastAction } from "./item";
-import { useEventTracking } from "nussknackerUi/eventTracking";
+import { EventTrackingType, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -17,7 +17,6 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const filtersContext = useFilterContext<ScenariosFiltersModel>();
     const _filterText = useMemo(() => filtersContext.getFilter("NAME"), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
-    const { trackEvent } = useEventTracking();
 
     const columns = useMemo(
         (): Columns<RowType> => [
@@ -86,21 +85,20 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 headerName: t("table.scenarios.title.METRICS", "Metrics"),
                 renderCell: ({ row }) =>
                     !row.isFragment ? (
-                        <div
-                            onClick={() => {
-                                trackEvent({ type: "CLICK_ACTION_METRICS" });
-                            }}
+                        <IconButton
+                            color={"inherit"}
+                            component={ExternalLink}
+                            href={metricsHref(row.name)}
+                            {...getEventTrackingProps({ type: EventTrackingType.ClickActionMetrics })}
                         >
-                            <IconButton color={"inherit"} component={ExternalLink} href={metricsHref(row.name)}>
-                                <AssessmentIcon />
-                            </IconButton>
-                        </div>
+                            <AssessmentIcon />
+                        </IconButton>
                     ) : null,
                 sortable: false,
                 align: "center",
             },
         ],
-        [filterText, t, trackEvent],
+        [filterText, t],
     );
 
     const [visibleColumns, setVisibleColumns] = useState(

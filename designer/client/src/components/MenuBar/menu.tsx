@@ -11,7 +11,7 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
-import { useEventTracking } from "../../containers/event-tracking";
+import { EventTrackingType, getEventTrackingProps } from "../../containers/event-tracking";
 
 const PlainButton = styled("button")({
     background: "unset",
@@ -99,7 +99,6 @@ function ExpandButton({ children }: PropsWithChildren<unknown>) {
 export function Menu(): JSX.Element {
     const tabs = useSelector(getTabs);
     const loggedUser = useSelector(getLoggedUser);
-    const { trackEvent } = useEventTracking();
 
     const elements = useMemo(
         () =>
@@ -117,16 +116,14 @@ export function Menu(): JSX.Element {
                         })}
                         key={tab.id}
                         tab={tab}
-                        onClick={() => {
-                            if (tab.id.toLowerCase() === "components") {
-                                trackEvent({ type: "CLICK_COMPONENTS_TAB" });
-                            } else if (tab.id.toLowerCase() === "metrics") {
-                                trackEvent({ type: "CLICK_GLOBAL_METRICS_TAB" });
-                            }
-                        }}
+                        {...(tab.id.toLowerCase() === "components"
+                            ? getEventTrackingProps({ type: EventTrackingType.ClickComponentsTab })
+                            : tab.id.toLowerCase() === "metrics"
+                            ? getEventTrackingProps({ type: EventTrackingType.ClickGlobalMetricsTab })
+                            : null)}
                     />
                 )),
-        [loggedUser, tabs, trackEvent],
+        [loggedUser, tabs],
     );
 
     const renderTruncator = useCallback(

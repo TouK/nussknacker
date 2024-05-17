@@ -11,7 +11,7 @@ export type InputProps = ValueFieldProps<string> & {
 };
 
 export const ThemedInput = forwardRef(function ThemedInput(
-    { value, onChange, placeholder, className }: InputProps,
+    { value, onChange, placeholder, className, ...props }: InputProps,
     ref: Ref<HTMLInputElement>,
 ): JSX.Element {
     return (
@@ -33,7 +33,10 @@ export const ThemedInput = forwardRef(function ThemedInput(
             placeholder={placeholder}
             className={className}
             value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+                onChange(e.target.value);
+            }}
+            {...props}
         />
     );
 });

@@ -14,13 +14,12 @@ import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { processingModeItems } from "../list/processingMode";
 import { ProcessingModeStack } from "./processingModeStack";
-import { useTrackFilterSelect } from "../../common/hooks/useTrackFilterSet";
+import { EventTrackingType, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
     const { data: statusDefinitions = [] } = useStatusDefinitions();
-    const { withTrackFilterSelect } = useTrackFilterSelect();
 
     const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
@@ -72,10 +71,18 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
 
     return (
         <>
-            <QuickFilter<ScenariosFiltersModel> isLoading={isLoading} filter="NAME" trackingEvent={"SEARCH_SCENARIOS_BY_NAME"}>
+            <QuickFilter<ScenariosFiltersModel>
+                isLoading={isLoading}
+                filter="NAME"
+                {...getEventTrackingProps({ type: EventTrackingType.SearchScenariosByName })}
+            >
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                     <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                        <StatusOptionsStack options={filterableValues.status} withArchived={true} />
+                        <StatusOptionsStack
+                            options={filterableValues.status}
+                            withArchived={true}
+                            {...getEventTrackingProps({ type: EventTrackingType.FilterScenariosByStatus })}
+                        />
                     </FilterMenu>
                     <FilterMenu
                         label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
@@ -85,7 +92,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
                             options={filterableValues.processingMode}
                             value={getFilter("PROCESSING_MODE", true)}
-                            onChange={withTrackFilterSelect({ type: "FILTER_SCENARIOS_BY_PROCESSING_MODE" }, setFilter("PROCESSING_MODE"))}
+                            onChange={setFilter("PROCESSING_MODE")}
+                            {...getEventTrackingProps({ type: EventTrackingType.FilterScenariosByProcessingMode })}
                         />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
@@ -93,7 +101,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             label={t("table.filter.CATEGORY", "Category")}
                             options={filterableValues.processCategory}
                             value={getFilter("CATEGORY", true)}
-                            onChange={withTrackFilterSelect({ type: "FILTER_SCENARIOS_BY_CATEGORY" }, setFilter("CATEGORY"))}
+                            onChange={setFilter("CATEGORY")}
+                            {...getEventTrackingProps({ type: EventTrackingType.FilterScenariosByCategory })}
                         />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CREATED_BY", "Author")} count={getFilter("CREATED_BY", true).length}>
@@ -101,7 +110,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             label={t("table.filter.CREATED_BY", "Author")}
                             options={filterableValues.author}
                             value={getFilter("CREATED_BY", true)}
-                            onChange={withTrackFilterSelect({ type: "FILTER_SCENARIOS_BY_AUTHOR" }, setFilter("CREATED_BY"))}
+                            onChange={setFilter("CREATED_BY")}
+                            {...getEventTrackingProps({ type: EventTrackingType.FilterScenariosByAuthor })}
                         />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.other", "Type")} count={getFilter("TYPE", true).length}>
@@ -113,7 +123,8 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                                 label={t("table.filter.SORT_BY", "Sort")}
                                 options={["createdAt", "modificationDate", "name"].map((name) => ({ name }))}
                                 value={getFilter("SORT_BY", true)}
-                                onChange={withTrackFilterSelect({ type: "SORT_SCENARIOS" }, setFilter("SORT_BY"))}
+                                onChange={setFilter("SORT_BY")}
+                                {...getEventTrackingProps({ type: EventTrackingType.SortScenarios })}
                             />
                         </FilterMenu>
                     ) : null}

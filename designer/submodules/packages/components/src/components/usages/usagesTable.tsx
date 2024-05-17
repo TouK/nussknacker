@@ -11,7 +11,7 @@ import { FilterLinkCell } from "../cellRenderers";
 import { UsageWithStatus } from "../useComponentsQuery";
 import { Box } from "@mui/material";
 import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatted";
-import { useEventTracking } from "nussknackerUi/eventTracking";
+import { EventTrackingType, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function nodeFilter(f, u: NodeUsageData) {
     switch (f) {
@@ -29,7 +29,6 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
     const filtersContext = useFilterContext<UsagesFiltersModel>();
     const _filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
-    const { trackEvent } = useEventTracking();
 
     const columns = useMemo(
         (): Columns<UsageWithStatus> => [
@@ -42,10 +41,8 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 renderCell: (props) => (
                     <ScenarioCell
                         filterText={filterText}
+                        {...getEventTrackingProps({ type: EventTrackingType.ClickScenarioFromComponentUsages })}
                         {...props}
-                        onClick={() => {
-                            trackEvent({ type: "CLICK_SCENARIO_FROM_COMPONENT_USAGES" });
-                        }}
                     />
                 ),
                 hideable: false,

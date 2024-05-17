@@ -8,7 +8,7 @@ import { ToolbarButtonProps } from "../../types";
 function CopyButton(props: ToolbarButtonProps): JSX.Element {
     const { copy } = useSelectionActions();
     const { t } = useTranslation();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const available = !disabled && copy;
 
     return (
@@ -18,6 +18,7 @@ function CopyButton(props: ToolbarButtonProps): JSX.Element {
             icon={<Icon />}
             disabled={!available}
             onClick={available ? (event) => copy(event.nativeEvent) : null}
+            type={type}
         />
     );
 }

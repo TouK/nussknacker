@@ -17,7 +17,7 @@ import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
 import { ScenarioAvatar } from "./scenarioAvatar";
-import { useEventTracking } from "nussknackerUi/eventTracking";
+import { getEventTrackingProps, EventTrackingType } from "nussknackerUi/eventTracking";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     return (
@@ -36,7 +36,6 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
 
 const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; style: CSSProperties }): JSX.Element {
     const opacity = row.isArchived ? 0.5 : 1;
-    const { trackEvent } = useEventTracking();
 
     return (
         <div style={style}>
@@ -45,15 +44,14 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                 sx={{ opacity }}
                 secondaryAction={
                     !row.isFragment && (
-                        <div
-                            onClick={() => {
-                                trackEvent({ type: "CLICK_ACTION_METRICS" });
-                            }}
+                        <IconButton
+                            color={"inherit"}
+                            component={ExternalLink}
+                            href={metricsHref(row.name)}
+                            {...getEventTrackingProps({ type: EventTrackingType.ClickActionMetrics })}
                         >
-                            <IconButton color={"inherit"} component={ExternalLink} href={metricsHref(row.name)}>
-                                <AssessmentIcon />
-                            </IconButton>
-                        </div>
+                            <AssessmentIcon />
+                        </IconButton>
                     )
                 }
             >

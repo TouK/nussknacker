@@ -8,10 +8,9 @@ import { useWindows } from "../../windowManager";
 import { HistoryItem, VersionType } from "./HistoryItem";
 import { ProcessVersionType } from "../Process/types";
 import { ProcessHistoryWrapper, TrackVertical } from "./StyledHistory";
-import { useEventTracking } from "../../containers/event-tracking";
+import { EventTrackingType, getEventTrackingProps } from "../../containers/event-tracking";
 
 export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.Element {
-    const { trackEvent } = useEventTracking();
     const scenario = useSelector(getScenario);
     const { history = [], lastDeployedAction, name, processVersionId } = scenario || {};
     const nothingToSave = useSelector(isSaveDisabled);
@@ -67,15 +66,10 @@ export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.El
                             isDeployed={processVersionId === lastDeployedAction?.processVersionId}
                             version={version}
                             type={type}
-                            onClick={(version) => {
-                                if (isLatest) {
-                                    trackEvent({ type: "CLICK_NEWER_VERSION" });
-                                } else {
-                                    trackEvent({ type: "CLICK_OLDER_VERSION" });
-                                }
-
-                                changeVersion(version);
-                            }}
+                            onClick={changeVersion}
+                            {...getEventTrackingProps(
+                                isLatest ? { type: EventTrackingType.ClickNewerVersion } : { type: EventTrackingType.ClickOlderVersion },
+                            )}
                         />
                     );
                 })}

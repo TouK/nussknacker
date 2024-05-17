@@ -26,7 +26,7 @@ import { head, isEmpty } from "lodash";
 type Props = ToolbarButtonProps;
 
 function TestWithFormButton(props: Props) {
-    const { disabled } = props;
+    const { disabled, type } = props;
     const { t } = useTranslation();
     const { open, inform } = useWindows();
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
@@ -150,6 +150,7 @@ function TestWithFormButton(props: Props) {
             icon={<Icon />}
             disabled={!available || disabled}
             onClick={onButtonClick}
+            type={type}
         />
     );
 }

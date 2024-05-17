@@ -6,11 +6,11 @@ import { GridRenderCellParams } from "@mui/x-data-grid";
 import { ScenarioAvatar } from "../../scenarios/list/scenarioAvatar";
 import Stack from "@mui/material/Stack";
 
-export function ScenarioCell({ filterText, ...props }: GridRenderCellParams & { filterText: string; onClick: () => void }): JSX.Element {
-    const { row, value, onClick } = props;
+export function ScenarioCell({ filterText, ...props }: GridRenderCellParams & { filterText: string }): JSX.Element {
+    const { row, value, id, ...passProps } = props;
     return (
         <CellLink component={ExternalLink} underline="hover" disabled={!value} href={scenarioHref(row.name)}>
-            <Stack onClick={onClick} direction="row" alignItems="center">
+            <Stack direction="row" alignItems="center" {...passProps}>
                 <ScenarioAvatar scenario={row} />
                 <Highlight value={value} filterText={filterText} />
                 <OpenInNew

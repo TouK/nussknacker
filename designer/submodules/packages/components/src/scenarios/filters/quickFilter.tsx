@@ -4,8 +4,6 @@ import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
 import { Search } from "@mui/icons-material";
-import { useEventTracking } from "nussknackerUi/eventTracking";
-import { EventTrackingType } from "../../../../../../client/src/containers/event-tracking";
 
 const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();
 
@@ -13,16 +11,13 @@ export function QuickFilter<F extends Record<string, any>>({
     children,
     isLoading,
     filter,
-    trackingEvent,
     ...props
 }: PropsWithChildren<{
     filter: keyof F;
     isLoading?: boolean;
-    trackingEvent: Extract<EventTrackingType, "SEARCH_SCENARIOS_BY_NAME" | "SEARCH_COMPONENTS_BY_NAME" | "SEARCH_COMPONENT_USAGES_BY_NAME">;
 }>): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<F>();
-    const { trackEventWithDebounce } = useEventTracking();
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
@@ -38,13 +33,7 @@ export function QuickFilter<F extends Record<string, any>>({
                     placeholder={t("table.filter.QUICK", "Search...")}
                     fullWidth
                     value={getFilter(filter) || ""}
-                    onChange={(value) => {
-                        if (value) {
-                            trackEventWithDebounce({ type: trackingEvent });
-                        }
-
-                        setFilter(filter)(value);
-                    }}
+                    onChange={setFilter(filter)}
                     sx={{
                         flex: 1,
                         ".MuiOutlinedInput-notchedOutline": {

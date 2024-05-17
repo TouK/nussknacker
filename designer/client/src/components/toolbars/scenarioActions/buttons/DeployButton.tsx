@@ -19,7 +19,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
     const hasErrors = useSelector(hasError);
     const processName = useSelector(getProcessName);
     const capabilities = useSelector(getCapabilities);
-    const { disabled } = props;
+    const { disabled, type } = props;
 
     const available = !disabled && deployPossible && capabilities.deploy;
 
@@ -54,6 +54,7 @@ export default function DeployButton(props: ToolbarButtonProps) {
             }
             onMouseOver={deployMouseOver}
             onMouseOut={deployMouseOut}
+            type={type}
         />
     );
 }
