@@ -5,6 +5,7 @@ import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
 import org.apache.flink.client.deployment.executors.PipelineExecutorUtils
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
+import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
@@ -96,6 +97,9 @@ class MiniClusterExecutionEnvironment(
   ): Unit = {
     Eventually.eventually {
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+      // we have to verify if job is initialized, because otherwise, not all vertices are available so vertices status check
+      // would be misleading
+      assertJobInitialized(executionGraph)
       additionalChecks
       val executionVertices  = executionGraph.getAllExecutionVertices.asScala
       val notInExpectedState = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
@@ -106,6 +110,11 @@ class MiniClusterExecutionEnvironment(
           .mkString(s"Some vertices of $name are not in expected (${expectedState.mkString(", ")}) state): ", ", ", "")
       )
     }(patience, implicitly[Retrying[Assertion]], implicitly[Position])
+  }
+
+  // Protected, to be overridden in Flink < 1.13 compatibility layer
+  protected def assertJobInitialized(executionGraph: AccessExecutionGraph): Assertion = {
+    assert(executionGraph.getState != JobStatus.INITIALIZING)
   }
 
   def assertJobNotFailing(jobID: JobID): Unit = {
