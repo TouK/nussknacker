@@ -29,23 +29,6 @@ object transformers {
       aggregateBy: LazyParameter[AnyRef],
       aggregator: Aggregator,
       windowLength: Duration,
-      variableName: String
-  )(implicit nodeId: NodeId): ContextTransformation =
-    slidingTransformer(
-      groupBy,
-      aggregateBy,
-      aggregator,
-      windowLength,
-      variableName,
-      emitWhenEventLeft = false,
-      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators
-    )
-
-  def slidingTransformer(
-      groupBy: LazyParameter[CharSequence],
-      aggregateBy: LazyParameter[AnyRef],
-      aggregator: Aggregator,
-      windowLength: Duration,
       variableName: String,
       emitWhenEventLeft: Boolean,
       explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean

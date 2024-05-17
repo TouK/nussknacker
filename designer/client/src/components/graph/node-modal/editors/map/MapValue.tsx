@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import React from "react";
 import { Expression, VariableTypes } from "../../../../../types";
 import { NodeValue } from "../../node";
-import EditableEditor from "../EditableEditor";
+import { EditableEditor } from "../EditableEditor";
 import { FieldError } from "../Validators";
 
 interface MapValueProps {
@@ -28,7 +28,6 @@ export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
                 showValidation={showValidation}
                 onValueChange={onChange}
                 expressionObj={value}
-                rowClassName={" "}
                 valueClassName={" "}
                 variableTypes={variableTypes}
                 validationLabelInfo={validationLabelInfo}

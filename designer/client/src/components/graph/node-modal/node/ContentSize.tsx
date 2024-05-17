@@ -8,13 +8,7 @@ const ModalContentDark = ({
 }: PropsWithChildren<{
     className?: string;
 }>) => {
-    return (
-        <div
-            data-testid="content-size"
-            className={cx("modalContentDark", className)}
-            {...props}
-        />
-    );
+    return <div data-testid="content-size" className={cx("modalContentDark", className)} {...props} />;
 };
 
 export const ContentSize = styled(ModalContentDark)({
