@@ -12,7 +12,7 @@ services:
       DB_DRIVER: "org.postgresql.Driver"
       DB_USER: "nu"
       DB_PASSWORD: "nupassword"
-      NUSSKNACKER_LOG_LEVEL: "DEBUG"
+      NUSSKNACKER_LOG_LEVEL: "INFO"
       KAFKA_ADDRESS: "kafka:9092"
       SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       INFLUXDB_URL: "http://influxdb:8086"
@@ -48,7 +48,7 @@ services:
       POSTGRES_USER: "nu"
       POSTGRES_PASSWORD: "nupassword"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U exampleuser" ]
+      test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s
       retries: 10
     volumes:
