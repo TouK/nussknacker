@@ -113,7 +113,7 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
       isArchived = false,
       createdAt = Timestamp.from(now),
       createdBy = userName,
-      impersonatedBy = loggedUser.impersonatedBy.map(_.username)
+      impersonatedBy = loggedUser.impersonatedBy.map(_.id)
     )
 
     val insertNew =

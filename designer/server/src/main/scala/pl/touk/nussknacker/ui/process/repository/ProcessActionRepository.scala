@@ -213,7 +213,7 @@ class DbProcessActionRepository(
       processId = processId,
       processVersionId = processVersion,
       user = user.username, // TODO: it should be user.id not name
-      impersonatedBy = user.impersonatedBy.map(_.username),
+      impersonatedBy = user.impersonatedBy.map(_.id),
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       actionName = actionName,

@@ -3,8 +3,9 @@ package pl.touk.nussknacker.ui.security.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatest.prop.{TableFor3, TableFor4}
+import org.scalatest.prop.{TableFor2, TableFor3, TableFor4}
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
+import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 
 class LoggedUserTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.security.Permission._
@@ -62,37 +63,92 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
     authorizedUser.can("Second", Write) shouldBe true
   }
 
-  test("should map impersonated user from AuthenticatedUser to LoggedUser with permissions matching role") {
+  test("should create logged user without impersonation") {
+    val rules             = List(ConfigRule("Editor", categories = List("Category"), permissions = List(Read, Write)))
+    val authenticatedUser = AuthenticatedUser("userId", "userName", Set("Editor"))
+
+    val loggedUser = LoggedUser.create(authenticatedUser, rules)
+
+    loggedUser shouldBe Right(LoggedUser(authenticatedUser, rules))
+  }
+
+  test("should create impersonated user when impersonating with appropriate permission") {
     val rules = List(
       ConfigRule("Editor", categories = List("Category"), permissions = List(Read, Write)),
       ConfigRule(
-        "TechnicalRole",
+        role = "Technical",
         categories = List("Category"),
         permissions = List(Deploy),
-        globalPermissions = List("OverrideUsername")
-      ),
+        globalPermissions = List("Impersonate")
+      )
     )
-    val impersonatedUser = ImpersonatedUser("impersonatedUserId", "impersonatedUserName", Set("Editor"))
-    val loggedTechnicalUser = LoggedUser(
-      AuthenticatedUser(
-        "technicalUserId",
-        "technicalUserName",
-        Set("TechnicalRole"),
-        Some(impersonatedUser)
-      ),
-      rules
+    val impersonatedUser = AuthenticatedUser("impersonatedUserId", "impersonatedUserName", Set("Editor"))
+    val authenticatedUser = AuthenticatedUser(
+      id = "technicalUserId",
+      username = "technicalUserName",
+      roles = Set("Technical"),
+      impersonatedAuthenticationUser = Some(impersonatedUser)
     )
-    val loggedImpersonatedUser = LoggedUser.createImpersonatedLoggedUser(
-      loggedTechnicalUser,
-      impersonatedUser,
-      rules
+
+    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules)
+
+    maybeLoggedUser match {
+      case Right(user: ImpersonatedUser) =>
+        user.id shouldEqual "impersonatedUserId"
+        user.username shouldEqual "impersonatedUserName"
+        user.impersonatedBy.nonEmpty shouldEqual true
+      case Right(_) => fail("Expected a ImpersonatedUser")
+      case Left(_)  => fail("Expected a Right but got a Left")
+    }
+  }
+
+  test("should not create impersonated user when impersonating without appropriate permission") {
+    val rules = List(
+      ConfigRule("Editor", categories = List("Category"), permissions = List(Read, Write)),
+      ConfigRule("Writer", categories = List("Category"), permissions = List(Write))
     )
-    loggedImpersonatedUser.id shouldEqual "impersonatedUserId"
-    loggedImpersonatedUser.username shouldEqual "impersonatedUserName"
-    loggedImpersonatedUser.can("Category", Read) shouldBe true
-    loggedImpersonatedUser.can("Category", Write) shouldBe true
-    loggedImpersonatedUser.can("Category", Deploy) shouldBe false
-    loggedImpersonatedUser.canImpersonate shouldBe false
+    val impersonatedUser = AuthenticatedUser("userId", "userName", Set("Editor"))
+    val authenticatedUser = AuthenticatedUser(
+      id = "writerUserId",
+      username = "writerUserName",
+      roles = Set("Writer"),
+      impersonatedAuthenticationUser = Some(impersonatedUser)
+    )
+
+    val userConversion = LoggedUser.create(authenticatedUser, rules)
+
+    userConversion match {
+      case Right(_)                      => fail("Expected a Right but got a Left")
+      case Left(ImpersonationNotAllowed) => ()
+    }
+  }
+
+  test("should check whether logged user can impersonate") {
+    val adminUser = AdminUser("adminId", "adminUsername")
+    val commonUserWithImpersonatePermission = CommonUser(
+      id = "userId",
+      username = "username",
+      categoryPermissions = Map("Category" -> Set(Read, Write)),
+      globalPermissions = List("Impersonate")
+    )
+    val commonUserWithoutImpersonatePermission = CommonUser(
+      id = "userId",
+      username = "username",
+      categoryPermissions = Map("Category" -> Set(Read, Write))
+    )
+    val impersonatedUser = ImpersonatedUser(adminUser, commonUserWithoutImpersonatePermission)
+
+    val users: TableFor2[LoggedUser, Boolean] = Table(
+      ("loggedUser", "canImpersonate"),
+      (adminUser, true),
+      (commonUserWithImpersonatePermission, true),
+      (commonUserWithoutImpersonatePermission, false),
+      (impersonatedUser, false),
+    )
+
+    forAll(users) { (loggedUser: LoggedUser, canImpersonate: Boolean) =>
+      new ImpersonationChecking(loggedUser).canImpersonate shouldEqual canImpersonate
+    }
   }
 
 }

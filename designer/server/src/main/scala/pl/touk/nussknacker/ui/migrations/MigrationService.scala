@@ -120,7 +120,6 @@ class MigrationService(
       processId <- getProcessId(processName)
       processIdWithName = ProcessIdWithName(processId, processName)
       _ <- checkLoggedUserCanWriteToProcess(processId)
-      _ <- checkLoggedUserCanOverrideProcess()
       _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
     } yield ()
 
@@ -150,18 +149,6 @@ class MigrationService(
           )
           .map(_.validationResult)
       )
-      .leftMap(MigrationError.from(_))
-  }
-
-  private def checkLoggedUserCanOverrideProcess()(implicit loggedUser: LoggedUser) = {
-    EitherT
-      .liftF[Future, NuDesignerError, Boolean](
-        Future.successful(loggedUser.canImpersonate)
-      )
-      .subflatMap {
-        case true  => Right(())
-        case false => Left(new UnauthorizedError(loggedUser))
-      }
       .leftMap(MigrationError.from(_))
   }
 

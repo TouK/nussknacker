@@ -67,7 +67,6 @@ import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.AuthenticatedToLoggedUserConverter.convertToLoggedUser
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
@@ -524,13 +523,13 @@ class AkkaHttpBasedRouteProvider(
         } ~ pathPrefix("api") {
           authenticationResources.authenticate() { authenticatedUser =>
             authorize(authenticatedUser.roles.nonEmpty) {
-              val userConversion = convertToLoggedUser(
+              val maybeLoggedUser = LoggedUser.create(
                 authenticatedUser,
                 authenticationResources.configuration.rules
               )
-              authorize(userConversion.isRight) {
+              authorize(maybeLoggedUser.isRight) {
                 apiResourcesWithAuthentication
-                  .map(_.securedRouteWithErrorHandling(userConversion.toOption.get))
+                  .map(_.securedRouteWithErrorHandling(maybeLoggedUser.toOption.get))
                   .reduce(_ ~ _)
               }
             }

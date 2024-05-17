@@ -5,7 +5,8 @@ import pl.touk.nussknacker.restmodel.SecurityError
 import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
-import pl.touk.nussknacker.ui.security.api.AuthenticatedToLoggedUserConverter.convertToLoggedUser
+import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
+import pl.touk.nussknacker.ui.security.api.LoggedUser.create
 import pl.touk.nussknacker.ui.security.api._
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
@@ -55,9 +56,9 @@ abstract class BaseHttpService(
         case Some(user) if user.roles.nonEmpty =>
           // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
           //       creation of another user representation based on authenticator.configuration. Shouldn't we just return the LoggedUser?
-          convertToLoggedUser(user, authenticator.configuration.rules) match {
-            case Right(loggedUser) => success(loggedUser)
-            case Left(_)           => securityError(AuthorizationError)
+          LoggedUser.create(user, authenticator.configuration.rules) match {
+            case Right(loggedUser)             => success(loggedUser)
+            case Left(ImpersonationNotAllowed) => securityError(AuthorizationError)
           }
         case Some(_) =>
           securityError(AuthorizationError)
