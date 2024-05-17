@@ -78,8 +78,6 @@ services:
     image: influxdb:1.8.10
     restart: unless-stopped
     hostname: influxdb
-    environment:
-      INFLUXDB_DB: esp
     healthcheck:
       test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
       interval: 10s
