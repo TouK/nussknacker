@@ -4,7 +4,7 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.{
@@ -21,7 +21,7 @@ class ScenarioActivityApiHttpServiceSecuritySpec
     with WithMockableDeploymentManager
     with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLoggingIfValidationFails {
 
   private val commentContent = "test message"
   private val fileContent    = "very important content"

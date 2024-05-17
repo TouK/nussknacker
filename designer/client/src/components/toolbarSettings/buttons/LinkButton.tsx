@@ -1,11 +1,8 @@
-import React, { ComponentType } from "react";
+import React from "react";
 import FallbackIcon from "../../../assets/img/toolbarButtons/link.svg";
 import { PlainStyleLink } from "../../../containers/plainStyleLink";
 import { ToolbarButton } from "../../toolbarComponents/toolbarButtons";
 import UrlIcon from "../../UrlIcon";
-import { FallbackProps } from "react-error-boundary";
-import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
-import { CustomButtonTypes } from "./CustomButtonTypes";
 
 export interface LinkButtonProps {
     name: string;
@@ -24,7 +21,7 @@ export function LinkButton({ url, icon, name, title, disabled, type }: LinkButto
                 type={type}
                 title={title || name}
                 disabled={disabled}
-                icon={<UrlIcon src={icon} FallbackComponent={FallbackIcon as ComponentType<FallbackProps>} />}
+                icon={<UrlIcon src={icon} FallbackComponent={FallbackIcon} />}
             />
         </PlainStyleLink>
     );

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingDesignerConfig,
   WithMockableDeploymentManager
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 
 class MigrationApiHttpServiceSecuritySpec
@@ -24,7 +24,7 @@ class MigrationApiHttpServiceSecuritySpec
     with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with WithMockableDeploymentManager
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLoggingIfValidationFails {
 
   "The endpoint for scenario migration between environments when" - {
     "authenticated should" - {

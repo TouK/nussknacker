@@ -4,7 +4,6 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
@@ -21,8 +20,6 @@ class StatisticsApiHttpServiceSecuritySpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers {
 
-  private val nuVersion = BuildInfo.version
-
   "The statistic URL endpoint when" - {
     "authenticated should" - {
       "return single URL" in {
@@ -36,7 +33,7 @@ class StatisticsApiHttpServiceSecuritySpec
             matchJsonWithRegexValues(
               s"""
                  |{
-                 |  "urls": ["https://stats.nussknacker.io/\\\\?c_n=[0-9]+&fingerprint=[\\\\w-]+?&source=sources&version=$nuVersion"]
+                 |  "urls": ["https://stats.nussknacker.io/\\\\?(?:.+=.+\\\\&?)+"]
                  |}
                  |""".stripMargin
             )

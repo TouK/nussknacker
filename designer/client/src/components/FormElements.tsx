@@ -21,6 +21,7 @@ export function Button({ className, onClick, ...props }: ButtonProps): JSX.Eleme
     return (
         <button
             {...props}
+            tabIndex={props.disabled ? -1 : props.tabIndex}
             className={className}
             onClick={(event) => {
                 const { currentTarget } = event;
