@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import better.files.{File => BetterFile}
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -39,14 +40,15 @@ class StatisticsApiHttpServiceBusinessSpec
     with RestAssuredVerboseLoggingIfValidationFails
     with Eventually {
 
-  private val nuVersion = BuildInfo.version
+  private val nuVersion   = BuildInfo.version
+  private val questDbPath = BetterFile.temp / "nu"
 
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)
     .source("sourceId", "barSource")
     .emptySink("sinkId", "barSink")
 
-  "The statistic URL endpoint when" - {
+  "The statistic URL endpoint should" - {
     "return single, bare URL without any scenarios details" in {
       given()
         .basicAuthReader()
@@ -110,13 +112,12 @@ class StatisticsApiHttpServiceBusinessSpec
     }
   }
 
-  "The register statistics endpoint when" - {
-    "authenticated should" - {
-      "save statistics asynchronously in DB and return NoContent" in {
-        given()
-          .when()
-          .basicAuthReader()
-          .jsonBody("""
+  "The register statistics endpoint should" - {
+    "save statistics asynchronously in DB and return NoContent" in {
+      given()
+        .when()
+        .basicAuthReader()
+        .jsonBody("""
               |{
               | "statistics": [
               |  {"name": "SEARCH_SCENARIOS_BY_NAME"},
@@ -124,17 +125,43 @@ class StatisticsApiHttpServiceBusinessSpec
               |  {"name": "SEARCH_SCENARIOS_BY_NAME"}
               | ]
               |}""".stripMargin)
-          .post(s"$nuDesignerHttpAddress/api/statistic")
-          .Then()
-          .statusCode(204)
-          .equalsPlainBody("")
-          .verifyApplicationState {
-            verifyStatisticsExists(
-              ("FILTER_SCENARIOS_BY_STATUS", new GreaterThanOrEqualToLongMatcher(1)),
-              ("SEARCH_SCENARIOS_BY_NAME", new GreaterThanOrEqualToLongMatcher(2))
-            )
-          }
-      }
+        .post(s"$nuDesignerHttpAddress/api/statistic")
+        .Then()
+        .statusCode(204)
+        .equalsPlainBody("")
+        .verifyApplicationState {
+          verifyStatisticsExists(
+            ("FILTER_SCENARIOS_BY_STATUS", new GreaterThanOrEqualToLongMatcher(1)),
+            ("SEARCH_SCENARIOS_BY_NAME", new GreaterThanOrEqualToLongMatcher(2))
+          )
+        }
+    }
+
+    "recover if DB files from disk are removed" in {
+      given()
+        .applicationState {
+          removeQuestDBFiles()
+        }
+        .when()
+        .basicAuthReader()
+        .jsonBody("""
+                    |{
+                    | "statistics": [
+                    |  {"name": "SEARCH_SCENARIOS_BY_NAME"},
+                    |  {"name": "FILTER_SCENARIOS_BY_STATUS"},
+                    |  {"name": "SEARCH_SCENARIOS_BY_NAME"}
+                    | ]
+                    |}""".stripMargin)
+        .post(s"$nuDesignerHttpAddress/api/statistic")
+        .Then()
+        .statusCode(204)
+        .equalsPlainBody("")
+        .verifyApplicationState {
+          verifyStatisticsExists(
+            ("FILTER_SCENARIOS_BY_STATUS", new GreaterThanOrEqualToLongMatcher(1)),
+            ("SEARCH_SCENARIOS_BY_NAME", new GreaterThanOrEqualToLongMatcher(2))
+          )
+        }
     }
   }
 
@@ -148,6 +175,10 @@ class StatisticsApiHttpServiceBusinessSpec
         .statusCode(200)
         .bodyWithStatisticsURL(queryParamPairs: _*)
     }
+  }
+
+  private def removeQuestDBFiles(): Unit = {
+    questDbPath.delete(swallowIOExceptions = true)
   }
 
   implicit class BodyWithStatisticsURL[T <: ValidatableResponse](validatableResponse: T) {

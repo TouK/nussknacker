@@ -10,14 +10,14 @@ import io.questdb.cairo.{CairoEngine, CairoException, DefaultCairoConfiguration}
 import io.questdb.griffin.{SqlException, SqlExecutionContextImpl}
 import io.questdb.log.LogFactory
 import io.questdb.std.Os
-import pl.touk.nussknacker.ui.db.timeseries.QuestDbFEStatisticsRepository.{createTableQuery, dropTablesQuery, tableName}
+import pl.touk.nussknacker.ui.db.timeseries.QuestDbFEStatisticsRepository.{createTableQuery, dropTableQuery, tableName}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.{ArrayBlockingQueue, ThreadPoolExecutor, TimeUnit}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
-import scala.util.{Failure, Try, Using}
+import scala.util.{Failure, Success, Try, Using}
 
 // TODO list:
 // 1. Writing in a single thread and polish usage of the wal2table job.
@@ -89,23 +89,36 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
   private def withExceptionHandling[T](dbAction: => T): Future[T] =
     Future {
       Try(dbAction).recoverWith {
-        case ex: CairoException if ex.isCritical =>
-          logger.warn("Critical exception - recreating table")
-          recreateTables()
-          Failure(ex)
+        case ex: CairoException if ex.isCritical || ex.isTableDropped =>
+          recoverWithRetry(ex, dbAction)
         case ex: SqlException if ex.getMessage.contains("table does not exist") =>
-          logger.warn("Table does not exists - recreating table")
-          recreateTables()
-          Failure(ex)
+          recoverWithRetry(ex, dbAction)
         case ex =>
           logger.warn("DB exception", ex)
           Failure(ex)
       }.get
     }
 
-  private def recreateTables(): Unit = Try {
+  private def recoverWithRetry[T](ex: Exception, dbAction: => T): Try[T] = {
+    logger.warn("Statistic DB exception - trying to recover", ex)
+    recreateTables() match {
+      case Failure(ex) =>
+        logger.warn("Exception occurred while tables recreate", ex)
+        Failure(ex)
+      case Success(_) =>
+        logger.info("Recreate succeeded - retrying db action")
+        Try(dbAction) match {
+          case f @ Failure(ex) =>
+            logger.warn("Exception occurred during db retry", ex)
+            f
+          case s @ Success(_) => s
+        }
+    }
+  }
+
+  private def recreateTables(): Try[Unit] = Try {
     logger.info("Recreating table")
-    cairoEngine.drop(dropTablesQuery, ctx)
+    cairoEngine.drop(dropTableQuery, ctx)
     QuestDbFEStatisticsRepository.createDirAndConfigureLogging()
     cairoEngine.ddl(createTableQuery, ctx)
   }.recover { case ex =>
@@ -115,6 +128,20 @@ private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine
 }
 
 object QuestDbFEStatisticsRepository extends LazyLogging {
+  private val tableName = "fe_statistics"
+  private val createTableQuery =
+    s"CREATE TABLE IF NOT EXISTS $tableName (name string, count long, ts timestamp) TIMESTAMP(ts) PARTITION BY DAY WAL"
+
+  private val selectQuery =
+    s"""
+       |   SELECT name,
+       |          sum(count)
+       |     FROM $tableName
+       |    WHERE date_trunc('day', ts) = date_trunc('day', now())
+       | GROUP BY name""".stripMargin
+
+  private val dropTableQuery =
+    s"DROP TABLE IF EXISTS $tableName"
 
   def create(): Resource[IO, FEStatisticsRepository[Future]] = for {
     executorService <- createExecutorService()
@@ -171,21 +198,6 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
       )(Seq(StandardOpenOption.TRUNCATE_EXISTING), StandardCharsets.UTF_8)
     LogFactory.configureRootDir(rootDir.canonicalPath)
   }
-
-  private val tableName = "fe_statistics"
-  private val createTableQuery =
-    s"CREATE TABLE IF NOT EXISTS $tableName (name string, count long, ts timestamp) TIMESTAMP(ts) PARTITION BY DAY WAL"
-
-  private val selectQuery =
-    s"""
-       |   SELECT name,
-       |          sum(count)
-       |     FROM $tableName
-       |    WHERE date_trunc('day', ts) = date_trunc('day', now())
-       | GROUP BY name""".stripMargin
-
-  private val dropTablesQuery =
-    "DROP ALL TABLES"
 
   private class CustomCairoConfiguration(private val root: String) extends DefaultCairoConfiguration(root) {
 
