@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
@@ -34,19 +35,15 @@ private[registrar] class AsyncInterpretationFunction(
   private lazy val compiledNode = compilerData.compileSubPart(node, validationContext)
 
   private var serviceExecutionContext: ServiceExecutionContext = _
+  private var uuid: UUID                                       = _
 
   override def open(parameters: Configuration): Unit = {
     super.open(parameters)
 
-    getRuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent(
-      "closeAsyncExecutionContext",
-      () => {
-        logger.info("User class loader release hook called - closing async execution context")
-        serviceExecutionContextPreparer.close()
-      }
-    )
+    val (uuidAux, serviceExecutionContextAux) = serviceExecutionContextPreparer.prepare(compilerData.metaData.name)
 
-    serviceExecutionContext = serviceExecutionContextPreparer.prepare(compilerData.metaData.name)
+    serviceExecutionContext = serviceExecutionContextAux
+    uuid = uuidAux
   }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
@@ -87,7 +84,7 @@ private[registrar] class AsyncInterpretationFunction(
 
   override def close(): Unit = {
     super.close()
-    serviceExecutionContextPreparer.close()
+    serviceExecutionContextPreparer.close(uuid)
   }
 
   // This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
