@@ -65,7 +65,6 @@ final case class DefaultServiceExecutionContextPreparer(
     with LazyLogging {
 
   def prepare(processName: ProcessName): (UUID, ServiceExecutionContext) = {
-    logger.info(s"Creating asyncExecutor for $processName, workers: $workers")
     val newUUID = UUID.randomUUID()
     tickets.put(newUUID, true)
 
