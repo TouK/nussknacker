@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
@@ -189,7 +190,7 @@ class SingleSideJoinTransformer(
 
 }
 
-case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) {
+case object SingleSideJoinTransformer extends SingleSideJoinTransformer(None) with UnboundedStreamComponent {
 
   val BranchTypeParamName: ParameterName = ParameterName("branchType")
 

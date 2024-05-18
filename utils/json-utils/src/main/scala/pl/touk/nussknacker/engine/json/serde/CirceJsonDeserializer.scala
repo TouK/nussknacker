@@ -27,6 +27,10 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     // 2. for typing purposes which is based on Circe
     val inputJson = new JSONTokener(string).nextValue()
 
+    // WARNING: everit mutates inputJson. Empty map become map with existing field with null value. For us in most cases it is not
+    //          problematic because we treat empty map and map with null values the same, but for some edge cases it might be tricky.
+    // TODO: We should consider replacing everit by networknt's json-schema-validator (it uses jackson under the hood)
+    //       The additional benefits is that it generates more readable validation errors.
     val validatedJson = jsonSchema
       .validateData(inputJson)
       .valueOr(errorMsg => throw CustomNodeValidationException(errorMsg, None))

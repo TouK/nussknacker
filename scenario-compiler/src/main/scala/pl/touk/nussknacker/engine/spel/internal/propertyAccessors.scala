@@ -185,8 +185,15 @@ object propertyAccessors {
       case _                        => false
     }
 
-    override def read(context: EvaluationContext, target: Any, name: String): TypedValue =
+    override def read(context: EvaluationContext, target: Any, name: String): TypedValue = {
+      // SpEL caches property accessors, so if first map is an empty map, for every subsequent maps evaluation will return null for any field
+      // The undocumented contract between PropertyOrFieldReference and PropertyAccessor is to throw an exception in this situation
+      // See "This is OK - it may have gone stale due to a class change..." comment in the PropertyOrFieldReference
+      if (!canRead(context, target, name)) {
+        throw new Exception("Using MapMissingPropertyToNullAccessor on target that accessor can be used with")
+      }
       new TypedValue(null)
+    }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
   }
