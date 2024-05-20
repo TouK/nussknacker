@@ -50,6 +50,7 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.newactivity.{ActivityService, CommentRepository}
 import pl.touk.nussknacker.ui.process.deployment.{
   ActionService,
   DefaultProcessingTypeActionService,
@@ -357,7 +358,10 @@ class AkkaHttpBasedRouteProvider(
             dbioRunner,
             Clock.systemDefaultZone()
           )
-        new DeploymentApiHttpService(authenticationResources, deploymentService)
+        val commentRepository = new CommentRepository(dbRef)
+        val activityService =
+          new ActivityService(featureTogglesConfig.deploymentCommentSettings, commentRepository, deploymentService)
+        new DeploymentApiHttpService(authenticationResources, activityService, deploymentService)
       }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)

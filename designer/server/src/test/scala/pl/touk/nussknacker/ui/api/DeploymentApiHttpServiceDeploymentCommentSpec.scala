@@ -69,7 +69,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
   "The deployment requesting endpoint" - {
     "With validationPattern configured in deploymentCommentSettings" - {
       "When no deployment comment is passed should" - {
-        "return 400" ignore {
+        "return 400" in {
           given()
             .applicationState {
               createSavedScenario(scenario)
@@ -89,7 +89,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
       }
 
       "When mismatch deployment comment is passed should" - {
-        "return 400" ignore {
+        "return 400" in {
           given()
             .applicationState {
               createSavedScenario(scenario)
@@ -110,7 +110,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
       }
 
       "When matching deployment comment is passed should" - {
-        "return accepted status code and run deployment that will process input files" ignore {
+        "return accepted status code and run deployment that will process input files" in {
           val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {

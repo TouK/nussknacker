@@ -11,18 +11,16 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DMValidateScenarioCommand,
   DataFreshnessPolicy
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId => LegacyDeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.{
-  DeploymentManagerDispatcher,
-  DeploymentService => LegacyDeploymentService
-}
+import pl.touk.nussknacker.ui.process.newactivity.ActivityService.CommentForeignKeys
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService._
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioMetadataRepository}
@@ -52,14 +50,6 @@ class DeploymentService(
     clock: Clock
 )(implicit ec: ExecutionContext) {
 
-  def processCommand(
-      command: DeploymentCommand
-  ): Future[Either[RunDeploymentError, Unit]] =
-    command match {
-      case command: RunDeploymentCommand =>
-        runDeployment(command)
-    }
-
   def getDeploymentStatus(
       id: DeploymentId
   )(implicit loggedUser: LoggedUser): Future[Either[GetDeploymentStatusError, StatusName]] =
@@ -73,9 +63,9 @@ class DeploymentService(
       status <- getScenarioStatus(id, deploymentWithScenarioMetadata.scenarioMetadata)
     } yield status.name).value
 
-  private def runDeployment(
+  def runDeployment(
       command: RunDeploymentCommand
-  ): Future[Either[RunDeploymentError, Unit]] =
+  )(saveComment: CommentForeignKeys => DB[Unit]): Future[Either[RunDeploymentError, Unit]] =
     dbioRunner.run(
       (for {
         scenarioMetadata <- getScenarioMetadata(command)
@@ -89,9 +79,8 @@ class DeploymentService(
           scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, command.user)
         ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
         _ <- validateUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command.user)
-        // TODO: we could store external deployment id
+        _ <- EitherT.right(saveComment(CommentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)))
         _ <- runDeploymentUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command)
-//        runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)
       } yield ()).value
     )
 
@@ -234,8 +223,6 @@ object DeploymentService {
   final case class DeploymentNotFoundError(id: DeploymentId) extends GetDeploymentStatusError
 
   case object NoPermissionError extends RunDeploymentError with GetDeploymentStatusError
-
-  final case class NewCommentValidationError(message: String) extends RunDeploymentError
 
   final case class ScenarioGraphValidationError(errors: ValidationErrors) extends RunDeploymentError
 
