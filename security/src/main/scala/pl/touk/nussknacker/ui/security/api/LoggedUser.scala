@@ -9,7 +9,6 @@ import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 sealed trait LoggedUser {
   val id: String
   val username: String
-  val isAdmin: Boolean
   def can(category: String, permission: Permission): Boolean
 }
 
@@ -23,21 +22,22 @@ object LoggedUser {
   ): Either[CreationError, LoggedUser] = {
     val loggedUser = LoggedUser(authenticatedUser, rules)
     authenticatedUser.impersonatedAuthenticationUser match {
-      case Some(impersonatedUser) =>
-        if (loggedUser.canImpersonate) {
-          Right(
-            ImpersonatedUser(
-              impersonatedUser = LoggedUser(impersonatedUser, rules),
-              impersonatingUser = loggedUser
-            )
+      case None =>
+        Right(loggedUser)
+      case Some(impersonatedUser) if loggedUser.canImpersonate =>
+        Right(
+          ImpersonatedUser(
+            impersonatedUser = LoggedUser(impersonatedUser, rules),
+            impersonatingUser = loggedUser
           )
-        } else Left(ImpersonationNotAllowed)
-      case None => Right(loggedUser)
+        )
+      case Some(_) =>
+        Left(ImpersonationNotAllowed)
     }
   }
 
   def apply(
-      authenticatedUser: BaseAuthenticationUserInfo,
+      authenticatedUser: AuthenticatedUser,
       rules: List[ConfigRule]
   ): RealLoggedUser = {
     val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
@@ -84,6 +84,16 @@ object LoggedUser {
 
   }
 
+  implicit class isAdminChecking(val user: LoggedUser) extends AnyVal {
+
+    def isAdmin: Boolean = user match {
+      case _: AdminUser        => true
+      case _: CommonUser       => false
+      case u: ImpersonatedUser => u.impersonatedUser.isAdmin
+    }
+
+  }
+
 }
 
 final case class CommonUser(
@@ -92,7 +102,6 @@ final case class CommonUser(
     categoryPermissions: Map[String, Set[Permission]] = Map.empty,
     globalPermissions: List[GlobalPermission] = Nil
 ) extends RealLoggedUser {
-  override val isAdmin: Boolean = false
 
   override def can(category: String, permission: Permission): Boolean = {
     categoryPermissions.get(category).exists(_ contains permission)
@@ -105,7 +114,6 @@ final case class CommonUser(
 }
 
 final case class AdminUser(id: String, username: String) extends RealLoggedUser {
-  override val isAdmin: Boolean                                       = true
   override def can(category: String, permission: Permission): Boolean = true
 }
 
@@ -113,7 +121,6 @@ final case class ImpersonatedUser(impersonatedUser: RealLoggedUser, impersonatin
     extends LoggedUser {
   override val id: String                                             = impersonatedUser.id
   override val username: String                                       = impersonatedUser.username
-  override val isAdmin: Boolean                                       = impersonatedUser.isAdmin
   override def can(category: String, permission: Permission): Boolean = impersonatedUser.can(category, permission)
   val impersonatedBy: RealLoggedUser                                  = impersonatingUser
 }

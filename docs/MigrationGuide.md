@@ -23,6 +23,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
 * [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) [#5837](https://github.com/TouK/nussknacker/pull/5837) [#5798](https://github.com/TouK/nussknacker/pull/5798) Refactoring around DeploymentManager's actions:
   * Custom Actions
     * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module

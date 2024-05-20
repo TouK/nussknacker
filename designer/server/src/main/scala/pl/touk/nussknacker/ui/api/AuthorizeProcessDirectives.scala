@@ -48,10 +48,6 @@ trait AuthorizeProcessDirectives {
     Directives.authorizeAsync(_ => processAuthorizer.check(processId, permission, user))
   }
 
-  def hasAdminPermission(loggedUser: LoggedUser): Directive0 = {
-    Directives.authorize(loggedUser.isAdmin)
-  }
-
   private def hasUserPermissionInProcess(
       processIdAndUser: (ProcessId, LoggedUser),
       permission: Permission.Value
