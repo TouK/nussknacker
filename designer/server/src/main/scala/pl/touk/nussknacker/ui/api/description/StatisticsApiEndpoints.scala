@@ -99,7 +99,7 @@ object StatisticsApiEndpoints {
       case object FilterScenariosByCategory            extends StatisticName
       case object FilterScenariosByAuthor              extends StatisticName
       case object FilterScenariosByOther               extends StatisticName
-      case object SortScenarios                        extends StatisticName
+      case object SortScenariosBySortOption            extends StatisticName
       case object SearchComponentsByName               extends StatisticName
       case object FilterComponentsByGroup              extends StatisticName
       case object FilterComponentsByProcessingMode     extends StatisticName
@@ -138,15 +138,13 @@ object StatisticsApiEndpoints {
       case object ClickTestGenerateFile                extends StatisticName
       case object ClickTestHide                        extends StatisticName
       case object ClickMoreScenarioDetails             extends StatisticName
-      case object ClickRollUpPanel                     extends StatisticName
       case object ClickExpandPanel                     extends StatisticName
       case object ClickCollapsePanel                   extends StatisticName
-      case object MovePanel                            extends StatisticName
+      case object MoveToolbarPanel                     extends StatisticName
       case object SearchNodesInScenario                extends StatisticName
       case object SearchComponentsInScenario           extends StatisticName
       case object ClickOlderVersion                    extends StatisticName
       case object ClickNewerVersion                    extends StatisticName
-      case object FiredKeyStroke                       extends StatisticName
       case object ClickNodeDocumentation               extends StatisticName
       case object ClickComponentsTab                   extends StatisticName
       case object ClickScenarioSave                    extends StatisticName
@@ -156,7 +154,7 @@ object StatisticsApiEndpoints {
       case object ClickScenarioUnarchive               extends StatisticName
       case object ClickScenarioCustomAction            extends StatisticName
       case object ClickScenarioCustomLink              extends StatisticName
-      case object KeyboardSelectNodes                  extends StatisticName
+      case object KeyboardRangeSelectNodes             extends StatisticName
       case object KeyboardCopyNode                     extends StatisticName
       case object KeyboardPasteNode                    extends StatisticName
       case object keyboardCutNode                      extends StatisticName
