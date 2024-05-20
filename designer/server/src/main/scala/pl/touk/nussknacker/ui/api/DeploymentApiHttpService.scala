@@ -31,10 +31,12 @@ class DeploymentApiHttpService(
               )
             )
             .map(_.left.map {
-              case DeploymentService.ConflictingDeploymentIdError(id)    => ConflictingDeploymentIdError(id)
-              case DeploymentService.ScenarioNotFoundError(scenarioName) => ScenarioNotFoundError(scenarioName)
-              case DeploymentService.NoPermissionError                   => NoPermissionError
-              case DeploymentService.NewCommentValidationError(message)  => CommentValidationErrorNG(message)
+              case DeploymentService.ConflictingDeploymentIdError(id)     => ConflictingDeploymentIdError(id)
+              case DeploymentService.ScenarioNotFoundError(scenarioName)  => ScenarioNotFoundError(scenarioName)
+              case DeploymentService.NoPermissionError                    => NoPermissionError
+              case DeploymentService.NewCommentValidationError(message)   => CommentValidationError(message)
+              case DeploymentService.ScenarioGraphValidationError(errors) => ScenarioGraphValidationError(errors)
+              case DeploymentService.DeployValidationError(message)       => DeployValidationError(message)
             })
         }
       }

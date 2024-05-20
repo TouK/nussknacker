@@ -128,12 +128,13 @@ class DeploymentApiHttpServiceBusinessSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              checkDeploymentStatusMatches(firstDeploymentId, SimpleStateStatus.Finished)
               checkDeploymentStatusMatches(
                 secondDeploymentId,
                 SimpleStateStatus.DuringDeploy,
-                SimpleStateStatus.Running
+                SimpleStateStatus.Running,
+                SimpleStateStatus.Finished
               )
+              checkDeploymentStatusMatches(firstDeploymentId, SimpleStateStatus.Finished)
             }
         }
       }

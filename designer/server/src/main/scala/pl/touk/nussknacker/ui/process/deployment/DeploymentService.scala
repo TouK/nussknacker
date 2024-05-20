@@ -65,7 +65,7 @@ class DeploymentService(
 
   def processCommand[Result](command: ScenarioCommand[Result]): Future[Result] = {
     command match {
-      case command: RunDeploymentCommand  => runDeployment(command)
+      case command: RunDeploymentCommand  => runScenario(command)
       case command: CancelScenarioCommand => cancelScenario(command)
       case command: CustomActionCommand   => processCustomAction(command)
     }
@@ -106,7 +106,7 @@ class DeploymentService(
     } yield actionResult
   }
 
-  private def runDeployment(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
+  private def runScenario(command: RunDeploymentCommand): Future[Future[Option[ExternalDeploymentId]]] = {
     import command.commonData._
     val actionName: ScenarioActionName    = ScenarioActionName.Deploy
     val actionParams: Map[String, String] = Map.empty

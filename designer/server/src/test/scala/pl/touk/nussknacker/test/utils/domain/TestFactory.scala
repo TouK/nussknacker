@@ -36,6 +36,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
+import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
@@ -155,6 +156,8 @@ object TestFactory {
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDbRef)
+
+  def newScenarioGraphVersionRepository(dbRef: DbRef) = new ScenarioGraphVersionRepository(dbRef)
 
   def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
