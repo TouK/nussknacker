@@ -2,7 +2,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.15.x (Not released yet)
+## In version 1.15.0
 
 ### Code API changes
 
@@ -80,6 +80,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
 * [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
   allowing for disabling namespaced Kafka consumer groups
+* [#5848](https://github.com/TouK/nussknacker/pull/5848): Introduced a new method for handling colors, aimed at simplifying customization. Now, all colors are centrally stored in a single location. Refer to [README.md](../designer/client/README.md#Theme-colors-customization) for details on theme colors customization.
 * [#5914](https://github.com/TouK/nussknacker/pull/5914) Removed dev-specific configuration files `dev-application.conf` 
   and `dev-tables-definition.sql` from public distribution artifacts
 
