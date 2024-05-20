@@ -142,7 +142,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
                 content: {
-                    fontSize: theme.typography.caption.fontSize,
+                    fontSize: theme.typography.body1.fontSize,
                     text: bodyContent,
                     opacity: node.isDisabled ? 0.3 : 1,
                     disabled: node.isDisabled,

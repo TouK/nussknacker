@@ -9,16 +9,14 @@ import ListIcon from "./icons/list.svg";
 import ScheduleIcon from "./icons/schedule.svg";
 import DateIcon from "./icons/date_range.svg";
 
-import { blendLighten } from "../../../../../containers/theme/helpers";
-
 export const SwitchButton = styled(Button)(({ disabled, theme }) => ({
     width: 35,
     height: 35,
     padding: 5,
-    backgroundColor: theme.palette.background.paper,
+    backgroundColor: disabled ? theme.palette.action.disabledBackground : theme.palette.background.paper,
     border: "none",
-    opacity: disabled ? 0.5 : 1,
-    filter: disabled ? "saturate(0)" : "non",
+    filter: disabled ? "saturate(0)" : "none",
+    pointerEvents: disabled ? "none" : "inherit",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -52,7 +50,7 @@ function getTypeIcon(type: EditorType) {
 export function SimpleEditorIcon({ type }: { type: EditorType }) {
     const theme = useTheme();
     const Icon = getTypeIcon(type);
-    return <Icon className={css({ color: theme.palette.success.main })} />;
+    return <Icon className={css({ color: theme.palette.primary.main })} />;
 }
 
 export const RawEditorIcon = CodeIcon;

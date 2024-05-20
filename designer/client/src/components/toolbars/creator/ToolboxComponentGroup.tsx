@@ -50,7 +50,14 @@ export function ToolboxComponentGroup(props: Props): JSX.Element {
 
     const label = useMemo(
         () => (
-            <Box display={"flex"} alignItems={"center"} width={"95%"} height={"100%"} onClick={highlighted ? toggleForceCollapsed : toggle}>
+            <Box
+                display={"flex"}
+                alignItems={"center"}
+                width={"95%"}
+                height={"100%"}
+                pl={2}
+                onClick={highlighted ? toggleForceCollapsed : toggle}
+            >
                 <Typography component={"span"} variant={"body2"}>
                     {name}
                 </Typography>

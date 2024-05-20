@@ -66,7 +66,7 @@
                 "description": null,
                 "layoutData": {
                     "x": 0,
-                    "y": 150
+                    "y": 180
                 }
             },
             "type": "Enricher"
@@ -82,7 +82,7 @@
                 "description": null,
                 "layoutData": {
                     "x": 0,
-                    "y": 300
+                    "y": 360
                 }
             },
             "type": "Processor"
@@ -106,7 +106,7 @@
                 "description": null,
                 "layoutData": {
                     "x": 0,
-                    "y": 450
+                    "y": 540
                 }
             },
             "type": "Sink"
