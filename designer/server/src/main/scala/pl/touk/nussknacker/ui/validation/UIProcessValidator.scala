@@ -19,7 +19,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
   ValidationResult
 }
-import pl.touk.nussknacker.ui.definition.DefinitionsService
+import pl.touk.nussknacker.ui.definition.{DefinitionsService, ScenarioPropertiesConfigFinalizer}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -28,29 +28,46 @@ class UIProcessValidator(
     processingType: ProcessingType,
     validator: ProcessValidator,
     scenarioProperties: Map[String, ScenarioPropertyConfig],
+    scenarioPropertiesConfigFinalizer: ScenarioPropertiesConfigFinalizer,
     additionalValidators: List[CustomProcessValidator],
     fragmentResolver: FragmentResolver,
 ) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private val scenarioPropertiesValidator = new ScenarioPropertiesValidator(scenarioProperties)
+  private val scenarioPropertiesValidator =
+    new ScenarioPropertiesValidator(scenarioProperties, scenarioPropertiesConfigFinalizer)
 
   def withFragmentResolver(fragmentResolver: FragmentResolver) =
-    new UIProcessValidator(processingType, validator, scenarioProperties, additionalValidators, fragmentResolver)
+    new UIProcessValidator(
+      processingType,
+      validator,
+      scenarioProperties,
+      scenarioPropertiesConfigFinalizer,
+      additionalValidators,
+      fragmentResolver
+    )
 
   def transformValidator(transform: ProcessValidator => ProcessValidator) =
     new UIProcessValidator(
       processingType,
       transform(validator),
       scenarioProperties,
+      scenarioPropertiesConfigFinalizer,
       additionalValidators,
       fragmentResolver
     )
 
   // TODO: It is used only in tests, remove it from the prodcution code
   def withScenarioPropertiesConfig(scenarioPropertiesConfig: Map[String, ScenarioPropertyConfig]) =
-    new UIProcessValidator(processingType, validator, scenarioPropertiesConfig, additionalValidators, fragmentResolver)
+    new UIProcessValidator(
+      processingType,
+      validator,
+      scenarioPropertiesConfig,
+      scenarioPropertiesConfigFinalizer,
+      additionalValidators,
+      fragmentResolver
+    )
 
   def validate(scenarioGraph: ScenarioGraph, processName: ProcessName, isFragment: Boolean)(
       implicit loggedUser: LoggedUser

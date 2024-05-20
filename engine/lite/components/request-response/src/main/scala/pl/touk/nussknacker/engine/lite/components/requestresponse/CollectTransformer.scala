@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse
 import cats.Monad
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.RequestResponseComponent
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponent
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 
-object CollectTransformer extends CustomStreamTransformer {
+object CollectTransformer extends CustomStreamTransformer with RequestResponseComponent {
 
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(

@@ -2,16 +2,17 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.15.x (Not released yet)
+## In version 1.15.0
 
 ### Code API changes
 
-* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) [#5837](https://github.com/TouK/nussknacker/pull/5837) Refactoring around DeploymentManager's actions:
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) [#5837](https://github.com/TouK/nussknacker/pull/5837) [#5798](https://github.com/TouK/nussknacker/pull/5798) Refactoring around DeploymentManager's actions:
   * Custom Actions
     * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
     * `CustomActionResult.req` was removed
     * `CustomAction` was renamed to `CustomActionDefinition`
     * `CustomActionRequest` (from the `extension-api`) was renamed to `CustomActionCommand`
+    * `CustomActionRequest` has additional comment parameter (like deploy and cancel actions)
   * Other "action" methods - all methods operating on a scenario (or its deployment) were replaced by case classes and
     one method handling them all: `processCommand(command)`:
     * `validate` - `DMValidateScenarioCommand`
@@ -27,10 +28,25 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * in `ProcessAction` attribute `actionType` renamed to `actionName`
     * in table `process_actions` column `action_type` is renamed to `action_name`
   * `DeploymentManagerDependencies.deploymentService` was splitted into `deployedScenariosProvider` and `actionService`
+  * Events renamed: 
+    * `OnDeployActionSuccess` renamed to `OnActionSuccess`
+    * `OnDeployActionFailed` renamed to `OnActionFailed`
 * [#5762](https://github.com/TouK/nussknacker/pull/5762) for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
 * [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
   * `AllowedProcessingModes.All` in case of all processing modes allowed
   * `AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes)` in case only set of processing modes is allowed
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Refactored API around `FlinkSource`
+  * Added `StandardFlinkSource` with more granular additional traits replacing the need for `FlinkIntermediateRawSource`
+  * Removed `BasicFlinkSource` and `FlinkIntermediateRawSource`. Sources extending these traits should now extend 
+    `StandardFlinkSource`. For reference on how to migrate, see changes in `FlinkKafkaSource` or `CollectionSource`
+  * Renamed `FlinkSource`'s `sourceStream` method to `contextStream`
+  * Removed `EmptySourceFunction`
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Added support for bounded sources and Flink runtime mode in 
+  Flink tests
+  * `CollectionSource` now takes Flink's `Boundedness` with default `Unbounded` and `RuntimeExecutionMode` with default 
+    `None` as a parameters. It's encouraged to set the `Boundedness` to bounded if applicable
+  * `Boundedness` and `RuntimeExecutionMode` is also possible to set in `FlinkTestScenarioRunner` in new overloading 
+    `runWithData` method
 
 ### Configuration changes
 
@@ -45,6 +61,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * If you previously specified base component jar explicitly in `modelConfig.classPath`
       as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
       `components/flink/flinkBaseUnbounded.jar` explicitly.
+    * [#5887](https://github.com/TouK/nussknacker/pull/5887) When using a custom DesignerConfig, ensure that long text elements like 'generate file' are positioned in the last row to prevent excessive spacing between elements.
 
 ### Other changes
 
@@ -55,6 +72,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
   * "Basic Decision Table" -> "Decision Table"
   * "Expression" -> "Match condition"
+* [#5881](https://github.com/TouK/nussknacker/pull/5881) `nussknacker-interpreter` module was renamed to `nussknacker-scenario-compiler`
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Added configurable idle timeout to Flink Kafka source with the
+  default value of 3 minutes. You can configure this timeout in Kafka component config at `idleTimeout.duration` 
+  or disable it at `idleTimeout.enabled`. You can learn about idleness
+  in [Flink general docs](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources)
+  and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
+  allowing for disabling namespaced Kafka consumer groups
+* [#5848](https://github.com/TouK/nussknacker/pull/5848): Introduced a new method for handling colors, aimed at simplifying customization. Now, all colors are centrally stored in a single location. Refer to [README.md](../designer/client/README.md#Theme-colors-customization) for details on theme colors customization.
+* [#5914](https://github.com/TouK/nussknacker/pull/5914) Removed dev-specific configuration files `dev-application.conf` 
+  and `dev-tables-definition.sql` from public distribution artifacts
 
 ## In version 1.14.0
 

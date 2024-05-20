@@ -15,6 +15,8 @@ import { CustomAceEditorCompleter } from "./CustomAceEditorCompleter";
 import { cx } from "@emotion/css";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
+import { nodeInputWithError, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
+import { Box, Fade, LinearProgress, styled } from "@mui/material";
 
 interface InputProps {
     value: string;
@@ -39,6 +41,8 @@ interface Props {
     editorMode?: EditorMode;
 }
 
+const ExpressionSuggestRow = styled("div")({});
+
 export function ExpressionSuggest(props: Props): JSX.Element {
     const { isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
@@ -49,9 +53,13 @@ export function ExpressionSuggest(props: Props): JSX.Element {
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
-    const expressionSuggester = useMemo(() => {
-        return new BackendExpressionSuggester(language, variableTypes, processingType, HttpService);
-    }, [processingType, variableTypes, language]);
+    const expressionSuggester = useMemo(
+        () => new BackendExpressionSuggester(language, variableTypes, processingType, HttpService),
+        [processingType, variableTypes, language],
+    );
+
+    const [isLoading, setIsLoading] = useState(false);
+    useEffect(() => expressionSuggester.on("stateChange", setIsLoading), [expressionSuggester]);
 
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);
@@ -61,26 +69,55 @@ export function ExpressionSuggest(props: Props): JSX.Element {
 
     return dataResolved ? (
         <>
-            <div
-                className={cx([
-                    "row-ace-editor",
-                    showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
-                    isMarked && "marked",
-                    editorFocused && "focused",
-                    inputProps.readOnly && "read-only",
-                ])}
-            >
-                <AceEditor
-                    ref={inputProps.ref}
-                    value={value}
-                    onChange={onChange}
-                    onFocus={editorFocus(true)}
-                    onBlur={editorFocus(false)}
-                    inputProps={inputProps}
-                    customAceEditorCompleter={customAceEditorCompleter}
-                />
-            </div>
+            <Box sx={{ position: "relative" }}>
+                <ExpressionSuggestRow
+                    className={cx([
+                        rowAceEditor,
+                        showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
+                        isMarked && "marked",
+                        editorFocused && "focused",
+                        inputProps.readOnly && "read-only",
+                    ])}
+                    sx={{ position: "relative" }}
+                >
+                    <AceEditor
+                        ref={inputProps.ref}
+                        value={value}
+                        onChange={onChange}
+                        onFocus={editorFocus(true)}
+                        onBlur={editorFocus(false)}
+                        inputProps={inputProps}
+                        customAceEditorCompleter={customAceEditorCompleter}
+                    />
+                </ExpressionSuggestRow>
+                <Fade
+                    in={isLoading}
+                    unmountOnExit
+                    style={{
+                        transitionDelay: isLoading ? ".25s" : "0s",
+                    }}
+                >
+                    <LoadingFeedback color="warning" inflate={0.25} />
+                </Fade>
+            </Box>
             {showValidation && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
         </>
     ) : null;
 }
+
+const LoadingFeedback = styled(LinearProgress)<{
+    inflate?: number;
+}>(({ inflate = 0 }) => {
+    const outside = inflate + 1;
+    const inside = 2 * inflate + 1;
+    return {
+        position: "absolute",
+        top: -outside,
+        bottom: -outside,
+        left: -outside,
+        right: -outside,
+        height: "auto",
+        clipPath: `polygon(0% 0%, 0% 100%, ${inside}px 100%, ${inside}px ${inside}px, calc(100% - ${inside}px) ${inside}px, calc(100% - ${inside}px) calc(100% - ${inside}px), ${inside}px calc(100% - ${inside}px), ${inside}px 100%, 100% 100%, 100% 0%)`,
+        opacity: 0.25,
+    };
+});

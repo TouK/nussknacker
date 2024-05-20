@@ -1,23 +1,22 @@
 CREATE TABLE transactions
 (
-    datatime  TIMESTAMP,
+    datetime  TIMESTAMP,
     client_id STRING,
-    amount    DECIMAL(15, 2),
+    amount    DECIMAL(15,2),
     `date`    STRING
 ) PARTITIONED BY (`date`) WITH (
       'connector' = 'filesystem',
       'path' = 'file:///transactions',
       'format' = 'csv'
-      );
+);
 
 CREATE TABLE transactions_summary
 (
-    datatime  TIMESTAMP,
     client_id STRING,
-    amount    DECIMAL(15, 2),
+    amount    DECIMAL(15,2),
     `date`    STRING
 ) PARTITIONED BY (`date`) WITH (
       'connector' = 'filesystem',
       'path' = 'file:///output/transactions_summary',
       'format' = 'csv'
-      )
+);

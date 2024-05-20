@@ -40,7 +40,8 @@ class ScenarioParametersService private (
     } else {
       val matchingProcessingTypes = parametersForProcessingType.toList.collect {
         case (processingType, parameters)
-            if processingMode.forall(_ == parameters.processingMode) &&
+            if loggedUser.can(parameters.category, Permission.Write) &&
+              processingMode.forall(_ == parameters.processingMode) &&
               engineSetupName.forall(_ == parameters.engineSetupName) &&
               category.forall(_ == parameters.category) =>
           processingType

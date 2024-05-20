@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import HttpService from "../../../http/HttpService";
-import ReactMarkdown from "react-markdown/with-html";
 import { useDebounce } from "use-debounce";
 import { NodeType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessName } from "./NodeDetailsContent/selectors";
 import NodeUtils from "../NodeUtils";
-import { styled } from "@mui/material";
+import { MarkdownStyled } from "./MarkdownStyled";
 
 interface Props {
     node: NodeType;
@@ -19,28 +18,6 @@ interface MarkdownAdditionalInfo {
     type: "MarkdownAdditionalInfo";
     content: string;
 }
-
-const ReactMarkdownStyled = styled(ReactMarkdown)`
-    margin-top: 20px;
-    margin-bottom: 10px;
-    font-size: 14px;
-    table {
-        background-color: #333;
-        margin-top: 5px;
-        margin-bottom: 5px;
-        width: 95%;
-    }
-    th,
-    td {
-        padding: 10px 10px;
-        border: 1px solid;
-        border-color: #666;
-        font-size: 12px;
-    }
-    a {
-        color: #359af1 !important;
-    }
-`;
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const { node } = props;
@@ -84,7 +61,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
         case "MarkdownAdditionalInfo": {
             // eslint-disable-next-line i18next/no-literal-string
             const linkTarget = "_blank";
-            return <ReactMarkdownStyled linkTarget={linkTarget}>{additionalInfo.content}</ReactMarkdownStyled>;
+            return <MarkdownStyled linkTarget={linkTarget}>{additionalInfo.content}</MarkdownStyled>;
         }
         default:
             // eslint-disable-next-line i18next/no-literal-string

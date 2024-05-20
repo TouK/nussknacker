@@ -24,7 +24,7 @@ export const TOOLBAR_WRAPPER_CLASSNAME = "toolbar-wrapper";
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const theme = useTheme();
-    const { title, children, id, onClose, onExpand, onCollapse, color = theme.custom.colors.primaryBackground, disableCollapse } = props;
+    const { title, children, id, onClose, onExpand, onCollapse, color = theme.palette.background.paper, disableCollapse } = props;
     const handlerProps = useDragHandler();
 
     const dispatch = useDispatch();
@@ -66,6 +66,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
             {(isCollapsible || onClose) && (
                 <PanelHeader
                     {...(isCollapsible ? handlerProps : {})}
+                    color={color}
                     onClick={() => toggleCollapsed()}
                     onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}
                 >
@@ -88,7 +89,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                     )}
                     {onClose && (
                         <IconWrapper as="button" onClick={onClose}>
-                            <StyledCloseIcon />
+                            <StyledCloseIcon color={"error"} />
                         </IconWrapper>
                     )}
                 </PanelHeader>

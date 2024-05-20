@@ -51,7 +51,8 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
 
-    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption } = selectStyled(theme);
+    const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
+        selectStyled(theme);
     return (
         <div className={cx(className)}>
             <Creatable
@@ -66,7 +67,13 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 styles={{
                     input: (base) => ({ ...input(base) }),
                     control: (base, props) => ({
-                        ...control(base, props.isFocused, props.isDisabled),
+                        ...control(base, props.isFocused, props.isDisabled, !isEmpty(fieldErrors)),
+                    }),
+                    dropdownIndicator: (base) => ({
+                        ...dropdownIndicator(base),
+                    }),
+                    indicatorSeparator: (base) => ({
+                        ...indicatorSeparator(base),
                     }),
                     menu: (base) => ({
                         ...menu(base),
@@ -78,12 +85,12 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                         ...menuList(base),
                     }),
                     option: (base, props) => ({
-                        ...menuOption(base, props.isSelected, props.isFocused),
+                        ...menuOption(base, props.isSelected, props.isDisabled),
                     }),
                     valueContainer: (base, props) => ({
-                        ...valueContainer(base, props.hasValue),
+                        ...valueContainer(base),
                     }),
-                    singleValue: (base, props) => ({ ...singleValue(base, props.isDisabled) }),
+                    singleValue: (base) => ({ ...singleValue(base, props.readOnly) }),
                 }}
             />
 

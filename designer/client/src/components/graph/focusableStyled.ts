@@ -1,15 +1,18 @@
 import { CSSProperties } from "react";
-import { css, styled, Theme } from "@mui/material";
-import { alpha, tint } from "../../containers/theme/helpers";
-import { ButtonWithFocus } from "../withFocus";
+import { styled, css, Theme } from "@mui/material";
+import { Button } from "../FormElements";
+import { blend } from "@mui/system";
+import { blendLighten } from "../../containers/theme/helpers";
+import { nodeValue } from "./node-modal/NodeDetailsContent/NodeTableStyled";
 
 export const buttonBase = (theme: Theme) => css`
-    border: 1px solid ${theme.custom.colors.doveGray};
     border-radius: 0;
-    background-color: ${theme.custom.colors.primaryBackground};
-    color: ${theme.custom.colors.secondaryColor};
+    background-color: ${theme.palette.background.paper};
     transition: background-color 0.2s;
     user-select: none;
+    &:focus {
+        border: 1px solid ${theme.palette.primary.main};
+    }
     &:disabled,
     &.disabled {
         opacity: 0.3;
@@ -18,11 +21,11 @@ export const buttonBase = (theme: Theme) => css`
 
     &:not(:disabled):hover,
     &:not(.disabled):hover {
-        background-color: ${theme.custom.colors.charcoal};
+        background-color: ${theme.palette.action.hover};
     }
 `;
 
-export const StyledButtonWithFocus = styled(ButtonWithFocus)(
+export const StyledButton = styled(Button)(
     ({ theme }) => css`
         ${buttonBase(theme)};
         width: 35px;
@@ -56,81 +59,74 @@ const modalContent = (errorColor: CSSProperties["color"], hrColor: CSSProperties
     }
 `;
 
+const nodeHighlight = (strokeColor: CSSProperties["color"], backgroundFill: CSSProperties["color"]) => css`
+    .body {
+        stroke: ${strokeColor};
+        stroke-width: 1px;
+    }
+    .background {
+        fill: ${backgroundFill};
+    }
+    .joint-port-body {
+        stroke-width: 1px;
+        fill: ${backgroundFill};
+        stroke: ${strokeColor};
+    }
+`;
+
 export const nodeValidationError = "node-validation-error";
 export const nodeFound = "node-found";
 export const nodeFoundHover = "node-found-hover";
 export const nodeFocused = "node-focused";
-const nodeStyles = (theme: Theme) => {
-    const error = theme.palette.error.main;
-    const found = theme.palette.warning.dark;
-    const focused = theme.custom.colors.cobalt;
 
+const nodeStyles = (theme: Theme) => {
     return css`
         .joint-type-esp-model {
             &,
             .body,
             .background,
             .joint-port-body {
+                stroke-width: 0.5;
                 transition: filter 0.5s, fill 0.25s, stroke 0.25s;
             }
+        }
 
-            .body {
-                stroke-width: 2px;
-            }
-            .joint-port-body {
-                stroke-width: 3px;
-            }
+        .joint-layers {
+            will-change: transform;
+            transition: none 0s ease 0s;
         }
 
         .${nodeValidationError} {
-            filter: drop-shadow(0 0 6px ${error});
-
-            .body,
-            .joint-port-body {
-                stroke: ${error};
-            }
+            ${nodeHighlight(
+                theme.palette.error.main,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
+            )}
         }
 
         .${nodeFocused} {
-            .background,
-            .joint-port-body {
-                fill: ${tint(focused, 0.9)};
-            }
+            ${nodeHighlight(
+                theme.palette.secondary.light,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.secondary.light, 0.15),
+            )}
         }
 
-        .${nodeValidationError} {
-            .background,
-            .joint-port-body {
-                fill: ${tint(error, 0.8)};
-            }
+        .${nodeFocused}.${nodeValidationError} {
+            ${nodeHighlight(
+                theme.palette.secondary.light,
+                blend(blendLighten(theme.palette.background.paper, 0.04), theme.palette.error.main, 0.3),
+            )}
         }
-
         .${nodeFound} {
-            .label rect,
-            .body,
-            .joint-port-body {
-                stroke: ${found};
-            }
-            .label rect,
-            .background,
-            .joint-port-body {
-                fill: ${tint(found, 0.8)};
-            }
+            ${nodeHighlight(theme.palette.success.main, blend(theme.palette.background.paper, theme.palette.success.main, 0.15))}
         }
-
-        .${nodeFocused} {
-            .body,
-            .joint-port-body {
-                stroke: ${focused};
-            }
+        .${nodeFocused}.${nodeFound} {
+            ${nodeHighlight(theme.palette.secondary.light, blend(theme.palette.background.paper, theme.palette.success.main, 0.15))}
         }
-
-        .${nodeFoundHover} {
-            .label rect,
-            .background,
-            .joint-port-body {
-                fill: ${tint(found, 0.6)};
-            }
+        .${nodeFoundHover}.${nodeFound} {
+            ${nodeHighlight(theme.palette.success.main, blend(theme.palette.background.paper, theme.palette.success.main, 0.4))}
+        }
+        .${nodeFocused}.${nodeFoundHover}.${nodeFound} {
+            ${nodeHighlight(theme.palette.secondary.light, blend(theme.palette.background.paper, theme.palette.success.main, 0.4))}
         }
     `;
 };
@@ -140,66 +136,19 @@ export const FocusableStyled = styled("div")(
         css`
             width: 100% !important;
             height: 100% !important;
+            user-select: none;
 
             ${nodeStyles(theme)}
 
             .modalContentDark {
-                ${modalContent(theme.custom.colors.error, theme.custom.colors.boulder)}
+                ${modalContent(theme.palette.error.main, blendLighten(theme.palette.background.paper, 0.25))}
             }
-
-            .error {
-                background-color: ${theme.custom.colors.yellowOrange};
-            }
-
             .element {
                 cursor: pointer;
-
                 &:active {
                     cursor: -moz-grabbing;
                     cursor: -webkit-grabbing;
                     cursor: grabbing;
-                }
-            }
-
-            .link {
-                .connection-wrap {
-                    &:hover {
-                        stroke: transparent;
-                        stroke-width: 10px;
-                        stroke-linecap: initial;
-                    }
-                }
-
-                &:hover {
-                    .connection {
-                        stroke: ${theme.custom.colors.scooter};
-                    }
-
-                    .marker-target,
-                    .marker-source {
-                        fill: ${theme.custom.colors.scooter}
-                    }
-
-                    .marker-vertices circle {
-                        fill: ${theme.custom.colors.nobel}
-                        r: 6px;
-                    }
-                }
-            }
-
-            .row-ace-editor {
-                color: ${theme.custom.colors.dimGray};
-                padding-top: 8px;
-                padding-bottom: 8px;
-                padding-left: 5px;
-                padding-right: 5px;
-                background-color: ${theme.custom.colors.secondaryBackground};
-                min-height: 35px;
-                outline: 1px solid ${alpha(theme.custom.colors.primaryColor, 0.075)};
-
-                &.focused {
-                    outline: 2px solid ${theme.custom.colors.cobalt} !important;
-                    outline-offset: -1px !important;
                 }
             }
 
@@ -228,7 +177,7 @@ export const FocusableStyled = styled("div")(
                 display: inline-flex;
                 width: 100%;
 
-                .node-value {
+                .${nodeValue} {
                     width: 100% !important;
                 }
             }
@@ -242,8 +191,8 @@ export const FocusableStyled = styled("div")(
                 width: 100%;
                 padding: 0 10px;
                 border: none;
-                background-color: ${theme.custom.colors.secondaryBackground};
-                color: ${theme.custom.colors.secondaryColor};
+                background-color: ${theme.palette.background.paper};
+                color: ${theme.palette.text.secondary};
                 font-weight: 400;
                 font-size: 16px;
             }
@@ -255,7 +204,7 @@ export const FocusableStyled = styled("div")(
             .joint-paper-background {
                 overflow-y: auto;
                 overflow-x: auto;
-                background-color: ${theme.custom.colors.canvasBackground};
+                background-color: ${theme.palette.background.default};
             }
 
             & svg {
@@ -263,17 +212,11 @@ export const FocusableStyled = styled("div")(
                 height: 100%;
             }
 
-            ${
-                id === "nk-graph-main" &&
-                `height: 100% !important;
-                `
-            }
-            ${
-                id === "nk-graph-fragment" &&
-                `width: 100% !important;
-                #svg-pan-zoom-controls {
-                    transform: translate(0, 0px) scale(0.5);
-                }`
-            }
+            ${id === "nk-graph-main" &&
+            `height: 100% !important;
+                `}
+            ${id === "nk-graph-fragment" &&
+            `width: 100% !important;
+                `}
         `,
 );

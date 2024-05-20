@@ -1,4 +1,4 @@
-import React, { ComponentType } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import DefaultIcon from "../../../../assets/img/toolbarButtons/custom_action.svg";
 import { CustomAction } from "../../../../types";
@@ -7,7 +7,6 @@ import { StatusType } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import UrlIcon from "../../../UrlIcon";
-import { FallbackProps } from "react-error-boundary";
 
 type CustomActionProps = {
     action: CustomAction;
@@ -20,11 +19,7 @@ export default function CustomActionButton(props: CustomActionProps) {
 
     const { t } = useTranslation();
 
-    const icon = action.icon ? (
-        <UrlIcon src={action.icon} FallbackComponent={DefaultIcon as ComponentType<FallbackProps>} />
-    ) : (
-        <DefaultIcon />
-    );
+    const icon = action.icon ? <UrlIcon src={action.icon} FallbackComponent={DefaultIcon} /> : <DefaultIcon />;
 
     const statusName = processStatus?.name;
     const available = !disabled && action.allowedStateStatusNames.includes(statusName);

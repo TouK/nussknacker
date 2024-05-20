@@ -23,7 +23,7 @@ class UserApiHttpServiceOAuth2Spec
     with WithSimplifiedDesignerConfig
     with NuRestAssureMatchers
     with NuRestAssureExtensions
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   private implicit val clock: Clock = Clock.systemUTC()

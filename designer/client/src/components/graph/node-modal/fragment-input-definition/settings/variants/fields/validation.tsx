@@ -13,6 +13,7 @@ import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { useSettings } from "../../SettingsProvider";
+import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Validation {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
@@ -33,7 +34,7 @@ export function ValidationsFields(props: Validation) {
         <>
             <FormControl>
                 <SettingLabelStyled required>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
-                <Box className={"node-value"}>
+                <Box className={nodeValue}>
                     <FormControlLabel
                         control={
                             <CustomSwitch

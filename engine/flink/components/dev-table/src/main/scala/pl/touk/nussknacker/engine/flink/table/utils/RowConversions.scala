@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.engine.flink.table.utils
 
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator
 import org.apache.flink.table.api.Expressions.$
-import org.apache.flink.table.api.{ApiExpression, DataTypes, Schema}
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.api.{DataTypes, Schema, Table}
+import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.flink.table.ColumnDefinition
 
@@ -27,9 +30,30 @@ object NestedRowConversions {
 
   import scala.jdk.CollectionConverters._
 
+  /*
+   This "f0" value is name given by flink at conversion of one element stream. For details read:
+   https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/.
+   */
   private val NestedRowColumnDefaultFlinkGivenName = "f0"
 
-  def columnsToSingleRowFlinkSchema(columns: List[ColumnDefinition]): Schema = {
+  final case class ColumnFlinkSchema(columnName: String, flinkDataType: DataType)
+
+  // TODO: avoid this step by mapping DataStream directly without this intermediate table with nested row
+  // TODO: infer schema from row and try to cast types to the desired schema
+  def buildTableFromRowStream(
+      tableEnv: StreamTableEnvironment,
+      streamOfRows: SingleOutputStreamOperator[Row],
+      columnSchema: List[ColumnFlinkSchema]
+  ): Table = {
+    val nestedRowSchema    = columnsToSingleRowFlinkSchema(columnSchema)
+    val tableWithNestedRow = tableEnv.fromDataStream(streamOfRows, nestedRowSchema)
+    val tableWithFlattenedRow = tableWithNestedRow.select(
+      columnSchema.map(c => $(NestedRowColumnDefaultFlinkGivenName).get(c.columnName).as(c.columnName)): _*
+    )
+    tableWithFlattenedRow
+  }
+
+  private def columnsToSingleRowFlinkSchema(columns: List[ColumnFlinkSchema]): Schema = {
     val fields: java.util.List[DataTypes.Field] =
       columns.map(c => DataTypes.FIELD(c.columnName, c.flinkDataType)).asJava
     val row = DataTypes.ROW(fields)
@@ -41,8 +65,5 @@ object NestedRowConversions {
       )
       .build()
   }
-
-  def flatteningSelectExpressions(columns: List[ColumnDefinition]): List[ApiExpression] =
-    columns.map(c => $(NestedRowColumnDefaultFlinkGivenName).get(c.columnName).as(c.columnName))
 
 }

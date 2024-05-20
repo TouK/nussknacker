@@ -38,7 +38,7 @@ function SortOption(props: {
     }, [isDesc, isSelected, onChange, name]);
     return (
         <FilterListItem
-            color={isDefault ? "default" : "primary"}
+            color={isDefault ? "default" : "error"}
             label={<FilterListItemLabel name={name} icon={icon} />}
             icon={<Sort />}
             checkedIcon={<ArrowUpward />}

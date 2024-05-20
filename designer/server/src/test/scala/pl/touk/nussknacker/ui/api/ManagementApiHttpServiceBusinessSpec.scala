@@ -13,7 +13,11 @@ import pl.touk.nussknacker.test.config.{
   WithMockableDeploymentManager,
   WithSimplifiedDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 import java.util.UUID
@@ -27,7 +31,7 @@ class ManagementApiHttpServiceBusinessSpec
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLoggingIfValidationFails {
 
   "The endpoint for testing with parameters should" - {
     "return empty results when empty results are returned by the deployment manager" in {
@@ -259,7 +263,7 @@ class ManagementApiHttpServiceBusinessSpec
           .post(s"$nuDesignerHttpAddress/api/processManagement/customAction/$wrongScenarioName/validation")
           .Then()
           .statusCode(404)
-          .equalsPlainBody(s"Couldn't find $wrongScenarioName when trying to validate action".stripMargin)
+          .equalsPlainBody(s"Couldn't find scenario $wrongScenarioName".stripMargin)
       }
 
       "non existing action" in {
@@ -283,7 +287,7 @@ class ManagementApiHttpServiceBusinessSpec
           .Then()
           .statusCode(404)
           .equalsPlainBody(
-            s"Couldn't find definition of action non-existing for scenario $exampleScenarioName when trying to validate".stripMargin
+            s"Couldn't find definition of action non-existing for scenario $exampleScenarioName".stripMargin
           )
       }
     }

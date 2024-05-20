@@ -58,12 +58,14 @@ to see detailed examples how those options should be translated into properties.
 credential in `JAAS` format, you should provide configuration similar to this one:
 
 ```
-kafkaProperties {
-  "schema.registry.url": "http://schemaregistry:8081"
-  "bootstrap.servers": "broker1:9092,broker2:9092"
-  "security.protocol": "SASL_SSL"
-  "sasl.mechanism": "PLAIN"
-  "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"some_user\" password=\"some_user\";"
+kafkaConfig {
+  kafkaProperties {
+    "schema.registry.url": "http://schemaregistry:8081"
+    "bootstrap.servers": "broker1:9092,broker2:9092"
+    "security.protocol": "SASL_SSL"
+    "sasl.mechanism": "PLAIN"
+    "sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"some_user\" password=\"some_user\";"
+  }
 }
 ```
 
@@ -188,7 +190,6 @@ Important thing to remember is that Kafka server addresses/Schema Registry addre
 | kafkaProperties                                                             | Medium     | map      |                  | Additional configuration of [producers](https://kafka.apache.org/documentation/#producerconfigs) or [consumers](https://kafka.apache.org/documentation/#consumerconfigs)                                                                                                   |
 | useStringForKey                                                             | Medium     | boolean  | true             | Kafka message keys will be in the string format (not in Avro)                                                                                                                                                                                                              |
 | kafkaEspProperties.forceLatestRead                                          | Medium     | boolean  | false            | If scenario is restarted, should offsets of source consumers be reset to latest (can be useful in test enrivonments)                                                                                                                                                       |
-| useNamingStrategyForConsumerGroupId                                         | Medium     | boolean  | true             | Use namespaced consumer group id if namespace is configured                                                                                                                                                                                                                |
 | topicsExistenceValidationConfig.enabled                                     | Low        | boolean  | false            | Determine if existence of topics should be validated if no [auto.create.topics.enable](https://kafka.apache.org/documentation/#brokerconfigs_auto.create.topics.enable) is false on Kafka cluster - note, that it may require permissions to access Kafka cluster settings |
 | topicsExistenceValidationConfig.validatorConfig.autoCreateFlagFetchCacheTtl | Low        | duration | 5 minutes        | TTL for checking Kafka cluster settings                                                                                                                                                                                                                                    |
 | topicsExistenceValidationConfig.validatorConfig.topicsFetchCacheTtl         | Low        | duration | 30 seconds       | TTL for caching list of existing topics                                                                                                                                                                                                                                    |
@@ -276,13 +277,15 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 - Flink cluster (both jobmanagers and taskmanagers) hosts - to be able to run job
 
 See [common config](#available-configuration-options) for the details of Kafka configuration, the table below presents additional options available only in Flink engine:
-      
 
-| Name                                              | Importance | Type                       | Default value    | Description                                                                                                                                                                                                 |
-|---------------------------------------------------|------------|----------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| kafkaEspProperties.defaultMaxOutOfOrdernessMillis | Medium     | duration                   | 60s              | Configuration of [bounded of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources |
-| consumerGroupNamingStrategy                       | Low        | processId/processId-nodeId | processId-nodeId | How consumer groups for sources should be named                                                                                                                                                             |
-| avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should Avro messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                          |
+
+| Name                                              | Importance | Type                       | Default value      | Description                                                                                                                                                                                                     |
+|---------------------------------------------------|------------|----------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| kafkaEspProperties.defaultMaxOutOfOrdernessMillis | Medium     | long                       | 60000 (60 seconds) | Configuration of [bounded out of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources |
+| idleTimeout.enabled                               | Medium     | boolean                    | true               | Enabling [idleness](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness) used by Kafka sources                                                                      |
+| idleTimeout.duration                              | Medium     | long                       | 3 minutes          | Configuration of [idle timout](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness) used by Kafka sources                                                           |
+| consumerGroupNamingStrategy                       | Low        | processId/processId-nodeId | processId-nodeId   | How consumer groups for sources should be named                                                                                                                                                                 |
+| avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true               | Should Avro messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                              |
             
 
 ### Configuration for Lite engine

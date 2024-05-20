@@ -14,8 +14,7 @@ const Header = styled("header")(({ theme }) => ({
     display: "flex",
     overflow: "hidden",
     userSelect: "none",
-    background: theme.custom.colors.secondaryBackground,
-    color: "#e6e6e6",
+    background: theme.palette.background.paper,
     height: "3.125em",
     alignItems: "stretch",
 }));

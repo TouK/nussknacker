@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.sql.utils
 
+import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyProcess
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, OutputVariableNameValue}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -33,7 +35,10 @@ trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with Befor
   ): typing.TypingResult = {
     val varName = "varName1"
     service.contextTransformation(ValidationContext.empty, List(OutputVariableNameValue(varName)))(NodeId("test"))(
-      service.TransformationStep(List((ParameterName("notUsed"), FailedToDefineParameter)), Some(state))
+      service.TransformationStep(
+        List((ParameterName("notUsed"), FailedToDefineParameter(NonEmptyList.one(EmptyProcess)))),
+        Some(state)
+      )
     ) match {
       case service.FinalResults(finalContext, _, _) => finalContext.apply(varName)
       case a                                        => throw new AssertionError(s"Should not happen: $a")

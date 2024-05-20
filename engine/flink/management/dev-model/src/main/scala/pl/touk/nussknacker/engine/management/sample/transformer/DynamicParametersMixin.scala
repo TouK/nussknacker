@@ -54,8 +54,8 @@ trait DynamicParametersMixin extends SingleInputDynamicComponent[AnyRef] {
       paramsMap
         .get(value)
         .map(NextParameters(_))
-        .getOrElse(NextParameters(Nil, List(CustomNodeError(s"Unknown type: ${value}", Some(choiceParamName)))))
-    case TransformationStep((`choiceParamName`, FailedToDefineParameter) :: Nil, None) =>
+        .getOrElse(NextParameters(Nil, List(CustomNodeError(s"Unknown type: $value", Some(choiceParamName)))))
+    case TransformationStep((`choiceParamName`, FailedToDefineParameter(_)) :: Nil, None) =>
       result(context, Nil)
     case TransformationStep((`choiceParamName`, _) :: otherParams, None) =>
       result(context, otherParams)

@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.Json._
+import org.apache.avro.Schema
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
   schemaVersionParamName,
   topicParamName
 }
-import pl.touk.nussknacker.engine.schemedkafka.schema.Address
+import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
@@ -55,11 +56,11 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   test("Should pass correct timestamp from test data") {
 
-    val topic             = "simple"
+    val topic             = "address"
     val expectedTimestamp = System.currentTimeMillis()
     val inputMeta =
       InputMeta(null, topic, 0, 1, expectedTimestamp, TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
-    val id: Int = registerSchema(topic)
+    val id: Int = registerSchema(topic, Address.schema)
 
     val process = ScenarioBuilder
       .streaming("test")
@@ -91,7 +92,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   test("Should pass parameters correctly and use them in scenario test") {
 
-    val topic = "simple"
+    val topic = "company"
+    registerSchema(topic, Company.schema)
     val process = ScenarioBuilder
       .streaming("test")
       .source(
@@ -101,16 +103,21 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")
+      .emptySink(
+        "end",
+        "sinkForInputMeta",
+        SingleValueParamName -> "#input.name + '-' + #input.address.city + '-' + #input.address.street"
+      )
 
     val parameterExpressions = Map(
-      ParameterName("city")   -> Expression.spel("'Lublin'"),
-      ParameterName("street") -> Expression.spel("'Lipowa'"),
+      ParameterName("name")           -> Expression.spel("'TouK'"),
+      ParameterName("address.city")   -> Expression.spel("'Warszawa'"),
+      ParameterName("address.street") -> Expression.spel("'Bohaterów Września'"),
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
     val results = run(process, scenarioTestData)
-    results.invocationResults("end").head.value shouldBe variable("Lublin-Lipowa")
+    results.invocationResults("end").head.value shouldBe variable("TouK-Warszawa-Bohaterów Września")
 
   }
 
@@ -141,9 +148,9 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.exceptions shouldBe empty
   }
 
-  private def registerSchema(topic: String) = {
+  private def registerSchema(topic: String, schema: Schema) = {
     val subject      = ConfluentUtils.topicSubject(topic, isKey = false)
-    val parsedSchema = ConfluentUtils.convertToAvroSchema(Address.schema)
+    val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
 

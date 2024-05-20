@@ -155,13 +155,12 @@ Similarly, information about field names and types returned by the OpenAPI servi
 ## ML enricher
 **(Enterprise only)**
 
-Nussknacker can evaluate ML models using the Machine Learning Enricher. The ML Enricher is an Enterprise component of Nussknacker and requires a separate license; contact info@nussknacker.io for more information. 
+Nussknacker can infer ML models using the Machine Learning enrichers. The ML enrichers are Enterprise components of Nussknacker and require a separate license. Please contact <info@nussknacker.io> for license terms and more details.
 
-Models can be either JPMML encoded or exported with H2O Mojo/Pojo. 
-Model repository can be one of the following:
-- file system
-- MLFlow registry
-- custom model registry
+We support the inference of the following ML technologies:
+- native Python models discovered using the [MLflow](https://mlflow.org/) model registry and executed with our ML runtime
+- models exported in the [PMML](https://en.wikipedia.org/wiki/Predictive_Model_Markup_Language) format
+- models exported in the [H2O](https://h2o.ai/) format
 
 Similarly to SQL and OpenAPI enrichers, as ML model input and output are known to Designer, when you double-click the ML Enricher node in the scenario you will see entry fields required by the model; data type hints and syntax error checking functionality will be active.   
 

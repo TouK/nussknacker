@@ -4,7 +4,7 @@ import io.restassured.RestAssured.given
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{WithBusinessCaseRestAssuredUsersExtensions, WithSimplifiedDesignerConfig}
 
@@ -14,7 +14,7 @@ class UserApiHttpServiceBusinessSpec
     with WithSimplifiedDesignerConfig
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "The endpoint for getting user info should" - {

@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{LayoutData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, ParameterEditor, SimpleParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.ErrorDetails
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.CellError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError.{CellError, ColumnDefinition, ErrorDetails}
 import pl.touk.nussknacker.engine.api.graph.{Edge, ProcessProperties, ScenarioGraph}
 import pl.touk.nussknacker.engine.api.parameter.{
   ParameterName,
@@ -595,15 +594,16 @@ object NodesApiEndpoints {
       implicit lazy val typingResultInJsonSchema: Schema[TypingResultInJson] = TypingDtoSchemas.typingResult.as
     }
 
-    implicit lazy val scenarioNameSchema: Schema[ProcessName]                         = Schema.derived
     implicit lazy val additionalInfoSchema: Schema[AdditionalInfo]                    = Schema.derived
     implicit lazy val scenarioAdditionalFieldsSchema: Schema[ProcessAdditionalFields] = Schema.derived
     implicit lazy val scenarioPropertiesSchema: Schema[ProcessProperties]             = Schema.derived.hidden(true)
 
-    implicit lazy val parameterSchema: Schema[EvaluatedParameter]              = Schema.derived
-    implicit lazy val edgeTypeSchema: Schema[EdgeType]                         = Schema.derived
-    implicit lazy val edgeSchema: Schema[Edge]                                 = Schema.derived
-    implicit lazy val cellErrorSchema: Schema[CellError]                       = Schema.derived
+    implicit lazy val parameterSchema: Schema[EvaluatedParameter] = Schema.derived
+    implicit lazy val edgeTypeSchema: Schema[EdgeType]            = Schema.derived
+    implicit lazy val edgeSchema: Schema[Edge]                    = Schema.derived
+    implicit lazy val cellErrorSchema: Schema[CellError]          = Schema.derived
+    import pl.touk.nussknacker.ui.api.TapirCodecs.ClassCodec._
+    implicit lazy val columnDefinitionSchema: Schema[ColumnDefinition]         = Schema.derived
     implicit lazy val errorDetailsSchema: Schema[ErrorDetails]                 = Schema.derived
     implicit lazy val nodeValidationErrorSchema: Schema[NodeValidationError]   = Schema.derived
     implicit lazy val fixedExpressionValueSchema: Schema[FixedExpressionValue] = Schema.derived
@@ -1316,6 +1316,8 @@ object NodesApiEndpoints {
 
     }
 
+    implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string
+
     @derive(schema, encoder, decoder)
     final case class PropertiesValidationRequestDto(
         additionalFields: ProcessAdditionalFields,
@@ -1466,30 +1468,21 @@ object NodesApiEndpoints {
       final case object NoPermission                                    extends NodesError with CustomAuthorizationError
       final case class MalformedTypingResult(msg: String)               extends NodesError
 
-      private def deserializationNotSupportedException =
-        (ignored: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
-
       implicit val noScenarioCodec: Codec[String, NoScenario, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoScenario](deserializationNotSupportedException)(e =>
-            s"No scenario ${e.scenarioName} found"
-          )
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoScenario](e =>
+          s"No scenario ${e.scenarioName} found"
         )
       }
 
       implicit val noProcessingTypeCodec: Codec[String, NoProcessingType, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, NoProcessingType](deserializationNotSupportedException)(e =>
-            s"ProcessingType type: ${e.processingType} not found"
-          )
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[NoProcessingType](e =>
+          s"ProcessingType type: ${e.processingType} not found"
         )
       }
 
       implicit val malformedTypingResultCoded: Codec[String, MalformedTypingResult, CodecFormat.TextPlain] = {
-        Codec.string.map(
-          Mapping.from[String, MalformedTypingResult](deserializationNotSupportedException)(e =>
-            s"The request content was malformed:\n${e.msg}"
-          )
+        BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[MalformedTypingResult](e =>
+          s"The request content was malformed:\n${e.msg}"
         )
       }
 

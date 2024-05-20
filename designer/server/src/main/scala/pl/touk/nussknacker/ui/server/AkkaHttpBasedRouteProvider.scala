@@ -35,6 +35,7 @@ import pl.touk.nussknacker.ui.config.{
   UsageStatisticsReportsConfig
 }
 import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.definition.component.{ComponentServiceProcessingTypeData, DefaultComponentService}
 import pl.touk.nussknacker.ui.definition.{
   AlignedComponentsDefinitionProvider,
@@ -46,24 +47,29 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.migrations.MigrationService
+import pl.touk.nussknacker.ui.migrations.{MigrationApiAdapterService, MigrationService}
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.deployment.{
+  ActionService,
+  DefaultProcessingTypeActionService,
+  DefaultProcessingTypeDeployedScenariosProvider,
+  DeploymentManagerDispatcher,
+  DeploymentService => LegacyDeploymentService,
+  ScenarioResolver,
+  ScenarioTestExecutorServiceImpl
+}
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
+import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.services.{
-  ManagementApiHttpService,
-  MigrationApiHttpService,
-  NuDesignerExposedApiHttpService
-}
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsService}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -71,6 +77,7 @@ import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UI
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
+import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -80,7 +87,8 @@ import scala.util.control.NonFatal
 class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
-    processingTypeDataStateFactory: ProcessingTypeDataStateFactory
+    processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
+    feStatisticsRepository: FEStatisticsRepository[Future]
 )(implicit system: ActorSystem, materializer: Materializer)
     extends RouteProvider[Route]
     with Directives
@@ -111,9 +119,9 @@ class AkkaHttpBasedRouteProvider(
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
-      val dbioRunner        = DBIOActionRunner(dbRef)
-      val actionRepository  = new DbProcessActionRepository(dbRef, modelBuildInfo)
-      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
+      implicit val dbioRunner: DBIOActionRunner = DBIOActionRunner(dbRef)
+      val actionRepository                      = new DbProcessActionRepository(dbRef, modelBuildInfo)
+      val processRepository                     = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
       val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
       val writeProcessRepository  = ProcessRepository.create(dbRef, migrations)
@@ -126,6 +134,7 @@ class AkkaHttpBasedRouteProvider(
           processingTypeData.name,
           ProcessValidator.default(processingTypeData.designerModelData.modelData),
           processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
           processingTypeData.deploymentData.additionalValidators,
           fragmentResolver
         )
@@ -173,7 +182,7 @@ class AkkaHttpBasedRouteProvider(
           futureProcessRepository
         )
 
-      val deploymentService = new DeploymentService(
+      val legacyDeploymentService = new LegacyDeploymentService(
         dmDispatcher,
         processRepository,
         actionRepository,
@@ -184,9 +193,9 @@ class AkkaHttpBasedRouteProvider(
         featureTogglesConfig.scenarioStateTimeout,
         featureTogglesConfig.deploymentCommentSettings
       )
-      deploymentService.invalidateInProgressActions()
+      legacyDeploymentService.invalidateInProgressActions()
 
-      actionServiceSupplier.set(deploymentService)
+      actionServiceSupplier.set(legacyDeploymentService)
 
       // we need to reload processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
@@ -200,7 +209,8 @@ class AkkaHttpBasedRouteProvider(
       val newProcessPreparer = processingTypeDataProvider.mapValues { processingTypeData =>
         new NewProcessPreparer(
           processingTypeData.deploymentData.metaDataInitializer,
-          processingTypeData.deploymentData.scenarioPropertiesConfig
+          processingTypeData.deploymentData.scenarioPropertiesConfig,
+          new ScenarioPropertiesConfigFinalizer(additionalUIConfigProvider, processingTypeData.name),
         )
       }
 
@@ -211,7 +221,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val processService = new DBProcessService(
-        deploymentService,
+        legacyDeploymentService,
         newProcessPreparer,
         processingTypeDataProvider.mapCombined(_.parametersService),
         processResolver,
@@ -252,6 +262,8 @@ class AkkaHttpBasedRouteProvider(
         shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
       )
 
+      val migrationApiAdapterService = new MigrationApiAdapterService()
+
       val migrationService = new MigrationService(
         config = resolvedConfig,
         processService = processService,
@@ -259,12 +271,14 @@ class AkkaHttpBasedRouteProvider(
         processAuthorizer = processAuthorizer,
         processChangeListener = processChangeListener,
         scenarioParametersService = processingTypeDataProvider.mapCombined(_.parametersService),
-        useLegacyCreateScenarioApi = true
+        useLegacyCreateScenarioApi = true,
+        migrationApiAdapterService = migrationApiAdapterService
       )
 
       val migrationApiHttpService = new MigrationApiHttpService(
         authenticator = authenticationResources,
-        migrationService = migrationService
+        migrationService = migrationService,
+        migrationApiAdapterService = migrationApiAdapterService
       )
       val componentsApiHttpService = new ComponentApiHttpService(
         authenticator = authenticationResources,
@@ -327,8 +341,19 @@ class AkkaHttpBasedRouteProvider(
           )
         }
       )
-      val deploymentHttpService =
-        new DeploymentApiHttpService(authenticationResources, processService, deploymentService)
+      val deploymentHttpService = {
+        val scenarioMetadataRepository = new ScenarioMetadataRepository(dbRef)
+        val deploymentRepository       = new DeploymentRepository(dbRef)
+        val deploymentService =
+          new DeploymentService(
+            scenarioMetadataRepository,
+            deploymentRepository,
+            legacyDeploymentService,
+            dbioRunner,
+            Clock.systemDefaultZone()
+          )
+        new DeploymentApiHttpService(authenticationResources, deploymentService)
+      }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
@@ -336,7 +361,7 @@ class AkkaHttpBasedRouteProvider(
         val routes = List(
           new ProcessesResources(
             processService = processService,
-            processStateService = deploymentService,
+            processStateService = legacyDeploymentService,
             processToolbarService = configProcessToolbarService,
             processAuthorizer = processAuthorizer,
             processChangeListener = processChangeListener
@@ -350,7 +375,7 @@ class AkkaHttpBasedRouteProvider(
           new ManagementResources(
             processAuthorizer,
             processService,
-            deploymentService,
+            legacyDeploymentService,
             dmDispatcher,
             metricsRegistry,
             scenarioTestService,
@@ -400,17 +425,21 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-      val fingerprintService           = new FingerprintService(dbioRunner, new FingerprintRepositoryImpl(dbRef))
-      val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(
+      val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
+      val usageStatisticsReportsSettingsService = UsageStatisticsReportsSettingsService(
         usageStatisticsReportsConfig,
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
-        fingerprintService.fingerprint
+        fingerprintService,
+        processActivityRepository,
+        componentService,
+        feStatisticsRepository
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
         authenticationResources,
-        usageStatisticsReportsSettingsDeterminer
+        usageStatisticsReportsSettingsService,
+        feStatisticsRepository
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings

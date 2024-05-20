@@ -8,6 +8,7 @@ import { DTPicker } from "../../../../../common/DTPicker";
 import { cx } from "@emotion/css";
 import { FieldError } from "../../Validators";
 import { isEmpty } from "lodash";
+import { nodeInput, nodeInputWithError } from "../../../NodeDetailsContent/NodeTableStyled";
 
 export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
@@ -71,8 +72,8 @@ export function DatepickerEditor(props: DatepickerEditorProps) {
                 value={value}
                 inputProps={{
                     className: cx([
-                        "node-input",
-                        showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
+                        nodeInput,
+                        showValidation && !isEmpty(fieldErrors) && nodeInputWithError,
                         isMarked && "marked",
                         editorFocused && "focused",
                         readOnly && "read-only",

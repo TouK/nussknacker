@@ -55,7 +55,7 @@ describe("Connection error", () => {
             cy.log("verify no backend access when scenario edit modal opens");
             cy.visitNewProcess(NAME, "filter");
 
-            cy.contains("svg", /filter/i).dblclick();
+            cy.get("[model-id='filter']").dblclick();
             cy.intercept("/api/notifications", { statusCode: 502 });
 
             cy.contains(/Backend connection issue/).should("be.visible");
