@@ -251,9 +251,7 @@ export class Graph extends React.Component<Props> {
     setEspGraphRef = (instance: HTMLElement): void => {
         this.instance = instance;
         if (this.props.isFragment !== true && this.props.connectDropTarget && instance) {
-            // eslint-disable-next-line react/no-find-dom-node
-            const node = findDOMNode(instance);
-            this.props.connectDropTarget(node);
+            this.props.connectDropTarget(instance);
         }
     };
     graph: dia.Graph;

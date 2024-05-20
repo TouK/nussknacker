@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useCallback, useState } from "react";
 import { ToolbarPosition } from "../../actions/nk/toolbars";
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { alpha, GlobalStyles, useTheme } from "@mui/material";
 import { DRAGGABLE_LIST_CLASSNAME, DRAGGING_FROM_CLASSNAME, DRAGGING_OVER_CLASSNAME } from "./ToolbarsContainer";
 import { SIDEBAR_WIDTH } from "../../stylesheets/variables";

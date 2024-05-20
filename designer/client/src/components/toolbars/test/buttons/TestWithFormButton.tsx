@@ -34,7 +34,7 @@ function TestWithFormButton({ disabled, name, title, icon, docs, markdownContent
         inform({ text: `Testing with form support only one source - found ${sourcesFound}.` });
     }, [inform, sourcesFound]);
 
-    const Icon = useCallback(({ className }) => <UrlIcon src={icon} FallbackComponent={TestWFormIcon} className={className} />, [icon]);
+    const Icon = useCallback(() => <UrlIcon src={icon} FallbackComponent={TestWFormIcon} />, [icon]);
 
     const action = useTestWithFormAction();
     const oneSourceTest = useCallback(() => {

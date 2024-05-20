@@ -10,7 +10,7 @@ import {
     DroppableProps,
     DroppableProvided,
     DroppableStateSnapshot,
-} from "react-beautiful-dnd";
+} from "@hello-pangea/dnd";
 import React, { CSSProperties, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { DragHandlerContext } from "../common/dndItems/DragHandle";
