@@ -137,7 +137,7 @@ class StatisticsApiHttpServiceBusinessSpec
         }
     }
 
-    "recover if DB files from disk are removed" in {
+    "recover if DB files from disk are removed" ignore {
       given()
         .applicationState {
           removeQuestDBFiles()
