@@ -107,7 +107,14 @@ export const EventTrackingSelector = {
     ...MoveEventsSelector,
 } as const;
 
-export type EventTrackingSelectorType = (typeof EventTrackingSelector)[keyof typeof EventTrackingSelector];
+// To avoid an error from submodules during make-types we need to create an explicit union of enums here. In other case we need to export all Tracking Selector enums
+export type EventTrackingSelectorType =
+    | ClickEventsSelector
+    | FilterEventsSelector
+    | SearchEventsSelector
+    | SortEventsSelector
+    | KeyboardEventsSelector
+    | MoveEventsSelector;
 
 export const useRegisterTrackingEvents = () => {
     const { trackEvent, trackEventWithDebounce } = useEventTracking();
