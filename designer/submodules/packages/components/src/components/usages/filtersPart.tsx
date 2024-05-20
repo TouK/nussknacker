@@ -27,7 +27,7 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
         <QuickFilter<UsagesFiltersModel>
             isLoading={isLoading}
             filter="TEXT"
-            {...getEventTrackingProps({ selector: EventTrackingSelector.SearchComponentUsagesByName, event: EventTrackingType.SEARCH })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.SearchComponentUsagesByName })}
         >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
@@ -75,7 +75,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
                     >
                         <FilterListItem
-                            color="default"
+                            checkboxProps={{
+                                color: "default",
+                            }}
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.SCENARIOS)}
                             onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
@@ -84,7 +86,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             })}
                         />
                         <FilterListItem
-                            color="default"
+                            checkboxProps={{
+                                color: "default",
+                            }}
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.FRAGMENTS)}
                             onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
@@ -94,7 +98,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         />
                         <Divider />
                         <FilterListItem
-                            color="secondary"
+                            checkboxProps={{
+                                color: "secondary",
+                            }}
                             checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.INDIRECT)}
                             onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.INDIRECT], getFilter("USAGE_TYPE", true)))}
                             label={t("table.filter.SHOW_INDIRECT", "Show indirect usage")}
@@ -103,7 +109,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             })}
                         />
                         <FilterListItem
-                            color="primary"
+                            checkboxProps={{
+                                color: "primary",
+                            }}
                             checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.DIRECT)}
                             onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.DIRECT], getFilter("USAGE_TYPE", true)))}
                             label={t("table.filter.SHOW_DIRECT", "Show direct usage")}

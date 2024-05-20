@@ -28,7 +28,7 @@ export function OtherOptionsStack(): JSX.Element {
             onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
         >
             <FilterListItem
-                color="default"
+                checkboxProps={{ color: "default" }}
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
                 label={
@@ -40,7 +40,7 @@ export function OtherOptionsStack(): JSX.Element {
                 {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByOther })}
             />
             <FilterListItem
-                color="default"
+                checkboxProps={{ color: "default" }}
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
                 label={

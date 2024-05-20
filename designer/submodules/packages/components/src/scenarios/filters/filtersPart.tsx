@@ -133,7 +133,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                                 value={getFilter("SORT_BY", true)}
                                 onChange={setFilter("SORT_BY")}
                                 {...getEventTrackingProps({
-                                    selector: EventTrackingSelector.SortScenariosBySortOption,
+                                    selector: EventTrackingSelector.ScenariosBySortOption,
                                 })}
                             />
                         </FilterMenu>

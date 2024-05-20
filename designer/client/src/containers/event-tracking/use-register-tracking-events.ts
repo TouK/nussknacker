@@ -95,7 +95,7 @@ enum MoveEventsSelector {
 }
 
 enum SortEventsSelector {
-    SortScenariosBySortOption = "SORT_SCENARIOS_BY_SORT_OPTION",
+    ScenariosBySortOption = "SCENARIOS_BY_SORT_OPTION",
 }
 
 export const EventTrackingSelector = {
@@ -144,7 +144,7 @@ export const useRegisterTrackingEvents = () => {
             if (Object.values(SortEventsSelector).find((sortEvent) => sortEvent === selector)) {
                 const selected = (element as HTMLOptionElement).selected;
                 if (selected) {
-                    trackEvent({ selector, event: EventTrackingType.Search });
+                    trackEvent({ selector, event: EventTrackingType.Sort });
                 }
                 break;
             }
