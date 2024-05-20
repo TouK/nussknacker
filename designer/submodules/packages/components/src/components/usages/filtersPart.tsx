@@ -27,7 +27,7 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
         <QuickFilter<UsagesFiltersModel>
             isLoading={isLoading}
             filter="TEXT"
-            {...getEventTrackingProps({ selector: EventTrackingSelector.SearchComponentUsagesByName })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentUsagesByName })}
         >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>

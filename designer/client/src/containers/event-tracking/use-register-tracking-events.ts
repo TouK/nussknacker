@@ -60,7 +60,7 @@ enum SearchEventsSelector {
     ScenariosByName = "SCENARIOS_BY_NAME",
     NodesInScenario = "NODES_IN_SCENARIO",
     ComponentsByName = "COMPONENTS_BY_NAME",
-    ComponentsByGroup = "COMPONENTS_BY_GROUP",
+    ComponentUsagesByName = "COMPONENT_USAGES_BY_NAME",
 }
 
 enum FilterEventsSelector {
@@ -76,6 +76,7 @@ enum FilterEventsSelector {
     ScenariosByAuthor = "SCENARIOS_BY_AUTHOR",
     ComponentUsagesByAuthor = "COMPONENT_USAGES_BY_AUTHOR",
     ComponentUsagesByOther = "COMPONENT_USAGES_BY_OTHER",
+    ComponentsByGroup = "COMPONENTS_BY_GROUP",
 }
 enum KeyboardEventsSelector {
     FocusSearchNodeField = "FOCUS_SEARCH_NODE_FIELD",
