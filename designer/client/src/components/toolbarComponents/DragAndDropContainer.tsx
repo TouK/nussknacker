@@ -18,7 +18,7 @@ export function DragAndDropContainer({ children, onMove }: Props) {
 
     const onDragEnd = useCallback(
         (result: DropResult) => {
-            trackEvent({ selector: EventTrackingSelector.ToolbarPanel, event: EventTrackingType.MOVE });
+            trackEvent({ selector: EventTrackingSelector.ToolbarPanel, event: EventTrackingType.Move });
             setIsDragging(false);
             const { destination, type, reason, source } = result;
             if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {

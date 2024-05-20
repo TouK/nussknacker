@@ -36,7 +36,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         withArchived={false}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentUsagesByStatus,
-                            event: EventTrackingType.FILTER,
                         })}
                     />
                 </FilterMenu>
@@ -48,7 +47,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={setFilter("CATEGORY")}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentUsagesByCategory,
-                            event: EventTrackingType.FILTER,
                         })}
                     />
                 </FilterMenu>
@@ -60,7 +58,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={setFilter("CREATED_BY")}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentUsagesByAuthor,
-                            event: EventTrackingType.FILTER,
                         })}
                     />
                 </FilterMenu>
@@ -84,7 +81,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ComponentUsagesByOther,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                         <FilterListItem
@@ -94,7 +90,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ComponentUsagesByOther,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                         <Divider />
@@ -105,7 +100,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             label={t("table.filter.SHOW_INDIRECT", "Show indirect usage")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ComponentUsagesByOther,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                         <FilterListItem
@@ -115,7 +109,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                             label={t("table.filter.SHOW_DIRECT", "Show direct usage")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ComponentUsagesByOther,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                     </OptionsStack>

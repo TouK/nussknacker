@@ -380,7 +380,7 @@ export class Graph extends React.Component<Props> {
                     this.panAndZoom.toggle(false);
                 })
                 .on(RangeSelectEvents.STOP, () => {
-                    handleStatisticsEvent({ selector: EventTrackingSelector.RangeSelectNodes, event: EventTrackingType.KEYBOARD });
+                    handleStatisticsEvent({ selector: EventTrackingSelector.RangeSelectNodes, event: EventTrackingType.Keyboard });
                     this.panAndZoom.toggle(true);
                 })
                 .on(RangeSelectEvents.RESET, () => {

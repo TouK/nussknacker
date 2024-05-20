@@ -11,7 +11,7 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
-import { EventTrackingSelector, EventTrackingType, getEventTrackingProps } from "../../containers/event-tracking";
+import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
 
 const PlainButton = styled("button")({
     background: "unset",
@@ -117,9 +117,9 @@ export function Menu(): JSX.Element {
                         key={tab.id}
                         tab={tab}
                         {...(tab.id.toLowerCase() === "components"
-                            ? getEventTrackingProps({ selector: EventTrackingSelector.ComponentsTab, event: EventTrackingType.CLICK })
+                            ? getEventTrackingProps({ selector: EventTrackingSelector.ComponentsTab })
                             : tab.id.toLowerCase() === "metrics"
-                            ? getEventTrackingProps({ selector: EventTrackingSelector.GlobalMetricsTab, event: EventTrackingType.CLICK })
+                            ? getEventTrackingProps({ selector: EventTrackingSelector.GlobalMetricsTab })
                             : null)}
                     />
                 )),

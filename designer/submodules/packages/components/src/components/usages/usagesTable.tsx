@@ -11,7 +11,7 @@ import { FilterLinkCell } from "../cellRenderers";
 import { UsageWithStatus } from "../useComponentsQuery";
 import { Box } from "@mui/material";
 import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatted";
-import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function nodeFilter(f, u: NodeUsageData) {
     switch (f) {
@@ -42,8 +42,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                     <ScenarioCell
                         filterText={filterText}
                         {...getEventTrackingProps({
-                            selector: EventTrackingSelector.ClickScenarioFromComponentUsages,
-                            event: EventTrackingType.CLICK,
+                            selector: EventTrackingSelector.ScenarioFromComponentUsages,
                         })}
                         {...props}
                     />

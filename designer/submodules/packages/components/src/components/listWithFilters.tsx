@@ -15,7 +15,7 @@ import { OptionsStack } from "../scenarios/filters/optionsStack";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
 import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
 import { processingModeItems } from "../scenarios/list/processingMode";
-import { EventTrackingType, getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 
 function CountFilterItem({ count }: { count: number }) {
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
@@ -54,7 +54,7 @@ function CountFilterItem({ count }: { count: number }) {
                     </>
                 )
             }
-            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByUsages, event: EventTrackingType.FILTER })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByUsages })}
         />
     );
 }
@@ -96,7 +96,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
         <QuickFilter<ComponentsFiltersModel>
             isLoading={isLoading}
             filter="NAME"
-            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByName, event: EventTrackingType.SEARCH })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByName })}
         >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter("GROUP", true).length}>
@@ -105,7 +105,7 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         options={filterableValues["componentGroupName"]}
                         value={getFilter("GROUP", true)}
                         onChange={setFilter("GROUP")}
-                        {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByGroup, event: EventTrackingType.FILTER })}
+                        {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByGroup })}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")} count={getFilter("PROCESSING_MODE", true).length}>
@@ -116,7 +116,6 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         onChange={setFilter("PROCESSING_MODE")}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentsByProcessingMode,
-                            event: EventTrackingType.FILTER,
                         })}
                     />
                 </FilterMenu>
@@ -128,7 +127,6 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         onChange={setFilter("CATEGORY")}
                         {...getEventTrackingProps({
                             selector: EventTrackingSelector.ComponentsByCategory,
-                            event: EventTrackingType.FILTER,
                         })}
                     />
                 </FilterMenu>

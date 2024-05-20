@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useSelectionActions } from "../components/graph/SelectionContextProvider";
 import { useDocumentListeners } from "./useDocumentListeners";
-import { EventTrackingSelector, EventTrackingType, TrackEventParams, useEventTracking } from "./event-tracking";
+import { EventTrackingSelector, TrackEventParams, EventTrackingType, useEventTracking } from "./event-tracking";
 
 export const isInputTarget = (target: EventTarget): boolean => ["INPUT", "SELECT", "TEXTAREA"].includes(target?.["tagName"]);
 export const isInputEvent = (event: Event): boolean => isInputTarget(event?.target);
@@ -14,7 +14,7 @@ export function BindKeyboardShortcuts({ disabled }: { disabled?: boolean }): JSX
 
     const eventWithStatistics = useCallback(
         ({ selector }: Omit<TrackEventParams, "event">, event: unknown) => {
-            trackEvent({ selector, event: EventTrackingType.KEYBOARD });
+            trackEvent({ selector, event: EventTrackingType.Keyboard });
             return event;
         },
         [trackEvent],

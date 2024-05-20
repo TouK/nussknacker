@@ -17,7 +17,7 @@ import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
 import { ScenarioAvatar } from "./scenarioAvatar";
-import { EventTrackingType, getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     return (
@@ -49,8 +49,7 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                             component={ExternalLink}
                             href={metricsHref(row.name)}
                             {...getEventTrackingProps({
-                                selector: EventTrackingSelector.ClickActionMetrics,
-                                event: EventTrackingType.CLICK,
+                                selector: EventTrackingSelector.ActionMetrics,
                             })}
                         >
                             <AssessmentIcon />

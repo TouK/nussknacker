@@ -14,7 +14,7 @@ import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { processingModeItems } from "../list/processingMode";
 import { ProcessingModeStack } from "./processingModeStack";
-import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
@@ -74,7 +74,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
             <QuickFilter<ScenariosFiltersModel>
                 isLoading={isLoading}
                 filter="NAME"
-                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByName, event: EventTrackingType.SEARCH })}
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByName })}
             >
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                     <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
@@ -83,7 +83,6 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             withArchived={true}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ScenariosByStatus,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                     </FilterMenu>
@@ -98,7 +97,6 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("PROCESSING_MODE")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ScenariosByProcessingMode,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                     </FilterMenu>
@@ -110,7 +108,6 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("CATEGORY")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ScenariosByCategory,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                     </FilterMenu>
@@ -122,7 +119,6 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("CREATED_BY")}
                             {...getEventTrackingProps({
                                 selector: EventTrackingSelector.ScenariosByAuthor,
-                                event: EventTrackingType.FILTER,
                             })}
                         />
                     </FilterMenu>
@@ -137,8 +133,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                                 value={getFilter("SORT_BY", true)}
                                 onChange={setFilter("SORT_BY")}
                                 {...getEventTrackingProps({
-                                    selector: EventTrackingSelector.SortScenarios,
-                                    event: EventTrackingType.FILTER,
+                                    selector: EventTrackingSelector.SortScenariosBySortOption,
                                 })}
                             />
                         </FilterMenu>

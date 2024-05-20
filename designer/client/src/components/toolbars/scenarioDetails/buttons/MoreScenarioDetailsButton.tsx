@@ -3,7 +3,7 @@ import { Link, Typography } from "@mui/material";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import i18next from "i18next";
 import { ProcessStateType, Scenario } from "../../../Process/types";
-import { EventTrackingSelector, EventTrackingType, getEventTrackingProps } from "../../../../containers/event-tracking";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 interface Props {
     scenario: Scenario;
@@ -24,7 +24,7 @@ export const MoreScenarioDetailsButton = ({ scenario, processState }: Props) => 
                     meta: { scenario, processState },
                 })
             }
-            {...getEventTrackingProps({ selector: EventTrackingSelector.MoreScenarioDetails, event: EventTrackingType.CLICK })}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.MoreScenarioDetails })}
         >
             {i18next.t("panels.scenarioDetails.moreButton", "More scenario details")}
         </Typography>

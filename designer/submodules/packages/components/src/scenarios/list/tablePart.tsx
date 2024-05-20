@@ -9,7 +9,7 @@ import { useDebouncedValue } from "rooks";
 import { IconButton } from "@mui/material";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import { LastAction } from "./item";
-import { EventTrackingType, getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 
 export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -90,8 +90,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                             component={ExternalLink}
                             href={metricsHref(row.name)}
                             {...getEventTrackingProps({
-                                selector: EventTrackingSelector.ClickActionMetrics,
-                                event: EventTrackingType.CLICK,
+                                selector: EventTrackingSelector.ActionMetrics,
                             })}
                         >
                             <AssessmentIcon />

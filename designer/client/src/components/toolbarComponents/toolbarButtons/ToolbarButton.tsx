@@ -6,7 +6,7 @@ import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets
 import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { Icon } from "./ToolbarButtonStyled";
-import { EventTrackingType, getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking";
+import { getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking";
 
 export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
     { onDrop, title, className, disabled, name, icon, hasError, isActive, type, ...props },
@@ -45,7 +45,7 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 
     const buttonProps = {
         ...props,
-        ...getEventTrackingProps({ selector: mapToolbarButtonToStatisticsEvent(type), event: EventTrackingType.CLICK }),
+        ...getEventTrackingProps({ selector: mapToolbarButtonToStatisticsEvent(type) }),
         title: title || name,
         className: cx(styles, className),
         children: (

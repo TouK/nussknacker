@@ -1,11 +1,12 @@
 import { debounce } from "lodash";
 import httpService from "../../http/HttpService";
 import { useCallback } from "react";
-import { EventTrackingSelector, EventTrackingType, getEventStatisticName } from "./helpers";
+import { getEventStatisticName } from "./helpers";
 import { useSelector } from "react-redux";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
+import { EventTrackingSelectorType, EventTrackingType } from "./use-register-tracking-events";
 
-export type TrackEventParams = { selector: EventTrackingSelector; event: EventTrackingType };
+export type TrackEventParams = { selector: EventTrackingSelectorType; event: EventTrackingType };
 
 export const useEventTracking = () => {
     const featuresSettings = useSelector(getFeatureSettings);
