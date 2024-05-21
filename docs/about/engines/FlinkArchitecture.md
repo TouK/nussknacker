@@ -10,10 +10,9 @@ Following diagrams illustrate architecture of Nussknacker setup with Flink compa
 deployment (more details about architecture of Flink itself can be found
 [here](https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/flink-architecture/)):
 
-<p align="center">
-  <img src="img/flink_simple.png" alt="" width="48%" />
-  <img src="img/nu_flink_simple.png" alt="" width="48%" />
-</p>
+| ![Lite with request-response layers diagram](./img/flink_simple.png) | ![Lite with streaming layers diagram](./img/nu_flink_simple.png) |
+|:--:|:--:|
+| Flink without Nu | Flink with Nu |
 
 This architecture assumes that:
 * Flink should be deployed in [Session Mode](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/overview/#session-mode)
