@@ -7,10 +7,9 @@ title: Lite engine
 One of the runtime execution [engines](../GLOSSARY.md#engine) provided by Nu is called Lite
 it provides a way to deploy a Nussknacker scenario as a Kubernetes microservice.
 
-<p align="center">
-  <img src="img/lite_layers.png" alt="Lite with streaming layers diagram" width="48%" />
-  <img src="img/lite_rr_layers.png" alt="Lite with request-response layers diagram" width="48%" />
-</p>
+| ![Lite with request-response layers diagram](./img/lite_rr_layers.png) | ![Lite with streaming layers diagram](./img/lite_layers.png) |
+|:--:|:--:|
+| Lite with request-response layers diagram | Lite with streaming layers diagram |
 
 This architecture provides significant benefits:
 * We leverage industry standards: K8s (and Kafka in streaming Processing mode) - to handle tough topics like scaling, 
