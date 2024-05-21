@@ -6,7 +6,7 @@ The diagram below shows architecture of a typical Nussknacker deployment in Requ
 components provided or needed by Nussknacker, 
 but also elements of broader service architecture. 
 
-![Typical request response implementation](../img/typical_implementation_requestresponse.png)
+![Typical request response implementation](./img/typical_implementation_requestresponse.png)
 
 The following paragraphs briefly explain the role of the architectural components in Nussknacker deployment. 
    

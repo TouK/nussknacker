@@ -12,10 +12,9 @@ As you can see, the diagrams are different only in [engine](../GLOSSARY.md#engin
 as general architecture of Nussknacker deployment and of stream processing solution remains the same, no matter 
 which engine you choose.
 
-<p align="center">
-  <img src="../img/typical_implementation_flink.png" alt="Typical flink streaming implementation" width="45%" />
-  <img src="../img/typical_implementation_lite.png" alt="Typical lite streaming implementation" width="45%" />
-</p>
+| ![Typical Flink streaming implementation](./img/typical_implementation_flink.png) | ![Typical Lite streaming implementation](./img/typical_implementation_lite.png) |
+|:--:|:--:|
+| Typical Flink streaming implementation | Typical Lite streaming implementation |
 
 The following paragraphs briefly explain the role of the architectural components in Nussknacker deployment.
 
