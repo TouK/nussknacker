@@ -8,19 +8,19 @@ Larger organization probably have at least some of them already in place, while 
 simplified versions.
 
 On the left, there is Flink engine version, on the right - Lite engine version.
-As you can see, the diagrams are different only in [engine](./GLOSSARY.md#engine) part. This is not a coincidence, 
+As you can see, the diagrams are different only in [engine](../GLOSSARY.md#engine) part. This is not a coincidence, 
 as general architecture of Nussknacker deployment and of stream processing solution remains the same, no matter 
 which engine you choose.
 
 <p align="center">
-  <img src="img/typical_implementation_flink.png" alt="Typical flink streaming implementation" width="45%" />
-  <img src="img/typical_implementation_lite.png" alt="Typical lite streaming implementation" width="45%" />
+  <img src="../img/typical_implementation_flink.png" alt="Typical flink streaming implementation" width="45%" />
+  <img src="../img/typical_implementation_lite.png" alt="Typical lite streaming implementation" width="45%" />
 </p>
 
 The following paragraphs briefly explain the role of the architectural components in Nussknacker deployment.
 
 - **Nussknacker** - allows to author, deploy and monitor real-time decision scenarios. More on its capabilities 
-can be found [here](./Overview.md).
+can be found [here](../Overview.md).
 
 - **Schema Registry**  - stores versioned information about the structure of data transported in Kafka streams; in a 
 sense performs a similar role to a relational database schema. Without it, scenarios that write to and read from a Kafka 

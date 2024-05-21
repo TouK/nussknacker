@@ -1,18 +1,17 @@
 ---
 title: Typical implementation - Request-Response
 ---
-import RequestResponseUrl from '@site/static/about/typical_implementation_requestresponse.png';
 
 The diagram below shows architecture of a typical Nussknacker deployment in Request-Response mode. It shows not only 
 components provided or needed by Nussknacker, 
 but also elements of broader service architecture. 
 
-![Typical request response implementation](./img/typical_implementation_requestresponse.png)
+![Typical request response implementation](../img/typical_implementation_requestresponse.png)
 
 The following paragraphs briefly explain the role of the architectural components in Nussknacker deployment. 
    
 - **Nussknacker** - allows to author, deploy and monitor real-time decision scenarios. More on its capabilities can be 
-found [here](./Overview.md).
+found [here](../Overview.md).
 
 - **Runtime engine** - Once authored, scenarios are deployed to the Lite engine for processing; Each service is deployed 
   as K8s Service, exposing REST API. 
