@@ -2,6 +2,17 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.16.0 (Not released yet)
+
+### Code API changes
+
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
+  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
+    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
+  * `DMValidateScenarioCommand.updateStrategy` was added
+    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+
 ## In version 1.15.0
 
 ### Code API changes

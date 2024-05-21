@@ -88,7 +88,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   }
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
-    case DMValidateScenarioCommand(_, _, canonicalProcess) =>
+    case DMValidateScenarioCommand(_, _, canonicalProcess, _) =>
       if (description(canonicalProcess).contains(descriptionForValidationFail)) {
         Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
       } else {
