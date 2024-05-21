@@ -8,6 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -92,7 +93,7 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            savepointPath = None
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
           )
         )
         .flatten
@@ -145,7 +146,7 @@ class NotificationServiceTest
           RunDeploymentCommand(
             commonData = CommonCommandData(processIdWithName, None, user),
             nodesDeploymentData = NodesDeploymentData.empty,
-            savepointPath = None
+            stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
           )
         )
         .flatten
@@ -194,7 +195,8 @@ class NotificationServiceTest
     ) {
       override protected def validateBeforeDeploy(
           processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-          deployedScenarioData: DeployedScenarioData
+          deployedScenarioData: DeployedScenarioData,
+          updateStrategy: DeploymentUpdateStrategy
       )(implicit user: LoggedUser): Future[Unit] = Future.successful(())
 
       override protected def prepareDeployedScenarioData(

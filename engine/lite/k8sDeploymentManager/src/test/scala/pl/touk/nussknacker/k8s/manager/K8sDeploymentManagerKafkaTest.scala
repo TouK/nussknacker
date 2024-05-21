@@ -7,11 +7,13 @@ import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
   DMCancelScenarioCommand,
   DMRunDeploymentCommand,
   DMValidateScenarioCommand,
-  DataFreshnessPolicy
+  DataFreshnessPolicy,
+  DeploymentUpdateStrategy
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -82,7 +84,18 @@ class K8sDeploymentManagerKafkaTest
         )
 
       val pversion = ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), "testUser", Some(22))
-      manager.processCommand(DMRunDeploymentCommand(pversion, DeploymentData.empty, scenario, None)).futureValue
+      manager
+        .processCommand(
+          DMRunDeploymentCommand(
+            pversion,
+            DeploymentData.empty,
+            scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
       pversion
     }
 
@@ -178,7 +191,18 @@ class K8sDeploymentManagerKafkaTest
 
     def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
       val version = ProcessVersion(VersionId(11), f.scenario.name, ProcessId(1234), "testUser", Some(22))
-      manager.processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, f.scenario, None)).futureValue
+      manager
+        .processCommand(
+          DMRunDeploymentCommand(
+            version,
+            DeploymentData.empty,
+            f.scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
 
       action(version)
       cancelAndAssertCleanup(manager, version)
@@ -280,7 +304,16 @@ class K8sDeploymentManagerKafkaTest
     ) // two pods takes test setup
 
     f.manager
-      .processCommand(DMValidateScenarioCommand(f.version, DeploymentData.empty, f.scenario))
+      .processCommand(
+        DMValidateScenarioCommand(
+          f.version,
+          DeploymentData.empty,
+          f.scenario,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
       .failed
       .futureValue shouldEqual
       ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
