@@ -1,5 +1,5 @@
 ---
-title: Typical implementation - Streaming
+title: Streaming
 ---
 
 Diagrams below show architecture of typical Nussknacker deployment in Streaming mode. They show not only

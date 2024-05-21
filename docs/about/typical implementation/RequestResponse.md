@@ -1,5 +1,5 @@
 ---
-title: Typical implementation - Request-Response
+title: Request-Response
 ---
 
 The diagram below shows architecture of a typical Nussknacker deployment in Request-Response mode. It shows not only 
