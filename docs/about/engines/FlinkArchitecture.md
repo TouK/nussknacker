@@ -11,8 +11,8 @@ deployment (more details about architecture of Flink itself can be found
 [here](https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/flink-architecture/)):
 
 <p align="center">
-  <img src="img/flink_simple.png" alt="" width="48%">
-  <img src="img/nu_flink_simple.png" alt="" width="48%">
+  <img src="img/flink_simple.png" alt="" width="48%" />
+  <img src="img/nu_flink_simple.png" alt="" width="48%" />
 </p>
 
 This architecture assumes that:

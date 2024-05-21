@@ -13,8 +13,8 @@ as general architecture of Nussknacker deployment and of stream processing solut
 which engine you choose.
 
 <p align="center">
-  <img src="img/typical_implementation_flink.png" alt="Typical flink streaming implementation" width="45%">
-  <img src="img/typical_implementation_lite.png" alt="Typical lite streaming implementation" width="45%">
+  <img src="img/typical_implementation_flink.png" alt="Typical flink streaming implementation" width="45%" />
+  <img src="img/typical_implementation_lite.png" alt="Typical lite streaming implementation" width="45%" />
 </p>
 
 The following paragraphs briefly explain the role of the architectural components in Nussknacker deployment.
