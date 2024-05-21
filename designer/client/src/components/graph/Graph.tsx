@@ -3,7 +3,6 @@ import { dia, g, shapes } from "jointjs";
 import styles from "jointjs/dist/joint.css";
 import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lodash";
 import React from "react";
-import { findDOMNode } from "react-dom";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
