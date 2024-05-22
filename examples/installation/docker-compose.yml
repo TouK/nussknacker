@@ -26,6 +26,7 @@ services:
     image: touk/nussknacker:1.14.0_scala-2.12
     restart: unless-stopped
     environment:
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf"
       DB_URL: "jdbc:postgresql://postgres:5432/nu-db"
       DB_DRIVER: "org.postgresql.Driver"
       DB_USER: "nu"
@@ -55,6 +56,8 @@ services:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
       retries: 10
+    volumes:
+      - ./designer/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
     volumes_from:
       - flink-jobmanager
 
