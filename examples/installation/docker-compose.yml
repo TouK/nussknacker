@@ -108,8 +108,8 @@ services:
     image: bitnami/zookeeper:3.9
     restart: unless-stopped
     environment:
-      ALLOW_ANONYMOUS_LOGIN: yes
-      ZOO_4LW_COMMANDS_WHITELIST: ruok
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_4LW_COMMANDS_WHITELIST: "ruok"
     healthcheck:
       test: ["CMD-SHELL", 'echo "ruok" | nc -w 2 -q 2 localhost 2181 | grep imok']
       interval: 5s
