@@ -17,7 +17,7 @@
       <env name="USAGE_REPORTS_FINGERPRINT" value="development" />
       <env name="USAGE_REPORTS_SOURCE" value="sources" />
       <env name="INPUT_CONFIG_RESOLVE_ENV_VARIABLES" value="false" />
-      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/tables-definition.sql" />
+      <env name="TABLES_DEFINITION_FILE" value="../../../nussknacker-dist/src/universal/conf/dev-tables-definition.sql" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
