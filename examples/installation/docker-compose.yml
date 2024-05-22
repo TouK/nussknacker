@@ -69,7 +69,7 @@ services:
       POSTGRES_USER: "nu"
       POSTGRES_PASSWORD: "nupassword"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready" ]
+      test: ["CMD-SHELL", "pg_isready -d nu-db -U nu"]
       interval: 10s
       retries: 10
     volumes:
