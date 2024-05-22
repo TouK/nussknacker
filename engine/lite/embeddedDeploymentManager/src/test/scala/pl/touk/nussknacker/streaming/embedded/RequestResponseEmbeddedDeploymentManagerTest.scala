@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DataFreshnessPolicy,
   DeployedScenarioData,
   DeploymentManager,
+  DeploymentUpdateStrategy,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -76,7 +78,16 @@ class RequestResponseEmbeddedDeploymentManagerTest
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = scenario.name)
       deploymentManager
-        .processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, scenario, None))
+        .processCommand(
+          DMRunDeploymentCommand(
+            version,
+            DeploymentData.empty,
+            scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
         .futureValue
     }
 
