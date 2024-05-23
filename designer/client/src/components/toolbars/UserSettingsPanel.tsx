@@ -11,6 +11,12 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
     const theme = useTheme();
     const [settings, , reset] = useUserSettings();
+
+    const lightMode = settings["debug.lightTheme"];
+    useEffect(() => {
+        theme.setMode(lightMode ? "light" : "dark");
+    }, [theme, lightMode]);
+
     const value = Object.entries(settings).map(([label, value]) => ({ label, value }));
     return (
         <ToolbarWrapper {...props} title={t("panels.userSettings.title", "🧪 User settings")}>
