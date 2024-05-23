@@ -71,6 +71,10 @@ describe("Processes list", () => {
 
         cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
 
+        cy.get("body").click();
+
+        cy.contains("button", /processing mode/i).click();
+
         cy.get("ul[role='menu']").within(() => {
             cy.contains(/Default/i).click();
         });

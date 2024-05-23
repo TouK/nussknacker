@@ -13,7 +13,7 @@ export interface FiltersParams<V extends string = string, T = string> {
 export function SimpleOptionsStack(props: FiltersParams<string, { name: string; icon?: string }>): JSX.Element {
     const { options = [], value = [], onChange, label, ...passProps } = props;
     return (
-        <OptionsStack label={label}>
+        <OptionsStack label={label} {...props}>
             {options.map((option) => {
                 const isSelected = value.includes(option.name);
                 const onClick = (checked: boolean) =>

@@ -15,7 +15,7 @@ export function ProcessingModeStack(
 ): JSX.Element {
     const { options = [], value = [], onChange, label, ...passProps } = props;
     return (
-        <OptionsStack label={label}>
+        <OptionsStack label={label} {...props}>
             {options.map((option) => {
                 const isSelected = value.includes(option.name);
                 const onClick = (checked: boolean) =>
