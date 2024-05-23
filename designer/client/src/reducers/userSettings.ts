@@ -2,9 +2,14 @@ import { persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { Reducer } from "../actions/reduxTypes";
 
-export interface UserSettings {
-    [key: string]: boolean;
-}
+type SettingsNames =
+    | `${string}.showLines`
+    | `${string}.noWrap`
+    | `survey-panel(${string}).closed`
+    | "debug.nodesAsJson"
+    | "debug.forceDisableModals";
+
+export type UserSettings = Partial<Record<SettingsNames, boolean>>;
 
 const reducer: Reducer<UserSettings> = (state = {}, action) => {
     switch (action.type) {

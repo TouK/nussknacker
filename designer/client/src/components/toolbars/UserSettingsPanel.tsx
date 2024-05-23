@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Typography, useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
 import { ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import { UserSettings } from "../../reducers/userSettings";
 
 export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
     const { t } = useTranslation();
@@ -63,12 +64,13 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
 const Menu = () => <></>;
 
 interface MultiValueLabelProps {
-    data: { label: string; value: unknown };
+    data: { label: keyof UserSettings; value: unknown };
     innerProps: { className?: string };
 }
 
 const MultiValueLabel = ({ data, innerProps }: MultiValueLabelProps) => {
     const [, toggle] = useUserSettings();
+
     return (
         <Typography variant={"subtitle2"} onClick={() => toggle([data.label])} className={innerProps.className}>
             {data.value ? "✅" : "⛔️"} {data.label}
