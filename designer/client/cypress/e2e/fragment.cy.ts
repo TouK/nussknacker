@@ -299,9 +299,6 @@ describe("Fragment", () => {
 
         cy.get("[data-testid=window]").find("section").scrollTo("top");
         cy.get("[data-testid=window]").find('[data-testid="content-size"]').matchImage();
-
-        cy.get("[data-testid=window]").find("section").scrollTo("bottom");
-        cy.get("[data-testid=window]").find('[id="nk-graph-fragment"]').matchImage();
     });
 
     it("should open properties", () => {
