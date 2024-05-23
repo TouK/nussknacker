@@ -33,7 +33,20 @@ export function UserSettingsPanel(props: ToolbarPanelProps): JSX.Element {
                         fontWeight: "bold",
                         color: theme.palette.getContrastText(theme.palette.success.dark),
                     }),
-                    control: (base) => ({ ...base, padding: 0, border: "none", backgroundColor: theme.palette.background.paper }),
+                    control: (base) => ({
+                        ...base,
+                        padding: 0,
+                        border: "none",
+                        backgroundColor: theme.palette.background.paper,
+                        outline: 0,
+                        borderRadius: 0,
+                        boxShadow: "none",
+                    }),
+                    input: (base) => ({
+                        ...base,
+                        color: theme.palette.text.primary,
+                        outline: 0,
+                    }),
                     valueContainer: (base) => ({ ...base, padding: 4, flexWrap: "wrap-reverse" }),
                 }}
                 components={{
