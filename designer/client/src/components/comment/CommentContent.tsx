@@ -8,7 +8,10 @@ import { NuThemeProvider } from "../../containers/theme/nuThemeProvider";
 
 interface Props {
     content: string;
-    commentSettings: { substitutionPattern?: string; substitutionLink?: string };
+    commentSettings: {
+        substitutionPattern?: string;
+        substitutionLink?: string;
+    };
 }
 
 function CommentContent({ commentSettings, content }: Props): JSX.Element {
