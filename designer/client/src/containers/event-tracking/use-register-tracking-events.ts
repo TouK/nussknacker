@@ -10,6 +10,8 @@ export const enum EventTrackingType {
     Click = "CLICK",
     Keyboard = "KEYBOARD",
     Move = "MOVE",
+    DoubleClick = "DOUBLE_CLICK",
+    KeyboardAndClick = "KEYBOARD_AND_CLICK",
 }
 
 enum ClickEventsSelector {
