@@ -302,6 +302,7 @@ val scalaTestPlusV       =
 val logbackV                = "1.2.13"
 // this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
+val betterFilesV            = "3.9.2"
 val circeV                  = "0.14.6"
 val circeGenericExtrasV     = "0.14.3"
 val circeYamlV              = "0.14.2"
@@ -321,7 +322,7 @@ val configV                 = "1.4.3"
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.12.0"
 val testContainersScalaV    = "0.41.3"
-val testContainersJavaV     = "1.19.7"
+val testContainersJavaV     = "1.19.8"
 val nettyV                  = "4.1.109.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
@@ -1129,15 +1130,17 @@ lazy val testUtils = (project in utils("test-utils"))
         "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
         "com.softwaremill.sttp.tapir"   %% "tapir-apispec-docs"      % tapirV,
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"      % openapiCirceYamlV,
-      ) ++ forScalaVersion(
-        scalaVersion.value,
-        Seq(),
-        // rest-assured is not cross compiled, so we have to use different versions
-        (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0" exclude ("commons-logging", "commons-logging")),
-        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1" exclude ("commons-logging", "commons-logging"))
-      )
+      ) ++ restAssuredDependency(scalaVersion.value)
     }
   )
+
+def restAssuredDependency(scalaVersion: String) = forScalaVersion(
+  scalaVersion,
+  Seq(),
+  // rest-assured is not cross compiled, so we have to use different versions
+  (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0"),
+  (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1")
+)
 
 lazy val jsonUtils = (project in utils("json-utils"))
   .settings(commonSettings)
@@ -1962,7 +1965,7 @@ lazy val designer = (project in file("designer/server"))
         "com.softwaremill.sttp.tapir"   %% "tapir-swagger-ui-bundle"         % tapirV,
         "io.circe"                      %% "circe-generic-extras"            % circeGenericExtrasV,
         "org.reflections"                % "reflections"                     % "0.10.2",
-        "com.github.pathikrit"          %% "better-files"                    % "3.9.2",
+        "com.github.pathikrit"          %% "better-files"                    % betterFilesV,
         "com.dimafeng"                  %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
         "com.dimafeng"                  %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
         "org.scalatestplus"             %% "mockito-4-11"                    % scalaTestPlusV       % Test,
@@ -2007,6 +2010,22 @@ lazy val designer = (project in file("designer/server"))
     developmentTestsDeploymentManager % Provided,
     devPeriodicDM                     % Provided,
     schemedKafkaComponentsUtils       % Provided,
+  )
+
+lazy val e2eTests = (project in file("e2e-tests"))
+  .configs(SlowTests)
+  .settings(slowTestsSettings)
+  .settings(
+    libraryDependencies ++= {
+      Seq(
+        "com.github.pathikrit"       %% "better-files"                   % betterFilesV         % Test,
+        "ch.qos.logback"              % "logback-classic"                % logbackV             % Test,
+        "com.typesafe.scala-logging" %% "scala-logging"                  % scalaLoggingV        % Test,
+        "org.scalatest"              %% "scalatest"                      % scalaTestV           % Test,
+        "com.dimafeng"               %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
+      ) ++
+        restAssuredDependency(scalaVersion.value)
+    }
   )
 
 /*

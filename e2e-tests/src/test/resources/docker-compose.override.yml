@@ -1,0 +1,4 @@
+services:
+
+  designer:
+    image: touk/nussknacker:1.15.0_scala-2.12

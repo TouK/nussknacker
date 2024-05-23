@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.e2e
+package pl.touk.nussknacker
 
 import org.scalatest.freespec.AnyFreeSpecLike
 
