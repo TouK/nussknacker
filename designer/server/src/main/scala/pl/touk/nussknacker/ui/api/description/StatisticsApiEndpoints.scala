@@ -154,7 +154,8 @@ object StatisticsApiEndpoints {
       case object ClickScenarioUnarchive               extends StatisticName
       case object ClickScenarioCustomAction            extends StatisticName
       case object ClickScenarioCustomLink              extends StatisticName
-      case object KeyboardRangeSelectNodes             extends StatisticName
+      case object DoubleClickRangeSelectNodes          extends StatisticName
+      case object KeyboardAndClickRangeSelectNodes     extends StatisticName
       case object KeyboardCopyNode                     extends StatisticName
       case object KeyboardPasteNode                    extends StatisticName
       case object keyboardCutNode                      extends StatisticName
