@@ -42,9 +42,19 @@ DatabaseLookupEnricher is a specialized look-up component; it returns all column
 ![alt_text](img/databaseLookupEnricher.png "databaseLookup Enricher")
 
 ### Decision Table
- 
-This component allows the user to match input to a pre-defined result. Please be wary that this component works a bit 
-different than [a classical decision table](https://en.wikipedia.org/wiki/Decision_table). It consists of the fields:
+
+Some decision flows can't be easily modeled using filter/switch/split nodes or resulting flow can be huge/unreadable. In such cases user may try to use the Decision Table component.  
+This can be helpful in situations like enriching data using static dictionary or matching business objects to specified segments based on multiple properties (columns).
+
+Our implementation is more generic than a simple decision table like the one described in [Wikipedia](https://en.wikipedia.org/wiki/Decision_table). 
+In our implementation of the decision table, columns contain "decision parameters" and  "actions". 
+Nussknacker does not distinguish these two types of columns, however, if you need the functionality of a decision table you probably will include one or more columns with actions.  
+To match one or more rows (as in a classic decision table) a **_match condition_** returning a boolean value has to be created. 
+This expression can refer to the variables used in the scenario and values in the columns - hence the name for these columns - "decision parameters". 
+The result will be all matched rows - the rows for which the **_match condition_** returned "true".  
+Because whole matched rows will be returned, we do not differentiate the "decision parameter" columns and "action" columns.
+
+It consists of the fields:
 
 - **_Decision Table_**: 
 
