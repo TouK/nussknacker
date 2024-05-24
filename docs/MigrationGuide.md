@@ -13,6 +13,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `DMValidateScenarioCommand.updateStrategy` was added
     * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
 
+### Configuration changes
+
+* [#6082](https://github.com/TouK/nussknacker/pull/6082) Default Influx database was changed from `esp` to `nussknacker_metrics`
+
+### Other changes
+
 ## In version 1.15.0
 
 ### Code API changes

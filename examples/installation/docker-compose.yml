@@ -23,7 +23,7 @@ services:
   ### Nussknacker designer service
 
   designer:
-    image: touk/nussknacker:1.14.0_scala-2.12
+    image: touk/nussknacker:1.15.0_scala-2.12
     restart: unless-stopped
     environment:
       CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf"
@@ -99,7 +99,7 @@ services:
     image: influxdb:1.8.10
     restart: unless-stopped
     environment:
-      INFLUXDB_DB: esp
+      INFLUXDB_DB: "nussknacker_metrics"
     healthcheck:
       test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
       interval: 10s
@@ -174,7 +174,7 @@ services:
     build:
       context: ./flink/
       args:
-        FLINK_VERSION: "1.17.2-scala_2.12-java11"
+        FLINK_VERSION: "1.18.1-scala_2.12-java11"
     restart: unless-stopped
     command: jobmanager
     environment:
@@ -190,7 +190,7 @@ services:
     build:
       context: ./flink/
       args:
-        FLINK_VERSION: "1.17.2-scala_2.12-java11"
+        FLINK_VERSION: "1.18.1-scala_2.12-java11"
     restart: unless-stopped
     command: taskmanager
     environment:
