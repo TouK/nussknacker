@@ -1,0 +1,220 @@
+name: nussknacker
+
+services:
+
+  nginx:
+    image: nginx:1.26.0-alpine
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      grafana:
+        condition: service_healthy
+      designer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "service", "nginx", "status"]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/additional:/etc/nginx/additional
+
+  ### Nussknacker designer service
+
+  designer:
+    image: touk/nussknacker:1.15.0_scala-2.12
+    restart: unless-stopped
+    environment:
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf"
+      DB_URL: "jdbc:postgresql://postgres:5432/nu-db"
+      DB_DRIVER: "org.postgresql.Driver"
+      DB_USER: "nu"
+      DB_PASSWORD: "nupassword"
+      NUSSKNACKER_LOG_LEVEL: "INFO"
+      KAFKA_ADDRESS: "kafka:9092"
+      SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      INFLUXDB_URL: "http://influxdb:8086"
+      FLINK_REST_URL: "http://flink-jobmanager:8081"
+      FLINK_QUERYABLE_STATE_PROXY_URL: "flink-taskmanager:9069"
+      JDK_JAVA_OPTIONS: "-Xmx1024M"
+      USAGE_REPORTS_SOURCE: "example-installation-docker-compose"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_healthy
+      flink-taskmanager:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./designer/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
+    volumes_from:
+      - flink-jobmanager
+
+  postgres:
+    image: postgres:13
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "nu-db"
+      POSTGRES_USER: "nu"
+      POSTGRES_PASSWORD: "nupassword"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d nu-db -U nu"]
+      interval: 10s
+      retries: 10
+    volumes:
+      - nussknacker_designer_data:/var/lib/postgresql/data
+
+  ### Nussknacker metrics-related services:
+
+  grafana:
+    image: grafana/grafana:7.5.17
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:/grafana"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3000"]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+
+  influxdb:
+    image: influxdb:1.8.10
+    restart: unless-stopped
+    environment:
+      INFLUXDB_DB: "nussknacker_metrics"
+    healthcheck:
+      test: [ "CMD-SHELL", "influx -execute 'SHOW DATABASES'" ]
+      interval: 10s
+      retries: 10
+
+  ### KAFKA-related services:
+
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    restart: unless-stopped
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_4LW_COMMANDS_WHITELIST: "ruok"
+    healthcheck:
+      test: ["CMD-SHELL", 'echo "ruok" | nc -w 2 -q 2 localhost 2181 | grep imok']
+      interval: 5s
+      retries: 5
+
+  kafka:
+    image: bitnami/kafka:3.7.0
+    restart: unless-stopped
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: "zookeeper:2181"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list" ]
+      interval: 10s
+      retries: 10
+
+  schema-registry:
+    image: bitnami/schema-registry:7.6.1
+    restart: unless-stopped
+    environment:
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+      SCHEMA_REGISTRY_KAFKA_BROKERS: "PLAINTEXT://kafka:9092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", 'echo -e "GET /subjects HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" | nc localhost 8081 | grep -q "HTTP/1.1 200 OK" | exit 0']
+      interval: 10s
+      retries: 10
+
+  akhq:
+    image: tchiotludo/akhq:0.24.0
+    restart: unless-stopped
+    environment:
+      AKHQ_CONFIGURATION: |
+        micronaut:
+          server:
+            context-path: /akhq
+        akhq:
+          connections:
+            nussknacker-kafka:
+              properties:
+                bootstrap.servers: "kafka:9092"
+              schema-registry:
+                url: "http://schema-registry:8081"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080" ]
+      interval: 10s
+      retries: 10
+
+  ### FLINK-related services
+
+  flink-jobmanager:
+    build:
+      context: ./flink/
+      args:
+        FLINK_VERSION: "1.18.1-scala_2.12-java11"
+    restart: unless-stopped
+    command: jobmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8081/jobs/overview" ]
+      interval: 10s
+      retries: 10
+    volumes:
+      - nussknacker_flink_data:/opt/flink/data
+
+  flink-taskmanager:
+    build:
+      context: ./flink/
+      args:
+        FLINK_VERSION: "1.18.1-scala_2.12-java11"
+    restart: unless-stopped
+    command: taskmanager
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: "flink-jobmanager"
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+      telegraf:
+        condition: service_healthy
+    volumes_from:
+      - flink-jobmanager
+
+  telegraf:
+    image: telegraf:1.30.2
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8087/write" ]
+      interval: 10s
+      retries: 10
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+
+volumes:
+  nussknacker_designer_data:
+    name: nussknacker_designer_data
+  nussknacker_flink_data:
+    name: nussknacker_flink_data

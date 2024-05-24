@@ -11,7 +11,13 @@ import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./Gra
 import { Events, GraphProps } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
-import { RangeSelectedEventData, RangeSelectEvents, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
+import {
+    RangeSelectedEventData,
+    RangeSelectEvents,
+    RangeSelectPlugin,
+    RangeSelectStartEventData,
+    SelectionMode,
+} from "./RangeSelectPlugin";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
@@ -35,6 +41,7 @@ import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
 import "./jqueryPassiveEvents";
+import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
@@ -52,6 +59,7 @@ type Props = GraphProps & {
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
     isPristine?: boolean;
     theme: Theme;
+    handleStatisticsEvent: (event: TrackEventParams) => void;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -375,10 +383,15 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom = new PanZoomPlugin(this.processGraphPaper, this.viewport);
 
         if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
-            const { toggleSelection, resetSelection } = this.props;
+            const { toggleSelection, resetSelection, handleStatisticsEvent } = this.props;
             new RangeSelectPlugin(this.processGraphPaper, this.props.theme);
             this.processGraphPaper
-                .on(RangeSelectEvents.START, () => {
+                .on(RangeSelectEvents.START, (data: RangeSelectStartEventData) => {
+                    handleStatisticsEvent({
+                        selector: EventTrackingSelector.RangeSelectNodes,
+                        event: data.source === "pointer" ? EventTrackingType.DoubleClick : EventTrackingType.KeyboardAndClick,
+                    });
+
                     this.panAndZoom.toggle(false);
                 })
                 .on(RangeSelectEvents.STOP, () => {

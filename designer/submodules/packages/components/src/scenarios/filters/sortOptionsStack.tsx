@@ -5,6 +5,7 @@ import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
 import { OptionsStack } from "./optionsStack";
 import { FilterListItemLabel } from "./filterListItemLabel";
 import { FiltersParams } from "./simpleOptionsStack";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 
 export function SortOptionsStack(props: FiltersParams<SortKey, { name: string; icon?: string }>): JSX.Element {
     const { options, value, onChange } = props;
@@ -38,15 +39,18 @@ function SortOption(props: {
     }, [isDesc, isSelected, onChange, name]);
     return (
         <FilterListItem
-            color={isDefault ? "default" : "error"}
             label={<FilterListItemLabel name={name} icon={icon} />}
-            icon={<Sort />}
-            checkedIcon={<ArrowUpward />}
-            indeterminateIcon={<ArrowDownward />}
-            indeterminate={isSelected && isDesc}
-            checked={isSelected}
             onChange={onClick}
             touched={!isDefault && isSelected}
+            checked={isSelected}
+            checkboxProps={{
+                color: isDefault ? "default" : "error",
+                icon: <Sort />,
+                checkedIcon: <ArrowUpward />,
+                indeterminateIcon: <ArrowDownward />,
+                indeterminate: isSelected && isDesc,
+            }}
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosBySortOption })}
         />
     );
 }

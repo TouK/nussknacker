@@ -11,7 +11,7 @@ function UndoButton(props: ToolbarButtonProps): JSX.Element {
     const { undo } = useSelectionActions();
     const past = useSelector(getHistoryPast);
     const { t } = useTranslation();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const available = !disabled && past.length > 0 && undo;
 
     return (
@@ -21,6 +21,7 @@ function UndoButton(props: ToolbarButtonProps): JSX.Element {
             disabled={!available}
             icon={<Icon />}
             onClick={available ? (e) => undo(e.nativeEvent) : null}
+            type={type}
         />
     );
 }

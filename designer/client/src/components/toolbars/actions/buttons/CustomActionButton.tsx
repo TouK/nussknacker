@@ -2,8 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import DefaultIcon from "../../../../assets/img/toolbarButtons/custom_action.svg";
 import { CustomAction } from "../../../../types";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import { StatusType } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
@@ -16,7 +15,7 @@ type CustomActionProps = {
 } & ToolbarButtonProps;
 
 export default function CustomActionButton(props: CustomActionProps) {
-    const { action, processStatus, disabled } = props;
+    const { action, processStatus, disabled, type } = props;
 
     const { t } = useTranslation();
 
@@ -43,6 +42,7 @@ export default function CustomActionButton(props: CustomActionProps) {
                     meta: action,
                 })
             }
+            type={type}
         />
     );
 }

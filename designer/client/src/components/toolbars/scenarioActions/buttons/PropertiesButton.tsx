@@ -11,7 +11,7 @@ import { ToolbarButtonProps } from "../../types";
 function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { openNodeWindow } = useWindows();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const scenario = useSelector(getScenario);
     const name = useSelector(getProcessUnsavedNewName);
     const propertiesErrors = useSelector(hasPropertiesErrors);
@@ -28,6 +28,7 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
             icon={<Icon />}
             disabled={disabled}
             onClick={onClick}
+            type={type}
         />
     );
 }

@@ -6,11 +6,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
   DMCancelScenarioCommand,
   DMMakeScenarioSavepointCommand,
   DMRunDeploymentCommand,
-  DMStopScenarioCommand
+  DMStopScenarioCommand,
+  DeploymentUpdateStrategy
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -52,7 +54,16 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val version     = ProcessVersion(VersionId(15), processName, processId, "user1", Some(13))
 
     val deployedResponse =
-      deploymentManager.processCommand(DMRunDeploymentCommand(version, defaultDeploymentData, process, None))
+      deploymentManager.processCommand(
+        DMRunDeploymentCommand(
+          version,
+          defaultDeploymentData,
+          process,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
 
     deployedResponse.futureValue
   }
@@ -137,7 +148,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
         empty(processName),
-        Some(savepointPath.toString)
+        StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.toString)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
@@ -170,7 +181,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
         empty(processName),
-        Some(savepointPath.futureValue)
+        StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.futureValue)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
@@ -196,7 +207,16 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processName)
       val exception =
         deploymentManager
-          .processCommand(DMRunDeploymentCommand(empty(process.name), defaultDeploymentData, statefullProcess, None))
+          .processCommand(
+            DMRunDeploymentCommand(
+              empty(process.name),
+              defaultDeploymentData,
+              statefullProcess,
+              DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+                StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+              )
+            )
+          )
           .failed
           .futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
@@ -221,7 +241,16 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       val statefulProcess = StatefulSampleProcess.processWithAggregator(processName, "#AGG.approxCardinality")
       val exception =
         deploymentManager
-          .processCommand(DMRunDeploymentCommand(empty(process.name), defaultDeploymentData, statefulProcess, None))
+          .processCommand(
+            DMRunDeploymentCommand(
+              empty(process.name),
+              defaultDeploymentData,
+              statefulProcess,
+              DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+                StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+              )
+            )
+          )
           .failed
           .futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
