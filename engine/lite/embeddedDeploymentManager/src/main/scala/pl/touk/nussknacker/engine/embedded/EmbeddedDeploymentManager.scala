@@ -89,9 +89,13 @@ class EmbeddedDeploymentManager(
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
     command match {
-      case _: DMValidateScenarioCommand => Future.successful(())
-      case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, _) =>
+      case DMValidateScenarioCommand(_, _, _, updateStrategy) =>
         Future {
+          ensureReplaceDeploymentUpdateStrategy(updateStrategy)
+        }
+      case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, updateStrategy) =>
+        Future {
+          ensureReplaceDeploymentUpdateStrategy(updateStrategy)
           deployScenarioClosingOldIfNeeded(
             processVersion,
             deploymentData,
@@ -106,6 +110,14 @@ class EmbeddedDeploymentManager(
           _: DMCustomActionCommand =>
         notImplemented
     }
+
+  private def ensureReplaceDeploymentUpdateStrategy(updateStrategy: DeploymentUpdateStrategy): Unit = {
+    updateStrategy match {
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+      case DeploymentUpdateStrategy.DontReplaceDeployment =>
+        throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+    }
+  }
 
   private def deployScenarioClosingOldIfNeeded(
       processVersion: ProcessVersion,

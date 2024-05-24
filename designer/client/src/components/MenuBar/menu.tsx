@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { styled, Typography } from "@mui/material";
 import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
 import { useSelector } from "react-redux";
 import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
@@ -20,16 +20,6 @@ const PlainButton = styled("button")({
         outline: "unset",
     },
 });
-
-export const PlainLink = styled(TabElement)(({ theme }) => ({
-    "&, &:hover, &:focus": {
-        color: "inherit",
-        textDecoration: "none",
-    },
-    "&:hover": {
-        background: theme.palette.action.hover,
-    },
-}));
 
 const List = styled(TruncatedList)({
     // make sure to override global classname
@@ -110,6 +100,16 @@ function ExpandButton({ children }: PropsWithChildren<unknown>) {
     );
 }
 
+const Spacer = styled("span")(({ theme }) => ({
+    color: theme.palette.action.disabled,
+    border: "1px solid",
+    alignSelf: "stretch",
+    "li &": {
+        marginBlock: theme.spacing(1.5),
+        marginInline: theme.spacing(1),
+    },
+}));
+
 export function Menu(): JSX.Element {
     const tabs = useSelector(getTabs);
     const loggedUser = useSelector(getLoggedUser);
@@ -120,17 +120,10 @@ export function Menu(): JSX.Element {
                 .filter((t) => !t.requiredPermission || loggedUser.hasGlobalPermission(t.requiredPermission))
                 .filter((t) => !!t.title)
                 .map((tab) => (
-                    <PlainLink
-                        sx={(theme) => ({
-                            fontWeight: 400,
-                            padding: ".8em 1.2em",
-                            "&.active": {
-                                background: theme.palette.action.active,
-                            },
-                        })}
-                        key={tab.id}
-                        tab={tab}
-                    />
+                    <React.Fragment key={tab.id}>
+                        {tab.spacerBefore ? <Spacer /> : null}
+                        <Typography component={TabElement} tab={tab} />
+                    </React.Fragment>
                 )),
         [loggedUser, tabs],
     );
