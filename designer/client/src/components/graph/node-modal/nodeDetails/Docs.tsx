@@ -3,6 +3,7 @@ import { PropsOf } from "@emotion/react";
 import Icon from "../../../../assets/img/documentation.svg";
 import React from "react";
 import { Subtype } from "./Subtype";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
 const LinkStyled = styled("a")({
     display: "flex",
@@ -22,7 +23,13 @@ type DocsProps = PropsOf<typeof Subtype> & {
 };
 
 export const Docs = ({ href, ...props }: DocsProps) => (
-    <LinkStyled target="_blank" href={href} title="Documentation" rel="noreferrer">
+    <LinkStyled
+        target="_blank"
+        href={href}
+        title="Documentation"
+        rel="noreferrer"
+        {...getEventTrackingProps({ selector: EventTrackingSelector.NodeDocumentation })}
+    >
         <Subtype endIcon={<DocsIcon />} {...props} />
     </LinkStyled>
 );

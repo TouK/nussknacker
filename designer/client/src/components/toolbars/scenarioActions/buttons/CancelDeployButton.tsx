@@ -6,8 +6,7 @@ import Icon from "../../../../assets/img/toolbarButtons/stop.svg";
 import HttpService from "../../../../http/HttpService";
 import { getProcessName, isCancelPossible } from "../../../../reducers/selectors/graph";
 import { getCapabilities } from "../../../../reducers/selectors/other";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { WindowKind, useWindows } from "../../../../windowManager";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
@@ -15,7 +14,7 @@ import { ToolbarButtonProps } from "../../types";
 export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const cancelPossible = useSelector(isCancelPossible);
     const processName = useSelector(getProcessName);
     const capabilities = useSelector(getCapabilities);
@@ -37,6 +36,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
                     meta: { action },
                 })
             }
+            type={type}
         />
     );
 }

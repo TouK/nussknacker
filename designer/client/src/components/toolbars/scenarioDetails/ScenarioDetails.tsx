@@ -1,4 +1,4 @@
-import { Box, Chip, Link, Typography } from "@mui/material";
+import { Box, Chip, Typography } from "@mui/material";
 import i18next from "i18next";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
@@ -10,7 +10,6 @@ import { ProcessingMode } from "../../../http/HttpService";
 import { RootState } from "../../../reducers";
 import { getProcessUnsavedNewName, getScenario, isProcessRenamed } from "../../../reducers/selectors/graph";
 import { getProcessState } from "../../../reducers/selectors/scenarioState";
-import { useWindows, WindowKind } from "../../../windowManager";
 import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
@@ -23,10 +22,9 @@ import {
     ProcessRename,
     ScenarioDetailsItemWrapper,
 } from "./ScenarioDetailsComponents";
+import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
 
 const ScenarioDetails = memo((props: ToolbarPanelProps) => {
-    const { open } = useWindows();
-
     const scenario = useSelector((state: RootState) => getScenario(state));
     const isRenamePending = useSelector((state: RootState) => isProcessRenamed(state));
     const unsavedNewName = useSelector((state: RootState) => getProcessUnsavedNewName(state));
@@ -67,22 +65,7 @@ const ScenarioDetails = memo((props: ToolbarPanelProps) => {
                             <Typography variant={"caption"}>{i18next.t("panels.scenarioDetails.category", "Category:")}</Typography>
                             <Chip size={"small"} label={scenario.processCategory} sx={{ ml: 1 }} />
                         </Box>
-                        <div>
-                            <Typography
-                                component={Link}
-                                variant={"overline"}
-                                color={"text"}
-                                sx={(theme) => ({ cursor: "pointer", textDecorationColor: theme.palette.text.secondary })}
-                                onClick={() =>
-                                    open({
-                                        kind: WindowKind.scenarioDetails,
-                                        meta: { scenario, processState },
-                                    })
-                                }
-                            >
-                                {i18next.t("panels.scenarioDetails.moreButton", "More scenario details")}
-                            </Typography>
-                        </div>
+                        <MoreScenarioDetailsButton scenario={scenario} processState={processState} />
                     </PanelScenarioDetails>
                 </CssFade>
             </SwitchTransition>

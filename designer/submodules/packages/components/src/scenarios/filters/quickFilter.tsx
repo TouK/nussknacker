@@ -12,7 +12,10 @@ export function QuickFilter<F extends Record<string, any>>({
     isLoading,
     filter,
     ...props
-}: PropsWithChildren<{ filter: keyof F; isLoading?: boolean }>): JSX.Element {
+}: PropsWithChildren<{
+    filter: keyof F;
+    isLoading?: boolean;
+}>): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<F>();
 

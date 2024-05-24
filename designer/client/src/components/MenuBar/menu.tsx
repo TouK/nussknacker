@@ -9,6 +9,7 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
+import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
 
 const PlainButton = styled("button")({
     background: "unset",
@@ -122,7 +123,15 @@ export function Menu(): JSX.Element {
                 .map((tab) => (
                     <React.Fragment key={tab.id}>
                         {tab.spacerBefore ? <Spacer /> : null}
-                        <Typography component={TabElement} tab={tab} />
+                        <Typography
+                            component={TabElement}
+                            tab={tab}
+                            {...(tab.id.toLowerCase() === "components"
+                                ? getEventTrackingProps({ selector: EventTrackingSelector.ComponentsTab })
+                                : tab.id.toLowerCase() === "metrics"
+                                ? getEventTrackingProps({ selector: EventTrackingSelector.GlobalMetricsTab })
+                                : null)}
+                        />
                     </React.Fragment>
                 )),
         [loggedUser, tabs],
