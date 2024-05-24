@@ -1,4 +1,4 @@
-import { NuIcon, useFilterContext } from "../../common";
+import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
@@ -9,6 +9,7 @@ import { xor } from "lodash";
 import { FilterListItemLabel } from "./filterListItemLabel";
 import ScanarioIcon from "../../assets/icons/scenario.svg";
 import FragmentIcon from "../../assets/icons/fragment.svg";
+import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
@@ -27,7 +28,7 @@ export function OtherOptionsStack(): JSX.Element {
             onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
         >
             <FilterListItem
-                color="default"
+                checkboxProps={{ color: "default" }}
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
                 label={
@@ -36,9 +37,10 @@ export function OtherOptionsStack(): JSX.Element {
                         <ScanarioIcon width={"1em"} height={"1em"} />
                     </Stack>
                 }
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByOther })}
             />
             <FilterListItem
-                color="default"
+                checkboxProps={{ color: "default" }}
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
                 onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
                 label={
@@ -47,6 +49,7 @@ export function OtherOptionsStack(): JSX.Element {
                         <FragmentIcon width={"1em"} height={"1em"} />
                     </Stack>
                 }
+                {...getEventTrackingProps({ selector: EventTrackingSelector.ScenariosByOther })}
             />
         </OptionsStack>
     );
@@ -64,7 +67,7 @@ interface StatusFiltersParams {
 }
 
 export function StatusOptionsStack(props: StatusFiltersParams): JSX.Element {
-    const { options = [], withArchived } = props;
+    const { options = [], withArchived, ...passProps } = props;
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
     const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "STATUS"];
@@ -86,7 +89,13 @@ export function StatusOptionsStack(props: StatusFiltersParams): JSX.Element {
                 const isSelected = value.includes(option.name);
                 const onClick = (checked: boolean) => onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name));
                 return (
-                    <FilterListItem key={option.name} checked={isSelected} onChange={onClick} label={<FilterListItemLabel {...option} />} />
+                    <FilterListItem
+                        key={option.name}
+                        checked={isSelected}
+                        onChange={onClick}
+                        label={<FilterListItemLabel {...option} />}
+                        {...passProps}
+                    />
                 );
             })}
             {withArchived ? (

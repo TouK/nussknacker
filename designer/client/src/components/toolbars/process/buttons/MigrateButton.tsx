@@ -14,7 +14,7 @@ import { ToolbarButtonProps } from "../../types";
 type Props = ToolbarButtonProps;
 
 function MigrateButton(props: Props) {
-    const { disabled } = props;
+    const { disabled, type } = props;
     const processName = useSelector(getProcessName);
     const versionId = useSelector(getProcessVersionId);
     const featuresSettings = useSelector(getFeatureSettings);
@@ -47,6 +47,7 @@ function MigrateButton(props: Props) {
             icon={<Icon />}
             disabled={!available}
             onClick={onClick}
+            type={type}
         />
     );
 }

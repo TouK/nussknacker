@@ -21,7 +21,7 @@ export type TestWithFormButtonProps = {
 
 const TestWFormIcon = loadable(() => import("../../../../assets/img/toolbarButtons/test-with-form.svg"));
 
-function TestWithFormButton({ disabled, name, title, icon, docs, markdownContent }: PropsOfButton<CustomButtonTypes.testWithForm>) {
+function TestWithFormButton({ disabled, name, title, icon, docs, markdownContent, type }: PropsOfButton<CustomButtonTypes.testWithForm>) {
     const { t } = useTranslation();
     const { open, inform } = useWindows();
 
@@ -56,6 +56,7 @@ function TestWithFormButton({ disabled, name, title, icon, docs, markdownContent
             icon={<Icon />}
             disabled={!isAvailable}
             onClick={sourcesFound > 1 ? multipleSourcesTest : oneSourceTest}
+            type={type}
         />
     );
 }

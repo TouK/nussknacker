@@ -11,7 +11,7 @@ function RedoButton(props: ToolbarButtonProps): JSX.Element {
     const { redo } = useSelectionActions();
     const future = useSelector(getHistoryFuture);
     const { t } = useTranslation();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const available = !disabled && future.length > 0 && redo;
 
     return (
@@ -21,6 +21,7 @@ function RedoButton(props: ToolbarButtonProps): JSX.Element {
             disabled={!available}
             icon={<Icon />}
             onClick={available ? (e) => redo(e.nativeEvent) : null}
+            type={type}
         />
     );
 }

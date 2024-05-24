@@ -99,7 +99,7 @@ object StatisticsApiEndpoints {
       case object FilterScenariosByCategory            extends StatisticName
       case object FilterScenariosByAuthor              extends StatisticName
       case object FilterScenariosByOther               extends StatisticName
-      case object SortScenarios                        extends StatisticName
+      case object SortScenariosBySortOption            extends StatisticName
       case object SearchComponentsByName               extends StatisticName
       case object FilterComponentsByGroup              extends StatisticName
       case object FilterComponentsByProcessingMode     extends StatisticName
@@ -113,10 +113,11 @@ object StatisticsApiEndpoints {
       case object FilterComponentUsagesByAuthor        extends StatisticName
       case object FilterComponentUsagesByOther         extends StatisticName
       case object ClickScenarioFromComponentUsages     extends StatisticName
-      case object ClickGlobalMetrics                   extends StatisticName
+      case object ClickGlobalMetricsTab                extends StatisticName
       case object ClickActionDeploy                    extends StatisticName
       case object ClickActionMetrics                   extends StatisticName
       case object ClickViewZoomIn                      extends StatisticName
+      case object ClickViewZoomOut                     extends StatisticName
       case object ClickViewReset                       extends StatisticName
       case object ClickEditUndo                        extends StatisticName
       case object ClickEditRedo                        extends StatisticName
@@ -137,15 +138,33 @@ object StatisticsApiEndpoints {
       case object ClickTestGenerateFile                extends StatisticName
       case object ClickTestHide                        extends StatisticName
       case object ClickMoreScenarioDetails             extends StatisticName
-      case object ClickRollUpPanel                     extends StatisticName
       case object ClickExpandPanel                     extends StatisticName
-      case object MovePanel                            extends StatisticName
+      case object ClickCollapsePanel                   extends StatisticName
+      case object MoveToolbarPanel                     extends StatisticName
       case object SearchNodesInScenario                extends StatisticName
       case object SearchComponentsInScenario           extends StatisticName
       case object ClickOlderVersion                    extends StatisticName
       case object ClickNewerVersion                    extends StatisticName
-      case object FiredKeyStroke                       extends StatisticName
       case object ClickNodeDocumentation               extends StatisticName
+      case object ClickComponentsTab                   extends StatisticName
+      case object ClickScenarioSave                    extends StatisticName
+      case object ClickTestCounts                      extends StatisticName
+      case object ClickScenarioCancel                  extends StatisticName
+      case object ClickScenarioArchiveToggle           extends StatisticName
+      case object ClickScenarioUnarchive               extends StatisticName
+      case object ClickScenarioCustomAction            extends StatisticName
+      case object ClickScenarioCustomLink              extends StatisticName
+      case object DoubleClickRangeSelectNodes          extends StatisticName
+      case object KeyboardAndClickRangeSelectNodes     extends StatisticName
+      case object KeyboardCopyNode                     extends StatisticName
+      case object KeyboardPasteNode                    extends StatisticName
+      case object keyboardCutNode                      extends StatisticName
+      case object keyboardSelectAllNodes               extends StatisticName
+      case object KeyboardRedoScenarioChanges          extends StatisticName
+      case object KeyboardUndoScenarioChanges          extends StatisticName
+      case object KeyboardDeleteNodes                  extends StatisticName
+      case object KeyboardDeselectAllNodes             extends StatisticName
+      case object KeyboardFocusSearchNodeField         extends StatisticName
 
       override def values = findValues
     }

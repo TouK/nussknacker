@@ -12,7 +12,7 @@ function FromFileButton(props: ToolbarButtonProps) {
     const testCapabilities = useSelector(getTestCapabilities);
     const processName = useSelector(getProcessName);
     const scenarioGraph = useSelector(getScenarioGraph);
-    const { disabled } = props;
+    const { disabled, type } = props;
     const { t } = useTranslation();
 
     const available = !disabled && testCapabilities && testCapabilities.canBeTested;
@@ -25,6 +25,7 @@ function FromFileButton(props: ToolbarButtonProps) {
             icon={<Icon />}
             disabled={!available}
             onDrop={(files) => files.forEach((file) => dispatch(testProcessFromFile(processName, file, scenarioGraph)))}
+            type={type}
         />
     );
 }
