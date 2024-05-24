@@ -70,7 +70,7 @@ class MigrationApiHttpServiceSecuritySpec
           .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
       }
     }
-    "no credentials were passes should" - {
+    "no credentials were passed should" - {
       "forbid access" in {
         given()
           .applicationState(
@@ -83,6 +83,52 @@ class MigrationApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
+      }
+    }
+    "impersonating user has permission to impersonate should" - {
+      "allow migration for impersonated user with appropriate permissions" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateWriterUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .equalsPlainBody("")
+      }
+      "forbid access for impersonated user with limited reading permissions" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateReaderUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
+      }
+    }
+    "impersonating user does not have permission to impersonate should" - {
+      "forbid access" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthWriter()
+          .impersonateWriterUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
   }

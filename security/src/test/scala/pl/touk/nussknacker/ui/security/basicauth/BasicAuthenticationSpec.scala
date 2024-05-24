@@ -46,28 +46,8 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
     }
   )
 
-  it("should permit an anonymous user") {
-    Get("/public") ~> testRoute ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual s"${anonymousUserRole}"
-    }
-  }
-
-  it("should permit an authenticated user") {
-    Get("/public").addCredentials(HttpCredentials.createBasicHttpCredentials("user", "user")) ~> testRoute ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual "User"
-    }
-  }
-
   it("should request authorization on invalid credentials") {
     Get("/public").addCredentials(HttpCredentials.createBasicHttpCredentials("user", "invalid")) ~> testRoute ~> check {
-      status shouldEqual StatusCodes.Unauthorized
-    }
-  }
-
-  it("should request authorization on anonymous access to a restricted resource") {
-    Get("/config") ~> testRoute ~> check {
       status shouldEqual StatusCodes.Unauthorized
     }
   }

@@ -5,6 +5,7 @@ import enumeratum.{Enum, EnumEntry}
 import io.restassured.specification.RequestSpecification
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.security.ImpersonatedUserData
 import pl.touk.nussknacker.test.NuRestAssureExtensions
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.utils.DesignerTestConfigValidator
@@ -115,6 +116,38 @@ trait WithAccessControlCheckingConfigRestAssuredUsersExtensions extends NuRestAs
 
     def basicAuthUnknownUser(): RequestSpecification =
       requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
+  }
+
+  implicit class UsersImpersonation[T <: RequestSpecification](requestSpecification: T) {
+
+    import io.circe.syntax._
+
+    private val impersonationHeader = "Impersonate-User-Data"
+
+    def impersonateReaderUser(): RequestSpecification =
+      requestSpecification.header(
+        impersonationHeader,
+        ImpersonatedUserData("reader", "reader", Set("Reader")).asJson.noSpaces
+      )
+
+    def impersonateLimitedReaderUser(): RequestSpecification =
+      requestSpecification.header(
+        impersonationHeader,
+        ImpersonatedUserData("limitedReader", "limitedReader", Set("LimitedReader")).asJson.noSpaces
+      )
+
+    def impersonateWriterUser(): RequestSpecification =
+      requestSpecification.header(
+        impersonationHeader,
+        ImpersonatedUserData("writer", "writer", Set("Writer")).asJson.noSpaces
+      )
+
+    def impersonateLimitedWriterUser(): RequestSpecification =
+      requestSpecification.header(
+        impersonationHeader,
+        ImpersonatedUserData("limitedWriter", "limitedWriter", Set("LimitedWriter")).asJson.noSpaces
+      )
+
   }
 
 }

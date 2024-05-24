@@ -29,8 +29,7 @@ class OAuth2AuthenticationResources(
 )(implicit executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
     extends AuthenticationResources
     with Directives
-    with LazyLogging
-    with AnonymousAccess {
+    with LazyLogging {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
@@ -38,25 +37,23 @@ class OAuth2AuthenticationResources(
 
   private val authenticator = OAuth2Authenticator(service)
 
-  override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
+  override def authenticate(): AuthenticationDirective[AuthenticatedUser] =
     SecurityDirectives.authenticateOAuth2Async(
       authenticator = authenticator,
       realm = realm
     )
+
+  override def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(authCredentials.value)
   }
 
-  override protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authenticator.authenticate(credentials.value)
-  }
-
-  override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
+  override def authenticationMethod(): EndpointInput[Credentials] =
     optionalOauth2AuthorizationCode(
       authorizationUrl = configuration.authorizeUrl.map(_.toString),
       // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
       // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
       tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
     )
-  }
 
   override protected val frontendStrategySettings: FrontendStrategySettings =
     configuration.overrideFrontendAuthenticationStrategy.getOrElse(

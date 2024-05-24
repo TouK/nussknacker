@@ -7,7 +7,6 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
-import pl.touk.nussknacker.ui.security.api.AnonymousAccess
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
@@ -164,7 +163,6 @@ object NuDesignerApiAvailableToExpose {
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
     val basicAuth = auth
       .basic[Option[String]]()
-      .map { AnonymousAccess.optionalStringToAuthCredentialsMapping(false) }
 
     Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
       .map(_.newInstance(basicAuth))

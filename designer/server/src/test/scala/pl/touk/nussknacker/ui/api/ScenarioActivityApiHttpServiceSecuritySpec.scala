@@ -186,6 +186,58 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
+    "impersonating user has permission to impersonate should" - {
+      "allow to add comment in scenario in allowed category for the impersonated user" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateLimitedWriterUser()
+          .plainBody(commentContent)
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(200)
+          .equalsPlainBody("")
+      }
+      "forbid to add comment in scenario because impersonated user has no writer permission" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .plainBody(commentContent)
+          .basicAuthAllPermUser()
+          .impersonateLimitedReaderUser()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
+    "impersonating user does not have permission to impersonate should" - {
+      "forbid access" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .plainBody(commentContent)
+          .basicAuthWriter()
+          .impersonateLimitedReaderUser()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+    }
   }
 
   "The scenario remove comment endpoint when" - {
