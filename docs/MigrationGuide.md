@@ -2,13 +2,20 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.16.0
+## In version 1.16.0 (Not released yet)
 
 ### Code API changes
 
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
+  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
+    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
+  * `DMValidateScenarioCommand.updateStrategy` was added
+    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+
 ### Configuration changes
 
-* [#6082](https://github.com/TouK/nussknacker/pull/6082) Default Influx database was changed from `esp` to `nussknacker_metrics` 
+* [#6082](https://github.com/TouK/nussknacker/pull/6082) Default Influx database was changed from `esp` to `nussknacker_metrics`
 
 ### Other changes
 

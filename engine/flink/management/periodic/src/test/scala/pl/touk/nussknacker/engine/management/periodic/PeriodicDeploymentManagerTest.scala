@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Inside, OptionValues}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -44,6 +45,10 @@ class PeriodicDeploymentManagerTest
   private val processName = ProcessName("test1")
   private val processId   = ProcessId(1)
   private val idWithName  = ProcessIdWithName(processId, processName)
+
+  private val updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+    StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+  )
 
   private val processVersion = ProcessVersion(
     versionId = VersionId(42L),
@@ -188,13 +193,13 @@ class PeriodicDeploymentManagerTest
     val emptyScenario = CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty)
 
     val validateResult = f.periodicDeploymentManager
-      .processCommand(DMValidateScenarioCommand(processVersion, DeploymentData.empty, emptyScenario))
+      .processCommand(DMValidateScenarioCommand(processVersion, DeploymentData.empty, emptyScenario, updateStrategy))
       .failed
       .futureValue
     validateResult shouldBe a[PeriodicProcessException]
 
     val deploymentResult = f.periodicDeploymentManager
-      .processCommand(DMRunDeploymentCommand(processVersion, DeploymentData.empty, emptyScenario, None))
+      .processCommand(DMRunDeploymentCommand(processVersion, DeploymentData.empty, emptyScenario, updateStrategy))
       .failed
       .futureValue
     deploymentResult shouldBe a[PeriodicProcessException]
@@ -209,7 +214,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           f.preparedDeploymentData,
           PeriodicProcessGen.buildCanonicalProcess(),
-          None
+          updateStrategy
         )
       )
       .futureValue
@@ -228,7 +233,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           DeploymentData.empty,
           PeriodicProcessGen.buildCanonicalProcess("0 0 0 ? * * 2000"),
-          None
+          updateStrategy
         )
       )
       .failed
@@ -248,7 +253,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           f.preparedDeploymentData,
           PeriodicProcessGen.buildCanonicalProcess(),
-          None
+          updateStrategy
         )
       )
       .futureValue
@@ -283,7 +288,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           f.preparedDeploymentData,
           PeriodicProcessGen.buildCanonicalProcess(),
-          None
+          updateStrategy
         )
       )
       .futureValue
@@ -309,7 +314,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           f.preparedDeploymentData,
           PeriodicProcessGen.buildCanonicalProcess(),
-          None
+          updateStrategy
         )
       )
       .futureValue
@@ -336,7 +341,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           f.preparedDeploymentData,
           PeriodicProcessGen.buildCanonicalProcess(),
-          None
+          updateStrategy
         )
       )
       .futureValue
@@ -363,7 +368,7 @@ class PeriodicDeploymentManagerTest
           processVersion,
           f.preparedDeploymentData,
           PeriodicProcessGen.buildCanonicalProcess(),
-          None
+          updateStrategy
         )
       )
       .futureValue

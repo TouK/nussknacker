@@ -26,6 +26,7 @@ services:
     image: touk/nussknacker:1.15.0_scala-2.12
     restart: unless-stopped
     environment:
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/application-customizations.conf"
       DB_URL: "jdbc:postgresql://postgres:5432/nu-db"
       DB_DRIVER: "org.postgresql.Driver"
       DB_USER: "nu"
@@ -55,6 +56,8 @@ services:
       test: [ "CMD-SHELL", "curl localhost:8080/api/app/healthCheck" ]
       interval: 10s
       retries: 10
+    volumes:
+      - ./designer/application-customizations.conf:/opt/nussknacker/conf/application-customizations.conf
     volumes_from:
       - flink-jobmanager
 
@@ -66,7 +69,7 @@ services:
       POSTGRES_USER: "nu"
       POSTGRES_PASSWORD: "nupassword"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready" ]
+      test: ["CMD-SHELL", "pg_isready -d nu-db -U nu"]
       interval: 10s
       retries: 10
     volumes:
@@ -108,8 +111,8 @@ services:
     image: bitnami/zookeeper:3.9
     restart: unless-stopped
     environment:
-      ALLOW_ANONYMOUS_LOGIN: yes
-      ZOO_4LW_COMMANDS_WHITELIST: ruok
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_4LW_COMMANDS_WHITELIST: "ruok"
     healthcheck:
       test: ["CMD-SHELL", 'echo "ruok" | nc -w 2 -q 2 localhost 2181 | grep imok']
       interval: 5s
