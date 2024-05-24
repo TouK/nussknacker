@@ -10,6 +10,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
 import { xor } from "lodash";
+import { EventTrackingType, EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
 
 interface FiltersPartProps {
     isLoading: boolean;
@@ -21,11 +22,22 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
     const otherFilters: Array<keyof UsagesFiltersModel> = ["TYPE", "USAGE_TYPE"];
+
     return (
-        <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
+        <QuickFilter<UsagesFiltersModel>
+            isLoading={isLoading}
+            filter="TEXT"
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentUsagesByName })}
+        >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                    <StatusOptionsStack options={filterableValues["STATUS"]} withArchived={false} />
+                    <StatusOptionsStack
+                        options={filterableValues["STATUS"]}
+                        withArchived={false}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentUsagesByStatus,
+                        })}
+                    />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                     <SimpleOptionsStack
@@ -33,6 +45,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         options={filterableValues["CATEGORY"]}
                         value={getFilter("CATEGORY", true)}
                         onChange={setFilter("CATEGORY")}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentUsagesByCategory,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.AUTHOR", "Author")} count={getFilter("CREATED_BY", true).length}>
@@ -41,6 +56,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         options={filterableValues["CREATED_BY"]}
                         value={getFilter("CREATED_BY", true)}
                         onChange={setFilter("CREATED_BY")}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentUsagesByAuthor,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu
@@ -57,29 +75,49 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
                     >
                         <FilterListItem
-                            color="default"
+                            checkboxProps={{
+                                color: "default",
+                            }}
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.SCENARIOS)}
                             onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                            })}
                         />
                         <FilterListItem
-                            color="default"
+                            checkboxProps={{
+                                color: "default",
+                            }}
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.FRAGMENTS)}
                             onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                            })}
                         />
                         <Divider />
                         <FilterListItem
-                            color="secondary"
+                            checkboxProps={{
+                                color: "secondary",
+                            }}
                             checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.INDIRECT)}
                             onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.INDIRECT], getFilter("USAGE_TYPE", true)))}
                             label={t("table.filter.SHOW_INDIRECT", "Show indirect usage")}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                            })}
                         />
                         <FilterListItem
-                            color="primary"
+                            checkboxProps={{
+                                color: "primary",
+                            }}
                             checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.DIRECT)}
                             onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.DIRECT], getFilter("USAGE_TYPE", true)))}
                             label={t("table.filter.SHOW_DIRECT", "Show direct usage")}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ComponentUsagesByOther,
+                            })}
                         />
                     </OptionsStack>
                 </FilterMenu>

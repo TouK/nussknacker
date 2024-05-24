@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{DMScenarioCommand, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.deployment.{CustomActionResult, ExternalDeploymentId}
@@ -23,7 +24,7 @@ case class CommonCommandData(processIdWithName: ProcessIdWithName, comment: Opti
 // - deployment on engine side - it is longer part, the result will be shown as a notification
 case class RunDeploymentCommand(
     commonData: CommonCommandData,
-    savepointPath: Option[String],
+    stateRestoringStrategy: StateRestoringStrategy,
     nodesDeploymentData: NodesDeploymentData
 ) extends ScenarioCommand[Future[Option[ExternalDeploymentId]]]
 

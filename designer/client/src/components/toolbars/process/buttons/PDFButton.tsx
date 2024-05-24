@@ -1,5 +1,5 @@
 import React from "react";
-import { RootState } from "../../../../reducers/index";
+import { RootState } from "../../../../reducers";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { connect } from "react-redux";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
@@ -13,7 +13,7 @@ import HttpService from "../../../../http/HttpService";
 type Props = StateProps & ToolbarButtonProps;
 
 function PDFButton(props: Props) {
-    const { processName, versionId, canExport, disabled } = props;
+    const { processName, versionId, canExport, disabled, type } = props;
     const available = !disabled && canExport;
     const { t } = useTranslation();
     const graphGetter = useGraph();
@@ -30,6 +30,7 @@ function PDFButton(props: Props) {
                 const exportedGraph = await graphGetter?.()?.exportGraph();
                 HttpService.exportProcessToPdf(processName, versionId, exportedGraph);
             }}
+            type={type}
         />
     );
 }

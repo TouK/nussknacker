@@ -11,6 +11,7 @@ import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.testmode.TestProcess._
@@ -133,7 +134,7 @@ class ManagementResources(
                         // adminProcessManagement endpoint is not used by the designer client. It is a part of API for tooling purpose
                         commonData = CommonCommandData(processIdWithName, comment.map(ApiCallComment(_)), user),
                         nodesDeploymentData = NodesDeploymentData.empty,
-                        savepointPath = Some(savepointPath)
+                        stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
                       )
                     )
                     .map(_ => ())
@@ -155,7 +156,7 @@ class ManagementResources(
                     RunDeploymentCommand(
                       commonData = CommonCommandData(processIdWithName, comment.map(UserComment), user),
                       nodesDeploymentData = NodesDeploymentData.empty,
-                      savepointPath = None
+                      stateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
                     )
                   )
                   .map(_ => ())

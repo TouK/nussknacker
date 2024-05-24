@@ -25,7 +25,7 @@ function FakeInput(props: TransparentBoxProps) {
 function PasteButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { paste, canPaste } = useSelectionActions();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const available = !disabled && paste && canPaste;
 
     const ref = useRef<HTMLButtonElement & HTMLDivElement>();
@@ -39,6 +39,7 @@ function PasteButton(props: ToolbarButtonProps): JSX.Element {
                 icon={<Icon />}
                 disabled={!available && !isTouchDevice()}
                 onClick={available ? (event) => paste(event.nativeEvent) : null}
+                type={type}
             />
             {isTouchDevice() && !available && (
                 <FakeInput

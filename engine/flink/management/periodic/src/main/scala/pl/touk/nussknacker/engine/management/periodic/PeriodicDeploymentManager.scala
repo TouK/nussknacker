@@ -115,7 +115,9 @@ class PeriodicDeploymentManager private[periodic] (
     for {
       scheduledProperty <- extractScheduleProperty(canonicalProcess)
       _                 <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
-      _ <- delegate.processCommand(DMValidateScenarioCommand(processVersion, deploymentData, canonicalProcess))
+      _ <- delegate.processCommand(
+        DMValidateScenarioCommand(processVersion, deploymentData, canonicalProcess, updateStrategy)
+      )
     } yield ()
   }
 
