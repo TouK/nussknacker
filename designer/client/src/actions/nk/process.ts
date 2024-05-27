@@ -15,7 +15,6 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
         dispatch({ type: "PROCESS_FETCH" });
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
-            dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
