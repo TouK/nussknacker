@@ -251,7 +251,9 @@ function dragNode(
 }
 
 function layoutScenario(waitTime = 600) {
-    cy.contains(/^layout$/).click();
+    cy.contains(/^layout$/)
+        .scrollIntoView()
+        .click();
     cy.wait(waitTime); //wait for graph view (zoom, pan) to settle
 }
 
