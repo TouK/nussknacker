@@ -3,18 +3,17 @@ package pl.touk.nussknacker.engine.process.async
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ProcessName, ServiceExecutionContext}
-import pl.touk.nussknacker.engine.process.async.DefaultServiceExecutionContextPreparer.{executorServiceCreator, tickets}
+import pl.touk.nussknacker.engine.process.async.DefaultServiceExecutionContextPreparer.tickets
 
+import java.util
 import java.util.UUID
 import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicLong
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 //TODO: this is somewhat experimental - how should we behave??
 object DefaultServiceExecutionContextPreparer extends LazyLogging {
 
-  private final val tickets: TrieMap[UUID, Boolean] = TrieMap[UUID, Boolean]()
+  private final val tickets: util.HashMap[UUID, Boolean] = new util.HashMap[UUID, Boolean]()
 
   private final var asyncExecutionContext: Option[(ProcessName, ExecutionContextExecutorService)] = None
 
