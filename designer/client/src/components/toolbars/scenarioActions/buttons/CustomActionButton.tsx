@@ -15,7 +15,7 @@ type CustomActionProps = {
 } & ToolbarButtonProps;
 
 export default function CustomActionButton(props: CustomActionProps) {
-    const { action, processStatus, disabled } = props;
+    const { action, processStatus, disabled, type } = props;
 
     const { t } = useTranslation();
 
@@ -42,6 +42,7 @@ export default function CustomActionButton(props: CustomActionProps) {
                     meta: action,
                 })
             }
+            type={type}
         />
     );
 }

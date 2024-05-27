@@ -4,8 +4,7 @@ import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/counts.svg";
 import { isFragment } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
@@ -15,7 +14,7 @@ function CountsButton(props: ToolbarButtonProps) {
     const featuresSettings = useSelector(getFeatureSettings);
     const fragment = useSelector(isFragment);
     const { open } = useWindows();
-    const { disabled } = props;
+    const { disabled, type } = props;
 
     return featuresSettings?.counts && !fragment ? (
         <ToolbarButton
@@ -28,6 +27,7 @@ function CountsButton(props: ToolbarButtonProps) {
                     kind: WindowKind.calculateCounts,
                 })
             }
+            type={type}
         />
     ) : null;
 }

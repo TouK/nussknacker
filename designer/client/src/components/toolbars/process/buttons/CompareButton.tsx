@@ -11,7 +11,7 @@ import { ToolbarButtonProps } from "../../types";
 type Props = ToolbarButtonProps;
 
 function CompareButton(props: Props): JSX.Element {
-    const { disabled } = props;
+    const { disabled, type } = props;
     const isSingleVersion = useSelector(hasOneVersion);
     const available = !disabled && !isSingleVersion;
     const { t } = useTranslation();
@@ -29,6 +29,7 @@ function CompareButton(props: Props): JSX.Element {
                     kind: WindowKind.compareVersions,
                 })
             }
+            type={type}
         />
     );
 }

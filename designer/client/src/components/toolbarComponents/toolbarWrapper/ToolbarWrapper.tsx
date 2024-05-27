@@ -9,6 +9,7 @@ import { useDragHandler } from "../../common/dndItems/DragHandle";
 import ErrorBoundary from "../../common/ErrorBoundary";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
 import { IconWrapper, StyledCloseIcon, StyledCollapseIcon } from "./ToolbarStyled";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../containers/event-tracking";
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id: string;
@@ -67,8 +68,15 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | 
                 <PanelHeader
                     {...(isCollapsible ? handlerProps : {})}
                     color={color}
-                    onClick={() => toggleCollapsed()}
-                    onKeyDown={(e) => e.key === "Enter" && toggleCollapsed()}
+                    onClick={toggleCollapsed}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            toggleCollapsed();
+                        }
+                    }}
+                    {...getEventTrackingProps({
+                        selector: isCollapsedLocal ? EventTrackingSelector.CollapsePanel : EventTrackingSelector.ExpandPanel,
+                    })}
                 >
                     <Typography
                         textTransform={"uppercase"}

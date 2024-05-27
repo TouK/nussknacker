@@ -3,15 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/generate-and-test.svg";
 import { getTestCapabilities, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;
 
 function GenerateAndTestButton(props: Props) {
-    const { disabled } = props;
+    const { disabled, type } = props;
     const { t } = useTranslation();
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
@@ -30,6 +29,7 @@ function GenerateAndTestButton(props: Props) {
                     kind: WindowKind.generateDataAndTest,
                 })
             }
+            type={type}
         />
     );
 }

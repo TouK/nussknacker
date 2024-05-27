@@ -27,6 +27,7 @@ export interface RangeSelectStartEventData {
     x: number;
     y: number;
     fingerSize: number;
+    source: "pointerWithModifier" | "pointer";
 }
 
 function getFingerSize(event: Event) {
@@ -101,7 +102,12 @@ export class RangeSelectPlugin {
         window.clearTimeout(this.cleanupTimeout);
 
         if (this.hasModifier(event)) {
-            const data: RangeSelectStartEventData = { fingerSize: getFingerSize(event), x: event.clientX, y: event.clientY };
+            const data: RangeSelectStartEventData = {
+                source: "pointerWithModifier",
+                fingerSize: getFingerSize(event),
+                x: event.clientX,
+                y: event.clientY,
+            };
             return this.paper.trigger(RangeSelectEvents.START, data);
         }
 
@@ -145,7 +151,12 @@ export class RangeSelectPlugin {
                 });
                 if (distance > 60) return;
 
-                const data: RangeSelectStartEventData = { fingerSize: getFingerSize(event), x: event.clientX, y: event.clientY };
+                const data: RangeSelectStartEventData = {
+                    source: "pointer",
+                    fingerSize: getFingerSize(event),
+                    x: event.clientX,
+                    y: event.clientY,
+                };
                 this.paper.trigger(RangeSelectEvents.START, data);
             });
     }

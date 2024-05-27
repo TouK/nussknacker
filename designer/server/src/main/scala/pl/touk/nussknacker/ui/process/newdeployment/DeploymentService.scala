@@ -4,6 +4,7 @@ import cats.Applicative
 import cats.data.EitherT
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.security.Permission
@@ -104,7 +105,7 @@ class DeploymentService(
                 command.comment,
                 command.user
               ),
-              savepointPath = None,
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
               nodesDeploymentData = command.nodesDeploymentData,
             )
           )

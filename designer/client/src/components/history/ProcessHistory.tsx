@@ -8,6 +8,7 @@ import { useWindows } from "../../windowManager";
 import { HistoryItem, VersionType } from "./HistoryItem";
 import { ProcessVersionType } from "../Process/types";
 import { ProcessHistoryWrapper, TrackVertical } from "./StyledHistory";
+import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
 
 export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.Element {
     const scenario = useSelector(getScenario);
@@ -66,6 +67,9 @@ export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.El
                             version={version}
                             type={type}
                             onClick={changeVersion}
+                            {...getEventTrackingProps({
+                                selector: isLatest ? EventTrackingSelector.NewerVersion : EventTrackingSelector.OlderVersion,
+                            })}
                         />
                     );
                 })}

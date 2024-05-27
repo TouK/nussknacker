@@ -2,6 +2,23 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.16.0 (Not released yet)
+
+### Code API changes
+
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
+  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
+    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
+  * `DMValidateScenarioCommand.updateStrategy` was added
+    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+
+### Configuration changes
+
+* [#6082](https://github.com/TouK/nussknacker/pull/6082) Default Influx database was changed from `esp` to `nussknacker_metrics`
+
+### Other changes
+
 ## In version 1.15.0
 
 ### Code API changes
@@ -80,7 +97,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
 * [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
   allowing for disabling namespaced Kafka consumer groups
-* [#5848](https://github.com/TouK/nussknacker/pull/5848): Introduced a new method for handling colors, aimed at simplifying customization. Now, all colors are centrally stored in a single location. Refer to [README.md](../designer/client/README.md#Theme-colors-customization) for details on theme colors customization.
+* [#5848](https://github.com/TouK/nussknacker/pull/5848): Introduced a new method for handling colors, aimed at simplifying customization. Now, all colors are centrally stored in a single location. Refer to [README.md](https://github.com/TouK/nussknacker/blob/staging/designer/client/README.md#theme-colors-customization) for details on theme colors customization.
 * [#5914](https://github.com/TouK/nussknacker/pull/5914) Removed dev-specific configuration files `dev-application.conf` 
   and `dev-tables-definition.sql` from public distribution artifacts
 
