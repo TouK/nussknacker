@@ -13,7 +13,7 @@ final case class UpdateProcessComment(override val value: String) extends System
 object UpdateProcessComment {
   implicit val encoder: Encoder[UpdateProcessComment] = Encoder.encodeString.contramap(_.value)
   implicit val decoder: Decoder[Option[UpdateProcessComment]] =
-    Decoder.decodeOption(Decoder.decodeString.map(UpdateProcessComment(_))).map(_.filterNot(_.value.isEmpty))
+    Decoder.decodeOption(Decoder.decodeString).map(_.filterNot(_.isEmpty).map(UpdateProcessComment(_)))
 }
 
 final case class MigrationComment(migrationsApplied: List[ProcessMigration]) extends SystemComment {
