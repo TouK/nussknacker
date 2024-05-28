@@ -3,18 +3,13 @@ package pl.touk.nussknacker.engine.process.async
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, ProcessName, ServiceExecutionContext}
-import pl.touk.nussknacker.engine.process.async.DefaultServiceExecutionContextPreparer.{executorServiceCreator, tickets}
 
-import java.util.UUID
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicLong
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService}
 
 //TODO: this is somewhat experimental - how should we behave??
 object DefaultServiceExecutionContextPreparer extends LazyLogging {
-
-  private final val tickets: TrieMap[UUID, Boolean] = TrieMap[UUID, Boolean]()
 
   private final var asyncExecutionContext: Option[(ProcessName, ExecutionContextExecutorService)] = None
 
@@ -45,14 +40,10 @@ object DefaultServiceExecutionContextPreparer extends LazyLogging {
     }
   }
 
-  private[DefaultServiceExecutionContextPreparer] def close(uuid: UUID): Unit = synchronized {
-    tickets.remove(uuid)
-
-    if (tickets.keySet.isEmpty) {
-      logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)}")
-      asyncExecutionContext.foreach { case (_, executorService) => executorService.shutdownNow() }
-      asyncExecutionContext = None
-    }
+  private[DefaultServiceExecutionContextPreparer] def close(): Unit = synchronized {
+    logger.info(s"Closing asyncExecutor for ${asyncExecutionContext.map(_._1)}")
+    asyncExecutionContext.foreach { case (_, executorService) => executorService.shutdownNow() }
+    asyncExecutionContext = None
   }
 
 }
@@ -64,18 +55,13 @@ final case class DefaultServiceExecutionContextPreparer(
 ) extends AsyncExecutionContextPreparer
     with LazyLogging {
 
-  def prepare(processName: ProcessName): (UUID, ServiceExecutionContext) = {
+  def prepare(processName: ProcessName): ServiceExecutionContext = {
     logger.info(s"Creating asyncExecutor for $processName, workers: $workers")
-    val newUUID = UUID.randomUUID()
-    tickets.put(newUUID, true)
-
-    val executionContext = DefaultServiceExecutionContextPreparer.getExecutionContext(workers, processName)
-
-    (newUUID, executionContext)
+    DefaultServiceExecutionContextPreparer.getExecutionContext(workers, processName)
   }
 
-  def close(uuid: UUID): Unit = {
-    DefaultServiceExecutionContextPreparer.close(uuid)
+  def close(): Unit = {
+    DefaultServiceExecutionContextPreparer.close()
   }
 
 }

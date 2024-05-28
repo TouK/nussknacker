@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.process
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 // TODO: rename me to ServiceExecutionContextPreparer in the future (it will break the backward compatibility, so we
@@ -10,9 +9,9 @@ trait AsyncExecutionContextPreparer {
   def bufferSize: Int
 
   def defaultUseAsyncInterpretation: Option[Boolean]
-  def prepare(processName: ProcessName): (UUID, ServiceExecutionContext)
+  def prepare(processName: ProcessName): ServiceExecutionContext
 
-  def close(uuid: UUID): Unit
+  def close(): Unit
 }
 
 final case class ServiceExecutionContext(executionContext: ExecutionContext)
