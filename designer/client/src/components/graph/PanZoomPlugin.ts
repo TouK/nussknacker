@@ -140,10 +140,6 @@ export class PanZoomPlugin {
             return false;
         }
 
-        if ("button" in event && event.button === 1) {
-            return false;
-        }
-
         if ("touches" in event && event.touches.length > 1) {
             return true;
         }
