@@ -18,6 +18,7 @@ class ScenarioGraphVersionRepository(dbRef: DbRef)(implicit ec: ExecutionContext
     toEffectAll(
       processVersionsTableWithScenarioJson
         .filter(_.processId === scenarioId)
+        .sortBy(_.id.desc)
         .take(1)
         .result
         .headOption

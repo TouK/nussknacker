@@ -31,11 +31,13 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
 
   private val actionRepository: DbProcessActionRepository = new DbProcessActionRepository(
     dbRef,
+    new CommentRepository(dbRef),
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
   ) with DbioRepository
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
+    new CommentRepository(dbRef),
     mapProcessingTypeDataProvider(1)
   )
 

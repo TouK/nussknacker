@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessAction,
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{CommentEntityData, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -43,11 +44,11 @@ trait ProcessActionRepository {
 
 class DbProcessActionRepository(
     protected val dbRef: DbRef,
+    commentRepository: CommentRepository,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(implicit ec: ExecutionContext)
     extends DbioRepository
     with NuTables
-    with CommentActions
     with ProcessActionRepository
     with LazyLogging {
 
@@ -88,7 +89,7 @@ class DbProcessActionRepository(
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
-      comment <- newCommentAction(processId, processVersion, comment)
+      comment <- saveCommentWhenPassed(processId, processVersion, comment)
       updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
       _ <-
         if (updated) {
@@ -178,7 +179,7 @@ class DbProcessActionRepository(
   )(implicit user: LoggedUser): DB[ProcessAction] = {
     val now = Instant.now()
     run(for {
-      comment <- newCommentAction(processId, processVersion, comment)
+      comment <- saveCommentWhenPassed(processId, processVersion, comment)
       result <- insertAction(
         None,
         processId,
@@ -373,5 +374,14 @@ class DbProcessActionRepository(
       comment = actionData._2.map(_.content),
       buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )
+
+  private def saveCommentWhenPassed(
+      scenarioId: ProcessId,
+      scenarioGraphVersionId: => VersionId,
+      commentOpt: Option[Comment]
+  )(
+      implicit user: LoggedUser
+  ): DB[Option[CommentEntityData]] =
+    commentOpt.map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _)).sequence
 
 }

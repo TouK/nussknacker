@@ -142,6 +142,8 @@ object TestFactory {
   def newDummyDBIOActionRunner(): DBIOActionRunner =
     newDBIOActionRunner(dummyDbRef)
 
+  def newCommentRepository(dbRef: DbRef) = new CommentRepository(dbRef)
+
   def newFutureFetchingScenarioRepository(dbRef: DbRef) =
     new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
 
@@ -151,6 +153,7 @@ object TestFactory {
   def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(
       dbRef,
+      newCommentRepository(dbRef),
       mapProcessingTypeDataProvider(modelVersions.map(Streaming.stringify -> _).toList: _*)
     )
 
@@ -163,13 +166,16 @@ object TestFactory {
     new DefaultFragmentRepository(newFutureFetchingScenarioRepository(dbRef))
 
   def newActionProcessRepository(dbRef: DbRef) =
-    new DbProcessActionRepository(dbRef, mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo))
-      with DbioRepository
+    new DbProcessActionRepository(
+      dbRef,
+      newCommentRepository(dbRef),
+      mapProcessingTypeDataProvider(Streaming.stringify -> buildInfo)
+    ) with DbioRepository
 
   def newDummyActionRepository(): DbProcessActionRepository =
     newActionProcessRepository(dummyDbRef)
 
-  def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
+  def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef, newCommentRepository(dbRef))
 
   def newDeploymentRepository(dbRef: DbRef) = new DeploymentRepository(dbRef)
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
+import cats.implicits.toTraverseOps
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService._
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService.RunDeploymentError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
+import pl.touk.nussknacker.ui.process.repository.{CommentRepository, DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,13 +64,10 @@ class ActivityService(
       scenarioId: ProcessId,
       scenarioGraphVersionId: VersionId,
       user: LoggedUser
-  ) = {
+  ) =
     EitherT.right[ActivityError[ErrorType]](
-      commentOpt
-        .map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _))
-        .getOrElse(DB.successful(()))
+      commentOpt.map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _)).sequence
     )
-  }
 
 }
 
