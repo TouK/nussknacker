@@ -4,13 +4,18 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{NodeDeploymentData, NodesDeploymentData, SqlFilteringExpression}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  EmptyProcess,
+  ExpressionParserCompilationError,
+  MissingRequiredProperty
+}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
@@ -78,10 +83,10 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                     value = ScenarioGraphValidationError(
                       ValidationErrors(
                         invalidNodes = Map(
-                          "filter " -> List(
+                          "filter" -> List(
                             PrettyValidationErrors.formatErrorMessage(
                               ExpressionParserCompilationError(
-                                message = "",
+                                message = "Bad expression",
                                 paramName = None,
                                 originalExpr = "",
                                 details = None
@@ -89,8 +94,13 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                             )
                           )
                         ),
-                        processPropertiesErrors = List.empty,
-                        globalErrors = List.empty
+                        globalErrors =
+                          List(UIGlobalError(PrettyValidationErrors.formatErrorMessage(EmptyProcess), List.empty)),
+                        processPropertiesErrors = List(
+                          PrettyValidationErrors.formatErrorMessage(
+                            MissingRequiredProperty(ParameterName("parallelism"), None)(NodeId("properties"))
+                          )
+                        ),
                       )
                     )
                   ),
@@ -195,7 +205,26 @@ object DeploymentApiEndpoints {
         case CommentValidationError(message)      => message
         case ScenarioGraphValidationError(errors) =>
           // TODO: Move to some structure
-          errors.toString
+          s"Scenario is invalid.${Option(errors.invalidNodes)
+              .filterNot(_.isEmpty)
+              .map {
+                _.map { case (nodeId, nodeErrors) =>
+                  s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
+                }.mkString("\nNode errors:", "", "")
+              }
+              .getOrElse("")}" +
+            s"${Option(errors.globalErrors)
+                .filterNot(_.isEmpty)
+                .map {
+                  _.map(_.error.message).mkString("\nGlobal errors: ", ", ", "")
+                }
+                .getOrElse("")}" +
+            s"${Option(errors.processPropertiesErrors)
+                .filterNot(_.isEmpty)
+                .map {
+                  _.map(_.message).mkString("\nProperties errors: ", ", ", "")
+                }
+                .getOrElse("")}"
         case DeployValidationError(message) => message
       }
 

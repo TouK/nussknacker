@@ -604,9 +604,12 @@ paths:
                   value: Comment is required.
                 Example2:
                   summary: Scenario validation error
-                  value: 'ValidationErrors(Map(filter  -> List(NodeValidationError(ExpressionParserCompilationError,Failed
-                    to parse expression: ,There is problem with expression in field
-                    None - it could not be parsed.,None,SaveAllowed,None))),List(),List())'
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      filter: Failed to parse expression: Bad expression
+                    Global errors: Empty scenario
+                    Properties errors: Configured property parallelism is missing
                 Example3:
                   summary: Deploy validation error
                   value: Not enough free slots on Flink cluster
