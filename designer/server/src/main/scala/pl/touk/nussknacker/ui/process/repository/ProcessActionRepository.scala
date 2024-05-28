@@ -382,6 +382,8 @@ class DbProcessActionRepository(
   )(
       implicit user: LoggedUser
   ): DB[Option[CommentEntityData]] =
-    commentOpt.map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _)).sequence
+    commentOpt
+      .map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _))
+      .sequence
 
 }
