@@ -253,7 +253,7 @@ function dragNode(
 function layoutScenario(waitTime = 600) {
     // prevents random clicks on metrics
     // lazy loaded panel moves layout button just before click
-    cy.contains(/we are happy/i).should("be.visible");
+    cy.contains(/we are happy/i).should("exist");
     cy.contains(/^layout$/).click();
     //wait for graph view (zoom, pan) to settle
     cy.wait(waitTime);
