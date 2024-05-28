@@ -78,7 +78,6 @@ private[registrar] class AsyncInterpretationFunction(
 
   override def close(): Unit = {
     super.close()
-    serviceExecutionContextPreparer.close()
   }
 
   // This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)
