@@ -1,6 +1,6 @@
 import "ace-builds/src-noconflict/ace";
 import { isEmpty } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
@@ -17,6 +17,7 @@ import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
 import { nodeInputWithError, rowAceEditor } from "../../NodeDetailsContent/NodeTableStyled";
 import { Box, Fade, LinearProgress, styled } from "@mui/material";
+import { useDeepMemo } from "../../../../../containers/hooks/useDeepMemo";
 
 interface InputProps {
     value: string;
@@ -53,7 +54,7 @@ export function ExpressionSuggest(props: Props): JSX.Element {
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
-    const expressionSuggester = useMemo(
+    const expressionSuggester = useDeepMemo(
         () => new BackendExpressionSuggester(language, variableTypes, processingType, HttpService),
         [processingType, variableTypes, language],
     );
