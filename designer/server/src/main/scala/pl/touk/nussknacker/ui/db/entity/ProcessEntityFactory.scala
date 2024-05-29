@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -32,6 +32,10 @@ trait ProcessEntityFactory extends BaseEntityFactory {
     def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
+
+    def latestVersionId: Rep[VersionId] = column[String]("latest_version_id") // notnull?
+
+    def latestActionId: Rep[ProcessActionId] = column[String]("latest_action_id") // nullable for sure
 
     def * : ProvenShape[ProcessEntityData] =
       (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (

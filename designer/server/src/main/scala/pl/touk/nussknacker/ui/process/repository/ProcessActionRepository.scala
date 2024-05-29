@@ -87,7 +87,14 @@ class DbProcessActionRepository(
   )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
       comment <- saveCommentWhenPassed(processId, processVersion, comment)
-      updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
+      updated <- updateAction(
+        actionId,
+        ProcessActionState.Finished,
+        processId,
+        Some(performedAt),
+        None,
+        comment.map(_.id)
+      )
       _ <-
         if (updated) {
           DBIOAction.successful(())
@@ -121,7 +128,14 @@ class DbProcessActionRepository(
   )(implicit user: LoggedUser): DB[Unit] = {
     val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
-      updated <- updateAction(actionId, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
+      updated <- updateAction(
+        actionId,
+        ProcessActionState.Failed,
+        processId,
+        Some(performedAt),
+        failureMessageOpt,
+        None
+      )
       _ <-
         if (updated) {
           DBIOAction.successful(())
@@ -219,27 +233,42 @@ class DbProcessActionRepository(
       commentId = commentId,
       buildInfo = buildInfoJsonOpt
     )
-    (processActionsTable += processActionData).map { insertCount =>
-      if (insertCount != 1)
+    insertProcessActionAndUpdateLatestActionId(processActionData).map { case (insertCount, updateLatestActionIdCount) =>
+      if (insertCount != 1 || updateLatestActionIdCount != 1)
         throw new IllegalArgumentException(s"Action with id: $actionId can't be inserted")
       processActionData
     }
   }
 
+  private def insertProcessActionAndUpdateLatestActionId(processActionData: ProcessActionEntityData) =
+    (for {
+      insertCount <- processActionsTable += processActionData
+
+      updateLatestActionIdCount <- processesTable
+        .filter(_.id === processActionData.processId)
+        .map(_.latestActionId)
+        .update(processActionData.id)
+    } yield (insertCount, updateLatestActionIdCount)).transactionally
+
   private def updateAction(
       actionId: ProcessActionId,
       state: ProcessActionState,
+      processId: ProcessId,
       performedAt: Option[Instant],
       failure: Option[String],
-      commentId: Option[Long]
-  ): DB[Boolean] = {
-    for {
+      commentId: Option[Long],
+  ): DB[Boolean] =
+    (for {
       updateCount <- processActionsTable
         .filter(_.id === actionId)
         .map(a => (a.performedAt, a.state, a.failureMessage, a.commentId))
         .update((performedAt.map(Timestamp.from), state, failure, commentId))
-    } yield updateCount == 1
-  }
+
+      updateLatestActionIdCount <- processesTable
+        .filter(_.id === processId)
+        .map(_.latestActionId)
+        .update(actionId)
+    } yield updateCount == 1 && updateLatestActionIdCount == 1).transactionally
 
   // we use "select for update where false" query syntax to lock the table - it is useful if you plan to insert something in a critical section
   def lockActionsTable: DB[Unit] = {
@@ -300,16 +329,11 @@ class DbProcessActionRepository(
 
   override def getLastActionPerProcess(actionState: Set[ProcessActionState]): DB[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
-      .filter(_.state.inSet(actionState))
-      .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
-      .join(
-        processActionsTable
-      ) // TODO here could use 'is_latest' preprocessing instead of join (keep track when inserting new action)
-      .on { case ((processId, maxPerformedAt), action) =>
-        action.processId === processId && action.state.inSet(actionState) && action.performedAt === maxPerformedAt
-      } // We fetch exactly this one with max deployment
-      .map { case ((processId, _), action) => processId -> action }
+      .join(processesTable)
+      .on { case (action, process) =>
+        action.processId === process.id && action.id === process.latestActionId && action.state.inSet(actionState)
+      }
+      .map { case (action, process) => process.id -> action }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
       .map { case ((processId, action), comment) => processId -> (action, comment) }

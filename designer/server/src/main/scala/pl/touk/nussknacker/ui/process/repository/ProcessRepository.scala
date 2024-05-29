@@ -210,7 +210,9 @@ class DBProcessRepository(
         ScenarioShapeFetchStrategy.FetchScenarioGraph
       ).result.headOption
       newProcessVersionOpt = versionToInsert(latestProcessVersion, process.processingType)
-      _ <- newProcessVersionOpt.map(processVersionsTable += _).getOrElse(dbMonad.pure(0))
+      _ <- newProcessVersionOpt
+        .map(processVersionsTable += _)
+        .getOrElse(dbMonad.pure(0)) // TODO: update processesTable.latestVersionId (transaction) here
     } yield ProcessUpdated(
       process.id,
       oldVersion = latestProcessVersion.map(_.id),
