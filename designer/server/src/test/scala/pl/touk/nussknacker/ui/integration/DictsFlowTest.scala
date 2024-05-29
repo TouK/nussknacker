@@ -120,7 +120,7 @@ class DictsFlowTest
   test("handle labels correctly even if referenced fragment compilation fails - fragment with invalid end of branch") {
     val fragmentName = "test_frag"
 
-    createEmptyProcess(ProcessName(fragmentName), isFragment = true)
+    createEmptyScenario(ProcessName(fragmentName), isFragment = true)
 
     // this fragment has only an input node, no valid end of branch
     val fragmentJson = """{
@@ -159,12 +159,12 @@ class DictsFlowTest
                          |  "comment": ""
                          |}""".stripMargin
 
-    val responseFrag = saveProcess(fragmentName, fragmentJson)
-    responseFrag.code shouldEqual StatusCode.Ok
+    val globalErrorFrag = extractGlobalValidationResult(fragmentName, fragmentJson)
+    globalErrorFrag.map(_.error.typ) shouldBe List("InvalidTailOfBranch")
 
     val processName = "test_proc"
 
-    createEmptyProcess(ProcessName(processName))
+    createEmptyScenario(ProcessName(processName))
 
     val process = ScenarioBuilder
       .streaming(processName)
@@ -178,12 +178,14 @@ class DictsFlowTest
         Map.empty
       )
 
-    extractValidationResult(process).asObject.value shouldBe empty
+    val globalErrorProcess = extractGlobalValidationResult(process)
+    globalErrorProcess.map(_.error.typ) shouldBe List("InvalidTailOfBranch")
+    globalErrorProcess.map(_.nodeIds) shouldBe List(List("test_frag"))
 
     // Check that label bound to dictId-key is updated in BE response
     val response2 = httpClient.send(
       quickRequest
-        .get(uri"$nuDesignerHttpAddress/api/processes/${processName}")
+        .get(uri"$nuDesignerHttpAddress/api/processes/$processName")
         .auth
         .basic("admin", "admin")
     )
@@ -202,10 +204,10 @@ class DictsFlowTest
       .rightValue shouldBe """{"key":"H000000","label":"Black"}"""
   }
 
-  test("handle labels correctly even if referenced fragment compilation fails - fragment with undefined output") {
+  test("handle labels correctly even if used fragment's resolution fails - unused output") {
     val fragmentName = "test_frag"
 
-    createEmptyProcess(ProcessName(fragmentName), isFragment = true)
+    createEmptyScenario(ProcessName(fragmentName), isFragment = true)
 
     val fragment = ScenarioBuilder
       .fragment(
@@ -228,12 +230,13 @@ class DictsFlowTest
       )
       .fragmentOutput("output", "output")
 
-    extractValidationResult(fragment).asObject.value shouldBe empty
+    extractNodeValidationResult(fragment).asObject.value shouldBe empty
 
     val processName = "test_proc"
 
-    createEmptyProcess(ProcessName(processName))
+    createEmptyScenario(ProcessName(processName))
 
+    // This process uses the defined fragment (which has output - not a sink), but doesn't direct it's output anywhere
     val process = ScenarioBuilder
       .streaming(processName)
       .additionalFields(properties = Map.empty)
@@ -246,10 +249,9 @@ class DictsFlowTest
         Map.empty
       )
 
-    val response    = saveProcess(process.name.value, process.toJsonAsProcessToSave.spaces2)
-    val globalError = response.extractFieldJsonValue("errors", "globalErrors").as[List[UIGlobalError]].rightValue.head
-    globalError.error.typ shouldBe "InvalidTailOfBranch"
-    globalError.nodeIds shouldBe List("test_frag-output")
+    val globalErrorProcess = extractGlobalValidationResult(process)
+    globalErrorProcess.map(_.error.typ) shouldBe List("InvalidTailOfBranch")
+    globalErrorProcess.map(_.nodeIds) shouldBe List(List("test_frag-output"))
 
     // Check that label bound to dictId-key is updated in BE response
     val response2 = httpClient.send(
@@ -283,7 +285,7 @@ class DictsFlowTest
     val expressionUsingDictWithInvalidLabel = s"#DICT['invalid']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithInvalidLabel)
 
-    createEmptyProcess(process.name)
+    createEmptyScenario(process.name)
 
     val response1 = httpClient.send(
       quickRequest
@@ -302,7 +304,7 @@ class DictsFlowTest
       "ExpressionParserCompilationError"
     }
 
-    val invalidNodesAfterSave = extractValidationResult(process)
+    val invalidNodesAfterSave = extractNodeValidationResult(process)
     invalidNodesAfterSave.asObject.value should have size 1
     invalidNodesAfterSave.hcursor
       .downField(VariableNodeId)
@@ -347,7 +349,7 @@ class DictsFlowTest
     val expressionUsingDictWithKey   = s"#DICT.$Key"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
 
-    createEmptyProcess(process.name)
+    createEmptyScenario(process.name)
 
     val exportResponse = httpClient.send(
       quickRequest
@@ -401,7 +403,7 @@ class DictsFlowTest
       process: CanonicalProcess,
       endResultExpressionToPost: Option[String]
   ): Json = {
-    createEmptyProcess(process.name)
+    createEmptyScenario(process.name)
 
     val response1 = httpClient.send(
       quickRequest
@@ -416,7 +418,7 @@ class DictsFlowTest
     response1.code shouldEqual StatusCode.Ok
     response1.extractFieldJsonValue("errors", "invalidNodes").asObject.value shouldBe empty
 
-    extractValidationResult(process).asObject.value shouldBe empty
+    extractNodeValidationResult(process).asObject.value shouldBe empty
 
     val response2 = httpClient.send(
       quickRequest
@@ -432,9 +434,9 @@ class DictsFlowTest
     response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
   }
 
-  private def createEmptyProcess(processName: ProcessName, isFragment: Boolean = false) = {
+  private def createEmptyScenario(scenarioName: ProcessName, isFragment: Boolean = false) = {
     val command = CreateScenarioCommand(
-      name = processName,
+      name = scenarioName,
       category = Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
@@ -452,10 +454,19 @@ class DictsFlowTest
     response.code shouldEqual StatusCode.Created
   }
 
-  private def extractValidationResult(process: CanonicalProcess): Json = {
+  private def extractNodeValidationResult(process: CanonicalProcess): Json = {
     val response = saveProcess(process.name.value, process.toJsonAsProcessToSave.spaces2)
     response.code shouldEqual StatusCode.Ok
     response.extractFieldJsonValue("errors", "invalidNodes")
+  }
+
+  private def extractGlobalValidationResult(process: CanonicalProcess): List[UIGlobalError] =
+    extractGlobalValidationResult(process.name.value, process.toJsonAsProcessToSave.spaces2)
+
+  private def extractGlobalValidationResult(scenarioName: String, scenarioJson: String): List[UIGlobalError] = {
+    val response = saveProcess(scenarioName, scenarioJson)
+    response.code shouldEqual StatusCode.Ok
+    response.extractFieldJsonValue("errors", "globalErrors").as[List[UIGlobalError]].rightValue
   }
 
   private def saveProcess(processName: String, processJson: String) =
