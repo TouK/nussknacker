@@ -75,9 +75,11 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       )
 
       deployedProcesses = lastActionPerProcess.flatMap { case (processId, action) =>
-        if (action.actionName == ScenarioActionName.Deploy && action.state == Finished) Some(processId)
+        if (action.actionName == ScenarioActionName.Deploy && action.state == Finished)
+          Some(processId)
         else
-          None // TODO it's not necessarily equal to the old code (first we search FinishedStates and then filter to Finished)
+          None
+      // TODO it's not necessarily equal to the old code (first we search FinishedStates and then filter to Finished)
       }.toSet
 
       latestProcesses <- fetchLatestProcessesQuery(query, deployedProcesses, isDeployed).result
