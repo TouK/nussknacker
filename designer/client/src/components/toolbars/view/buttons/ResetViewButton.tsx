@@ -14,7 +14,7 @@ export function ResetViewButton(props: ToolbarButtonProps) {
     const configId = useSelector(getToolbarsConfigId);
     const graphGetter = useGraph();
 
-    const { disabled } = props;
+    const { disabled, type } = props;
 
     return (
         <ToolbarButton
@@ -25,6 +25,7 @@ export function ResetViewButton(props: ToolbarButtonProps) {
                 dispatch(resetToolbars(configId));
                 graphGetter?.()?.fit();
             }}
+            type={type}
         />
     );
 }

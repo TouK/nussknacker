@@ -34,7 +34,11 @@ object ComponentDefinitionExtractor {
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): Option[ComponentDefinitionWithImplementation] = {
     val configBasedOnDefinition = SingleComponentConfig.zero
-      .copy(docsUrl = inputComponentDefinition.docsUrl, icon = inputComponentDefinition.icon)
+      .copy(
+        docsUrl = inputComponentDefinition.docsUrl,
+        icon = inputComponentDefinition.icon,
+        componentId = inputComponentDefinition.designerWideId
+      )
     ComponentDefinitionExtractor
       .extract(
         inputComponentDefinition.name,

@@ -7,10 +7,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
   DeployedScenarioData,
   DeploymentManager,
+  DeploymentUpdateStrategy,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -47,7 +49,16 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = scenario.name)
       deploymentManager
-        .processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, scenario, None))
+        .processCommand(
+          DMRunDeploymentCommand(
+            version,
+            DeploymentData.empty,
+            scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
         .futureValue
     }
 

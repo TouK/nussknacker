@@ -1,6 +1,13 @@
 # Changelog
 
-1.15.0 (Not released yet)
+1.16.0 (Not released yet)
+-------------------------
+
+* [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
+  * Deployments API returns correct status of deployment instead of returning always the last deployment's status
+
+1.15.0 (17 May 2024)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) [#3922](https://github.com/TouK/nussknacker/pull/5901) Libraries bump:
@@ -31,7 +38,10 @@
   [#5734](https://github.com/TouK/nussknacker/pull/5734) [#5653](https://github.com/TouK/nussknacker/pull/5653) [#5744](https://github.com/TouK/nussknacker/pull/5744) 
   [#5757](https://github.com/TouK/nussknacker/pull/5757) [#5777](https://github.com/TouK/nussknacker/pull/5777) [#5825](https://github.com/TouK/nussknacker/pull/5825)
   [#5896](https://github.com/TouK/nussknacker/pull/5896) Experimental Batch processing mode support
+* [#6031](https://github.com/TouK/nussknacker/pull/6031) Fixed duplicated components on the Components tab
 * [#6010](https://github.com/TouK/nussknacker/pull/6010) Fix ad hoc tests with schemas containing nested fields
+* [#6044](https://github.com/TouK/nussknacker/pull/6044) Fixed json refs handling: If first parsed record was an empty record, every subsequent record was treated as an empty record 
+* [#5813](https://github.com/TouK/nussknacker/pull/5813) Fixed "More than one processing type ..." error during scenario creation when user has limited access to categories.
 
 1.14.0 (21 Mar 2024)
 -------------------------

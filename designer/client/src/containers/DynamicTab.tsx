@@ -31,6 +31,7 @@ export type DynamicTabData = BaseTabData & {
     title: string;
     id: string;
     requiredPermission?: string;
+    spacerBefore?: boolean;
 };
 
 export interface RemoteComponentProps {

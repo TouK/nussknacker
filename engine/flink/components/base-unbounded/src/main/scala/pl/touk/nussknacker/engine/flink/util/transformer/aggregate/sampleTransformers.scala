@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.{Component, ProcessingMode, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes.SetOf
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -18,6 +21,7 @@ object sampleTransformers {
    */
   object SlidingAggregateTransformerV2
       extends CustomStreamTransformer
+      with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
 
@@ -70,6 +74,7 @@ object sampleTransformers {
    */
   class TumblingAggregateTransformer(config: AggregateWindowsConfig)
       extends CustomStreamTransformer
+      with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
 
@@ -126,6 +131,7 @@ object sampleTransformers {
    */
   object SessionWindowAggregateTransformer
       extends CustomStreamTransformer
+      with UnboundedStreamComponent
       with ExplicitUidInOperatorsSupport
       with Serializable {
 

@@ -3,26 +3,35 @@ package pl.touk.nussknacker.ui.process.newdeployment
 import cats.Applicative
 import cats.data.EitherT
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{
+  DMRunDeploymentCommand,
+  DMValidateScenarioCommand,
+  DataFreshnessPolicy,
+  DeploymentUpdateStrategy
+}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId => LegacyDeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
-import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
-import pl.touk.nussknacker.ui.process.deployment.{
-  CommonCommandData,
-  DeploymentService => LegacyDeploymentService,
-  RunDeploymentCommand => LegacyRunDeploymentCommand
-}
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentService._
-import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DBIOActionRunner, ScenarioMetadataRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, ScenarioMetadataRepository}
+import pl.touk.nussknacker.ui.process.version.ScenarioGraphVersionService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.sql.Timestamp
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import scala.util.control.NonFatal
 
 // TODO: This class is a new version of deployment.DeploymentService. The problem with the old one is that
 //       it joins multiple responsibilities like activity log (currently called "actions") and deployments management.
@@ -34,20 +43,12 @@ import scala.language.higherKinds
 //       After we do this, we can remove legacy classes and fully switch to the new once.
 class DeploymentService(
     scenarioMetadataRepository: ScenarioMetadataRepository,
+    scenarioGraphVersionService: ScenarioGraphVersionService,
     deploymentRepository: DeploymentRepository,
-    // TODO: we shouldn't call legacy service, instead we should new service from the legacy one
-    legacyDeploymentService: LegacyDeploymentService,
+    dmDispatcher: DeploymentManagerDispatcher,
     dbioRunner: DBIOActionRunner,
     clock: Clock
 )(implicit ec: ExecutionContext) {
-
-  def processCommand(
-      command: DeploymentCommand
-  ): Future[Either[RunDeploymentError, Unit]] =
-    command match {
-      case command: RunDeploymentCommand =>
-        runDeployment(command)
-    }
 
   def getDeploymentStatus(
       id: DeploymentId
@@ -59,64 +60,126 @@ class DeploymentService(
         category = deploymentWithScenarioMetadata.scenarioMetadata.processCategory,
         permission = Permission.Read
       )
-      // TODO: We should check deployment status instead scenario state but before that we should pass correct deployment id
-      scenarioState <- getScenarioStatus(deploymentWithScenarioMetadata.scenarioMetadata)
-    } yield scenarioState.status.name).value
+      statusOpt <- getDeploymentStatusFromDeploymentManager(id, deploymentWithScenarioMetadata.scenarioMetadata)
+      // TODO: Distinguish between: during deploy status and finished but with job information removed from Flink/K8s side
+      status = statusOpt.getOrElse(SimpleStateStatus.DuringDeploy)
+    } yield status.name).value
 
-  private def runDeployment(
-      command: RunDeploymentCommand
-  ): Future[Either[RunDeploymentError, Unit]] =
-    dbioRunner.run(
-      (for {
-        scenarioMetadata <- getScenarioMetadata(command)
-        _ <- checkPermission(
-          user = command.user,
-          category = scenarioMetadata.processCategory,
-          permission = Permission.Deploy
-        )
-        _         <- saveDeployment(command, scenarioMetadata)
-        runResult <- invokeLegacyRunDeploymentLogic(command, scenarioMetadata)
-      } yield runResult).value
-    )
+  def runDeployment(command: RunDeploymentCommand): DB[Either[RunDeploymentError, DeploymentForeignKeys]] =
+    (for {
+      scenarioMetadata <- getScenarioMetadata(command)
+      _ <- checkPermission(
+        user = command.user,
+        category = scenarioMetadata.processCategory,
+        permission = Permission.Deploy
+      )
+      _ <- saveDeployment(command, scenarioMetadata)
+      scenarioGraphVersion <- EitherT(
+        scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, command.user)
+      ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
+      _ <- validateUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command.user)
+      _ <- runDeploymentUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command)
+    } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
 
-  private def getScenarioMetadata(command: RunDeploymentCommand) =
+  private def getScenarioMetadata(command: RunDeploymentCommand): EitherT[DB, RunDeploymentError, ProcessEntityData] =
     EitherT.fromOptionF(
       scenarioMetadataRepository.getScenarioMetadata(command.scenarioName),
       ScenarioNotFoundError(command.scenarioName)
     )
 
-  private def saveDeployment(command: RunDeploymentCommand, scenarioMetadata: ProcessEntityData) =
+  private def saveDeployment(
+      command: RunDeploymentCommand,
+      scenarioMetadata: ProcessEntityData
+  ): EitherT[DB, RunDeploymentError, Unit] =
     EitherT(
       deploymentRepository.saveDeployment(
         DeploymentEntityData(command.id, scenarioMetadata.id, Timestamp.from(clock.instant()), command.user.id)
       )
     ).leftMap(e => ConflictingDeploymentIdError(e.id))
 
-  private def invokeLegacyRunDeploymentLogic(command: RunDeploymentCommand, scenarioMetadata: ProcessEntityData) =
-    EitherT[DB, RunDeploymentError, Unit](
-      DB.from(
-        // TODO: Currently it doesn't use our deploymentId. Instead, it uses action id
-        legacyDeploymentService
-          .processCommand(
-            LegacyRunDeploymentCommand(
-              CommonCommandData(
-                ProcessIdWithName(scenarioMetadata.id, command.scenarioName),
-                command.comment,
-                command.user
-              ),
-              savepointPath = None,
-              nodesDeploymentData = command.nodesDeploymentData,
-            )
-          )
-          .transform { result =>
-            result
-              .map[Either[RunDeploymentError, Unit]](_ => Right(()))
-              .recover { case CommentValidationError(msg) =>
-                Left(NewCommentValidationError(msg))
+  private def validateUsingDeploymentManager(
+      scenarioMetadata: ProcessEntityData,
+      scenarioGraphVersion: ProcessVersionEntityData,
+      user: LoggedUser
+  ): EitherT[DB, RunDeploymentError, Unit] = {
+    val runtimeVersionData = RuntimeVersionData(
+      versionId = scenarioGraphVersion.id,
+      processName = scenarioMetadata.name,
+      processId = scenarioMetadata.id,
+      user = scenarioGraphVersion.user,
+      modelVersion = scenarioGraphVersion.modelVersion
+    )
+    // TODO: It shouldn't be needed
+    val dumbDeploymentData = DeploymentData(
+      LegacyDeploymentId(""),
+      user.toManagerUser,
+      Map.empty,
+      NodesDeploymentData.empty
+    )
+    for {
+      result <- EitherT[DB, RunDeploymentError, Unit](
+        toEffectAll(
+          DB.from(
+            dmDispatcher
+              .deploymentManagerUnsafe(scenarioMetadata.processingType)(user)
+              .processCommand(
+                DMValidateScenarioCommand(
+                  runtimeVersionData,
+                  dumbDeploymentData,
+                  scenarioGraphVersion.jsonUnsafe,
+                  DeploymentUpdateStrategy.DontReplaceDeployment
+                )
+              )
+              .map(_ => Right(()))
+              // TODO: more explicit way to pass errors from DM
+              .recover { case NonFatal(ex) =>
+                Left(DeployValidationError(ex.getMessage))
               }
-          }
+          )
+        )
+      )
+    } yield result
+  }
+
+  private def runDeploymentUsingDeploymentManager(
+      scenarioMetadata: ProcessEntityData,
+      scenarioGraphVersion: ProcessVersionEntityData,
+      command: RunDeploymentCommand
+  ): EitherT[DB, RunDeploymentError, Option[ExternalDeploymentId]] = {
+    val runtimeVersionData = RuntimeVersionData(
+      versionId = scenarioGraphVersion.id,
+      processName = scenarioMetadata.name,
+      processId = scenarioMetadata.id,
+      user = scenarioGraphVersion.user,
+      modelVersion = scenarioGraphVersion.modelVersion
+    )
+    val deploymentData = DeploymentData(
+      toLegacyDeploymentId(command.id),
+      command.user.toManagerUser,
+      additionalDeploymentData = Map.empty,
+      command.nodesDeploymentData
+    )
+    EitherT.right(
+      toEffectAll(
+        DB.from(
+          dmDispatcher
+            .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)
+            .processCommand(
+              DMRunDeploymentCommand(
+                runtimeVersionData,
+                deploymentData,
+                scenarioGraphVersion.jsonUnsafe,
+                DeploymentUpdateStrategy.DontReplaceDeployment
+              )
+            )
+        )
       )
     )
+  }
+
+  private def toLegacyDeploymentId(id: DeploymentId) = {
+    LegacyDeploymentId(id.toString)
+  }
 
   private def getDeploymentById(id: DeploymentId) =
     EitherT.fromOptionF(dbioRunner.run(deploymentRepository.getDeploymentById(id)), DeploymentNotFoundError(id))
@@ -124,16 +187,28 @@ class DeploymentService(
   private def checkPermission[F[_]: Applicative](user: LoggedUser, category: String, permission: Permission) =
     EitherT.cond[F](user.can(category, permission), (), NoPermissionError)
 
-  private def getScenarioStatus(scenarioMetadata: ProcessEntityData)(implicit loggedUser: LoggedUser) = {
+  private def getDeploymentStatusFromDeploymentManager(deploymentId: DeploymentId, scenarioMetadata: ProcessEntityData)(
+      implicit loggedUser: LoggedUser
+  ) = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     EitherT.right[GetDeploymentStatusError](
-      legacyDeploymentService.getProcessState(ProcessIdWithName(scenarioMetadata.id, scenarioMetadata.name))
+      dmDispatcher
+        .deploymentManagerUnsafe(scenarioMetadata.processingType)
+        .getProcessStates(scenarioMetadata.name)
+        .map { result =>
+          val legacyDeploymentId = toLegacyDeploymentId(deploymentId)
+          result.value
+            .find(_.deploymentId.contains(legacyDeploymentId))
+            .map(_.status)
+        }
     )
   }
 
 }
 
 object DeploymentService {
+
+  final case class DeploymentForeignKeys(scenarioId: ProcessId, scenarioGraphVersionId: VersionId)
 
   sealed trait RunDeploymentError
 
@@ -147,6 +222,8 @@ object DeploymentService {
 
   case object NoPermissionError extends RunDeploymentError with GetDeploymentStatusError
 
-  final case class NewCommentValidationError(message: String) extends RunDeploymentError
+  final case class ScenarioGraphValidationError(errors: ValidationErrors) extends RunDeploymentError
+
+  final case class DeployValidationError(message: String) extends RunDeploymentError
 
 }

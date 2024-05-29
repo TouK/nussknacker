@@ -11,6 +11,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
@@ -161,7 +162,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           defaultVersion,
           defaultDeploymentData,
           canonicalProcess,
-          None
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
         )
       )
       .futureValue shouldBe None
@@ -177,7 +180,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         defaultVersion,
         defaultDeploymentData,
         canonicalProcess,
-        None
+        DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+          StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+        )
       )
     )
     expectException(result, "Exception when sending request: POST http://test.pl/jars/file/run")
@@ -193,11 +198,29 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val message =
       "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
     expectException(
-      manager.processCommand(DMValidateScenarioCommand(defaultVersion, defaultDeploymentData, canonicalProcess)),
+      manager.processCommand(
+        DMValidateScenarioCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      ),
       message
     )
     expectException(
-      manager.processCommand(DMRunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None)),
+      manager.processCommand(
+        DMRunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      ),
       message
     )
   }
@@ -206,7 +229,16 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
     createManager(statuses, acceptDeploy = true)
-      .processCommand(DMRunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None))
+      .processCommand(
+        DMRunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -214,7 +246,16 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true)
-      .processCommand(DMRunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None))
+      .processCommand(
+        DMRunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 

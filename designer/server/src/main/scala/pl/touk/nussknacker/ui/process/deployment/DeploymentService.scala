@@ -129,29 +129,31 @@ class DeploymentService(
         //       references to existing fields and uses correct types. We should also protect from sql injection attacks
         command.nodesDeploymentData
       )
+      updateStrategy = DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(command.stateRestoringStrategy)
       dmCommand = DMRunDeploymentCommand(
         deployedScenarioData.processVersion,
         deployedScenarioData.deploymentData,
         deployedScenarioData.resolvedScenario,
-        command.savepointPath
+        updateStrategy
       )
       // TODO: move validateBeforeDeploy before creating an action
-      actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData).transformWith {
-        case Failure(ex) =>
-          removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
-        case Success(_) =>
-          // we notify of deployment finish/fail only if initial validation succeeded
-          val deploymentFuture = runActionAndHandleResults(
-            actionName,
-            validatedComment,
-            ctx
-          ) {
-            dispatcher
-              .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
-              .processCommand(dmCommand)
-          }
-          Future.successful(deploymentFuture)
-      }
+      actionResult <- validateBeforeDeploy(ctx.latestScenarioDetails, deployedScenarioData, updateStrategy)
+        .transformWith {
+          case Failure(ex) =>
+            removeInvalidAction(ctx.actionId).transform(_ => Failure(ex))
+          case Success(_) =>
+            // we notify of deployment finish/fail only if initial validation succeeded
+            val deploymentFuture = runActionAndHandleResults(
+              actionName,
+              validatedComment,
+              ctx
+            ) {
+              dispatcher
+                .deploymentManagerUnsafe(ctx.latestScenarioDetails.processingType)
+                .processCommand(dmCommand)
+            }
+            Future.successful(deploymentFuture)
+        }
     } yield actionResult
   }
 
@@ -219,7 +221,8 @@ class DeploymentService(
 
   protected def validateBeforeDeploy(
       processDetails: ScenarioWithDetailsEntity[CanonicalProcess],
-      deployedScenarioData: DeployedScenarioData
+      deployedScenarioData: DeployedScenarioData,
+      updateStrategy: DeploymentUpdateStrategy
   )(implicit user: LoggedUser): Future[Unit] = {
     for {
       // 1. check scenario has no errors
@@ -240,7 +243,8 @@ class DeploymentService(
           DMValidateScenarioCommand(
             processDetails.toEngineProcessVersion,
             deployedScenarioData.deploymentData,
-            deployedScenarioData.resolvedScenario
+            deployedScenarioData.resolvedScenario,
+            updateStrategy
           )
         )
     } yield ()

@@ -36,7 +36,7 @@ const standardPalette: PaletteOptions = {
     },
 };
 
-export const darkModePalette = {
+export const darkModePalette: PaletteOptions = {
     ...standardPalette,
     custom: {
         environmentAlert: {
@@ -59,16 +59,16 @@ export const darkModePalette = {
                 fill: "#DB4646",
             },
             Filter: {
-                fill: "#FAA05A",
+                fill: "#FF9444",
             },
             Switch: {
                 fill: "#1B78BC",
             },
             VariableBuilder: {
-                fill: "#FEB58A",
+                fill: "#E16AC0",
             },
             Variable: {
-                fill: "#FEB58A",
+                fill: "#E16AC0",
             },
             Enricher: {
                 fill: "#A171E6",
@@ -77,7 +77,7 @@ export const darkModePalette = {
                 fill: "#A171E6",
             },
             Split: {
-                fill: "#F9C542",
+                fill: "#CC9C00",
             },
             Processor: {
                 fill: "#4583dd",
@@ -89,19 +89,28 @@ export const darkModePalette = {
                 fill: "#46ca94",
             },
             CustomNode: {
-                fill: "#1EC6BE",
+                fill: "#19A49D",
             },
             Join: {
-                fill: "#1EC6BE",
+                fill: "#19A49D",
             },
             _group: {
-                fill: "#1EC6BE",
+                fill: "#19A49D",
             },
         },
         windows: {
-            compareVersions: { backgroundColor: "#1ba1af", color: "white" },
-            customAction: { backgroundColor: "white", color: "black" },
-            default: { backgroundColor: "#2D8E54", color: "white" },
+            compareVersions: {
+                backgroundColor: "#1ba1af",
+                color: "white",
+            },
+            customAction: {
+                backgroundColor: "white",
+                color: "black",
+            },
+            default: {
+                backgroundColor: "#2D8E54",
+                color: "white",
+            },
         },
     },
 };

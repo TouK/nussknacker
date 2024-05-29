@@ -97,7 +97,7 @@ class MigrationService(
       }
     }
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsernameO)
+      UpdateScenarioCommand(scenarioGraph, Some(updateProcessComment), forwardedUsernameO)
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),

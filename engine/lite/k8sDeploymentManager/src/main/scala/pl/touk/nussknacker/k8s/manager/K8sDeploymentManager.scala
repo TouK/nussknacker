@@ -132,9 +132,14 @@ class K8sDeploymentManager(
       .flatMap(_.strategy)
     for {
       resourceQuotas <- k8sClient.list[ResourceQuotaList]()
-      oldDeployment <- k8sClient.getOption[Deployment](
-        objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
-      )
+      oldDeployment <- updateStrategy match {
+        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+          k8sClient.getOption[Deployment](
+            objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
+          )
+        case DeploymentUpdateStrategy.DontReplaceDeployment =>
+          throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+      }
       _ <- Future.fromTry(
         K8sPodsResourceQuotaChecker
           .hasReachedQuotaLimit(
@@ -155,6 +160,13 @@ class K8sDeploymentManager(
     val scalingOptions = determineScalingOptions(canonicalProcess)
     logger.debug(s"Deploying $processVersion")
     for {
+      _ <- Future {
+        updateStrategy match {
+          case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) => ()
+          case DeploymentUpdateStrategy.DontReplaceDeployment =>
+            throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+        }
+      }
       configMap <- k8sUtils.createOrUpdate(
         configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
           Map(

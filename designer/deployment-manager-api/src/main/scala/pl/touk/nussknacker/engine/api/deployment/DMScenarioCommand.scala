@@ -33,7 +33,8 @@ sealed trait DMScenarioCommand[Result]
 case class DMValidateScenarioCommand(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
-    canonicalProcess: CanonicalProcess
+    canonicalProcess: CanonicalProcess,
+    updateStrategy: DeploymentUpdateStrategy
 ) extends DMScenarioCommand[Unit]
 
 /**
@@ -44,7 +45,7 @@ case class DMRunDeploymentCommand(
     processVersion: ProcessVersion,
     deploymentData: DeploymentData,
     canonicalProcess: CanonicalProcess,
-    savepointPath: Option[String]
+    updateStrategy: DeploymentUpdateStrategy
 ) extends DMScenarioCommand[Option[ExternalDeploymentId]]
 
 case class DMCancelDeploymentCommand(scenarioName: ProcessName, deploymentId: DeploymentId, user: User)

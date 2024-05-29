@@ -141,5 +141,10 @@ case class ComponentDefinition(
     name: String,
     component: Component,
     icon: Option[String] = None,
-    docsUrl: Option[String] = None
-)
+    docsUrl: Option[String] = None,
+    designerWideId: Option[DesignerWideComponentId] = None
+) {
+
+  def withDesignerWideId(id: String): ComponentDefinition = copy(designerWideId = Some(DesignerWideComponentId(id)))
+
+}

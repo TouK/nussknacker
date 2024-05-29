@@ -592,7 +592,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    updateCanonicalProcess(process, comment) {
+    updateCanonicalProcess(process, Some(comment)) {
       forScenarioReturned(processName) { process =>
         process.history.map(_.size) shouldBe Some(2)
       }
@@ -1170,11 +1170,15 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-  private def updateCanonicalProcess(process: CanonicalProcess, comment: String = "")(
+  private def updateCanonicalProcess(process: CanonicalProcess, comment: Option[String] = None)(
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(
+        CanonicalProcessConverter.toScenarioGraph(process),
+        comment.map(UpdateProcessComment(_)),
+        None
+      ),
       process.name
     )(
       testCode
@@ -1236,7 +1240,7 @@ class ProcessesResourcesSpec
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, comment = None, forwardedUserName = None), name)(testCode)
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)

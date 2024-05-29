@@ -11,19 +11,21 @@ import {
 } from "@mui/material";
 import React from "react";
 
-interface FilterItemProps extends Omit<CheckboxProps, "onChange"> {
+interface FilterItemProps {
     label: string | React.ReactElement;
     onChange: (checked: boolean) => void;
+    checked: boolean;
+    checkboxProps?: CheckboxProps;
     invert?: boolean;
     touched?: boolean;
 }
 
 export function FilterListItem(props: FilterItemProps): JSX.Element {
-    const { label, touched = props.checked, checked, onChange, invert, ...passProps } = props;
+    const { label, touched = props.checked, onChange, invert, checkboxProps, ...passProps } = props;
     return (
-        <MenuItem selected={touched} onClick={() => onChange(!checked)} dense sx={{ minWidth: 175 }}>
+        <MenuItem selected={touched} onClick={() => onChange(!props.checked)} dense sx={{ minWidth: 175 }} {...passProps}>
             <ListItemIcon>
-                <Checkbox sx={{ padding: 0 }} checked={invert ? !checked : checked} disableRipple {...passProps} />
+                <Checkbox sx={{ padding: 0 }} checked={invert ? !props.checked : props.checked} disableRipple {...checkboxProps} />
             </ListItemIcon>
             <ListItemText primary={label} />
         </MenuItem>

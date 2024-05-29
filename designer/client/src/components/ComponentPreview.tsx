@@ -1,7 +1,7 @@
 import { css, cx } from "@emotion/css";
 import React from "react";
 import { NodeType } from "../types";
-import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, portSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
+import { BORDER_RADIUS, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH } from "./graph/EspNode/esp";
 import NodeUtils from "./graph/NodeUtils";
 import { ComponentIcon } from "./toolbars/creator/ComponentIcon";
 import { alpha, styled, useTheme } from "@mui/material";
@@ -53,13 +53,13 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
     });
 
     const imageColors = css({
-        background: theme.palette.custom.nodes[node?.type]?.fill,
+        background: theme.palette.custom.getNodeStyles(node)?.fill,
         color: theme.palette.common.white,
     });
 
     const ContentStyled = styled("div")(({ theme }) => ({
         color: theme.palette.text.primary,
-        fontSize: theme.typography.caption.fontSize,
+        fontSize: theme.typography.body1.fontSize,
         flex: 1,
         whiteSpace: "nowrap",
         display: "flex",
@@ -89,8 +89,8 @@ export function ComponentPreview({ node, isActive, isOver }: { node: NodeType; i
 }
 
 const Port = ({ className }: { className?: string }) => {
-    const size = portSize * 2;
-    const position = size * 2;
+    const size = 24;
+    const position = size / 2;
     const port = css({
         width: size,
         height: size,

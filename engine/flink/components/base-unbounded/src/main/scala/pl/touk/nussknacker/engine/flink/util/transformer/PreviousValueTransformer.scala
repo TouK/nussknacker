@@ -7,11 +7,15 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
-case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+case object PreviousValueTransformer
+    extends CustomStreamTransformer
+    with UnboundedStreamComponent
+    with ExplicitUidInOperatorsSupport {
 
   type Value = AnyRef
 

@@ -134,7 +134,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     text: description,
                 },
                 iconBackground: {
-                    fill: theme.palette.custom.nodes[node.type].fill,
+                    fill: theme.palette.custom.getNodeStyles(node).fill,
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
                 icon: {
@@ -142,7 +142,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
                 content: {
-                    fontSize: theme.typography.caption.fontSize,
+                    fontSize: theme.typography.body1.fontSize,
                     text: bodyContent,
                     opacity: node.isDisabled ? 0.3 : 1,
                     disabled: node.isDisabled,

@@ -37,7 +37,7 @@ const standardPalette: PaletteOptions = {
 };
 
 // It's for a testing purpose only, to check if all color relations are added. We don't support light mode yet
-export const lightModePalette = {
+export const lightModePalette: PaletteOptions = {
     ...standardPalette,
     custom: {
         environmentAlert: {
@@ -60,16 +60,16 @@ export const lightModePalette = {
                 fill: "#DB4646",
             },
             Filter: {
-                fill: "#FAA05A",
+                fill: "#FF9444",
             },
             Switch: {
                 fill: "#1B78BC",
             },
             VariableBuilder: {
-                fill: "#FEB58A",
+                fill: "#E16AC0",
             },
             Variable: {
-                fill: "#FEB58A",
+                fill: "#E16AC0",
             },
             Enricher: {
                 fill: "#A171E6",
@@ -78,7 +78,7 @@ export const lightModePalette = {
                 fill: "#A171E6",
             },
             Split: {
-                fill: "#F9C542",
+                fill: "#CC9C00",
             },
             Processor: {
                 fill: "#4583dd",
@@ -90,13 +90,13 @@ export const lightModePalette = {
                 fill: "#46ca94",
             },
             CustomNode: {
-                fill: "#1EC6BE",
+                fill: "#19A49D",
             },
             Join: {
-                fill: "#1EC6BE",
+                fill: "#19A49D",
             },
             _group: {
-                fill: "#1EC6BE",
+                fill: "#19A49D",
             },
         },
         windows: {

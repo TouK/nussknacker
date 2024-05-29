@@ -16,9 +16,9 @@ import SaveButton from "../../toolbars/process/buttons/SaveButton";
 import UnArchiveButton from "../../toolbars/process/buttons/UnArchiveButton";
 import { LinkButton } from "./LinkButton";
 import { ActionButton } from "./ActionButton";
-import CancelDeployButton from "../../toolbars/scenarioDetails/buttons/CancelDeployButton";
-import DeployButton from "../../toolbars/scenarioDetails/buttons/DeployButton";
-import PropertiesButton from "../../toolbars/scenarioDetails/buttons/PropertiesButton";
+import CancelDeployButton from "../../toolbars/scenarioActions/buttons/CancelDeployButton";
+import DeployButton from "../../toolbars/scenarioActions/buttons/DeployButton";
+import PropertiesButton from "../../toolbars/scenarioActions/buttons/PropertiesButton";
 import CountsButton from "../../toolbars/test/buttons/CountsButton";
 import FromFileButton from "../../toolbars/test/buttons/FromFileButton";
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton";
@@ -32,8 +32,12 @@ import { BuiltinButtonTypes } from "./BuiltinButtonTypes";
 import { CustomButtonTypes } from "./CustomButtonTypes";
 import { ToolbarButton, ToolbarButtonTypes } from "./types";
 
+export type PropsOfButton<T> = ToolbarButton & {
+    type: T;
+};
+
 type ToolbarButtonsMap = {
-    [T in ToolbarButtonTypes]: ComponentType<ToolbarButton & { type: T }>;
+    [T in ToolbarButtonTypes]: ComponentType<PropsOfButton<T>>;
 };
 
 export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
@@ -64,6 +68,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
     [BuiltinButtonTypes.testHide]: HideButton,
     [CustomButtonTypes.customAction]: ActionButton,
     [CustomButtonTypes.customLink]: LinkButton,
-    [BuiltinButtonTypes.testWithForm]: TestWithFormButton,
+    [CustomButtonTypes.testWithForm]: TestWithFormButton,
     [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
 };
