@@ -203,29 +203,8 @@ object DeploymentApiEndpoints {
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestRunDeploymentError] {
         case ScenarioNotFoundError(scenarioName)  => s"Scenario $scenarioName not found"
         case CommentValidationError(message)      => message
-        case ScenarioGraphValidationError(errors) =>
-          // TODO: Move to some structure
-          s"Scenario is invalid.${Option(errors.invalidNodes)
-              .filterNot(_.isEmpty)
-              .map {
-                _.map { case (nodeId, nodeErrors) =>
-                  s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
-                }.mkString("\nNode errors:", "", "")
-              }
-              .getOrElse("")}" +
-            s"${Option(errors.globalErrors)
-                .filterNot(_.isEmpty)
-                .map {
-                  _.map(_.error.message).mkString("\nGlobal errors: ", ", ", "")
-                }
-                .getOrElse("")}" +
-            s"${Option(errors.processPropertiesErrors)
-                .filterNot(_.isEmpty)
-                .map {
-                  _.map(_.message).mkString("\nProperties errors: ", ", ", "")
-                }
-                .getOrElse("")}"
-        case DeployValidationError(message) => message
+        case ScenarioGraphValidationError(errors) => toHumanReadableMessage(errors)
+        case DeployValidationError(message)       => message
       }
 
     implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
@@ -238,6 +217,30 @@ object DeploymentApiEndpoints {
         s"Deployment ${err.id} not found"
       )
 
+  }
+
+  private def toHumanReadableMessage(errors: ValidationErrors) = {
+    // TODO: Move to some details field
+    s"Scenario is invalid.${Option(errors.invalidNodes)
+        .filterNot(_.isEmpty)
+        .map {
+          _.map { case (nodeId, nodeErrors) =>
+            s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
+          }.mkString("\nNode errors:", "", "")
+        }
+        .getOrElse("")}" +
+      s"${Option(errors.globalErrors)
+          .filterNot(_.isEmpty)
+          .map {
+            _.map(_.error.message).mkString("\nGlobal errors: ", ", ", "")
+          }
+          .getOrElse("")}" +
+      s"${Option(errors.processPropertiesErrors)
+          .filterNot(_.isEmpty)
+          .map {
+            _.map(_.message).mkString("\nProperties errors: ", ", ", "")
+          }
+          .getOrElse("")}"
   }
 
 }
