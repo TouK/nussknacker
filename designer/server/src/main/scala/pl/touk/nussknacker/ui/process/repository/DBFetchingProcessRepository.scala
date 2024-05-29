@@ -5,6 +5,7 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.Finished
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
@@ -70,25 +71,32 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
   ): DBIOAction[List[ScenarioWithDetailsEntity[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
       lastActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, None)
+        actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates)
       )
-      lastStateActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository
-          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
-      )
-      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
-      lastDeployedActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ScenarioActionName.Deploy)))
-      )
-      latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
+
+      deployedProcesses = lastActionPerProcess.flatMap { case (processId, action) =>
+        if (action.actionName == ScenarioActionName.Deploy && action.state == Finished) Some(processId)
+        else
+          None // TODO it's not necessarily equal to the old code (first we search FinishedStates and then filter to Finished)
+      }.toSet
+
+      latestProcesses <- fetchLatestProcessesQuery(query, deployedProcesses, isDeployed).result
     } yield latestProcesses
       .map { case ((_, processVersion), process) =>
+        val latestAction: Option[ProcessAction] = lastActionPerProcess.get(process.id)
+        val latestStateAction =
+          latestAction.filter(action => ScenarioActionName.StateActions.contains(action.actionName))
+        // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
+        val lastDeployedAction = latestAction.filter(action =>
+          action.actionName == ScenarioActionName.Deploy && action.state == Finished // TODO it's not necessarily equal to the old code (first we search FinishedStates and then filter to Finished)
+        )
+
         createFullDetails(
           process,
           processVersion,
-          lastActionPerProcess.get(process.id),
-          lastStateActionPerProcess.get(process.id),
-          lastDeployedActionPerProcess.get(process.id),
+          latestAction,
+          latestStateAction,
+          lastDeployedAction,
           isLatestVersion = true,
           // For optimisation reasons we don't return history and tags when querying for list of processes
           None,

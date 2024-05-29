@@ -35,10 +35,7 @@ trait ProcessActionRepository {
       implicit ec: ExecutionContext
   ): DB[List[ProcessAction]]
 
-  def getLastActionPerProcess(
-      actionState: Set[ProcessActionState],
-      actionNamesOpt: Option[Set[ScenarioActionName]]
-  ): DB[Map[ProcessId, ProcessAction]]
+  def getLastActionPerProcess(actionState: Set[ProcessActionState]): DB[Map[ProcessId, ProcessAction]]
 
 }
 
@@ -301,15 +298,14 @@ class DbProcessActionRepository(
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  override def getLastActionPerProcess(
-      actionState: Set[ProcessActionState],
-      actionNamesOpt: Option[Set[ScenarioActionName]]
-  ): DB[Map[ProcessId, ProcessAction]] = {
+  override def getLastActionPerProcess(actionState: Set[ProcessActionState]): DB[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
       .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
-      .join(processActionsTable)
+      .join(
+        processActionsTable
+      ) // TODO here could use 'is_latest' preprocessing instead of join (keep track when inserting new action)
       .on { case ((processId, maxPerformedAt), action) =>
         action.processId === processId && action.state.inSet(actionState) && action.performedAt === maxPerformedAt
       } // We fetch exactly this one with max deployment
@@ -319,11 +315,7 @@ class DbProcessActionRepository(
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
     run(
-      actionNamesOpt
-        .map(actionNames => query.filter { case (_, (entity, _)) => entity.actionName.inSet(actionNames) })
-        .getOrElse(query)
-        .result
-        .map(_.toMap.mapValuesNow(toFinishedProcessAction))
+      query.result.map(_.toMap.mapValuesNow(toFinishedProcessAction))
     )
   }
 

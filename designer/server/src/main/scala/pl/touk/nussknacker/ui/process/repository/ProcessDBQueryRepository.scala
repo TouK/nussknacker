@@ -33,7 +33,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
 
   protected def fetchLatestProcessesQuery(
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-      lastDeployedActionPerProcess: Set[ProcessId],
+      deployedProcesses: Set[ProcessId],
       isDeployed: Option[Boolean]
   )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
     (
@@ -46,7 +46,9 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
     processVersionsTableWithUnit
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
-      .join(processVersionsTableQuery)
+      .join(
+        processVersionsTableQuery
+      ) // TODO here could use 'is_latest' preprocessing instead of join (keep track when inserting new version)
       .on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
       }
@@ -55,7 +57,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       .filter { case ((_, _), process) =>
         isDeployed match {
           case None      => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess) === dep
+          case Some(dep) => process.id.inSet(deployedProcesses) === dep
         }
       }
 
