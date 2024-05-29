@@ -14,6 +14,7 @@ import pl.touk.nussknacker.ui.db.timeseries.QuestDbFEStatisticsRepository.{creat
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.StandardOpenOption
+import java.util.UUID
 import java.util.concurrent.{ArrayBlockingQueue, ThreadPoolExecutor, TimeUnit}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
@@ -28,7 +29,7 @@ import scala.util.{Failure, Success, Try, Using}
 // 6. Handling errors while creating the QuestDb.
 // 7. Write tests when db directory is deleted in runtime.
 // 8. Changing table definition and recreate
-// 9. multi tenant metrics
+// 9. multi tenancy - instance id from configuration?
 private class QuestDbFEStatisticsRepository(private val cairoEngine: CairoEngine)(
     private implicit val ec: ExecutionContextExecutorService
 ) extends FEStatisticsRepository[Future]
@@ -181,7 +182,9 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   }
 
   private def createRootDirIfNotExists(): File = {
-    val nuDir = File.temp.createChild("nu", asDirectory = true)
+    val nuDir = File.temp
+      .createChild("nu", asDirectory = true)
+      .createChild(UUID.randomUUID().toString, asDirectory = true)
     logger.debug("Statistics path: {}", nuDir)
     nuDir
   }
