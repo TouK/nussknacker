@@ -294,18 +294,22 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
       status shouldEqual StatusCodes.OK
     }
 
-  protected def updateCanonicalProcess(process: CanonicalProcess, comment: String = "")(
+  protected def updateCanonicalProcess(process: CanonicalProcess, comment: Option[String] = None)(
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(
+        CanonicalProcessConverter.toScenarioGraph(process),
+        comment.map(UpdateProcessComment(_)),
+        None
+      ),
       process.name
     )(
       testCode

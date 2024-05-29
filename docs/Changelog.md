@@ -4,6 +4,8 @@
 -------------------------
 
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
+  * Deployments API returns correct status of deployment instead of returning always the last deployment's status
 
 1.15.0 (17 May 2024)
 -------------------------
