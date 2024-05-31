@@ -35,7 +35,7 @@ trait ProcessActionRepository {
       implicit ec: ExecutionContext
   ): DB[List[ProcessAction]]
 
-  def getLastActionPerProcess(actionState: Set[ProcessActionState]): DB[Map[ProcessId, ProcessAction]]
+  def getLastFinishedActionsPerProcess: DB[Map[ProcessId, LastFinishedActions]]
 
 }
 
@@ -269,10 +269,15 @@ class DbProcessActionRepository(
       actionId: ProcessActionId,
       processId: ProcessId
   ) =
-    if (ProcessActionState.FinishedStates.contains(actionState))
+    if (actionState == ProcessActionState.Finished)
       processesTable
         .filter(_.id === processId)
         .map(_.latestFinishedActionId)
+        .update(Some(actionId))
+    else if (actionState == ProcessActionState.ExecutionFinished)
+      processesTable
+        .filter(_.id === processId)
+        .map(_.latestExecutionFinishedActionId)
         .update(Some(actionId))
     else DBIOAction.successful(())
 
@@ -333,21 +338,38 @@ class DbProcessActionRepository(
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  override def getLastActionPerProcess(actionState: Set[ProcessActionState]): DB[Map[ProcessId, ProcessAction]] = {
+  override def getLastFinishedActionsPerProcess: DB[Map[ProcessId, LastFinishedActions]] = {
     val query = processActionsTable
       .join(processesTable)
       .on { case (action, process) =>
-        action.processId === process.id && action.id === process.latestFinishedActionId &&
-        action.state.inSet(actionState)
+        action.processId === process.id && action.state.inSet(ProcessActionState.FinishedStates) &&
+        (action.id === process.latestFinishedActionId || action.id === process.latestExecutionFinishedActionId)
       }
       .map { case (action, process) => process.id -> action }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
-    run(
-      query.result.map(_.toMap.mapValuesNow(toFinishedProcessAction))
-    )
+    run(query.result.map(_.foldLeft(Map.empty[ProcessId, Map[ProcessActionState, ProcessAction]]) {
+      case (map, (processId, (action, comment))) =>
+        val finishedAction = toFinishedProcessAction((action, comment))
+
+        map.get(processId) match {
+          case Some(latestActionByState) =>
+            val updatedLatestActionByState =
+              latestActionByState + (action.state -> finishedAction)
+
+            map + (processId -> updatedLatestActionByState)
+          case None =>
+            val latestActionByState = Map(action.state -> finishedAction)
+            map + (processId -> latestActionByState)
+        }
+    }.mapValuesNow { latestActionByState =>
+      LastFinishedActions(
+        lastFinishedAction = latestActionByState.get(ProcessActionState.Finished),
+        lastExecutionFinishedAction = latestActionByState.get(ProcessActionState.ExecutionFinished),
+      )
+    }))
   }
 
   override def getFinishedProcessAction(

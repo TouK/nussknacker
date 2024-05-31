@@ -36,7 +36,10 @@ trait ProcessEntityFactory extends BaseEntityFactory {
     def latestVersionId: Rep[VersionId] = column[VersionId]("latest_version_id", NotNull)
 
     def latestFinishedActionId: Rep[Option[ProcessActionId]] =
-      column[Option[ProcessActionId]]("latest_finished_action_id") // TODO: split into Finished/ExecutionFinished?
+      column[Option[ProcessActionId]]("latest_finished_action_id")
+
+    def latestExecutionFinishedActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_execution_finished_action_id")
 
     def * : ProvenShape[ProcessEntityData] =
       (
@@ -71,5 +74,6 @@ final case class ProcessEntityData(
     createdAt: Timestamp,
     createdBy: String,
     latestVersionId: VersionId,
-    latestFinishedActionId: Option[ProcessActionId]
+    latestFinishedActionId: Option[ProcessActionId],
+    latestExecutionFinishedActionId: Option[ProcessActionId]
 )

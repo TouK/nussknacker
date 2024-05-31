@@ -121,7 +121,8 @@ class DBProcessRepository(
       createdAt = Timestamp.from(now),
       createdBy = userName,
       latestVersionId = VersionId.initialVersionId,
-      latestFinishedActionId = None
+      latestFinishedActionId = None,
+      latestExecutionFinishedActionId = None
     )
 
     val insertNew =
