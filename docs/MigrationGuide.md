@@ -6,12 +6,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
-* [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
-  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
-    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
-    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
-  * `DMValidateScenarioCommand.updateStrategy` was added
-    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
     * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
     * `AuthenticationManager` is now responsible for authentication. `AuthenticationResources` handles only plugin specific authentication now
@@ -24,6 +18,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
           The `Option[String]` should hold the value that will be passed to the mentioned `PassedAuthCredentials`.
     * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
       It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
+    * `AuthenticationProvider` SPI is responsible for creation of `ImpersonationContext` for provided plugin specific authentication mechanism.
+    * `ImpersonationContext` has one method `getImpersonatedUserData(impersonatedUserIdentity)` which returns user's data for impersonation.
+    * `AuthenticationConfiguration` has one additional Boolean property `isAdminImpersonationPossible` which defines whether admin users can be impersonated by users with the `Impersonate` permission.
+      The property is set to `false` by default for `BasicAuthenticationConfiguration`, `OAuth2Configuration` and `DummyAuthenticationConfiguration`.
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
+  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
+    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
+  * `DMValidateScenarioCommand.updateStrategy` was added
+    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
 
 ### Configuration changes
 
