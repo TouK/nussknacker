@@ -38,7 +38,6 @@ import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrap
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
-import "./jqueryPassiveEvents";
 import { PaperContainer } from "./paperContainer";
 import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
 
