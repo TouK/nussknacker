@@ -81,7 +81,7 @@ object LoggedUser {
     else
       Left(ImpersonationNotAllowed)
 
-  implicit class ImpersonationChecking(val user: LoggedUser) extends AnyVal {
+  implicit class UserImpersonationSyntax(val user: LoggedUser) extends AnyVal {
 
     def canImpersonate: Boolean = user match {
       case _: AdminUser        => true
@@ -92,14 +92,20 @@ object LoggedUser {
           .contains(Permission.Impersonate.toString.toLowerCase)
     }
 
-  }
-
-  implicit class isAdminChecking(val user: LoggedUser) extends AnyVal {
-
     def isAdmin: Boolean = user match {
       case _: AdminUser        => true
       case _: CommonUser       => false
       case u: ImpersonatedUser => u.impersonatedUser.isAdmin
+    }
+
+    def getImpersonatingUserId: Option[String] = user match {
+      case _: RealLoggedUser   => None
+      case u: ImpersonatedUser => Some(u.impersonatingUser.id)
+    }
+
+    def getImpersonatingUserName: Option[String] = user match {
+      case _: RealLoggedUser   => None
+      case u: ImpersonatedUser => Some(u.impersonatingUser.username)
     }
 
   }

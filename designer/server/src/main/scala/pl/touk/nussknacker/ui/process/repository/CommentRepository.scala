@@ -32,14 +32,8 @@ class CommentRepository(protected val dbRef: DbRef)(implicit ec: ExecutionContex
         processVersionId = scenarioGraphVersionId,
         content = comment.value,
         user = user.username,
-        impersonatedByIdentity = user match {
-          case _: RealLoggedUser   => None
-          case u: ImpersonatedUser => Some(u.impersonatingUser.id)
-        },
-        impersonatedByUsername = user match {
-          case _: RealLoggedUser   => None
-          case u: ImpersonatedUser => Some(u.impersonatingUser.username)
-        },
+        impersonatedByIdentity = user.getImpersonatingUserId,
+        impersonatedByUsername = user.getImpersonatingUserName,
         createDate = Timestamp.from(Instant.now())
       )
       _ <- commentsTable += entityData

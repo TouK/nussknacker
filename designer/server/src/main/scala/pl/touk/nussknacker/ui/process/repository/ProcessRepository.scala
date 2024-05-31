@@ -120,14 +120,8 @@ class DBProcessRepository(
       isArchived = false,
       createdAt = Timestamp.from(now),
       createdBy = userName,
-      impersonatedByIdentity = loggedUser match {
-        case _: RealLoggedUser   => None
-        case u: ImpersonatedUser => Some(u.impersonatingUser.id)
-      },
-      impersonatedByUsername = loggedUser match {
-        case _: RealLoggedUser   => None
-        case u: ImpersonatedUser => Some(u.impersonatingUser.username)
-      }
+      impersonatedByIdentity = loggedUser.getImpersonatingUserId,
+      impersonatedByUsername = loggedUser.getImpersonatingUserName
     )
 
     val insertNew =

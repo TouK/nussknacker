@@ -214,14 +214,8 @@ class DbProcessActionRepository(
       processId = processId,
       processVersionId = processVersion,
       user = user.username, // TODO: it should be user.id not name
-      impersonatedByIdentity = user match {
-        case _: RealLoggedUser   => None
-        case u: ImpersonatedUser => Some(u.impersonatingUser.id)
-      },
-      impersonatedByUsername = user match {
-        case _: RealLoggedUser   => None
-        case u: ImpersonatedUser => Some(u.impersonatingUser.username)
-      },
+      impersonatedByIdentity = user.getImpersonatingUserId,
+      impersonatedByUsername = user.getImpersonatingUserName,
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       actionName = actionName,

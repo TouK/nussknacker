@@ -84,14 +84,8 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef, comment
         fileName = attachmentToAdd.fileName,
         data = attachmentToAdd.data,
         user = loggedUser.username,
-        impersonatedByIdentity = loggedUser match {
-          case _: RealLoggedUser   => None
-          case u: ImpersonatedUser => Some(u.impersonatingUser.id)
-        },
-        impersonatedByUsername = loggedUser match {
-          case _: RealLoggedUser   => None
-          case u: ImpersonatedUser => Some(u.impersonatingUser.username)
-        },
+        impersonatedByIdentity = loggedUser.getImpersonatingUserId,
+        impersonatedByUsername = loggedUser.getImpersonatingUserName,
         createDate = Timestamp.from(Instant.now())
       )
     } yield ()
