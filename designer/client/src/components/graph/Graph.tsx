@@ -32,7 +32,6 @@ import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrap
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
-import "./jqueryPassiveEvents";
 import { PaperContainer } from "./paperContainer";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
