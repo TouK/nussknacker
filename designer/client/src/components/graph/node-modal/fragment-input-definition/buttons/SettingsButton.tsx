@@ -1,7 +1,7 @@
 import React from "react";
 import TuneIcon from "@mui/icons-material/Tune";
-import { StyledButton } from "../../../focusableStyled";
 import { useTheme } from "@mui/material";
+import { StyledButton } from "../../../styledButton";
 
 interface SettingsButton {
     isOpen: boolean;

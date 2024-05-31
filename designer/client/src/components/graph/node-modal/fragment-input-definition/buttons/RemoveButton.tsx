@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { StyledButton } from "../../../focusableStyled";
+
+import { StyledButton } from "../../../styledButton";
 
 export function RemoveButton({ onClick }: { onClick: () => void }): JSX.Element {
     const { t } = useTranslation();
