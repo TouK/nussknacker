@@ -101,7 +101,7 @@ class UserApiHttpServiceSecuritySpec
             .get(s"$nuDesignerHttpAddress/api/user")
             .Then()
             .statusCode(403)
-            .body(equalTo("The supplied authentication is not authorized to access this resource"))
+            .body(equalTo("The supplied authentication is not authorized to impersonate"))
         }
       }
     }

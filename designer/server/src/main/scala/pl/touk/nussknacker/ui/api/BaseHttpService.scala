@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
 import pl.touk.nussknacker.restmodel.SecurityError
-import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
+import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError, ImpersonationError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
 import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
@@ -62,7 +62,7 @@ abstract class BaseHttpService(
             authenticationManager.isAdminImpersonationPossible
           ) match {
             case Right(loggedUser)             => success(loggedUser)
-            case Left(ImpersonationNotAllowed) => securityError(AuthorizationError)
+            case Left(ImpersonationNotAllowed) => securityError(ImpersonationError)
           }
         case Some(_) =>
           securityError(AuthorizationError)

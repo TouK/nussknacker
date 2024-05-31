@@ -139,7 +139,7 @@ class ScenarioParametersApiHttpServiceSecuritySpec
           .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
           .Then()
           .statusCode(403)
-          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
       }
     }
   }

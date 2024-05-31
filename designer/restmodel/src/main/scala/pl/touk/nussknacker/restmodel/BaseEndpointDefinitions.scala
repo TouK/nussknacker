@@ -48,6 +48,16 @@ object BaseEndpointDefinitions {
             ),
             oneOfVariantFromMatchType(
               Forbidden,
+              plainBody[SecurityError.ImpersonationError.type]
+                .example(
+                  Example.of(
+                    summary = Some("Authorization failed"),
+                    value = SecurityError.ImpersonationError
+                  )
+                )
+            ),
+            oneOfVariantFromMatchType(
+              Forbidden,
               plainBody[SecurityError.AuthorizationError.type]
                 .example(
                   Example.of(
@@ -82,6 +92,15 @@ object BaseEndpointDefinitions {
       )
     }
 
+    implicit val impersonationErrorCodec
+        : Codec[String, SecurityError.ImpersonationError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, SecurityError.ImpersonationError.type](_ => SecurityError.ImpersonationError)(_ =>
+          "The supplied authentication is not authorized to impersonate"
+        )
+      )
+    }
+
   }
 
   def toTextPlainCodecSerializationOnly[T](
@@ -101,4 +120,5 @@ sealed trait SecurityError
 object SecurityError {
   case object AuthenticationError extends SecurityError
   case object AuthorizationError  extends SecurityError
+  case object ImpersonationError  extends SecurityError
 }

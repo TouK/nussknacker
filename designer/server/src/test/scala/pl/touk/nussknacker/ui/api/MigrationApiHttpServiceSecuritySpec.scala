@@ -127,7 +127,7 @@ class MigrationApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(403)
-          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
       }
     }
     "impersonating user does not have permission to impersonate should" - {
@@ -143,7 +143,7 @@ class MigrationApiHttpServiceSecuritySpec
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(403)
-          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
       }
     }
   }
