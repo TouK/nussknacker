@@ -53,7 +53,8 @@ trait ProcessEntityFactory extends BaseEntityFactory {
         createdAt,
         createdBy,
         latestVersionId,
-        latestFinishedActionId
+        latestFinishedActionId,
+        latestExecutionFinishedActionId
       ) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
