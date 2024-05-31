@@ -33,12 +33,25 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
-    def latestVersionId: Rep[VersionId] = column[String]("latest_version_id") // notnull?
+    def latestVersionId: Rep[VersionId] = column[VersionId]("latest_version_id", NotNull)
 
-    def latestActionId: Rep[ProcessActionId] = column[String]("latest_action_id") // nullable for sure
+    def latestFinishedActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_finished_action_id") // TODO: split into Finished/ExecutionFinished?
 
     def * : ProvenShape[ProcessEntityData] =
-      (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
+      (
+        id,
+        name,
+        description,
+        processCategory,
+        processingType,
+        isFragment,
+        isArchived,
+        createdAt,
+        createdBy,
+        latestVersionId,
+        latestFinishedActionId
+      ) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
 
@@ -56,5 +69,7 @@ final case class ProcessEntityData(
     isFragment: Boolean,
     isArchived: Boolean,
     createdAt: Timestamp,
-    createdBy: String
+    createdBy: String,
+    latestVersionId: VersionId,
+    latestFinishedActionId: Option[ProcessActionId]
 )

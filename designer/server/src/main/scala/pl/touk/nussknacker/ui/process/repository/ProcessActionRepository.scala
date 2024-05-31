@@ -233,8 +233,8 @@ class DbProcessActionRepository(
       commentId = commentId,
       buildInfo = buildInfoJsonOpt
     )
-    insertProcessActionAndUpdateLatestActionId(processActionData).map { case (insertCount, updateLatestActionIdCount) =>
-      if (insertCount != 1 || updateLatestActionIdCount != 1)
+    insertProcessActionAndUpdateLatestActionId(processActionData).map { insertCount =>
+      if (insertCount != 1)
         throw new IllegalArgumentException(s"Action with id: $actionId can't be inserted")
       processActionData
     }
@@ -244,11 +244,8 @@ class DbProcessActionRepository(
     (for {
       insertCount <- processActionsTable += processActionData
 
-      updateLatestActionIdCount <- processesTable
-        .filter(_.id === processActionData.processId)
-        .map(_.latestActionId)
-        .update(processActionData.id)
-    } yield (insertCount, updateLatestActionIdCount)).transactionally
+      _ <- updateLatestFinishedActionId(processActionData.state, processActionData.id, processActionData.processId)
+    } yield insertCount).transactionally
 
   private def updateAction(
       actionId: ProcessActionId,
@@ -264,11 +261,20 @@ class DbProcessActionRepository(
         .map(a => (a.performedAt, a.state, a.failureMessage, a.commentId))
         .update((performedAt.map(Timestamp.from), state, failure, commentId))
 
-      updateLatestActionIdCount <- processesTable
+      _ <- updateLatestFinishedActionId(state, actionId, processId)
+    } yield updateCount == 1).transactionally
+
+  private def updateLatestFinishedActionId(
+      actionState: ProcessActionState,
+      actionId: ProcessActionId,
+      processId: ProcessId
+  ) =
+    if (ProcessActionState.FinishedStates.contains(actionState))
+      processesTable
         .filter(_.id === processId)
-        .map(_.latestActionId)
-        .update(actionId)
-    } yield updateCount == 1 && updateLatestActionIdCount == 1).transactionally
+        .map(_.latestFinishedActionId)
+        .update(Some(actionId))
+    else DBIOAction.successful(())
 
   // we use "select for update where false" query syntax to lock the table - it is useful if you plan to insert something in a critical section
   def lockActionsTable: DB[Unit] = {
@@ -331,7 +337,8 @@ class DbProcessActionRepository(
     val query = processActionsTable
       .join(processesTable)
       .on { case (action, process) =>
-        action.processId === process.id && action.id === process.latestActionId && action.state.inSet(actionState)
+        action.processId === process.id && action.id === process.latestFinishedActionId &&
+        action.state.inSet(actionState)
       }
       .map { case (action, process) => process.id -> action }
       .joinLeft(commentsTable)
