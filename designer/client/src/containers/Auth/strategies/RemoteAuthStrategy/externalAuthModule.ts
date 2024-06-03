@@ -1,5 +1,5 @@
 import { ComponentType, PropsWithChildren } from "react";
-import { Module } from "../../../ExternalLib/types";
+import { Module } from "../../../ExternalLib";
 
 interface RedirectState {
     targetPath: string;

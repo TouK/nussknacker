@@ -1,10 +1,10 @@
 import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { splitUrl } from "../../containers/ExternalLib";
-import { RemoteComponent } from "../../containers/ExternalLib/RemoteComponent";
 import { ToolbarButtons } from "./toolbarButtons";
 import { ToolbarConfig } from "../toolbarSettings/types";
 import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";
+import { RemoteComponent } from "../RemoteComponent";
 
 export type ToolbarPanelProps = PropsWithChildren<Omit<ToolbarConfig, "buttons">>;
 
