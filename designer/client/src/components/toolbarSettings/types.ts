@@ -1,4 +1,4 @@
-import { ModuleUrl } from "../../containers/ExternalLib";
+import { ModuleUrl } from "../../ExternalLib";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { ToolbarButton } from "./buttons";

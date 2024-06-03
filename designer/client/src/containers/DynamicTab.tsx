@@ -1,7 +1,7 @@
 import * as queryString from "query-string";
 import React, { memo, useMemo } from "react";
 import ErrorBoundary from "../components/common/ErrorBoundary";
-import { ModuleUrl, splitUrl } from "./ExternalLib";
+import { ModuleUrl, splitUrl } from "../ExternalLib";
 import { NotFound } from "./errors/NotFound";
 import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";

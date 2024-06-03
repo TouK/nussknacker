@@ -1,6 +1,6 @@
 import React from "react";
 import LoaderSpinner from "./spinner/Spinner";
-import * as LibLoader from "../containers/ExternalLib";
+import * as LibLoader from "../ExternalLib";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import SystemUtils from "../common/SystemUtils";
 
