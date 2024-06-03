@@ -5,9 +5,9 @@ sidebar_position: 1
 # Model configuration
 
 Model definition is part of a scenario type definition. There can be multiple scenario types in one Nussknacker installation, consequently there will also be multiple model definitions in such a case. 
-Check [configuration areas](docs/installation_configuration_guide/Common.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](../ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
+Check [configuration areas](../Common.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](../ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
 
-Model defines how to configure [components](/about/GLOSSARY#component) and certain runtime behavior (e.g. error handling) for a given scenario type. Model configuration is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
+Model defines how to configure [components](../../about/GLOSSARY#component) and certain runtime behavior (e.g. error handling) for a given scenario type. Model configuration is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
 
 * Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the Designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
 * There is additional set of defaults, taken from `defaultModelConfig.conf` if it exists on the classpath. The standard Nussknacker installation uses the one from [here](https://github.com/TouK/nussknacker/blob/staging/defaultModel/src/main/resources/defaultModelConfig.conf), installations using certain code customizations may use a different one.       
@@ -42,9 +42,9 @@ Nussknacker comes with a set of provided components. Some of them (e.g. `filter`
 predefined and accessible by default. Others need additional configuration - the most important ones are enrichers, where you have to set e.g. JDBC URL or external service address.
 
 Check Integration documentation for the details on how to configure the following components:
-- [OpenAPI](docs/integration/OpenAPI.md) Supports accessing external APIs directly from scenario 
-- [SQL](docs/integration/Sql.md)         Supports access to SQL database engines    
-- [Machine Learning](docs/integration/MachineLearning.md)         Infers ML models
+- [OpenAPI](../../integration/OpenAPI.md) Supports accessing external APIs directly from scenario 
+- [SQL](../../integration/Sql.md)         Supports access to SQL database engines    
+- [Machine Learning](../../integration/MachineLearning.md)         Infers ML models
 
 
 ### Configuration of component providers

@@ -52,18 +52,18 @@ When writing documentation please follow these instructions:
     ```
     [main configuration file](./Common#configuration-areas) 
     ```
-* all links to `https://nussknacker.io/documentation/`, but other than `Documentation` section in that page, e.g. to `About` or `Quickstart` sections: 
+* all links to `https://nussknacker.io/documentation/`, but other than `Documentation` section in that page, e.g. to `Quickstart` sections: 
   * should **not** point to `md` or `mdx` files
   * should **not** be relative
     
   example of correct link:
     ```
-    [Components](/about/GLOSSARY#component)
+    [Components](/docs/about/GLOSSARY#component)
     ```
   example of incorrect links:
     ```
-    [Components](/about/GLOSSARY.md#component)
-    [Components](../about/GLOSSARY#component)
+    [Components](/docs/about/GLOSSARY.md#component)
+    [Components](../docs/about/GLOSSARY#component)
     ```
 ### Automatic Screenshots Updates in Documentation
 
