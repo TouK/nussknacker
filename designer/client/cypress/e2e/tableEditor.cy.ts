@@ -2,7 +2,7 @@ function snapshot() {
     cy.get("@editor").matchImage();
 }
 
-describe.skip("Table editor", () => {
+describe("Table editor", () => {
     const seed = "table";
 
     before(() => {
@@ -13,7 +13,7 @@ describe.skip("Table editor", () => {
         cy.deleteAllTestProcesses({ filter: seed });
     });
 
-    it("should display rich table editor", () => {
+    it.skip("should display rich table editor", () => {
         cy.viewport("macbook-15");
         cy.visitNewProcess(seed, "table", "Default");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
@@ -108,5 +108,52 @@ describe.skip("Table editor", () => {
 
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.contains(`There is no property 'some name' in type`).should("be.visible");
+    });
+
+    // For now, it's a separate test. However, we can merge it should display rich table editor when fixed
+    it("should change columns position", () => {
+        cy.viewport("macbook-15");
+        cy.visitNewProcess(seed, "table", "Default");
+        cy.intercept("POST", "/api/nodes/*/validation", (request) => {
+            if (request.body.nodeData.service?.parameters.find((p) => p.name === "Expression")) {
+                request.alias = "validation";
+            }
+        });
+
+        cy.getNode("decision-table").dblclick();
+        cy.get("[data-testid=window]").should("be.visible").as("modal");
+        cy.get("[title='Decision Table']").next().as("editor");
+        cy.get("[data-testid='table-container']").should("be.visible").as("table");
+
+        // Provide data to the table
+        cy.get("@table").click(100, 50);
+        cy.get("[role='menuitem']").contains("Double").click();
+        cy.get("@table").click(550, 18);
+        cy.realType("some name");
+        cy.realPress("Enter");
+        cy.get("@table").click(100, 125);
+        cy.get("#portal textarea").should("be.visible");
+        cy.realType("2.0");
+        cy.realPress("Enter");
+        cy.get("@table").click(580, 25).click(580, 25);
+        cy.get("@table").click(350, 125).click(350, 125);
+        cy.get("#portal textarea").should("be.visible");
+        cy.realType("true").realPress("Tab");
+        cy.realType("bar").realPress("Enter");
+        cy.realPress("Enter");
+        cy.realPress("Escape");
+        cy.realType("xxx");
+        snapshot();
+
+        // Move the last column to the first place
+        cy.get("@table").realMouseDown({ x: 400, y: 40 }).realMouseMove(50, 40).realMouseUp();
+        snapshot();
+
+        // Reopen the node and verify if position is persisted
+        cy.contains(/^apply/i)
+            .should("be.enabled")
+            .click();
+        cy.getNode("decision-table").dblclick();
+        snapshot();
     });
 });

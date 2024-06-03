@@ -355,6 +355,18 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     const rightElement = useMemo<DataEditorProps["rightElement"]>(() => <RightElement onColumnAppend={onColumnAppend} />, [onColumnAppend]);
 
     const [hasFocus, setHasFocus] = useState(false);
+
+    const onColumnMoved = useCallback(
+        (startIndex: number, endIndex: number) => {
+            dispatch({
+                type: ActionTypes.moveColumn,
+                startIndex,
+                endIndex,
+            });
+        },
+        [dispatch],
+    );
+
     return (
         <>
             <Sizer
@@ -411,6 +423,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
                     highlightRegions={highlightRegions()}
                     onItemHovered={toggleTooltip}
                     drawCell={drawCell}
+                    onColumnMoved={onColumnMoved}
                 />
                 <TypesMenu
                     anchorPosition={typesMenuData?.position}
