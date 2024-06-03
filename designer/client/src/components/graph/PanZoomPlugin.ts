@@ -127,21 +127,17 @@ export class PanZoomPlugin {
         this.paperSelection.on(".zoom", null);
     }
 
-    private filterEvents(event: MouseEvent | TouchEvent): boolean {
+    private filterEvents(event: MouseEvent | TouchEvent | WheelEvent): boolean {
         if (!this._enabled) {
-            return false;
-        }
-
-        if (isModified(event)) {
-            return false;
-        }
-
-        if ("button" in event && event.button === 1) {
             return false;
         }
 
         if (event.type === "wheel") {
             return true;
+        }
+
+        if (isModified(event)) {
+            return false;
         }
 
         if ("touches" in event && event.touches.length > 1) {

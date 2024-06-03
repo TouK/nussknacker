@@ -15,7 +15,7 @@ import { LoadingButtonTypes } from "../windowManager/LoadingButton";
 
 interface AddProcessDialogProps extends WindowContentProps {
     isFragment?: boolean;
-    errors: NodeValidationError[];
+    errors?: NodeValidationError[];
 }
 
 export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {

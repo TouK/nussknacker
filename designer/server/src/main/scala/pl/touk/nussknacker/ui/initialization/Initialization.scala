@@ -28,9 +28,10 @@ object Initialization {
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
       fetchingRepository: DBFetchingProcessRepository[DB],
+      commentRepository: CommentRepository,
       environment: String
   )(implicit ec: ExecutionContext): Unit = {
-    val processRepository = new DBProcessRepository(db, migrations.mapValues(_.version))
+    val processRepository = new DBProcessRepository(db, commentRepository, migrations.mapValues(_.version))
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),

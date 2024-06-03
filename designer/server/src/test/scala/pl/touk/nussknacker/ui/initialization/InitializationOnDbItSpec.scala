@@ -34,7 +34,9 @@ abstract class InitializationOnDbItSpec
 
   private val migrations = mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2))
 
-  private lazy val repository = TestFactory.newFetchingProcessRepository(testDbRef)
+  private lazy val commentRepository = TestFactory.newCommentRepository(testDbRef)
+
+  private lazy val scenarioRepository = TestFactory.newFetchingProcessRepository(testDbRef)
 
   private lazy val dbioRunner = TestFactory.newDBIOActionRunner(testDbRef)
 
@@ -45,11 +47,11 @@ abstract class InitializationOnDbItSpec
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, testDbRef, repository, "env1")
+    Initialization.init(migrations, testDbRef, scenarioRepository, commentRepository, "env1")
 
     dbioRunner
       .runInTransaction(
-        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        scenarioRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(2)))
@@ -64,11 +66,11 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(ProcessName(s"id$id"))
     }
 
-    Initialization.init(migrations, testDbRef, repository, "env1")
+    Initialization.init(migrations, testDbRef, scenarioRepository, commentRepository, "env1")
 
     dbioRunner
       .runInTransaction(
-        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        scenarioRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion))
@@ -82,7 +84,8 @@ abstract class InitializationOnDbItSpec
       Initialization.init(
         mapProcessingTypeDataProvider("streaming" -> new TestMigrations(1, 2, 5)),
         testDbRef,
-        repository,
+        scenarioRepository,
+        commentRepository,
         "env1"
       )
     )
@@ -91,7 +94,7 @@ abstract class InitializationOnDbItSpec
 
     dbioRunner
       .runInTransaction(
-        repository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
+        scenarioRepository.fetchLatestProcessesDetails[Unit](ScenarioQuery.unarchivedProcesses)
       )
       .futureValue
       .map(d => (d.name.value, d.modelVersion)) shouldBe List(("proc1", Some(1)))

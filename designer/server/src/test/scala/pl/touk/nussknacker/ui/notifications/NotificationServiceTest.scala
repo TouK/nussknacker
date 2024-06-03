@@ -62,8 +62,14 @@ class NotificationServiceTest
   private val clock: Clock            = clockForInstant(() => currentInstant)
   private val processRepository       = TestFactory.newFetchingProcessRepository(testDbRef)
   private val writeProcessRepository  = TestFactory.newWriteProcessRepository(testDbRef)
+  private val commentRepository       = TestFactory.newCommentRepository(testDbRef)
+
   private val actionRepository =
-    new DbProcessActionRepository(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    new DbProcessActionRepository(
+      testDbRef,
+      commentRepository,
+      ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
+    )
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail    = List(DataToRefresh.state)

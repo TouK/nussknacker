@@ -11,9 +11,9 @@ import {
     DroppableProvided,
     DroppableStateSnapshot,
 } from "react-beautiful-dnd";
-import React, { CSSProperties, useCallback, useMemo } from "react";
+import React, { CSSProperties, Suspense, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { DragHandlerContext } from "../common/dndItems/DragHandle";
+import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
 import { cx } from "@emotion/css";
@@ -123,7 +123,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                             s.isDropAnimating && ANIMATING_CLASSNAME,
                         )}
                     >
-                        {ordered[r.source.index].component}
+                        <Suspense fallback={<SimpleDragHandle />}>{ordered[r.source.index].component}</Suspense>
                     </StyledDraggableItem>
                 </DragHandlerContext.Provider>
             </div>
