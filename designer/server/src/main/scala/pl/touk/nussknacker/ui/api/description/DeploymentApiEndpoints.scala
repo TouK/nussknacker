@@ -4,10 +4,18 @@ import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.{NodeDeploymentData, NodesDeploymentData, SqlFilteringExpression}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  EmptyProcess,
+  ExpressionParserCompilationError,
+  MissingRequiredProperty
+}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
@@ -57,7 +65,7 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                 )
               )
           ),
-          oneOfVariantFromMatchType(
+          oneOfVariant[BadRequestRunDeploymentError](
             StatusCode.BadRequest,
             plainBody[BadRequestRunDeploymentError]
               .examples(
@@ -68,7 +76,37 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
                   ),
                   Example.of(
                     summary = Some("Comment is required"),
-                    value = CommentValidationErrorNG("Comment is required.")
+                    value = CommentValidationError("Comment is required.")
+                  ),
+                  Example.of(
+                    summary = Some("Scenario validation error"),
+                    value = ScenarioGraphValidationError(
+                      ValidationErrors(
+                        invalidNodes = Map(
+                          "filter" -> List(
+                            PrettyValidationErrors.formatErrorMessage(
+                              ExpressionParserCompilationError(
+                                message = "Bad expression",
+                                paramName = None,
+                                originalExpr = "",
+                                details = None
+                              )(NodeId("filter"))
+                            )
+                          )
+                        ),
+                        globalErrors =
+                          List(UIGlobalError(PrettyValidationErrors.formatErrorMessage(EmptyProcess), List.empty)),
+                        processPropertiesErrors = List(
+                          PrettyValidationErrors.formatErrorMessage(
+                            MissingRequiredProperty(ParameterName("parallelism"), None)(NodeId("properties"))
+                          )
+                        ),
+                      )
+                    )
+                  ),
+                  Example.of(
+                    summary = Some("Deploy validation error"),
+                    value = DeployValidationError("Not enough free slots on Flink cluster")
                   )
                 )
               )
@@ -149,7 +187,11 @@ object DeploymentApiEndpoints {
 
     final case class ScenarioNotFoundError(scenarioName: ProcessName) extends BadRequestRunDeploymentError
 
-    final case class CommentValidationErrorNG(message: String) extends BadRequestRunDeploymentError
+    final case class CommentValidationError(message: String) extends BadRequestRunDeploymentError
+
+    final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestRunDeploymentError
+
+    final case class DeployValidationError(message: String) extends BadRequestRunDeploymentError
 
     sealed trait GetDeploymentStatusError
 
@@ -159,8 +201,10 @@ object DeploymentApiEndpoints {
 
     implicit val badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestRunDeploymentError] {
-        case ScenarioNotFoundError(scenarioName) => s"Scenario $scenarioName not found"
-        case CommentValidationErrorNG(message)   => message
+        case ScenarioNotFoundError(scenarioName)  => s"Scenario $scenarioName not found"
+        case CommentValidationError(message)      => message
+        case ScenarioGraphValidationError(errors) => toHumanReadableMessage(errors)
+        case DeployValidationError(message)       => message
       }
 
     implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
@@ -173,6 +217,30 @@ object DeploymentApiEndpoints {
         s"Deployment ${err.id} not found"
       )
 
+  }
+
+  private def toHumanReadableMessage(errors: ValidationErrors) = {
+    // TODO: Move to some details field
+    s"Scenario is invalid.${Option(errors.invalidNodes)
+        .filterNot(_.isEmpty)
+        .map {
+          _.map { case (nodeId, nodeErrors) =>
+            s"\n  $nodeId: ${nodeErrors.map(_.message).mkString(", ")}"
+          }.mkString("\nNode errors:", "", "")
+        }
+        .getOrElse("")}" +
+      s"${Option(errors.globalErrors)
+          .filterNot(_.isEmpty)
+          .map {
+            _.map(_.error.message).mkString("\nGlobal errors: ", ", ", "")
+          }
+          .getOrElse("")}" +
+      s"${Option(errors.processPropertiesErrors)
+          .filterNot(_.isEmpty)
+          .map {
+            _.map(_.message).mkString("\nProperties errors: ", ", ", "")
+          }
+          .getOrElse("")}"
   }
 
 }

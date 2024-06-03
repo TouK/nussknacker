@@ -3,7 +3,7 @@ describe("Undo/Redo", () => {
     const screenshotOptions: Cypress.MatchImageOptions = {
         maxDiffThreshold: 0.005,
         screenshotConfig: {
-            blackout: ["> :not(#nk-graph-main) > div"],
+            blackout: ["> div > :not(#nk-graph-main)"],
         },
     };
 

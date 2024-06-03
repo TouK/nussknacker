@@ -110,6 +110,34 @@ class DeploymentApiHttpServiceBusinessSpec
             .statusCode(409)
         }
       }
+
+      "when invoked twice with different deployment id should" - {
+        "return status of correct deployment" in {
+          val firstDeploymentId  = DeploymentId.generate
+          val secondDeploymentId = DeploymentId.generate
+          `given`()
+            .applicationState {
+              createSavedScenario(scenario)
+              runDeployment(firstDeploymentId)
+              waitForDeploymentStatusMatches(firstDeploymentId, SimpleStateStatus.Finished)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/$secondDeploymentId")
+            .Then()
+            .statusCode(202)
+            .verifyApplicationState {
+              checkDeploymentStatusMatches(
+                secondDeploymentId,
+                SimpleStateStatus.DuringDeploy,
+                SimpleStateStatus.Running,
+                SimpleStateStatus.Finished
+              )
+              checkDeploymentStatusMatches(firstDeploymentId, SimpleStateStatus.Finished)
+            }
+        }
+      }
     }
 
     "not authenticated should" - {

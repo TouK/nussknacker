@@ -602,6 +602,17 @@ paths:
                 Example1:
                   summary: Comment is required
                   value: Comment is required.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      filter: Failed to parse expression: Bad expression
+                    Global errors: Empty scenario
+                    Properties errors: Configured property parallelism is missing
+                Example3:
+                  summary: Deploy validation error
+                  value: Not enough free slots on Flink cluster
         '401':
           description: ''
           content:

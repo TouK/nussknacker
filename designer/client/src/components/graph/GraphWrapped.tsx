@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect } from "react";
+import React, { forwardRef } from "react";
 import { useWindows } from "../../windowManager";
 import { Graph } from "./Graph";
 import { useSelector } from "react-redux";
@@ -8,6 +8,7 @@ import { getLoggedUser, getProcessDefinitionData } from "../../reducers/selector
 import { GraphProps } from "./types";
 import { useTheme } from "@mui/material";
 import { useEventTracking } from "../../containers/event-tracking";
+import { GraphStyledWrapper } from "./graphStyledWrapper";
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
@@ -22,18 +23,20 @@ export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwar
     const { trackEvent } = useEventTracking();
 
     return (
-        <Graph
-            {...props}
-            ref={forwardedRef}
-            userSettings={userSettings}
-            showModalNodeDetails={openNodeWindow}
-            isPristine={pristine}
-            processCategory={processCategory}
-            loggedUser={loggedUser}
-            processDefinitionData={processDefinitionData}
-            selectionState={selectionState}
-            theme={theme}
-            handleStatisticsEvent={trackEvent}
-        />
+        <GraphStyledWrapper>
+            <Graph
+                {...props}
+                ref={forwardedRef}
+                userSettings={userSettings}
+                showModalNodeDetails={openNodeWindow}
+                isPristine={pristine}
+                processCategory={processCategory}
+                loggedUser={loggedUser}
+                processDefinitionData={processDefinitionData}
+                selectionState={selectionState}
+                theme={theme}
+                handleStatisticsEvent={trackEvent}
+            />
+        </GraphStyledWrapper>
     );
 });

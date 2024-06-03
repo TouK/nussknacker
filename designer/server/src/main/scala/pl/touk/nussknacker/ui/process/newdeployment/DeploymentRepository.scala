@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
 import db.util.DBIOActionInstances._
+import org.postgresql.util.{PSQLException, PSQLState}
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
@@ -22,8 +23,13 @@ class DeploymentRepository(dbRef: DbRef)(implicit ec: ExecutionContext) extends 
   def saveDeployment(deployment: DeploymentEntityData): DB[Either[ConflictingDeploymentIdError, Unit]] = {
     toEffectAll(deploymentsTable += deployment).asTry.map(
       _.map(_ => Right(()))
-        .recover { case _: SQLIntegrityConstraintViolationException =>
-          Left(ConflictingDeploymentIdError(deployment.id))
+        .recover {
+          // for postgres
+          case e: PSQLException if e.getSQLState == PSQLState.UNIQUE_VIOLATION.getState =>
+            Left(ConflictingDeploymentIdError(deployment.id))
+          // for other dbs, e.g. hsql
+          case _: SQLIntegrityConstraintViolationException =>
+            Left(ConflictingDeploymentIdError(deployment.id))
         }
         .get
     )

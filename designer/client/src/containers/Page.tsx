@@ -11,4 +11,5 @@ export const Page = styled("div")({
 export const GraphPage = styled(Page)(({ theme }) => ({
     backgroundColor: theme.palette.background.default,
     zIndex: 1,
+    display: "grid",
 }));

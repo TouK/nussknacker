@@ -3,6 +3,7 @@ import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import { useUserSettings } from "../../../../../common/userSettings";
 import AceWrapper, { AceKeyCommand, AceWrapperProps } from "./AceWrapper";
+import { UserSettings } from "../../../../../reducers/userSettings";
 
 export default forwardRef(function AceWithSettings(
     props: Omit<AceWrapperProps, "noWrap" | "showLines">,
@@ -10,8 +11,8 @@ export default forwardRef(function AceWithSettings(
 ): JSX.Element {
     const [userSettings, toggleSettings] = useUserSettings();
 
-    const [showLinesName, noWrapName] = useMemo(
-        () => ["showLines", "noWrap"].map((name) => `${props.inputProps.language}.${name}`),
+    const [showLinesName, noWrapName] = useMemo<(keyof UserSettings)[]>(
+        () => [`${props.inputProps.language}.showLines`, `${props.inputProps.language}.noWrap`],
         [props],
     );
 
