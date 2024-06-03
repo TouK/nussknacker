@@ -105,10 +105,12 @@ export function reducer(state: TableData, action: Action): TableData {
         case ActionTypes.replaceData:
             return action.data;
         case ActionTypes.moveColumn: {
+            const { startIndex, endIndex } = action;
+
             return {
                 ...state,
-                rows: state.rows.map((row) => reorderArray(row, action.startIndex, action.endIndex)),
-                columns: reorderArray(state.columns, action.startIndex, action.endIndex),
+                rows: state.rows.map((row) => reorderArray(row, startIndex, endIndex)),
+                columns: reorderArray(state.columns, startIndex, endIndex),
             };
         }
         default:
