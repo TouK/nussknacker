@@ -58,12 +58,12 @@ When writing documentation please follow these instructions:
     
   example of correct link:
     ```
-    [Components](/docs/about/GLOSSARY#component)
+    [Components](/quickstart/GLOSSARY#component)
     ```
   example of incorrect links:
     ```
-    [Components](/docs/about/GLOSSARY.md#component)
-    [Components](../docs/about/GLOSSARY#component)
+    [Components](/quickstart/GLOSSARY.md#component)
+    [Components](../quickstart/GLOSSARY#component)
     ```
 ### Automatic Screenshots Updates in Documentation
 
