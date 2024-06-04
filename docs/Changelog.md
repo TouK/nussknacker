@@ -10,6 +10,7 @@
 1.15.1 (4 June 2024)
 -------------------------
 * [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
+* [#6127](https://github.com/TouK/nussknacker/pull/6127) Ad-hoc tests available in scenarios without `flink-dropwizard-metrics-deps` in classPath
 
 1.15.0 (17 May 2024)
 -------------------------
