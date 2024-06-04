@@ -198,7 +198,7 @@ class ProcessUtils {
     determineComponentId = (node?: NodeType): string | null => {
         const componentType = this.determineComponentType(node);
         const componentName = this.determineComponentName(node);
-        return (componentType && componentName && componentType + "-" + componentName) || null;
+        return componentType && componentName ? `${componentType}-${componentName}` : null;
     };
 
     // It should be synchronized with ComponentInfoExtractor.fromScenarioNode

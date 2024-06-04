@@ -57,7 +57,7 @@ object ProcessService {
 
   @JsonCodec final case class UpdateScenarioCommand(
       scenarioGraph: ScenarioGraph,
-      comment: UpdateProcessComment,
+      comment: Option[UpdateProcessComment],
       forwardedUserName: Option[RemoteUserName]
   )
 
@@ -400,7 +400,7 @@ class DBProcessService(
       val updateProcessAction = UpdateProcessAction(
         processIdWithName.id,
         substituted,
-        Option(action.comment),
+        action.comment,
         increaseVersionWhenJsonNotChanged = false,
         forwardedUserName = action.forwardedUserName
       )

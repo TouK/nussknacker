@@ -60,7 +60,7 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
     const keys = uniq(Object.keys({ ...append, ...remove }));
     return Object.fromEntries(
         keys.map((key) => {
-            const current = ensureArray(query[key]).map(decodeURIComponent);
+            const current = ensureArray(query[key]).map(String);
             const withAdded = uniq(current.concat(append?.[key]));
             const cleaned = without(withAdded, ...ensureArray(remove?.[key])).filter(Boolean);
             return [key, cleaned];

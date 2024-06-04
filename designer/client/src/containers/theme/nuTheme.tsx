@@ -8,6 +8,7 @@ import { WindowKind } from "../../windowManager";
 import { EnvironmentTagColor } from "../EnvironmentTag";
 import { NodeType } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
+import { Dispatch, SetStateAction } from "react";
 
 declare module "@mui/material/FormHelperText" {
     interface FormHelperTextPropsVariantOverrides {
@@ -52,6 +53,7 @@ declare module "@mui/material/styles" {
 
     interface Theme {
         custom: typeof custom;
+        setMode: Dispatch<SetStateAction<PaletteMode>>;
     }
 
     interface ThemeOptions {
@@ -107,7 +109,7 @@ const headerCommonStyles = {
     marginBottom: "10px",
 };
 
-export const nuTheme = (mode: PaletteMode) => {
+export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<PaletteMode>>) => {
     return createTheme(
         deepmerge(getDesignTokens(mode), {
             typography: (palette: Palette) => ({
@@ -235,6 +237,7 @@ export const nuTheme = (mode: PaletteMode) => {
                 },
             },
             custom,
+            setMode,
         }),
     );
 };

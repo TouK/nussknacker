@@ -223,26 +223,25 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       modifiedBy = processVersion.user,
       createdAt = process.createdAt.toInstant,
       createdBy = process.createdBy,
-      json = convertToTargetShape(processVersion, process),
+      json = convertToTargetShape(processVersion),
       history = history.map(_.toList),
       modelVersion = processVersion.modelVersion
     )
   }
 
   private def convertToTargetShape[PS: ScenarioShapeFetchStrategy](
-      processVersion: ProcessVersionEntityData,
-      process: ProcessEntityData
+      processVersion: ProcessVersionEntityData
   ): PS = {
     (processVersion.json, processVersion.componentsUsages, implicitly[ScenarioShapeFetchStrategy[PS]]) match {
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchCanonical) =>
-        canonical.asInstanceOf[PS]
+        canonical
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchScenarioGraph) =>
         val scenarioGraph =
           CanonicalProcessConverter.toScenarioGraph(canonical)
-        scenarioGraph.asInstanceOf[PS]
-      case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
+        scenarioGraph
+      case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ()
       case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>
-        componentsUsages.asInstanceOf[PS]
+        componentsUsages
       case (_, _, strategy) =>
         throw new IllegalArgumentException(
           s"Missing scenario json data, it's required to convert for strategy: $strategy."

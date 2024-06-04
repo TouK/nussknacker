@@ -8,6 +8,7 @@ import { DisableField } from "./DisableField";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
 import { ParametersList } from "./parametersList";
+import { useTranslation } from "react-i18next";
 
 export function EnricherProcessor({
     errors,
@@ -30,6 +31,8 @@ export function EnricherProcessor({
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {
+    const { t } = useTranslation();
+
     return (
         <>
             <IdField
@@ -61,7 +64,7 @@ export function EnricherProcessor({
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     fieldType={FieldType.input}
-                    fieldLabel={"Output"}
+                    fieldLabel={t("nodes.enricher.output", "Output variable name")}
                     fieldName={"output"}
                     errors={errors}
                 />

@@ -1,3 +1,7 @@
+const screenshotConfig = {
+    blackout: ["[data-testid=graphPage] > div > div:not(#nk-graph-main)"],
+};
+
 describe("Connection error", () => {
     const NAME = "no-backend";
 
@@ -24,9 +28,7 @@ describe("Connection error", () => {
             cy.goOffline();
             cy.contains(/No network access/).should("be.visible");
             cy.get("body").matchImage({
-                screenshotConfig: {
-                    blackout: ["[data-testid=graphPage] > :not(#nk-graph-main) > div"],
-                },
+                screenshotConfig,
             });
             cy.goOnline();
             cy.contains(/No network access/).should("not.exist");
@@ -39,9 +41,7 @@ describe("Connection error", () => {
 
             cy.contains(/Backend connection issue/).should("be.visible");
             cy.get("body").matchImage({
-                screenshotConfig: {
-                    blackout: ["[data-testid=graphPage] > :not(#nk-graph-main) > div"],
-                },
+                screenshotConfig,
             });
 
             cy.intercept("/api/notifications", (req) => {
@@ -60,9 +60,7 @@ describe("Connection error", () => {
 
             cy.contains(/Backend connection issue/).should("be.visible");
             cy.get("body").matchImage({
-                screenshotConfig: {
-                    blackout: ["[data-testid=graphPage] > :not(#nk-graph-main) > div"],
-                },
+                screenshotConfig,
             });
 
             cy.intercept("/api/notifications", (req) => {

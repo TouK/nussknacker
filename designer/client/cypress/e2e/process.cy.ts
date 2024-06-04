@@ -109,7 +109,7 @@ describe("Process", () => {
     describe("with data", () => {
         const screenshotOptions: Cypress.MatchImageOptions = {
             screenshotConfig: {
-                blackout: ["> :not(#nk-graph-main) > div"],
+                blackout: ["> div > :not(#nk-graph-main)"],
             },
         };
 

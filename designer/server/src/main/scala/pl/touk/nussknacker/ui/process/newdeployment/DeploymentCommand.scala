@@ -13,6 +13,5 @@ final case class RunDeploymentCommand(
     id: DeploymentId,
     scenarioName: ProcessName,
     nodesDeploymentData: NodesDeploymentData,
-    user: LoggedUser,
-    comment: Option[Comment]
+    user: LoggedUser
 ) extends DeploymentCommand
