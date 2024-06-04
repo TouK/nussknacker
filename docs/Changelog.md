@@ -7,6 +7,10 @@
 * [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status
 
+1.15.1 (4 June 2024)
+-------------------------
+* [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
+
 1.15.0 (17 May 2024)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
