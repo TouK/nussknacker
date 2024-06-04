@@ -5,7 +5,11 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.ScheduledStatus
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
@@ -20,6 +24,7 @@ import pl.touk.nussknacker.test.{
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 class ManagementApiHttpServiceBusinessSpec
@@ -103,6 +108,31 @@ class ManagementApiHttpServiceBusinessSpec
     .streaming(exampleScenarioName)
     .source("sourceId", "barSource")
     .emptySink("sinkId", "barSink")
+
+  "The endpoint for customActions should " - {
+    "return valid custom actions for Scenario " in {
+      given()
+        .applicationState {
+          createDeployedScenario(exampleScenario)
+
+          MockableDeploymentManager.configure(
+            Map(
+              exampleScenario.name.value -> ScheduledStatus(LocalDateTime.now().plusDays(1))
+            )
+          )
+        }
+        .when()
+        .basicAuthAllPermUser()
+        .get(s"$nuDesignerHttpAddress/api/processManagement/customAction/$exampleScenarioName/1")
+        .Then()
+        .statusCode(200)
+        .equalsJsonBody(s"""[
+                           |    "hello",
+                           |    "not-implemented",
+                           |    "some-params-action"
+                           |]""".stripMargin)
+    }
+  }
 
   "The endpoint for nodes validation should " - {
     "validate proper request without errors and " - {

@@ -2,11 +2,10 @@ package pl.touk.nussknacker.ui.services
 
 import cats.data.{EitherT, Validated}
 import cats.syntax.all._
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.deployment.{CustomActionContext, CustomActionDefinition}
 import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
@@ -29,6 +28,8 @@ class ManagementApiHttpService(
 
   private val managementApiEndpoints = new ManagementApiEndpoints(authManager.authenticationEndpointInput())
 
+  private implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
+
   expose {
     managementApiEndpoints.customActionValidationEndpoint
       .serverSecurityLogic(authorizeKnownUser[ManagementApiError])
@@ -41,6 +42,26 @@ class ManagementApiHttpService(
             validator = new CustomActionValidator(actionDefinition)
             resultsDto <- getValidationResultsDto(validator, req)
           } yield resultsDto
+        }
+      }
+  }
+
+  expose {
+    managementApiEndpoints.customActionAvailabilityEndpoint
+      .serverSecurityLogic(authorizeKnownUser[ManagementApiError])
+      .serverLogicEitherT { implicit loggedUser =>
+        { case (processName, versionId) =>
+          for {
+            scenarioId <- getScenarioIdByName(processName)
+            scenarioIdWithName = ProcessIdWithName(scenarioId, processName)
+            deploymentManager <- EitherT.right(dispatcher.deploymentManagerUnsafe(scenarioIdWithName))
+            processState      <- EitherT.right(deploymentManager.getProcessState(scenarioIdWithName, None))
+            availableCustomActions = deploymentManager.customActionsDefinitions.collect {
+              case definition
+                  if definition.allowed(CustomActionContext(scenarioIdWithName.name, versionId, processState.value)) =>
+                definition.actionName
+            }
+          } yield availableCustomActions
         }
       }
   }

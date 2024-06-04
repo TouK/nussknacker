@@ -49,11 +49,16 @@ object MockableDeploymentManagerProvider {
   //       improved, but there is no need to do it ATM.
   object MockableDeploymentManager extends DeploymentManager with StubbingCommands {
 
-    private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
+    private val scenarioStatuses      = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val testResults           = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
+    private val scenarioStatusDetails = new AtomicReference[Map[ScenarioName, StatusDetails]](Map.empty)
 
-    def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
+    def configure(
+        scenarioStates: Map[ScenarioName, StateStatus],
+        scenarioDetails: Map[ScenarioName, StatusDetails] = Map.empty
+    ): Unit = {
       scenarioStatuses.set(scenarioStates)
+      scenarioStatusDetails.set(scenarioDetails)
     }
 
     def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[Json]]): Unit = {
@@ -108,8 +113,9 @@ object MockableDeploymentManagerProvider {
     override def getProcessStates(name: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-      val status = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
-      Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
+      val status          = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
+      val scenarioDetails = scenarioStatusDetails.get().getOrElse(name.value, StatusDetails(status, None))
+      Future.successful(WithDataFreshnessStatus.fresh(List(scenarioDetails)))
     }
 
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
