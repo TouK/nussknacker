@@ -110,7 +110,7 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
 
     const [value, setValue] = useState<UnknownRecord>();
 
-    const confirm = useCallback(async () => {
+    const confirmAction = useCallback(async () => {
         await HttpService.customAction(processName, action.name, value, comment).then((response) => {
             if (response.isSuccess) {
                 dispatch(loadProcessState(processName));
@@ -124,10 +124,10 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
-            { title: t("dialog.button.confirm", "confirm"), action: () => confirm() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
+            { title: t("dialog.button.confirm", "Ok"), action: () => confirmAction() },
         ],
-        [confirm, props, t],
+        [confirmAction, props, t],
     );
 
     return (

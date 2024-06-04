@@ -10,6 +10,7 @@ import { WindowKind, useWindows } from "../../../../windowManager";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
+import { ACTION_DIALOG_WIDTH } from "../../../toolbarSettings/actions";
 
 export default function CancelDeployButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
@@ -33,6 +34,7 @@ export default function CancelDeployButton(props: ToolbarButtonProps) {
                 open<ToggleProcessActionModalData>({
                     title: message,
                     kind: WindowKind.deployProcess,
+                    width: ACTION_DIALOG_WIDTH,
                     meta: { action },
                 })
             }

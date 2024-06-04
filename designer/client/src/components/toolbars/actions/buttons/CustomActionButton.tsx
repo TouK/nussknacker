@@ -7,6 +7,7 @@ import { StatusType } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import UrlIcon from "../../../UrlIcon";
+import { ACTION_DIALOG_WIDTH } from "../../../toolbarSettings/actions";
 
 type CustomActionProps = {
     action: CustomAction;
@@ -39,6 +40,7 @@ export default function CustomActionButton(props: CustomActionProps) {
                 open<CustomAction>({
                     title: action.name,
                     kind: WindowKind.customAction,
+                    width: ACTION_DIALOG_WIDTH,
                     meta: action,
                 })
             }
