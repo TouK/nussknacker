@@ -1,0 +1,6 @@
+services:
+
+  spec-setup:
+    build:
+      context: .
+      dockerfile: src/Dockerfile
