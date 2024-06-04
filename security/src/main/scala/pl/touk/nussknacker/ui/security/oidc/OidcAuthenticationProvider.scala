@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.oidc
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.ui.security.api.{AuthenticationProvider, ImpersonationContext}
+import pl.touk.nussknacker.ui.security.api.AuthenticationProvider
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2AuthenticationResources
 import sttp.client3.SttpBackend
 
@@ -22,8 +22,6 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
     )
   }
 
-  // TODO implement impersonation support for Oidc
-  override def createImpersonationContext(config: Config): ImpersonationContext = (_: String) => None
 }
 
 object OidcAuthenticationProvider extends OidcAuthenticationProvider

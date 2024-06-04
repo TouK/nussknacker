@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.dummy
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.ui.security.api.{AuthenticationProvider, AuthenticationResources, ImpersonationContext}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationProvider, AuthenticationResources}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,5 +17,4 @@ class DummyAuthenticationProvider extends AuthenticationProvider {
     new DummyAuthenticationResources(name, DummyAuthenticationConfiguration.create(config))
   }
 
-  override def createImpersonationContext(config: Config): ImpersonationContext = (_: String) => None
 }

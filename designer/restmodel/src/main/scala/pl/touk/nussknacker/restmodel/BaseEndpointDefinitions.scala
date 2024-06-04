@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.restmodel
 
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
+import pl.touk.nussknacker.restmodel.SecurityError.ImpersonationError
 import pl.touk.nussknacker.security.AuthCredentials
 import sttp.model.StatusCode.{Forbidden, Unauthorized}
 import sttp.tapir.EndpointIO.Example
@@ -96,7 +97,7 @@ object BaseEndpointDefinitions {
         : Codec[String, SecurityError.ImpersonationError.type, CodecFormat.TextPlain] = {
       Codec.string.map(
         Mapping.from[String, SecurityError.ImpersonationError.type](_ => SecurityError.ImpersonationError)(_ =>
-          "The supplied authentication is not authorized to impersonate"
+          ImpersonationError.errorMessage
         )
       )
     }
@@ -120,5 +121,9 @@ sealed trait SecurityError
 object SecurityError {
   case object AuthenticationError extends SecurityError
   case object AuthorizationError  extends SecurityError
-  case object ImpersonationError  extends SecurityError
+
+  case object ImpersonationError extends SecurityError {
+    val errorMessage = "The supplied authentication is not authorized to impersonate"
+  }
+
 }

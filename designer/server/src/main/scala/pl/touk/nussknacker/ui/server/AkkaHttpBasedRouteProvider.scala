@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
@@ -25,6 +26,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerDependencies, ModelDependencies}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
+import pl.touk.nussknacker.restmodel.SecurityError.ImpersonationError
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{
@@ -68,10 +70,10 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
+import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 import pl.touk.nussknacker.ui.security.api.{
   AuthenticationManager,
   AuthenticationResources,
-  ImpersonationContext,
   LoggedUser,
   NussknackerInternalUser
 }
@@ -212,8 +214,7 @@ class AkkaHttpBasedRouteProvider(
       val processActivityRepository = new DbProcessActivityRepository(dbRef, commentRepository)
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
-      val impersonationContext    = ImpersonationContext(resolvedConfig, getClass.getClassLoader, sttpBackend)
-      val authenticationManager   = new AuthenticationManager(authenticationResources, impersonationContext)
+      val authenticationManager   = new AuthenticationManager(authenticationResources)
 
       Initialization.init(migrations, dbRef, processRepository, commentRepository, environment)
 
@@ -546,15 +547,17 @@ class AkkaHttpBasedRouteProvider(
         } ~ pathPrefix("api") {
           authenticationManager.authenticate() { authenticatedUser =>
             authorize(authenticatedUser.roles.nonEmpty) {
-              val maybeLoggedUser = LoggedUser.create(
+              LoggedUser.create(
                 authenticatedUser,
                 authenticationManager.authenticationRules,
                 authenticationManager.isAdminImpersonationPossible
-              )
-              authorize(maybeLoggedUser.isRight) {
-                apiResourcesWithAuthentication
-                  .map(_.securedRouteWithErrorHandling(maybeLoggedUser.toOption.get))
-                  .reduce(_ ~ _)
+              ) match {
+                case Left(ImpersonationNotAllowed) =>
+                  complete(StatusCodes.Forbidden -> ImpersonationError.errorMessage)
+                case Right(loggedUser) =>
+                  apiResourcesWithAuthentication
+                    .map(_.securedRouteWithErrorHandling(loggedUser))
+                    .reduce(_ ~ _)
               }
             }
           }

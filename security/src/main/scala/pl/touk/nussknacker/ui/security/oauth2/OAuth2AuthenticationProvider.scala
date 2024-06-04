@@ -2,12 +2,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.security.api.{
-  AuthenticationProvider,
-  AuthenticationResources,
-  ImpersonatedUserData,
-  ImpersonationContext
-}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationProvider, AuthenticationResources}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,8 +20,6 @@ class OAuth2AuthenticationProvider extends AuthenticationProvider with LazyLoggi
     new OAuth2AuthenticationResources(name, realm, service, configuration)
   }
 
-  // TODO implement impersonation support for OAuth2
-  override def createImpersonationContext(config: Config): ImpersonationContext = (_: String) => None
 }
 
 object OAuth2AuthenticationProvider {

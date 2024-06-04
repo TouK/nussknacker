@@ -149,7 +149,7 @@ Currently supported permissions:
 
 ### Impersonation
 
-Nussknacker has an impersonation mechanism, allowing system's technical users to perform actions on behalf of
+Nussknacker supports an impersonation mechanism on the API level, allowing system's technical users to perform actions on behalf of
 business users. A technical user has to have the `Impersonate` global permission configured in order to be able to
 impersonate.
 

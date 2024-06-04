@@ -75,11 +75,14 @@ object LoggedUser {
       impersonatingUser: RealLoggedUser,
       impersonatedLoggedUser: RealLoggedUser,
       isAdminImpersonationPossible: Boolean
-  ): Either[CreationError, LoggedUser] =
-    if (isAdminImpersonationPossible || (!isAdminImpersonationPossible && !impersonatedLoggedUser.isAdmin))
+  ): Either[CreationError, LoggedUser] = impersonatedLoggedUser match {
+    case _: CommonUser =>
       Right(ImpersonatedUser(impersonatedLoggedUser, impersonatingUser))
-    else
+    case _: AdminUser if isAdminImpersonationPossible =>
+      Right(ImpersonatedUser(impersonatedLoggedUser, impersonatingUser))
+    case _: AdminUser =>
       Left(ImpersonationNotAllowed)
+  }
 
   implicit class UserImpersonationSyntax(val user: LoggedUser) extends AnyVal {
 
@@ -138,7 +141,6 @@ final case class ImpersonatedUser(impersonatedUser: RealLoggedUser, impersonatin
   override val id: String                                             = impersonatedUser.id
   override val username: String                                       = impersonatedUser.username
   override def can(category: String, permission: Permission): Boolean = impersonatedUser.can(category, permission)
-  val impersonatedBy: RealLoggedUser                                  = impersonatingUser
 }
 
 sealed trait CreationError

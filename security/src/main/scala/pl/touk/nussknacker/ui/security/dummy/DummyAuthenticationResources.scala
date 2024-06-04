@@ -5,7 +5,13 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsMissin
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1}
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationResources, FrontendStrategySettings}
+import pl.touk.nussknacker.ui.security.api.{
+  AuthenticatedUser,
+  AuthenticationResources,
+  FrontendStrategySettings,
+  NoAnonymousAccessSupport,
+  NoImpersonationSupport
+}
 import sttp.model.headers.WWWAuthenticateChallenge
 import sttp.tapir._
 
@@ -15,7 +21,9 @@ import scala.concurrent.Future
 class DummyAuthenticationResources(
     override val name: String,
     override val configuration: DummyAuthenticationConfiguration
-) extends AuthenticationResources {
+) extends AuthenticationResources
+    with NoImpersonationSupport
+    with NoAnonymousAccessSupport {
 
   override type CONFIG = DummyAuthenticationConfiguration
 

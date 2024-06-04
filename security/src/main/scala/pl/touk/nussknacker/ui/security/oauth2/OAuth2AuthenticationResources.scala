@@ -29,7 +29,9 @@ class OAuth2AuthenticationResources(
 )(implicit executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
     extends AuthenticationResources
     with Directives
-    with LazyLogging {
+    with LazyLogging
+    with NoImpersonationSupport
+    with AnonymousAccessSupport {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
@@ -171,6 +173,7 @@ class OAuth2AuthenticationResources(
     Mapping.stringPrefixCaseInsensitive(prefix + " ")
   }
 
+  override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
 }
 
 final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)
