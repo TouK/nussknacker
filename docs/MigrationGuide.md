@@ -8,18 +8,23 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
     * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
-    * `AuthenticationManager` is now responsible for authentication. `AuthenticationResources` handles only plugin specific authentication now
-      and both anonymous access and impersonation access are handled at `AuthenticationManager` level. This leads to following changes
+    * `AuthenticationManager` is now responsible for authentication. `AuthenticationResources` handles only plugin specific
+      authentication now. This leads to following changes
       in `AuthenticationResources` API:
         * `authenticate()` returns `AuthenticationDirective[AuthenticatedUser]` and not `Directive1[AuthenticatedUser]`
         * `authenticate(authCredentials)` receives `PassedAuthCredentials` parameter type instead of `AuthCredentials`
           as anonymous access is no longer part of `AuthenticationResources` logic
         * `authenticationMethod()` returns `EndpointInput[Option[String]]` instead of `EndpointInput[AuthCredentials]`.
           The `Option[String]` should hold the value that will be passed to the mentioned `PassedAuthCredentials`.
+        * `AuthenticationResources` extends `ImpersonationSupport` and `AnonymousAccessSupport` traits:
+          * `ImpersonationSupport` has one method `getImpersonatedUserData(impersonatedUserIdentity)` which returns required
+            user's data for the impersonation by user's `identity`. If you do not want to have impersonation mechanism for your authentication
+            method you can extend your `AuthenticationResources` implementation with `NoImpersonationSupport` trait.
+          * `AnonymousAccessSupport` has one method `getAnonymousRole()` which returns anonymous role name. If you do not want to have
+            an anonymous access mechanism for your authentication method you can extend your `AuthenticationResources`
+            implementation with `NoAnonymousAccessSupport` trait.
     * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
       It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
-    * `AuthenticationProvider` SPI is responsible for creation of `ImpersonationContext` for provided plugin specific authentication mechanism.
-    * `ImpersonationContext` has one method `getImpersonatedUserData(impersonatedUserIdentity)` which returns user's data for impersonation.
     * `AuthenticationConfiguration` has one additional Boolean property `isAdminImpersonationPossible` which defines whether admin users can be impersonated by users with the `Impersonate` permission.
       The property is set to `false` by default for `BasicAuthenticationConfiguration`, `OAuth2Configuration` and `DummyAuthenticationConfiguration`.
 * [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
