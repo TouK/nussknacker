@@ -17,7 +17,7 @@ trait NuDockerBasedInstallationExample extends ForAllTestContainer { // with Wit
   val test = new DockerComposeContainer(
     composeFiles = Seq(
       new File("examples/installation/docker-compose.yml"),
-      new File(Resource.getUrl("docker-compose.override.yml").toURI)
+//      new File(Resource.getUrl("spec-setup/docker-compose.override.yml").toURI)
     ),
     exposedServices = Seq(
       ExposedService("schema-registry", 8081)
@@ -27,41 +27,41 @@ trait NuDockerBasedInstallationExample extends ForAllTestContainer { // with Wit
 
   override def container: DockerComposeContainer = test
 
-  override def afterStart(): Unit = {
-    val schemaRegistryContainer = test.getContainerByServiceName("schema-registry").get
-
-    val transactionSchema =
-      """
-        |{
-        |  "$schema": "http://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "clientId": { "type": "string" },
-        |    "amount": { "type": "integer" },
-        |    "isLast": { "type": "boolean", "default": false },
-        |    "eventDate": { "type": "integer" }
-        |  },
-        |  "required": ["clientId", "amount"],
-        |  "additionalProperties": false
-        |}
-        |""".stripMargin
-
-    val espaced = transactionSchema.replaceAll("\"", """\\"""").replaceAll("\n", """\\n""")
-    given()
-      .when()
-      .contentType("application/vnd.schemaregistry.v1+json")
-      .body(
-        s"""{
-           |  "schema": "${espaced}",
-           |  "schemaType": "JSON",
-           |  "references": []
-           |}""".stripMargin
-      )
-      .post(s"http://localhost:${schemaRegistryContainer.getMappedPort(8081)}/subjects/transactions-value/versions")
-      .Then()
-      .statusCode(200)
-
-    super.afterStart()
-  }
+//  override def afterStart(): Unit = {
+//    val schemaRegistryContainer = test.getContainerByServiceName("schema-registry").get
+//
+//    val transactionSchema =
+//      """
+//        |{
+//        |  "$schema": "http://json-schema.org/draft-07/schema",
+//        |  "type": "object",
+//        |  "properties": {
+//        |    "clientId": { "type": "string" },
+//        |    "amount": { "type": "integer" },
+//        |    "isLast": { "type": "boolean", "default": false },
+//        |    "eventDate": { "type": "integer" }
+//        |  },
+//        |  "required": ["clientId", "amount"],
+//        |  "additionalProperties": false
+//        |}
+//        |""".stripMargin
+//
+//    val espaced = transactionSchema.replaceAll("\"", """\\"""").replaceAll("\n", """\\n""")
+//    given()
+//      .when()
+//      .contentType("application/vnd.schemaregistry.v1+json")
+//      .body(
+//        s"""{
+//           |  "schema": "${espaced}",
+//           |  "schemaType": "JSON",
+//           |  "references": []
+//           |}""".stripMargin
+//      )
+//      .post(s"http://localhost:${schemaRegistryContainer.getMappedPort(8081)}/subjects/transactions-value/versions")
+//      .Then()
+//      .statusCode(200)
+//
+//    super.afterStart()
+//  }
 
 }

@@ -3,4 +3,7 @@ services:
   spec-setup:
     build:
       context: .
-      dockerfile: src/Dockerfile
+      dockerfile: Dockerfile
+    depends_on:
+      nginx:
+        condition: service_healthy

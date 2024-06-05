@@ -5,8 +5,8 @@ for FILE in "/app/data/schema-registry"/*; do
     FILENAME=$(basename "$FILE")
     ESCAPED_CONTENT=$(awk '{gsub(/\n/, "\\n"); gsub(/"/, "\\\""); print}' < "$FILE")
 
-    HTTP_STATUS=$(
-      curl -o /dev/null -s -w "%{http_code}\n" \
+    RESPONSE=$(
+      curl -s -L -w "\n%{http_code}" \
         -XPOST "http://schema-registry:8081/subjects/${FILENAME}-value/versions" \
         -H "Content-Type: application/vnd.schemaregistry.v1+json" -d \
          "{
@@ -16,7 +16,10 @@ for FILE in "/app/data/schema-registry"/*; do
         }"
     )
 
-    if [[ "$HTTP_STATUS" -ne 200 ]] ; then
+    HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+    RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
+
+    if [[ "$HTTP_CODE" == 200 ]] ; then
       echo "Cannot add schema from $FILENAME"
       exit 1
     fi
