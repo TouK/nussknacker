@@ -8,8 +8,8 @@ fi
 git config --global credential.useHttpPath true
 
 rm -rf nu-installation-example-repo
-#git clone git@github.com:TouK/nussknacker-installation-example.git nu-installation-example-repo
-git clone https://github.com/TouK/nussknacker-installation-example.git nu-installation-example-repo
+git clone git@github.com:TouK/nussknacker-installation-example.git nu-installation-example-repo
+#git clone https://github.com/TouK/nussknacker-installation-example.git nu-installation-example-repo
 
 # Copy the folder to the cloned repository
 rm -rf nu-installation-example-repo/*
@@ -19,7 +19,5 @@ cd nu-installation-example-repo
 git config user.email "actions@github.com"
 git config user.name "GitHub Actions"
 git add .
-git remote set-url origin https://github.com/TouK/nussknacker-installation-example.git
-
 git commit -m "Push $FOLDER_TO_PUSH from source repository"
 git push -f origin master
