@@ -16,6 +16,7 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
             dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
+            dispatch(updateEnabledCustomActions(processName, response.data.processVersionId));
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
@@ -51,6 +52,16 @@ export function displayTestCapabilities(processName: ProcessName, scenarioGraph:
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,
+            }),
+        );
+}
+
+export function updateEnabledCustomActions(processName: ProcessName, versionId: ProcessVersionId) {
+    return (dispatch) =>
+        HttpService.getEnabledCustomActions(processName, versionId).then((data) =>
+            dispatch({
+                type: "UPDATE_ENABLED_CUSTOM_ACTIONS",
+                enabledCustomActions: data,
             }),
         );
 }
