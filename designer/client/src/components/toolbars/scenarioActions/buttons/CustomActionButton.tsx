@@ -7,7 +7,7 @@ import { StatusType } from "../../../Process/types";
 import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import UrlIcon from "../../../UrlIcon";
-import { ACTION_DIALOG_WIDTH } from "../../../toolbarSettings/actions";
+import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 
 type CustomActionProps = {
     action: CustomAction;
