@@ -5,7 +5,6 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.Finished
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.ui.db.DbRef
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
-import pl.touk.nussknacker.engine.util.Implicits._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object DBFetchingProcessRepository {
 
@@ -181,10 +180,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       processVersion = processVersion,
       lastActionData = actions.headOption,
       lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
-      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
-      lastDeployedActionData = actions.headOption.filter(a =>
-        a.actionName == ScenarioActionName.Deploy && a.state == ProcessActionState.Finished
-      ),
+      // For last deploy action we are not interested in Deploys that are Finished, but not ExecutionFinished, and that are not Cancelled
+      // so that the presence of such an action means that the process is currently deployed
+      lastDeployedActionData = actions
+        .find(action => Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel).contains(action.actionName))
+        .filter(action =>
+          action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
+        ),
       isLatestVersion = isLatestVersion,
       tags = Some(tags),
       history = Some(

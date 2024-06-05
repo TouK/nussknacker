@@ -46,7 +46,3 @@ ALTER TABLE "processes"
 
 ALTER TABLE "processes"
     ADD CONSTRAINT "fk_process_latest_finished_deploy_action" FOREIGN KEY ("latest_finished_deploy_action_id") REFERENCES "process_actions" ("id") ON DELETE CASCADE;
-
-ALTER TABLE "processes"
-    ALTER COLUMN "latest_version_id" SET NOT NULL;
-

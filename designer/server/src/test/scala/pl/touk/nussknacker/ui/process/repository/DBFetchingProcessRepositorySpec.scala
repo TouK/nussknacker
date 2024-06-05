@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
-import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -65,10 +64,10 @@ class DBFetchingProcessRepositorySpec
 
   test("fetch processes for category") {
 
-    def saveProcessForCategory(processId: ProcessId, category: String) = {
+    def saveProcessForCategory(category: String) = {
       saveProcess(
         ScenarioBuilder
-          .streaming(s"$processId")
+          .streaming(s"categorized-$category")
           .source("s", "")
           .emptySink("sink", ""),
         Instant.now(),
@@ -82,11 +81,8 @@ class DBFetchingProcessRepositorySpec
       categoryPermissions = Map("Category1" -> Set(Permission.Read))
     )
 
-    saveProcessForCategory(ProcessId(12345L), "Category1")
-    saveProcessForCategory(ProcessId(12346L), "Category2")
-
-    actions.addInProgressAction(ProcessId(12345L), ScenarioActionName.Deploy, None, None)
-
+    saveProcessForCategory("Category1")
+    saveProcessForCategory("Category2")
     val processes = fetching
       .fetchLatestProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
         ScenarioShapeFetchStrategy.NotFetch,
@@ -95,8 +91,7 @@ class DBFetchingProcessRepositorySpec
       )
       .futureValue
 
-    processes.map(_.name.value) shouldEqual "12345" :: Nil
-    processes.map(_.lastAction.map(_.actionName)) shouldEqual Some(ScenarioActionName.Deploy) :: Nil
+    processes.map(_.name.value) shouldEqual "categorized-Category1" :: Nil
   }
 
   test("should rename process") {

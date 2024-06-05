@@ -261,7 +261,7 @@ class DbProcessActionRepository(
       processId: ProcessId,
       performedAt: Option[Instant],
       failure: Option[String],
-      commentId: Option[Long],
+      commentId: Option[Long]
   ): DB[Boolean] =
     (for {
       updateCount <- processActionsTable

@@ -36,11 +36,11 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       deployedProcesses: Set[ProcessId],
       isDeployed: Option[Boolean]
   )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
-    (ProcessVersionEntityFactory#ProcessVersionEntityWithUnit, ProcessEntityFactory#ProcessEntity),
+    (ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessEntityFactory#ProcessEntity),
     (ProcessVersionEntityData, ProcessEntityData),
     Seq
   ] =
-    processVersionsTableWithUnit
+    processVersionsTableQuery
       .join(processTableFilteredByUser.filter(query))
       .on { case (version, process) => version.processId === process.id && version.id === process.latestVersionId }
       .filter { case (_, process) =>
