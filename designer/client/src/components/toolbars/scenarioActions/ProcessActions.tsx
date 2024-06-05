@@ -7,9 +7,11 @@ import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { ActionButton } from "../../toolbarSettings/buttons";
+import { getEnabledCustomActions } from "../../../reducers/selectors/graph";
 
 const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPanelProps) => {
     const customActions = useSelector((state: RootState) => getCustomActions(state));
+    const enabledCustomActions = useSelector(getEnabledCustomActions);
 
     // TODO: better styling of process info toolbar in case of many custom actions
 
@@ -19,7 +21,7 @@ const ProcessActions = memo(({ buttonsVariant, children, ...props }: ToolbarPane
                 {children}
                 {customActions.map((action) => (
                     //TODO: to be replaced by toolbar config
-                    <ActionButton name={action.name} key={action.name} />
+                    <ActionButton name={action.name} key={action.name} disabled={!enabledCustomActions.includes(action.name)} />
                 ))}
             </ToolbarButtons>
         </ToolbarWrapper>

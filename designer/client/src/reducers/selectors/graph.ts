@@ -72,3 +72,4 @@ export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);
 export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.properties?.additionalFields);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
+export const getEnabledCustomActions = createSelector(getGraph, (state) => state.enabledCustomActions || []);
