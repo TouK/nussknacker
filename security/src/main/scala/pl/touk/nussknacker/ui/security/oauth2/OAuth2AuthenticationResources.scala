@@ -49,13 +49,13 @@ class OAuth2AuthenticationResources(
     authenticator.authenticate(authCredentials.value)
   }
 
-  override def authenticationMethod(): EndpointInput[Credentials] =
+  override def authenticationMethod(): EndpointInput[Option[PassedAuthCredentials]] =
     optionalOauth2AuthorizationCode(
       authorizationUrl = configuration.authorizeUrl.map(_.toString),
       // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
       // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
       tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
-    )
+    ).map(_.map(PassedAuthCredentials))(_.map(_.value))
 
   override protected val frontendStrategySettings: FrontendStrategySettings =
     configuration.overrideFrontendAuthenticationStrategy.getOrElse(

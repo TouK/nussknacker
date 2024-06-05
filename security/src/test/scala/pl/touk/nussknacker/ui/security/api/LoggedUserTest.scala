@@ -11,7 +11,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.security.Permission._
 
   test("Admin permission grants other permissions") {
-    def admin(cp: Map[String, Set[Permission]]) = LoggedUser("1", "admin", cp, isAdmin = true)
+    def admin(cp: Map[String, Set[Permission]]) = RealLoggedUser("1", "admin", cp, isAdmin = true)
 
     val perms: TableFor3[LoggedUser, Permission, String] = Table(
       ("user", "permission", "category"),
@@ -28,7 +28,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
   }
 
   test("check user permission in category") {
-    def u(m: Map[String, Set[Permission]]) = LoggedUser("user", "user", categoryPermissions = m)
+    def u(m: Map[String, Set[Permission]]) = RealLoggedUser("user", "user", categoryPermissions = m)
 
     val perms: TableFor4[LoggedUser, Permission, String, Boolean] = Table(
       ("categoryPermissions", "permission", "category", "result"),
@@ -50,7 +50,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       ConfigRule("SecondEditor", categories = List("Second"), permissions = List(Read, Write))
     )
 
-    val authorizedUser = LoggedUser.apply(
+    val authorizedUser = RealLoggedUser(
       AuthenticatedUser("userId", "userName", Set("FirstDeployer", "SecondEditor")),
       rules
     )
@@ -67,9 +67,9 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
     val rules             = List(ConfigRule("Editor", categories = List("Category"), permissions = List(Read, Write)))
     val authenticatedUser = AuthenticatedUser("userId", "userName", Set("Editor"))
 
-    val loggedUser = LoggedUser.create(authenticatedUser, rules)
+    val loggedUser = LoggedUser(authenticatedUser, rules)
 
-    loggedUser shouldBe Right(LoggedUser(authenticatedUser, rules))
+    loggedUser shouldBe Right(RealLoggedUser(authenticatedUser, rules))
   }
 
   test("should create impersonated user when impersonating with appropriate permission") {
@@ -90,7 +90,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules)
+    val maybeLoggedUser = LoggedUser(authenticatedUser, rules)
 
     maybeLoggedUser match {
       case Right(user: ImpersonatedUser) =>
@@ -120,7 +120,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules, isAdminImpersonationPossible = true)
+    val maybeLoggedUser = LoggedUser(authenticatedUser, rules, isAdminImpersonationPossible = true)
 
     maybeLoggedUser match {
       case Right(user: ImpersonatedUser) =>
@@ -145,7 +145,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val userConversion = LoggedUser.create(authenticatedUser, rules)
+    val userConversion = LoggedUser(authenticatedUser, rules)
 
     userConversion match {
       case Right(_)                      => fail("Expected a Right but got a Left")
@@ -171,7 +171,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules)
+    val maybeLoggedUser = LoggedUser(authenticatedUser, rules)
 
     maybeLoggedUser match {
       case Right(_)                      => fail("Expected a Right but got a Left")

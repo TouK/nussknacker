@@ -15,18 +15,18 @@ import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.DictError.{
 }
 import pl.touk.nussknacker.ui.api.description.DictApiEndpoints.Dtos.DictDto
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.{AuthenticationManager, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class DictApiHttpService(
-    authenticationManager: AuthenticationManager,
+    authManager: AuthManager,
     processingTypeData: ProcessingTypeDataProvider[(DictQueryService, Map[String, DictDefinition], ClassLoader), _]
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticationManager)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val dictApiEndpoints = new DictApiEndpoints(authenticationManager.authenticationEndpointInput())
+  private val dictApiEndpoints = new DictApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     dictApiEndpoints.dictionaryEntryQueryEndpoint

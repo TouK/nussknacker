@@ -13,7 +13,7 @@ import sttp.client3.testing.SttpBackendStub
 
 import scala.concurrent.Future
 
-class AuthenticationManagerSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives {
+class AuthManagerSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives {
 
   implicit private val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
   private val classLoader                                           = getClass.getClassLoader
@@ -32,10 +32,10 @@ class AuthenticationManagerSpec extends AnyFunSpec with Matchers with ScalatestR
 
   private val authenticationResources = AuthenticationResources(config, classLoader, testingBackend)
   assert(authenticationResources.isInstanceOf[BasicAuthenticationResources])
-  private val authenticationManager = new AuthenticationManager(authenticationResources)
+  private val authManager = new AuthManager(authenticationResources)
 
   private val testRoute = Route.seal(
-    authenticationManager.authenticate() { authenticatedUser =>
+    authManager.authenticate() { authenticatedUser =>
       val endAuthenticatedUser = authenticatedUser.impersonatedAuthenticationUser match {
         case Some(impersonatedUser) => impersonatedUser
         case None                   => authenticatedUser
@@ -89,7 +89,7 @@ class AuthenticationManagerSpec extends AnyFunSpec with Matchers with ScalatestR
       .addCredentials(HttpCredentials.createBasicHttpCredentials(username, username))
       .addHeader(
         RawHeader(
-          AuthenticationManager.impersonateHeaderName,
+          AuthManager.impersonateHeaderName,
           impersonatedUsername
         )
       ) ~> testRoute ~> check {
@@ -103,7 +103,7 @@ class AuthenticationManagerSpec extends AnyFunSpec with Matchers with ScalatestR
       .addCredentials(HttpCredentials.createBasicHttpCredentials(username, "wrong"))
       .addHeader(
         RawHeader(
-          AuthenticationManager.impersonateHeaderName,
+          AuthManager.impersonateHeaderName,
           impersonatedUsername
         )
       ) ~> testRoute ~> check {
@@ -115,7 +115,7 @@ class AuthenticationManagerSpec extends AnyFunSpec with Matchers with ScalatestR
     Get("/processes")
       .addHeader(
         RawHeader(
-          AuthenticationManager.impersonateHeaderName,
+          AuthManager.impersonateHeaderName,
           impersonatedUsername
         )
       ) ~> testRoute ~> check {

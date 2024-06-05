@@ -10,7 +10,7 @@ paths:
       summary: Show component usage
       operationId: getApiComponentsIdUsages
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -71,7 +71,7 @@ paths:
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -98,7 +98,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -114,7 +115,7 @@ paths:
       summary: Listing components
       operationId: getApiComponents
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -150,7 +151,7 @@ paths:
                     allowedProcessingModes:
                     - Request-Response
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -176,6 +177,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -186,7 +198,7 @@ paths:
       summary: Endpoint to validate input in custom action fields
       operationId: postApiProcessmanagementCustomactionScenarionameValidation
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -212,7 +224,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomActionValidationDto'
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
           content:
             text/plain:
@@ -240,7 +252,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -299,7 +312,7 @@ paths:
       summary: Deployed processes health check service
       operationId: getApiAppHealthcheckProcessDeployment
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -319,7 +332,7 @@ paths:
                   value:
                     status: OK
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -345,6 +358,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -370,7 +394,7 @@ paths:
       summary: Deployed processes validation service
       operationId: getApiAppHealthcheckProcessValidation
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -390,7 +414,7 @@ paths:
                   value:
                     status: OK
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -416,6 +440,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -441,7 +476,7 @@ paths:
       summary: Processing type data reload service
       operationId: postApiAppProcessingtypeReload
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -452,7 +487,7 @@ paths:
         '204':
           description: ''
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -478,6 +513,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -488,7 +534,7 @@ paths:
       summary: Server configuration viewer service
       operationId: getApiAppConfig
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -516,7 +562,7 @@ paths:
                         - model/flinkExecutor.jar
                         - components/flink
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -542,6 +588,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -552,7 +609,7 @@ paths:
       summary: Configured categories with their processing types service
       operationId: getApiAppConfigCategorieswithprocessingtype
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -573,7 +630,7 @@ paths:
                     Category1: streaming
                     Category2: streaming2
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -599,6 +656,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -609,7 +677,7 @@ paths:
       summary: Get status of a deployment
       operationId: getApiDeploymentsDeploymentidStatus
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -633,7 +701,7 @@ paths:
               schema:
                 type: string
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: path parameter deploymentId'
           content:
             text/plain:
@@ -661,7 +729,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -680,7 +749,7 @@ paths:
       summary: Run the deployment of a scenario
       operationId: putApiDeploymentsDeploymentid
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -754,6 +823,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '409':
           description: ''
           content:
@@ -775,7 +855,7 @@ paths:
       summary: Get list of dictionary entries matching the label pattern
       operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -807,7 +887,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/DictEntry'
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: query parameter label'
           content:
             text/plain:
@@ -835,7 +915,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -851,7 +932,7 @@ paths:
         expected type
       operationId: postApiProcessdefinitiondataProcessingtypeDicts
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -906,7 +987,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -921,7 +1003,7 @@ paths:
       summary: Migration between environments service
       operationId: postApiMigrate
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -997,6 +1079,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -1007,7 +1100,7 @@ paths:
       summary: current version of the scenario description version being used
       operationId: getApiMigrationScenarioDescriptionVersion
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1022,7 +1115,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiVersion'
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -1048,6 +1141,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -1058,7 +1162,7 @@ paths:
       summary: Additional info for provided node
       operationId: postApiNodesScenarionameAdditionalinfo
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1115,7 +1219,7 @@ paths:
                       Results for a can be found [here](http://touk.pl?id=a)
                     type: MarkdownAdditionalInfo
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
           content:
             text/plain:
@@ -1143,7 +1247,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1162,7 +1267,7 @@ paths:
       summary: Validate provided Node
       operationId: postApiNodesScenarionameValidation
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1298,7 +1403,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1317,7 +1423,7 @@ paths:
       summary: Suggest possible variables
       operationId: postApiParametersProcessingtypeSuggestions
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1441,7 +1547,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1460,7 +1567,7 @@ paths:
       summary: Validate given parameters
       operationId: postApiParametersProcessingtypeValidate
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1573,7 +1680,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1592,7 +1700,7 @@ paths:
       summary: Additional info for provided properties
       operationId: postApiPropertiesScenarionameAdditionalinfo
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1639,7 +1747,7 @@ paths:
                     content: 2 threads will be used on environment '{scenarioName}'
                     type: MarkdownAdditionalInfo
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
           content:
             text/plain:
@@ -1667,7 +1775,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1686,7 +1795,7 @@ paths:
       summary: Validate node properties
       operationId: postApiPropertiesScenarionameValidation
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1761,7 +1870,7 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
           content:
             text/plain:
@@ -1789,7 +1898,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1808,7 +1918,7 @@ paths:
       summary: Endpoint to display notifications
       operationId: getApiNotifications
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1836,7 +1946,7 @@ paths:
                     - activity
                     - state
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -1862,6 +1972,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -1872,7 +1993,7 @@ paths:
       summary: Add scenario comment service
       operationId: postApiProcessesScenarionameVersionidActivityComments
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1900,7 +2021,7 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: path parameter versionId, Invalid value for: body'
           content:
             text/plain:
@@ -1928,7 +2049,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1947,7 +2069,7 @@ paths:
       summary: Delete process comment service
       operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -1969,7 +2091,7 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: path parameter commentId'
           content:
             text/plain:
@@ -1997,7 +2119,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -2026,7 +2149,7 @@ paths:
       summary: Scenario activity service
       operationId: getApiProcessesScenarionameActivity
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -2062,7 +2185,7 @@ paths:
                       user: test
                       createDate: '2024-01-17T14:21:17Z'
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -2089,7 +2212,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -2108,7 +2232,7 @@ paths:
       summary: Service providing available combinations of scenario's parameters
       operationId: getApiScenarioparameterscombinations
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -2140,7 +2264,7 @@ paths:
                       Flink:
                       - Invalid Flink configuration
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -2166,6 +2290,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -2176,7 +2311,7 @@ paths:
       summary: Register statistics service
       operationId: postApiStatistic
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -2193,7 +2328,7 @@ paths:
         '204':
           description: ''
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity, Invalid
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: body'
           content:
             text/plain:
@@ -2220,6 +2355,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []
@@ -2230,7 +2376,7 @@ paths:
       summary: Statistics URL service
       operationId: getApiStatisticUsage
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -2251,7 +2397,7 @@ paths:
                     urls:
                     - https://stats.nussknacker.io/?a_n=1&a_t=0&a_v=0&c=3&c_n=82&c_t=0&c_v=0&f_m=0&f_v=0&fingerprint=development&n_m=2&n_ma=0&n_mi=2&n_v=1&s_a=0&s_dm_c=1&s_dm_e=1&s_dm_f=2&s_dm_l=0&s_f=1&s_pm_b=0&s_pm_rr=1&s_pm_s=3&s_s=3&source=sources&u_ma=0&u_mi=0&u_v=0&v_m=2&v_ma=1&v_mi=3&v_v=2&version=1.15.0-SNAPSHOT
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -2277,6 +2423,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -2297,7 +2454,7 @@ paths:
       summary: Logged user info service
       operationId: getApiUser
       parameters:
-      - name: Impersonate-User-Identity
+      - name: Nu-Impersonate-User-Identity
         in: header
         required: false
         schema:
@@ -2336,7 +2493,7 @@ paths:
                     categoryPermissions: {}
                     globalPermissions: []
         '400':
-          description: 'Invalid value for: header Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -2362,6 +2519,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
       security:
       - {}
       - httpAuth: []

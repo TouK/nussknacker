@@ -5,18 +5,18 @@ import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService.UnderlyingServiceError
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentService, RunDeploymentCommand}
-import pl.touk.nussknacker.ui.security.api.AuthenticationManager
+import pl.touk.nussknacker.ui.security.api.AuthManager
 
 import scala.concurrent.ExecutionContext
 
 class DeploymentApiHttpService(
-    authenticationManager: AuthenticationManager,
+    authManager: AuthManager,
     activityService: ActivityService,
     deploymentService: DeploymentService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticationManager) {
+    extends BaseHttpService(authManager) {
 
-  private val endpoints = new DeploymentApiEndpoints(authenticationManager.authenticationEndpointInput())
+  private val endpoints = new DeploymentApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     endpoints.runDeploymentEndpoint

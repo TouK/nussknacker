@@ -18,7 +18,6 @@ trait AuthenticationResources
     with AnonymousAccessSupport {
 
   type CONFIG <: AuthenticationConfiguration
-  type Credentials = Option[String]
   def name: String
   def configuration: CONFIG
 
@@ -36,7 +35,7 @@ trait AuthenticationResources
 
   def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]]
 
-  def authenticationMethod(): EndpointInput[Credentials]
+  def authenticationMethod(): EndpointInput[Option[PassedAuthCredentials]]
 
   final lazy val routeWithPathPrefix: Route =
     pathPrefix("authentication" / name.toLowerCase()) {

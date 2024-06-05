@@ -8,14 +8,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
     * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
-    * `AuthenticationManager` is now responsible for authentication. `AuthenticationResources` handles only plugin specific
+    * `AuthManager` is now responsible for authentication and authorization. `AuthenticationResources` handles only plugin specific
       authentication now. This leads to following changes
       in `AuthenticationResources` API:
         * `authenticate()` returns `AuthenticationDirective[AuthenticatedUser]` and not `Directive1[AuthenticatedUser]`
         * `authenticate(authCredentials)` receives `PassedAuthCredentials` parameter type instead of `AuthCredentials`
           as anonymous access is no longer part of `AuthenticationResources` logic
-        * `authenticationMethod()` returns `EndpointInput[Option[String]]` instead of `EndpointInput[AuthCredentials]`.
-          The `Option[String]` should hold the value that will be passed to the mentioned `PassedAuthCredentials`.
+        * `authenticationMethod()` returns `EndpointInput[Option[PassedAuthCredentials]]` instead of `EndpointInput[AuthCredentials]`.
+          The `Option[PassedAuthCredentials]` should hold the value that will be passed to the mentioned `authenticate(authCredentials)`.
         * `AuthenticationResources` extends `ImpersonationSupport` and `AnonymousAccessSupport` traits:
           * `ImpersonationSupport` has one method `getImpersonatedUserData(impersonatedUserIdentity)` which returns required
             user's data for the impersonation by user's `identity`. If you do not want to have impersonation mechanism for your authentication

@@ -9,20 +9,20 @@ import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
   StatisticUrlResponseDto
 }
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, WriteFEStatisticsRepository}
-import pl.touk.nussknacker.ui.security.api.AuthenticationManager
+import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class StatisticsApiHttpService(
-    authenticationManager: AuthenticationManager,
+    authManager: AuthManager,
     usageStatisticsReportsSettingsService: UsageStatisticsReportsSettingsService,
     repository: FEStatisticsRepository[Future]
 )(implicit ec: ExecutionContext)
-    extends BaseHttpService(authenticationManager)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val endpoints                = new StatisticsApiEndpoints(authenticationManager.authenticationEndpointInput())
+  private val endpoints                = new StatisticsApiEndpoints(authManager.authenticationEndpointInput())
   private val ignoringErrorsRepository = new IgnoringErrorsStatisticsRepository(repository)
 
   expose {

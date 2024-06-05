@@ -37,8 +37,10 @@ class DummyAuthenticationResources(
   override def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] =
     Future.successful(Option.empty)
 
-  override def authenticationMethod(): EndpointInput[Credentials] = {
-    auth.basic[Option[String]](new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
+  override def authenticationMethod(): EndpointInput[Option[PassedAuthCredentials]] = {
+    auth
+      .basic[Option[String]](new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
+      .map(_.map(PassedAuthCredentials))(_.map(_.value))
   }
 
 }

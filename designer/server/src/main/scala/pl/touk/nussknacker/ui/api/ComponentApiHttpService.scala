@@ -4,18 +4,18 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.restmodel.component.ComponentApiEndpoints
 import pl.touk.nussknacker.ui.definition.component.ComponentService
-import pl.touk.nussknacker.ui.security.api.{AuthenticationManager, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.ExecutionContext
 
 class ComponentApiHttpService(
-    authenticationManager: AuthenticationManager,
+    authManager: AuthManager,
     componentService: ComponentService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticationManager)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val componentApiEndpoints = new ComponentApiEndpoints(authenticationManager.authenticationEndpointInput())
+  private val componentApiEndpoints = new ComponentApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     componentApiEndpoints.componentsListEndpoint

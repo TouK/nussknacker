@@ -12,62 +12,25 @@ sealed trait LoggedUser {
   def can(category: String, permission: Permission): Boolean
 }
 
-sealed trait RealLoggedUser extends LoggedUser
-
 object LoggedUser {
 
-  def create(
+  def apply(
       authenticatedUser: AuthenticatedUser,
       rules: List[ConfigRule],
       isAdminImpersonationPossible: Boolean = false
   ): Either[CreationError, LoggedUser] = {
-    val loggedUser = LoggedUser(authenticatedUser, rules)
+    val loggedUser = RealLoggedUser(authenticatedUser, rules)
     authenticatedUser.impersonatedAuthenticationUser match {
       case None =>
         Right(loggedUser)
       case Some(impersonatedUser) if loggedUser.canImpersonate =>
         createImpersonatedUser(
           loggedUser,
-          LoggedUser(impersonatedUser, rules),
+          RealLoggedUser(impersonatedUser, rules),
           isAdminImpersonationPossible
         )
       case Some(_) =>
         Left(ImpersonationNotAllowed)
-    }
-  }
-
-  def apply(
-      authenticatedUser: AuthenticatedUser,
-      rules: List[ConfigRule]
-  ): RealLoggedUser = {
-    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
-    apply(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
-  }
-
-  def apply(
-      id: String,
-      username: String,
-      categoryPermissions: Map[String, Set[Permission]] = Map.empty,
-      globalPermissions: List[GlobalPermission] = Nil,
-      isAdmin: Boolean = false
-  ): RealLoggedUser = {
-    if (isAdmin) {
-      AdminUser(id, username)
-    } else {
-      CommonUser(id, username, categoryPermissions, globalPermissions)
-    }
-  }
-
-  def apply(id: String, username: String, rulesSet: RulesSet): RealLoggedUser = {
-    if (rulesSet.isAdmin) {
-      LoggedUser(id = id, username = username, isAdmin = true)
-    } else {
-      LoggedUser(
-        id = id,
-        username = username,
-        categoryPermissions = rulesSet.permissions,
-        globalPermissions = rulesSet.globalPermissions
-      )
     }
   }
 
@@ -111,6 +74,44 @@ object LoggedUser {
       case u: ImpersonatedUser => Some(u.impersonatingUser.username)
     }
 
+  }
+
+}
+
+sealed trait RealLoggedUser extends LoggedUser
+
+object RealLoggedUser {
+
+  def apply(authenticatedUser: AuthenticatedUser, rules: List[ConfigRule]): RealLoggedUser = {
+    val rulesSet = RulesSet.getOnlyMatchingRules(authenticatedUser.roles.toList, rules)
+    RealLoggedUser(id = authenticatedUser.id, username = authenticatedUser.username, rulesSet = rulesSet)
+  }
+
+  def apply(
+      id: String,
+      username: String,
+      categoryPermissions: Map[String, Set[Permission]] = Map.empty,
+      globalPermissions: List[GlobalPermission] = Nil,
+      isAdmin: Boolean = false
+  ): RealLoggedUser = {
+    if (isAdmin) {
+      AdminUser(id, username)
+    } else {
+      CommonUser(id, username, categoryPermissions, globalPermissions)
+    }
+  }
+
+  private def apply(id: String, username: String, rulesSet: RulesSet): RealLoggedUser = {
+    if (rulesSet.isAdmin) {
+      RealLoggedUser(id = id, username = username, isAdmin = true)
+    } else {
+      RealLoggedUser(
+        id = id,
+        username = username,
+        categoryPermissions = rulesSet.permissions,
+        globalPermissions = rulesSet.globalPermissions
+      )
+    }
   }
 
 }

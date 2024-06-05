@@ -32,8 +32,10 @@ class BasicAuthenticationResources(
     authenticator.authenticate(authCredentials)
   }
 
-  override def authenticationMethod(): EndpointInput[Credentials] =
-    auth.basic[Option[String]](WWWAuthenticateChallenge.basic.realm(realm))
+  override def authenticationMethod(): EndpointInput[Option[PassedAuthCredentials]] =
+    auth
+      .basic[Option[String]](WWWAuthenticateChallenge.basic.realm(realm))
+      .map(_.map(PassedAuthCredentials))(_.map(_.value))
 
   override def getImpersonatedUserData(impersonatedUserIdentity: String): Option[ImpersonatedUserData] =
     configuration.users

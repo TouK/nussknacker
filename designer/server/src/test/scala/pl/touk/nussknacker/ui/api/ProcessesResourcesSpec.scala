@@ -45,11 +45,11 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationManager, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.SecurityError.ImpersonationError
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 
 import scala.concurrent.Future
 
@@ -765,7 +765,7 @@ class ProcessesResourcesSpec
       applicationRoute ~>
       check {
         status shouldEqual StatusCodes.Forbidden
-        responseAs[String] shouldEqual ImpersonationError.errorMessage
+        responseAs[String] shouldEqual ImpersonationMissingPermissionError.errorMessage
       }
   }
 
@@ -1169,7 +1169,7 @@ class ProcessesResourcesSpec
   private def impersonateWriterUser() = addImpersonationHeader("writer")
 
   private def addImpersonationHeader(userIdentity: String) =
-    addHeader(RawHeader(AuthenticationManager.impersonateHeaderName, userIdentity))
+    addHeader(RawHeader(AuthManager.impersonateHeaderName, userIdentity))
 
   private def parseResponseToListJsonProcess(response: String): List[ProcessJson] = {
     parser.decode[List[Json]](response).value.map(j => ProcessJson(j))

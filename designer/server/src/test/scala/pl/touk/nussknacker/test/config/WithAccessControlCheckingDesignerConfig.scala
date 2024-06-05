@@ -119,7 +119,7 @@ trait WithAccessControlCheckingConfigRestAssuredUsersExtensions extends NuRestAs
 
   implicit class UsersImpersonation[T <: RequestSpecification](requestSpecification: T) {
 
-    private val impersonationHeader = "Impersonate-User-Identity"
+    private val impersonationHeader = "Nu-Impersonate-User-Identity"
 
     def impersonateAdminUser(): RequestSpecification =
       requestSpecification.header(impersonationHeader, "admin")
