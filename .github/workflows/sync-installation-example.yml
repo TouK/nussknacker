@@ -2,6 +2,13 @@ name: "Sync installation example"
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+      - staging
+      - demo
+      - preview/*
+      - release/*
 
 jobs:
   setup:
