@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError
 import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoActionDefinition, NoScenario}
 import pl.touk.nussknacker.ui.api.{BaseHttpService, CustomActionValidationDto, ManagementApiEndpoints}
 import pl.touk.nussknacker.ui.process.ProcessService
+import pl.touk.nussknacker.ui.process.ProcessService.{GetScenarioWithDetailsOptions, SkipScenarioGraph}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.CustomActionValidator
@@ -55,10 +56,22 @@ class ManagementApiHttpService(
             scenarioId <- getScenarioIdByName(processName)
             scenarioIdWithName = ProcessIdWithName(scenarioId, processName)
             deploymentManager <- EitherT.right(dispatcher.deploymentManagerUnsafe(scenarioIdWithName))
-            processState      <- EitherT.right(deploymentManager.getProcessState(scenarioIdWithName, None))
+            scenarioWithDetails <- EitherT.right(
+              processService.getProcessWithDetails(
+                scenarioIdWithName,
+                versionId,
+                GetScenarioWithDetailsOptions(SkipScenarioGraph, fetchState = true)
+              )
+            )
             availableCustomActions = deploymentManager.customActionsDefinitions.collect {
               case definition
-                  if definition.allowed(CustomActionContext(scenarioIdWithName.name, versionId, processState.value)) =>
+                  if definition.allowed(
+                    CustomActionContext(
+                      processVersionId = versionId,
+                      lastDeployedAction = scenarioWithDetails.lastDeployedAction,
+                      processState = scenarioWithDetails.state
+                    )
+                  ) =>
                 definition.actionName
             }
           } yield availableCustomActions

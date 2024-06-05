@@ -134,7 +134,6 @@ package object definition {
 
     def apply(action: CustomActionDefinition): UICustomAction = UICustomAction(
       name = action.actionName,
-      // allowedStateStatusNames = action.allowedStateStatusNames,
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
     )
@@ -143,7 +142,6 @@ package object definition {
 
   @JsonCodec final case class UICustomAction(
       name: ScenarioActionName,
-      // allowedStateStatusNames: List[String],
       icon: Option[URI],
       parameters: List[UICustomActionParameter]
   )

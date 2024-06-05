@@ -507,7 +507,7 @@ class HttpService {
 
     getEnabledCustomActions(processName: string, versionId: number): Promise<string[]> {
         return api
-            .post(`/processManagement/customAction/${encodeURIComponent(processName)}/${versionId}`)
+            .get(`/processManagement/customAction/${encodeURIComponent(processName)}/${versionId}`)
             .then((res) => res.data)
             .catch((error) => {
                 this.#addError(

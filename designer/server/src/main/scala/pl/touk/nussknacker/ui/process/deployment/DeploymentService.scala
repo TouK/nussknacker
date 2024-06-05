@@ -282,7 +282,14 @@ class DeploymentService(
       .deploymentManagerUnsafe(processDetails.processingType)
       .customActionsDefinitions
       .collect {
-        case a if a.allowed(CustomActionContext(processDetails.name, processDetails.processVersionId, ps)) =>
+        case a
+            if a.allowed(
+              CustomActionContext(
+                processVersionId = processDetails.processVersionId,
+                lastDeployedAction = processDetails.lastDeployedAction,
+                processState = Some(ps)
+              )
+            ) =>
           a.actionName
       }
       .toSet
