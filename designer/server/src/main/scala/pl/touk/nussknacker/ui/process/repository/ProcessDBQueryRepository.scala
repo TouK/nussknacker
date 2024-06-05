@@ -33,7 +33,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
 
   protected def fetchLatestProcessesQuery(
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-      lastDeployedActionPerProcess: Set[ProcessId],
+      deployedProcesses: Set[ProcessId],
       isDeployed: Option[Boolean]
   )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
     (
@@ -55,7 +55,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       .filter { case ((_, _), process) =>
         isDeployed match {
           case None      => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess) === dep
+          case Some(dep) => process.id.inSet(deployedProcesses) === dep
         }
       }
 
