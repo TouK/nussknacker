@@ -45,7 +45,7 @@ In order to configure the mode you need to:
     deliveryGuarantee: "EXACTLY_ONCE"
   }
   ```
-- Configure checkpointing for a scenario:
+- Configure checkpointing for a scenario (your output data will be visible in time range specified by checkpoint interval):
   - Define restart strategies [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
   - Enable choice of the restart strategy on UI: [Scenario properties](../installation_configuration_guide/model/ModelConfiguration.md#scenario-properties), e.g.
     ```
