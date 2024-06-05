@@ -13,7 +13,7 @@ git clone "https://$ACCESS_TOKEN@github.com/TouK/nussknacker-installation-exampl
 
 # Copy the folder to the cloned repository
 rm -rf nu-installation-example-repo/*
-cp -r "examples/installation/" nu-installation-example-repo/
+cp -r examples/installation/* nu-installation-example-repo/
 git remote set-url origin "https://$ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git"
 
 cd nu-installation-example-repo
