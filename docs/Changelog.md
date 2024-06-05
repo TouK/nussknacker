@@ -6,7 +6,7 @@
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
 * [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status
-* [TBD](TBD) Add possibility to configure kafka exactly-once delivery for flink.
+* [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
 
 1.15.1 (5 June 2024)
 -------------------------
