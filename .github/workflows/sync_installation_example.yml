@@ -1,0 +1,14 @@
+name: "Sync installation example"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Nu repository
+        uses: actions/checkout@v3
+
+      - name: Push folder to another repository
+        env:
+          ACCESS_TOKEN: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
+        run: |
+          ./.github/workflows/scripts/publishNuInstallationExample.sh
