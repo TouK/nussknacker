@@ -19,5 +19,7 @@ cd nu-installation-example-repo
 git config user.email "actions@github.com"
 git config user.name "GitHub Actions"
 git add .
+git remote set-url origin https://github.com/TouK/nussknacker-installation-example.git
+
 git commit -m "Push $FOLDER_TO_PUSH from source repository"
 git push -f origin "master"
