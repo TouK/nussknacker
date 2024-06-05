@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 if [ -z "$ACCESS_TOKEN" ]; then
     echo "ACCESS_TOKEN variable has to be defined"
