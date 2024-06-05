@@ -22,4 +22,4 @@ git add .
 git remote set-url origin https://github.com/TouK/nussknacker-installation-example.git
 
 git commit -m "Push $FOLDER_TO_PUSH from source repository"
-git push -f origin "master"
+git push -f origin master
