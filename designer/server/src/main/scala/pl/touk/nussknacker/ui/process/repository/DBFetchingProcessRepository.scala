@@ -77,9 +77,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
           .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
       )
       // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
-      lastDeployedActionPerProcess = lastActionPerProcess.filter { case (_, action) =>
-        action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
-      }
+      lastDeployedActionPerProcess <- fetchActionsOrEmpty(
+        actionRepository
+          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(Set(ScenarioActionName.Deploy)))
+      ).map(_.filter { case (_, action) => action.state == ProcessActionState.Finished })
 
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield latestProcesses
@@ -182,9 +183,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       lastActionData = actions.headOption,
       lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
       // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
-      lastDeployedActionData = actions.headOption.filter(a =>
-        a.actionName == ScenarioActionName.Deploy && a.state == ProcessActionState.Finished
-      ),
+      lastDeployedActionData =
+        actions.find(_.actionName == ScenarioActionName.Deploy).filter(_.state == ProcessActionState.Finished),
       isLatestVersion = isLatestVersion,
       tags = Some(tags),
       history = Some(
