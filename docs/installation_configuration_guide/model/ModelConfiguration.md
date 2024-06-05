@@ -157,7 +157,7 @@ Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$compon
 
 You can override default grouping of basic components in toolbox panels with `componentsGroupMapping` setting. Component names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.)                |
 
-## Scenario properties              
+## Scenario properties
 
 It's possible to add additional properties for scenario. 
 They can be used for allowing more detailed scenario information (e.g. pass information about marketing campaign target etc.), 

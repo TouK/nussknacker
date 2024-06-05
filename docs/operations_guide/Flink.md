@@ -29,6 +29,44 @@ In particular, one must not forget that the Flink connector (when checkpoints ar
 * Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct.
 * Ignore offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
 
+#### EXACTLY_ONCE delivery mode
+
+The mode is well described here: [this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/connectors/datastream/kafka/#fault-tolerance).
+In order to configure the mode you need to:
+- Configure the property `components.kafka.config.deliveryGuarantee` to: "EXACTLY_ONCE", e.g.
+  ```
+  kafkaConfig {
+    kafkaProperties {
+      "bootstrap.servers": ${?KAFKA_ADDRESS}
+      "schema.registry.url": ${?SCHEMA_REGISTRY_URL}
+      "auto.offset.reset": ${?KAFKA_AUTO_OFFSET_RESET}
+      "isolation.level": "read_committed"
+    }
+    deliveryGuarantee: "EXACTLY_ONCE"
+  }
+  ```
+- Configure checkpointing for a scenario:
+  - Define restart strategies [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
+  - Enable choice of the restart strategy on UI: [Scenario properties](../installation_configuration_guide/model/ModelConfiguration.md#scenario-properties), e.g.
+    ```
+    scenarioPropertiesConfig {
+      restartType {
+        label: "flink restart strategy”
+        defaultValue: ""
+        editor: {
+          type: "FixedValuesParameterEditor",
+          possibleValues: [
+            {"label": "fixed-delay", "expression": "default"}
+          ]
+        }
+      }
+    }
+    ```
+- Ensure your consumer which is reading from the scenario output topic to have `isolation.level` set to: "read_committed".
+- Configure flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum restart duration" in property `kafkaProperties."transaction.timeout.ms"`: [kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options).
+- Configure Kafka broker `transaction.max.timeout.ms` to be greater than `transaction.timeout.ms`.
+- Ensure your Kafka broker cluster has at least three brokers [Kafka docs](https://docs.confluent.io/platform/current/installation/configuration/producer-configs.html#transactional-id).
+
 ## Nussknacker and Flink cluster
 
 

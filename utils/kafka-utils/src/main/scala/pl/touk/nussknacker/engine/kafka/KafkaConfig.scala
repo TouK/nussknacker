@@ -28,7 +28,8 @@ case class KafkaConfig(
     schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
     avroAsJsonSerialization: Option[Boolean] = None,
     kafkaAddress: Option[String] = None,
-    idleTimeout: Option[IdlenessConfig] = None
+    idleTimeout: Option[IdlenessConfig] = None,
+    deliveryGuarantee: Option[DeliveryGuarantee.Value] = None
 ) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(
@@ -116,4 +117,10 @@ case class IdlenessConfig(enabled: Boolean, duration: FiniteDuration = DefaultDu
 object IdlenessConfig {
   val DefaultDuration: FiniteDuration = 3 minutes
   val DefaultConfig: IdlenessConfig   = IdlenessConfig(enabled = true, duration = DefaultDuration)
+}
+
+object DeliveryGuarantee extends Enumeration {
+  val ExactlyOnce: DeliveryGuarantee.Value = Value("EXACTLY_ONCE")
+  val AtLeastOnce: DeliveryGuarantee.Value = Value("AT_LEAST_ONCE")
+  val None: DeliveryGuarantee.Value        = Value("NONE")
 }
