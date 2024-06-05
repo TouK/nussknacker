@@ -19,6 +19,6 @@ jobs:
 
       - name: Push folder to another repository
         env:
-          ACCESS_TOKEN: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
+          ACCESS_TOKEN: ${{ secrets.NU_INSTALLATION_EXAMPLE_PAT }}
         run: |
           ./.github/workflows/scripts/publishNuInstallationExample.sh
