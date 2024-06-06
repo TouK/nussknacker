@@ -103,7 +103,10 @@ object ToolbarButton {
     config.title.map(t => fillByScenarioData(t, scenario)),
     config.icon.map(i => fillByScenarioData(i, scenario, urlOption = true)),
     config.url.map(th => fillByScenarioData(th, scenario, urlOption = true)),
-    config.markdownContent.map(chujciwdupe => fillByScenarioData(chujciwdupe, scenario)),
+    config.markdownContent.map(mc => fillByScenarioData(mc, scenario)),
+    config.docs.map(d =>
+      DocsButtonConfig(fillByScenarioData(d.url, scenario, urlOption = true), fillByScenarioData(d.label, scenario))
+    ),
     disabled = verifyCondition(config.disabled, scenario)
   )
 
@@ -117,7 +120,14 @@ final case class ToolbarButton(
     icon: Option[String],
     url: Option[String],
     markdownContent: Option[String],
+    docs: Option[DocsButtonConfig],
     disabled: Boolean
+)
+
+@JsonCodec
+final case class DocsButtonConfig(
+    url: String,
+    label: String
 )
 
 private[process] object ToolbarHelper {
