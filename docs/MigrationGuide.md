@@ -16,13 +16,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
           as anonymous access is no longer part of `AuthenticationResources` logic
         * `authenticationMethod()` returns `EndpointInput[Option[PassedAuthCredentials]]` instead of `EndpointInput[AuthCredentials]`.
           The `Option[PassedAuthCredentials]` should hold the value that will be passed to the mentioned `authenticate(authCredentials)`.
-        * `AuthenticationResources` extends `ImpersonationSupport` and `AnonymousAccessSupport` traits:
-          * `ImpersonationSupport` has one method `getImpersonatedUserData(impersonatedUserIdentity)` which returns required
-            user's data for the impersonation by user's `identity`. If you do not want to have impersonation mechanism for your authentication
-            method you can extend your `AuthenticationResources` implementation with `NoImpersonationSupport` trait.
+        * `AuthenticationResources` extends `AnonymousAccessSupport` trait:
           * `AnonymousAccessSupport` has one method `getAnonymousRole()` which returns anonymous role name. If you do not want to have
             an anonymous access mechanism for your authentication method you can extend your `AuthenticationResources`
             implementation with `NoAnonymousAccessSupport` trait.
+        * `AuthenticationResources` has a field `impersonationSupport` of type `ImpersonationSupport`:
+          * `ImpersonationSupport` is a trait stating whether authentication method supports impersonation.
+            If you don't want impersonation support you can assign `NoImpersonationSupport` object to it.
+            If you wish to have it - assign `ImpersonationSupport` abstract class to it and
+            implement `getImpersonatedUserData(impersonatedUserIdentity)` method which returns required
+            user's data for the impersonation by user's `identity`.
     * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
       It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
     * `AuthenticationConfiguration` has one additional Boolean property `isAdminImpersonationPossible` which defines whether admin users can be impersonated by users with the `Impersonate` permission.

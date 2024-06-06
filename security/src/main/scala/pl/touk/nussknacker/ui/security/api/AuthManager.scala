@@ -81,7 +81,9 @@ class AuthManager(protected val authenticationResources: AuthenticationResources
       impersonatingUser: AuthenticatedUser,
       impersonatedUserIdentity: String
   ): Either[ImpersonationAuthenticationError, AuthenticatedUser] =
-    authenticationResources.getImpersonatedUserDataWithSupportCheck(impersonatedUserIdentity) match {
+    authenticationResources.impersonationSupport.getImpersonatedUserDataWithSupportCheck(
+      impersonatedUserIdentity
+    ) match {
       case Right(maybeImpersonatedUserData) =>
         maybeImpersonatedUserData match {
           case Some(impersonatedUserData) =>

@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.security.api.{
   AuthenticatedUser,
   AuthenticationResources,
   FrontendStrategySettings,
+  ImpersonationSupport,
   NoAnonymousAccessSupport,
   NoImpersonationSupport
 }
@@ -22,7 +23,6 @@ class DummyAuthenticationResources(
     override val name: String,
     override val configuration: DummyAuthenticationConfiguration
 ) extends AuthenticationResources
-    with NoImpersonationSupport
     with NoAnonymousAccessSupport {
 
   override type CONFIG = DummyAuthenticationConfiguration
@@ -43,4 +43,5 @@ class DummyAuthenticationResources(
       .map(_.map(PassedAuthCredentials))(_.map(_.value))
   }
 
+  override def impersonationSupport: ImpersonationSupport = NoImpersonationSupport
 }

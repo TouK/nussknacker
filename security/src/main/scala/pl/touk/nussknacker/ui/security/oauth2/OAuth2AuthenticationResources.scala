@@ -30,7 +30,6 @@ class OAuth2AuthenticationResources(
     extends AuthenticationResources
     with Directives
     with LazyLogging
-    with NoImpersonationSupport
     with AnonymousAccessSupport {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
@@ -172,6 +171,8 @@ class OAuth2AuthenticationResources(
   private def stringPrefixWithSpace(prefix: String): Mapping[String, String] = {
     Mapping.stringPrefixCaseInsensitive(prefix + " ")
   }
+
+  override def impersonationSupport: ImpersonationSupport = NoImpersonationSupport
 
   override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
 }

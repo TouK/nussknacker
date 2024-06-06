@@ -1,19 +1,26 @@
 package pl.touk.nussknacker.ui.security.api
 
-trait ImpersonationSupport {
-  def getImpersonatedUserData(impersonatedUserIdentity: String): Option[ImpersonatedUserData]
+sealed trait ImpersonationSupport {
 
   def getImpersonatedUserDataWithSupportCheck(
+      impersonatedUserIdentity: String
+  ): Either[ImpersonationNotSupported.type, Option[ImpersonatedUserData]]
+
+}
+
+abstract class ImpersonationSupported extends ImpersonationSupport {
+  def getImpersonatedUserData(impersonatedUserIdentity: String): Option[ImpersonatedUserData]
+
+  override final def getImpersonatedUserDataWithSupportCheck(
       impersonatedUserIdentity: String
   ): Either[ImpersonationNotSupported.type, Option[ImpersonatedUserData]] =
     Right(getImpersonatedUserData(impersonatedUserIdentity))
 
 }
 
-trait NoImpersonationSupport extends ImpersonationSupport {
-  override def getImpersonatedUserData(impersonatedUserIdentity: String): Option[ImpersonatedUserData] = None
+object NoImpersonationSupport extends ImpersonationSupport {
 
-  override def getImpersonatedUserDataWithSupportCheck(
+  override final def getImpersonatedUserDataWithSupportCheck(
       impersonatedUserIdentity: String
   ): Either[ImpersonationNotSupported.type, Option[ImpersonatedUserData]] = Left(ImpersonationNotSupported)
 

@@ -11,15 +11,12 @@ import sttp.tapir.EndpointInput
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait AuthenticationResources
-    extends Directives
-    with FailFastCirceSupport
-    with ImpersonationSupport
-    with AnonymousAccessSupport {
+trait AuthenticationResources extends Directives with FailFastCirceSupport with AnonymousAccessSupport {
 
   type CONFIG <: AuthenticationConfiguration
   def name: String
   def configuration: CONFIG
+  def impersonationSupport: ImpersonationSupport
 
   protected def frontendStrategySettings: FrontendStrategySettings
 

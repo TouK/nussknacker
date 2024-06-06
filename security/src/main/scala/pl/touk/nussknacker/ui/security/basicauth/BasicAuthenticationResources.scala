@@ -37,15 +37,19 @@ class BasicAuthenticationResources(
       .basic[Option[String]](WWWAuthenticateChallenge.basic.realm(realm))
       .map(_.map(PassedAuthCredentials))(_.map(_.value))
 
-  override def getImpersonatedUserData(impersonatedUserIdentity: String): Option[ImpersonatedUserData] =
-    configuration.users
-      .find { _.identity == impersonatedUserIdentity }
-      .flatMap { configUser =>
-        configUser.username match {
-          case Some(username) => Some(ImpersonatedUserData(configUser.identity, username, configUser.roles))
-          case None           => Some(ImpersonatedUserData(configUser.identity, configUser.identity, configUser.roles))
+  override def impersonationSupport: ImpersonationSupport = new ImpersonationSupported {
+
+    override def getImpersonatedUserData(impersonatedUserIdentity: String): Option[ImpersonatedUserData] =
+      configuration.users
+        .find { _.identity == impersonatedUserIdentity }
+        .flatMap { configUser =>
+          configUser.username match {
+            case Some(username) => Some(ImpersonatedUserData(configUser.identity, username, configUser.roles))
+            case None => Some(ImpersonatedUserData(configUser.identity, configUser.identity, configUser.roles))
+          }
         }
-      }
+
+  }
 
   override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
 }
