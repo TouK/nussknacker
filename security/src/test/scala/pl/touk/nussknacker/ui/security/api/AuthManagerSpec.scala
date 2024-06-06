@@ -30,8 +30,12 @@ class AuthManagerSpec extends AnyFunSpec with Matchers with ScalatestRouteTest w
         }
       """.stripMargin)
 
-  private val authenticationResources = AuthenticationResources(config, classLoader, testingBackend)
-  assert(authenticationResources.isInstanceOf[BasicAuthenticationResources])
+  private val authenticationResources = {
+    val resources = AuthenticationResources(config, classLoader, testingBackend)
+    assert(resources.isInstanceOf[BasicAuthenticationResources])
+    resources
+  }
+
   private val authManager = new AuthManager(authenticationResources)
 
   private val testRoute = Route.seal(

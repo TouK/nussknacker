@@ -4,10 +4,10 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.SecurityError
 import pl.touk.nussknacker.ui.security.api.SecurityError.{
-  BaseAuthenticationError,
-  BaseAuthorizationError,
+  CannotAuthenticateUser,
   ImpersonatedUserDataNotFoundError,
-  ImpersonationMissingPermissionError
+  ImpersonationMissingPermissionError,
+  InsufficientPermission
 }
 import sttp.model.StatusCode.{Forbidden, NotFound, Unauthorized}
 import sttp.tapir.EndpointIO.Example
@@ -45,11 +45,11 @@ object BaseEndpointDefinitions {
           oneOf(
             oneOfVariantFromMatchType(
               Unauthorized,
-              plainBody[BaseAuthenticationError.type]
+              plainBody[CannotAuthenticateUser.type]
                 .example(
                   Example.of(
                     summary = Some("Authentication failed"),
-                    value = BaseAuthenticationError
+                    value = CannotAuthenticateUser
                   )
                 )
             ),
@@ -76,11 +76,11 @@ object BaseEndpointDefinitions {
             ),
             oneOfVariantFromMatchType(
               Forbidden,
-              plainBody[BaseAuthorizationError.type]
+              plainBody[InsufficientPermission.type]
                 .example(
                   Example.of(
                     summary = Some("Authorization failed"),
-                    value = BaseAuthorizationError
+                    value = InsufficientPermission
                   )
                 )
             )
@@ -92,17 +92,17 @@ object BaseEndpointDefinitions {
 
   private object Codecs {
 
-    implicit val authenticationErrorCodec: Codec[String, BaseAuthenticationError.type, CodecFormat.TextPlain] = {
+    implicit val authenticationErrorCodec: Codec[String, CannotAuthenticateUser.type, CodecFormat.TextPlain] = {
       Codec.string.map(
-        Mapping.from[String, BaseAuthenticationError.type](_ => BaseAuthenticationError)(_ =>
+        Mapping.from[String, CannotAuthenticateUser.type](_ => CannotAuthenticateUser)(_ =>
           "The supplied authentication is invalid"
         )
       )
     }
 
-    implicit val authorizationErrorCodec: Codec[String, BaseAuthorizationError.type, CodecFormat.TextPlain] = {
+    implicit val authorizationErrorCodec: Codec[String, InsufficientPermission.type, CodecFormat.TextPlain] = {
       Codec.string.map(
-        Mapping.from[String, BaseAuthorizationError.type](_ => BaseAuthorizationError)(_ =>
+        Mapping.from[String, InsufficientPermission.type](_ => InsufficientPermission)(_ =>
           "The supplied authentication is not authorized to access this resource"
         )
       )

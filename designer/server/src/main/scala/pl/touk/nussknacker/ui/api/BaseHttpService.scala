@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import cats.data.EitherT
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
-import pl.touk.nussknacker.ui.security.api.SecurityError.BaseAuthorizationError
+import pl.touk.nussknacker.ui.security.api.SecurityError.InsufficientPermission
 import pl.touk.nussknacker.ui.security.api._
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
@@ -39,8 +39,8 @@ abstract class BaseHttpService(
     authorizeKnownUser[BUSINESS_ERROR](credentials)
       .map {
         case right @ Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser)           => securityError(BaseAuthorizationError)
-        case Right(_: ImpersonatedUser)     => securityError(BaseAuthorizationError)
+        case Right(_: CommonUser)           => securityError(InsufficientPermission)
+        case Right(_: ImpersonatedUser)     => securityError(InsufficientPermission)
         case error @ Left(_)                => error
       }
   }
@@ -89,7 +89,7 @@ abstract class BaseHttpService(
       result match {
         case Left(error) =>
           error match {
-            case _: CustomAuthorizationError => securityError(BaseAuthorizationError)
+            case _: CustomAuthorizationError => securityError(InsufficientPermission)
             case e                           => businessError(e)
           }
         case Right(value) => success(value)

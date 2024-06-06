@@ -19,36 +19,28 @@ import pl.touk.nussknacker.security.{AuthCredentials, ImpersonatedUserIdentity}
 import pl.touk.nussknacker.ui.security.api.AuthManager.{ImpersonationConsideringInputEndpoint, impersonateHeaderName}
 import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
 import pl.touk.nussknacker.ui.security.api.SecurityError.{
-  BaseAuthenticationError,
-  BaseAuthorizationError,
+  CannotAuthenticateUser,
   ImpersonatedUserDataNotFoundError,
-  ImpersonationMissingPermissionError
+  ImpersonationMissingPermissionError,
+  InsufficientPermission
 }
 import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthManager(authenticationResources: AuthenticationResources)(implicit ec: ExecutionContext) {
+class AuthManager(protected val authenticationResources: AuthenticationResources)(implicit ec: ExecutionContext)
+    extends AkkaBasedAuthManager {
 
-  private lazy val isAdminImpersonationPossible: Boolean =
+  protected lazy val isAdminImpersonationPossible: Boolean =
     authenticationResources.configuration.isAdminImpersonationPossible
-  private lazy val authenticationRules: List[AuthenticationConfiguration.ConfigRule] =
+  protected lazy val authenticationRules: List[AuthenticationConfiguration.ConfigRule] =
     authenticationResources.configuration.rules
-
-  def authenticate(): Directive1[AuthenticatedUser] = authenticationResources.getAnonymousRole match {
-    case Some(role) =>
-      authenticationResources.authenticate().optional.flatMap {
-        case Some(user) => provideOrImpersonateUserDirective(user)
-        case None => handleAuthorizationFailedRejection.tmap(_ => AuthenticatedUser.createAnonymousUser(Set(role)))
-      }
-    case None => authenticationResources.authenticate().flatMap(provideOrImpersonateUserDirective)
-  }
 
   def authenticate(authCredentials: AuthCredentials): Future[Either[AuthenticationError, AuthenticatedUser]] =
     authCredentials match {
       case NoCredentialsProvided => authenticateWithAnonymousAccess()
       case passedCredentials @ PassedAuthCredentials(_) =>
-        authenticationResources.authenticate(passedCredentials).map(_.toRight(BaseAuthenticationError))
+        authenticationResources.authenticate(passedCredentials).map(_.toRight(CannotAuthenticateUser))
       case ImpersonatedAuthCredentials(impersonatingUserAuthCredentials, impersonatedUserIdentity) =>
         authenticateWithImpersonation(impersonatingUserAuthCredentials, impersonatedUserIdentity)
     }
@@ -58,15 +50,6 @@ class AuthManager(authenticationResources: AuthenticationResources)(implicit ec:
       .authenticationMethod()
       .withPossibleImpersonation()
 
-  def authorizeDirective(user: AuthenticatedUser)(secureRoute: LoggedUser => Route): Route =
-    Directives.authorize(user.roles.nonEmpty) {
-      LoggedUser(user, authenticationRules, isAdminImpersonationPossible) match {
-        case Left(ImpersonationNotAllowed) =>
-          complete(StatusCodes.Forbidden -> ImpersonationMissingPermissionError.errorMessage)
-        case Right(loggedUser) => secureRoute(loggedUser)
-      }
-    }
-
   def authorize(user: AuthenticatedUser): Either[AuthorizationError, LoggedUser] = {
     if (user.roles.nonEmpty)
       // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
@@ -75,19 +58,7 @@ class AuthManager(authenticationResources: AuthenticationResources)(implicit ec:
         case Right(loggedUser)             => Right(loggedUser)
         case Left(ImpersonationNotAllowed) => Left(ImpersonationMissingPermissionError)
       }
-    else Left(BaseAuthorizationError)
-  }
-
-  private def provideOrImpersonateUserDirective(user: AuthenticatedUser): Directive1[AuthenticatedUser] = {
-    optionalHeaderValueByName(impersonateHeaderName).flatMap {
-      case Some(impersonatedUserIdentity) =>
-        handleImpersonation(user, impersonatedUserIdentity) match {
-          case Right(impersonatedUser) => provide(impersonatedUser)
-          case Left(ImpersonatedUserDataNotFoundError) =>
-            complete(StatusCodes.NotFound, ImpersonatedUserDataNotFoundError.errorMessage)
-        }
-      case None => provide(user)
-    }
+    else Left(InsufficientPermission)
   }
 
   private def authenticateWithImpersonation(
@@ -96,26 +67,20 @@ class AuthManager(authenticationResources: AuthenticationResources)(implicit ec:
   ): Future[Either[AuthenticationError, AuthenticatedUser]] = {
     authenticationResources.authenticate(impersonatingUserAuthCredentials).map {
       case Some(impersonatingUser) => handleImpersonation(impersonatingUser, impersonatedUserIdentity.value)
-      case None                    => Left(BaseAuthenticationError)
+      case None                    => Left(CannotAuthenticateUser)
     }
   }
-
-  private def handleAuthorizationFailedRejection: Directive0 = handleRejections(
-    RejectionHandler
-      .newBuilder()
-      // If the authorization rejection was caused by anonymous access,
-      // we issue the Unauthorized status code with a challenge instead of the Forbidden
-      .handle { case AuthorizationFailedRejection => authenticationResources.authenticate() { _ => reject } }
-      .result()
-  )
 
   private def authenticateWithAnonymousAccess(): Future[Either[AuthenticationError, AuthenticatedUser]] = Future {
     authenticationResources.getAnonymousRole
       .map(role => AuthenticatedUser.createAnonymousUser(Set(role)))
-      .toRight(BaseAuthenticationError)
+      .toRight(CannotAuthenticateUser)
   }
 
-  private def handleImpersonation(impersonatingUser: AuthenticatedUser, impersonatedUserIdentity: String) =
+  protected def handleImpersonation(
+      impersonatingUser: AuthenticatedUser,
+      impersonatedUserIdentity: String
+  ): Either[ImpersonatedUserDataNotFoundError.type, AuthenticatedUser] =
     authenticationResources.getImpersonatedUserData(impersonatedUserIdentity) match {
       case Some(impersonatedUserData) =>
         Right(AuthenticatedUser.createImpersonatedUser(impersonatingUser, impersonatedUserData))
@@ -158,5 +123,51 @@ object AuthManager {
       }
 
   }
+
+}
+
+// Akka based auth logic is separated from the rest of AuthManager since it will be easier to remove it once we fully
+// migrate to Tapir. Also it helps with readability within AuthManager as Akka and Tapir logic look different.
+private[api] trait AkkaBasedAuthManager {
+  self: AuthManager =>
+
+  def authenticate(): Directive1[AuthenticatedUser] = authenticationResources.getAnonymousRole match {
+    case Some(role) =>
+      authenticationResources.authenticate().optional.flatMap {
+        case Some(user) => provideOrImpersonateUserDirective(user)
+        case None => handleAuthorizationFailedRejection.tmap(_ => AuthenticatedUser.createAnonymousUser(Set(role)))
+      }
+    case None => authenticationResources.authenticate().flatMap(provideOrImpersonateUserDirective)
+  }
+
+  def authorizeRoute(user: AuthenticatedUser)(secureRoute: LoggedUser => Route): Route =
+    Directives.authorize(user.roles.nonEmpty) {
+      LoggedUser(user, authenticationRules, isAdminImpersonationPossible) match {
+        case Right(loggedUser) => secureRoute(loggedUser)
+        case Left(ImpersonationNotAllowed) =>
+          complete(StatusCodes.Forbidden -> ImpersonationMissingPermissionError.errorMessage)
+      }
+    }
+
+  private def provideOrImpersonateUserDirective(user: AuthenticatedUser): Directive1[AuthenticatedUser] = {
+    optionalHeaderValueByName(impersonateHeaderName).flatMap {
+      case Some(impersonatedUserIdentity) =>
+        handleImpersonation(user, impersonatedUserIdentity) match {
+          case Right(impersonatedUser) => provide(impersonatedUser)
+          case Left(ImpersonatedUserDataNotFoundError) =>
+            complete(StatusCodes.NotFound, ImpersonatedUserDataNotFoundError.errorMessage)
+        }
+      case None => provide(user)
+    }
+  }
+
+  private def handleAuthorizationFailedRejection: Directive0 = handleRejections(
+    RejectionHandler
+      .newBuilder()
+      // If the authorization rejection was caused by anonymous access,
+      // we issue the Unauthorized status code with a challenge instead of the Forbidden
+      .handle { case AuthorizationFailedRejection => authenticationResources.authenticate() { _ => reject } }
+      .result()
+  )
 
 }

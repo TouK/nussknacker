@@ -541,7 +541,7 @@ class AkkaHttpBasedRouteProvider(
           apiResourcesWithoutAuthentication.reduce(_ ~ _)
         } ~ pathPrefix("api") {
           authManager.authenticate() { authenticatedUser =>
-            authManager.authorizeDirective(authenticatedUser) { loggedUser =>
+            authManager.authorizeRoute(authenticatedUser) { loggedUser =>
               apiResourcesWithAuthentication
                 .map(_.securedRouteWithErrorHandling(loggedUser))
                 .reduce(_ ~ _)
