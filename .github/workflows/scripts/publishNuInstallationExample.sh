@@ -12,17 +12,16 @@ fi
 
 rm -rf nu-installation-example-repo
 git clone "https://$ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git" nu-installation-example-repo
-
-# Copy the folder to the cloned repository
-rm -rf nu-installation-example-repo/*
-cp -r examples/installation/* nu-installation-example-repo/
+cd nu-installation-example-repo
 git remote set-url origin "https://$ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git"
 
-cd nu-installation-example-repo
+rm -rf ./*
+cp -r ../examples/installation/* .
+echo "NUSSKNACKER_VERSION=$NUSSKNACKER_VERSION" >> .env
+
 git config user.email "actions@github.com"
 git config user.name "GitHub Actions"
 git add .
-# todo: version in the commit message
-git commit -m "Push $NUSSKNACKER_VERSION from source repository"
+git commit -m "Publishing $NUSSKNACKER_VERSION installation example"
 git tag "$NUSSKNACKER_VERSION"
 git push -f origin master --tags
