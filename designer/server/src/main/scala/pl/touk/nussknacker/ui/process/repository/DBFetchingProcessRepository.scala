@@ -76,11 +76,17 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         actionRepository
           .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
       )
-      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
+      // For last deploy action we are not interested in Deploys that are Finished, but not ExecutionFinished, and that are not Cancelled
+      // so that the presence of such an action means that the process is currently deployed
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(
         actionRepository
-          .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(Set(ScenarioActionName.Deploy)))
-      ).map(_.filter { case (_, action) => action.state == ProcessActionState.Finished })
+          .getLastActionPerProcess(
+            ProcessActionState.FinishedStates,
+            Some(Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel))
+          )
+      ).map(_.filter { case (_, action) =>
+        action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
+      })
 
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield latestProcesses
@@ -182,9 +188,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       processVersion = processVersion,
       lastActionData = actions.headOption,
       lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
-      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
-      lastDeployedActionData =
-        actions.find(_.actionName == ScenarioActionName.Deploy).filter(_.state == ProcessActionState.Finished),
+      // For last deploy action we are not interested in Deploys that are Finished, but not ExecutionFinished, and that are not Cancelled
+      // so that the presence of such an action means that the process is currently deployed
+      lastDeployedActionData = actions
+        .find(action => Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel).contains(action.actionName))
+        .filter(action =>
+          action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
+        ),
       isLatestVersion = isLatestVersion,
       tags = Some(tags),
       history = Some(
