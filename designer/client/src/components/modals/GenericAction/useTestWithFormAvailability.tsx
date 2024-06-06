@@ -25,14 +25,13 @@ export function useTestWithFormAvailability(disabled: boolean) {
 
     useEffect(() => {
         if (isRenamed) return;
-
         dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
     }, [dispatch, isRenamed, scenarioGraph, scenarioName]);
 
     useEffect(() => {
         if (isRenamed || !isAvailable) return;
         dispatch(fetchTestFormParameters(scenarioName, scenarioGraph));
-    }, [dispatch, isAvailable, isRenamed, scenarioGraph, scenarioName]);
+    }, [dispatch, isRenamed, scenarioName, scenarioGraph, isAvailable]);
 
     return isAvailable;
 }
