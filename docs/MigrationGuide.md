@@ -23,7 +23,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * `AuthenticationResources` has a field `impersonationSupport` of type `ImpersonationSupport`:
           * `ImpersonationSupport` is a trait stating whether authentication method supports impersonation.
             If you don't want impersonation support you can assign `NoImpersonationSupport` object to it.
-            If you wish to have it - assign `ImpersonationSupport` abstract class to it and
+            If you wish to have it - assign `ImpersonationSupported` abstract class to it and
             implement `getImpersonatedUserData(impersonatedUserIdentity)` method which returns required
             user's data for the impersonation by user's `identity`.
     * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
