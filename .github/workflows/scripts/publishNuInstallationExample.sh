@@ -17,7 +17,7 @@ git remote set-url origin "https://$NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN@github.
 
 rm -rf ./*
 cp -r ../examples/installation/* .
-echo "NUSSKNACKER_VERSION=$NUSSKNACKER_VERSION" >> .env
+echo "NUSSKNACKER_VERSION=$NUSSKNACKER_VERSION" > .env
 
 git config user.email "actions@github.com"
 git config user.name "GitHub Actions"
