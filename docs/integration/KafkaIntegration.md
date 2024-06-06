@@ -8,7 +8,7 @@ sidebar_position: 1
 
 To better understand how Nussknacker works with Kafka, it's recommended to read the following first:
 * [Kafka introduction](https://kafka.apache.org/intro)
-* [Role of Schema Registry](/about/TypicalImplementationStreaming/)
+* [Role of Schema Registry](../about/typical%20implementation/Streaming.md)
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
 
 If you want to use Flink engine, this is also recommended:

@@ -17,15 +17,15 @@ Details of K8s based configuration can be found in  [Nussknacker Helm chart docu
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-* [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
+* [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
-  * [Model](/about/GLOSSARY#model) configuration.
+  * [Model](../about/GLOSSARY#model) configuration.
   * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
   * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
-[Model](/about/GLOSSARY#model) configuration defines which components and which [Processing Mode](/about/ProcessingModes) will be available for the user. 
-[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](/about/engine).
-[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](/about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
+[Model](../about/GLOSSARY#model) configuration defines which components and which [Processing Mode](../about/ProcessingModes) will be available for the user. 
+[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](../about/engine).
+[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](../about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
 
 The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
@@ -69,7 +69,7 @@ scenarioTypes {"{"}  <br/>
 It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
 
 * To use different set of components depending on the category
-* To deploy scenarios on different [Engines](/about/engine)
+* To deploy scenarios on different [Engines](../about/engines)
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.                   
 

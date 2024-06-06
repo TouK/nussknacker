@@ -140,12 +140,14 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData = compilerData.jobData
+      val jobData          = compilerData.jobData
+      val componentUseCase = compilerData.componentUseCase
+
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseCase),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
@@ -182,7 +184,7 @@ class FlinkProcessRegistrar(
 
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id), contextTypeInformation)
+        .process(new SourceMetricsFunction(part.id, compilerData.componentUseCase), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 
@@ -377,7 +379,12 @@ class FlinkProcessRegistrar(
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
         stream.flatMap(
-          new SyncInterpretationFunction(compilerDataForProcessPart(Some(part)), node, validationContext, useIOMonad),
+          new SyncInterpretationFunction(
+            compilerDataForProcessPart(Some(part)),
+            node,
+            validationContext,
+            useIOMonad
+          ),
           ti
         )
       }
