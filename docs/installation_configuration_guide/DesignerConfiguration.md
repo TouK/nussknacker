@@ -130,6 +130,10 @@ Each user has id and set of permissions for every scenario category. The followi
 * Write - user can modify/add new scenarios in category
 * Deploy - user can deploy or cancel scenarios in given category
 
+You can set `isAdmin` flag to a certain role in the [users configuration file](/docs/installation_configuration_guide/DesignerConfiguration.md#Users-file-format).
+Users who have this role will be considered an Admin user by the system and will have all the permissions to every
+scenario category as well as all the [global permissions](/docs/installation_configuration_guide/DesignerConfiguration.md#Global-permissions).
+
 You can set a role assigned to an anonymous user with the `anonymousUserRole` setting in the `authentication` section in the configuration.
 When no value is provided (default), no anonymous access will be granted.
 
@@ -141,18 +145,29 @@ have one.
 
 Currently supported permissions:
 
-* AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components
-  functionality).
+* Impersonate - Enables technical user to impersonate a business user and act on their behalf with their permissions.
+
+### Impersonation
+
+Nussknacker supports an impersonation mechanism on the API level, allowing system's technical users to perform actions on behalf of
+business users. A technical user has to have the `Impersonate` global permission configured in order to be able to
+impersonate.
+
+Currently only BasicAuth security mechanism supports this feature.
+
+You can configure whether Admin users can be impersonated by such technical users with `isAdminImpersonationPossible`
+setting in the `authentication` section. By default, it's set to `false`.
 
 ### Common configuration parameters
 
 The table below contains parameters common to all the supported authentication methods.
 
-| Parameter name                   | Importance | Type        | Default value | Description                                                                                                                                                        |
-|----------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| authentication.method            | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`                                                                                                                                    |
-| authentication.usersFile         | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions                                                                          |
-| authentication.anonymousUserRole | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
+| Parameter name                              | Importance | Type        | Default value | Description                                                                                                                                                        |
+|---------------------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| authentication.method                       | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`                                                                                                                                    |
+| authentication.usersFile                    | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions                                                                          |
+| authentication.anonymousUserRole            | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
+| authentication.isAdminImpersonationPossible | required   | boolean     | false         | `true` or `false`. Flag describing whether users with `Impersonate` global permission can impersonate Admin users.                                                 |
 
 #### Users' file format:
 

@@ -37,7 +37,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
 }
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import sttp.client3.testing.SttpBackendStub
@@ -212,7 +212,7 @@ object TestFactory {
       username: String = "user",
       permissions: Iterable[Permission.Permission] = List.empty
   ): LoggedUser =
-    LoggedUser(
+    RealLoggedUser(
       id,
       username,
       Map(TestCategory.Category1.stringify -> permissions.toSet),
@@ -220,7 +220,7 @@ object TestFactory {
     )
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser =
-    LoggedUser(id, username, Map.empty, isAdmin = true)
+    RealLoggedUser(id, username, Map.empty, isAdmin = true)
 
   def mapProcessingTypeDataProvider[T](data: (String, T)*): ProcessingTypeDataProvider[T, Nothing] = {
     // TODO: tests for user privileges

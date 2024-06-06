@@ -3,6 +3,7 @@
 1.16.0 (Not released yet)
 -------------------------
 
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
 * [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status

@@ -19,6 +19,8 @@ final case class DummyAuthenticationConfiguration(override val anonymousUserRole
     extends AuthenticationConfiguration {
   override val name: String = "Dummy"
 
+  override val isAdminImpersonationPossible: Boolean = false
+
   override def usersFile: URI = throw new IllegalStateException(
     "There is no users file in case of Dummy authentication"
   )
