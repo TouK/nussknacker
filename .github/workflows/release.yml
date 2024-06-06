@@ -24,7 +24,7 @@ jobs:
       NUSSKNACKER_VERSION: ${{ inputs.release_version }}
       NEXT_VERSION_RELEASE: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
       SBT_RELEASE_NEXT_VERSION: ${{ format('{0} {1} with-defaults', 'release-version', inputs.release_version) }}
-      ACCESS_TOKEN: ${{ secrets.NU_INSTALLATION_EXAMPLE_PAT }}
+      NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN: ${{ secrets.NU_INSTALLATION_EXAMPLE_PAT }}
     steps:
       - name: "Output variables"
         run: |

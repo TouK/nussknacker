@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
-if [ -z "$ACCESS_TOKEN" ]; then
-    echo "ACCESS_TOKEN variable has to be defined"
+if [ -z "$NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN" ]; then
+    echo "NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN variable has to be defined"
     exit 1
 fi
 
