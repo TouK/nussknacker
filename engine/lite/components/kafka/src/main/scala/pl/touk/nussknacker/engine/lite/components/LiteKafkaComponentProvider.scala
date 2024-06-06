@@ -40,12 +40,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
     val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
-    if (KafkaConfig.parseConfig(dependencies.config).idleTimeout.isDefined) {
-      throw new IllegalArgumentException(
-        "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
-          "Please remove the idleness config from your Lite Kafka sources config."
-      )
-    }
+    validateConfiguration(dependencies.config)
 
     List(
       ComponentDefinition(
@@ -72,4 +67,21 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
   override def isAutoLoaded: Boolean = true
+
+  private def validateConfiguration(config: Config): Unit = {
+    val kafkaConfig = KafkaConfig.parseConfig(config)
+    if (kafkaConfig.idleTimeout.isDefined) {
+      throw new IllegalArgumentException(
+        "Idleness is a Flink specific feature and is not supported in Lite Kafka sources. " +
+          "Please remove the idleness config from your Lite Kafka sources config."
+      )
+    }
+    if (kafkaConfig.sinkDeliveryGuarantee.isDefined) {
+      throw new IllegalArgumentException(
+        "SinkDeliveryGuarantee is a Flink specific feature and is not supported in Lite Kafka config. " +
+          "Please remove the sinkDeliveryGuarantee property from your Lite Kafka config."
+      )
+    }
+  }
+
 }

@@ -17,12 +17,12 @@ object PartitionByKeyFlinkKafkaProducer {
     val props = KafkaUtils.toProducerProperties(config, clientId)
     // we set default to 10min, as FlinkKafkaProducer logs warn if not set
     props.putIfAbsent(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, "600000")
-    val semantic = config.deliveryGuarantee match {
+    val semantic = config.sinkDeliveryGuarantee match {
       case Some(value) =>
         value match {
-          case DeliveryGuarantee.ExactlyOnce => FlinkKafkaProducer.Semantic.EXACTLY_ONCE
-          case DeliveryGuarantee.AtLeastOnce => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
-          case DeliveryGuarantee.None        => FlinkKafkaProducer.Semantic.NONE
+          case SinkDeliveryGuarantee.ExactlyOnce => FlinkKafkaProducer.Semantic.EXACTLY_ONCE
+          case SinkDeliveryGuarantee.AtLeastOnce => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
+          case SinkDeliveryGuarantee.None        => FlinkKafkaProducer.Semantic.NONE
         }
       // AT_LEAST_ONCE is default
       case None => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE

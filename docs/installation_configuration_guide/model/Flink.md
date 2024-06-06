@@ -60,7 +60,7 @@ Out of the box, Nussknacker provides following ExceptionHandler types:
 
 ### Configuring restart strategies
 
-We rely on Flink restart strategies described [in documentation](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/ops/state/task_failure_recovery/).
+We rely on Flink restart strategies described [in documentation](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/task_failure_recovery/).
 It's also possible to configure restart strategies per scenario, using additional properties.           
 
 ```

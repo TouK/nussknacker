@@ -29,43 +29,57 @@ In particular, one must not forget that the Flink connector (when checkpoints ar
 * Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct.
 * Ignore offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
 
-#### EXACTLY_ONCE delivery mode
+#### End-to-end Exactly-once event processing
 
-The mode is well described here: [this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/connectors/datastream/kafka/#fault-tolerance).
-In order to configure the mode you need to:
-- Configure the property `components.kafka.config.deliveryGuarantee` to: "EXACTLY_ONCE", e.g.
-  ```
-  kafkaConfig {
-    kafkaProperties {
-      "bootstrap.servers": ${?KAFKA_ADDRESS}
-      "schema.registry.url": ${?SCHEMA_REGISTRY_URL}
-      "auto.offset.reset": ${?KAFKA_AUTO_OFFSET_RESET}
-      "isolation.level": "read_committed"
-    }
-    deliveryGuarantee: "EXACTLY_ONCE"
-  }
-  ```
-- Configure checkpointing for a scenario (your output data will be visible in time range specified by checkpoint interval):
-  - Define restart strategies [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
-  - Enable choice of the restart strategy on UI: [Scenario properties](../installation_configuration_guide/model/ModelConfiguration.md#scenario-properties), e.g.
+Nussknacker allows you to process events in the Exactly-once Semantics. This feature is provided by Flink. 
+To read more about it see: [flink fault tolerance](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/learn-flink/fault_tolerance/#exactly-once-guarantees).
+More information about certain connectors can be found here: [section with fault tolerance for connectors](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/guarantees/).
+Kafka connector specific information is provided at: [this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/kafka/#fault-tolerance).
+
+In order to achieve End-to-end Exactly-once event processing, you need to check multiple places of configuration:
+- Nussknacker configuration:
+  - Configure the property `components.kafka.config.deliveryGuarantee` to: "EXACTLY_ONCE", e.g.
     ```
-    scenarioPropertiesConfig {
-      restartType {
-        label: "flink restart strategy”
-        defaultValue: ""
-        editor: {
-          type: "FixedValuesParameterEditor",
-          possibleValues: [
-            {"label": "fixed-delay", "expression": "default"}
-          ]
+    kafkaConfig {
+      kafkaProperties {
+        "bootstrap.servers": ${?KAFKA_ADDRESS}
+        "schema.registry.url": ${?SCHEMA_REGISTRY_URL}
+        "auto.offset.reset": ${?KAFKA_AUTO_OFFSET_RESET}
+        "isolation.level": "read_committed"
+      }
+      sinkDeliveryGuarantee: "EXACTLY_ONCE"
+    }
+    ```
+  - Configure checkpointing for a scenario (your output data will be visible in time range specified by checkpoint interval):
+    - Define restart strategies [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
+    - Enable choice of the restart strategy on UI: [Scenario properties](../installation_configuration_guide/model/ModelConfiguration.md#scenario-properties), e.g.
+      ```
+      scenarioPropertiesConfig {
+        restartType {
+          label: "flink restart strategy”
+          defaultValue: ""
+          editor: {
+            type: "FixedValuesParameterEditor",
+            possibleValues: [
+              {"label": "fixed-delay", "expression": "default"}
+            ]
+          }
         }
       }
-    }
-    ```
-- Ensure your consumer which is reading from the scenario output topic to have `isolation.level` set to: "read_committed".
-- Configure flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum restart duration" in property `kafkaProperties."transaction.timeout.ms"`: [kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options).
-- Configure Kafka broker `transaction.max.timeout.ms` to be greater than `transaction.timeout.ms`.
-- Ensure your Kafka broker cluster has at least three brokers [Kafka docs](https://docs.confluent.io/platform/current/installation/configuration/producer-configs.html#transactional-id).
+      ```
+  - Configure Flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum
+    restart duration" in property `kafkaProperties."transaction.timeout.ms"`
+    ([kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options)) or data loss may happen when
+    Kafka expires an uncommitted transaction.
+  - Ensure Flink Kafka consumer `isolation.level` is set to `read_committed`
+    ([kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options)) if you plan consuming events 
+    from transactional source. 
+- Flink cluster configuration:
+- Kafka cluster configuration:
+  - Ensure that Kafka broker `transaction.max.timeout.ms` [Kafka docs](https://kafka.apache.org/documentation/#brokerconfigs_transaction.max.timeout.ms) is greater than producer `transaction.timeout.ms`.
+  - Ensure that your Kafka broker cluster has at least three brokers [Kafka docs](https://kafka.apache.org/documentation/#producerconfigs_transactional.id).
+- Application consuming Nussknacker's messages configuration:
+    - Ensure your consumer has `isolation.level` set to: `read_committed`.
 
 ## Nussknacker and Flink cluster
 

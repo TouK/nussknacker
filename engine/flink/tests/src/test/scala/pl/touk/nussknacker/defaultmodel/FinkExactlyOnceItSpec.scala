@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.extensions.SpelExtension
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 
 import scala.jdk.CollectionConverters._
@@ -19,13 +19,12 @@ class FinkExactlyOnceItSpec
     extends FlinkWithKafkaSuite
     with PatientScalaFutures
     with LazyLogging
-    with SpelExtension
     with WithKafkaComponentsConfig {
 
   override val avroAsJsonSerialization: Boolean = true
 
   override def kafkaComponentsConfig: Config = super.kafkaComponentsConfig
-    .withValue("config.deliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
+    .withValue("config.sinkDeliveryGuarantee", fromAnyRef("EXACTLY_ONCE"))
     .withValue(KafkaConfigProperties.property("config", "isolation.level"), fromAnyRef("read_committed"))
 
   private val inputOutputMessage =
@@ -63,18 +62,18 @@ class FinkExactlyOnceItSpec
       .source(
         "read committed source",
         "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'".spel(),
-        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel()
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'".spel,
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel
       )
       .emptySink(
         "end",
         "kafka",
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "".spel(),
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'".spel(),
-        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel(),
-        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"false".spel(),
-        "first"                                                         -> "#input.first".spel(),
-        "last"                                                          -> "#input.last".spel()
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'".spel,
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'1'".spel,
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"false".spel,
+        "first"                                                         -> "#input.first".spel,
+        "last"                                                          -> "#input.last".spel
       )
 
 }
