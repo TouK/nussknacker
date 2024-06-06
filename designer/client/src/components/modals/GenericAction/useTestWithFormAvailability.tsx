@@ -6,9 +6,8 @@ import {
     isLatestProcessVersion,
     isProcessRenamed,
 } from "../../../reducers/selectors/graph";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { displayTestCapabilities, fetchTestFormParameters } from "../../../actions/nk";
-import { useDeepCompareEffect } from "rooks";
 
 // TODO: fetch TestCapabilities and TestFormParameters in chain to avoid stupid errors
 export function useTestWithFormAvailability(disabled: boolean) {
@@ -24,13 +23,13 @@ export function useTestWithFormAvailability(disabled: boolean) {
         return !disabled && processIsLatestVersion && testCapabilities?.canTestWithForm;
     }, [disabled, processIsLatestVersion, testCapabilities?.canTestWithForm]);
 
-    useDeepCompareEffect(() => {
+    useEffect(() => {
         if (isRenamed) return;
 
         dispatch(displayTestCapabilities(scenarioName, scenarioGraph));
     }, [dispatch, isRenamed, scenarioGraph, scenarioName]);
 
-    useDeepCompareEffect(() => {
+    useEffect(() => {
         if (isRenamed || !isAvailable) return;
         dispatch(fetchTestFormParameters(scenarioName, scenarioGraph));
     }, [dispatch, isAvailable, isRenamed, scenarioGraph, scenarioName]);
