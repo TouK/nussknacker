@@ -11,9 +11,9 @@ if [ -z "$NUSSKNACKER_VERSION" ]; then
 fi
 
 rm -rf nu-installation-example-repo
-git clone "https://$ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git" nu-installation-example-repo
+git clone "https://$NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git" nu-installation-example-repo
 cd nu-installation-example-repo
-git remote set-url origin "https://$ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git"
+git remote set-url origin "https://$NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN@github.com/TouK/nussknacker-installation-example.git"
 
 rm -rf ./*
 cp -r ../examples/installation/* .
