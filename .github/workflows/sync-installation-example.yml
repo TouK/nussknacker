@@ -20,6 +20,6 @@ jobs:
       - name: Push folder to another repository
         env:
           ACCESS_TOKEN: ${{ secrets.NU_INSTALLATION_EXAMPLE_PAT }}
-          NUSSKNACKER_VERSION: "1.15.1"
+          NUSSKNACKER_VERSION: "1.15.0"
         run: |
           ./.github/workflows/scripts/publishNuInstallationExample.sh
