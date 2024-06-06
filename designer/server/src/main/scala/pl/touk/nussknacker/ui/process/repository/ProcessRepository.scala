@@ -102,9 +102,6 @@ class DBProcessRepository(
   // FIXME: It's temporary way.. After merge and refactor process repositories we can remove it.
   override def run[R]: DB[R] => DB[R] = identity
 
-  /**
-   * These action should be done on transaction - move it to ProcessService.createProcess
-   */
   def saveNewProcess(
       action: CreateProcessAction
   )(implicit loggedUser: LoggedUser): DB[Option[ProcessCreated]] = {
@@ -120,9 +117,10 @@ class DBProcessRepository(
       isArchived = false,
       createdAt = Timestamp.from(now),
       createdBy = userName,
-      latestVersionId = VersionId.initialVersionId,
+      latestVersionId = None,
       latestFinishedActionId = None,
-      latestExecutionFinishedActionId = None
+      latestFinishedCancelActionId = None,
+      latestFinishedDeployActionId = None
     )
 
     val insertNew =
@@ -148,6 +146,25 @@ class DBProcessRepository(
               .map(res => res.newVersion.map(ProcessCreated(res.processId, _)))
         }
     }
+//    for {
+//      latestVersionOpt <- latestProcessVersionsNoJsonQuery(action.processName).result.headOption
+//      _ <- latestVersionOpt match {
+//        case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
+//        case None    => DBIO.successful(())
+//      }
+//      existingProcessOpt <- processesTable.filter(_.name === action.processName).result.headOption
+//      _ <- existingProcessOpt match {
+//        case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
+//        case None    => DBIO.successful(())
+//      }
+//      insertedEntity <- insertNew += processToSave
+//      updateResult <- updateProcessInternal(
+//        ProcessIdWithName(insertedEntity.id, insertedEntity.name),
+//        action.canonicalProcess,
+//        increaseVersionWhenJsonNotChanged = false,
+//        userName = userName
+//      )
+//    } yield updateResult.newVersion.map(ProcessCreated(updateResult.processId, _))
   }
 
   def updateProcess(
@@ -230,7 +247,7 @@ class DBProcessRepository(
       updateLatestVersionIdCount <- processesTable
         .filter(_.id === newProcessVersionOpt.processId)
         .map(_.latestVersionId)
-        .update(newProcessVersionOpt.id)
+        .update(Some(newProcessVersionOpt.id))
     } yield (insertCount, updateLatestVersionIdCount)).transactionally
 
   def deleteProcess(processId: ProcessIdWithName): DB[Unit] =

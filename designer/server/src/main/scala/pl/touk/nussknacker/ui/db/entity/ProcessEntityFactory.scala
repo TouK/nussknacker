@@ -33,13 +33,16 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
-    def latestVersionId: Rep[VersionId] = column[VersionId]("latest_version_id", NotNull)
+    def latestVersionId: Rep[Option[VersionId]] = column[Option[VersionId]]("latest_version_id")
 
     def latestFinishedActionId: Rep[Option[ProcessActionId]] =
       column[Option[ProcessActionId]]("latest_finished_action_id")
 
-    def latestExecutionFinishedActionId: Rep[Option[ProcessActionId]] =
-      column[Option[ProcessActionId]]("latest_execution_finished_action_id")
+    def latestFinishedCancelActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_finished_cancel_action_id")
+
+    def latestFinishedDeployActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_finished_deploy_action_id")
 
     def * : ProvenShape[ProcessEntityData] =
       (
@@ -54,7 +57,8 @@ trait ProcessEntityFactory extends BaseEntityFactory {
         createdBy,
         latestVersionId,
         latestFinishedActionId,
-        latestExecutionFinishedActionId
+        latestFinishedCancelActionId,
+        latestFinishedDeployActionId
       ) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
@@ -74,7 +78,9 @@ final case class ProcessEntityData(
     isArchived: Boolean,
     createdAt: Timestamp,
     createdBy: String,
-    latestVersionId: VersionId,
+    latestVersionId: Option[VersionId], // None only when a new process is inserted, but it's initial version isn't yet
+    // in practice the inserts happen in one transaction, and could be handled with a DEFERRED foreign key, but e.g. HSQL doesn't support it
     latestFinishedActionId: Option[ProcessActionId],
-    latestExecutionFinishedActionId: Option[ProcessActionId]
+    latestFinishedCancelActionId: Option[ProcessActionId],
+    latestFinishedDeployActionId: Option[ProcessActionId]
 )
