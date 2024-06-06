@@ -2,12 +2,36 @@ import { PropsOf } from "@emotion/react";
 import Markdown from "react-markdown";
 import remarkDirective from "remark-directive";
 import remarkDirectiveRehype from "remark-directive-rehype";
-import React from "react";
-import { styled } from "@mui/material";
+import React, { PropsWithChildren } from "react";
+import { lighten, styled } from "@mui/material";
 import { getBorderColor } from "../../../containers/theme/helpers";
+import { Link } from "react-router-dom";
 
-const MarkdownWithPlugins = ({ remarkPlugins = [], children, ...props }: PropsOf<typeof Markdown>) => (
-    <Markdown remarkPlugins={[remarkDirective, remarkDirectiveRehype, ...remarkPlugins]} {...props}>
+const RouterLink = ({
+    to,
+    children,
+}: PropsWithChildren<{
+    to: string;
+}>) => <Link to={to}>{children}</Link>;
+
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace JSX {
+        interface IntrinsicElements {
+            "router-link": PropsOf<typeof RouterLink>;
+        }
+    }
+}
+
+const MarkdownWithPlugins = ({ remarkPlugins = [], children, components = {}, ...props }: PropsOf<typeof Markdown>) => (
+    <Markdown
+        components={{
+            "router-link": RouterLink,
+            ...components,
+        }}
+        remarkPlugins={[remarkDirective, remarkDirectiveRehype, ...remarkPlugins]}
+        {...props}
+    >
         {children}
     </Markdown>
 );
@@ -28,7 +52,14 @@ export const MarkdownStyled = styled(MarkdownWithPlugins)(({ theme }) => ({
         fontSize: "12px",
     },
     a: {
-        color: `${theme.palette.primary.main} !important`,
+        color: theme.palette.primary.main,
+        "&:hover": {
+            color: lighten(theme.palette.primary.main, 0.25),
+        },
+        "&:focus": {
+            color: theme.palette.primary.main,
+            textDecoration: "none",
+        },
     },
 }));
 

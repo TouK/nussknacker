@@ -10,7 +10,7 @@ latest-staging - developer build with latest, not released yet features
 
 # How to use
 
-This image is not designed to be used from command line at first place. The main purpose of it is to be used programmatically by [Nussknacker K8s Deployment Manager](https://nussknacker.io/documentation/about/engines/LiteArchitecture/).
+This image is not designed to be used from command line at first place. The main purpose of it is to be used programmatically by [Nussknacker K8s Deployment Manager](https://nussknacker.io/documentation/docs/about/engines/LiteArchitecture/).
 
 If you want to check it manually, the invocation will look like:
 ```
