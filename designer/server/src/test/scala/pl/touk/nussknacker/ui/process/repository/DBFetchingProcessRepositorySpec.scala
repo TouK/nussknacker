@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -70,7 +70,7 @@ class DBFetchingProcessRepositorySpec
       )
     }
 
-    val c1Reader = LoggedUser(
+    val c1Reader = RealLoggedUser(
       id = "1",
       username = "user",
       categoryPermissions = Map("Category1" -> Set(Permission.Read))

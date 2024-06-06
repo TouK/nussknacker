@@ -1,5 +1,9 @@
 # Changelog
 
+1.16.0 (Not released yet)
+-------------------------
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
+
 1.15.2 (7 June 2024)
 -------------------------
 * [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.

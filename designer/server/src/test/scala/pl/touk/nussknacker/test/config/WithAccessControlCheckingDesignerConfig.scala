@@ -117,4 +117,25 @@ trait WithAccessControlCheckingConfigRestAssuredUsersExtensions extends NuRestAs
       requestSpecification.preemptiveBasicAuth("unknownuser", "wrongcredentials")
   }
 
+  implicit class UsersImpersonation[T <: RequestSpecification](requestSpecification: T) {
+
+    private val impersonationHeader = "Nu-Impersonate-User-Identity"
+
+    def impersonateAdminUser(): RequestSpecification =
+      requestSpecification.header(impersonationHeader, "admin")
+
+    def impersonateReaderUser(): RequestSpecification =
+      requestSpecification.header(impersonationHeader, "reader")
+
+    def impersonateLimitedReaderUser(): RequestSpecification =
+      requestSpecification.header(impersonationHeader, "limitedReader")
+
+    def impersonateWriterUser(): RequestSpecification =
+      requestSpecification.header(impersonationHeader, "writer")
+
+    def impersonateLimitedWriterUser(): RequestSpecification =
+      requestSpecification.header(impersonationHeader, "limitedWriter")
+
+  }
+
 }
