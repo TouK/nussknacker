@@ -10,7 +10,8 @@ import scala.concurrent.duration._
 case class BasicAuthenticationConfiguration(
     usersFile: URI,
     cachingHashes: Option[CachingHashesConfig],
-    anonymousUserRole: Option[String] = None
+    anonymousUserRole: Option[String] = None,
+    isAdminImpersonationPossible: Boolean = false
 ) extends AuthenticationConfiguration {
   override def name: String = BasicAuthenticationConfiguration.name
 

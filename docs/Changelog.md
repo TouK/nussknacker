@@ -1,5 +1,9 @@
 # Changelog
 
+1.16.0 (Not released yet)
+-------------------------
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
+
 1.15.3 (24 June 2024)
 -------------------------
 * [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.

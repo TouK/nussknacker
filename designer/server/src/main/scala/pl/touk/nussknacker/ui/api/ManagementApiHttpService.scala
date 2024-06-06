@@ -14,20 +14,20 @@ import pl.touk.nussknacker.ui.api.ManagementApiEndpoints.ManagementApiError.{NoA
 import pl.touk.nussknacker.ui.api.{BaseHttpService, CustomActionValidationDto, ManagementApiEndpoints}
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.validation.CustomActionValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ManagementApiHttpService(
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     dispatcher: DeploymentManagerDispatcher,
     processService: ProcessService
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val managementApiEndpoints = new ManagementApiEndpoints(authenticator.authenticationMethod())
+  private val managementApiEndpoints = new ManagementApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     managementApiEndpoints.customActionValidationEndpoint

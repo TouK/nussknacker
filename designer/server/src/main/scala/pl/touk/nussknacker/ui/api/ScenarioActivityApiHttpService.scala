@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.repository.{ProcessActivityRepository, UserComment}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioAttachmentService}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.HeadersSupport.ContentDisposition
 import pl.touk.nussknacker.ui.server.TapirStreamEndpointProvider
 import sttp.model.MediaType
@@ -24,17 +24,19 @@ import java.net.URLConnection
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioActivityApiHttpService(
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     scenarioActivityRepository: ProcessActivityRepository,
     scenarioService: ProcessService,
     scenarioAuthorizer: AuthorizeProcess,
     attachmentService: ScenarioAttachmentService,
     streamEndpointProvider: TapirStreamEndpointProvider
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val scenarioActivityApiEndpoints = new ScenarioActivityApiEndpoints(authenticator.authenticationMethod())
+  private val scenarioActivityApiEndpoints = new ScenarioActivityApiEndpoints(
+    authManager.authenticationEndpointInput()
+  )
 
   expose {
     scenarioActivityApiEndpoints.scenarioActivityEndpoint
