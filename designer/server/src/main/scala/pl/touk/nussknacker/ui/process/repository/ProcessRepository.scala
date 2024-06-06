@@ -120,8 +120,8 @@ class DBProcessRepository(
       isArchived = false,
       createdAt = Timestamp.from(now),
       createdBy = userName,
-      impersonatedByIdentity = loggedUser.getImpersonatingUserId,
-      impersonatedByUsername = loggedUser.getImpersonatingUserName
+      impersonatedByIdentity = loggedUser.impersonatingUserId,
+      impersonatedByUsername = loggedUser.impersonatingUserName
     )
 
     val insertNew =

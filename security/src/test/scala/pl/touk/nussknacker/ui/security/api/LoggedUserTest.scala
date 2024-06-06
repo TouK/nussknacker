@@ -67,7 +67,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
     val rules             = List(ConfigRule("Editor", categories = List("Category"), permissions = List(Read, Write)))
     val authenticatedUser = AuthenticatedUser("userId", "userName", Set("Editor"))
 
-    val loggedUser = LoggedUser(authenticatedUser, rules)
+    val loggedUser = LoggedUser.create(authenticatedUser, rules)
 
     loggedUser shouldBe Right(RealLoggedUser(authenticatedUser, rules))
   }
@@ -90,7 +90,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val maybeLoggedUser = LoggedUser(authenticatedUser, rules)
+    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules)
 
     maybeLoggedUser match {
       case Right(user: ImpersonatedUser) =>
@@ -120,7 +120,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val maybeLoggedUser = LoggedUser(authenticatedUser, rules, isAdminImpersonationPossible = true)
+    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules, isAdminImpersonationPossible = true)
 
     maybeLoggedUser match {
       case Right(user: ImpersonatedUser) =>
@@ -145,7 +145,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val userConversion = LoggedUser(authenticatedUser, rules)
+    val userConversion = LoggedUser.create(authenticatedUser, rules)
 
     userConversion match {
       case Right(_)                      => fail("Expected a Right but got a Left")
@@ -171,7 +171,7 @@ class LoggedUserTest extends AnyFunSuite with Matchers {
       impersonatedAuthenticationUser = Some(impersonatedUser)
     )
 
-    val maybeLoggedUser = LoggedUser(authenticatedUser, rules)
+    val maybeLoggedUser = LoggedUser.create(authenticatedUser, rules)
 
     maybeLoggedUser match {
       case Right(_)                      => fail("Expected a Right but got a Left")

@@ -7,9 +7,10 @@ import pl.touk.nussknacker.ui.security.api.SecurityError.{
   CannotAuthenticateUser,
   ImpersonatedUserDataNotFoundError,
   ImpersonationMissingPermissionError,
+  ImpersonationNotSupportedError,
   InsufficientPermission
 }
-import sttp.model.StatusCode.{Forbidden, NotFound, Unauthorized}
+import sttp.model.StatusCode.{Forbidden, NotFound, NotImplemented, Unauthorized}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 
@@ -50,6 +51,19 @@ object BaseEndpointDefinitions {
                   Example.of(
                     summary = Some("Authentication failed"),
                     value = CannotAuthenticateUser
+                  )
+                )
+            ),
+            oneOfVariantFromMatchType(
+              NotImplemented,
+              plainBody[ImpersonationNotSupportedError.type]
+                .description("Impersonation is not supported for defined authentication mechanism")
+                .example(
+                  Example.of(
+                    summary = Some(
+                      "Cannot authenticate impersonated user as impersonation is not supported by the authentication mechanism"
+                    ),
+                    value = ImpersonationNotSupportedError
                   )
                 )
             ),
@@ -122,6 +136,15 @@ object BaseEndpointDefinitions {
       Codec.string.map(
         Mapping.from[String, ImpersonatedUserDataNotFoundError.type](_ => ImpersonatedUserDataNotFoundError)(_ =>
           ImpersonatedUserDataNotFoundError.errorMessage
+        )
+      )
+    }
+
+    implicit val impersonationNotSupportedErrorCodec
+        : Codec[String, ImpersonationNotSupportedError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, ImpersonationNotSupportedError.type](_ => ImpersonationNotSupportedError)(_ =>
+          ImpersonationNotSupportedError.errorMessage
         )
       )
     }

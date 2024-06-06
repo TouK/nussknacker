@@ -14,7 +14,7 @@ sealed trait LoggedUser {
 
 object LoggedUser {
 
-  def apply(
+  def create(
       authenticatedUser: AuthenticatedUser,
       rules: List[ConfigRule],
       isAdminImpersonationPossible: Boolean = false
@@ -64,12 +64,12 @@ object LoggedUser {
       case u: ImpersonatedUser => u.impersonatedUser.isAdmin
     }
 
-    def getImpersonatingUserId: Option[String] = user match {
+    def impersonatingUserId: Option[String] = user match {
       case _: RealLoggedUser   => None
       case u: ImpersonatedUser => Some(u.impersonatingUser.id)
     }
 
-    def getImpersonatingUserName: Option[String] = user match {
+    def impersonatingUserName: Option[String] = user match {
       case _: RealLoggedUser   => None
       case u: ImpersonatedUser => Some(u.impersonatingUser.username)
     }

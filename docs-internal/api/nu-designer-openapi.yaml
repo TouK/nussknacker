@@ -105,6 +105,17 @@ paths:
               schema:
                 type: string
               example: Component {id} not exist.
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -188,6 +199,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -258,6 +280,17 @@ paths:
             text/plain:
               schema:
                 type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -384,6 +417,17 @@ paths:
                     processes:
                     - process1
                     - process2
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -466,6 +510,17 @@ paths:
                     processes:
                     - process2
                     - process3
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -524,6 +579,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -599,6 +665,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -667,6 +744,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -739,6 +827,17 @@ paths:
                 Example:
                   summary: No deployment {deploymentId} found
                   value: Deployment a9a1e269-0b71-4582-a948-603482d27298 not found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -845,6 +944,17 @@ paths:
                   summary: Deployment with id {deploymentId} already exists
                   value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
                     exists
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -921,6 +1031,17 @@ paths:
             text/plain:
               schema:
                 type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -993,6 +1114,17 @@ paths:
             text/plain:
               schema:
                 type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1090,6 +1222,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1152,6 +1295,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1257,6 +1411,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1413,6 +1578,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1557,6 +1733,17 @@ paths:
                 Example:
                   summary: 'ProcessingType type: {processingType} not found'
                   value: 'ProcessingType type: ''processingType'' not found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1690,6 +1877,17 @@ paths:
                 Example:
                   summary: 'ProcessingType type: {processingType} not found'
                   value: 'ProcessingType type: ''processingType'' not found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1785,6 +1983,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1908,6 +2117,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1983,6 +2203,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2059,6 +2290,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2139,6 +2381,17 @@ paths:
                 Example:
                   summary: 'Unable to delete comment with id: {commentId}'
                   value: 'Unable to delete comment with id: 1'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2222,6 +2475,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2301,6 +2565,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2366,6 +2641,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2444,6 +2730,17 @@ paths:
                 Example:
                   summary: Statistics generation failed.
                   value: Statistics generation failed.
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2530,6 +2827,17 @@ paths:
                 Example:
                   summary: No impersonated user's data found for provided identity
                   value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []

@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.security.api.SecurityError.{
   CannotAuthenticateUser,
   ImpersonatedUserDataNotFoundError,
   ImpersonationMissingPermissionError,
+  ImpersonationNotSupportedError,
   InsufficientPermission
 }
 import sttp.tapir._
@@ -54,9 +55,8 @@ class AuthManager(protected val authenticationResources: AuthenticationResources
     if (user.roles.nonEmpty)
       // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
       //       creation of another user representation based on authenticator.configuration. Shouldn't we just return the LoggedUser?
-      LoggedUser(user, authenticationRules, isAdminImpersonationPossible) match {
-        case Right(loggedUser)             => Right(loggedUser)
-        case Left(ImpersonationNotAllowed) => Left(ImpersonationMissingPermissionError)
+      LoggedUser.create(user, authenticationRules, isAdminImpersonationPossible).left.map {
+        case ImpersonationNotAllowed => ImpersonationMissingPermissionError
       }
     else Left(InsufficientPermission)
   }
@@ -80,11 +80,15 @@ class AuthManager(protected val authenticationResources: AuthenticationResources
   protected def handleImpersonation(
       impersonatingUser: AuthenticatedUser,
       impersonatedUserIdentity: String
-  ): Either[ImpersonatedUserDataNotFoundError.type, AuthenticatedUser] =
-    authenticationResources.getImpersonatedUserData(impersonatedUserIdentity) match {
-      case Some(impersonatedUserData) =>
-        Right(AuthenticatedUser.createImpersonatedUser(impersonatingUser, impersonatedUserData))
-      case None => Left(ImpersonatedUserDataNotFoundError)
+  ): Either[ImpersonationAuthenticationError, AuthenticatedUser] =
+    authenticationResources.getImpersonatedUserDataWithSupportCheck(impersonatedUserIdentity) match {
+      case Right(maybeImpersonatedUserData) =>
+        maybeImpersonatedUserData match {
+          case Some(impersonatedUserData) =>
+            Right(AuthenticatedUser.createImpersonatedUser(impersonatingUser, impersonatedUserData))
+          case None => Left(ImpersonatedUserDataNotFoundError)
+        }
+      case Left(ImpersonationNotSupported) => Left(ImpersonationNotSupportedError)
     }
 
 }
@@ -142,7 +146,7 @@ private[api] trait AkkaBasedAuthManager {
 
   def authorizeRoute(user: AuthenticatedUser)(secureRoute: LoggedUser => Route): Route =
     Directives.authorize(user.roles.nonEmpty) {
-      LoggedUser(user, authenticationRules, isAdminImpersonationPossible) match {
+      LoggedUser.create(user, authenticationRules, isAdminImpersonationPossible) match {
         case Right(loggedUser) => secureRoute(loggedUser)
         case Left(ImpersonationNotAllowed) =>
           complete(StatusCodes.Forbidden -> ImpersonationMissingPermissionError.errorMessage)
@@ -156,6 +160,8 @@ private[api] trait AkkaBasedAuthManager {
           case Right(impersonatedUser) => provide(impersonatedUser)
           case Left(ImpersonatedUserDataNotFoundError) =>
             complete(StatusCodes.NotFound, ImpersonatedUserDataNotFoundError.errorMessage)
+          case Left(ImpersonationNotSupportedError) =>
+            complete(StatusCodes.NotImplemented, ImpersonationNotSupportedError.errorMessage)
         }
       case None => provide(user)
     }
