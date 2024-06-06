@@ -108,6 +108,7 @@ object TopTabType extends Enumeration {
     `type`: TopTabType.Value,
     url: String,
     requiredPermission: Option[String],
+    spacerBefore: Option[Boolean] = Some(false),
     // Deprecated: use accessTokenInQuery.enabled setting instead
     addAccessTokenInQueryParam: Option[Boolean],
     accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings())
