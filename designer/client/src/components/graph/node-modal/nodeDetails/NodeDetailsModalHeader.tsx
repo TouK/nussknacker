@@ -9,7 +9,8 @@ import ProcessUtils from "../../../../common/ProcessUtils";
 import { ModalHeader, WindowHeaderIconStyled } from "./NodeDetailsStyled";
 import { NodeDocs } from "./SubHeader";
 import { IconModalTitle } from "./IconModalTitle";
-import { useComponentIcon } from "../../../toolbars/creator/ComponentIcon";
+import { ComponentIcon } from "../../../toolbars/creator/ComponentIcon";
+import { styled } from "@mui/material";
 
 const nodeClassProperties = [`service.id`, `ref.typ`, `nodeType`, `ref.id`];
 
@@ -58,7 +59,6 @@ export const NodeDetailsModalSubheader = ({ node }: { node: NodeType }): ReactEl
     return <NodeDocs name={nodeClass} href={docsUrl} />;
 };
 
-export const NodeDetailsModalIcon = ({ node }: { node: NodeType }): ReactElement => {
-    const src = useComponentIcon(node);
-    return <WindowHeaderIconStyled src={src} sx={{ backgroundColor: (t) => t.palette.custom.getNodeStyles(node).fill }} />;
-};
+export const NodeDetailsModalIcon = styled(WindowHeaderIconStyled.withComponent(ComponentIcon))(({ node, theme }) => ({
+    backgroundColor: theme.palette.custom.getNodeStyles(node).fill,
+}));

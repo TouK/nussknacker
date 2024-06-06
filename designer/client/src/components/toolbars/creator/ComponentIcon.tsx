@@ -1,4 +1,4 @@
-import { isString, memoize } from "lodash";
+import { memoize } from "lodash";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -21,29 +21,15 @@ const preloadBeImage = memoize((src: string): string | null => {
     return `#${id}`;
 });
 
-function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null {
+export function getComponentIconSrc(node: NodeType, { components }: ProcessDefinitionData): string | null {
     // missing type means that node is the fake properties component
     // TODO we should split properties node logic and normal components logic
-    if (nodeOrPath.type) {
-        return (
-            ProcessUtils.extractComponentDefinition(nodeOrPath, processDefinitionData.components)?.icon ||
-            `/assets/components/${nodeOrPath.type}.svg`
-        );
-    } else {
-        return null;
-    }
-}
+    if (!node?.type) return null;
 
-export const getComponentIconSrc: {
-    (path: string): string;
-    (node: NodeType, processDefinitionData: ProcessDefinitionData): string | null;
-} = (nodeOrPath, processDefinitionData?) => {
-    if (nodeOrPath) {
-        const icon = isString(nodeOrPath) ? nodeOrPath : getIconFromDef(nodeOrPath, processDefinitionData);
-        return preloadBeImage(icon);
-    }
-    return null;
-};
+    const definitionIcon = ProcessUtils.extractComponentDefinition(node, components)?.icon;
+    const typeIcon = `/assets/components/${node.type}.svg`;
+    return preloadBeImage(definitionIcon || typeIcon);
+}
 
 export function useComponentIcon(node: NodeType) {
     const [src, setSrc] = useState<string>(null);

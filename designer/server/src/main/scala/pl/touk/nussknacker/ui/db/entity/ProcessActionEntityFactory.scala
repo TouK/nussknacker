@@ -8,7 +8,7 @@ import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import java.sql.Timestamp
 import java.time.Instant
 
-trait ProcessActionEntityFactory extends BaseEntityFactory {
+trait ProcessActionEntityFactory extends BaseEntityFactory with CommentEntityFactory {
 
   import profile.api._
 
@@ -16,7 +16,6 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
     LTableQuery(new ProcessActionEntity(_))
 
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
-  val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
     def id: Rep[ProcessActionId] = column[ProcessActionId]("id", O.PrimaryKey)
