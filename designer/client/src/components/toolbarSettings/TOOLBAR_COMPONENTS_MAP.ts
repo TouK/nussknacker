@@ -1,5 +1,5 @@
 /* eslint-disable quote-props */
-import { ComponentType } from "react";
+import { ComponentType, lazy } from "react";
 import TipsPanel from "../tips/Tips";
 import { AttachmentsPanel } from "../toolbars/AttachmentsPanel";
 import { CommentsPanel } from "../comment/CommentsPanel";
@@ -8,7 +8,6 @@ import { DefaultToolbarPanel, ToolbarPanelProps } from "../toolbarComponents/Def
 import ScenarioDetails from "../toolbars/scenarioDetails/ScenarioDetails";
 import { UserSettingsPanel } from "../toolbars/UserSettingsPanel";
 import { VersionsPanel } from "../toolbars/VersionsPanel";
-import loadable from "@loadable/component";
 import ProcessActions from "../toolbars/actions/ProcessActions";
 import { SearchPanel } from "../toolbars/search/SearchPanel";
 
@@ -26,5 +25,5 @@ export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelPr
     "comments-panel": CommentsPanel,
     "attachments-panel": AttachmentsPanel,
     "user-settings-panel": UserSettingsPanel,
-    "survey-panel": loadable(() => import("../toolbars/Survey")),
+    "survey-panel": lazy(() => import("../toolbars/Survey")),
 };
