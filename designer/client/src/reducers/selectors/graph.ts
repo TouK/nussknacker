@@ -1,4 +1,4 @@
-import { isEmpty } from "lodash";
+import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
@@ -12,7 +12,9 @@ import { TestFormParameters } from "../../common/TestResultUtils";
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
-export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph));
+export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
+    memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
+});
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
