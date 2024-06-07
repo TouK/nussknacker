@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.api.process.ProcessingType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -39,6 +39,17 @@ trait ProcessEntityFactory extends BaseEntityFactory {
     // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
     def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
 
+    def latestVersionId: Rep[Option[VersionId]] = column[Option[VersionId]]("latest_version_id")
+
+    def latestFinishedActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_finished_action_id")
+
+    def latestFinishedCancelActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_finished_cancel_action_id")
+
+    def latestFinishedDeployActionId: Rep[Option[ProcessActionId]] =
+      column[Option[ProcessActionId]]("latest_finished_deploy_action_id")
+
     def * : ProvenShape[ProcessEntityData] =
       (
         id,
@@ -51,7 +62,11 @@ trait ProcessEntityFactory extends BaseEntityFactory {
         createdAt,
         createdBy,
         impersonatedByIdentity,
-        impersonatedByUsername
+        impersonatedByUsername,
+        latestVersionId,
+        latestFinishedActionId,
+        latestFinishedCancelActionId,
+        latestFinishedDeployActionId
       ) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
@@ -72,5 +87,10 @@ final case class ProcessEntityData(
     createdAt: Timestamp,
     createdBy: String,
     impersonatedByIdentity: Option[String],
-    impersonatedByUsername: Option[String]
+    impersonatedByUsername: Option[String],
+    latestVersionId: Option[VersionId], // None only when a new process is inserted, but it's initial version isn't yet
+    // in practice the inserts happen in one transaction, and could be handled with a DEFERRED foreign key, but e.g. HSQL doesn't support it
+    latestFinishedActionId: Option[ProcessActionId],
+    latestFinishedCancelActionId: Option[ProcessActionId],
+    latestFinishedDeployActionId: Option[ProcessActionId]
 )

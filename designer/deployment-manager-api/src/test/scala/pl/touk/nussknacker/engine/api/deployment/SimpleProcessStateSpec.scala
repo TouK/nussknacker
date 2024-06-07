@@ -20,7 +20,7 @@ class SimpleProcessStateSpec extends AnyFunSpec with Matchers with Inside {
 
   it("scenario state should be running") {
     val state = createProcessState(SimpleStateStatus.Running)
-    state.allowedActions shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
+    state.allowedActions shouldBe List(ScenarioActionName.Cancel, ScenarioActionName.Deploy)
   }
 
   it("scenario state should be finished") {
