@@ -32,22 +32,25 @@ In particular, one must not forget that the Flink connector (when checkpoints ar
 #### End-to-end Exactly-once event processing
 
 Nussknacker allows you to process events in the Exactly-once Semantics. This feature is provided by Flink.
-TODO -> events can be processed exactly once but steps in scenario can be repeated
-To read more about it see: [Flink fault tolerance](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/learn-flink/fault_tolerance/#exactly-once-guarantees).
+An important note is that we guarantee that the message is delivered once and only once via kafka sink in the scenario.
+If a fault occurs between checkpoints and after an operation that performs some side effects, such as enrichment,
+it possible that this action could be repeated.
+To read more about it see: [Flink blog post](https://flink.apache.org/2018/02/28/an-overview-of-end-to-end-exactly-once-processing-in-apache-flink-with-apache-kafka-too/) and 
+[Flink fault tolerance](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/learn-flink/fault_tolerance/#exactly-once-guarantees).
 More information about certain connectors can be found here: [section with fault tolerance for connectors](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/guarantees/).
 Kafka connector specific information is provided at: [this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/kafka/#fault-tolerance).
 
 In order to achieve End-to-end Exactly-once event processing, you need to check multiple places of configuration:
 - Flink cluster configuration:
   - Configure checkpointing.
-    It's crucial to configure this, as events are committed during checkpoint and consequently the output 
-    events will be visible within the time range specified by the checkpoint interval. It's essential to configure
-    proper interval like 1-2 seconds (interval should be configured in nussknacker - 
-    `Configure the checkpointing interval` section). Such a short interval has large overhead on Flink, and
-    you should consider configuring:
+    A Prerequisite is to have persistent storage for the state, and you should make sure that this is configured.
+    In Exactly-once events are committed during checkpoint and consequently the output events will be visible within 
+    the time range specified by the checkpoint interval. It's essential to configure proper interval like 1-2 seconds
+    (interval should be configured in nussknacker - `Configure the checkpointing interval` section).
+    Such a short interval has large overhead on Flink, and you should consider configuring:
     - Incremental checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/dev/datastream/fault-tolerance/checkpointing/#state-backend-incremental).
     - Unaligned checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/checkpointing_under_backpressure/#unaligned-checkpoints).
-    Additionally you have to ensure that checkpointing mode is set to `EXACTLY_ONCE` [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#execution-checkpointing-mode)
+    Additionally you have to ensure that checkpointing mode is set to `EXACTLY_ONCE` [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#execution-checkpointing-mode).
   - Ensure task failure recovery is configured.
     [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
     The main purpose of Exactly-once is to don't miss any events and don't have duplicated events during failures. 
