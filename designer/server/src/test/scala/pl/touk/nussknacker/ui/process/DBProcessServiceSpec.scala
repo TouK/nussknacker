@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -35,13 +35,13 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   // These users were created based on categories configuration at designer.conf
   private val adminUser = TestFactory.adminUser()
 
-  private val allCategoriesUser = LoggedUser(
+  private val allCategoriesUser = RealLoggedUser(
     id = "allCategoriesUser",
     username = "allCategoriesUser",
     categoryPermissions = TestCategory.values.map(c => c.stringify -> Set(Permission.Read)).toMap
   )
 
-  private val category1User = LoggedUser(
+  private val category1User = RealLoggedUser(
     id = "testUser",
     username = "testUser",
     categoryPermissions = Map(Category1.stringify -> Set(Permission.Read))

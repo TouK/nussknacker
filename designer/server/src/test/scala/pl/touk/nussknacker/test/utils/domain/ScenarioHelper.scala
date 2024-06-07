@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,7 +25,7 @@ import scala.jdk.CollectionConverters._
 private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implicit executionContext: ExecutionContext)
     extends PatientScalaFutures {
 
-  private implicit val user: LoggedUser = LoggedUser("admin", "admin", Map.empty, isAdmin = true)
+  private implicit val user: LoggedUser = RealLoggedUser("admin", "admin", Map.empty, isAdmin = true)
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 

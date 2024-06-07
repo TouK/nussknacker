@@ -13,6 +13,7 @@ export const ActionTypes = {
     columnResize: "column-resize",
     renameColumn: "rename-column",
     changeColumnType: "change-column-type",
+    moveColumn: "move-column",
 } as const;
 
 type Actions = {
@@ -58,6 +59,10 @@ type Actions = {
     [ActionTypes.changeColumnType]: {
         column: number;
         dataType: SupportedType;
+    };
+    [ActionTypes.moveColumn]: {
+        startIndex: number;
+        endIndex: number;
     };
 };
 

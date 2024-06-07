@@ -15,7 +15,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.UnauthorizedError
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
 
@@ -51,7 +51,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         )
     )
 
-    val fooCategoryUser = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
+    val fooCategoryUser = RealLoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
 
     provider.forProcessingType("foo")(fooCategoryUser)
     an[UnauthorizedError] shouldBe thrownBy {
@@ -92,7 +92,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
           _ => TestFactory.deploymentManagerDependencies
         )
     )
-    val fooCategoryUser    = LoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
+    val fooCategoryUser    = RealLoggedUser("fooCategoryUser", "fooCategoryUser", Map("foo" -> Set(Permission.Read)))
     val processingTypeData = provider.forProcessingTypeUnsafe("foo")(fooCategoryUser)
     processingTypeData.deploymentData.engineSetupName shouldEqual EngineSetupName("Overriden Engine Setup")
   }

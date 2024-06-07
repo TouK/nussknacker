@@ -39,18 +39,34 @@ class NotificationServiceImpl(
       )
       .map(_.map {
         case (
-              ProcessActionEntityData(id, _, _, _, _, _, actionName, ProcessActionState.Finished, _, _, _),
+              ProcessActionEntityData(id, _, _, _, _, _, _, _, actionName, ProcessActionState.Finished, _, _, _),
               processName
             ) =>
           Notification.actionFinishedNotification(id.toString, actionName, processName)
         case (
-              ProcessActionEntityData(id, _, _, _, _, _, actionName, ProcessActionState.ExecutionFinished, _, _, _),
+              ProcessActionEntityData(
+                id,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                actionName,
+                ProcessActionState.ExecutionFinished,
+                _,
+                _,
+                _
+              ),
               processName
             ) =>
           Notification.actionExecutionFinishedNotification(id.toString, actionName, processName)
         case (
               ProcessActionEntityData(
                 id,
+                _,
+                _,
                 _,
                 _,
                 _,
