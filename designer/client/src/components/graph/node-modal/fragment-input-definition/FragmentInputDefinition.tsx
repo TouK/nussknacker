@@ -14,12 +14,13 @@ interface Props extends Omit<MapVariableProps<FragmentInputParameter>, "readOnly
     isEditMode?: boolean;
 }
 
-export function useTypeOptions() {
+export function useTypeOptions<Value = string>() {
     const definitionData = useSelector(getProcessDefinitionData);
     const typeOptions = useMemo(
         () =>
             definitionData?.classes?.map((type) => ({
-                value: type.refClazzName,
+                // TODO: Instead of using type assertion type, set refClazzName as a union of available clazzNames
+                value: type.refClazzName as Value,
                 label: ProcessUtils.humanReadableType(type),
             })),
         [definitionData?.classes],

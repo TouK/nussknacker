@@ -1,4 +1,5 @@
 import { TableData } from "./tableState";
+import { SupportedType } from "../TableEditor";
 
 type MatrixElement<M> = M extends Matrix<infer T> ? T : never;
 type Matrix<I> = readonly (readonly I[])[];
@@ -39,7 +40,7 @@ function expandArray<T>(array: T[], length: number, fill?: (i: number) => T): T[
     return [...array, ...newValues];
 }
 
-export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType?: string): TableData {
+export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType?: SupportedType): TableData {
     if (rowsNum <= 0 && colsNum <= 0) {
         return state;
     }

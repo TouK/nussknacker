@@ -47,7 +47,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             rows: rows,
             cols: cols,
             className: cx(nodeInput),
-            style: nodeInputCss,
+            style: nodeInputCss(),
             value: value,
             language: language,
             onValueChange: onValueChange,
