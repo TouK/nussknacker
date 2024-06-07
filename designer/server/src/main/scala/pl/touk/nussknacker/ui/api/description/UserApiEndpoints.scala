@@ -6,7 +6,7 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.security.api.GlobalPermission.GlobalPermission
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
 import sttp.model.StatusCode.Ok
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.derevo.schema
@@ -70,26 +70,46 @@ object DisplayableUser {
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def apply(user: LoggedUser, allUserAccessibleCategories: Iterable[String]): DisplayableUser = user match {
-    case CommonUser(id, username, categoryPermissions, globalPermissions) =>
+    case user: RealLoggedUser =>
+      displayableUserFrom(user, allUserAccessibleCategories)
+    case ImpersonatedUser(impersonatedUser, _) =>
+      displayableUserFrom(impersonatedUser, allUserAccessibleCategories)
+  }
+
+  private def displayableUserFrom(
+      realLoggedUser: RealLoggedUser,
+      allUserAccessibleCategories: Iterable[String]
+  ): DisplayableUser = realLoggedUser match {
+    case user: CommonUser =>
       new DisplayableUser(
-        id = id,
+        id = user.id,
         isAdmin = false,
-        username = username,
+        username = user.username,
         // Sorting for stable tests results
         categories = allUserAccessibleCategories.toList.sorted,
-        categoryPermissions = categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted),
-        globalPermissions = globalPermissions
+        categoryPermissions = categoryPermissionsOf(user),
+        globalPermissions = globalPermissionsOf(user)
       )
-    case AdminUser(id, username) =>
+    case user: AdminUser =>
       new DisplayableUser(
-        id = id,
+        id = user.id,
         isAdmin = true,
-        username = username,
+        username = user.username,
         // Sorting for stable tests results
         categories = allUserAccessibleCategories.toList.sorted,
-        categoryPermissions = Map.empty,
-        globalPermissions = Nil
+        categoryPermissions = categoryPermissionsOf(user),
+        globalPermissions = globalPermissionsOf(user)
       )
+  }
+
+  private def categoryPermissionsOf(user: RealLoggedUser): Map[String, List[String]] = user match {
+    case u: CommonUser => u.categoryPermissions.mapValuesNow(_.map(_.toString).toList.sorted)
+    case _: AdminUser  => Map.empty
+  }
+
+  private def globalPermissionsOf(user: RealLoggedUser): List[GlobalPermission] = user match {
+    case u: CommonUser => u.globalPermissions
+    case _: AdminUser  => Nil
   }
 
 }

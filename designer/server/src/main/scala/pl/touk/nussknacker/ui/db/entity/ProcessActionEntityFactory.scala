@@ -30,6 +30,12 @@ trait ProcessActionEntityFactory extends BaseEntityFactory with CommentEntityFac
 
     def user: Rep[String] = column[String]("user")
 
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
+
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
     def actionName: Rep[ScenarioActionName] = column[ScenarioActionName]("action_name")
@@ -59,6 +65,8 @@ trait ProcessActionEntityFactory extends BaseEntityFactory with CommentEntityFac
       processId,
       processVersionId,
       user,
+      impersonatedByIdentity,
+      impersonatedByUsername,
       createdAt,
       performedAt,
       actionName,
@@ -79,6 +87,8 @@ final case class ProcessActionEntityData(
     processId: ProcessId,
     processVersionId: Option[VersionId],
     user: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String],
     createdAt: Timestamp,
     performedAt: Option[Timestamp],
     actionName: ScenarioActionName,
