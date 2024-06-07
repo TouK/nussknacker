@@ -31,12 +31,28 @@ In particular, one must not forget that the Flink connector (when checkpoints ar
 
 #### End-to-end Exactly-once event processing
 
-Nussknacker allows you to process events in the Exactly-once Semantics. This feature is provided by Flink. 
-To read more about it see: [flink fault tolerance](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/learn-flink/fault_tolerance/#exactly-once-guarantees).
+Nussknacker allows you to process events in the Exactly-once Semantics. This feature is provided by Flink.
+TODO -> events can be processed exactly once but steps in scenario can be repeated
+To read more about it see: [Flink fault tolerance](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/learn-flink/fault_tolerance/#exactly-once-guarantees).
 More information about certain connectors can be found here: [section with fault tolerance for connectors](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/guarantees/).
 Kafka connector specific information is provided at: [this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/kafka/#fault-tolerance).
 
 In order to achieve End-to-end Exactly-once event processing, you need to check multiple places of configuration:
+- Flink cluster configuration:
+  - Configure checkpointing.
+    It's crucial to configure this, as events are committed during checkpoint and consequently the output 
+    events will be visible within the time range specified by the checkpoint interval. It's essential to configure
+    proper interval like 1-2 seconds (interval should be configured in nussknacker - 
+    `Configure the checkpointing interval` section). Such a short interval has large overhead on Flink, and
+    you should consider configuring:
+    - Incremental checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/dev/datastream/fault-tolerance/checkpointing/#state-backend-incremental).
+    - Unaligned checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/checkpointing_under_backpressure/#unaligned-checkpoints).
+    Additionally you have to ensure that checkpointing mode is set to `EXACTLY_ONCE` [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#execution-checkpointing-mode)
+  - Ensure task failure recovery is configured.
+    [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
+    The main purpose of Exactly-once is to don't miss any events and don't have duplicated events during failures. 
+    If the task failure recovery is not configured, after failure task will not be running and has failed state. 
+    As a result, there is no opportunity to use Exactly-once mechanism.
 - Nussknacker configuration:
   - Configure the property `components.kafka.config.deliveryGuarantee` to: "EXACTLY_ONCE", e.g.
     ```
@@ -50,34 +66,27 @@ In order to achieve End-to-end Exactly-once event processing, you need to check 
       sinkDeliveryGuarantee: "EXACTLY_ONCE"
     }
     ```
-  - Configure checkpointing for a scenario (your output data will be visible in time range specified by checkpoint interval):
-    - Define restart strategies [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
-    - Enable choice of the restart strategy on UI: [Scenario properties](../installation_configuration_guide/model/ModelConfiguration.md#scenario-properties), e.g.
-      ```
-      scenarioPropertiesConfig {
-        restartType {
-          label: "flink restart strategy”
-          defaultValue: ""
-          editor: {
-            type: "FixedValuesParameterEditor",
-            possibleValues: [
-              {"label": "fixed-delay", "expression": "default"}
-            ]
-          }
-        }
-      }
-      ```
+  - Configure the checkpointing interval:
+    Default value for the interval is 10 minutes which is not acceptable for Exactly-once.
+    Therefore, it needs to be configured to appropriate value.
+    - Interval can be configured globally for all scenarios via: 
+      [Flink model configuration](../installation_configuration_guide/model/Flink.md#flink-specific-model-configuration).
+    - You can override global interval in a scenario by setting `Checkpoint interval in seconds` in a scenario 
+      properties on UI.
   - Configure Flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum
     restart duration" in property `kafkaProperties."transaction.timeout.ms"`
     ([kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options)) or data loss may happen when
     Kafka expires an uncommitted transaction.
   - Ensure Flink Kafka consumer `isolation.level` is set to `read_committed`
     ([kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options)) if you plan consuming events 
-    from transactional source. 
-- Flink cluster configuration:
+    from transactional source.
 - Kafka cluster configuration:
-  - Ensure that Kafka broker `transaction.max.timeout.ms` [Kafka docs](https://kafka.apache.org/documentation/#brokerconfigs_transaction.max.timeout.ms) is greater than producer `transaction.timeout.ms`.
-  - Ensure that your Kafka broker cluster has at least three brokers [Kafka docs](https://kafka.apache.org/documentation/#producerconfigs_transactional.id).
+  - Ensure your Kafka version supports transactions.
+  - Ensure that Kafka broker `transaction.max.timeout.ms` 
+    [Kafka docs](https://kafka.apache.org/documentation/#brokerconfigs_transaction.max.timeout.ms) is greater than 
+    producer `transaction.timeout.ms`.
+  - Ensure that your Kafka broker cluster has at least three brokers
+    [Kafka docs](https://kafka.apache.org/documentation/#producerconfigs_transactional.id).
 - Application consuming Nussknacker's messages configuration:
     - Ensure your consumer has `isolation.level` set to: `read_committed`.
 
