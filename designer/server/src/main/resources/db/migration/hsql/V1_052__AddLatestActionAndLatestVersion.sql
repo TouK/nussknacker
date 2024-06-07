@@ -33,6 +33,7 @@ SET "latest_version_id"                = (SELECT pv."id"
                                             AND pa."action_name" = 'DEPLOY'
                                           ORDER BY pa."created_at" DESC
                                           LIMIT 1);
+
 ALTER TABLE "processes"
     ADD CONSTRAINT "fk_process_latest_version" FOREIGN KEY ("id", "latest_version_id") REFERENCES "process_versions" ("process_id", "id") ON DELETE CASCADE;
 
