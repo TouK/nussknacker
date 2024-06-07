@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.statistics.ComponentKeys._
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -310,6 +311,7 @@ class ScenarioStatisticsTest
       LiteEmbeddedDMCount    -> "0",
       UnknownDMCount         -> "0",
       ActiveScenarioCount    -> "2",
+      AccountService         -> "3",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }
