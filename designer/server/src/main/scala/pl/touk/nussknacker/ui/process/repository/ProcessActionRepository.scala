@@ -304,7 +304,11 @@ class DbProcessActionRepository(
       actionState: Set[ProcessActionState],
       actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]] = {
-    val query = processActionsTable
+    val queryWithActionNamesFilter = actionNamesOpt
+      .map(actionNames => processActionsTable.filter { action => action.actionName.inSet(actionNames) })
+      .getOrElse(processActionsTable)
+
+    val finalQuery = queryWithActionNamesFilter
       .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
@@ -318,11 +322,7 @@ class DbProcessActionRepository(
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
     run(
-      actionNamesOpt
-        .map(actionNames => query.filter { case (_, (entity, _)) => entity.actionName.inSet(actionNames) })
-        .getOrElse(query)
-        .result
-        .map(_.toMap.mapValuesNow(toFinishedProcessAction))
+      finalQuery.result.map(_.toMap.mapValuesNow(toFinishedProcessAction))
     )
   }
 
