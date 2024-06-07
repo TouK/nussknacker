@@ -149,6 +149,7 @@ describe("Table editor", () => {
         cy.get("@table").realMouseDown({ x: 400, y: 40 }).realMouseMove(50, 40).realMouseUp();
         snapshot();
 
+        console.log("test");
         //FIXME: for now, clicking the apply changes button makes the test run forever, even when the test is green.
         // Looks like it's a problem with real events.
 
