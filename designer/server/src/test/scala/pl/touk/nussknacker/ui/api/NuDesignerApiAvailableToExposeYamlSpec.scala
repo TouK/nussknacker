@@ -76,7 +76,7 @@ object NuDesignerApiAvailableToExpose {
     val basicAuth = auth
       .basic[Option[String]]()
       .map(_.map(PassedAuthCredentials))(_.map(_.value))
-      .withPossibleImpersonation()
+      .withPossibleImpersonation(false)
 
     Try(clazz.getConstructor(classOf[EndpointInput[PassedAuthCredentials]]))
       .map(_.newInstance(basicAuth))
