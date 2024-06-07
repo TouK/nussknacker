@@ -76,19 +76,17 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       lastFinishedStateActionPerProcess  = lastActionsPerProcess.mapValuesNow(_.lastFinishedStateAction)
       lastFinishedDeployActionPerProcess = lastActionsPerProcess.mapValuesNow(_.lastFinishedDeployAction)
 
-      latestProcesses <- fetchLatestProcessesQuery(query, lastFinishedDeployActionPerProcess.keySet, isDeployed).result
+      deployedProcesses = lastFinishedDeployActionPerProcess.filter { case (_, deploy) => deploy.isDefined }.keySet
+
+      latestProcesses <- fetchLatestProcessesQuery(query, deployedProcesses, isDeployed).result
     } yield latestProcesses
       .map { case (processVersion, process) =>
-        val lastAction         = lastFinishedActionPerProcess.get(process.id).flatten
-        val lastStateAction    = lastFinishedStateActionPerProcess.get(process.id).flatten
-        val lastDeployedAction = lastFinishedDeployActionPerProcess.get(process.id).flatten
-
         createFullDetails(
           process,
           processVersion,
-          lastAction,
-          lastStateAction,
-          lastDeployedAction,
+          lastFinishedActionPerProcess.get(process.id).flatten,
+          lastFinishedStateActionPerProcess.get(process.id).flatten,
+          lastFinishedDeployActionPerProcess.get(process.id).flatten,
           isLatestVersion = true,
           // For optimisation reasons we don't return history and tags when querying for list of processes
           None,
