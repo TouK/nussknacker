@@ -17,6 +17,8 @@ trait AuthenticationConfiguration {
 
   def anonymousUserRole: Option[String]
 
+  def isAdminImpersonationPossible: Boolean
+
   private lazy val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
   protected lazy val usersOpt: Option[List[ConfigUser]] =

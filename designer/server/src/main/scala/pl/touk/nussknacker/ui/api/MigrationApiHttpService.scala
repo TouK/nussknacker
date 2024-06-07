@@ -6,19 +6,21 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints
 import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService, MigrationService}
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.security.api.AuthManager
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MigrationApiHttpService(
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     migrationService: MigrationService,
     migrationApiAdapterService: MigrationApiAdapterService
 )(implicit val ec: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val remoteEnvironmentApiEndpoints = new MigrationApiEndpoints(authenticator.authenticationMethod())
+  private val remoteEnvironmentApiEndpoints = new MigrationApiEndpoints(
+    authManager.authenticationEndpointInput()
+  )
 
   expose {
     remoteEnvironmentApiEndpoints.migrateEndpoint

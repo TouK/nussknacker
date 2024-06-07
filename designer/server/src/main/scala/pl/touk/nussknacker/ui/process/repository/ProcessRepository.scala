@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -117,6 +117,8 @@ class DBProcessRepository(
       isArchived = false,
       createdAt = Timestamp.from(now),
       createdBy = userName,
+      impersonatedByIdentity = loggedUser.impersonatingUserId,
+      impersonatedByUsername = loggedUser.impersonatingUserName,
       latestVersionId = None,
       latestFinishedActionId = None,
       latestFinishedCancelActionId = None,
@@ -146,25 +148,6 @@ class DBProcessRepository(
               .map(res => res.newVersion.map(ProcessCreated(res.processId, _)))
         }
     }
-//    for {
-//      latestVersionOpt <- latestProcessVersionsNoJsonQuery(action.processName).result.headOption
-//      _ <- latestVersionOpt match {
-//        case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
-//        case None    => DBIO.successful(())
-//      }
-//      existingProcessOpt <- processesTable.filter(_.name === action.processName).result.headOption
-//      _ <- existingProcessOpt match {
-//        case Some(_) => DBIOAction.failed(ProcessAlreadyExists(action.processName.value))
-//        case None    => DBIO.successful(())
-//      }
-//      insertedEntity <- insertNew += processToSave
-//      updateResult <- updateProcessInternal(
-//        ProcessIdWithName(insertedEntity.id, insertedEntity.name),
-//        action.canonicalProcess,
-//        increaseVersionWhenJsonNotChanged = false,
-//        userName = userName
-//      )
-//    } yield updateResult.newVersion.map(ProcessCreated(updateResult.processId, _))
   }
 
   def updateProcess(

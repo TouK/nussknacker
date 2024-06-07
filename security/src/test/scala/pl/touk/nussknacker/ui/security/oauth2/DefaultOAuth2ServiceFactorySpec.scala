@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
 import sttp.client3.Response
 import sttp.client3.testing.SttpBackendStub
@@ -91,7 +91,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules) }
+      .map { case (user, _) => RealLoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]
@@ -117,7 +117,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules) }
+      .map { case (user, _) => RealLoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]
@@ -147,7 +147,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules) }
+      .map { case (user, _) => RealLoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]
@@ -178,7 +178,7 @@ class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
       .flatMap { case (authorizationData, _) =>
         service.checkAuthorizationAndAuthenticateUser(authorizationData.accessToken)
       }
-      .map { case (user, _) => LoggedUser(user, rules) }
+      .map { case (user, _) => RealLoggedUser(user, rules) }
       .futureValue
 
     user shouldBe a[LoggedUser]

@@ -33,6 +33,12 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
+
     def latestVersionId: Rep[Option[VersionId]] = column[Option[VersionId]]("latest_version_id")
 
     def latestFinishedActionId: Rep[Option[ProcessActionId]] =
@@ -55,6 +61,8 @@ trait ProcessEntityFactory extends BaseEntityFactory {
         isArchived,
         createdAt,
         createdBy,
+        impersonatedByIdentity,
+        impersonatedByUsername,
         latestVersionId,
         latestFinishedActionId,
         latestFinishedCancelActionId,
@@ -78,6 +86,8 @@ final case class ProcessEntityData(
     isArchived: Boolean,
     createdAt: Timestamp,
     createdBy: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String],
     latestVersionId: Option[VersionId], // None only when a new process is inserted, but it's initial version isn't yet
     // in practice the inserts happen in one transaction, and could be handled with a DEFERRED foreign key, but e.g. HSQL doesn't support it
     latestFinishedActionId: Option[ProcessActionId],
