@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
+import pl.touk.nussknacker.ui.statistics.ComponentKeys.Custom
 
 import java.time.Instant
 
@@ -119,11 +120,24 @@ object ScenarioStatistics {
     if (componentList.isEmpty) {
       Map.empty
     } else {
-      val withoutFragments      = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsByNameCount = withoutFragments.groupBy(_.name).size
+      // Get number of available components to check how many custom components created
+      val withoutFragments          = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
+      val componentsWithUsageByName = withoutFragments.groupMapReduce(_.name)(_.usageCount)((sth, sth2) => sth + sth2)
+      val componentsWithUsageByNameCount = componentsWithUsageByName.size
 
-      Map(
-        ComponentsCount -> componentsByNameCount
+      // Get usage statistics for each component
+      val componentUsed = componentsWithUsageByName.filter(_._2 > 0)
+      val componentUsedMap = componentUsed
+        .map { case (name, usages) =>
+          (mapComponentNameToStatisticKey(name), usages)
+        }
+        .groupMapReduce(_._1)(_._2)((usages1, usages2) => usages1 + usages2)
+
+      (
+        componentUsedMap ++
+          Map(
+            ComponentsCount -> componentsWithUsageByNameCount
+          )
       ).map { case (k, v) => (k.toString, v.toString) }
     }
   }
@@ -174,6 +188,8 @@ object ScenarioStatistics {
     else orderedList.last
   }
 
+  private def mapComponentNameToStatisticKey(name: String): StatisticKey =
+    ComponentMap.componentMap.getOrElse(name, Custom)
 }
 
 sealed abstract class StatisticKey(val name: String) {
@@ -213,3 +229,90 @@ case object ActiveScenarioCount    extends StatisticKey("s_a")
 case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
 case object NuFingerprint          extends StatisticKey("fingerprint")
 case object NuVersion              extends StatisticKey("version")
+
+object ComponentKeys {
+  case object Aggregate                         extends StatisticKey("ag")
+  case object AggregateTumbling                 extends StatisticKey("agt")
+  case object ComponentService                  extends StatisticKey("cos")
+  case object DatesTypesService                 extends StatisticKey("dts")
+  case object AccountService                    extends StatisticKey("acs")
+  case object DynamicService                    extends StatisticKey("dsv")
+  case object OptionalTypesService              extends StatisticKey("ots")
+  case object Monitor                           extends StatisticKey("mon")
+  case object AggregateSliding                  extends StatisticKey("agsl")
+  case object HideVariables                     extends StatisticKey("hv")
+  case object SingleSideJoin                    extends StatisticKey("ssj")
+  case object Delay                             extends StatisticKey("dy")
+  case object Request                           extends StatisticKey("req")
+  case object DeadEnd                           extends StatisticKey("dea")
+  case object EnricherNullResult                extends StatisticKey("enr")
+  case object MultipleParamsService             extends StatisticKey("mps")
+  case object UnionWithEditors                  extends StatisticKey("uwe")
+  case object DecisionTable                     extends StatisticKey("dt")
+  case object RealKafkaJsonSampleProduct        extends StatisticKey("rkj")
+  case object Union                             extends StatisticKey("un")
+  case object DbQuery                           extends StatisticKey("dq")
+  case object KafkaTransaction                  extends StatisticKey("kt")
+  case object ParamService                      extends StatisticKey("ps")
+  case object RealKafka                         extends StatisticKey("rk")
+  case object ModelConfigReader                 extends StatisticKey("mcr")
+  case object OneSource                         extends StatisticKey("os")
+  case object ConstantStateTransformer          extends StatisticKey("cst")
+  case object LastVariableWithFilter            extends StatisticKey("lvw")
+  case object Stateful                          extends StatisticKey("st")
+  case object EnrichWithAdditionalData          extends StatisticKey("ewa")
+  case object SendCommunication                 extends StatisticKey("sc")
+  case object ClientHttpService                 extends StatisticKey("chs")
+  case object FullOuterJoin                     extends StatisticKey("foj")
+  case object PreviousValue                     extends StatisticKey("pv")
+  case object DbLookup                          extends StatisticKey("dl")
+  case object ConfiguratorService               extends StatisticKey("con")
+  case object CommunicationSource               extends StatisticKey("com")
+  case object ListReturnObjectService           extends StatisticKey("lro")
+  case object Filter                            extends StatisticKey("fil")
+  case object Kafka                             extends StatisticKey("ka")
+  case object Response                          extends StatisticKey("resp")
+  case object ServiceModelService               extends StatisticKey("sms")
+  case object ProvidedComponentComponentV1      extends StatisticKey("pcv1")
+  case object SimpleTypesCustomNode             extends StatisticKey("stc")
+  case object DeadEndLite                       extends StatisticKey("del")
+  case object CollectionTypesService            extends StatisticKey("cts")
+  case object UnionReturnObjectService          extends StatisticKey("uro")
+  case object CampaignService                   extends StatisticKey("cas")
+  case object ProvidedComponentComponentV2      extends StatisticKey("pcv2")
+  case object Split                             extends StatisticKey("spl")
+  case object ClassInstanceSource               extends StatisticKey("cis")
+  case object Variable                          extends StatisticKey("var")
+  case object BoundedSource                     extends StatisticKey("bs")
+  case object Periodic                          extends StatisticKey("per")
+  case object AdditionalVariable                extends StatisticKey("adv")
+  case object CommunicationSink                 extends StatisticKey("coms")
+  case object EchoEnumService                   extends StatisticKey("esv")
+  case object Choice                            extends StatisticKey("cho")
+  case object CsvSourceLite                     extends StatisticKey("csl")
+  case object AggregateSession                  extends StatisticKey("agse")
+  case object CsvSource                         extends StatisticKey("csv")
+  case object ServiceWithDictParameterEditor    extends StatisticKey("swd")
+  case object Collect                           extends StatisticKey("col")
+  case object CustomValidatedService            extends StatisticKey("cuv")
+  case object ComplexReturnObjectService        extends StatisticKey("cro")
+  case object ProvidedComponentComponentV3      extends StatisticKey("pcv3")
+  case object KafkaString                       extends StatisticKey("ks")
+  case object ForEach                           extends StatisticKey("fe")
+  case object Enricher                          extends StatisticKey("en")
+  case object ConstantStateTransformerLongValue extends StatisticKey("cstl")
+  case object SimpleTypesService                extends StatisticKey("sts")
+  case object GenericSourceWithCustomVariables  extends StatisticKey("gsw")
+  case object SendSms                           extends StatisticKey("ss")
+  case object UnionMemo                         extends StatisticKey("um")
+  case object CustomFilter                      extends StatisticKey("cf")
+  case object SqlSource                         extends StatisticKey("sqs")
+  case object Log                               extends StatisticKey("log")
+  case object RecordVariable                    extends StatisticKey("rv")
+  case object DynamicMultipleParamsService      extends StatisticKey("dmp")
+  case object NoneReturnTypeTransformer         extends StatisticKey("nrt")
+  case object Table                             extends StatisticKey("tab")
+  case object MeetingService                    extends StatisticKey("msv")
+  case object TransactionService                extends StatisticKey("tsv")
+  case object Custom                            extends StatisticKey("cus")
+}
