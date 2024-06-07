@@ -49,7 +49,7 @@ class AuthManager(protected val authenticationResources: AuthenticationResources
   def authenticationEndpointInput(): EndpointInput[AuthCredentials] =
     authenticationResources
       .authenticationMethod()
-      .withPossibleImpersonation()
+      .withPossibleImpersonation(authenticationResources.getAnonymousRole.isDefined)
 
   def authorize(user: AuthenticatedUser): Either[AuthorizationError, LoggedUser] = {
     if (user.roles.nonEmpty)
@@ -100,24 +100,26 @@ object AuthManager {
 
   implicit class ImpersonationConsideringInputEndpoint(underlying: EndpointInput[Option[PassedAuthCredentials]]) {
 
-    def withPossibleImpersonation(): EndpointInput[AuthCredentials] = {
+    def withPossibleImpersonation(anonymousAccessEnabled: Boolean): EndpointInput[AuthCredentials] = {
       underlying
         .and(impersonationHeaderEndpointInput)
-        .map(mappedAuthenticationEndpointInput)
+        .map { mappedAuthenticationEndpointInput(anonymousAccessEnabled) }
     }
 
     private def impersonationHeaderEndpointInput: EndpointIO.Header[Option[String]] =
       header[Option[String]](impersonateHeaderName)
 
-    private def mappedAuthenticationEndpointInput
-        : Mapping[(Option[PassedAuthCredentials], Option[String]), AuthCredentials] =
+    private def mappedAuthenticationEndpointInput(
+        anonymousAccessEnabled: Boolean
+    ): Mapping[(Option[PassedAuthCredentials], Option[String]), AuthCredentials] =
       Mapping.fromDecode[(Option[PassedAuthCredentials], Option[String]), AuthCredentials] {
         case (Some(passedCredentials), None) => DecodeResult.Value(passedCredentials)
         case (Some(passedCredentials), Some(identity)) =>
           DecodeResult.Value(
             ImpersonatedAuthCredentials(passedCredentials, ImpersonatedUserIdentity(identity))
           )
-        case (None, None) => DecodeResult.Value(NoCredentialsProvided)
+        case (None, None) if !anonymousAccessEnabled => DecodeResult.Missing
+        case (None, None)                            => DecodeResult.Value(NoCredentialsProvided)
         // In case of a situation where we receive impersonation header without credentials of an impersonating user
         // we return DecodeResult.Missing instead of NoCredentialsProvided as we require impersonating user to be authenticated
         case (None, Some(_)) => DecodeResult.Missing
