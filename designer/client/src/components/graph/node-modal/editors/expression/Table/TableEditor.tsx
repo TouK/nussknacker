@@ -134,10 +134,10 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
                 return {
                     kind: GridCellKind.Custom,
                     allowOverlay: true,
-                    copyData: value,
+                    copyData: value ?? "",
                     data: {
                         kind: "date-picker-cell",
-                        date: value,
+                        date: value ?? "",
                         format: column.type,
                     },
                 };

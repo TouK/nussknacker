@@ -28,7 +28,7 @@ export const customRenderers: CustomRenderer<DatePickerCell>[] = [
                 copyData: "",
                 data: {
                     ...v.data,
-                    date: null,
+                    date: "",
                 },
             }),
         }),

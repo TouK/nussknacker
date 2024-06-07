@@ -36,7 +36,7 @@ export const DatePicker: ProvideEditorComponent<DatePickerCell> = (props) => {
                         ...value.data,
                         date:
                             typeof data === "string"
-                                ? data
+                                ? data || ""
                                 : data.format(value.data.format === "java.time.LocalDateTime" ? DATE_TIME_DISPLAY_FORMAT : DATE_FORMAT),
                     },
                 });
