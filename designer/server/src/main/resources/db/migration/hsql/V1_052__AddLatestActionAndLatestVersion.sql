@@ -7,7 +7,6 @@ ALTER TABLE "processes"
 ALTER TABLE "processes"
     ADD COLUMN "latest_finished_deploy_action_id" UUID;
 
--- TODO this update could be much more optimized
 UPDATE "processes" p
 SET "latest_version_id"                = (SELECT pv."id"
                                           FROM "process_versions" pv
