@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
@@ -56,6 +57,9 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
   override def customActionsDefinitions: List[CustomActionDefinition] = delegate.customActionsDefinitions
 
   override def close(): Unit = delegate.close()
+
+  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+    delegate.getDeploymentStatusesToUpdate
 
 }
 

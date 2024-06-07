@@ -63,6 +63,11 @@ import pl.touk.nussknacker.ui.process.deployment.{
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, ProcessModelMigrator, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
+import pl.touk.nussknacker.ui.process.newdeployment.synchronize.{
+  DeploymentsStatusesSynchronizationConfig,
+  DeploymentsStatusesSynchronizationScheduler,
+  DeploymentsStatusesSynchronizer
+}
 import pl.touk.nussknacker.ui.process.newdeployment.{DeploymentRepository, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
@@ -118,14 +123,32 @@ class AkkaHttpBasedRouteProvider(
         DefaultProcessingTypeDeployedScenariosProvider(dbRef, _),
         sttpBackend,
       )
+      deploymentRepository = new DeploymentRepository(dbRef, Clock.systemDefaultZone())
+      dbioRunner           = DBIOActionRunner(dbRef)
+      deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
+        deploymentRepository,
+        processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
+        dbioRunner
+      )
+      _ <- Resource.fromAutoCloseable(
+        IO {
+          val scheduler = new DeploymentsStatusesSynchronizationScheduler(
+            system,
+            deploymentsStatusesSynchronizer,
+            DeploymentsStatusesSynchronizationConfig.parse(resolvedConfig)
+          )
+          scheduler.run()
+          scheduler
+        }
+      )
     } yield {
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
-      implicit val dbioRunner: DBIOActionRunner = DBIOActionRunner(dbRef)
-      val commentRepository                     = new CommentRepository(dbRef)
+      implicit val implicitDbioRunner: DBIOActionRunner = dbioRunner
+      val commentRepository                             = new CommentRepository(dbRef)
       val actionRepository  = new DbProcessActionRepository(dbRef, commentRepository, modelBuildInfo)
       val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
@@ -353,7 +376,6 @@ class AkkaHttpBasedRouteProvider(
         val scenarioGraphVersionRepository = new ScenarioGraphVersionRepository(dbRef)
         val scenarioGraphVersionService =
           new ScenarioGraphVersionService(scenarioGraphVersionRepository, processValidator, scenarioResolver)
-        val deploymentRepository = new DeploymentRepository(dbRef)
         val deploymentService =
           new DeploymentService(
             scenarioMetadataRepository,

@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.newdeployment
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -207,7 +209,10 @@ class EmbeddedDeploymentManager(
           .map { interpreterData =>
             StatusDetails(
               status = interpreterData.scenarioDeployment
-                .fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
+                .fold(
+                  _ => ProblemStateStatus(s"Scenario compilation errors"),
+                  deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
+                ),
               deploymentId = Some(interpreterData.deploymentId),
               externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
               version = Some(interpreterData.processVersion)
@@ -217,6 +222,18 @@ class EmbeddedDeploymentManager(
       )
     )
   }
+
+  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+    Future.successful(
+      (
+        for {
+          (_, interpreterData) <- deployments.toList
+          newDeployment        <- interpreterData.deploymentId.toNewDeploymentIdOpt
+          status = interpreterData.scenarioDeployment
+            .fold(_ => ProblemDeploymentStatus(s"Scenario compilation errors"), deployment => deployment.status())
+        } yield newDeployment -> status
+      ).toMap
+    )
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 

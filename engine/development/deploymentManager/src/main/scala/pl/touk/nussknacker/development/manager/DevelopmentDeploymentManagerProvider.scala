@@ -5,22 +5,21 @@ import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{
+  DateParameterEditor,
+  LiteralIntegerValidator,
+  MandatoryParameterValidator,
+  StringParameterEditor
+}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
-import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.definition.{
-  DateParameterEditor,
-  LiteralIntegerValidator,
-  MandatoryParameterValidator,
-  StringParameterEditor,
-  TextareaParameterEditor
-}
 
 import java.net.URI
 import java.util.UUID
@@ -36,8 +35,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
-  import pl.touk.nussknacker.engine.ModelData._
   import SimpleStateStatus._
+  import pl.touk.nussknacker.engine.ModelData._
 
   // Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"
@@ -163,6 +162,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
   }
+
+  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+    Future.successful(Map.empty)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)

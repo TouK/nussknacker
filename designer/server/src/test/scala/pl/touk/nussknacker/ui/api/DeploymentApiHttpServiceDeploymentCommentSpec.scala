@@ -8,7 +8,8 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleDeploymentStatus
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
 import pl.touk.nussknacker.test.{
@@ -16,7 +17,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails,
   VeryPatientScalaFutures
 }
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -129,7 +129,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+              waitForDeploymentStatusNameMatches(requestedDeploymentId, SimpleDeploymentStatus.Finished.name)
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")

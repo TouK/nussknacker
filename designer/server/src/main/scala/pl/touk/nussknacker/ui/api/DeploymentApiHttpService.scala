@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.api.deployment.ProblemDeploymentStatus
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
@@ -56,10 +57,18 @@ class DeploymentApiHttpService(
         { deploymentId =>
           deploymentService
             .getDeploymentStatus(deploymentId)
-            .map(_.left.map {
-              case DeploymentService.DeploymentNotFoundError(id) => DeploymentNotFoundError(id)
-              case DeploymentService.NoPermissionError           => NoPermissionError
-            })
+            .map(
+              _.map { statusWithModifiedAt =>
+                GetDeploymentStatusResponse(
+                  statusWithModifiedAt.value.name,
+                  ProblemDeploymentStatus.extractDescription(statusWithModifiedAt.value),
+                  statusWithModifiedAt.modifiedAt.toInstant
+                )
+              }.left.map {
+                case DeploymentService.DeploymentNotFoundError(id) => DeploymentNotFoundError(id)
+                case DeploymentService.NoPermissionError           => NoPermissionError
+              }
+            )
         }
       }
   }

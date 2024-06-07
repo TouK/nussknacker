@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ScenarioParametersService,
@@ -36,7 +35,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
+import pl.touk.nussknacker.ui.process.version.ScenarioGraphVersionRepository
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
@@ -176,10 +175,6 @@ object TestFactory {
     newActionProcessRepository(dummyDbRef)
 
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef, newCommentRepository(dbRef))
-
-  def newDeploymentRepository(dbRef: DbRef) = new DeploymentRepository(dbRef)
-
-  def newScenarioRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
 
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())

@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
@@ -328,6 +328,11 @@ class K8sDeploymentManager(
     } yield {
       WithDataFreshnessStatus.fresh(deployments.map(mapper.status(_, pods)))
     }
+  }
+
+  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
+    // We don't handle this flow for k8s dm, so we return empty list map of updates
+    Future.successful(Map.empty)
   }
 
   private def configMapForData(

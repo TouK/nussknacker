@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
   PeriodicProcessListenerFactory,
   ProcessConfigEnricherFactory
 }
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 
@@ -183,6 +183,11 @@ class PeriodicDeploymentManager private[periodic] (
       name: ProcessName
   )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     service.getStatusDetails(name).map(_.map(List(_)))
+  }
+
+  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
+    // We don't handle this flow for k8s dm, so we return empty list map of updates
+    Future.successful(Map.empty)
   }
 
   override def resolve(

@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.{
   BaseModelData,
   DeploymentManagerDependencies,
@@ -45,6 +46,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
       WithDataFreshnessStatus.fresh(List.empty)
     )
   }
+
+  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+    Future.successful(Map.empty)
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 

@@ -10,7 +10,7 @@ import scala.concurrent.Future
 
 class FlinkClientStub extends FlinkClient {
 
-  override def findJobsByName(jobName: String)(
+  override def getJobsOverviews()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[flinkRestModel.JobOverview]]] = ???
 

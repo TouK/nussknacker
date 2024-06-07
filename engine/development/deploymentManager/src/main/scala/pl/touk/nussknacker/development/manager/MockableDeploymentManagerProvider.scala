@@ -13,13 +13,7 @@ import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActi
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer,
-  deployment
-}
+import pl.touk.nussknacker.engine._
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Future
@@ -111,6 +105,9 @@ object MockableDeploymentManagerProvider {
       val status = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
       Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
     }
+
+    override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+      Future.successful(Map.empty)
 
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
       command match {

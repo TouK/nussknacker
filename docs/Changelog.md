@@ -5,8 +5,10 @@
 
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
-* [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) Batch processing mode related improvements:
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status
+  * Deployments API returns more information about status of a deployment: problem description and status modification time
+  * Status of a deployment is cached on the Designer side - in case of retention of finished job on Flink, status is still returned as FINISHED
 * [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
 
 1.15.1 (5 June 2024)
