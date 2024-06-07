@@ -5,7 +5,7 @@ import cats.data.Validated
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
 import java.net.URL
@@ -14,7 +14,8 @@ import scala.concurrent.ExecutionContext
 class SettingsResources(
     config: FeatureTogglesConfig,
     authenticationMethod: String,
-    analyticsConfig: Option[AnalyticsConfig]
+    analyticsConfig: Option[AnalyticsConfig],
+    usageStatisticsReportsConfig: UsageStatisticsReportsConfig
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
@@ -36,8 +37,7 @@ class SettingsResources(
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
             redirectAfterArchive = config.redirectAfterArchive,
-            // TODO: It's disabled temporarily until we remove it on FE. We can remove it once it has been removed on FE.
-            usageStatisticsReports = UsageStatisticsReportsSettings(false, None)
+            usageStatisticsReports = UsageStatisticsReportsSettings(usageStatisticsReportsConfig.enabled)
           )
 
           val authenticationSettings = AuthenticationSettings(
@@ -145,4 +145,4 @@ object TopTabType extends Enumeration {
     analytics: Option[AnalyticsSettings]
 )
 
-@JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean, url: Option[String])
+@JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean)

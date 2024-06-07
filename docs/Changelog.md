@@ -8,6 +8,11 @@
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status
 * [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
 
+1.15.1 (5 June 2024)
+-------------------------
+* [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
+* [#6127](https://github.com/TouK/nussknacker/pull/6127) Ad-hoc tests available in scenarios without `flink-dropwizard-metrics-deps` in classPath
+
 1.15.0 (17 May 2024)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
