@@ -21,17 +21,17 @@ class DBIOActionRunner(dbRef: DbRef)(implicit ec: ExecutionContext) {
 
   def runInSerializableTransactionWithRetry[T](
       action: DB[T],
-      maxRetries: Int = 5,
-      delay: FiniteDuration = 10.millis
+      maxRetries: Int = 10,
+      initialDelay: FiniteDuration = 10.millis
   ): Future[T] = {
+    val transactionAction = action.transactionally.withTransactionIsolation(TransactionIsolation.Serializable)
     def doRun(): Future[Try[T]] = {
-      val transactionAction = action.transactionally.withTransactionIsolation(TransactionIsolation.Serializable)
       run(transactionAction).map(Success(_)).recover {
         case ex: java.sql.SQLException if ex.getSQLState == "40001" => Failure(ex)
       }
     }
     retry
-      .JitterBackoff(maxRetries, delay)
+      .JitterBackoff(maxRetries, initialDelay)
       .apply(doRun())
       .map(_.fold[T](ex => throw new TransactionsRunAttemptsExceedException(ex, maxRetries), identity))
   }
