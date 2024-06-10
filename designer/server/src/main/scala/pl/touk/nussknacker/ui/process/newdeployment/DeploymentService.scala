@@ -64,14 +64,16 @@ class DeploymentService(
         category = scenarioMetadata.processCategory,
         permission = Permission.Deploy
       )
-      // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
-      // Because of that we can't run more than one deployment for scenario in a time.
-      // TODO: We should key metrics by deployment id and remove this limitation
-      _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
       scenarioGraphVersion <- EitherT(
         scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, command.user)
       ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
       _ <- validateUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command.user)
+      // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
+      // Because of that we can't run more than one deployment for scenario in a time.
+      // TODO: We should key metrics by deployment id and remove this limitation
+      // Saving of deployment is the final step before deployment request because we want to store only requested deployments
+      _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
+      // TODO: Change deployment state to PROBLEM when runDeploymentUsingDeploymentManager ends up with failure
       _ <- runDeploymentUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command)
     } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
 
