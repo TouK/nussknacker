@@ -86,7 +86,7 @@ It's also possible to configure restart strategies per scenario, using additiona
 ### Flink Component provider configuration
 
 #### Configuring offset for Tumbling aggregate time windows
-`components.base.aggregateWindowsConfig.tumblingWindowsOffset` - use [ISO_8601 Duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) format to configure it. 
+`components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset` - use [ISO_8601 Duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) format to configure it. 
 This configuration is optional, by default offset is equal 0.
 This setting applies only to windows in tumbling aggregate. Might be useful when you need daily windows to be aligned to different than UTC timezone.
 See example in Flink [docs](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/windows/#tumbling-windows)
