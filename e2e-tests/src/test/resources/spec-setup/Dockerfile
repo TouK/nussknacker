@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 RUN apt update && \
     apt install -y curl && \
@@ -7,7 +7,7 @@ RUN apt update && \
 WORKDIR /app
 
 COPY entrypoint.sh /
-COPY src/ /app/scripts/
+COPY scripts/ /app/scripts/
 COPY data/ /app/data/
 
 ENTRYPOINT [ "/entrypoint.sh" ]

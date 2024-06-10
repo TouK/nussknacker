@@ -3,8 +3,7 @@
 for FILE in "/app/data/schema-registry"/*; do
   if [ -f "$FILE" ]; then
     FILENAME=$(basename "$FILE")
-    ESCAPED_CONTENT=$(awk '{gsub(/\n/, "\\n"); gsub(/"/, "\\\""); print}' < "$FILE")
-
+    ESCAPED_CONTENT=$(awk 'BEGIN{ORS="\\n"} {gsub(/"/, "\\\"")} 1' < "$FILE")
     RESPONSE=$(
       curl -s -L -w "\n%{http_code}" \
         -XPOST "http://schema-registry:8081/subjects/${FILENAME}-value/versions" \
@@ -17,10 +16,10 @@ for FILE in "/app/data/schema-registry"/*; do
     )
 
     HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
-    RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
 
-    if [[ "$HTTP_CODE" == 200 ]] ; then
-      echo "Cannot add schema from $FILENAME"
+    if [[ "$HTTP_CODE" != 200 ]] ; then
+      RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
+      echo "Cannot add schema from $FILENAME.\nHTTP response: $RESPONSE_BODY"
       exit 1
     fi
   fi

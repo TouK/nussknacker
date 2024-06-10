@@ -1,3 +1,10 @@
 #!/bin/bash -ex
 
-find /app -type f -name '*.sh' -exec {} \;
+# setup other containers using auto-executed scripts
+while IFS= read -r script; do
+  "$script"
+done < <(find /app/scripts/auto-executed -type f -name '*.sh')
+
+echo "Setup done!"
+# loop forever (you can use manually called utils scripts now)
+tail -f /dev/null

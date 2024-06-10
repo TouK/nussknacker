@@ -2,7 +2,7 @@ services:
 
   spec-setup:
     build:
-      context: .
+      context: ../../e2e-tests/src/test/resources/spec-setup/
       dockerfile: Dockerfile
     depends_on:
       nginx:
