@@ -45,8 +45,8 @@ In order to achieve End-to-end Exactly-once event processing, you need to check 
   - Configure checkpointing.
     A Prerequisite is to have persistent storage for the state, and you should make sure that this is configured.
     In Exactly-once events are committed during checkpoint and consequently the output events will be visible within 
-    the time range specified by the checkpoint interval. It's essential to configure proper interval like 1-2 seconds
-    (interval should be configured in nussknacker - `Configure the checkpointing interval` section).
+    the time range specified by the checkpoint interval. It's essential to configure proper interval in a range of 
+    1-10 seconds (interval should be configured in nussknacker - `Configure the checkpointing interval` section).
     Such a short interval has large overhead on Flink, and you should consider configuring:
     - Incremental checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/dev/datastream/fault-tolerance/checkpointing/#state-backend-incremental).
     - Unaligned checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/checkpointing_under_backpressure/#unaligned-checkpoints).
@@ -90,6 +90,10 @@ In order to achieve End-to-end Exactly-once event processing, you need to check 
     producer `transaction.timeout.ms`.
   - Ensure that your Kafka broker cluster has at least three brokers
     [Kafka docs](https://kafka.apache.org/documentation/#producerconfigs_transactional.id).
+  - According to: [current presentation](https://www.confluent.io/events/current/2023/3-flink-mistakes-we-made-so-you-wont-have-to/)
+    you should also consider configuring `transactional.id.expiration.ms` due to the fact that every transactionId
+    metadata is stored on kafka on every checkpoint. The metadata weights around 300 bytes so accumulated size could be
+    big. As a result we should configure a policy which will expire transactionId.
 - Application consuming Nussknacker's messages configuration:
     - Ensure your consumer has `isolation.level` set to: `read_committed`.
 
