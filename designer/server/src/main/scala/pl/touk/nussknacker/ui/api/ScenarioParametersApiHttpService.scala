@@ -4,18 +4,20 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.ScenarioParametersApiEndpoints
 import pl.touk.nussknacker.ui.api.description.ScenarioParametersApiEndpoints.Dtos.ScenarioParametersCombinationWithEngineErrors
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ScenarioParametersService}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ScenarioParametersApiHttpService(
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     scenarioParametersService: ProcessingTypeDataProvider[_, ScenarioParametersService]
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val parametersApiEndpoints = new ScenarioParametersApiEndpoints(authenticator.authenticationMethod())
+  private val parametersApiEndpoints = new ScenarioParametersApiEndpoints(
+    authManager.authenticationEndpointInput()
+  )
 
   expose {
     parametersApiEndpoints.scenarioParametersCombinationsEndpoint

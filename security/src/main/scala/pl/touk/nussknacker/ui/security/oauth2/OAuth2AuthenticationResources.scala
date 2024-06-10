@@ -30,7 +30,7 @@ class OAuth2AuthenticationResources(
     extends AuthenticationResources
     with Directives
     with LazyLogging
-    with AnonymousAccess {
+    with AnonymousAccessSupport {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
@@ -38,25 +38,23 @@ class OAuth2AuthenticationResources(
 
   private val authenticator = OAuth2Authenticator(service)
 
-  override protected def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
+  override def authenticate(): AuthenticationDirective[AuthenticatedUser] =
     SecurityDirectives.authenticateOAuth2Async(
       authenticator = authenticator,
       realm = realm
     )
+
+  override def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(authCredentials.value)
   }
 
-  override protected def authenticateReally(credentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authenticator.authenticate(credentials.value)
-  }
-
-  override protected def rawAuthCredentialsMethod: EndpointInput[Option[String]] = {
+  override def authenticationMethod(): EndpointInput[Option[PassedAuthCredentials]] =
     optionalOauth2AuthorizationCode(
       authorizationUrl = configuration.authorizeUrl.map(_.toString),
       // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
       // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
       tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
-    )
-  }
+    ).map(_.map(PassedAuthCredentials))(_.map(_.value))
 
   override protected val frontendStrategySettings: FrontendStrategySettings =
     configuration.overrideFrontendAuthenticationStrategy.getOrElse(
@@ -174,6 +172,9 @@ class OAuth2AuthenticationResources(
     Mapping.stringPrefixCaseInsensitive(prefix + " ")
   }
 
+  override def impersonationSupport: ImpersonationSupport = NoImpersonationSupport
+
+  override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
 }
 
 final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)

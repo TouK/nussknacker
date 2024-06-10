@@ -3,10 +3,18 @@
 1.16.0 (Not released yet)
 -------------------------
 
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
 * [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status
+* [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
 * [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
+
+1.15.2 (7 June 2024)
+-------------------------
+* [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
+  * Deployed version of scenario is now shown properly even if other actions followed deploy.
+  * Scenario state is now not impacted by actions that don't actually change it.
 
 1.15.1 (5 June 2024)
 -------------------------

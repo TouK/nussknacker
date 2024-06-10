@@ -186,6 +186,72 @@ class ScenarioActivityApiHttpServiceSecuritySpec
           .equalsPlainBody("The supplied authentication is not authorized to access this resource")
       }
     }
+    "impersonating user has permission to impersonate should" - {
+      val allowedScenarioName = "s1"
+      "allow to add comment in scenario in allowed category for the impersonated user" in {
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateLimitedWriterUser()
+          .plainBody(commentContent)
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(200)
+          .equalsPlainBody("")
+      }
+      "forbid to add comment in scenario because impersonated user has no writer permission" in {
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .basicAuthAllPermUser()
+          .impersonateLimitedReaderUser()
+          .plainBody(commentContent)
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to access this resource")
+      }
+      "forbid admin impersonation with default configuration" in {
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateAdminUser()
+          .plainBody(commentContent)
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
+      }
+    }
+    "impersonating user does not have permission to impersonate should" - {
+      "forbid access" in {
+        val allowedScenarioName = "s1"
+        given()
+          .applicationState {
+            createSavedScenario(exampleScenario(allowedScenarioName), category = Category1)
+            createSavedScenario(exampleScenario("s2"), category = Category2)
+          }
+          .plainBody(commentContent)
+          .basicAuthWriter()
+          .impersonateLimitedReaderUser()
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/processes/$allowedScenarioName/1/activity/comments")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
+      }
+    }
   }
 
   "The scenario remove comment endpoint when" - {

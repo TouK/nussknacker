@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ScenarioV
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.NuTables
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, ImpersonatedUser, LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
 
 import java.sql.Timestamp
@@ -18,9 +18,15 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
   protected def processTableFilteredByUser(
       implicit loggedUser: LoggedUser
   ): Query[ProcessEntityFactory#ProcessEntity, ProcessEntityData, Seq] = {
+    def getTableForUser(user: RealLoggedUser) = {
+      user match {
+        case user: CommonUser => processesTable.filter(_.processCategory inSet user.categories(Permission.Read))
+        case _: AdminUser     => processesTable
+      }
+    }
     loggedUser match {
-      case user: CommonUser => processesTable.filter(_.processCategory inSet user.categories(Permission.Read))
-      case _: AdminUser     => processesTable
+      case user: RealLoggedUser   => getTableForUser(user)
+      case user: ImpersonatedUser => getTableForUser(user.impersonatedUser)
     }
   }
 
@@ -33,7 +39,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
 
   protected def fetchLatestProcessesQuery(
       query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-      lastDeployedActionPerProcess: Set[ProcessId],
+      deployedProcesses: Set[ProcessId],
       isDeployed: Option[Boolean]
   )(implicit fetchShape: ScenarioShapeFetchStrategy[_], loggedUser: LoggedUser): Query[
     (
@@ -55,7 +61,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with NuTables {
       .filter { case ((_, _), process) =>
         isDeployed match {
           case None      => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess) === dep
+          case Some(dep) => process.id.inSet(deployedProcesses) === dep
         }
       }
 

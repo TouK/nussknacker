@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.data.EitherT
-import pl.touk.nussknacker.restmodel.SecurityError
-import pl.touk.nussknacker.restmodel.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.{CustomAuthorizationError, NoRequirementServerEndpoint}
+import pl.touk.nussknacker.ui.security.api.SecurityError.InsufficientPermission
 import pl.touk.nussknacker.ui.security.api._
 import sttp.tapir.server.{PartialServerEndpoint, ServerEndpoint}
 
@@ -12,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(
-    authenticator: AuthenticationResources
+    authManager: AuthManager
 )(implicit executionContext: ExecutionContext) {
 
   // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
@@ -40,7 +39,8 @@ abstract class BaseHttpService(
     authorizeKnownUser[BUSINESS_ERROR](credentials)
       .map {
         case right @ Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser)           => securityError(AuthorizationError)
+        case Right(_: CommonUser)           => securityError(InsufficientPermission)
+        case Right(_: ImpersonatedUser)     => securityError(InsufficientPermission)
         case error @ Left(_)                => error
       }
   }
@@ -48,17 +48,15 @@ abstract class BaseHttpService(
   protected def authorizeKnownUser[BUSINESS_ERROR](
       credentials: AuthCredentials
   ): Future[LogicResult[BUSINESS_ERROR, LoggedUser]] = {
-    authenticator
+    authManager
       .authenticate(credentials)
       .map {
-        case Some(user) if user.roles.nonEmpty =>
-          // TODO: This is strange that we call authenticator.authenticate and the first thing that we do with the returned user is
-          //       creation of another user representation based on authenticator.configuration. Shouldn't we just return the LoggedUser?
-          success(LoggedUser(user, authenticator.configuration.rules))
-        case Some(_) =>
-          securityError(AuthorizationError)
-        case None =>
-          securityError(AuthenticationError)
+        case Left(authenticationError) => securityError(authenticationError)
+        case Right(authenticatedUser) =>
+          authManager.authorize(authenticatedUser) match {
+            case Right(loggedUser)        => success(loggedUser)
+            case Left(authorizationError) => securityError(authorizationError)
+          }
       }
   }
 
@@ -91,7 +89,7 @@ abstract class BaseHttpService(
       result match {
         case Left(error) =>
           error match {
-            case _: CustomAuthorizationError => securityError(AuthorizationError)
+            case _: CustomAuthorizationError => securityError(InsufficientPermission)
             case e                           => businessError(e)
           }
         case Right(value) => success(value)
