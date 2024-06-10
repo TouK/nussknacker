@@ -885,6 +885,52 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("should provide the same proper scenario state when fetching all scenarios and one scenario") {
+    createDeployedWithCustomActionScenario(processName, category = Category1)
+
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[List[ScenarioWithDetails]]
+
+      loadedProcess.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[ScenarioWithDetails]
+
+      loadedProcess.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+  }
+
   test("not allow to save process if already exists") {
     val processName = ProcessName("p1")
     saveProcess(processName, ProcessTestData.sampleScenarioGraph, category = Category1) {

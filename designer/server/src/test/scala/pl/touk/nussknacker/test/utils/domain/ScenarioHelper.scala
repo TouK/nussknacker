@@ -98,6 +98,18 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
     } yield id).futureValue
   }
 
+  def createDeployedWithCustomActionScenario(
+      scenarioName: ProcessName,
+      category: String,
+      isFragment: Boolean
+  ): ProcessId = {
+    (for {
+      id <- prepareValidScenario(scenarioName, category, isFragment)
+      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareCustomAction(id)
+    } yield id).futureValue
+  }
+
   def createArchivedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
@@ -127,6 +139,14 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
     val comment    = DeploymentComment.unsafe(UserComment("Cancel comment")).toComment(actionName)
+    dbioRunner.run(
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
+    )
+  }
+
+  private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
+    val actionName = ScenarioActionName("Custom")
+    val comment    = DeploymentComment.unsafe(UserComment("Execute custom action")).toComment(actionName)
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )

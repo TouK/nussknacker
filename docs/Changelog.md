@@ -11,6 +11,12 @@
   * Status of a deployment is cached on the Designer side - in case of retention of finished job on Flink, status is still returned as FINISHED
 * [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
 
+1.15.2 (7 June 2024)
+-------------------------
+* [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
+  * Deployed version of scenario is now shown properly even if other actions followed deploy.
+  * Scenario state is now not impacted by actions that don't actually change it.
+
 1.15.1 (5 June 2024)
 -------------------------
 * [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
