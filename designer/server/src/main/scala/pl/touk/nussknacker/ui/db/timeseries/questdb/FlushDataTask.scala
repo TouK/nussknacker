@@ -9,7 +9,8 @@ import scala.util.Try
 
 private[questdb] class FlushDataTask(private val engine: CairoEngine, private val tableName: String)
     extends LazyLogging {
-  private val applyWal2TableJob = new ApplyWal2TableJob(engine, 1, 1)
+  private val workerCount       = 1
+  private val applyWal2TableJob = new ApplyWal2TableJob(engine, workerCount, workerCount)
 
   def run(): Unit = {
     logger.info("Flushing data to disk")

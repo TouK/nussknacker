@@ -4,9 +4,9 @@ import akka.actor.{ActorSystem, Cancellable}
 import better.files.File
 import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
+import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.security.AllowAllSecurityContext
-import io.questdb.cairo.{CairoEngine, CairoException}
-import io.questdb.griffin.{SqlException, SqlExecutionContextImpl}
+import io.questdb.griffin.SqlExecutionContextImpl
 import io.questdb.log.LogFactory
 import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
 }
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository.{
   createTableQuery,
-  recover,
+  recreateCairoEngine,
   selectQuery,
   tableName
 }
@@ -30,7 +30,6 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Futu
 import scala.util.{Failure, Success, Try}
 
 // TODO list:
-// WARNING - for now is not thread safe - multiple request at the same time will kill application
 // 2. Compacting?
 // 4. Configurable directory of db (for now it's tmp directory) and limiting db file space on disk.
 // 5. Collecting statistics should be deactivable by configuration. (If db creation fails provide NoOp DB as fallback)
@@ -45,11 +44,13 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
 ) extends FEStatisticsRepository[Future]
     with LazyLogging {
 
-  private val sqlContext = new ThreadAwareObjectPool(() =>
-    new SqlExecutionContextImpl(engine.get(), 1).`with`(AllowAllSecurityContext.INSTANCE, null)
+  private val workerCount = 1
+
+  private val sqlContextPool = new ThreadAwareObjectPool(() =>
+    new SqlExecutionContextImpl(engine.get(), workerCount).`with`(AllowAllSecurityContext.INSTANCE, null)
   )
 
-  private val recordCursorPool = new ThreadAwareObjectPool(() => engine.get().select(selectQuery, sqlContext.get()))
+  private val recordCursorPool = new ThreadAwareObjectPool(() => engine.get().select(selectQuery, sqlContextPool.get()))
 
   private val walTableWriterPool = new ThreadAwareObjectPool(() =>
     engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName))
@@ -59,7 +60,7 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
   private lazy val retentionTask = new AtomicReference(createRetentionTask())
   private val shouldCleanUpData  = new AtomicBoolean(false)
 
-  override def write(statistics: Map[String, Long]): Future[Unit] = withExceptionHandling(() => {
+  override def write(statistics: Map[String, Long]): Future[Unit] = run(() => {
     val statsWalTableWriter = walTableWriterPool.get()
     statistics.foreach { entry =>
       val row = statsWalTableWriter.newRow(currentTimeMicros())
@@ -70,10 +71,10 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
     statsWalTableWriter.commit()
   })
 
-  override def read(): Future[Map[String, Long]] = withExceptionHandling(() => {
+  override def read(): Future[Map[String, Long]] = run(() => {
     recordCursorPool
       .get()
-      .fetch(sqlContext.get()) { record =>
+      .fetch(sqlContextPool.get()) { record =>
         val name  = record.getStrA(0).toString
         val count = record.getLong(1)
         name -> count
@@ -87,63 +88,28 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
   private def close(): Unit = {
     recordCursorPool.clear()
     walTableWriterPool.clear()
-    sqlContext.clear()
+    sqlContextPool.clear()
     flushDataTask.get().close()
     retentionTask.get().close()
   }
 
-  private def initialize(): Unit = {
-    engine.get().ddl(createTableQuery, sqlContext.get())
+  private def createTableIfNotExist(): Unit = {
+    engine.get().ddl(createTableQuery, sqlContextPool.get())
   }
 
-  private def withExceptionHandling[T](dbAction: () => T): Future[T] =
+  private def run[T](dbAction: () => T): Future[T] =
     Future {
-      if (engine.get().tableExists(tableName)) {
-        runDbAction(dbAction)
-      } else {
-        recoverWithRetry(new IllegalStateException("Table does not exist"), dbAction).get
-      }
+      engine.get().runWithExceptionHandling(recover, tableName, dbAction)
     }
 
-  private def runDbAction[T](dbAction: () => T) = {
-    Try(dbAction()).recoverWith {
-      case ex: CairoException if ex.isCritical || ex.isTableDropped =>
-        recoverWithRetry(ex, dbAction)
-      case ex: SqlException if ex.getMessage.contains("table does not exist") =>
-        recoverWithRetry(ex, dbAction)
-      case ex =>
-        logger.warn("DB exception", ex)
-        Failure(ex)
-    }.get
-  }
-
-  private def recoverWithRetry[T](ex: Exception, dbAction: () => T): Try[T] = {
-    logger.warn("Statistic DB exception - trying to recover", ex)
-    closeAndRecover() match {
-      case Failure(ex) =>
-        logger.warn("Exception occurred while tables recreate", ex)
-        Failure(ex)
-      case Success(_) =>
-        logger.info("Recreate succeeded - retrying db action")
-        Try(dbAction()) match {
-          case f @ Failure(ex) =>
-            logger.warn("Exception occurred during db retry", ex)
-            f
-          case s @ Success(_) =>
-            logger.info("Retried db action succeeded")
-            s
-        }
+  private def recover(): Try[Unit] = synchronized {
+    Try {
+      close()
+      recreateCairoEngine(engine)
+      createTableIfNotExist()
+      flushDataTask.set(createFlushDataTask())
+      retentionTask.set(createRetentionTask())
     }
-  }
-
-  private def closeAndRecover(): Try[Unit] = Try {
-    recordCursorPool.clear()
-    walTableWriterPool.clear()
-    sqlContext.clear()
-    recover(engine)
-    initialize()
-    flushDataTask.set(createFlushDataTask())
-    retentionTask.set(createRetentionTask())
   }
 
   private def flushDataToDisk(): Unit = {
@@ -155,7 +121,7 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
 
   private def cleanUpOldData(): Unit = Try {
     shouldCleanUpData.set(false)
-    retentionTask.get().run(sqlContext.get(), clock)
+    retentionTask.get().run(sqlContextPool.get(), clock)
   }.recover { case ex: Exception =>
     logger.warn("Exception thrown while cleaning data.", ex)
   }
@@ -185,8 +151,8 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
     cairoEngine     <- createCairoEngine()
     repository      <- createRepository(executorService, cairoEngine, clock)
     // TODO: move task properties to configuration
-    _ <- createTask(system, Duration(2L, TimeUnit.SECONDS), () => repository.flushDataToDisk())
-    _ <- createTask(system, Duration(2L, TimeUnit.SECONDS), () => repository.scheduleRetention())
+    _ <- scheduleTask(system, Duration(2L, TimeUnit.SECONDS), () => repository.flushDataToDisk())
+    _ <- scheduleTask(system, Duration(2L, TimeUnit.SECONDS), () => repository.scheduleRetention())
   } yield repository
 
   // todo move this ExecutorService properties to a configuration
@@ -223,7 +189,7 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   ): Resource[IO, QuestDbFEStatisticsRepository] = Resource.make(
     acquire = for {
       repository <- IO(new QuestDbFEStatisticsRepository(cairoEngine, clock)(ec))
-      _          <- IO(repository.initialize())
+      _          <- IO(repository.createTableIfNotExist())
     } yield repository
   )(release = repository => IO(repository.close()))
 
@@ -252,7 +218,11 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
     LogFactory.configureRootDir(rootDir.canonicalPath)
   }
 
-  private def createTask(system: ActorSystem, interval: FiniteDuration, runnable: Runnable): Resource[IO, Cancellable] =
+  private def scheduleTask(
+      system: ActorSystem,
+      interval: FiniteDuration,
+      runnable: Runnable
+  ): Resource[IO, Cancellable] =
     Resource.make(
       acquire = IO(
         system.scheduler
@@ -260,7 +230,7 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
       )
     )(release = task => IO(task.cancel()))
 
-  private def recover(engine: AtomicReference[CairoEngine]): Unit = this.synchronized {
+  private def recreateCairoEngine(engine: AtomicReference[CairoEngine]): Unit = {
     val cairoEngine = engine.get()
     closeCairoEngine(cairoEngine)
     val nuDir = File(cairoEngine.getConfiguration.getRoot)
