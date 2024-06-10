@@ -8,6 +8,7 @@
 * [#5982](https://github.com/TouK/nussknacker/pull/5982) Batch processing mode related improvements:
   * Deployments API returns correct status of deployment instead of returning always the last deployment's status
 * [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
+* [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
 
 1.15.2 (7 June 2024)
 -------------------------

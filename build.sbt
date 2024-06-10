@@ -1274,7 +1274,8 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
     libraryDependencies ++= {
       Seq(
         "org.scalacheck"    %% "scalacheck"                    % scalaCheckV    % Test,
-        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        "org.scalatestplus" %% "mockito-4-11"                  % scalaTestPlusV % Test,
       )
     },
   )
