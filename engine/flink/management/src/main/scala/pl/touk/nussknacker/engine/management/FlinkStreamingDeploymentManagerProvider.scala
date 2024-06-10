@@ -4,6 +4,7 @@ import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
@@ -58,43 +59,44 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 //Properties from this class should be public because implementing projects should be able to reuse them
 object FlinkStreamingPropertiesConfig {
 
-  val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
+  private val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
     ScenarioPropertyConfig(
-      defaultValue = None,
+      defaultValue = Some("1"),
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism")
     )
 
-  val spillStatePossibleValues = List(
-    FixedExpressionValue("", "Server default"),
+  private val spillStatePossibleValues = List(
     FixedExpressionValue("false", "False"),
     FixedExpressionValue("true", "True")
   )
 
-  val asyncPossibleValues = List(
-    FixedExpressionValue("", "Server default"),
+  private val asyncPossibleValues = List(
     FixedExpressionValue("false", "Synchronous"),
     FixedExpressionValue("true", "Asynchronous")
   )
 
-  val spillStateConfig: (String, ScenarioPropertyConfig) = StreamMetaData.spillStateToDiskName ->
+  private val spillStateConfig: (String, ScenarioPropertyConfig) = StreamMetaData.spillStateToDiskName ->
     ScenarioPropertyConfig(
-      defaultValue = None,
+      defaultValue = Some("true"),
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
       validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
       label = Some("Spill state to disk")
     )
 
-  val asyncInterpretationConfig: (String, ScenarioPropertyConfig) = StreamMetaData.useAsyncInterpretationName ->
-    ScenarioPropertyConfig(
-      defaultValue = None,
-      editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
-      validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
-      label = Some("IO mode")
-    )
+  private val asyncInterpretationConfig: (String, ScenarioPropertyConfig) =
+    StreamMetaData.useAsyncInterpretationName ->
+      ScenarioPropertyConfig(
+        defaultValue = Some(
+          DefaultAsyncInterpretationValueDeterminer.DefaultValue.toString
+        ), // config -> asyncExecutionConfig.defaultUseAsyncInterpretation
+        editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
+        validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
+        label = Some("IO mode")
+      )
 
-  val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
+  private val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
@@ -106,8 +108,7 @@ object FlinkStreamingPropertiesConfig {
     Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
 
   val metaDataInitializer: MetaDataInitializer = MetaDataInitializer(
-    metadataType = StreamMetaData.typeName,
-    overridingProperties = Map(StreamMetaData.parallelismName -> "1", StreamMetaData.spillStateToDiskName -> "true")
+    metadataType = StreamMetaData.typeName
   )
 
 }

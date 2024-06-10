@@ -44,10 +44,10 @@ object FragmentSpecificData {
 
 // TODO: rename to FlinkStreamMetaData
 case class StreamMetaData(
-    parallelism: Option[Int] = None,
+    parallelism: Option[Int] = Some(1),
     // we assume it's safer to spill state to disk and fix performance than to fix heap problems...
     spillStateToDisk: Option[Boolean] = Some(true),
-    useAsyncInterpretation: Option[Boolean] = None,
+    useAsyncInterpretation: Option[Boolean] = Some(false),
     checkpointIntervalInSeconds: Option[Long] = None
 ) extends ScenarioSpecificData {
 

@@ -66,14 +66,9 @@ class FlinkProcessCompilerDataFactory(
     // TODO: this should be somewhere else?
     val timeout = modelConfig.as[FiniteDuration]("timeout")
 
-    // TODO: should this be the default?
-    val asyncExecutionContextPreparer = creator
-      .asyncExecutionContextPreparer(modelDependencies)
-      .getOrElse(
-        modelConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
-      )
-    val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelDependencies)
-    val listenersToUse   = adjustListeners(defaultListeners, modelDependencies)
+    val asyncExecutionContextPreparer = modelConfig.as[DefaultServiceExecutionContextPreparer]("asyncExecutionConfig")
+    val defaultListeners              = prepareDefaultListeners(usedNodes) ++ creator.listeners(modelDependencies)
+    val listenersToUse                = adjustListeners(defaultListeners, modelDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(modelDependencies, userCodeClassLoader)
 
