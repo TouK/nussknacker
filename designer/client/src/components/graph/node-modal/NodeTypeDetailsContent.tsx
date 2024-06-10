@@ -214,7 +214,7 @@ export function NodeTypeDetailsContent({
                 <Filter
                     edges={edges}
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
+                    variableTypes={variableTypes}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}
@@ -302,7 +302,6 @@ export function NodeTypeDetailsContent({
                 <Switch
                     edges={edges}
                     errors={errors}
-                    findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}
                     node={node}
                     parameterDefinitions={parameterDefinitions}

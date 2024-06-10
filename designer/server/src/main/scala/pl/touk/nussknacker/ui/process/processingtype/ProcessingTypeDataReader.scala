@@ -1,7 +1,14 @@
 package pl.touk.nussknacker.ui.process.processingtype
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.{
+  ConfigWithUnresolvedVersion,
+  DeploymentManagerDependencies,
+  DeploymentManagerProvider,
+  ModelData,
+  ModelDependencies,
+  ProcessingTypeConfig
+}
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap

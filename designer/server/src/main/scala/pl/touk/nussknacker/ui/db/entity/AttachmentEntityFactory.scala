@@ -28,7 +28,23 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
 
     def user = column[String]("user", NotNull)
 
-    def * = (id, processId, processVersionId, fileName, data, user, createDate) <> (
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
+
+    def * = (
+      id,
+      processId,
+      processVersionId,
+      fileName,
+      data,
+      user,
+      impersonatedByIdentity,
+      impersonatedByUsername,
+      createDate
+    ) <> (
       AttachmentEntityData.apply _ tupled, AttachmentEntityData.unapply
     )
 
@@ -45,6 +61,8 @@ final case class AttachmentEntityData(
     fileName: String,
     data: Array[Byte],
     user: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String],
     createDate: Timestamp
 ) {
   val createDateTime: Instant = createDate.toInstant

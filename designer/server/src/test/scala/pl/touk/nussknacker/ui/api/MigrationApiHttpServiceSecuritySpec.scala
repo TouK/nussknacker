@@ -7,7 +7,8 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
-import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
   WithAccessControlCheckingDesignerConfig,
@@ -46,31 +47,31 @@ class MigrationApiHttpServiceSecuritySpec
       "forbid access for user with limited reading permissions" in {
         given()
           .applicationState(
-            createSavedScenario(exampleScenario, Category1)
+            createSavedScenario(exampleScenario, Category2)
           )
           .when()
-          .basicAuthReader()
+          .basicAuthLimitedReader()
           .jsonBody(requestData)
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
+          .equalsPlainBody("The supplied user [limitedReader] is not authorized to access this resource")
       }
       "forbid access for user with limited writing permissions" in {
         given()
           .applicationState(
-            createSavedScenario(exampleScenario, Category1)
+            createSavedScenario(exampleScenario, Category2)
           )
           .when()
-          .basicAuthWriter()
-          .jsonBody(requestData)
+          .basicAuthLimitedWriter()
+          .jsonBody(prepareRequestData(exampleProcessName.value, Category2))
           .post(s"$nuDesignerHttpAddress/api/migrate")
           .Then()
           .statusCode(401)
-          .equalsPlainBody("The supplied user [writer] is not authorized to access this resource")
+          .equalsPlainBody("The supplied user [limitedWriter] is not authorized to access this resource")
       }
     }
-    "no credentials were passes should" - {
+    "no credentials were passed should" - {
       "forbid access" in {
         given()
           .applicationState(
@@ -83,6 +84,66 @@ class MigrationApiHttpServiceSecuritySpec
           .Then()
           .statusCode(401)
           .equalsPlainBody("The supplied user [anonymous] is not authorized to access this resource")
+      }
+    }
+    "impersonating user has permission to impersonate should" - {
+      "allow migration for impersonated user with appropriate permissions" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateWriterUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(200)
+          .equalsPlainBody("")
+      }
+      "forbid access for impersonated user with limited reading permissions" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateReaderUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(401)
+          .equalsPlainBody("The supplied user [reader] is not authorized to access this resource")
+      }
+      "forbid admin impersonation with default configuration" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateAdminUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
+      }
+    }
+    "impersonating user does not have permission to impersonate should" - {
+      "forbid access" in {
+        given()
+          .applicationState(
+            createSavedScenario(exampleScenario, Category1)
+          )
+          .when()
+          .basicAuthWriter()
+          .impersonateWriterUser()
+          .jsonBody(requestData)
+          .post(s"$nuDesignerHttpAddress/api/migrate")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
       }
     }
   }
@@ -99,7 +160,7 @@ class MigrationApiHttpServiceSecuritySpec
 
   private lazy val exampleGraph = CanonicalProcessConverter.toScenarioGraph(exampleScenario)
 
-  private def prepareRequestData(scenarioName: String): String =
+  private def prepareRequestData(scenarioName: String, processCategory: TestCategory): String =
     s"""
        |{
        |  "version": "1",
@@ -109,11 +170,11 @@ class MigrationApiHttpServiceSecuritySpec
        |  "engineSetupName": "Mockable",
        |  "processName": "${scenarioName}",
        |  "isFragment": false,
-       |  "processCategory": "${Category1.stringify}",
+       |  "processCategory": "${processCategory.stringify}",
        |  "scenarioGraph": ${exampleGraph.asJson.noSpaces}
        |}
        |""".stripMargin
 
-  private lazy val requestData: String = prepareRequestData(exampleProcessName.value)
+  private lazy val requestData: String = prepareRequestData(exampleProcessName.value, processCategory = Category1)
 
 }

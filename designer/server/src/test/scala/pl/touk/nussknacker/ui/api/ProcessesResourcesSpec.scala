@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
@@ -45,10 +45,11 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 
 import scala.concurrent.Future
 
@@ -731,6 +732,62 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("authorize impersonated user with write permissions to create scenario") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~>
+      withAllPermUser() ~>
+      impersonateWriterUser() ~>
+      applicationRoute ~>
+      check {
+        status shouldEqual StatusCodes.Created
+      }
+  }
+
+  test("not authorize user trying to impersonate without appropriate permission") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~>
+      withWriterUser() ~>
+      impersonateAllPermUser() ~>
+      applicationRoute ~>
+      check {
+        status shouldEqual StatusCodes.Forbidden
+        responseAs[String] shouldEqual ImpersonationMissingPermissionError.errorMessage
+      }
+  }
+
+  test("not authorize impersonated user with read permissions to create scenario") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~>
+      withAllPermUser() ~>
+      impersonateReaderUser() ~>
+      applicationRoute ~>
+      check {
+        status shouldEqual StatusCodes.Unauthorized
+        responseAs[String] shouldEqual "User doesn't have access to the given category"
+      }
+  }
+
   test("archive process") {
     createEmptyScenario(processName, category = Category1)
 
@@ -825,6 +882,52 @@ class ProcessesResourcesSpec
       val loadedProcess = responseAs[ScenarioWithDetails]
       loadedProcess.processCategory shouldBe Category1.stringify
       loadedProcess.createdAt should not be null
+    }
+  }
+
+  test("should provide the same proper scenario state when fetching all scenarios and one scenario") {
+    createDeployedWithCustomActionScenario(processName, category = Category1)
+
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[List[ScenarioWithDetails]]
+
+      loadedProcess.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[ScenarioWithDetails]
+
+      loadedProcess.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
     }
   }
 
@@ -1104,6 +1207,15 @@ class ProcessesResourcesSpec
   private def withWriterUser() = addBasicAuth("writer", "writer")
 
   private def addBasicAuth(name: String, secret: String) = addCredentials(BasicHttpCredentials(name, secret))
+
+  private def impersonateAllPermUser() = addImpersonationHeader("allpermuser")
+
+  private def impersonateReaderUser() = addImpersonationHeader("reader")
+
+  private def impersonateWriterUser() = addImpersonationHeader("writer")
+
+  private def addImpersonationHeader(userIdentity: String) =
+    addHeader(RawHeader(AuthManager.impersonateHeaderName, userIdentity))
 
   private def parseResponseToListJsonProcess(response: String): List[ProcessJson] = {
     parser.decode[List[Json]](response).value.map(j => ProcessJson(j))
