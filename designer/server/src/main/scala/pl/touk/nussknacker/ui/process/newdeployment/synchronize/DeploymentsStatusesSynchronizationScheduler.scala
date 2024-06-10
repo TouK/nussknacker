@@ -19,7 +19,7 @@ class DeploymentsStatusesSynchronizationScheduler(
 
   import actorSystem.dispatcher
 
-  def run(): Unit = {
+  def start(): Unit = {
     scheduledJob = Some(
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
         Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)

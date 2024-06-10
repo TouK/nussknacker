@@ -137,7 +137,7 @@ class AkkaHttpBasedRouteProvider(
             deploymentsStatusesSynchronizer,
             DeploymentsStatusesSynchronizationConfig.parse(resolvedConfig)
           )
-          scheduler.run()
+          scheduler.start()
           scheduler
         }
       )
