@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.description
 
+import cats.data.NonEmptyList
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import pl.touk.nussknacker.engine.api.NodeId
@@ -28,7 +29,7 @@ import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
-import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
@@ -58,13 +59,15 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .out(statusCode(StatusCode.Accepted))
       .errorOut(
         oneOf[RunDeploymentError](
-          oneOfVariant[ConflictingDeploymentIdError](
+          oneOfVariant[ConflictRunDeploymentError](
             StatusCode.Conflict,
-            plainBody[ConflictingDeploymentIdError]
-              .example(
-                Example.of(
-                  summary = Some("Deployment with id {deploymentId} already exists"),
-                  value = ConflictingDeploymentIdError(exampleDeploymentId)
+            plainBody[ConflictRunDeploymentError]
+              .examples(
+                List(
+                  Example.of(
+                    summary = Some("Deployment with id {deploymentId} already exists"),
+                    value = ConflictingDeploymentIdError(exampleDeploymentId)
+                  )
                 )
               )
           ),
@@ -220,7 +223,13 @@ object DeploymentApiEndpoints {
 
     sealed trait BadRequestRunDeploymentError extends RunDeploymentError
 
-    final case class ConflictingDeploymentIdError(id: DeploymentId) extends RunDeploymentError
+    sealed trait ConflictRunDeploymentError extends RunDeploymentError
+
+    final case class ConflictingDeploymentIdError(id: DeploymentId) extends ConflictRunDeploymentError
+
+    final case class ConcurrentDeploymentsForScenarioArePerformedError(
+        concurrentDeploymentsIds: NonEmptyList[DeploymentId]
+    ) extends ConflictRunDeploymentError
 
     final case class ScenarioNotFoundError(scenarioName: ProcessName) extends BadRequestRunDeploymentError
 
@@ -244,10 +253,12 @@ object DeploymentApiEndpoints {
         case DeployValidationError(message)       => message
       }
 
-    implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictingDeploymentIdError, CodecFormat.TextPlain] =
-      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[ConflictingDeploymentIdError](err =>
-        s"Deployment with id ${err.id} already exists"
-      )
+    implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictRunDeploymentError, CodecFormat.TextPlain] =
+      BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[ConflictRunDeploymentError] {
+        case ConflictingDeploymentIdError(id) => s"Deployment with id $id already exists"
+        case ConcurrentDeploymentsForScenarioArePerformedError(concurrentDeploymentsIds) =>
+          s"Deployment can't be run because deployment with ids ${concurrentDeploymentsIds.toList.mkString(", ")} for the same scenario are performed concurrently"
+      }
 
     implicit val deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[DeploymentNotFoundError](err =>

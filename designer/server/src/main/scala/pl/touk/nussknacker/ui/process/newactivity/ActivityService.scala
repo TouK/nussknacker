@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process.newactivity
 
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
-import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
@@ -29,24 +28,22 @@ class ActivityService(
   ): Future[Either[ActivityError[ErrorType], Unit]] = {
     toActivityCommandConverter.convert(command) match {
       case RunDeploymentActivityCommand(command) =>
-        dbioRunner.run(
-          (for {
-            validatedCommentOpt <- validateDeploymentCommentWhenPassed(comment)
-            keys                <- runDeployment(command)
-            _ <- saveCommentWhenPassed[RunDeploymentError](
-              validatedCommentOpt,
-              keys.scenarioId,
-              keys.scenarioGraphVersionId,
-              command.user
-            )
-          } yield ()).value
-        )
+        (for {
+          validatedCommentOpt <- validateDeploymentCommentWhenPassed(comment)
+          keys                <- runDeployment(command)
+          _ <- saveCommentWhenPassed[RunDeploymentError](
+            validatedCommentOpt,
+            keys.scenarioId,
+            keys.scenarioGraphVersionId,
+            command.user
+          )
+        } yield ()).value
     }
   }
 
   private def validateDeploymentCommentWhenPassed(comment: Option[Comment]) = {
     EitherT
-      .fromEither[DB](
+      .fromEither[Future](
         DeploymentComment
           .createDeploymentComment(comment, deploymentCommentSettings)
           .toEither
@@ -66,7 +63,11 @@ class ActivityService(
       user: LoggedUser
   ) =
     EitherT.right[ActivityError[ErrorType]](
-      commentOpt.map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _)).sequence
+      commentOpt
+        .map(comment =>
+          dbioRunner.run(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, comment))
+        )
+        .sequence
     )
 
 }

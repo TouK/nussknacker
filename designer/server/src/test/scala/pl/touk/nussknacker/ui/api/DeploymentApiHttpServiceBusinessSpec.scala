@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import io.restassured.RestAssured.`given`
+import io.restassured.RestAssured.{`given`, when}
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
@@ -19,7 +20,9 @@ import pl.touk.nussknacker.test.{
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -111,7 +114,31 @@ class DeploymentApiHttpServiceBusinessSpec
         }
       }
 
-      "when invoked twice with different deployment id should" - {
+      "when invoked twice with different deployment id, run concurrently" - {
+        "return conflict status code" in {
+          `given`()
+            .applicationState {
+              createSavedScenario(scenario)
+            }
+
+          def requestDeployment(id: DeploymentId): Future[Int] =
+            Future {
+              `given`()
+                .when()
+                .basicAuthAdmin()
+                .jsonBody(correctDeploymentRequest)
+                .put(s"$nuDesignerHttpAddress/api/deployments/$id")
+                .statusCode()
+            }
+
+          List(
+            requestDeployment(DeploymentId.generate),
+            requestDeployment(DeploymentId.generate)
+          ).sequence.futureValue.toSet shouldBe Set(202, 409)
+        }
+      }
+
+      "when invoked twice with different deployment id, run one by one should" - {
         "return status of correct deployment" in {
           val firstDeploymentId  = DeploymentId.generate
           val secondDeploymentId = DeploymentId.generate

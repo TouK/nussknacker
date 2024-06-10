@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.process.newdeployment
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import db.util.DBIOActionInstances._
 import org.postgresql.util.{PSQLException, PSQLState}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
@@ -23,6 +24,10 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
   override protected val profile: JdbcProfile = dbRef.profile
 
   import profile.api._
+
+  def getScenarioDeploymentsInNotMatchingStatus(scenarioId: ProcessId, statusNames: Set[DeploymentStatusName]) = {
+    toEffectAll(deploymentsTable.filter(d => d.scenarioId === scenarioId && !(d.statusName inSet statusNames)).result)
+  }
 
   def saveDeployment(deployment: DeploymentEntityData): DB[Either[ConflictingDeploymentIdError, Unit]] = {
     toEffectAll(deploymentsTable += deployment).asTry.map(

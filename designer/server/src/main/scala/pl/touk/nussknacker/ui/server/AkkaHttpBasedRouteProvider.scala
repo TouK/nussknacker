@@ -377,7 +377,12 @@ class AkkaHttpBasedRouteProvider(
         val scenarioMetadataRepository     = new ScenarioMetadataRepository(dbRef)
         val scenarioGraphVersionRepository = new ScenarioGraphVersionRepository(dbRef)
         val scenarioGraphVersionService =
-          new ScenarioGraphVersionService(scenarioGraphVersionRepository, processValidator, scenarioResolver)
+          new ScenarioGraphVersionService(
+            scenarioGraphVersionRepository,
+            processValidator,
+            scenarioResolver,
+            dbioRunner
+          )
         val deploymentService =
           new DeploymentService(
             scenarioMetadataRepository,

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.Applicative
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -32,7 +32,6 @@ import scala.util.control.NonFatal
 //       it joins multiple responsibilities like activity log (currently called "actions") and deployments management.
 //       Also, because of the fact that periodic mechanism is build as a plug-in (DeploymentManager), some deployment related
 //       operations (run now operation) is modeled as a CustomAction. Eventually, we should:
-//       - Split activity log and deployments management
 //       - Move periodic mechanism into to the designer's core
 //       - Remove CustomAction
 //       After we do this, we can remove legacy classes and fully switch to the new once.
@@ -57,15 +56,18 @@ class DeploymentService(
       )
     } yield deploymentWithScenarioMetadata.deployment.statusWithModifiedAt).value
 
-  def runDeployment(command: RunDeploymentCommand): DB[Either[RunDeploymentError, DeploymentForeignKeys]] =
+  def runDeployment(command: RunDeploymentCommand): Future[Either[RunDeploymentError, DeploymentForeignKeys]] =
     (for {
       scenarioMetadata <- getScenarioMetadata(command)
-      _ <- checkPermission(
+      _ <- checkPermission[Future, RunDeploymentError](
         user = command.user,
         category = scenarioMetadata.processCategory,
         permission = Permission.Deploy
       )
-      _ <- saveDeployment(command, scenarioMetadata)
+      // We keep deployments metrics (used by counts mechanism) keyed by scenario name.
+      // Because of that we can't run more than one deployment for scenario in a time.
+      // TODO: We should key metrics by deployment id and remove this limitation
+      _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
       scenarioGraphVersion <- EitherT(
         scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, command.user)
       ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
@@ -73,11 +75,46 @@ class DeploymentService(
       _ <- runDeploymentUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command)
     } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
 
-  private def getScenarioMetadata(command: RunDeploymentCommand): EitherT[DB, RunDeploymentError, ProcessEntityData] =
+  private def getScenarioMetadata(
+      command: RunDeploymentCommand
+  ): EitherT[Future, RunDeploymentError, ProcessEntityData] =
     EitherT.fromOptionF(
-      scenarioMetadataRepository.getScenarioMetadata(command.scenarioName),
+      dbioRunner.run(scenarioMetadataRepository.getScenarioMetadata(command.scenarioName)),
       ScenarioNotFoundError(command.scenarioName)
     )
+
+  private def saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(
+      command: RunDeploymentCommand,
+      scenarioMetadata: ProcessEntityData
+  ): EitherT[Future, RunDeploymentError, Unit] = {
+    EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
+      nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
+      _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments)
+      _                      <- saveDeployment(command, scenarioMetadata)
+    } yield ()).value))
+  }
+
+  private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ProcessEntityData) = {
+    val nonPerformingDeploymentStatuses =
+      Set(SimpleDeploymentStatus.Canceled.name, SimpleDeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
+    EitherT.right(
+      deploymentRepository.getScenarioDeploymentsInNotMatchingStatus(
+        scenarioMetadata.id,
+        nonPerformingDeploymentStatuses
+      )
+    )
+  }
+
+  private def checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments: Seq[DeploymentEntityData]) = {
+    EitherT.fromEither(
+      NonEmptyList
+        .fromList(nonFinishedDeployments.toList)
+        .map(conflictingDeployments =>
+          Left(ConcurrentDeploymentsForScenarioArePerformedError(conflictingDeployments.map(_.id)))
+        )
+        .getOrElse(Right(()))
+    )
+  }
 
   private def saveDeployment(
       command: RunDeploymentCommand,
@@ -101,7 +138,7 @@ class DeploymentService(
       scenarioMetadata: ProcessEntityData,
       scenarioGraphVersion: ProcessVersionEntityData,
       user: LoggedUser
-  ): EitherT[DB, RunDeploymentError, Unit] = {
+  ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = RuntimeVersionData(
       versionId = scenarioGraphVersion.id,
       processName = scenarioMetadata.name,
@@ -117,26 +154,22 @@ class DeploymentService(
       NodesDeploymentData.empty
     )
     for {
-      result <- EitherT[DB, RunDeploymentError, Unit](
-        toEffectAll(
-          DB.from(
-            dmDispatcher
-              .deploymentManagerUnsafe(scenarioMetadata.processingType)(user)
-              .processCommand(
-                DMValidateScenarioCommand(
-                  runtimeVersionData,
-                  dumbDeploymentData,
-                  scenarioGraphVersion.jsonUnsafe,
-                  DeploymentUpdateStrategy.DontReplaceDeployment
-                )
-              )
-              .map(_ => Right(()))
-              // TODO: more explicit way to pass errors from DM
-              .recover { case NonFatal(ex) =>
-                Left(DeployValidationError(ex.getMessage))
-              }
+      result <- EitherT[Future, RunDeploymentError, Unit](
+        dmDispatcher
+          .deploymentManagerUnsafe(scenarioMetadata.processingType)(user)
+          .processCommand(
+            DMValidateScenarioCommand(
+              runtimeVersionData,
+              dumbDeploymentData,
+              scenarioGraphVersion.jsonUnsafe,
+              DeploymentUpdateStrategy.DontReplaceDeployment
+            )
           )
-        )
+          .map(_ => Right(()))
+          // TODO: more explicit way to pass errors from DM
+          .recover { case NonFatal(ex) =>
+            Left(DeployValidationError(ex.getMessage))
+          }
       )
     } yield result
   }
@@ -145,7 +178,7 @@ class DeploymentService(
       scenarioMetadata: ProcessEntityData,
       scenarioGraphVersion: ProcessVersionEntityData,
       command: RunDeploymentCommand
-  ): EitherT[DB, RunDeploymentError, Option[ExternalDeploymentId]] = {
+  ): EitherT[Future, RunDeploymentError, Option[ExternalDeploymentId]] = {
     val runtimeVersionData = RuntimeVersionData(
       versionId = scenarioGraphVersion.id,
       processName = scenarioMetadata.name,
@@ -160,20 +193,16 @@ class DeploymentService(
       command.nodesDeploymentData
     )
     EitherT.right(
-      toEffectAll(
-        DB.from(
-          dmDispatcher
-            .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)
-            .processCommand(
-              DMRunDeploymentCommand(
-                runtimeVersionData,
-                deploymentData,
-                scenarioGraphVersion.jsonUnsafe,
-                DeploymentUpdateStrategy.DontReplaceDeployment
-              )
-            )
+      dmDispatcher
+        .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)
+        .processCommand(
+          DMRunDeploymentCommand(
+            runtimeVersionData,
+            deploymentData,
+            scenarioGraphVersion.jsonUnsafe,
+            DeploymentUpdateStrategy.DontReplaceDeployment
+          )
         )
-      )
     )
   }
 
@@ -204,6 +233,10 @@ object DeploymentService {
   sealed trait GetDeploymentStatusError
 
   final case class ConflictingDeploymentIdError(id: DeploymentId) extends RunDeploymentError
+
+  final case class ConcurrentDeploymentsForScenarioArePerformedError(
+      concurrentDeploymentsIds: NonEmptyList[DeploymentId]
+  ) extends RunDeploymentError
 
   final case class ScenarioNotFoundError(scenarioName: ProcessName) extends RunDeploymentError
 

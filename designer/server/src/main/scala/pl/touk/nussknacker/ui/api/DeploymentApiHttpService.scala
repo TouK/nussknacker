@@ -35,15 +35,20 @@ class DeploymentApiHttpService(
               request.comment
             )
             .map(_.left.map {
-              case UnderlyingServiceError(DeploymentService.ConflictingDeploymentIdError(id)) =>
-                ConflictingDeploymentIdError(id)
-              case UnderlyingServiceError(DeploymentService.ScenarioNotFoundError(scenarioName)) =>
-                ScenarioNotFoundError(scenarioName)
-              case UnderlyingServiceError(DeploymentService.NoPermissionError) => NoPermissionError
-              case UnderlyingServiceError(DeploymentService.ScenarioGraphValidationError(errors)) =>
-                ScenarioGraphValidationError(errors)
-              case UnderlyingServiceError(DeploymentService.DeployValidationError(message)) =>
-                DeployValidationError(message)
+              case UnderlyingServiceError(err) =>
+                err match {
+                  case DeploymentService.ConflictingDeploymentIdError(id) =>
+                    ConflictingDeploymentIdError(id)
+                  case DeploymentService.ConcurrentDeploymentsForScenarioArePerformedError(concurrentDeploymentsIds) =>
+                    ConcurrentDeploymentsForScenarioArePerformedError(concurrentDeploymentsIds)
+                  case DeploymentService.ScenarioNotFoundError(scenarioName) =>
+                    ScenarioNotFoundError(scenarioName)
+                  case DeploymentService.NoPermissionError => NoPermissionError
+                  case DeploymentService.ScenarioGraphValidationError(errors) =>
+                    ScenarioGraphValidationError(errors)
+                  case DeploymentService.DeployValidationError(message) =>
+                    DeployValidationError(message)
+                }
               case ActivityService.CommentValidationError(message) => CommentValidationError(message)
             })
         }
