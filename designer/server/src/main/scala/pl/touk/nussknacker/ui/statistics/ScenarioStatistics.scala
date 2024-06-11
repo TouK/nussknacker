@@ -121,17 +121,21 @@ object ScenarioStatistics {
       Map.empty
     } else {
       // Get number of available components to check how many custom components created
-      val withoutFragments          = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsWithUsageByName = withoutFragments.groupMapReduce(_.name)(_.usageCount)((sth, sth2) => sth + sth2)
+      val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
+      val componentsWithUsageByName: Map[String, Long] =
+        withoutFragments
+          .groupBy(_.name)
+          .mapValues(_.map(_.usageCount).sum)
       val componentsWithUsageByNameCount = componentsWithUsageByName.size
 
       // Get usage statistics for each component
       val componentUsed = componentsWithUsageByName.filter(_._2 > 0)
-      val componentUsedMap = componentUsed
+      val componentUsedMap: Map[StatisticKey, Long] = componentUsed
         .map { case (name, usages) =>
           (mapComponentNameToStatisticKey(name), usages)
         }
-        .groupMapReduce(_._1)(_._2)((usages1, usages2) => usages1 + usages2)
+        .groupBy(_._1)
+        .mapValues(_.values.sum)
 
       (
         componentUsedMap ++
