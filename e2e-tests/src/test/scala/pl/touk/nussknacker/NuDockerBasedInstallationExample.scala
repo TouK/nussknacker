@@ -3,14 +3,15 @@ package pl.touk.nussknacker
 import better.files._
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.scalatest.Suite
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
+import pl.touk.nussknacker.ContainerExt._
 
 import java.io.File
 
 // todo: singleton container
-trait NuDockerBasedInstallationExample extends ForAllTestContainer with BeforeAndAfterAll with LazyLogging {
+trait NuDockerBasedInstallationExample extends ForAllTestContainer with LazyLogging {
   this: Suite =>
 
   override val container: DockerComposeContainer = new DockerComposeContainer(
@@ -26,20 +27,17 @@ trait NuDockerBasedInstallationExample extends ForAllTestContainer with BeforeAn
     )
   )
 
-  private lazy val specSetupService = container
-    .getContainerByServiceName("spec-setup")
-    .getOrElse(throw new IllegalStateException("Spec-setup service not available!"))
+  protected lazy val nussknackerAppClient: NussknackerAppClient = new NussknackerAppClient("localhost", 8080)
+
+  private lazy val specSetupService = unsafeContainerByServiceName("spec-setup")
 
   def sendMessageToKafka(topic: String, message: String): Unit = {
-    val cmd = s"""echo "${message.replaceAll(
-        "\"",
-        "\\\""
-      )}" | /opt/bitnami/kafka/bin/kafka-console-producer.sh --topic "$topic" --bootstrap-server kafka:9092"""
-    val exitResult = specSetupService.execInContainer(cmd)
-    exitResult.getExitCode match {
-      case 0     => logger.error(s"cmd: $cmd - MESSAGE SENT")
-      case other => logger.error(s"cmd: $cmd - MESSAGE NOT SENT: $other")
-    }
+    val escapedMessage = message.replaceAll("\"", "\\\\\"")
+    specSetupService.executeBash(s"""/app/scripts/utils/send-to-kafka.sh "$topic" "$escapedMessage" """)
   }
+
+  private def unsafeContainerByServiceName(name: String) = container
+    .getContainerByServiceName(name)
+    .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
 }

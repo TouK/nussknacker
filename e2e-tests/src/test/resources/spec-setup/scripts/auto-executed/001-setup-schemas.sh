@@ -1,5 +1,7 @@
 #!/bin/bash -ex
 
+cd "$(dirname "$0")"
+
 for FILE in "/app/data/schema-registry"/*; do
   if [ -f "$FILE" ]; then
     FILENAME=$(basename "$FILE")
