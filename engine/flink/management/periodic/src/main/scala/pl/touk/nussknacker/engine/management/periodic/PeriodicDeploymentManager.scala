@@ -185,11 +185,6 @@ class PeriodicDeploymentManager private[periodic] (
     service.getStatusDetails(name).map(_.map(List(_)))
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
-    // We don't handle this flow for k8s dm, so we return empty list map of updates
-    Future.successful(Map.empty)
-  }
-
   override def resolve(
       idWithName: ProcessIdWithName,
       statusDetailsList: List[StatusDetails],
@@ -214,5 +209,10 @@ class PeriodicDeploymentManager private[periodic] (
   }
 
   override def customActionsDefinitions: List[CustomActionDefinition] = customActionsProvider.customActions
+
+  // TODO We don't handle deployment synchronization on periodic DM because it currently uses it's own deployments and
+  //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)
+  //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }

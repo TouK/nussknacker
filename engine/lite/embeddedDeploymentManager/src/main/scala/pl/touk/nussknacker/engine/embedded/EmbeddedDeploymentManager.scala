@@ -223,17 +223,22 @@ class EmbeddedDeploymentManager(
     )
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-    Future.successful(
-      (
-        for {
-          (_, interpreterData) <- deployments.toList
-          newDeployment        <- interpreterData.deploymentId.toNewDeploymentIdOpt
-          status = interpreterData.scenarioDeployment
-            .fold(_ => ProblemDeploymentStatus(s"Scenario compilation errors"), deployment => deployment.status())
-        } yield newDeployment -> status
-      ).toMap
-    )
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+    new DeploymentSynchronisationSupported {
+
+      override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+        Future.successful(
+          (
+            for {
+              (_, interpreterData) <- deployments.toList
+              newDeployment        <- interpreterData.deploymentId.toNewDeploymentIdOpt
+              status = interpreterData.scenarioDeployment
+                .fold(_ => ProblemDeploymentStatus(s"Scenario compilation errors"), deployment => deployment.status())
+            } yield newDeployment -> status
+          ).toMap
+        )
+
+    }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 

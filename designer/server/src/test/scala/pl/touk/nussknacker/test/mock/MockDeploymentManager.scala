@@ -90,9 +90,6 @@ class MockDeploymentManager(
     }
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-    Future.successful(Map.empty)
-
   override protected def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
     import command._
     logger.debug(s"Adding deploy for ${processVersion.processName}")
@@ -280,6 +277,8 @@ class MockDeploymentManager(
     } else {
       Future.successful(())
     }
+
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }
 

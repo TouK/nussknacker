@@ -163,9 +163,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     Future.successful(WithDataFreshnessStatus.fresh(memory.get(name).toList))
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-    Future.successful(Map.empty)
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
@@ -223,6 +220,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     MinSleepTimeSeconds + random.nextInt(MaxSleepTimeSeconds - MinSleepTimeSeconds + 1),
     TimeUnit.SECONDS
   )
+
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }
 

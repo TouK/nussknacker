@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleDeploymentStatus, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -13,9 +12,8 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkRestManager.JobDetails
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
-import java.util.UUID
 import scala.concurrent.Future
 
 class FlinkRestManager(
@@ -69,23 +67,28 @@ class FlinkRestManager(
       )
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
-    client.getJobsOverviews()(DataFreshnessPolicy.Fresh).map(_.value).flatMap { jobsOverviews =>
-      jobsOverviews
-        .map { jobOverview =>
-          val status = mapJobStatus(jobOverview)
-          client.getJobConfig(jobOverview.jid).map { jobConfig =>
-            jobConfig.`user-config`
-              .get("deploymentId")
-              .flatMap(_.asString)
-              .flatMap(newdeployment.DeploymentId.fromString)
-              .map(_ -> status)
-          }
+  override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+    new DeploymentSynchronisationSupported {
+
+      override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
+        client.getJobsOverviews()(DataFreshnessPolicy.Fresh).map(_.value).flatMap { jobsOverviews =>
+          jobsOverviews
+            .map { jobOverview =>
+              val status = mapJobStatus(jobOverview)
+              client.getJobConfig(jobOverview.jid).map { jobConfig =>
+                jobConfig.`user-config`
+                  .get("deploymentId")
+                  .flatMap(_.asString)
+                  .flatMap(newdeployment.DeploymentId.fromString)
+                  .map(_ -> status)
+              }
+            }
+            .sequence
+            .map(_.flatten.toMap)
         }
-        .sequence
-        .map(_.flatten.toMap)
+      }
+
     }
-  }
 
   // NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): DeploymentStatus = {
@@ -98,8 +101,8 @@ class FlinkRestManager(
       case JobStatus.CANCELLING                              => SimpleDeploymentStatus.DuringCancel
       // The job is not technically running, but should be in a moment
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => SimpleDeploymentStatus.Running
-      case JobStatus.FAILING => SimpleDeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
-      case JobStatus.FAILED  => SimpleDeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
+      case JobStatus.FAILING | JobStatus.FAILED =>
+        SimpleDeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
       case _ =>
         throw new IllegalStateException() // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }

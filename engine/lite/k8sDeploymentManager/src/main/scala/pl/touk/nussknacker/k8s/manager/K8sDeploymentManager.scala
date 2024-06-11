@@ -330,11 +330,6 @@ class K8sDeploymentManager(
     }
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
-    // We don't handle this flow for k8s dm, so we return empty list map of updates
-    Future.successful(Map.empty)
-  }
-
   private def configMapForData(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess,
@@ -385,6 +380,12 @@ class K8sDeploymentManager(
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
   override protected def executionContext: ExecutionContext = dependencies.executionContext
+
+  // TODO We don't handle deployment synchronization on k8s DM because with current resources model it wasn't trivial to implement it.
+  //      The design of resources is that each scenario has only one k8s deployment and we don't want to rollout this deployment when
+  //      when nothing important is changed (e.g. deploymentId is changed). We should rethink if we want to handle multiple deployments
+  //      for each scenario in this case and where store the deploymentId
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }
 

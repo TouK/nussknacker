@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentId
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 
 import scala.concurrent.Future
@@ -45,7 +44,6 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
     Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toList))
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-    Future.successful(Map.empty)
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }

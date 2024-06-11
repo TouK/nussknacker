@@ -11,9 +11,9 @@ object SimpleDeploymentStatus {
 
   object Problem {
 
-    val defaultDescription = "There are some problems with deployment."
+    private val DefaultDescription = "There are some problems with deployment."
 
-    val Failed: ProblemDeploymentStatus = ProblemDeploymentStatus(defaultDescription)
+    val Failed: ProblemDeploymentStatus = ProblemDeploymentStatus(DefaultDescription)
 
   }
 

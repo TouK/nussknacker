@@ -106,9 +106,6 @@ object MockableDeploymentManagerProvider {
       Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
     }
 
-    override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-      Future.successful(Map.empty)
-
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
       command match {
         case DMTestScenarioCommand(scenarioName, _, _) =>
@@ -124,6 +121,8 @@ object MockableDeploymentManagerProvider {
           super.processCommand(other)
       }
     }
+
+    override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
     override def close(): Unit = {}
   }

@@ -127,7 +127,9 @@ class AkkaHttpBasedRouteProvider(
       dbioRunner           = DBIOActionRunner(dbRef)
       deploymentsStatusesSynchronizer = new DeploymentsStatusesSynchronizer(
         deploymentRepository,
-        processingTypeDataProvider.mapValues(_.deploymentData.validDeploymentManagerOrStub),
+        processingTypeDataProvider.mapValues(
+          _.deploymentData.validDeploymentManagerOrStub.deploymentSynchronisationSupport
+        ),
         dbioRunner
       )
       _ <- Resource.fromAutoCloseable(

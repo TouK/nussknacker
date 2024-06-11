@@ -33,6 +33,8 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
 
 trait DeploymentManager extends AutoCloseable {
 
+  def deploymentSynchronisationSupport: DeploymentSynchronisationSupport
+
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
   final def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
@@ -55,8 +57,6 @@ trait DeploymentManager extends AutoCloseable {
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 
-  def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]]
-
   /**
     * Resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
@@ -74,3 +74,13 @@ trait DeploymentManager extends AutoCloseable {
     Future.failed(new NotImplementedError())
 
 }
+
+sealed trait DeploymentSynchronisationSupport
+
+trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSupport {
+
+  def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]]
+
+}
+
+object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport

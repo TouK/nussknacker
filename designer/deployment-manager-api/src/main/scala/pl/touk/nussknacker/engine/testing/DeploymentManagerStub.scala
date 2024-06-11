@@ -47,12 +47,11 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
     )
   }
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-    Future.successful(Map.empty)
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
   override def customActionsDefinitions: List[CustomActionDefinition] = Nil
+
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
   override def close(): Unit = {}
 

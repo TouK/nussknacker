@@ -2,18 +2,21 @@ package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
 import akka.actor.{ActorSystem, Cancellable}
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.Try
 
 // TODO: Properly handle HA setup: synchronizeAll() should be invoked only on one instance of designer in a time
 class DeploymentsStatusesSynchronizationScheduler(
     actorSystem: ActorSystem,
     synchronizer: DeploymentsStatusesSynchronizer,
     config: DeploymentsStatusesSynchronizationConfig
-) extends AutoCloseable {
+) extends AutoCloseable
+    with LazyLogging {
 
   @volatile private var scheduledJob: Option[Cancellable] = None
 
@@ -22,7 +25,12 @@ class DeploymentsStatusesSynchronizationScheduler(
   def start(): Unit = {
     scheduledJob = Some(
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
-        Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)
+        Try(Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)).failed.foreach { ex =>
+          logger.error(
+            s"Error while synchronizing deployments statuses. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
+            ex
+          )
+        }
       }
     )
   }
@@ -40,9 +48,11 @@ final case class DeploymentsStatusesSynchronizationConfig(
 
 object DeploymentsStatusesSynchronizationConfig {
 
+  val ConfigPath = "deploymentStatusesSynchronization"
+
   def parse(config: Config): DeploymentsStatusesSynchronizationConfig =
     config
-      .getAs[DeploymentsStatusesSynchronizationConfig]("deploymentStatusesSynchronization")
+      .getAs[DeploymentsStatusesSynchronizationConfig](ConfigPath)
       .getOrElse(DeploymentsStatusesSynchronizationConfig())
 
 }

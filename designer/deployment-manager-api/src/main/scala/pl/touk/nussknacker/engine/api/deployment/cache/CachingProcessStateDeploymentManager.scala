@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 
@@ -13,8 +12,11 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL: FiniteDuration)
-    extends DeploymentManager {
+class CachingProcessStateDeploymentManager(
+    delegate: DeploymentManager,
+    cacheTTL: FiniteDuration,
+    override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport
+) extends DeploymentManager {
 
   private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
     .newBuilder()
@@ -58,9 +60,6 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL
 
   override def close(): Unit = delegate.close()
 
-  override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
-    delegate.getDeploymentStatusesToUpdate
-
 }
 
 object CachingProcessStateDeploymentManager extends LazyLogging {
@@ -72,7 +71,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
     scenarioStateCacheTTL
       .map { cacheTTL =>
         logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
-        new CachingProcessStateDeploymentManager(delegate, cacheTTL)
+        new CachingProcessStateDeploymentManager(delegate, cacheTTL, delegate.deploymentSynchronisationSupport)
       }
       .getOrElse {
         logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
