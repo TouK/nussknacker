@@ -12,10 +12,12 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.DbRef
-import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository
+import pl.touk.nussknacker.ui.db.timeseries.questdb.{QuestDbConfig, QuestDbFEStatisticsRepository}
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NopFEStatisticsRepository}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 
 import java.time.Clock
+import scala.concurrent.Future
 
 class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataStateFactory) extends LazyLogging {
 
@@ -37,7 +39,8 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       _                      <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry        <- createGeneralPurposeMetricsRegistry()
       db                     <- DbRef.create(config.resolved)
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock)
+      questDbConfig          <- Resource.eval(IO(QuestDbConfig.apply(config.resolved)))
+      feStatisticsRepository <- createFEStatisticsRepository(clock, questDbConfig, system)
       server = new NussknackerHttpServer(
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory, feStatisticsRepository)(
           system,
@@ -68,6 +71,27 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
 
   private def createGeneralPurposeMetricsRegistry() = {
     Resource.pure[IO, MetricRegistry](new MetricRegistry)
+  }
+
+  private def createFEStatisticsRepository(
+      clock: Clock,
+      config: QuestDbConfig,
+      system: ActorSystem
+  ): Resource[IO, FEStatisticsRepository[Future]] = {
+    val repository = if (config.enabled) {
+      QuestDbFEStatisticsRepository.create(system, clock, config)
+    } else {
+      logger.info("QuestDb is disabled - collecting FE statistics is skipped")
+      createNopFEStatisticRepository
+    }
+    repository.handleErrorWith { t: Throwable =>
+      logger.warn("Creating QuestDb failed", t)
+      createNopFEStatisticRepository
+    }
+  }
+
+  private def createNopFEStatisticRepository: Resource[IO, FEStatisticsRepository[Future]] = {
+    Resource.eval(IO(new NopFEStatisticsRepository()))
   }
 
   private def startJmxReporter(metricsRegistry: MetricRegistry) = {
