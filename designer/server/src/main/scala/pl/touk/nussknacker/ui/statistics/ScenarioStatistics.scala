@@ -125,7 +125,7 @@ object ScenarioStatistics {
       val componentsWithUsageByName: Map[String, Long] =
         withoutFragments
           .groupBy(_.name)
-          .mapValues(_.map(_.usageCount).sum)
+          .mapValuesNow(_.map(_.usageCount).sum)
       val componentsWithUsageByNameCount = componentsWithUsageByName.size
 
       // Get usage statistics for each component
@@ -135,7 +135,7 @@ object ScenarioStatistics {
           (mapComponentNameToStatisticKey(name), usages)
         }
         .groupBy(_._1)
-        .mapValues(_.values.sum)
+        .mapValuesNow(_.values.sum)
 
       (
         componentUsedMap ++
