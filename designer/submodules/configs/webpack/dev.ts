@@ -34,14 +34,16 @@ export default merge(commonConfig, {
                     [`^${process.env.PROXY_PATH}`]: "/static",
                 },
                 onProxyReq: (proxyReq, req, res) => {
-                    // redirect instead of rewrite for one time basic auth
-                    if (req.headers?.origin) {
-                        res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-                        res.setHeader("Access-Control-Allow-Credentials", "true");
-                        res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, content-type, Authorization");
-                        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+                    if (req.headers?.authorization?.match(/^basic/i)) {
+                        if (req.headers?.origin) {
+                            // redirect instead of rewrite for one time basic auth
+                            res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+                            res.setHeader("Access-Control-Allow-Credentials", "true");
+                            res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, content-type, Authorization");
+                            res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+                        }
+                        res.redirect(new URL(req.url, process.env.NU_FE_CORE_URL).href);
                     }
-                    res.redirect(new URL(req.url, process.env.NU_FE_CORE_URL).href);
                 },
             },
         },
