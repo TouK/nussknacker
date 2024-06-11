@@ -7,3 +7,7 @@ services:
     depends_on:
       nginx:
         condition: service_healthy
+
+  kafka:
+    ports:
+      - "9092:9092"

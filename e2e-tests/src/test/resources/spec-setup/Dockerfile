@@ -1,4 +1,7 @@
-FROM ubuntu:24.04
+#todo: explain why
+FROM bitnami/kafka:3.7.0
+
+USER root
 
 RUN apt update && \
     apt install -y curl && \

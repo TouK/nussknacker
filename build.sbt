@@ -2018,6 +2018,7 @@ lazy val designer = (project in file("designer/server"))
   )
 
 lazy val e2eTests = (project in file("e2e-tests"))
+  .settings(commonSettings)
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(

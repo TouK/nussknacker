@@ -3,10 +3,12 @@
 for FILE in "/app/data/schema-registry"/*; do
   if [ -f "$FILE" ]; then
     FILENAME=$(basename "$FILE")
+    SCHEMA_NAME="$FILENAME-value"
+    echo "Creating schema '$SCHEMA_NAME'"
     ESCAPED_CONTENT=$(awk 'BEGIN{ORS="\\n"} {gsub(/"/, "\\\"")} 1' < "$FILE")
     RESPONSE=$(
       curl -s -L -w "\n%{http_code}" \
-        -XPOST "http://schema-registry:8081/subjects/${FILENAME}-value/versions" \
+        -XPOST "http://schema-registry:8081/subjects/${SCHEMA_NAME}/versions" \
         -H "Content-Type: application/vnd.schemaregistry.v1+json" -d \
          "{
           \"schema\": \"${ESCAPED_CONTENT}\",
