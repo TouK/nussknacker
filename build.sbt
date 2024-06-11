@@ -29,7 +29,7 @@ lazy val supportedScalaVersions = List(scala212, scala213)
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-lazy val silencerV      = "1.7.14"
+lazy val silencerV      = "1.7.17"
 lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
@@ -171,7 +171,7 @@ lazy val commonSettings =
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
-      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
+      addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
       libraryDependencies += compilerPlugin(
         "com.github.ghik" % "silencer-plugin" % forScalaVersion(
           scalaVersion.value,
@@ -302,12 +302,12 @@ val scalaTestPlusV       =
 val logbackV                = "1.2.13"
 // this is used in cloud, official JsonEncoder uses different field layout
 val logbackJsonV            = "0.1.5"
-val circeV                  = "0.14.6"
+val circeV                  = "0.14.7"
 val circeGenericExtrasV     = "0.14.3"
 val circeYamlV              = "0.14.2"
 val jwtCirceV               = "10.0.0"
-val jacksonV                = "2.15.4"
-val catsV                   = "2.10.0"
+val jacksonV                = "2.16.2"
+val catsV                   = "2.12.0"
 val catsEffectV             = "3.5.4"
 val everitSchemaV           = "1.14.4"
 val slf4jV                  = "1.7.36"
@@ -321,36 +321,36 @@ val configV                 = "1.4.3"
 val dropWizardV             = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.12.0"
 val testContainersScalaV    = "0.41.3"
-val testContainersJavaV     = "1.19.7"
-val nettyV                  = "4.1.109.Final"
+val testContainersJavaV     = "1.19.8"
+val nettyV                  = "4.1.110.Final"
 val nettyReactiveStreamsV   = "2.0.12"
 
 val akkaV                     = "2.6.20"
 val akkaHttpV                 = "10.2.10"
 val akkaManagementV           = "1.1.4"
 val akkaHttpCirceV            = "1.39.2"
-val slickV                    = "3.4.1"
-val slickPgV                  = "0.21.1"
+val slickV                    = "3.4.1"  // 3.5 drops Scala 2.12
+val slickPgV                  = "0.21.1" // 0.22.2 uses Slick 3.5
 val hikariCpV                 = "5.1.0"
-val hsqldbV                   = "2.7.2"
+val hsqldbV                   = "2.7.3"
 val postgresV                 = "42.7.3"
 // Flway 10 requires Java 17
 val flywayV                   = "9.22.3"
 val confluentV                = "7.5.1"
 val azureKafkaSchemaRegistryV = "1.1.1"
-val azureSchemaRegistryV      = "1.4.4"
-val azureIdentityV            = "1.12.0"
+val azureSchemaRegistryV      = "1.4.6"
+val azureIdentityV            = "1.12.1"
 val bcryptV                   = "0.10.2"
-val cronParserV               = "9.1.6" // 9.1.7+ requires JDK 16+
+val cronParserV               = "9.1.6"  // 9.1.7+ requires JDK 16+
 val javaxValidationApiV       = "2.0.1.Final"
 val caffeineCacheV            = "3.1.8"
-val sttpV                     = "3.9.5"
-val tapirV                    = "1.10.5"
-val openapiCirceYamlV         = "0.9.0"
+val sttpV                     = "3.9.7"
+val tapirV                    = "1.10.8"
+val openapiCirceYamlV         = "0.10.0"
 //we use legacy version because this one supports Scala 2.12
 val monocleV                  = "2.1.0"
-val jmxPrometheusJavaagentV   = "0.20.0"
-val wireMockV                 = "2.35.2"
+val jmxPrometheusJavaagentV   = "1.0.1"
+val wireMockV                 = "3.6.0"
 val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.3"
 
@@ -621,7 +621,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
           ),
         "org.apache.flink"        % "flink-statebackend-rocksdb" % flinkV         % flinkScope,
         "com.softwaremill.retry" %% "retry"                      % "0.3.6",
-        "com.github.tomakehurst"  % "wiremock-jre8"              % wireMockV      % Test,
+        "org.wiremock"            % "wiremock"                   % wireMockV      % Test,
         "org.scalatestplus"      %% "mockito-4-11"               % scalaTestPlusV % Test,
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
@@ -1123,7 +1123,7 @@ lazy val testUtils = (project in utils("test-utils"))
         "org.typelevel"                 %% "cats-effect"             % catsEffectV,
         "io.circe"                      %% "circe-parser"            % circeV,
         "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
-        "com.lihaoyi"                   %% "ujson"                   % "3.1.2",
+        "com.lihaoyi"                   %% "ujson"                   % "3.3.1",
         // This lib produces more descriptive errors during validation than everit
         "com.networknt"                  % "json-schema-validator"   % "1.4.0",
         "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
@@ -1134,7 +1134,7 @@ lazy val testUtils = (project in utils("test-utils"))
         Seq(),
         // rest-assured is not cross compiled, so we have to use different versions
         (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0" exclude ("commons-logging", "commons-logging")),
-        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1" exclude ("commons-logging", "commons-logging"))
+        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.4.0" exclude ("commons-logging", "commons-logging"))
       )
     }
   )
@@ -1479,7 +1479,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager"))
         "com.github.julien-truffaut" %% "monocle-core"  % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
         "com.typesafe.akka"          %% "akka-slf4j"    % akkaV     % Test,
-        "com.github.tomakehurst"      % "wiremock-jre8" % wireMockV % Test
+        "org.wiremock"                % "wiremock"      % wireMockV % Test,
       )
     },
     buildAndImportRuntimeImageToK3d := {
@@ -1665,7 +1665,7 @@ lazy val httpUtils = (project in utils("http-utils"))
   )
   .dependsOn(componentsApi % Provided, testUtils % Test)
 
-val swaggerParserV      = "2.1.15"
+val swaggerParserV      = "2.1.22"
 val swaggerIntegrationV = "2.2.10"
 
 lazy val openapiComponents = (project in component("openapi"))
@@ -1956,7 +1956,7 @@ lazy val designer = (project in file("designer/server"))
         "org.hsqldb"                     % "hsqldb"                          % hsqldbV,
         "org.postgresql"                 % "postgresql"                      % postgresV,
         "org.flywaydb"                   % "flyway-core"                     % flywayV,
-        "org.apache.xmlgraphics"         % "fop"                             % "2.8" exclude ("commons-logging", "commons-logging"),
+        "org.apache.xmlgraphics"         % "fop"                             % "2.9" exclude ("commons-logging", "commons-logging"),
         "com.beachape"                  %% "enumeratum-circe"                % enumeratumV,
         "tf.tofu"                       %% "derevo-circe"                    % "0.13.0",
         "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml"              % openapiCirceYamlV,
@@ -1978,7 +1978,7 @@ lazy val designer = (project in file("designer/server"))
         "org.scalacheck"                %% "scalacheck"                      % scalaCheckV          % Test,
         "com.github.erosb"               % "everit-json-schema"              % everitSchemaV exclude ("commons-logging", "commons-logging"),
         "org.apache.flink"               % "flink-metrics-dropwizard"        % flinkV               % Test,
-        "com.github.tomakehurst"         % "wiremock-jre8"                   % wireMockV            % Test,
+        "org.wiremock"                   % "wiremock"                        % wireMockV            % Test,
         "io.circe"                      %% "circe-yaml"                      % circeYamlV           % Test,
         "org.questdb"                    % "questdb"                         % "7.4.2",
       ) ++ forScalaVersion(
