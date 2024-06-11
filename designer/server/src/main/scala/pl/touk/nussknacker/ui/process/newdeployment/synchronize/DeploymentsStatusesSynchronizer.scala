@@ -29,22 +29,29 @@ class DeploymentsStatusesSynchronizer(
       .map { case (processingType, manager) =>
         manager match {
           case synchronisationSupported: DeploymentSynchronisationSupported =>
-            logger.debug(s"Running synchronization of deployments statuses for processing type: $processingType")
+            logger.trace(s"Running synchronization of deployments statuses for processing type: $processingType")
             for {
               statusesByDeploymentId <- synchronisationSupported.getDeploymentStatusesToUpdate
               updateResult <- dbioActionRunner.run(repository.updateDeploymentStatuses(statusesByDeploymentId))
               _ = {
-                logger.debug {
-                  val updateSummary = Option(updateResult)
-                    .filterNot(_.isEmpty)
-                    .map(_.mkString("Deployments ", ", ", " statuses were changed"))
-                    .getOrElse("No deployments status was changed")
-                  s"Synchronization of deployments statuses for processing type processing type: $processingType finished. $updateSummary"
+                Option(updateResult).filterNot(_.isEmpty) match {
+                  case None =>
+                    logger.trace(
+                      s"Synchronization of deployments statuses for processing type: $processingType finished. No deployment status was changed"
+                    )
+                  case Some(changes) =>
+                    logger.debug(
+                      changes.mkString(
+                        s"Synchronization of deployments statuses for processing type: $processingType finished. Deployments ",
+                        ", ",
+                        " statuses were changed"
+                      )
+                    )
                 }
               }
             } yield ()
           case NoDeploymentSynchronisationSupport =>
-            logger.debug(
+            logger.trace(
               s"Synchronization of deployments statuses for processing type: $processingType is not supported, skipping."
             )
             Future.unit
