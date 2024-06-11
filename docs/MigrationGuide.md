@@ -36,8 +36,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
   * `DMValidateScenarioCommand.updateStrategy` was added
     * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
-  * `getDeploymentStatusesToUpdate` method was added for purpose of synchronization of statuses. If synchronization mechanism is not used in context of given DM,
-    empty Map can be returned
+  * `deploymentSynchronisationSupport` field was added for purpose of synchronisation of statuses. If synchronisation mechanism is not used in context of given DM, 
+    you should return `NoDeploymentSynchronisationSupport` object. The synchronisation mechanism is used by `/api/deployments/{deploymentId}/status` endpoint. Other endpoints don't use it.
 
 ### Configuration changes
 

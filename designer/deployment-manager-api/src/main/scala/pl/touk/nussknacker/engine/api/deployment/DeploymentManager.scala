@@ -83,4 +83,4 @@ trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSuppor
 
 }
 
-object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport
+case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport
