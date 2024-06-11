@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.api.component
 
 import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
-import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
+import org.semver4j.Semver
 import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.version.BuildInfo
