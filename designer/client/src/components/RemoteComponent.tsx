@@ -4,8 +4,11 @@ import * as LibLoader from "../ExternalLib";
 import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 import SystemUtils from "../common/SystemUtils";
 
-export const loadExternalReactModule = LibLoader.getExternalReactModuleLoader(NuThemeProvider);
-export const loadExternalReactModuleWithAuth = LibLoader.getExternalReactModuleLoader(NuThemeProvider, SystemUtils.asyncAuthorizationToken);
+export const loadExternalReactModule = LibLoader.getExternalReactModuleLoader({ Wrapper: NuThemeProvider });
+export const loadExternalReactModuleWithAuth = LibLoader.getExternalReactModuleLoader({
+    Wrapper: NuThemeProvider,
+    getAuthToken: SystemUtils.asyncAuthorizationToken,
+});
 
 window["loadExternalReactModule"] = loadExternalReactModule;
 window["loadExternalReactModuleWithAuth"] = loadExternalReactModuleWithAuth;

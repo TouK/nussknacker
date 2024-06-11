@@ -8,7 +8,7 @@ export function useExternalLib<M extends Module = Module>(scope?: ModuleString):
     const module = context?.modules[scope] as M;
 
     if (scope && !module) {
-        throw new Error("useExternalLib must be used within a ExternalLibContext.Provider. Module not loaded.");
+        throw new Error(`useExternalLib must be used within a ExternalLibContext.Provider. Module not loaded.`);
     }
 
     return { module, context };

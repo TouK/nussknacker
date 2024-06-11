@@ -1,6 +1,6 @@
 import { ModuleString, ModuleUrl, ScriptUrl } from "./types";
 import { useExternalLib } from "./hooks";
-import React from "react";
+import React, { Fragment } from "react";
 import { splitUrl } from "./tools";
 import ReactDOM from "react-dom";
 import { ExternalModule, ExternalModuleProps } from "./ExternalModule";
@@ -35,8 +35,13 @@ export function RemoteComponent<P extends NonNullable<unknown>>({
     );
 }
 
+interface LoaderOptions {
+    Wrapper?: React.FunctionComponent<React.PropsWithChildren<unknown>>;
+    getAuthToken?: () => Promise<string>;
+}
+
 export const getExternalReactModuleLoader =
-    (Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>>, getAuthToken?: () => Promise<string>) =>
+    ({ Wrapper = Fragment, getAuthToken }: LoaderOptions = {}) =>
     <P extends NonNullable<unknown>>(url: string, props: P) => {
         const rootContainer = document.createElement(`div`);
         document.body.appendChild(rootContainer);
