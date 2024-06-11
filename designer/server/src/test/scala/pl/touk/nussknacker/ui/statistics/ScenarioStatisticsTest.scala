@@ -316,7 +316,7 @@ class ScenarioStatisticsTest
       LiteEmbeddedDMCount    -> "0",
       UnknownDMCount         -> "0",
       ActiveScenarioCount    -> "2",
-      AccountService         -> "3",
+      AccountService         -> "5",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }
@@ -376,6 +376,17 @@ class ScenarioStatisticsTest
       List("Category1"),
       links = List.empty,
       usageCount = 3,
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
+    ),
+    ComponentListElement(
+      DesignerWideComponentId("request-response-service-accountservice"),
+      "accountService",
+      "/assets/components/Processor.svg",
+      ComponentType.Service,
+      ComponentGroupName("services"),
+      List("Category1"),
+      links = List.empty,
+      usageCount = 2,
       AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
     )
   )
