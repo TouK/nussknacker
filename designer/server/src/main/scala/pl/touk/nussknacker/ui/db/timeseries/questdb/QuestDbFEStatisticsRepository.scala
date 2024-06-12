@@ -7,12 +7,12 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.security.AllowAllSecurityContext
-import io.questdb.griffin.SqlExecutionContextImpl
-import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
-  BuildCairoEngineExtension,
-  CairoEngineExtension,
-  RecordCursorFactoryExtension
-}
+import io.questdb.cairo.sql.RecordCursorFactory
+import io.questdb.cairo.wal.WalWriter
+import io.questdb.griffin.{SqlExecutionContext, SqlExecutionContextImpl}
+import io.questdb.log.LogFactory
+import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
+import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.RecordCursorFactoryExtension
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository.{
   createTableQuery,
   recreateCairoEngine,
@@ -21,20 +21,20 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepositor
 }
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.StandardOpenOption
 import java.time.Clock
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import java.util.concurrent.{ArrayBlockingQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 // TODO list:
-// 2. Compacting?
 // 4. Limiting db file space on disk?
 // 6. API should have better types (missing domain layer for FE statistics names).
 // 7. Changing table definition and recreate
-// 10. flush data in close?
-// todo polish this class in next commits
 private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[CairoEngine], private val clock: Clock)(
     private implicit val ec: ExecutionContextExecutorService
 ) extends FEStatisticsRepository[Future]
@@ -42,32 +42,40 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
 
   private val workerCount = 1
 
-  private val sqlContextPool = new ThreadAwareObjectPool(() =>
+  private val sqlContextPool: ThreadAwareObjectPool[SqlExecutionContext] = new ThreadAwareObjectPool(() =>
     new SqlExecutionContextImpl(engine.get(), workerCount).`with`(AllowAllSecurityContext.INSTANCE, null)
   )
 
-  private val recordCursorPool = new ThreadAwareObjectPool(() => engine.get().select(selectQuery, sqlContextPool.get()))
+  private val recordCursorPool: ThreadAwareObjectPool[RecordCursorFactory] =
+    new ThreadAwareObjectPool(() => engine.get().select(selectQuery, sqlContextPool.get()))
 
-  private val walTableWriterPool = new ThreadAwareObjectPool(() =>
+  private val walTableWriterPool: ThreadAwareObjectPool[WalWriter] = new ThreadAwareObjectPool(() =>
     engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName))
   )
 
   private val flushDataTask      = new AtomicReference(createFlushDataTask())
+  private val taskRecovery       = new TaskRecovery(engine, recover, tableName)
   private lazy val retentionTask = new AtomicReference(createRetentionTask())
-  private val shouldCleanUpData  = new AtomicBoolean(false)
 
-  override def write(statistics: Map[String, Long]): Future[Unit] = run(() => {
-    val statsWalTableWriter = walTableWriterPool.get()
-    statistics.foreach { entry =>
-      val row = statsWalTableWriter.newRow(currentTimeMicros())
-      row.putStr(0, entry._1)
-      row.putLong(1, entry._2)
-      row.append()
+  private val shouldCleanUpData    = new AtomicBoolean(false)
+  private val aggregatedStatistics = new ConcurrentHashMap[String, java.lang.Long]()
+
+  override def write(statistics: Map[String, Long]): Future[Unit] = Future {
+    statistics.foreach { case (key, newValue) =>
+      aggregatedStatistics.compute(
+        key,
+        (_, oldValue) => {
+          if (oldValue == null) {
+            newValue
+          } else {
+            oldValue + newValue
+          }
+        }
+      )
     }
-    statsWalTableWriter.commit()
-  })
+  }
 
-  override def read(): Future[Map[String, Long]] = run(() => {
+  override def read(): Future[Map[String, Long]] = Future {
     recordCursorPool
       .get()
       .fetch(sqlContextPool.get()) { record =>
@@ -76,7 +84,7 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
         name -> count
       }
       .toMap
-  })
+  }
 
   private def currentTimeMicros(): Long =
     Math.multiplyExact(clock.instant().toEpochMilli, 1000L)
@@ -93,11 +101,6 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
     engine.get().ddl(createTableQuery, sqlContextPool.get())
   }
 
-  private def run[T](dbAction: () => T): Future[T] =
-    Future {
-      engine.get().runWithExceptionHandling(recover, tableName, dbAction)
-    }
-
   private def recover(): Try[Unit] = synchronized {
     Try {
       close()
@@ -109,24 +112,33 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
   }
 
   private def flushDataToDisk(): Unit = {
-    flushDataTask.get().run()
+    val statistics          = statisticsSnapshot()
+    val currentTimeInMicros = currentTimeMicros()
+    taskRecovery.runWithRecover(() => flushDataTask.get().runUnsafe(statistics, currentTimeInMicros))
     if (shouldCleanUpData.get()) {
       cleanUpOldData()
     }
   }
 
-  private def cleanUpOldData(): Unit = Try {
+  private def statisticsSnapshot(): Map[String, Long] = {
+    aggregatedStatistics
+      .keySet()
+      .asScala
+      .toList
+      .map(key => key -> Try(aggregatedStatistics.remove(key).longValue()).getOrElse(0L))
+      .toMap
+  }
+
+  private def cleanUpOldData(): Unit = {
     shouldCleanUpData.set(false)
-    retentionTask.get().run(sqlContextPool.get(), clock)
-  }.recover { case ex: Exception =>
-    logger.warn("Exception thrown while cleaning data.", ex)
+    taskRecovery.runWithRecover(() => retentionTask.get().runUnsafe())
   }
 
   private def scheduleRetention(): Unit =
     shouldCleanUpData.set(true)
 
-  private def createFlushDataTask() = new FlushDataTask(engine.get(), tableName)
-  private def createRetentionTask() = new RetentionTask(engine.get(), tableName)
+  private def createFlushDataTask() = new FlushDataTask(engine.get(), walTableWriterPool)
+  private def createRetentionTask() = new RetentionTask(engine.get(), tableName, sqlContextPool, clock)
 }
 
 object QuestDbFEStatisticsRepository extends LazyLogging {
@@ -231,7 +243,13 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
       repository <- IO(new QuestDbFEStatisticsRepository(cairoEngine, clock)(ec))
       _          <- IO(repository.createTableIfNotExist())
     } yield repository
-  )(release = repository => IO(repository.close()))
+  )(release =
+    repository =>
+      IO {
+        repository.flushDataToDisk()
+        repository.close()
+      }
+  )
 
   private def scheduleTask(
       system: ActorSystem,

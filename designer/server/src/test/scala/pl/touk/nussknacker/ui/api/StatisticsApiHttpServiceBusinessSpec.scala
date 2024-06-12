@@ -62,9 +62,7 @@ class StatisticsApiHttpServiceBusinessSpec
   private val questDbPath               = BetterFile.temp / "nu" / questDbRelativePathString
   private val now                       = Instant.now()
   private val yesterday                 = now.plus(-1L, ChronoUnit.DAYS)
-  private val twoDaysBefore              = yesterday.plus(-1L, ChronoUnit.DAYS)
   private val yesterdayPartitionName    = DateTimeFormatter.ISO_LOCAL_DATE.format(yesterday.atZone(ZoneOffset.UTC))
-  private val twoDaysBeforePartitionName = DateTimeFormatter.ISO_LOCAL_DATE.format(twoDaysBefore.atZone(ZoneOffset.UTC))
   private val statisticsNames           = StatisticName.values
   private val statisticsNamesSize       = statisticsNames.size
   private val statisticsByIndex         = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
@@ -200,12 +198,10 @@ class StatisticsApiHttpServiceBusinessSpec
       val statisticName = randomStatisticName()
       given()
         .applicationState {
-          when(mockedClock.instant()).thenReturn(yesterday, twoDaysBefore, now)
-          createStatistics(statisticName)
+          when(mockedClock.instant()).thenReturn(yesterday, now)
           createStatistics(statisticName)
           eventually {
             isPartitionPresent(yesterdayPartitionName) shouldBe true
-            isPartitionPresent(twoDaysBeforePartitionName) shouldBe true
           }
         }
         .when()
@@ -218,7 +214,6 @@ class StatisticsApiHttpServiceBusinessSpec
         .verifyApplicationState {
           eventually {
             isPartitionPresent(yesterdayPartitionName) shouldBe false
-            isPartitionPresent(twoDaysBeforePartitionName) shouldBe false
           }
         }
     }
