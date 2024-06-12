@@ -20,7 +20,7 @@ final case class ProblemDeploymentStatus(description: String) extends Deployment
 
 object DeploymentStatus extends Enum[DeploymentStatus] {
 
-  override val values: IndexedSeq[DeploymentStatus] = findValues
+  override def values = findValues
 
   object Problem {
 
