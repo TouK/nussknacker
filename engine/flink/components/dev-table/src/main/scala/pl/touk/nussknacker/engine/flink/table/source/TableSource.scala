@@ -77,8 +77,7 @@ class TableSource(
     tableDefinition.columns.map(c => Parameter(ParameterName(c.columnName), c.typingResult))
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): RECORD = params.map {
-    case (paramName, value) =>
-      paramName.value -> value.asInstanceOf[Any]
+    case (paramName, value) => paramName.value -> value.asInstanceOf[Any]
   }.asJava
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[RECORD]] = None
