@@ -84,6 +84,7 @@ class TableSource(
 
   override def typeInformation: TypeInformation[RECORD] = TypeInformation.of(classOf[RECORD])
 
+//  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
 
 //  TODO: add implementation during task with dumping data from data source
