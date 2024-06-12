@@ -4,23 +4,27 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentManager,
+  DeploymentStatus,
   DeploymentSynchronisationSupport,
   DeploymentSynchronisationSupported,
   NoDeploymentSynchronisationSupport
 }
+import pl.touk.nussknacker.engine.newdeployment
+import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import pl.touk.nussknacker.ui.security.api.NussknackerInternalUser
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class DeploymentsStatusesSynchronizer(
     repository: DeploymentRepository,
     synchronizationSupport: ProcessingTypeDataProvider[DeploymentSynchronisationSupport, _],
     dbioActionRunner: DBIOActionRunner
 )(implicit ec: ExecutionContext)
-    extends LazyLogging {
+    extends LazyLoggingWithTraces {
 
   def synchronizeAll(): Future[Unit] = {
     synchronizationSupport
@@ -31,20 +35,29 @@ class DeploymentsStatusesSynchronizer(
           case synchronisationSupported: DeploymentSynchronisationSupported =>
             logger.trace(s"Running synchronization of deployments statuses for processing type: $processingType")
             for {
-              statusesByDeploymentId <- synchronisationSupported.getDeploymentStatusesToUpdate
+              statusesByDeploymentId <- synchronisationSupported.getDeploymentStatusesToUpdate.recover {
+                case NonFatal(ex) =>
+                  logger.debugWithTraceStack(
+                    s"Error during fetching of deployment statuses for processing type [$processingType]: ${ex.getMessage}. Synchronisation will be skipped",
+                    ex
+                  )
+                  Map.empty[newdeployment.DeploymentId, DeploymentStatus]
+              }
               updateResult <- dbioActionRunner.run(repository.updateDeploymentStatuses(statusesByDeploymentId))
               _ = {
                 Option(updateResult).filterNot(_.isEmpty) match {
                   case None =>
-                    logger.trace(
-                      s"Synchronization of deployments statuses for processing type: $processingType finished. No deployment status was changed"
+                    // TODO: Change to trace
+                    logger.info(
+                      s"Synchronization for processing type [$processingType] finished. Fetched deployment statuses: $statusesByDeploymentId. No deployment status was changed"
                     )
                   case Some(changes) =>
-                    logger.debug(
+                    // TODO: Change to debug
+                    logger.info(
                       changes.mkString(
-                        s"Synchronization of deployments statuses for processing type: $processingType finished. Deployments ",
+                        s"Synchronization for processing type [$processingType] finished. Fetched deployment statuses: $statusesByDeploymentId. Statuses for deployments ",
                         ", ",
-                        " statuses were changed"
+                        " were changed"
                       )
                     )
                 }
@@ -52,7 +65,7 @@ class DeploymentsStatusesSynchronizer(
             } yield ()
           case NoDeploymentSynchronisationSupport =>
             logger.trace(
-              s"Synchronization of deployments statuses for processing type: $processingType is not supported, skipping."
+              s"Synchronization for processing type [$processingType] is not supported. Skipping."
             )
             Future.unit
         }

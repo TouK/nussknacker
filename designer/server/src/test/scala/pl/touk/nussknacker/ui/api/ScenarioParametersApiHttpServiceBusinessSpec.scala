@@ -30,7 +30,7 @@ class ScenarioParametersApiHttpServiceBusinessSpec
              |    {
              |      "processingMode": "Unbounded-Stream",
              |      "category": "Category1",
-             |      "engineSetupName": "Flink"
+             |      "engineSetupName": "Mockable"
              |    }
              |  ],
              |  "engineSetupErrors": {}

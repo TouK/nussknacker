@@ -34,12 +34,12 @@ class ScenarioParametersApiHttpServiceSecuritySpec
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category1",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    },
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category2",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    }
                |  ],
                |  "engineSetupErrors": {}
@@ -59,7 +59,7 @@ class ScenarioParametersApiHttpServiceSecuritySpec
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category1",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    }
                |  ],
                |  "engineSetupErrors": {}
@@ -122,7 +122,7 @@ class ScenarioParametersApiHttpServiceSecuritySpec
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category1",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    }
                |  ],
                |  "engineSetupErrors": {}

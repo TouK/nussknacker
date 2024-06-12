@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.embedded.streaming
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, StateStatus}
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleDeploymentStatus, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
@@ -57,9 +56,9 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
   class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter) extends Deployment {
 
     override def status(): DeploymentStatus = interpreter.status() match {
-      case TaskStatus.Running      => SimpleDeploymentStatus.Running
-      case TaskStatus.DuringDeploy => SimpleDeploymentStatus.DuringDeploy
-      case TaskStatus.Restarting   => SimpleDeploymentStatus.Restarting
+      case TaskStatus.Running      => DeploymentStatus.Running
+      case TaskStatus.DuringDeploy => DeploymentStatus.DuringDeploy
+      case TaskStatus.Restarting   => DeploymentStatus.Restarting
       case other                   => throw new IllegalStateException(s"Not supporter task status: $other")
     }
 

@@ -1,11 +1,6 @@
 package pl.touk.nussknacker.ui.process.newdeployment
 
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentStatus,
-  DeploymentStatusName,
-  NoAttributesDeploymentStatus,
-  ProblemDeploymentStatus
-}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.{BaseEntityFactory, ProcessEntityData, ProcessEntityFactory}
@@ -72,7 +67,7 @@ trait DeploymentEntityFactory extends BaseEntityFactory { self: ProcessEntityFac
         statusProblemDescription.getOrElse(throw new IllegalStateException("Problem status without description"))
       )
     } else {
-      NoAttributesDeploymentStatus(statusName)
+      DeploymentStatus.withName(statusName.value)
     }
     DeploymentEntityData(id, scenarioId, createdAt, createdBy, WithModifiedAt(status, statusModifiedAt))
   }

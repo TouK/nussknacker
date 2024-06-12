@@ -4,7 +4,7 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.ui.db.DbRef
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 trait Repository[F[_]] {
@@ -29,6 +29,8 @@ trait DbioRepository extends Repository[DB] {
 trait BasicRepository extends Repository[Future] {
 
   import api._
+
+  protected implicit def ec: ExecutionContext
 
   private val dbioRunner = DBIOActionRunner(dbRef)
 

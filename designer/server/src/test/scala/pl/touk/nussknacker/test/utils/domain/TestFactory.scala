@@ -28,6 +28,7 @@ import pl.touk.nussknacker.ui.definition.ScenarioPropertiesConfigFinalizer
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.fragment.{DefaultFragmentRepository, FragmentResolver}
+import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository
 import pl.touk.nussknacker.ui.process.processingtype.{
   ProcessingTypeDataProvider,
   ScenarioParametersService,
@@ -35,12 +36,13 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ValueWithRestriction
 }
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.version.ScenarioGraphVersionRepository
+import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import sttp.client3.testing.SttpBackendStub
 
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -159,6 +161,13 @@ object TestFactory {
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDbRef)
 
+  def newScenarioGraphVersionService(dbRef: DbRef) = new ScenarioGraphVersionService(
+    newScenarioGraphVersionRepository(dbRef),
+    mapProcessingTypeDataProvider(Streaming.stringify -> processValidator),
+    scenarioResolverByProcessingType,
+    newDBIOActionRunner(dbRef)
+  )
+
   def newScenarioGraphVersionRepository(dbRef: DbRef) = new ScenarioGraphVersionRepository(dbRef)
 
   def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
@@ -175,6 +184,10 @@ object TestFactory {
     newActionProcessRepository(dummyDbRef)
 
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef, newCommentRepository(dbRef))
+
+  def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
+
+  def newDeploymentRepository(dbRef: DbRef, clock: Clock) = new DeploymentRepository(dbRef, clock)
 
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())

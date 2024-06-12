@@ -27,7 +27,7 @@ class DeploymentsStatusesSynchronizationScheduler(
       actorSystem.scheduler.scheduleAtFixedRate(0 seconds, config.delayBetweenSynchronizations) { () =>
         Try(Await.result(synchronizer.synchronizeAll(), config.synchronizationTimeout)).failed.foreach { ex =>
           logger.error(
-            s"Error while synchronizing deployments statuses. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
+            s"Error during deployments statuses synchronization. Synchronization will be retried in ${config.delayBetweenSynchronizations}",
             ex
           )
         }
