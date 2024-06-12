@@ -2024,16 +2024,20 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings(
     libraryDependencies ++= {
       Seq(
-        "com.github.pathikrit"       %% "better-files"                   % betterFilesV         % Test,
-        "ch.qos.logback"              % "logback-classic"                % logbackV             % Test,
-        "com.typesafe.scala-logging" %% "scala-logging"                  % scalaLoggingV        % Test,
-        "org.scalatest"              %% "scalatest"                      % scalaTestV           % Test,
-        "com.dimafeng"               %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
+        "com.github.pathikrit"        %% "better-files"                   % betterFilesV         % Test,
+        "ch.qos.logback"               % "logback-classic"                % logbackV             % Test,
+        "com.typesafe.scala-logging"  %% "scala-logging"                  % scalaLoggingV        % Test,
+        "org.scalatest"               %% "scalatest"                      % scalaTestV           % Test,
+        "com.softwaremill.sttp.tapir" %% "tapir-sttp-client"              % tapirV               % Test,
+        "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
       ) ++
         restAssuredDependency(scalaVersion.value)
     }
   )
-  .dependsOn(testUtils % Test)
+  .dependsOn(
+    designer  % Test,
+    testUtils % Test
+  )
 
 /*
   We want to simplify dependency management in downstream projects using BOM pattern

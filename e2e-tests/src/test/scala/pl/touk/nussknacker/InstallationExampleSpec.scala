@@ -1,17 +1,20 @@
 package pl.touk.nussknacker
 
-import better.files.File
 import org.scalatest.freespec.AnyFreeSpecLike
 
 class InstallationExampleSpec extends AnyFreeSpecLike with NuDockerBasedInstallationExample {
 
   "A test" in {
-    sendMessageToKafka("transactions", """{ "message": "Test1" }""")
-    sendMessageToKafka("transactions", """{ "message": "Test2" }""")
+    nussknackerAppClient.loadFlinkStreamingScenarioFromResource("DetectLargeTransactions")
+    nussknackerAppClient.deploy()
 
-    nussknackerAppClient.scenarioFromFile(File(getClass.getResource("/scenarios/DetectLargeTransactions.json")))
+    Thread.sleep(10000)
 
-    println("test")
+    sendMessageToKafka("transactions", """{ "clientId": "100", "amount":100, "isLast":false }" """)
+    sendMessageToKafka("transactions", """{ "clientId": "101", "amount":1000, "isLast":false }" """)
+    sendMessageToKafka("transactions", """{ "clientId": "102", "amount":10000, "isLast":false }" """)
+
+    println("test") // todo: remove
   }
 
 }

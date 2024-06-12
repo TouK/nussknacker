@@ -14,3 +14,6 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       JDK_JAVA_OPTIONS: "-Xmx2048M"
+
+  postgres:
+    volumes: []
