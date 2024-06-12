@@ -203,17 +203,17 @@ class ScenarioStatisticsTest
   }
 
   test("should determine query params with version and source ") {
-    val params = new UsageStatisticsReportsSettingsService(
+    val urlString = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
-    ).determineQueryParams().value.futureValue.value
-    params should contain("fingerprint" -> sampleFingerprint)
-    params should contain("source" -> "sources")
-    params should contain("version" -> BuildInfo.version)
+    ).prepareStatisticsUrl().futureValue.value.head.toString
+    urlString should include(s"fingerprint=$sampleFingerprint")
+    urlString should include("source=sources")
+    urlString should include(s"version=${BuildInfo.version}")
   }
 
   test("should combined statistics for all scenarios") {

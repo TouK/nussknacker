@@ -18,11 +18,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, Pro
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.{
-  nuFingerprintFileName,
-  prepareUrlString,
-  toURL
-}
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
@@ -111,25 +107,6 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
     }
   }
 
-  private[statistics] def prepareUrlString(queryParams: Map[String, String]): String = {
-    // Sorting for purpose of easier testing
-    queryParams.toList
-      .sortBy(_._1)
-      .map { case (k, v) =>
-        s"${URLEncoder.encode(k, StandardCharsets.UTF_8)}=${URLEncoder.encode(v, StandardCharsets.UTF_8)}"
-      }
-      .mkString("https://stats.nussknacker.io/?", "&", "")
-  }
-
-  private[statistics] def toURL(urlString: String): Either[StatisticError, Option[URL]] =
-    Try(new URI(urlString).toURL) match {
-      case Failure(ex) => {
-        logger.warn(s"Exception occurred while creating URL from string: [$urlString]", ex)
-        Left(CannotGenerateStatisticsError)
-      }
-      case Success(value) => Right(Some(value))
-    }
-
 }
 
 class UsageStatisticsReportsSettingsService(
@@ -143,15 +120,16 @@ class UsageStatisticsReportsSettingsService(
     fetchFeStatistics: () => Future[Map[String, Long]]
 )(implicit ec: ExecutionContext) {
 
-  def prepareStatisticsUrl(): Future[Either[StatisticError, Option[URL]]] = {
+  def prepareStatisticsUrl(): Future[Either[StatisticError, List[URL]]] = {
     if (config.enabled) {
-      determineQueryParams().value
-        .map {
-          case Right(queryParams) => toURL(prepareUrlString(queryParams))
-          case Left(e)            => Left(e)
-        }
+      val maybeUrls = for {
+        queryParams <- determineQueryParams()
+        fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
+        urls <- EitherT.fromEither[Future](new StatisticsUrlsDomainService(fingerprint, queryParams).prepareUrls())
+      } yield urls
+      maybeUrls.value
     } else {
-      Future.successful(Right(None))
+      Future.successful(Right(Nil))
     }
   }
 
@@ -159,9 +137,8 @@ class UsageStatisticsReportsSettingsService(
     for {
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
       scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
-      fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-      basicStatistics   = determineBasicStatistics(fingerprint, config)
-      generalStatistics = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
+      basicStatistics     = determineBasicStatistics(config)
+      generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
       componentList <- new EitherT(fetchComponentList())
@@ -178,11 +155,9 @@ class UsageStatisticsReportsSettingsService(
   }
 
   private def determineBasicStatistics(
-      fingerprint: Fingerprint,
       config: UsageStatisticsReportsConfig
   ): Map[String, String] =
     Map(
-      NuFingerprint.name -> fingerprint.value,
       // If it is not set, we assume that it is some custom build from source code
       NuSource.name  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       NuVersion.name -> BuildInfo.version
