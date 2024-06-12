@@ -34,8 +34,7 @@ class TableSource(
     enableFlinkBatchExecutionMode: Boolean
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
-    with FlinkSourceTestSupport[RECORD]
-    with TestDataGenerator {
+    with FlinkSourceTestSupport[RECORD] {
 
   import scala.jdk.CollectionConverters._
 
@@ -86,9 +85,6 @@ class TableSource(
 
 //  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
-
-//  TODO: add implementation during task with dumping data from data source
-  override def generateTestData(size: Int): TestData = ???
 
 }
 
