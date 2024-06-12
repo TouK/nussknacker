@@ -58,23 +58,27 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
   def updateDeploymentStatuses(statusesToUpdate: Map[DeploymentId, DeploymentStatus]): DB[Set[DeploymentId]] = {
     statusesToUpdate.toList
       .map { case (id, status) =>
-        val problemDescription = ProblemDeploymentStatus.extractDescription(status)
         toEffectAll(
-          deploymentsTable
-            .filter(d =>
-              d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= problemDescription)
-            )
-            .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt))
-            .update((status.name, problemDescription, Timestamp.from(clock.instant())))
-            .map { result =>
-              if (result > 0) Set(id) else Set.empty[DeploymentId]
-            }
+          updateDeploymentStatus(id, status).map(updated => if (updated) Set(id) else Set.empty[DeploymentId])
         )
       }
       .sequence
       .map(_.combineAll)
       // For the performance reasons it is better to run all updates in the one session, transactionally should enforce it
       .transactionally
+  }
+
+  def updateDeploymentStatus(id: DeploymentId, status: DeploymentStatus): DB[Boolean] = {
+    val problemDescription = ProblemDeploymentStatus.extractDescription(status)
+    toEffectAll(
+      deploymentsTable
+        .filter(d => d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= problemDescription))
+        .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt))
+        .update((status.name, problemDescription, Timestamp.from(clock.instant())))
+        .map { result =>
+          if (result > 0) true else false
+        }
+    )
   }
 
 }

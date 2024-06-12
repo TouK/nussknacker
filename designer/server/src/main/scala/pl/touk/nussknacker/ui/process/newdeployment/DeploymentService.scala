@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.Applicative
 import cats.data.{EitherT, NonEmptyList}
+import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
@@ -41,7 +42,8 @@ class DeploymentService(
     dmDispatcher: DeploymentManagerDispatcher,
     dbioRunner: DBIOActionRunner,
     clock: Clock
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext)
+    extends LazyLogging {
 
   def getDeploymentStatus(
       id: DeploymentId
@@ -72,8 +74,7 @@ class DeploymentService(
       // TODO: We should key metrics by deployment id and remove this limitation
       // Saving of deployment is the final step before deployment request because we want to store only requested deployments
       _ <- saveDeploymentEnsuringNoConcurrentDeploymentsForScenario(command, scenarioMetadata)
-      // TODO: Change deployment state to PROBLEM when runDeploymentUsingDeploymentManager ends up with failure
-      _ <- runDeploymentUsingDeploymentManager(scenarioMetadata, scenarioGraphVersion, command)
+      _ <- runDeploymentUsingDeploymentManagerAsync(scenarioMetadata, scenarioGraphVersion, command)
     } yield DeploymentForeignKeys(scenarioMetadata.id, scenarioGraphVersion.id)).value
 
   private def getScenarioMetadata(
@@ -178,11 +179,11 @@ class DeploymentService(
     } yield result
   }
 
-  private def runDeploymentUsingDeploymentManager(
+  private def runDeploymentUsingDeploymentManagerAsync(
       scenarioMetadata: ProcessEntityData,
       scenarioGraphVersion: ProcessVersionEntityData,
       command: RunDeploymentCommand
-  ): EitherT[Future, RunDeploymentError, Option[ExternalDeploymentId]] = {
+  ): EitherT[Future, RunDeploymentError, Unit] = {
     val runtimeVersionData = RuntimeVersionData(
       versionId = scenarioGraphVersion.id,
       processName = scenarioMetadata.name,
@@ -196,18 +197,42 @@ class DeploymentService(
       additionalDeploymentData = Map.empty,
       command.nodesDeploymentData
     )
-    EitherT.right(
-      dmDispatcher
-        .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)
-        .processCommand(
-          DMRunDeploymentCommand(
-            runtimeVersionData,
-            deploymentData,
-            scenarioGraphVersion.jsonUnsafe,
-            DeploymentUpdateStrategy.DontReplaceDeployment
-          )
+    dmDispatcher
+      .deploymentManagerUnsafe(scenarioMetadata.processingType)(command.user)
+      .processCommand(
+        DMRunDeploymentCommand(
+          runtimeVersionData,
+          deploymentData,
+          scenarioGraphVersion.jsonUnsafe,
+          DeploymentUpdateStrategy.DontReplaceDeployment
         )
-    )
+      )
+      .map { externalDeploymentId =>
+        logger.debug(
+          s"Deployment [${command.id}] successfully requested. External deployment id is: $externalDeploymentId"
+        )
+      }
+      .failed
+      .foreach(handleFailureDuringDeploymentRequesting(command.id, _))
+    EitherT.pure(())
+  }
+
+  private def handleFailureDuringDeploymentRequesting(
+      deploymentId: DeploymentId,
+      ex: Throwable
+  ): Unit = {
+    logger.warn(s"Deployment [$deploymentId] requesting finished with failure. Status will be marked as PROBLEM", ex)
+    dbioRunner
+      .run(
+        deploymentRepository.updateDeploymentStatus(
+          deploymentId,
+          DeploymentStatus.Problem.FailureDuringDeploymentRequesting
+        )
+      )
+      .failed
+      .foreach { ex =>
+        logger.warn(s"Exception during marking deployment [$deploymentId] status as PROBLEM", ex)
+      }
   }
 
   private def toLegacyDeploymentId(id: DeploymentId) = {

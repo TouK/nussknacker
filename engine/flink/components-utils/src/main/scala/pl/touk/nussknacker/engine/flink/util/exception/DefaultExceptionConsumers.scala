@@ -26,7 +26,7 @@ case class BrieflyLoggingExceptionConsumer(processMetaData: MetaData, params: Ma
     with LazyLoggingWithTraces {
 
   override def consume(e: NuExceptionInfo[NonTransientException]): Unit = {
-    warnWithDebugStack(
+    logger.warnWithDebugStack(
       s"${processMetaData.name}: Exception: ${e.throwable.getMessage} (${e.throwable.getClass.getName}), params: $params",
       e.throwable
     )

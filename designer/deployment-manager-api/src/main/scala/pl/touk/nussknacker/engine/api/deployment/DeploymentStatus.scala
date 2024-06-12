@@ -28,6 +28,10 @@ object DeploymentStatus extends Enum[DeploymentStatus] {
 
     val Failed: ProblemDeploymentStatus = ProblemDeploymentStatus(DefaultDescription)
 
+    val FailureDuringDeploymentRequesting: ProblemDeploymentStatus = ProblemDeploymentStatus(
+      "There were some problems with deployment requesting"
+    )
+
   }
 
   case object DuringDeploy extends NoAttributesDeploymentStatus

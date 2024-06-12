@@ -5,19 +5,24 @@ import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import io.circe.Json
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{NotBlankParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter}
-import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
+import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionParameter, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
@@ -27,10 +32,13 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] =
-    valid(MockableDeploymentManager)
+    valid(new MockableDeploymentManager(Some(modelData)))
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
+
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+    FlinkStreamingPropertiesConfig.properties
 
   override val name: String = "mockable"
 }
@@ -39,25 +47,10 @@ object MockableDeploymentManagerProvider {
 
   type ScenarioName = String
 
-  // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
-  //       improved, but there is no need to do it ATM.
-  object MockableDeploymentManager extends DeploymentManager with StubbingCommands {
+  class MockableDeploymentManager(modelDataOpt: Option[BaseModelData]) extends DeploymentManager with StubbingCommands {
 
-    private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
-    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
-
-    def configure(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
-      scenarioStatuses.set(scenarioStates)
-    }
-
-    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[Json]]): Unit = {
-      testResults.set(scenarioTestResults)
-    }
-
-    def clean(): Unit = {
-      scenarioStatuses.set(Map.empty)
-      testResults.set(Map.empty)
-    }
+    private lazy val testRunnerOpt =
+      modelDataOpt.map(modelData => new FlinkProcessTestRunner(modelData.asInvokableModelData))
 
     override def resolve(
         idWithName: ProcessIdWithName,
@@ -102,21 +95,29 @@ object MockableDeploymentManagerProvider {
     override def getProcessStates(name: ProcessName)(
         implicit freshnessPolicy: DataFreshnessPolicy
     ): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-      val status = scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
+      val status = MockableDeploymentManager.scenarioStatuses.get().getOrElse(name.value, SimpleStateStatus.NotDeployed)
       Future.successful(WithDataFreshnessStatus.fresh(List(StatusDetails(status, None))))
     }
 
     override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = {
       command match {
-        case DMTestScenarioCommand(scenarioName, _, _) =>
-          Future.successful {
-            testResults
-              .get()
-              .getOrElse(
-                scenarioName.value,
-                throw new IllegalArgumentException(s"Tests results not mocked for scenario [${scenarioName.value}]")
-              )
+        case DMRunDeploymentCommand(_, deploymentData, _, _) =>
+          Future {
+            deploymentData.deploymentId.toNewDeploymentIdOpt
+              .flatMap(MockableDeploymentManager.deploymentResults.get().get)
+              .flatMap(_.get)
           }
+        case DMTestScenarioCommand(scenarioName, scenario, testData) =>
+          MockableDeploymentManager.testResults
+            .get()
+            .get(scenarioName.value)
+            .map(Future.successful)
+            .orElse(testRunnerOpt.map(_.test(scenario, testData)))
+            .getOrElse(
+              throw new IllegalArgumentException(
+                s"Tests results not mocked for scenario [${scenarioName.value}] and no model data provided"
+              )
+            )
         case other =>
           super.processCommand(other)
       }
@@ -125,6 +126,35 @@ object MockableDeploymentManagerProvider {
     override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
     override def close(): Unit = {}
+  }
+
+  // note: At the moment this manager cannot be used in tests which are executed in parallel. It can be obviously
+  //       improved, but there is no need to do it ATM.
+  object MockableDeploymentManager {
+
+    private val scenarioStatuses = new AtomicReference[Map[ScenarioName, StateStatus]](Map.empty)
+    private val testResults      = new AtomicReference[Map[ScenarioName, TestResults[Json]]](Map.empty)
+    private val deploymentResults =
+      new AtomicReference[Map[DeploymentId, Try[Option[ExternalDeploymentId]]]](Map.empty)
+
+    def configureScenarioStatuses(scenarioStates: Map[ScenarioName, StateStatus]): Unit = {
+      MockableDeploymentManager.scenarioStatuses.set(scenarioStates)
+    }
+
+    def configureDeploymentResults(deploymentResults: Map[DeploymentId, Try[Option[ExternalDeploymentId]]]): Unit = {
+      MockableDeploymentManager.deploymentResults.set(deploymentResults)
+    }
+
+    def configureTestResults(scenarioTestResults: Map[ScenarioName, TestResults[Json]]): Unit = {
+      MockableDeploymentManager.testResults.set(scenarioTestResults)
+    }
+
+    def clean(): Unit = {
+      MockableDeploymentManager.scenarioStatuses.set(Map.empty)
+      MockableDeploymentManager.deploymentResults.set(Map.empty)
+      MockableDeploymentManager.testResults.set(Map.empty)
+    }
+
   }
 
 }

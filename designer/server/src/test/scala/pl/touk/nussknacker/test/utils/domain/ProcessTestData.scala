@@ -389,11 +389,13 @@ object ProcessTestData {
       ProcessAdditionalFields(
         description = None,
         properties = Map(
-          "maxEvents"        -> "",
-          "parallelism"      -> "1",
-          "numberOfThreads"  -> "1",
-          "spillStateToDisk" -> "true",
-          "environment"      -> "test"
+          "maxEvents"                   -> "",
+          "parallelism"                 -> "1",
+          "numberOfThreads"             -> "1",
+          "spillStateToDisk"            -> "true",
+          "environment"                 -> "test",
+          "checkpointIntervalInSeconds" -> "",
+          "useAsyncInterpretation"      -> "",
         ),
         metaDataType = "StreamMetaData"
       )
