@@ -18,13 +18,16 @@ import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
+
+  import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -41,6 +44,9 @@ class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
     FlinkStreamingPropertiesConfig.properties
 
   override val name: String = "mockable"
+
+  override def engineSetupIdentity(config: Config): Any =
+    config.getAs[String]("id").getOrElse("")
 }
 
 object MockableDeploymentManagerProvider {
