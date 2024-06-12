@@ -9,8 +9,13 @@ import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, TestWithParametersSupport}
-import pl.touk.nussknacker.engine.api.test.TestRecordParser
+import pl.touk.nussknacker.engine.api.process.{
+  BasicContextInitializer,
+  ContextInitializer,
+  TestDataGenerator,
+  TestWithParametersSupport
+}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -29,7 +34,8 @@ class TableSource(
     enableFlinkBatchExecutionMode: Boolean
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
-    with FlinkSourceTestSupport[RECORD] {
+    with FlinkSourceTestSupport[RECORD]
+    with TestDataGenerator {
 
   import scala.jdk.CollectionConverters._
 
@@ -80,6 +86,10 @@ class TableSource(
   override def typeInformation: TypeInformation[RECORD] = TypeInformation.of(classOf[RECORD])
 
   override def testRecordParser: TestRecordParser[RECORD] = ???
+
+//  TODO: add implementation during task with dumping data from data source
+  override def generateTestData(size: Int): TestData = ???
+
 }
 
 object TableSource {
