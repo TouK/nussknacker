@@ -6,9 +6,7 @@ class InstallationExampleSpec extends AnyFreeSpecLike with NuDockerBasedInstalla
 
   "A test" in {
     nussknackerAppClient.loadFlinkStreamingScenarioFromResource("DetectLargeTransactions")
-    nussknackerAppClient.deploy()
-
-    Thread.sleep(10000)
+    nussknackerAppClient.deployAndWaitForRunningState("DetectLargeTransactions")
 
     sendMessageToKafka("transactions", """{ "clientId": "100", "amount":100, "isLast":false }" """)
     sendMessageToKafka("transactions", """{ "clientId": "101", "amount":1000, "isLast":false }" """)

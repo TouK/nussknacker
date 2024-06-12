@@ -2,6 +2,7 @@ package pl.touk.nussknacker
 
 import better.files.File
 import cats.effect.unsafe.implicits._
+import org.testcontainers.shaded.org.bouncycastle.math.field.FiniteField
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
@@ -9,6 +10,7 @@ import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.test.WithTestHttpClientCreator
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos.RunDeploymentRequest
+import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticName
 import sttp.client3._
 import sttp.model.StatusCode
 import sttp.model.headers.WWWAuthenticateChallenge
@@ -17,6 +19,8 @@ import sttp.tapir.{DecodeResult, EndpointInput, auth}
 import ujson.Value
 
 import java.util.{Base64, UUID}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.util.{Failure, Success, Try}
 
 class NussknackerAppClient(host: String, port: Int) {
 
@@ -107,15 +111,28 @@ class NussknackerAppClient(host: String, port: Int) {
     }
   }
 
-  def deploy() = {
+  def deployAndWaitForRunningState(scenarioName: String, timeout: FiniteDuration = 30 seconds): Unit = {
+    val deploymentId = UUID.randomUUID()
+    runDeployment(deploymentId, scenarioName)
+    (1 to 10).foreach { _ =>
+      Try(getDeploymentStatus(deploymentId)) match {
+        case Failure(_) =>
+          Thread.sleep(1000)
+        case Success(_) =>
+          return
+      }
+    }
+  }
+
+  private def runDeployment(deploymentIdUuid: UUID, scenarioName: String) = {
     val response = SttpClientInterpreter()
       .toSecureRequest(new DeploymentApiEndpoints(authInput).runDeploymentEndpoint, Some(uri"$nuAddress"))
       .apply(AuthCredentials.PassedAuthCredentials(Base64.getEncoder.encodeToString("admin:admin".getBytes)))
       .apply(
         (
-          DeploymentId(UUID.randomUUID()),
+          DeploymentId(deploymentIdUuid),
           RunDeploymentRequest(
-            scenarioName = ProcessName("DetectLargeTransactions"),
+            scenarioName = ProcessName(scenarioName),
             nodesDeploymentData = NodesDeploymentData(Map.empty),
             comment = None
           )
@@ -129,6 +146,24 @@ class NussknackerAppClient(host: String, port: Int) {
         v match {
           case Left(value) => ???
           case Right(())   =>
+        }
+    }
+  }
+
+  private def getDeploymentStatus(deploymentIdUuid: UUID) = {
+    val response = SttpClientInterpreter()
+      .toSecureRequest(new DeploymentApiEndpoints(authInput).getDeploymentStatusEndpoint, Some(uri"$nuAddress"))
+      .apply(AuthCredentials.PassedAuthCredentials(Base64.getEncoder.encodeToString("admin:admin".getBytes)))
+      .apply(DeploymentId(deploymentIdUuid))
+      .send(httpClient)
+
+    response.body match {
+      case failure: DecodeResult.Failure => ???
+      case DecodeResult.Value(v) =>
+        v match {
+          case Left(value)      => ???
+          case Right("RUNNING") =>
+          case Right(_)         => ???
         }
     }
   }
