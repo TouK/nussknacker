@@ -2033,7 +2033,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
         restAssuredDependency(scalaVersion.value)
     }
   )
-  .dependsOn(kafkaUtils % Test)
+  .dependsOn(testUtils % Test)
 
 /*
   We want to simplify dependency management in downstream projects using BOM pattern
