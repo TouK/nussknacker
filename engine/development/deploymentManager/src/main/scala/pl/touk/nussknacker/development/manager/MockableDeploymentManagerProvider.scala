@@ -13,13 +13,7 @@ import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActi
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.StubbingCommands
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.{
-  BaseModelData,
-  DeploymentManagerDependencies,
-  DeploymentManagerProvider,
-  MetaDataInitializer,
-  deployment
-}
+import pl.touk.nussknacker.engine._
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Future
@@ -127,6 +121,8 @@ object MockableDeploymentManagerProvider {
           super.processCommand(other)
       }
     }
+
+    override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
     override def close(): Unit = {}
   }

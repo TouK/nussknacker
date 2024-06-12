@@ -2,12 +2,33 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{ScenarioActionName, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentStatus,
+  NoAttributesDeploymentStatus,
+  NoAttributesStateStatus,
+  ProblemDeploymentStatus,
+  ScenarioActionName,
+  StateDefinitionDetails,
+  StateStatus
+}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
 
 object SimpleStateStatus {
+
+  def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {
+    deploymentStatus match {
+      case NoAttributesDeploymentStatus(name) => NoAttributesStateStatus(name.value)
+      // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
+      // statuses that are not deployment statuses but scenario statuses.
+      case ProblemDeploymentStatus(description) => ProblemStateStatus(description)
+      case other =>
+        throw new IllegalArgumentException(
+          s"Problem during conversion of deployment status to scenario status. Not expected deployment status: $other"
+        )
+    }
+  }
 
   // Represents general problem.
   final case class ProblemStateStatus(description: String, allowedActions: List[ScenarioActionName] = defaultActions)

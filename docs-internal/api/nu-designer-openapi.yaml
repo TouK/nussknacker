@@ -785,9 +785,19 @@ paths:
         '200':
           description: ''
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/GetDeploymentStatusResponse'
+              examples:
+                RUNNING status:
+                  value:
+                    name: RUNNING
+                    modifiedAt: '2024-01-01T00:00:00Z'
+                PROBLEM status:
+                  value:
+                    name: PROBLEM
+                    problemDescription: There are some problems with deployment.
+                    modifiedAt: '2024-01-01T00:00:00Z'
         '400':
           description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
             value for: path parameter deploymentId'
@@ -3437,6 +3447,22 @@ components:
           type: string
         nodeId:
           type: string
+    GetDeploymentStatusResponse:
+      title: GetDeploymentStatusResponse
+      type: object
+      required:
+      - name
+      - modifiedAt
+      properties:
+        name:
+          type: string
+        problemDescription:
+          type:
+          - string
+          - 'null'
+        modifiedAt:
+          type: string
+          format: date-time
     HealthCheckProcessErrorResponseDto:
       title: HealthCheckProcessErrorResponseDto
       type: object

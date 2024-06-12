@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.embedded
 
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, StateStatus}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 
@@ -30,6 +30,6 @@ trait DeploymentStrategy {
 
 trait Deployment extends AutoCloseable {
 
-  def status(): StateStatus
+  def status(): DeploymentStatus
 
 }

@@ -8,12 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  DeploymentManager,
-  StatusDetails,
-  WithDataFreshnessStatus
-}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -30,8 +25,9 @@ class CachingProcessStateDeploymentManagerSpec
     with OptionValues {
 
   test("should ask delegate for a fresh state each time") {
-    val delegate       = prepareDMReturningRandomStates
-    val cachingManager = new CachingProcessStateDeploymentManager(delegate, 10 seconds)
+    val delegate = prepareDMReturningRandomStates
+    val cachingManager =
+      new CachingProcessStateDeploymentManager(delegate, 10 seconds, NoDeploymentSynchronisationSupport)
 
     val results = List(
       cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh),
@@ -44,8 +40,9 @@ class CachingProcessStateDeploymentManagerSpec
   }
 
   test("should cache state for DataFreshnessPolicy.CanBeCached") {
-    val delegate       = prepareDMReturningRandomStates
-    val cachingManager = new CachingProcessStateDeploymentManager(delegate, 10 seconds)
+    val delegate = prepareDMReturningRandomStates
+    val cachingManager =
+      new CachingProcessStateDeploymentManager(delegate, 10 seconds, NoDeploymentSynchronisationSupport)
 
     val firstInvocation = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.CanBeCached)
     firstInvocation.cached shouldBe false
@@ -57,8 +54,9 @@ class CachingProcessStateDeploymentManagerSpec
   }
 
   test("should reuse state updated by DataFreshnessPolicy.Fresh during reading with DataFreshnessPolicy.CanBeCached") {
-    val delegate       = prepareDMReturningRandomStates
-    val cachingManager = new CachingProcessStateDeploymentManager(delegate, 10 seconds)
+    val delegate = prepareDMReturningRandomStates
+    val cachingManager =
+      new CachingProcessStateDeploymentManager(delegate, 10 seconds, NoDeploymentSynchronisationSupport)
 
     val resultForFresh = cachingManager.getProcessStatesDeploymentIdNow(DataFreshnessPolicy.Fresh)
     resultForFresh.cached shouldBe false

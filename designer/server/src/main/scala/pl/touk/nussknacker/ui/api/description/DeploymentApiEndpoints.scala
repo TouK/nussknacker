@@ -9,23 +9,26 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   MissingRequiredProperty
 }
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleDeploymentStatus
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, UIGlobalError, ValidationErrors}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{UIGlobalError, ValidationErrors}
 import pl.touk.nussknacker.security.AuthCredentials
 import pl.touk.nussknacker.ui.api.BaseHttpService.CustomAuthorizationError
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.process.repository.ApiCallComment
 import sttp.model.StatusCode
+import sttp.tapir.Codec.PlainCodec
 import sttp.tapir.EndpointIO.{Example, Info}
 import sttp.tapir._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
+import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset}
 import java.util.UUID
 
 class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEndpointDefinitions {
@@ -115,7 +118,8 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       )
       .withSecurity(auth)
 
-  lazy val getDeploymentStatusEndpoint: SecuredEndpoint[DeploymentId, GetDeploymentStatusError, StatusName, Any] =
+  lazy val getDeploymentStatusEndpoint
+      : SecuredEndpoint[DeploymentId, GetDeploymentStatusError, GetDeploymentStatusResponse, Any] =
     baseNuApiEndpoint
       .summary("Get status of a deployment")
       .tag("Deployments")
@@ -123,7 +127,26 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
       .in(
         "deployments" / deploymentIdPathCapture / "status"
       )
-      .out(statusCode(StatusCode.Ok).and(stringBody))
+      .out(
+        statusCode(StatusCode.Ok).and(
+          jsonBody[GetDeploymentStatusResponse].examples(
+            List(
+              Example.of(
+                GetDeploymentStatusResponse(SimpleDeploymentStatus.Running.name, None, exampleInstant),
+                Some("RUNNING status")
+              ),
+              Example.of(
+                GetDeploymentStatusResponse(
+                  SimpleDeploymentStatus.Problem.Failed.name,
+                  Some(SimpleDeploymentStatus.Problem.Failed.description),
+                  exampleInstant
+                ),
+                Some("PROBLEM status")
+              )
+            )
+          )
+        )
+      )
       .errorOut(
         oneOf[GetDeploymentStatusError](
           oneOfVariantValueMatcher[DeploymentNotFoundError](
@@ -145,6 +168,8 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
 
   private lazy val exampleDeploymentId = DeploymentId(UUID.fromString("a9a1e269-0b71-4582-a948-603482d27298"))
 
+  private lazy val exampleInstant = LocalDateTime.of(2024, 1, 1, 0, 0, 0).atZone(ZoneOffset.UTC).toInstant
+
   private lazy val deploymentIdPathCapture = path[DeploymentId]("deploymentId")
     .copy(info =
       Info
@@ -163,12 +188,24 @@ object DeploymentApiEndpoints {
 
     implicit val scenarioNameSchema: Schema[ProcessName] = Schema.string[ProcessName]
 
+    implicit val deploymentIdCodec: PlainCodec[DeploymentId] =
+      Codec.uuid.map(DeploymentId(_))(_.value)
+
     // TODO: scenario graph version / the currently active version instead of the latest
     @derive(encoder, decoder, schema)
     final case class RunDeploymentRequest(
         scenarioName: ProcessName,
         nodesDeploymentData: NodesDeploymentData,
         comment: Option[ApiCallComment]
+    )
+
+    implicit val deploymentStatusNameCodec: Schema[DeploymentStatusName] = Schema.string[DeploymentStatusName]
+
+    @derive(encoder, decoder, schema)
+    final case class GetDeploymentStatusResponse(
+        name: DeploymentStatusName,
+        problemDescription: Option[String],
+        modifiedAt: Instant
     )
 
     implicit val nodeDeploymentDataCodec: Schema[NodeDeploymentData] = Schema.string[SqlFilteringExpression].as

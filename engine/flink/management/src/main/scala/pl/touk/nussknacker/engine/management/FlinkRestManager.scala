@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.management
 
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleDeploymentStatus, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkRestManager.JobDetails
 import pl.touk.nussknacker.engine.management.rest.FlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 
 import scala.concurrent.Future
 
@@ -37,11 +37,12 @@ class FlinkRestManager(
     val preparedName = modelData.namingStrategy.prepareName(name.value)
 
     client
-      .findJobsByName(preparedName)
+      .getJobsOverviews()
       .flatMap(result =>
         Future
           .sequence(
             result.value
+              .filter(_.name == preparedName)
               .map(job =>
                 withJobDetails(job.jid, name).map { jobDetails =>
                   // TODO: return error when there's no correct version in process
@@ -51,7 +52,7 @@ class FlinkRestManager(
                     logger.debug(s"No correct job details in deployed scenario: ${job.name}")
                   }
                   StatusDetails(
-                    mapJobStatus(job),
+                    SimpleStateStatus.fromDeploymentStatus(mapJobStatus(job)),
                     jobDetails.flatMap(_.deploymentId),
                     Some(ExternalDeploymentId(job.jid)),
                     version = jobDetails.map(_.version),
@@ -66,28 +67,50 @@ class FlinkRestManager(
       )
   }
 
-  private def toJobStatus(overview: JobOverview): JobStatus = {
-    import org.apache.flink.api.common.JobStatus
-    JobStatus.valueOf(overview.state)
-  }
+  override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+    new DeploymentSynchronisationSupported {
+
+      override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] = {
+        client.getJobsOverviews()(DataFreshnessPolicy.Fresh).map(_.value).flatMap { jobsOverviews =>
+          jobsOverviews
+            .map { jobOverview =>
+              val status = mapJobStatus(jobOverview)
+              client.getJobConfig(jobOverview.jid).map { jobConfig =>
+                jobConfig.`user-config`
+                  .get("deploymentId")
+                  .flatMap(_.asString)
+                  .flatMap(newdeployment.DeploymentId.fromString)
+                  .map(_ -> status)
+              }
+            }
+            .sequence
+            .map(_.flatten.toMap)
+        }
+      }
+
+    }
 
   // NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
-  protected def mapJobStatus(overview: JobOverview): StateStatus = {
+  protected def mapJobStatus(overview: JobOverview): DeploymentStatus = {
     toJobStatus(overview) match {
-      case JobStatus.RUNNING if ensureTasksRunning(overview) => SimpleStateStatus.Running
-      case s if checkDuringDeployForNotRunningJob(s)         => SimpleStateStatus.DuringDeploy
-      case JobStatus.FINISHED                                => SimpleStateStatus.Finished
-      case JobStatus.RESTARTING                              => SimpleStateStatus.Restarting
-      case JobStatus.CANCELED                                => SimpleStateStatus.Canceled
-      case JobStatus.CANCELLING                              => SimpleStateStatus.DuringCancel
+      case JobStatus.RUNNING if ensureTasksRunning(overview) => SimpleDeploymentStatus.Running
+      case s if checkDuringDeployForNotRunningJob(s)         => SimpleDeploymentStatus.DuringDeploy
+      case JobStatus.FINISHED                                => SimpleDeploymentStatus.Finished
+      case JobStatus.RESTARTING                              => SimpleDeploymentStatus.Restarting
+      case JobStatus.CANCELED                                => SimpleDeploymentStatus.Canceled
+      case JobStatus.CANCELLING                              => SimpleDeploymentStatus.DuringCancel
       // The job is not technically running, but should be in a moment
-      case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => SimpleStateStatus.Running
-      case JobStatus.FAILING => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
-      case JobStatus.FAILED  => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
+      case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => SimpleDeploymentStatus.Running
+      case JobStatus.FAILING | JobStatus.FAILED =>
+        SimpleDeploymentStatus.Problem.Failed // redeploy allowed, handle with restartStrategy
       case _ =>
         throw new IllegalStateException() // TODO: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
+  }
 
+  private def toJobStatus(overview: JobOverview): JobStatus = {
+    import org.apache.flink.api.common.JobStatus
+    JobStatus.valueOf(overview.state)
   }
 
   protected def ensureTasksRunning(overview: JobOverview): Boolean = {
