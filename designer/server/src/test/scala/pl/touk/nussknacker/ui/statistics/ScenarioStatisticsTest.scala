@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.statistics.ComponentKeys._
 
+import java.net.URI
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -221,6 +222,19 @@ class ScenarioStatisticsTest
     urlString should include(s"version=${BuildInfo.version}")
   }
 
+  test("should determine statistics for components") {
+    val params = new UsageStatisticsReportsSettingsService(
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      mockedFingerprintService,
+      () => Future.successful(Right(List.empty)),
+      _ => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(componentList)),
+      () => Future.successful(Map.empty[String, Long]),
+    ).determineQueryParams().value.futureValue.value
+    params should contain(AccountService.toString -> "5")
+    params shouldNot contain(Choice.toString)
+  }
+
   test("should combined statistics for all scenarios") {
     val nonRunningScenario = ScenarioStatisticsInputData(
       isFragment = false,
@@ -299,7 +313,7 @@ class ScenarioStatisticsTest
       UptimeInSecondsAverage -> "0",
       UptimeInSecondsMax     -> "0",
       UptimeInSecondsMin     -> "0",
-      ComponentsCount        -> "1",
+      ComponentsCount        -> "2",
       FragmentsUsedMedian    -> "1",
       FragmentsUsedAverage   -> "1",
       NodesMedian            -> "3",
@@ -388,6 +402,35 @@ class ScenarioStatisticsTest
       links = List.empty,
       usageCount = 2,
       AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
+    ),
+    ComponentListElement(
+      DesignerWideComponentId("builtin-choice"),
+      "choice",
+      "/assets/components/Switch.svg",
+      ComponentType.BuiltIn,
+      ComponentGroupName("base"),
+      List(
+        "BatchDev",
+        "Category1",
+        "Category2",
+        "Default",
+        "DevelopmentTests",
+        "Periodic",
+        "RequestResponse",
+        "RequestResponseK8s",
+        "StreamingLite",
+        "StreamingLiteK8s"
+      ),
+      List(
+        ComponentLink(
+          "documentation",
+          "Documentation",
+          new URI("/assets/icons/documentation.svg"),
+          new URI("https://nussknacker.io/documentation/docs/scenarios_authoring/BasicNodes#choice")
+        )
+      ),
+      0,
+      AllowedProcessingModes.All
     )
   )
 
