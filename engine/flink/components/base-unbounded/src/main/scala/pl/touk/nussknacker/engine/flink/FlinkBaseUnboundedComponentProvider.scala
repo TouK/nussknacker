@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.engine.flink
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentProvider,
+  DefaultComponentName,
+  NussknackerVersion
+}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.AggregateWindowsConfig
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransformers.{
@@ -55,7 +60,10 @@ object FlinkBaseUnboundedComponentProvider {
       ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs(
         "AggregatesInTimeWindows#sliding-window"
       ),
-      ComponentDefinition("aggregate-tumbling", new TumblingAggregateTransformer(aggregateWindowsConfig))
+      ComponentDefinition(
+        DefaultComponentName.aggregateTumbling.toString,
+        new TumblingAggregateTransformer(aggregateWindowsConfig)
+      )
         .withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
       ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs(
         "AggregatesInTimeWindows#session-window"
