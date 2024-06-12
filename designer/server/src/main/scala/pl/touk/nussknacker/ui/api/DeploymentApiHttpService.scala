@@ -39,8 +39,9 @@ class DeploymentApiHttpService(
                 err match {
                   case DeploymentService.ConflictingDeploymentIdError(id) =>
                     ConflictingDeploymentIdError(id)
-                  case DeploymentService.ConcurrentDeploymentsForScenarioArePerformedError(concurrentDeploymentsIds) =>
-                    ConcurrentDeploymentsForScenarioArePerformedError(concurrentDeploymentsIds)
+                  case DeploymentService
+                        .ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, concurrentDeploymentsIds) =>
+                    ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, concurrentDeploymentsIds)
                   case DeploymentService.ScenarioNotFoundError(scenarioName) =>
                     ScenarioNotFoundError(scenarioName)
                   case DeploymentService.NoPermissionError => NoPermissionError

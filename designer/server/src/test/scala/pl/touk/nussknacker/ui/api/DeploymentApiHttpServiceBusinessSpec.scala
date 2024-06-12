@@ -2,13 +2,13 @@ package pl.touk.nussknacker.ui.api
 
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import io.restassured.RestAssured.{`given`, when}
+import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleDeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
@@ -20,9 +20,9 @@ import pl.touk.nussknacker.test.{
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeploymentApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -84,7 +84,7 @@ class DeploymentApiHttpServiceBusinessSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              waitForDeploymentStatusNameMatches(requestedDeploymentId, SimpleDeploymentStatus.Finished.name)
+              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatus.Finished.name)
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
@@ -146,7 +146,7 @@ class DeploymentApiHttpServiceBusinessSpec
             .applicationState {
               createSavedScenario(scenario)
               runDeployment(firstDeploymentId)
-              waitForDeploymentStatusNameMatches(firstDeploymentId, SimpleDeploymentStatus.Finished.name)
+              waitForDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
             }
             .when()
             .basicAuthAdmin()
@@ -157,11 +157,11 @@ class DeploymentApiHttpServiceBusinessSpec
             .verifyApplicationState {
               checkDeploymentStatusNameMatches(
                 secondDeploymentId,
-                SimpleDeploymentStatus.DuringDeploy.name,
-                SimpleDeploymentStatus.Running.name,
-                SimpleDeploymentStatus.Finished.name
+                DeploymentStatus.DuringDeploy.name,
+                DeploymentStatus.Running.name,
+                DeploymentStatus.Finished.name
               )
-              checkDeploymentStatusNameMatches(firstDeploymentId, SimpleDeploymentStatus.Finished.name)
+              checkDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
             }
         }
       }

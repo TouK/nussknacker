@@ -2,12 +2,11 @@ package pl.touk.nussknacker.ui.process.newdeployment
 
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import db.util.DBIOActionInstances._
-import org.postgresql.util.{PSQLException, PSQLState}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
-import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
+import pl.touk.nussknacker.ui.db.{DbRef, NuTables, SqlStates}
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentEntityFactory.DeploymentEntityData
 import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.{
   ConflictingDeploymentIdError,
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.ui.process.newdeployment.DeploymentRepository.{
 }
 import slick.jdbc.JdbcProfile
 
-import java.sql.{SQLIntegrityConstraintViolationException, Timestamp}
+import java.sql.{SQLException, Timestamp}
 import java.time.Clock
 import scala.concurrent.ExecutionContext
 
@@ -25,7 +24,10 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
 
   import profile.api._
 
-  def getScenarioDeploymentsInNotMatchingStatus(scenarioId: ProcessId, statusNames: Set[DeploymentStatusName]) = {
+  def getScenarioDeploymentsInNotMatchingStatus(
+      scenarioId: ProcessId,
+      statusNames: Set[DeploymentStatusName]
+  ): DB[Seq[DeploymentEntityData]] = {
     toEffectAll(deploymentsTable.filter(d => d.scenarioId === scenarioId && !(d.statusName inSet statusNames)).result)
   }
 
@@ -33,11 +35,7 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
     toEffectAll(deploymentsTable += deployment).asTry.map(
       _.map(_ => Right(()))
         .recover {
-          // for postgres
-          case e: PSQLException if e.getSQLState == PSQLState.UNIQUE_VIOLATION.getState =>
-            Left(ConflictingDeploymentIdError(deployment.id))
-          // for other dbs, e.g. hsql
-          case _: SQLIntegrityConstraintViolationException =>
+          case e: SQLException if e.getSQLState == SqlStates.UniqueViolation =>
             Left(ConflictingDeploymentIdError(deployment.id))
         }
         .get

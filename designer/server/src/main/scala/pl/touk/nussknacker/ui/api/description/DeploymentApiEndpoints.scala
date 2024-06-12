@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   ExpressionParserCompilationError,
   MissingRequiredProperty
 }
-import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleDeploymentStatus
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
@@ -135,13 +134,13 @@ class DeploymentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseE
           jsonBody[GetDeploymentStatusResponse].examples(
             List(
               Example.of(
-                GetDeploymentStatusResponse(SimpleDeploymentStatus.Running.name, None, exampleInstant),
+                GetDeploymentStatusResponse(DeploymentStatus.Running.name, None, exampleInstant),
                 Some("RUNNING status")
               ),
               Example.of(
                 GetDeploymentStatusResponse(
-                  SimpleDeploymentStatus.Problem.Failed.name,
-                  Some(SimpleDeploymentStatus.Problem.Failed.description),
+                  DeploymentStatus.Problem.Failed.name,
+                  Some(DeploymentStatus.Problem.Failed.description),
                   exampleInstant
                 ),
                 Some("PROBLEM status")
@@ -228,6 +227,7 @@ object DeploymentApiEndpoints {
     final case class ConflictingDeploymentIdError(id: DeploymentId) extends ConflictRunDeploymentError
 
     final case class ConcurrentDeploymentsForScenarioArePerformedError(
+        scenarioName: ProcessName,
         concurrentDeploymentsIds: NonEmptyList[DeploymentId]
     ) extends ConflictRunDeploymentError
 
@@ -256,8 +256,10 @@ object DeploymentApiEndpoints {
     implicit val conflictingDeploymentIdErrorCodec: Codec[String, ConflictRunDeploymentError, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[ConflictRunDeploymentError] {
         case ConflictingDeploymentIdError(id) => s"Deployment with id $id already exists"
-        case ConcurrentDeploymentsForScenarioArePerformedError(concurrentDeploymentsIds) =>
-          s"Deployment can't be run because deployment with ids ${concurrentDeploymentsIds.toList.mkString(", ")} for the same scenario are performed concurrently"
+        case ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, concurrentDeploymentsIds) =>
+          s"Deployment can't be run because only a single deployment per scenario can be run at a time. " +
+            s"Currently the scenario [$scenarioName] has running deployments with ids: " +
+            s"${concurrentDeploymentsIds.toList.sortBy(_.value).mkString(",")}".stripMargin
       }
 
     implicit val deploymentNotFoundErrorCodec: Codec[String, DeploymentNotFoundError, CodecFormat.TextPlain] =

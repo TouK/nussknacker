@@ -19,14 +19,10 @@ object SimpleStateStatus {
 
   def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {
     deploymentStatus match {
-      case NoAttributesDeploymentStatus(name) => NoAttributesStateStatus(name.value)
+      case noAttributes: NoAttributesDeploymentStatus => NoAttributesStateStatus(noAttributes.name.value)
       // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
       // statuses that are not deployment statuses but scenario statuses.
-      case ProblemDeploymentStatus(description) => ProblemStateStatus(description)
-      case other =>
-        throw new IllegalArgumentException(
-          s"Problem during conversion of deployment status to scenario status. Not expected deployment status: $other"
-        )
+      case problem: ProblemDeploymentStatus => ProblemStateStatus(problem.description)
     }
   }
 

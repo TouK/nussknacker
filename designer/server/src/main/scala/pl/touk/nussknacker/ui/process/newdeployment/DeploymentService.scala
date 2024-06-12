@@ -5,7 +5,6 @@ import cats.data.{EitherT, NonEmptyList}
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleDeploymentStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => RuntimeVersionData}
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId => LegacyDeploymentId, ExternalDeploymentId}
@@ -91,14 +90,14 @@ class DeploymentService(
   ): EitherT[Future, RunDeploymentError, Unit] = {
     EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
       nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
-      _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments)
+      _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments, scenarioMetadata.name)
       _                      <- saveDeployment(command, scenarioMetadata)
     } yield ()).value))
   }
 
   private def getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata: ProcessEntityData) = {
     val nonPerformingDeploymentStatuses =
-      Set(SimpleDeploymentStatus.Canceled.name, SimpleDeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
+      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
     EitherT.right(
       deploymentRepository.getScenarioDeploymentsInNotMatchingStatus(
         scenarioMetadata.id,
@@ -107,12 +106,15 @@ class DeploymentService(
     )
   }
 
-  private def checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments: Seq[DeploymentEntityData]) = {
+  private def checkNoConcurrentDeploymentsForScenario(
+      nonFinishedDeployments: Seq[DeploymentEntityData],
+      scenarioName: ProcessName
+  ) = {
     EitherT.fromEither(
       NonEmptyList
         .fromList(nonFinishedDeployments.toList)
         .map(conflictingDeployments =>
-          Left(ConcurrentDeploymentsForScenarioArePerformedError(conflictingDeployments.map(_.id)))
+          Left(ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, conflictingDeployments.map(_.id)))
         )
         .getOrElse(Right(()))
     )
@@ -130,7 +132,7 @@ class DeploymentService(
           scenarioMetadata.id,
           now,
           command.user.id,
-          WithModifiedAt(SimpleDeploymentStatus.DuringDeploy, now)
+          WithModifiedAt(DeploymentStatus.DuringDeploy, now)
         )
       )
     ).leftMap(e => ConflictingDeploymentIdError(e.id))
@@ -237,6 +239,7 @@ object DeploymentService {
   final case class ConflictingDeploymentIdError(id: DeploymentId) extends RunDeploymentError
 
   final case class ConcurrentDeploymentsForScenarioArePerformedError(
+      scenarioName: ProcessName,
       concurrentDeploymentsIds: NonEmptyList[DeploymentId]
   ) extends RunDeploymentError
 

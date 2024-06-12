@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.ui.db.DbRef
+import pl.touk.nussknacker.ui.db.{DbRef, SqlStates}
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner.TransactionsRunAttemptsExceedException
 import slick.jdbc.{JdbcProfile, TransactionIsolation}
 
+import java.sql.SQLException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -27,7 +28,7 @@ class DBIOActionRunner(dbRef: DbRef)(implicit ec: ExecutionContext) {
     val transactionAction = action.transactionally.withTransactionIsolation(TransactionIsolation.Serializable)
     def doRun(): Future[Try[T]] = {
       run(transactionAction).map(Success(_)).recover {
-        case ex: java.sql.SQLException if ex.getSQLState == "40001" => Failure(ex)
+        case ex: SQLException if ex.getSQLState == SqlStates.SerializationFailure => Failure(ex)
       }
     }
     retry
