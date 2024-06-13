@@ -402,7 +402,7 @@ describe("Process", () => {
         cy.get("[data-testid=window]")
             .should("be.visible")
             .find("label")
-            .contains(/input:/i)
+            .contains(/value:/i)
             .siblings()
             .find("input")
             .type("10");
