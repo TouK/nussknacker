@@ -3,6 +3,7 @@
 1.16.0 (Not released yet)
 -------------------------
 
+* [todo](todo) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
 * [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) [#6172](https://github.com/TouK/nussknacker/pull/6172) Batch processing mode related improvements:
