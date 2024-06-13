@@ -30,7 +30,7 @@ function deployScenario() {
 
   local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X PUT "http://localhost:8080/api/deployments/$DEPLOYMENT_ID" \
-    -H "Content-Type: application/json" -d "$BODY" \
+    -H "Content-Type: application/json" -d "$BODY"
   )
 
   local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
@@ -46,7 +46,7 @@ function deployScenario() {
 
 function checkDeploymentStatus() {
   if [ "$#" -ne 1 ]; then
-    echo "Error: Two parameters required: 1) deployment UUID"
+    echo "Error: One parameter required: 1) deployment UUID"
     exit 21
   fi
 

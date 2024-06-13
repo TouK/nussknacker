@@ -2,12 +2,13 @@
 
 cd "$(dirname "$0")"
 
-if [ "$#" -lt 1 ]; then
-  echo "Error: One parameter required: 1) scenario file path"
+if [ "$#" -lt 2 ]; then
+  echo "Error: Two parameters required: 1) scenario name, 2) scenario file path"
   exit 1
 fi
 
-SCENARIO_FILE_PATH=$1
+SCENARIO_NAME=$1
+SCENARIO_FILE_PATH=$2
 CATEGORY=${2:-"Default"}
 
 if [ ! -f "$SCENARIO_FILE_PATH" ]; then
@@ -114,8 +115,7 @@ function saveScenario() {
   echo "Scenario $SCENARIO_NAME saved successfully."
 }
 
-SCENARIO_NAME=$(cat $SCENARIO_FILE_PATH | jq -r .metaData.id)
-META_DATA_TYPE=$(cat $SCENARIO_FILE_PATH | jq -r .metaData.additionalFields.metaDataType)
+META_DATA_TYPE=$(jq -r .metaData.additionalFields.metaDataType < "$SCENARIO_FILE_PATH")
 case "$META_DATA_TYPE" in
   "StreamMetaData")
     ENGINE="Flink"
