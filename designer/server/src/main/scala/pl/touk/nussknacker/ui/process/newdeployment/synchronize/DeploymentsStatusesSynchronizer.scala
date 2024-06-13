@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.ui.process.newdeployment.synchronize
 
 import cats.implicits.toTraverseOps
-import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.{
-  DeploymentManager,
   DeploymentStatus,
   DeploymentSynchronisationSupport,
   DeploymentSynchronisationSupported,
@@ -47,13 +45,11 @@ class DeploymentsStatusesSynchronizer(
               _ = {
                 Option(updateResult).filterNot(_.isEmpty) match {
                   case None =>
-                    // TODO: Change to trace
-                    logger.info(
+                    logger.trace(
                       s"Synchronization for processing type [$processingType] finished. Fetched deployment statuses: $statusesByDeploymentId. No deployment status was changed"
                     )
                   case Some(changes) =>
-                    // TODO: Change to debug
-                    logger.info(
+                    logger.debug(
                       changes.mkString(
                         s"Synchronization for processing type [$processingType] finished. Fetched deployment statuses: $statusesByDeploymentId. Statuses for deployments ",
                         ", ",

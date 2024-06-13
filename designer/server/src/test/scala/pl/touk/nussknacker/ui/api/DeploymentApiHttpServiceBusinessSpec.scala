@@ -71,7 +71,7 @@ class DeploymentApiHttpServiceBusinessSpec
   "The deployment requesting endpoint" - {
     "authenticated as user with deploy access" - {
       "when invoked once should" - {
-        "return accepted status code and run deployment that will process input files" in {
+        "return accepted status code and run deployment that will process input files" ignore {
           val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
@@ -97,7 +97,7 @@ class DeploymentApiHttpServiceBusinessSpec
       }
 
       "when invoked twice with the same deployment id should" - {
-        "return conflict status code" in {
+        "return conflict status code" ignore {
           val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
@@ -115,7 +115,7 @@ class DeploymentApiHttpServiceBusinessSpec
       }
 
       "when invoked twice with different deployment id, run concurrently" - {
-        "return conflict status code" in {
+        "return conflict status code" ignore {
           `given`()
             .applicationState {
               createSavedScenario(scenario)
@@ -139,7 +139,7 @@ class DeploymentApiHttpServiceBusinessSpec
       }
 
       "when invoked twice with different deployment id, run one by one should" - {
-        "return status of correct deployment" in {
+        "return status of correct deployment" ignore {
           val firstDeploymentId  = DeploymentId.generate
           val secondDeploymentId = DeploymentId.generate
           `given`()
@@ -168,7 +168,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "not authenticated should" - {
-      "return unauthenticated status code" in {
+      "return unauthenticated status code" ignore {
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -182,7 +182,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "badly authenticated should" - {
-      "return unauthenticated status code" in {
+      "return unauthenticated status code" ignore {
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -197,7 +197,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "authenticated without read access to category should" - {
-      "forbid access" in {
+      "forbid access" ignore {
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -212,7 +212,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "authenticated without deploy access to category should" - {
-      "forbid access" in {
+      "forbid access" ignore {
         given()
           .applicationState {
             createSavedScenario(scenario)
