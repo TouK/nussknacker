@@ -12,6 +12,7 @@
   * Overlapping deployment metrics/counts workaround: Ensure that only one deployment is performed for each scenario at a time
 * [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
 * [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
+* [#6185](https://github.com/TouK/nussknacker/pull/6185) Improvement: Make UniversalKafkaSinkFactory available at BoundedStream
 
 1.15.2 (7 June 2024)
 -------------------------
