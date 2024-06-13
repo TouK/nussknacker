@@ -6,6 +6,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Code API changes
 
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates. 
+  `processes` and `process_versions` tables won't store username with this part anymore in `createdBy` and `modifiedBy` columns.
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
     * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
     * `AuthManager` is now responsible for authentication and authorization. `AuthenticationResources` handles only plugin specific
