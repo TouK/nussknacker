@@ -2,6 +2,7 @@
 
 1.16.0 (Not released yet)
 -------------------------
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 
 1.15.3 (24 June 2024)
