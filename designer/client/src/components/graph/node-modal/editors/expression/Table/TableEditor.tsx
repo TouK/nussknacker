@@ -29,6 +29,8 @@ import { longestRow } from "./state/helpers";
 import { useTableState } from "./state/tableState";
 import { useTableTheme } from "./tableTheme";
 import { TypesMenu } from "./TypesMenu";
+import { customRenderers } from "./customRenderers";
+import { isDatePickerCell } from "./customCells";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -37,7 +39,9 @@ const SUPPORTED_TYPES = [
     "java.lang.Integer",
     "java.time.LocalDate",
     "java.time.LocalDateTime",
-];
+] as const;
+
+export type SupportedType = (typeof SUPPORTED_TYPES)[number];
 
 const RightElement = ({ onColumnAppend }: { onColumnAppend: () => void }) => {
     const tableTheme = useTableTheme();
@@ -93,7 +97,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
         }
     }, [expressionObj.expression, onValueChange, rawExpression]);
 
-    const { defaultTypeOption, orderedTypeOptions } = useTypeOptions();
+    const { defaultTypeOption, orderedTypeOptions } = useTypeOptions<SupportedType>();
     const supportedTypes = useMemo(() => orderedTypeOptions.filter(({ value }) => SUPPORTED_TYPES.includes(value)), [orderedTypeOptions]);
 
     useEffect(() => {
@@ -124,6 +128,21 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     const getCellContent = useCallback(
         ([col, row]: Item): GridCell => {
             const value = rows[row]?.[col];
+            const column = columns[col];
+
+            if (column.type === "java.time.LocalDateTime" || column.type === "java.time.LocalDate") {
+                return {
+                    kind: GridCellKind.Custom,
+                    allowOverlay: true,
+                    copyData: value ?? "",
+                    data: {
+                        kind: "date-picker-cell",
+                        date: value ?? "",
+                        format: column.type,
+                    },
+                };
+            }
+
             return {
                 kind: GridCellKind.Text,
                 displayData: value ?? "",
@@ -132,7 +151,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
                 readonly: false,
             };
         },
-        [rows],
+        [columns, rows],
     );
 
     const onCellsEdited: DataEditorProps["onCellsEdited"] = useCallback(
@@ -142,7 +161,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
                 dataChanges: newValues.map(({ location, value }) => ({
                     column: location[0],
                     row: location[1],
-                    value: value.data.toString(),
+                    value: isDatePickerCell(value) ? value.data.date : value.data.toString(),
                 })),
             });
         },
@@ -334,7 +353,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
     );
 
     const onTypesMenuChange = useCallback(
-        (dataType?: string) => {
+        (dataType?: SupportedType) => {
             dispatch({
                 type: ActionTypes.changeColumnType,
                 column: typesMenuData?.column,
@@ -387,6 +406,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
                 }}
             >
                 <DataEditor
+                    customRenderers={customRenderers}
                     getRowThemeOverride={(row) => ({
                         bgCell: row >= rows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
                     })}
