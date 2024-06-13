@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{
   PeriodicProcessDeploymentId,
@@ -21,6 +22,9 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
   implicit val periodicProcessDeploymentStatusColumnTyped: JdbcType[PeriodicProcessDeploymentStatus] =
     MappedColumnType.base[PeriodicProcessDeploymentStatus, String](_.toString, PeriodicProcessDeploymentStatus.withName)
 
+  implicit val externalDeploymentIdColumnTyped: JdbcType[ExternalDeploymentId] =
+    MappedColumnType.base[ExternalDeploymentId, String](_.value, ExternalDeploymentId(_))
+
   class PeriodicProcessDeploymentsTable(tag: Tag)
       extends Table[PeriodicProcessDeploymentEntity](tag, "periodic_process_deployments") {
 
@@ -35,6 +39,9 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
     def scheduleName: Rep[Option[String]] = column[Option[String]]("schedule_name")
 
     def deployedAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("deployed_at")
+
+    def externalDeploymentId: Rep[Option[ExternalDeploymentId]] =
+      column[Option[ExternalDeploymentId]]("job_id") // TODO: add this column via migration
 
     def completedAt: Rep[Option[LocalDateTime]] = column[Option[LocalDateTime]]("completed_at")
 
@@ -51,6 +58,7 @@ trait PeriodicProcessDeploymentsTableFactory extends PeriodicProcessesTableFacto
       runAt,
       scheduleName,
       deployedAt,
+      externalDeploymentId,
       completedAt,
       retriesLeft,
       nextRetryAt,
@@ -70,6 +78,7 @@ case class PeriodicProcessDeploymentEntity(
     runAt: LocalDateTime,
     scheduleName: Option[String],
     deployedAt: Option[LocalDateTime],
+    externalDeploymentId: Option[ExternalDeploymentId],
     completedAt: Option[LocalDateTime],
     retriesLeft: Int,
     nextRetryAt: Option[LocalDateTime],

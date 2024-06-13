@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.db.InMemPeriodicProcessesRepository.{
   DeploymentIdSequence,
@@ -97,6 +98,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       runAt = runAt,
       scheduleName = scheduleName,
       deployedAt = None,
+      externalDeploymentId = None,
       completedAt = None,
       status = status,
       retriesLeft = deployMaxRetries,
@@ -211,7 +213,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       .filter(process => process.processName == processName && process.processingType == processingType)
       .toSeq
 
-  override def markDeployed(id: PeriodicProcessDeploymentId): Unit = {
+  def markDeployed(id: PeriodicProcessDeploymentId, externalDeploymentId: Option[ExternalDeploymentId]): Unit = {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Deployed, deployedAt = Some(LocalDateTime.now())))
   }
 
@@ -257,6 +259,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       runAt = runAt,
       scheduleName = scheduleName.value,
       deployedAt = None,
+      externalDeploymentId = None,
       completedAt = None,
       retriesLeft = deployMaxRetries,
       nextRetryAt = None,

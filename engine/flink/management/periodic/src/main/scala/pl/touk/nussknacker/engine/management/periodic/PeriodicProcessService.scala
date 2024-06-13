@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId}
+import pl.touk.nussknacker.engine.management.FlinkRestManager
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{
   DeploymentStatus,
   EngineStatusesToReschedule,
@@ -204,12 +205,11 @@ class PeriodicProcessService(
   private def synchronizeDeploymentsStates(
       processName: ProcessName,
       schedules: SchedulesState
-  ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
+  ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] = {
+    val latestDeployments = schedules.schedules.values.toList.flatMap(_.latestDeployments)
+
     for {
-      runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
-      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
-        (deployment, runtimeStatuses.getStatus(deployment.id))
-      })
+      scheduleDeploymentsWithStatus <- getScheduleDeploymentsWithStatus(processName, latestDeployments)
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
@@ -222,6 +222,41 @@ class PeriodicProcessService(
           deployment.id
       }.toSet
     } yield (followingDeployDeploymentsForSchedules, needRescheduleDeployments)
+  }
+
+  private def getScheduleDeploymentsWithStatus(
+      processName: ProcessName,
+      latestDeployments: List[ScheduleDeploymentData],
+  ) = {
+    for {
+      deploymentManagerStatuses <- delegateDeploymentManager
+        .getProcessStates(processName)(DataFreshnessPolicy.Fresh)
+        .map(_.value)
+      scheduleDeploymentsWithDeploymentManagerStatus = latestDeployments.map { deployment =>
+        (deployment, deploymentManagerStatuses.getStatus(deployment.id))
+      }
+
+      scheduleDeploymentsWithRuntimeStatus <- Future.sequence(scheduleDeploymentsWithDeploymentManagerStatus.map {
+        case (deployment, status) => getRuntimeStatus(processName, deployment, status)
+      })
+    } yield scheduleDeploymentsWithRuntimeStatus
+  }
+
+  private def getRuntimeStatus(
+      processName: ProcessName,
+      deployment: ScheduleDeploymentData,
+      runtimeStatus: Option[StatusDetails]
+  ) = {
+    (delegateDeploymentManager, deployment.externalDeploymentId) match {
+      case (flinkRestManager: FlinkRestManager, Some(externalDeploymentId)) =>
+        // In the case of FlinkRestManager, asking for a job status by id avoids races.
+        // (Job can be not present on job list for scenario if it's freshly submitted)
+        val futureStatus = flinkRestManager.getJobStatus(processName, externalDeploymentId).map(Some(_))
+        futureStatus.map(status => (deployment, status))
+      case _ =>
+        Future.successful(deployment, runtimeStatus)
+    }
+  }
 
   // We assume that this method leaves with data in consistent state
   private def synchronizeDeploymentState(
@@ -393,7 +428,7 @@ class PeriodicProcessService(
         logger.info("Scenario has been deployed {} for deployment id {}", deploymentWithJarData.processVersion, id)
         // TODO: add externalDeploymentId??
         scheduledProcessesRepository
-          .markDeployed(id)
+          .markDeployed(id, externalDeploymentId)
           .flatMap(_ => scheduledProcessesRepository.findProcessData(id))
           .flatMap(afterChange => handleEvent(DeployedEvent(afterChange, externalDeploymentId)))
           .run

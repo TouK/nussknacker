@@ -14,6 +14,8 @@ class FlinkClientStub extends FlinkClient {
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[flinkRestModel.JobOverview]]] = ???
 
+  override def findJobByJobId(jobId: String): Future[flinkRestModel.JobDetailsInfo] = ???
+
   override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = ???
 
   override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = ???

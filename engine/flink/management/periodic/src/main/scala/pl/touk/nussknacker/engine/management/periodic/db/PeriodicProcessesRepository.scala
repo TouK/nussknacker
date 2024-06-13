@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionId
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
@@ -141,7 +142,7 @@ trait PeriodicProcessesRepository {
 
   def findProcessData(processName: ProcessName): Action[Seq[PeriodicProcess[CanonicalProcess]]]
 
-  def markDeployed(id: PeriodicProcessDeploymentId): Action[Unit]
+  def markDeployed(id: PeriodicProcessDeploymentId, externalDeploymentId: Option[ExternalDeploymentId]): Action[Unit]
 
   def markFinished(id: PeriodicProcessDeploymentId): Action[Unit]
 
@@ -240,11 +241,14 @@ class SlickPeriodicProcessesRepository(
       .map(_.map(PeriodicProcessesRepository.createPeriodicProcessWithJson))
   }
 
-  override def markDeployed(id: PeriodicProcessDeploymentId): Action[Unit] = {
+  override def markDeployed(
+      id: PeriodicProcessDeploymentId,
+      externalDeploymentId: Option[ExternalDeploymentId]
+  ): Action[Unit] = {
     val q = for {
       d <- PeriodicProcessDeployments if d.id === id
-    } yield (d.status, d.deployedAt)
-    val update = q.update((PeriodicProcessDeploymentStatus.Deployed, Some(now())))
+    } yield (d.status, d.deployedAt, d.externalDeploymentId)
+    val update = q.update((PeriodicProcessDeploymentStatus.Deployed, Some(now()), externalDeploymentId))
     update.map(_ => ())
   }
 
@@ -414,6 +418,7 @@ class SlickPeriodicProcessesRepository(
       runAt = runAt,
       scheduleName = scheduleName.value,
       deployedAt = None,
+      externalDeploymentId = None,
       completedAt = None,
       retriesLeft = deployMaxRetries,
       nextRetryAt = None,

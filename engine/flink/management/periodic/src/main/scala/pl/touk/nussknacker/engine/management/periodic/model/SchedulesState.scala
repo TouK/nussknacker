@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic.model
 
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.periodic.db.{PeriodicProcessDeploymentEntity, PeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -45,6 +46,7 @@ case class ScheduleId(processId: PeriodicProcessId, scheduleName: ScheduleName)
 case class ScheduleDeploymentData(
     id: PeriodicProcessDeploymentId,
     createdAt: LocalDateTime,
+    externalDeploymentId: Option[ExternalDeploymentId],
     runAt: LocalDateTime,
     retriesLeft: Int,
     nextRetryAt: Option[LocalDateTime],
@@ -57,7 +59,7 @@ case class ScheduleDeploymentData(
   ): PeriodicProcessDeployment[Unit] =
     PeriodicProcessDeployment(id, process, createdAt, runAt, scheduleName, retriesLeft, nextRetryAt, state)
 
-  def display = s"deploymentId=$id"
+  def display = s"(deploymentId=$id, externalDeploymentId=$externalDeploymentId)"
 
 }
 
@@ -67,6 +69,7 @@ object ScheduleDeploymentData {
     ScheduleDeploymentData(
       deployment.id,
       deployment.createdAt,
+      deployment.externalDeploymentId,
       deployment.runAt,
       deployment.retriesLeft,
       deployment.nextRetryAt,

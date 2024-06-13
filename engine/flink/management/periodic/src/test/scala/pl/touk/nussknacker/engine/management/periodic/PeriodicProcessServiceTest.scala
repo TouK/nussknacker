@@ -163,6 +163,7 @@ class PeriodicProcessServiceTest
 
   // Flink job could disappear from Flink console.
   test("handleFinished - should reschedule scenario if Flink job is missing") {
+    // TODO: this scenario should use delegateDeploymentManager that extends FlinkRestManager and call `getJobStatus` with externalDeploymentId
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
 

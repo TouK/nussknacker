@@ -99,6 +99,18 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .recoverWith(recoverWithMessage("retrieve Flink jobs"))
   }
 
+  def findJobByJobId(
+      jobId: String
+  ): Future[JobDetailsInfo] = {
+    basicRequest
+      .readTimeout(config.scenarioStateRequestTimeout)
+      .get(flinkUrl.addPath("jobs", jobId))
+      .response(asJson[JobDetailsInfo])
+      .send(backend)
+      .flatMap(SttpJson.failureToFuture)
+      .recoverWith(recoverWithMessage("retrieve Flink job"))
+  }
+
   override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
     basicRequest
       .get(flinkUrl.addPath("jobs", jobId, "config"))

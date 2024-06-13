@@ -57,6 +57,8 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
           )
     }
 
+  override def findJobByJobId(jobId: String): Future[flinkRestModel.JobDetailsInfo] = delegate.findJobByJobId(jobId)
+
   override def getJobConfig(jobId: String): Future[ExecutionConfig] =
     jobsConfigCache
       .get(jobId, (_, _) => delegate.getJobConfig(jobId).toJava.toCompletableFuture)

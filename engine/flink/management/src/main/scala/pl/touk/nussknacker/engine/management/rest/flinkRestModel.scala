@@ -65,6 +65,14 @@ object flinkRestModel {
       tasks: JobTasksOverview
   )
 
+  @JsonCodec(decodeOnly = true) case class JobDetailsInfo(
+      jid: String,
+      name: String,
+      `start-time`: Long,
+      state: String,
+      tasks: JobTasksOverview
+  )
+
   @JsonCodec(decodeOnly = true) case class JobTasksOverview(
       total: Int,
       created: Int,

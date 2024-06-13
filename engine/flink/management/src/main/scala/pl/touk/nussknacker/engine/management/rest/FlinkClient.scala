@@ -6,7 +6,7 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobOverview}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobDetailsInfo, JobOverview}
 import sttp.client3.SttpBackend
 
 import java.io.File
@@ -20,6 +20,8 @@ trait FlinkClient {
   def getJobsOverviews()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[JobOverview]]]
+
+  def findJobByJobId(jobId: String): Future[JobDetailsInfo]
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig]
 
