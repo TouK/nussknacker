@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, ReactElement, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { splitUrl } from "../../ExternalLib";
+import { splitUrl } from "@touk/federated-component";
 import { ToolbarButtons } from "./toolbarButtons";
 import { ToolbarConfig } from "../toolbarSettings/types";
 import { ToolbarWrapper } from "./toolbarWrapper/ToolbarWrapper";

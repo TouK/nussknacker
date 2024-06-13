@@ -1,4 +1,4 @@
-import { ModuleUrl } from "../../ExternalLib";
+import { ModuleUrl } from "@touk/federated-component";
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { ToolbarButton } from "./buttons";

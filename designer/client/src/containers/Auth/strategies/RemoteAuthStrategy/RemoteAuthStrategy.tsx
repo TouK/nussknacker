@@ -3,7 +3,7 @@ import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import ErrorBoundary from "../../../../components/common/ErrorBoundary";
 import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
-import { ModuleString, ModuleUrl, splitUrl } from "../../../../ExternalLib";
+import { ModuleString, ModuleUrl, splitUrl } from "@touk/federated-component";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
 import { Strategy, StrategyConstructor } from "../../Strategy";
 import { AuthClient } from "./externalAuthModule";
