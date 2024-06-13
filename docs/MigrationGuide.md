@@ -30,12 +30,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
     * `AuthenticationConfiguration` has one additional Boolean property `isAdminImpersonationPossible` which defines whether admin users can be impersonated by users with the `Impersonate` permission.
       The property is set to `false` by default for `BasicAuthenticationConfiguration`, `OAuth2Configuration` and `DummyAuthenticationConfiguration`.
-* [#6087](https://github.com/TouK/nussknacker/pull/6087) `DeploymentManager` API changes:
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) [#6155](https://github.com/TouK/nussknacker/pull/6155) `DeploymentManager` API changes:
   * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
     * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
     * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
   * `DMValidateScenarioCommand.updateStrategy` was added
     * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+  * `deploymentSynchronisationSupport` field was added for purpose of synchronisation of statuses. If synchronisation mechanism is not used in context of given DM, 
+    you should return `NoDeploymentSynchronisationSupport` object. The synchronisation mechanism is used by `/api/deployments/{deploymentId}/status` endpoint. Other endpoints don't use it.
 
 ### Configuration changes
 

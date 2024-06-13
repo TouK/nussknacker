@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
   PeriodicProcessListenerFactory,
   ProcessConfigEnricherFactory
 }
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 
@@ -209,5 +209,10 @@ class PeriodicDeploymentManager private[periodic] (
   }
 
   override def customActionsDefinitions: List[CustomActionDefinition] = customActionsProvider.customActions
+
+  // TODO We don't handle deployment synchronization on periodic DM because it currently uses it's own deployments and
+  //      its statuses synchronization mechanism (see PeriodicProcessService.synchronizeDeploymentsStates)
+  //      We should move periodic mechanism to the core and reuse new synchronization mechanism also in this case.
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }

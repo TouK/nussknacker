@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.api.deployment.ProblemDeploymentStatus
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints
 import pl.touk.nussknacker.ui.api.description.DeploymentApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.newactivity.ActivityService
@@ -34,15 +35,21 @@ class DeploymentApiHttpService(
               request.comment
             )
             .map(_.left.map {
-              case UnderlyingServiceError(DeploymentService.ConflictingDeploymentIdError(id)) =>
-                ConflictingDeploymentIdError(id)
-              case UnderlyingServiceError(DeploymentService.ScenarioNotFoundError(scenarioName)) =>
-                ScenarioNotFoundError(scenarioName)
-              case UnderlyingServiceError(DeploymentService.NoPermissionError) => NoPermissionError
-              case UnderlyingServiceError(DeploymentService.ScenarioGraphValidationError(errors)) =>
-                ScenarioGraphValidationError(errors)
-              case UnderlyingServiceError(DeploymentService.DeployValidationError(message)) =>
-                DeployValidationError(message)
+              case UnderlyingServiceError(err) =>
+                err match {
+                  case DeploymentService.ConflictingDeploymentIdError(id) =>
+                    ConflictingDeploymentIdError(id)
+                  case DeploymentService
+                        .ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, concurrentDeploymentsIds) =>
+                    ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, concurrentDeploymentsIds)
+                  case DeploymentService.ScenarioNotFoundError(scenarioName) =>
+                    ScenarioNotFoundError(scenarioName)
+                  case DeploymentService.NoPermissionError => NoPermissionError
+                  case DeploymentService.ScenarioGraphValidationError(errors) =>
+                    ScenarioGraphValidationError(errors)
+                  case DeploymentService.DeployValidationError(message) =>
+                    DeployValidationError(message)
+                }
               case ActivityService.CommentValidationError(message) => CommentValidationError(message)
             })
         }
@@ -56,10 +63,18 @@ class DeploymentApiHttpService(
         { deploymentId =>
           deploymentService
             .getDeploymentStatus(deploymentId)
-            .map(_.left.map {
-              case DeploymentService.DeploymentNotFoundError(id) => DeploymentNotFoundError(id)
-              case DeploymentService.NoPermissionError           => NoPermissionError
-            })
+            .map(
+              _.map { statusWithModifiedAt =>
+                GetDeploymentStatusResponse(
+                  statusWithModifiedAt.value.name,
+                  ProblemDeploymentStatus.extractDescription(statusWithModifiedAt.value),
+                  statusWithModifiedAt.modifiedAt.toInstant
+                )
+              }.left.map {
+                case DeploymentService.DeploymentNotFoundError(id) => DeploymentNotFoundError(id)
+                case DeploymentService.NoPermissionError           => NoPermissionError
+              }
+            )
         }
       }
   }

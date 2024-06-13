@@ -16,6 +16,10 @@ import scala.concurrent.duration.FiniteDuration
 class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDuration, jobsConfigCacheSize: Int)
     extends FlinkClient {
 
+  // In scala 2.12, Unit is not an AnyRef, so it is impossible to use it with buildAsync.
+  // TODO: switch to Unit after migration to >= 2.13 only scala version(s)
+  private val jobsOverviewCacheSingleKey = ""
+
   private val jobsOverviewCache: AsyncCache[String, List[JobOverview]] =
     Caffeine
       .newBuilder()
@@ -31,20 +35,23 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
   override def deleteJarIfExists(jarFileName: String): Future[Unit] =
     delegate.deleteJarIfExists(jarFileName)
 
-  override def findJobsByName(
-      jobName: String
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[JobOverview]]] =
+  override def getJobsOverviews()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[JobOverview]]] =
     freshnessPolicy match {
       case Fresh =>
-        val resultFuture = delegate.findJobsByName(jobName)
-        jobsOverviewCache.put(jobName, resultFuture.map(_.value).toJava.toCompletableFuture)
+        val resultFuture = delegate.getJobsOverviews()
+        jobsOverviewCache.put(jobsOverviewCacheSingleKey, resultFuture.map(_.value).toJava.toCompletableFuture)
         resultFuture
       case CanBeCached =>
-        Option(jobsOverviewCache.getIfPresent(jobName))
+        Option(jobsOverviewCache.getIfPresent(jobsOverviewCacheSingleKey))
           .map(_.toScala.map(WithDataFreshnessStatus.cached))
           .getOrElse(
             jobsOverviewCache
-              .get(jobName, (_, _) => delegate.findJobsByName(jobName).map(_.value).toJava.toCompletableFuture)
+              .get(
+                jobsOverviewCacheSingleKey,
+                (_, _) => delegate.getJobsOverviews().map(_.value).toJava.toCompletableFuture
+              )
               .toScala
               .map(WithDataFreshnessStatus.fresh)
           )

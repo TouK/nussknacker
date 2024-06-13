@@ -11,8 +11,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -118,7 +117,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
   class RequestResponseDeployment(path: String, interpreter: RequestResponseRunnableScenarioInterpreter)
       extends Deployment {
 
-    override def status(): StateStatus = SimpleStateStatus.Running
+    override def status(): DeploymentStatus = DeploymentStatus.Running
 
     override def close(): Unit = {
       slugToScenarioRoute.remove(path)

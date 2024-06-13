@@ -278,6 +278,8 @@ class MockDeploymentManager(
       Future.successful(())
     }
 
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
 }
 
 class MockManagerProvider(deploymentManager: DeploymentManager = new MockDeploymentManager())

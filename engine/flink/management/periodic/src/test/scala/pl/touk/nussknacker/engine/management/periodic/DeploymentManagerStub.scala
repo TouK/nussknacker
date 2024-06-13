@@ -44,4 +44,6 @@ class DeploymentManagerStub extends BaseDeploymentManager with StubbingCommands 
     Future.successful(WithDataFreshnessStatus.fresh(jobStatus.toList))
   }
 
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
 }

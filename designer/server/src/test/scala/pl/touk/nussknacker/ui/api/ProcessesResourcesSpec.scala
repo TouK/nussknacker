@@ -114,7 +114,7 @@ class ProcessesResourcesSpec
 
   test("return single process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -181,7 +181,7 @@ class ProcessesResourcesSpec
 
   test("not allow to archive still running process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -242,7 +242,7 @@ class ProcessesResourcesSpec
 
   test("should not allow to rename deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -268,7 +268,7 @@ class ProcessesResourcesSpec
    */
   ignore("should not allow to rename process with running state") {
     createEmptyScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -500,7 +500,7 @@ class ProcessesResourcesSpec
     createDeployedCanceledExampleScenario(secondProcessor, category = Category1)
     createDeployedExampleScenario(thirdProcessor, category = Category1)
 
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(
         secondProcessor.value -> SimpleStateStatus.Canceled,
         thirdProcessor.value  -> SimpleStateStatus.Running
@@ -573,6 +573,7 @@ class ProcessesResourcesSpec
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
 
+      forScenarioReturned(processName)(_ => ())
       doUpdateProcess(command, processName) {
         forScenarioReturned(processName) { process =>
           process.history.map(_.size) shouldBe Some(1)
@@ -885,6 +886,52 @@ class ProcessesResourcesSpec
     }
   }
 
+  test("should provide the same proper scenario state when fetching all scenarios and one scenario") {
+    createDeployedWithCustomActionScenario(processName, category = Category1)
+
+    Get(s"/api/processes") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[List[ScenarioWithDetails]]
+
+      loadedProcess.head.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.head.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+
+    Get(s"/api/processes/$processName") ~> withReaderUser() ~> applicationRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val loadedProcess = responseAs[ScenarioWithDetails]
+
+      loadedProcess.lastAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("Custom"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastStateAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+      loadedProcess.lastDeployedAction should matchPattern {
+        case Some(
+              ProcessAction(_, _, _, _, _, _, ScenarioActionName("DEPLOY"), ProcessActionState.Finished, _, _, _, _)
+            ) =>
+      }
+    }
+  }
+
   test("not allow to save process if already exists") {
     val processName = ProcessName("p1")
     saveProcess(processName, ProcessTestData.sampleScenarioGraph, category = Category1) {
@@ -966,7 +1013,7 @@ class ProcessesResourcesSpec
 
   test("should return status for single deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -1046,7 +1093,7 @@ class ProcessesResourcesSpec
   }
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
