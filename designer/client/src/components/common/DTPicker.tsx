@@ -4,11 +4,7 @@ import { useTranslation } from "react-i18next";
 import { styled } from "@mui/material";
 import { nodeInputCss } from "../NodeInput";
 
-const DTPickerStyled = styled(DateTimePicker)(() => ({
-    ...nodeInputCss({
-        padding: "0",
-    }),
-}));
+const DTPickerStyled = styled(DateTimePicker)(nodeInputCss, { padding: 0 });
 const style = {
     background: "none",
     border: "none",
