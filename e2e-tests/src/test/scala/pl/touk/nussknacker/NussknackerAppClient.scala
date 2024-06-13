@@ -114,9 +114,26 @@ class NussknackerAppClient(host: String, port: Int) {
   def deployAndWaitForRunningState(scenarioName: String, timeout: FiniteDuration = 30 seconds): Unit = {
     val deploymentId = UUID.randomUUID()
     runDeployment(deploymentId, scenarioName)
-    (1 to 10).foreach { _ =>
+    (1 to 600).foreach { _ =>
       Try(getDeploymentStatus(deploymentId)) match {
-        case Failure(_) =>
+        case Failure(ex) =>
+          println("EX: " + ex.getMessage)
+          Thread.sleep(1000)
+        case Success(_) =>
+          return
+      }
+    }
+  }
+
+  def deploy(scenarioName: String, deploymentId: UUID): Unit = {
+    runDeployment(deploymentId, scenarioName)
+  }
+
+  def waitForRunningState(deploymentId: UUID): Unit = {
+    (1 to 600).foreach { _ =>
+      Try(getDeploymentStatus(deploymentId)) match {
+        case Failure(ex) =>
+          println("EX: " + ex.getMessage)
           Thread.sleep(1000)
         case Success(_) =>
           return

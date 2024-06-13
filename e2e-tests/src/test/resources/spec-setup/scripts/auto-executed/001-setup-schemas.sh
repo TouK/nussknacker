@@ -2,7 +2,9 @@
 
 cd "$(dirname "$0")"
 
-for FILE in "/app/data/schema-registry"/*; do
+echo "Starting to add preconfigured schemas ..."
+
+for FILE in "../../data/schema-registry"/*; do
   if [ -f "$FILE" ]; then
     FILENAME=$(basename "$FILE")
     SCHEMA_NAME="$FILENAME-value"
@@ -28,3 +30,5 @@ for FILE in "/app/data/schema-registry"/*; do
     fi
   fi
 done
+
+echo "DONE!"
