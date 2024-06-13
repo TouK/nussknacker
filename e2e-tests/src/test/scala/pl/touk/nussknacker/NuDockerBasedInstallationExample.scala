@@ -33,7 +33,7 @@ trait NuDockerBasedInstallationExample extends ForAllTestContainer with LazyLogg
 
   def sendMessageToKafka(topic: String, message: String): Unit = {
     val escapedMessage = message.replaceAll("\"", "\\\\\"")
-    specSetupService.executeBash(s"""/app/scripts/utils/kafka/send-to-kafka.sh "$topic" "$escapedMessage" """)
+    specSetupService.executeBash(s"""/app/scripts/utils/kafka/send-to-topic.sh "$topic" "$escapedMessage" """)
   }
 
   private def unsafeContainerByServiceName(name: String) = container

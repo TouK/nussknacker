@@ -9,6 +9,7 @@ function importAndDeployScenario() {
   fi
 
   set -e
+
   local EXAMPLE_SCENARIO_NAME=$1
   local EXAMPLE_SCENARIO_FILE=$2
 

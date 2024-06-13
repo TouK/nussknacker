@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 cd "$(dirname "$0")"
 
@@ -9,7 +9,7 @@ fi
 
 SCENARIO_NAME=$1
 SCENARIO_FILE_PATH=$2
-CATEGORY=${2:-"Default"}
+CATEGORY=${3:-"Default"}
 
 if [ ! -f "$SCENARIO_FILE_PATH" ]; then
   echo "Error: Cannot find file $SCENARIO_FILE_PATH with scenario"
@@ -38,8 +38,8 @@ function createEmptyScenario() {
   }"
 
   local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
-    -X POST "http://localhost:8080/api/processes" \
-    -H "Content-Type: application/json" -d "$BODY" \
+    -X POST "http://nginx:8080/api/processes" \
+    -H "Content-Type: application/json" -d "$BODY"
   )
 
   local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
@@ -65,7 +65,7 @@ function importScenarioFromFile() {
   local SCENARIO_FILE=$2
 
   local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
-    -X POST "http://localhost:8080/api/processes/import/$SCENARIO_NAME" \
+    -X POST "http://nginx:8080/api/processes/import/$SCENARIO_NAME" \
     -F "process=@$SCENARIO_FILE"
   )
 
@@ -100,7 +100,7 @@ function saveScenario() {
   }"
 
   local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
-    -X PUT "http://localhost:8080/api/processes/$SCENARIO_NAME" \
+    -X PUT "http://nginx:8080/api/processes/$SCENARIO_NAME" \
     -H "Content-Type: application/json" -d "$BODY"
   )
 

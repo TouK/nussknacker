@@ -29,7 +29,7 @@ function deployScenario() {
   }"
 
   local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
-    -X PUT "http://localhost:8080/api/deployments/$DEPLOYMENT_ID" \
+    -X PUT "http://nginx:8080/api/deployments/$DEPLOYMENT_ID" \
     -H "Content-Type: application/json" -d "$BODY"
   )
 
@@ -55,7 +55,7 @@ function checkDeploymentStatus() {
   local DEPLOYMENT_ID=$1
 
   local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
-    -X GET "http://localhost:8080/api/deployments/$DEPLOYMENT_ID/status"
+    -X GET "http://nginx:8080/api/deployments/$DEPLOYMENT_ID/status"
   )
 
   local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)

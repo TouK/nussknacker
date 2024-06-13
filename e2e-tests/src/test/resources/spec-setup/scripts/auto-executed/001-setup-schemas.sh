@@ -30,7 +30,7 @@ function createJsonSchema() {
 
   local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
 
-  if [[ "$HTTP_CODE" != 200 ]] ; then
+  if [[ "$HTTP_STATUS" != 200 ]] ; then
     local BODY=$(echo "$RESPONSE" | sed \$d)
     echo -e "Error: Cannot create schema $SCHEMA_NAME.\nHTTP status: $HTTP_STATUS, response body: $BODY"
     exit 12

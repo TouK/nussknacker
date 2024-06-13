@@ -14,7 +14,7 @@ function sendMessage() {
   local MSG=$2
 
   echo "Sending message $MSG to '$TOPIC_NAME'"
-  ../utils/kafka/send-to-kafka.sh "$TOPIC_NAME" "$MSG"
+  ../utils/kafka/send-to-topic.sh "$TOPIC_NAME" "$MSG"
   echo "Message sent!"
 }
 
