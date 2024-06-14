@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 # setup other containers using auto-executed scripts
 while IFS= read -r script; do

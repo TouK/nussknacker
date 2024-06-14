@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 if [ "$#" -ne 2 ]; then
     echo "Two parameters required: topic and message"

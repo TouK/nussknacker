@@ -41,7 +41,7 @@ function deployScenario() {
     exit 12
   fi
 
-  echo "Scenario $SCENARIO_NAME ordered successfully."
+  echo "Scenario $SCENARIO_NAME deployment started ..."
 }
 
 function checkDeploymentStatus() {
@@ -92,4 +92,4 @@ while true; do
   sleep $WAIT_INTERVAL
 done
 
-echo "$SCENARIO_NAME is RUNNING!"
+echo "Scenario $SCENARIO_NAME is RUNNING!"
