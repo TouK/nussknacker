@@ -66,6 +66,37 @@ class CachedFlinkClientTest
     verify(delegate, times(1)).getJobConfig(any[String])
   }
 
+  test("shouldn't cache job configs with missing deploymentId") {
+    val delegate           = mock[FlinkClient]
+    val cachingFlinkClient = new CachedFlinkClient(delegate, 10 seconds, 10)
+
+    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+      val config = flinkRestModel.ExecutionConfig(
+        `job-parallelism` = 1,
+        `user-config` = Map.empty
+      )
+      Future.successful(config)
+    }
+    cachingFlinkClient
+      .getJobConfig("foo")
+      .futureValue
+      .`user-config`
+      .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe empty
+
+    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+      val config = flinkRestModel.ExecutionConfig(
+        `job-parallelism` = 1,
+        `user-config` = Map(CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("someDeploymentId"))
+      )
+      Future.successful(config)
+    }
+    cachingFlinkClient
+      .getJobConfig("foo")
+      .futureValue
+      .`user-config`
+      .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe defined
+  }
+
   private def prepareMockedFlinkClient: FlinkClient = {
     val delegate = mock[FlinkClient]
 
@@ -88,7 +119,8 @@ class CachedFlinkClientTest
       val config = flinkRestModel.ExecutionConfig(
         `job-parallelism` = 1,
         `user-config` = Map(
-          "time" -> Json.fromLong(System.currentTimeMillis())
+          "time"                                      -> Json.fromLong(System.currentTimeMillis()),
+          CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("fooDeploymentId")
         )
       )
 
