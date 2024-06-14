@@ -3,16 +3,24 @@ import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import ErrorBoundary from "../../../../components/common/ErrorBoundary";
 import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
-import { splitUrl } from "../../../ExternalLib";
-import { ModuleString, ModuleUrl } from "../../../ExternalLib/types";
+import { ModuleString, ModuleUrl, splitUrl } from "@touk/federated-component";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
 import { Strategy, StrategyConstructor } from "../../Strategy";
 import { AuthClient } from "./externalAuthModule";
-import { RemoteComponent } from "../../../ExternalLib/RemoteComponent";
+import { RemoteComponent } from "../../../../components/RemoteComponent";
 
 type AuthLibCallback = (a: AuthClient) => void;
 
-function createAuthWrapper({ url, scope }: { url: ModuleUrl; scope: ModuleString }, onInit: AuthLibCallback): FunctionComponent {
+function createAuthWrapper(
+    {
+        url,
+        scope,
+    }: {
+        url: ModuleUrl;
+        scope: ModuleString;
+    },
+    onInit: AuthLibCallback,
+): FunctionComponent {
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
             <ErrorBoundary>
@@ -28,7 +36,11 @@ export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy 
     private pendingClient = PendingPromise.withTimeout<AuthClient>();
     Wrapper = createAuthWrapper(this.urlWithScope, (auth) => this.pendingClient.resolve(auth));
 
-    async inteceptor(error?: { response?: { status?: AuthErrorCodes } }): Promise<unknown> {
+    async inteceptor(error?: {
+        response?: {
+            status?: AuthErrorCodes;
+        };
+    }): Promise<unknown> {
         if (error?.response?.status === AuthErrorCodes.HTTP_UNAUTHORIZED_CODE) {
             await this.handleAuth();
         }
@@ -50,9 +62,15 @@ export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy 
 
     constructor(private settings: RemoteAuthenticationSettings) {}
 
-    private get urlWithScope(): { scope: ModuleString; url: ModuleUrl } {
+    private get urlWithScope(): {
+        scope: ModuleString;
+        url: ModuleUrl;
+    } {
         const [url, scope] = splitUrl(this.settings.moduleUrl as ModuleUrl);
-        return { url, scope };
+        return {
+            url,
+            scope,
+        };
     }
 
     private onError?: (error: AuthErrorCodes) => void = () => {
