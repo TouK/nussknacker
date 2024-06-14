@@ -47,18 +47,10 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       scheduleProperty: SingleScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
       deployMaxRetries: Int = 0,
       processingType: String = processingType,
-      processActionId: Option[ProcessActionId] = None,
-      runAt: LocalDateTime = LocalDateTime.now(),
-      deployedAt: Option[LocalDateTime] = None
+      processActionId: Option[ProcessActionId] = None
   ): PeriodicProcessDeploymentId = {
     val periodicProcessId = addOnlyProcess(processName, scheduleProperty, processingType, processActionId)
-    addOnlyDeployment(
-      periodicProcessId,
-      deploymentStatus,
-      deployMaxRetries = deployMaxRetries,
-      runAt = runAt,
-      deployedAt = deployedAt
-    )
+    addOnlyDeployment(periodicProcessId, deploymentStatus, deployMaxRetries = deployMaxRetries)
   }
 
   def addOnlyProcess(
@@ -95,8 +87,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       status: PeriodicProcessDeploymentStatus,
       runAt: LocalDateTime = LocalDateTime.now(),
       deployMaxRetries: Int = 0,
-      scheduleName: Option[String] = None,
-      deployedAt: Option[LocalDateTime] = None,
+      scheduleName: Option[String] = None
   ): PeriodicProcessDeploymentId = {
     val id = PeriodicProcessDeploymentId(DeploymentIdSequence.incrementAndGet())
     val entity = PeriodicProcessDeploymentEntity(
@@ -105,7 +96,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       createdAt = LocalDateTime.now(),
       runAt = runAt,
       scheduleName = scheduleName,
-      deployedAt = deployedAt,
+      deployedAt = None,
       completedAt = None,
       status = status,
       retriesLeft = deployMaxRetries,
