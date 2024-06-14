@@ -106,7 +106,8 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // this prevents problem with table api in runtime:
   // https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
-  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
+//  TODO: Makes jobs fail but tests run on local env dont work without it
+//  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
   // merge Netty version information files
@@ -1814,6 +1815,10 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-api-java"        % flinkV,
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
+//
+//        "org.apache.flink" % "flink-connector-datagen" % flinkV,
+        "org.apache.flink" % "flink-streaming-java"        % flinkV,
+        "org.apache.flink" % "flink-clients"               % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
         "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-json"                  % flinkV,
@@ -1821,6 +1826,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
     }
   )
   .dependsOn(
+    utilsInternal        % Provided,
     flinkComponentsApi   % Provided,
     componentsApi        % Provided,
     commonUtils          % Provided,

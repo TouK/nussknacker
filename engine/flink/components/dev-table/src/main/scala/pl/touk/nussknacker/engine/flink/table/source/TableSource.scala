@@ -1,11 +1,17 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.configuration.{Configuration, CoreOptions, DeploymentOptions, PipelineOptions}
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.delegation.ExecutorFactory
+import org.apache.flink.table.factories.FactoryUtil
 import org.apache.flink.types.Row
+import org.apache.flink.util.Preconditions.checkNotNull
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -15,7 +21,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TestDataGenerator,
   TestWithParametersSupport
 }
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -27,14 +33,18 @@ import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
+import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
-    enableFlinkBatchExecutionMode: Boolean
+    enableFlinkBatchExecutionMode: Boolean,
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
-    with FlinkSourceTestSupport[RECORD] {
+    with FlinkSourceTestSupport[RECORD]
+    with TestDataGenerator {
 
   import scala.jdk.CollectionConverters._
 
@@ -85,6 +95,57 @@ class TableSource(
 
 //  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
+
+  override def generateTestData(size: Int): TestData = {
+
+    // TODO: extract classpath-extracting method instead of creating modelClassLoader
+    // TODO: check what we need to load - for tests we need more than
+    val classPathUrls = ModelClassLoader(List("components/flink-dev/flinkTable.jar"), None).urls
+
+    // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
+    // the necessary classes
+    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+      val effectiveConfiguration = new Configuration()
+
+      // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
+      effectiveConfiguration.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+
+      // without this, on the task level the classloader is basically empty
+      effectiveConfiguration.set(
+        PipelineOptions.CLASSPATHS,
+        classPathUrls.map(_.toString).asJava
+      )
+
+      val env      = StreamExecutionEnvironment.getExecutionEnvironment(effectiveConfiguration)
+      val tableEnv = StreamTableEnvironment.create(env)
+
+      sqlStatements.foreach(tableEnv.executeSql)
+      val tableWithLimit = tableEnv.from(tableDefinition.tableName).limit(size)
+
+      val rowsIterator = tableEnv.toDataStream(tableWithLimit).executeAndCollect()
+      val rowsList     = scala.collection.mutable.ArrayBuffer.empty[Row]
+      while (rowsIterator.hasNext) {
+        rowsList.append(rowsIterator.next())
+      }
+
+      // TODO: check if closing like this is ok, some IllegalStateExceptions get logged
+      rowsIterator.close()
+      env.close()
+
+      // TODO: is this way of encoding ok? fail on unknown?
+      val encoder = BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader)
+      val testRecords = rowsList.toList.map(row =>
+        TestRecord(
+          // TODO: make the field order deterministic
+          encoder.encode(
+            row.getFieldNames(true).asScala.map(fName => fName -> row.getField(fName)).toMap
+          )
+        )
+      )
+
+      TestData(testRecords)
+    }
+  }
 
 }
 
