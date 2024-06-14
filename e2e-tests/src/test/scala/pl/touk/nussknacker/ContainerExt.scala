@@ -8,11 +8,15 @@ import scala.language.implicitConversions
 class ContainerExt(val container: ContainerState) extends LazyLogging {
 
   def executeBash(cmd: String): Unit = {
+    logger.info(executeBashAndReadStdout(cmd))
+  }
+
+  def executeBashAndReadStdout(cmd: String): String = {
     logger.info(s"Calling command '$cmd' on container '${container.getContainerInfo.getName}' ...")
     val exitResult = container.execInContainer("bash", "-c", cmd)
     exitResult.getExitCode match {
       case 0 =>
-        logger.info(exitResult.getStdout)
+        exitResult.getStdout
       case other =>
         throw new IllegalStateException(
           s"""Code returned: $other

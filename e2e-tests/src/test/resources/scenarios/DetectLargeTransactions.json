@@ -4,7 +4,7 @@
     "additionalFields": {
       "description": null,
       "properties": {
-        "parallelism": "2",
+        "parallelism": "1",
         "spillStateToDisk": "true"
       },
       "metaDataType": "StreamMetaData"

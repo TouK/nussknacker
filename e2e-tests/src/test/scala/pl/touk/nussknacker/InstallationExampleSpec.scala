@@ -1,23 +1,33 @@
 package pl.touk.nussknacker
 
+import better.files._
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.should.Matchers
 
-import java.util.UUID
-
-class InstallationExampleSpec extends AnyFreeSpecLike with NuDockerBasedInstallationExample {
+class InstallationExampleSpec extends AnyFreeSpecLike with NuDockerBasedInstallationExample with Matchers {
 
   "A test" in {
-//    nussknackerAppClient.loadFlinkStreamingScenarioFromResource("DetectLargeTransactions")
-//    nussknackerAppClient.deploy("DetectLargeTransactions", UUID.randomUUID())
-//    val deploymentId = UUID.randomUUID()
-//    nussknackerAppClient.deploy("DetectLargeTransactions", deploymentId)
-//    nussknackerAppClient.waitForRunningState(deploymentId)
-//
-//    sendMessageToKafka("transactions", """{ "clientId": "100", "amount":100, "isLast":false }" """)
-//    sendMessageToKafka("transactions", """{ "clientId": "101", "amount":1000, "isLast":false }" """)
-//    sendMessageToKafka("transactions", """{ "clientId": "102", "amount":10000, "isLast":false }" """)
+    loadFlinkStreamingScenarioFromResource(
+      scenarioName = "DetectLargeTransactions",
+      scenarioJsonFile = File(getClass.getResource("/scenarios/DetectLargeTransactions.json"))
+    )
+    deployAndWaitForRunningState(scenarioName = "DetectLargeTransactions")
 
-    println("test") // todo: remove
+    val transactions = List(
+      ujson.read("""{ "clientId": "100", "amount":100, "isLast":false }"""),
+      ujson.read("""{ "clientId": "101", "amount":1000, "isLast":false }"""),
+      ujson.read("""{ "clientId": "102", "amount":10000, "isLast":false }""")
+    )
+
+    transactions.foreach { transaction =>
+      sendMessageToKafka("transactions", transaction)
+    }
+
+    Thread.sleep(5000)
+
+    val processedTransactions = readMessagesFromKafka("transactions")
+
+    processedTransactions should equal(transactions)
   }
 
 }

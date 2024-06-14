@@ -13,7 +13,7 @@ function importAndDeployScenario() {
   local EXAMPLE_SCENARIO_NAME=$1
   local EXAMPLE_SCENARIO_FILE=$2
 
-  ../utils/nu/load-scenario-from-json.sh "$EXAMPLE_SCENARIO_NAME" "$EXAMPLE_SCENARIO_FILE"
+  ../utils/nu/load-scenario-from-json-file.sh "$EXAMPLE_SCENARIO_NAME" "$EXAMPLE_SCENARIO_FILE"
   ../utils/nu/deploy-scenario-and-wait-for-running-state.sh "$EXAMPLE_SCENARIO_NAME"
 }
 

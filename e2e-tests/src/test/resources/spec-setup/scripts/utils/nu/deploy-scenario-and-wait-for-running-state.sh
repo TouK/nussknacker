@@ -69,6 +69,8 @@ function checkDeploymentStatus() {
   echo "$BODY"
 }
 
+echo "Deploying scenario $SCENARIO_NAME ..."
+
 START_TIME=$(date +%s)
 END_TIME=$((START_TIME + TIMEOUT_SECONDS))
 
