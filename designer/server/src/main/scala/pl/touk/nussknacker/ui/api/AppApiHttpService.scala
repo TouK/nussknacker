@@ -13,24 +13,24 @@ import pl.touk.nussknacker.ui.api.description.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppApiHttpService(
     config: Config,
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     processingTypeDataReloader: ProcessingTypeDataReload,
     modelBuildInfos: ProcessingTypeDataProvider[Map[String, String], _],
     categories: ProcessingTypeDataProvider[String, _],
     processService: ProcessService,
     shouldExposeConfig: Boolean
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
+  private val appApiEndpoints = new AppApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     appApiEndpoints.appHealthCheckEndpoint

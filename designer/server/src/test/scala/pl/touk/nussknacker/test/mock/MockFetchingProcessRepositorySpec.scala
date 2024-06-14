@@ -13,7 +13,7 @@ import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.{ScenarioShapeFetchStrategy, ScenarioWithDetailsEntity}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import scala.util.Try
 
@@ -145,13 +145,13 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
   private val admin: LoggedUser = TestFactory.adminUser()
 
-  private val marketingUser: LoggedUser = LoggedUser(
+  private val marketingUser: LoggedUser = RealLoggedUser(
     id = "1",
     username = "marketingUser",
     categoryPermissions = Map(categoryMarketing -> Set(Permission.Read))
   )
 
-  private val fraudUser: LoggedUser = LoggedUser(
+  private val fraudUser: LoggedUser = RealLoggedUser(
     id = "2",
     username = "fraudUser",
     categoryPermissions = Map(categoryFraud -> Set(Permission.Read), categoryFraudSecond -> Set(Permission.Read))

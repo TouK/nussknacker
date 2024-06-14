@@ -6,18 +6,18 @@ import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.{
   StatisticError,
   StatisticUrlResponseDto
 }
-import pl.touk.nussknacker.ui.security.api.AuthenticationResources
+import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 
 import scala.concurrent.ExecutionContext
 
 class StatisticsApiHttpService(
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     determiner: UsageStatisticsReportsSettingsDeterminer
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator) {
+    extends BaseHttpService(authManager) {
 
-  private val endpoints = new StatisticsApiEndpoints(authenticator.authenticationMethod())
+  private val endpoints = new StatisticsApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     endpoints.statisticUsageEndpoint

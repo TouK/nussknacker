@@ -1,5 +1,21 @@
 # Changelog
 
+1.16.0 (Not released yet)
+-------------------------
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
+
+1.15.2 (7 June 2024)
+-------------------------
+* [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
+  * Deployed version of scenario is now shown properly even if other actions followed deploy.
+  * Scenario state is now not impacted by actions that don't actually change it.
+
+1.15.1 (5 June 2024)
+-------------------------
+* [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
+* [#6127](https://github.com/TouK/nussknacker/pull/6127) Ad-hoc tests available in scenarios without `flink-dropwizard-metrics-deps` in classPath
+
 1.15.0 (17 May 2024)
 -------------------------
 * [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)

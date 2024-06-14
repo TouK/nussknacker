@@ -3,18 +3,18 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.ui.api.description.{DisplayableUser, UserApiEndpoints}
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserApiHttpService(
-    authenticator: AuthenticationResources,
+    authManager: AuthManager,
     categories: ProcessingTypeDataProvider[String, _],
 )(implicit executionContext: ExecutionContext)
-    extends BaseHttpService(authenticator)
+    extends BaseHttpService(authManager)
     with LazyLogging {
 
-  private val userApiEndpoints = new UserApiEndpoints(authenticator.authenticationMethod())
+  private val userApiEndpoints = new UserApiEndpoints(authManager.authenticationEndpointInput())
 
   expose {
     userApiEndpoints.userInfoEndpoint

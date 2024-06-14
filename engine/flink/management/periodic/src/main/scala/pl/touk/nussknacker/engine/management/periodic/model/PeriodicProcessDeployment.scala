@@ -27,7 +27,7 @@ case class PeriodicProcessDeployment[ProcessRep](
     }
 
   def display: String =
-    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=${periodicProcess.id}"
+    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=$id"
 
 }
 

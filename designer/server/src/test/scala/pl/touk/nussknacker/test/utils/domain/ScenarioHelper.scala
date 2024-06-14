@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,7 +25,7 @@ import scala.jdk.CollectionConverters._
 private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implicit executionContext: ExecutionContext)
     extends PatientScalaFutures {
 
-  private implicit val user: LoggedUser = LoggedUser("admin", "admin", Map.empty, isAdmin = true)
+  private implicit val user: LoggedUser = RealLoggedUser("admin", "admin", Map.empty, isAdmin = true)
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
@@ -96,6 +96,18 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
     } yield id).futureValue
   }
 
+  def createDeployedWithCustomActionScenario(
+      scenarioName: ProcessName,
+      category: String,
+      isFragment: Boolean
+  ): ProcessId = {
+    (for {
+      id <- prepareValidScenario(scenarioName, category, isFragment)
+      _  <- prepareDeploy(id, processingTypeBy(category))
+      _  <- prepareCustomAction(id)
+    } yield id).futureValue
+  }
+
   def createArchivedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
@@ -125,6 +137,14 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
   private def prepareCancel(scenarioId: ProcessId): Future[_] = {
     val actionName = ScenarioActionName.Cancel
     val comment    = DeploymentComment.unsafe(UserComment("Cancel comment")).toComment(actionName)
+    dbioRunner.run(
+      actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
+    )
+  }
+
+  private def prepareCustomAction(scenarioId: ProcessId): Future[_] = {
+    val actionName = ScenarioActionName("Custom")
+    val comment    = DeploymentComment.unsafe(UserComment("Execute custom action")).toComment(actionName)
     dbioRunner.run(
       actionRepository.addInstantAction(scenarioId, VersionId.initialVersionId, actionName, Some(comment), None)
     )

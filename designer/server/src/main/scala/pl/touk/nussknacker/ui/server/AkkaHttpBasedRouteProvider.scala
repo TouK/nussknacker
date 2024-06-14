@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
@@ -65,7 +66,9 @@ import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeData, Proces
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsDeterminer}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
@@ -201,6 +204,7 @@ class AkkaHttpBasedRouteProvider(
       val processActivityRepository = new DbProcessActivityRepository(dbRef)
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
+      val authManager             = new AuthManager(authenticationResources)
 
       Initialization.init(migrations, dbRef, processRepository, environment)
 
@@ -252,7 +256,7 @@ class AkkaHttpBasedRouteProvider(
       val processAuthorizer   = new AuthorizeProcess(futureProcessRepository)
       val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
-        authenticator = authenticationResources,
+        authManager = authManager,
         processingTypeDataReloader = processingTypeDataProvider,
         modelBuildInfos = modelBuildInfo,
         categories = processingTypeDataProvider.mapValues(_.category),
@@ -274,32 +278,32 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val migrationApiHttpService = new MigrationApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         migrationService = migrationService,
         migrationApiAdapterService = migrationApiAdapterService
       )
       val componentsApiHttpService = new ComponentApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         componentService = componentService
       )
       val userApiHttpService = new UserApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         categories = processingTypeDataProvider.mapValues(_.category)
       )
 
       val managementApiHttpService = new ManagementApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         dispatcher = dmDispatcher,
         processService = processService
       )
 
       val notificationApiHttpService = new NotificationApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         notificationService = notificationService
       )
 
       val nodesApiHttpService = new NodesApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         processingTypeToConfig = processingTypeDataProvider.mapValues(_.designerModelData.modelData),
         processingTypeToProcessValidator = processValidator,
         processingTypeToNodeValidator = processingTypeDataProvider.mapValues(v =>
@@ -315,7 +319,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val scenarioActivityApiHttpService = new ScenarioActivityApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         scenarioActivityRepository = processActivityRepository,
         scenarioService = processService,
         scenarioAuthorizer = processAuthorizer,
@@ -326,11 +330,11 @@ class AkkaHttpBasedRouteProvider(
         new AkkaHttpBasedTapirStreamEndpointProvider()
       )
       val scenarioParametersHttpService = new ScenarioParametersApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         scenarioParametersService = processingTypeDataProvider.mapCombined(_.parametersService)
       )
       val dictApiHttpService = new DictApiHttpService(
-        authenticator = authenticationResources,
+        authManager = authManager,
         processingTypeData = processingTypeDataProvider.mapValues { processingTypeData =>
           (
             processingTypeData.designerModelData.modelData.designerDictServices.dictQueryService,
@@ -350,7 +354,7 @@ class AkkaHttpBasedRouteProvider(
             dbioRunner,
             Clock.systemDefaultZone()
           )
-        new DeploymentApiHttpService(authenticationResources, deploymentService)
+        new DeploymentApiHttpService(authManager, deploymentService)
       }
 
       initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
@@ -434,7 +438,7 @@ class AkkaHttpBasedRouteProvider(
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
-        authenticationResources,
+        authManager,
         usageStatisticsReportsSettingsDeterminer
       )
 
@@ -442,7 +446,8 @@ class AkkaHttpBasedRouteProvider(
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
         authenticationResources.name,
-        analyticsConfig
+        analyticsConfig,
+        usageStatisticsReportsConfig
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
@@ -472,7 +477,7 @@ class AkkaHttpBasedRouteProvider(
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
-        authenticationResources = authenticationResources,
+        authManager = authManager,
         tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
@@ -501,7 +506,7 @@ class AkkaHttpBasedRouteProvider(
 
   private def createAppRoute(
       resolvedConfig: Config,
-      authenticationResources: AuthenticationResources,
+      authManager: AuthManager,
       tapirRelatedRoutes: List[Route],
       apiResourcesWithAuthentication: List[RouteWithUser],
       apiResourcesWithoutAuthentication: List[Route],
@@ -516,13 +521,11 @@ class AkkaHttpBasedRouteProvider(
         } ~ pathPrefix("api") {
           apiResourcesWithoutAuthentication.reduce(_ ~ _)
         } ~ pathPrefix("api") {
-          authenticationResources.authenticate() { authenticatedUser =>
-            authorize(authenticatedUser.roles.nonEmpty) {
-              val loggedUser = LoggedUser(
-                authenticatedUser = authenticatedUser,
-                rules = authenticationResources.configuration.rules
-              )
-              apiResourcesWithAuthentication.map(_.securedRouteWithErrorHandling(loggedUser)).reduce(_ ~ _)
+          authManager.authenticate() { authenticatedUser =>
+            authManager.authorizeRoute(authenticatedUser) { loggedUser =>
+              apiResourcesWithAuthentication
+                .map(_.securedRouteWithErrorHandling(loggedUser))
+                .reduce(_ ~ _)
             }
           }
         }

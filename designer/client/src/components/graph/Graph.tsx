@@ -34,7 +34,6 @@ import { dragHovered } from "./GraphStyled";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
-import "./jqueryPassiveEvents";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;

@@ -35,9 +35,9 @@ An essential part of Nussknacker is a visual design tool for decision algorithms
 
 The way the data are processed and features available depend on the processing mode and engine used. 
 
-Nussknacker supports three [processing modes](https://nussknacker.io/documentation/about/ProcessingModes/): streaming, request-response and batch (planned in version 1.16). In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions. 
+Nussknacker supports three [processing modes](https://nussknacker.io/documentation/docs/about/ProcessingModes/): streaming, request-response and batch (planned in version 1.16). In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions. 
 
-There are two engines to which scenarios can be deployed: Flink and Light. Check out [this document](https://nussknacker.io/documentation/about/engines/) to understand which of the two fits fits your use case better. 
+There are two engines to which scenarios can be deployed: Flink and Light. Check out [this document](https://nussknacker.io/documentation/docs/about/engines/) to understand which of the two fits fits your use case better. 
 
 ## Why Nussknacker
 
@@ -46,11 +46,11 @@ Nussknacker promises to make developing and deploying real-time decision algorit
 We discovered that several factors heavily influence the development of algorithms that work with real-time data, including expectations placed on the tools used:
 - **Domain experts** - often, these are domain experts who conceptualize the algorithms, and the expertise required is very domain specific. Without proper tools for converting algorithms to code, domain experts have to delegate this work to programmers who are proficient in multiple tools, programming languages, and technologies. This approach costs money and takes time. With Nussknacker, domain experts build the algorithm from prefabricated blocks. The trick is to make these prefabricated blocks infinitely flexible to allow for any data transformation and flow control condition. Nussknacker achieves this by using [SpEL](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/#spel), an easy-to-learn expression language.
 - **Experimentation** - the algorithms may require a lot of experimentation before one gets them right. If so, the iteration time required to implement a change, deploy it, and see the result should be in single minutes if not seconds. With Nussknacker, non-technical users can achieve iteration time below one minute.
-- **Productivity** - if low-code solutions want to be considered tools rather than toys, they must offer features available in professional developer toolkits. Nussknacker Designer has built-in [syntax checking, code completion ](https://nussknacker.io/documentation/about/KeyFeatures/#smart-code-suggestions-and-validation), versioning, [debugging, and testing support](https://nussknacker.io/documentation/docs/next/scenarios_authoring/TestingAndDebugging/).
+- **Productivity** - if low-code solutions want to be considered tools rather than toys, they must offer features available in professional developer toolkits. Nussknacker Designer has built-in [syntax checking, code completion ](https://nussknacker.io/documentation/docs/about/KeyFeatures/#smart-code-suggestions-and-validation), versioning, [debugging, and testing support](https://nussknacker.io/documentation/docs/next/scenarios_authoring/TestingAndDebugging/).
 - **Observability** - experimenting with algorithms requires insights going beyond pure technical metrics like throughput, Kafka topics lag, etc. Out of the box, Nussknacker comes with an integrated and ready-to-use monitoring subsystem which allows monitoring not only technical aspects of the running scenario but also its internal behavior - for example [events count](https://nussknacker.io/documentation/docs/next/scenarios_authoring/TestingAndDebugging/#watching-nodes-filtering-behaviour-with-counts) per scenario step. You will not need to spend developers' time on this functionality.
 - **Architecture** - last but not least, the fundamentals on which you build matter. Nussknacker  achieves exceptional throughput, horizontal scalability, resilience, and high availability through the use of tools and platforms known for their rock-solid architecture - Kafka, Flink, and Kubernetes, which handle all processing tasks.
 
-Check out [this document](https://nussknacker.io/documentation/about/KeyFeatures/) for a concise summary of Nussknacker features. 
+Check out [this document](https://nussknacker.io/documentation/docs/about/KeyFeatures/) for a concise summary of Nussknacker features. 
 
 
 ## Use cases
@@ -70,7 +70,7 @@ Nussknacker is typically used as a component of a larger system, but it can be u
 
 ## Where to learn more
 
-- [Typical deployment](https://nussknacker.io/documentation/about/TypicalImplementationStreaming/)
+- [Typical deployment](https://nussknacker.io/documentation/docs/about/typical%20implementation/Streaming/)
 - [Authoring scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) 
 - [Customer success story](https://nussknacker.io/case-studies/real-time-marketing-for-a-telecom-service-provider/)
 

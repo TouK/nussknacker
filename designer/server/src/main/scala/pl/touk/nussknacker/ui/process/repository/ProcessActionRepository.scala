@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, Proc
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -213,6 +213,8 @@ class DbProcessActionRepository(
       processId = processId,
       processVersionId = processVersion,
       user = user.username, // TODO: it should be user.id not name
+      impersonatedByIdentity = user.impersonatingUserId,
+      impersonatedByUsername = user.impersonatingUserName,
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       actionName = actionName,
@@ -304,7 +306,11 @@ class DbProcessActionRepository(
       actionState: Set[ProcessActionState],
       actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]] = {
-    val query = processActionsTable
+    val queryWithActionNamesFilter = actionNamesOpt
+      .map(actionNames => processActionsTable.filter { action => action.actionName.inSet(actionNames) })
+      .getOrElse(processActionsTable)
+
+    val finalQuery = queryWithActionNamesFilter
       .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
@@ -318,11 +324,7 @@ class DbProcessActionRepository(
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
     run(
-      actionNamesOpt
-        .map(actionNames => query.filter { case (_, (entity, _)) => entity.actionName.inSet(actionNames) })
-        .getOrElse(query)
-        .result
-        .map(_.toMap.mapValuesNow(toFinishedProcessAction))
+      finalQuery.result.map(_.toMap.mapValuesNow(toFinishedProcessAction))
     )
   }
 
