@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.rest
 
-import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
+import com.github.benmanes.caffeine.cache.{AsyncCache, Cache, Caffeine}
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCached, Fresh}
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
@@ -22,11 +22,11 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
       .expireAfterWrite(java.time.Duration.ofMillis(jobsOverviewCacheTTL.toMillis))
       .buildAsync[String, List[JobOverview]]()
 
-  private val jobsConfigCache: AsyncCache[String, ExecutionConfig] =
+  private val jobsConfigCache: Cache[String, ExecutionConfig] =
     Caffeine
       .newBuilder()
       .maximumSize(jobsConfigCacheSize)
-      .buildAsync[String, ExecutionConfig]()
+      .build[String, ExecutionConfig]()
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] =
     delegate.deleteJarIfExists(jarFileName)
@@ -51,9 +51,16 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
     }
 
   override def getJobConfig(jobId: String): Future[ExecutionConfig] =
-    jobsConfigCache
-      .get(jobId, (_, _) => delegate.getJobConfig(jobId).toJava.toCompletableFuture)
-      .toScala
+    Option(jobsConfigCache.getIfPresent(jobId))
+      .map(Future.successful)
+      .getOrElse(
+        delegate.getJobConfig(jobId).map { jobConfig =>
+          if (jobConfig.`user-config`.contains(CachedFlinkClient.deploymentIdUserConfigKey)) {
+            jobsConfigCache.put(jobId, jobConfig)
+          }
+          jobConfig
+        }
+      )
 
   override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] =
     delegate.cancel(deploymentId)
@@ -82,5 +89,11 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
   // TODO: Do we need cache here?
   override def getJobManagerConfig: Future[Configuration] =
     delegate.getJobManagerConfig
+
+}
+
+object CachedFlinkClient {
+
+  val deploymentIdUserConfigKey = "deploymentId"
 
 }
