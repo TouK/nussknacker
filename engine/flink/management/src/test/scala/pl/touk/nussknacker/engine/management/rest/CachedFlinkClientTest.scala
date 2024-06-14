@@ -81,12 +81,12 @@ class CachedFlinkClientTest
       .getJobConfig("foo")
       .futureValue
       .`user-config`
-      .get(CachedFlinkClient.deploymentIdUserConfigKey) shouldBe empty
+      .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe empty
 
     when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
       val config = flinkRestModel.ExecutionConfig(
         `job-parallelism` = 1,
-        `user-config` = Map(CachedFlinkClient.deploymentIdUserConfigKey -> Json.fromString("someDeploymentId"))
+        `user-config` = Map(CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("someDeploymentId"))
       )
       Future.successful(config)
     }
@@ -94,7 +94,7 @@ class CachedFlinkClientTest
       .getJobConfig("foo")
       .futureValue
       .`user-config`
-      .get(CachedFlinkClient.deploymentIdUserConfigKey) shouldBe defined
+      .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe defined
   }
 
   private def prepareMockedFlinkClient: FlinkClient = {
@@ -120,7 +120,7 @@ class CachedFlinkClientTest
         `job-parallelism` = 1,
         `user-config` = Map(
           "time"                                      -> Json.fromLong(System.currentTimeMillis()),
-          CachedFlinkClient.deploymentIdUserConfigKey -> Json.fromString("fooDeploymentId")
+          CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("fooDeploymentId")
         )
       )
 

@@ -55,7 +55,7 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
       .map(Future.successful)
       .getOrElse(
         delegate.getJobConfig(jobId).map { jobConfig =>
-          if (jobConfig.`user-config`.contains(CachedFlinkClient.deploymentIdUserConfigKey)) {
+          if (jobConfig.`user-config`.contains(CachedFlinkClient.DeploymentIdUserConfigKey)) {
             jobsConfigCache.put(jobId, jobConfig)
           }
           jobConfig
@@ -94,6 +94,6 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
 
 object CachedFlinkClient {
 
-  val deploymentIdUserConfigKey = "deploymentId"
+  val DeploymentIdUserConfigKey = "deploymentId"
 
 }
