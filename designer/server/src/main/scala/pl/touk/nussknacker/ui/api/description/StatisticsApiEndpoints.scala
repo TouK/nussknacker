@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.EnumEntry.UpperSnakecase
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
@@ -90,81 +89,81 @@ object StatisticsApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class StatisticDto private (name: StatisticName)
 
-    sealed trait StatisticName extends EnumEntry with UpperSnakecase
+    sealed abstract class StatisticName(override val entryName: String) extends EnumEntry
 
     object StatisticName extends Enum[StatisticName] with CirceEnum[StatisticName] {
-      case object SearchScenariosByName                extends StatisticName
-      case object FilterScenariosByStatus              extends StatisticName
-      case object FilterScenariosByProcessingMode      extends StatisticName
-      case object FilterScenariosByCategory            extends StatisticName
-      case object FilterScenariosByAuthor              extends StatisticName
-      case object FilterScenariosByOther               extends StatisticName
-      case object SortScenariosBySortOption            extends StatisticName
-      case object SearchComponentsByName               extends StatisticName
-      case object FilterComponentsByGroup              extends StatisticName
-      case object FilterComponentsByProcessingMode     extends StatisticName
-      case object FilterComponentsByCategory           extends StatisticName
-      case object FilterComponentsByMultipleCategories extends StatisticName
-      case object FilterComponentsByUsages             extends StatisticName
-      case object ClickComponentUsages                 extends StatisticName
-      case object SearchComponentUsagesByName          extends StatisticName
-      case object FilterComponentUsagesByStatus        extends StatisticName
-      case object FilterComponentUsagesByCategory      extends StatisticName
-      case object FilterComponentUsagesByAuthor        extends StatisticName
-      case object FilterComponentUsagesByOther         extends StatisticName
-      case object ClickScenarioFromComponentUsages     extends StatisticName
-      case object ClickGlobalMetricsTab                extends StatisticName
-      case object ClickActionDeploy                    extends StatisticName
-      case object ClickActionMetrics                   extends StatisticName
-      case object ClickViewZoomIn                      extends StatisticName
-      case object ClickViewZoomOut                     extends StatisticName
-      case object ClickViewReset                       extends StatisticName
-      case object ClickEditUndo                        extends StatisticName
-      case object ClickEditRedo                        extends StatisticName
-      case object ClickEditCopy                        extends StatisticName
-      case object ClickEditPaste                       extends StatisticName
-      case object ClickEditDelete                      extends StatisticName
-      case object ClickEditLayout                      extends StatisticName
-      case object ClickScenarioProperties              extends StatisticName
-      case object ClickScenarioCompare                 extends StatisticName
-      case object ClickScenarioMigrate                 extends StatisticName
-      case object ClickScenarioImport                  extends StatisticName
-      case object ClickScenarioJson                    extends StatisticName
-      case object ClickScenarioPdf                     extends StatisticName
-      case object ClickScenarioArchive                 extends StatisticName
-      case object ClickTestGenerated                   extends StatisticName
-      case object ClickTestAdhoc                       extends StatisticName
-      case object ClickTestFromFile                    extends StatisticName
-      case object ClickTestGenerateFile                extends StatisticName
-      case object ClickTestHide                        extends StatisticName
-      case object ClickMoreScenarioDetails             extends StatisticName
-      case object ClickExpandPanel                     extends StatisticName
-      case object ClickCollapsePanel                   extends StatisticName
-      case object MoveToolbarPanel                     extends StatisticName
-      case object SearchNodesInScenario                extends StatisticName
-      case object SearchComponentsInScenario           extends StatisticName
-      case object ClickOlderVersion                    extends StatisticName
-      case object ClickNewerVersion                    extends StatisticName
-      case object ClickNodeDocumentation               extends StatisticName
-      case object ClickComponentsTab                   extends StatisticName
-      case object ClickScenarioSave                    extends StatisticName
-      case object ClickTestCounts                      extends StatisticName
-      case object ClickScenarioCancel                  extends StatisticName
-      case object ClickScenarioArchiveToggle           extends StatisticName
-      case object ClickScenarioUnarchive               extends StatisticName
-      case object ClickScenarioCustomAction            extends StatisticName
-      case object ClickScenarioCustomLink              extends StatisticName
-      case object DoubleClickRangeSelectNodes          extends StatisticName
-      case object KeyboardAndClickRangeSelectNodes     extends StatisticName
-      case object KeyboardCopyNode                     extends StatisticName
-      case object KeyboardPasteNode                    extends StatisticName
-      case object keyboardCutNode                      extends StatisticName
-      case object keyboardSelectAllNodes               extends StatisticName
-      case object KeyboardRedoScenarioChanges          extends StatisticName
-      case object KeyboardUndoScenarioChanges          extends StatisticName
-      case object KeyboardDeleteNodes                  extends StatisticName
-      case object KeyboardDeselectAllNodes             extends StatisticName
-      case object KeyboardFocusSearchNodeField         extends StatisticName
+      case object SearchScenariosByName                extends StatisticName("ssbn")
+      case object FilterScenariosByStatus              extends StatisticName("fsbs")
+      case object FilterScenariosByProcessingMode      extends StatisticName("fsbpm")
+      case object FilterScenariosByCategory            extends StatisticName("fsbc")
+      case object FilterScenariosByAuthor              extends StatisticName("fsba")
+      case object FilterScenariosByOther               extends StatisticName("fsbo")
+      case object SortScenariosBySortOption            extends StatisticName("ssbso")
+      case object SearchComponentsByName               extends StatisticName("scbn")
+      case object FilterComponentsByGroup              extends StatisticName("fcbg")
+      case object FilterComponentsByProcessingMode     extends StatisticName("fcbpm")
+      case object FilterComponentsByCategory           extends StatisticName("fcbc")
+      case object FilterComponentsByMultipleCategories extends StatisticName("fcbmc")
+      case object FilterComponentsByUsages             extends StatisticName("fcbu")
+      case object ClickComponentUsages                 extends StatisticName("ccu")
+      case object SearchComponentUsagesByName          extends StatisticName("scubn")
+      case object FilterComponentUsagesByStatus        extends StatisticName("fcubs")
+      case object FilterComponentUsagesByCategory      extends StatisticName("fcubc")
+      case object FilterComponentUsagesByAuthor        extends StatisticName("fcuba")
+      case object FilterComponentUsagesByOther         extends StatisticName("fcubo")
+      case object ClickScenarioFromComponentUsages     extends StatisticName("csfcu")
+      case object ClickGlobalMetricsTab                extends StatisticName("cgmt")
+      case object ClickActionDeploy                    extends StatisticName("cad")
+      case object ClickActionMetrics                   extends StatisticName("cam")
+      case object ClickViewZoomIn                      extends StatisticName("cvzi")
+      case object ClickViewZoomOut                     extends StatisticName("cvzo")
+      case object ClickViewReset                       extends StatisticName("cvr")
+      case object ClickEditUndo                        extends StatisticName("ceu")
+      case object ClickEditRedo                        extends StatisticName("cer")
+      case object ClickEditCopy                        extends StatisticName("cec")
+      case object ClickEditPaste                       extends StatisticName("cep")
+      case object ClickEditDelete                      extends StatisticName("ced")
+      case object ClickEditLayout                      extends StatisticName("cel")
+      case object ClickScenarioProperties              extends StatisticName("csp")
+      case object ClickScenarioCompare                 extends StatisticName("csco")
+      case object ClickScenarioMigrate                 extends StatisticName("csm")
+      case object ClickScenarioImport                  extends StatisticName("csi")
+      case object ClickScenarioJson                    extends StatisticName("csj")
+      case object ClickScenarioPdf                     extends StatisticName("cspd")
+      case object ClickScenarioArchive                 extends StatisticName("csa")
+      case object ClickTestGenerated                   extends StatisticName("ctg")
+      case object ClickTestAdhoc                       extends StatisticName("cta")
+      case object ClickTestFromFile                    extends StatisticName("ctff")
+      case object ClickTestGenerateFile                extends StatisticName("ctgt")
+      case object ClickTestHide                        extends StatisticName("cth")
+      case object ClickMoreScenarioDetails             extends StatisticName("cmsd")
+      case object ClickExpandPanel                     extends StatisticName("cexp")
+      case object ClickCollapsePanel                   extends StatisticName("ccp")
+      case object MoveToolbarPanel                     extends StatisticName("mtp")
+      case object SearchNodesInScenario                extends StatisticName("snis")
+      case object SearchComponentsInScenario           extends StatisticName("scis")
+      case object ClickOlderVersion                    extends StatisticName("cov")
+      case object ClickNewerVersion                    extends StatisticName("cnv")
+      case object ClickNodeDocumentation               extends StatisticName("cnd")
+      case object ClickComponentsTab                   extends StatisticName("cct")
+      case object ClickScenarioSave                    extends StatisticName("css")
+      case object ClickTestCounts                      extends StatisticName("ctc")
+      case object ClickScenarioCancel                  extends StatisticName("csc")
+      case object ClickScenarioArchiveToggle           extends StatisticName("csat")
+      case object ClickScenarioUnarchive               extends StatisticName("csu")
+      case object ClickScenarioCustomAction            extends StatisticName("csca")
+      case object ClickScenarioCustomLink              extends StatisticName("cscl")
+      case object DoubleClickRangeSelectNodes          extends StatisticName("dcrsn")
+      case object KeyboardAndClickRangeSelectNodes     extends StatisticName("kacrsn")
+      case object KeyboardCopyNode                     extends StatisticName("kcon")
+      case object KeyboardPasteNode                    extends StatisticName("kpn")
+      case object KeyboardCutNode                      extends StatisticName("kcn")
+      case object KeyboardSelectAllNodes               extends StatisticName("ksan")
+      case object KeyboardRedoScenarioChanges          extends StatisticName("krsc")
+      case object KeyboardUndoScenarioChanges          extends StatisticName("kusc")
+      case object KeyboardDeleteNodes                  extends StatisticName("kdn")
+      case object KeyboardDeselectAllNodes             extends StatisticName("kdan")
+      case object KeyboardFocusSearchNodeField         extends StatisticName("kfsnf")
 
       override def values = findValues
     }
