@@ -31,6 +31,7 @@ import { useTableTheme } from "./tableTheme";
 import { TypesMenu } from "./TypesMenu";
 import { customRenderers } from "./customRenderers";
 import { isDatePickerCell } from "./customCells";
+import type { GetRowThemeCallback } from "@glideapps/glide-data-grid/src/internal/data-grid/render/data-grid-render.cells";
 
 const SUPPORTED_TYPES = [
     "java.lang.String",
@@ -386,6 +387,13 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
         [dispatch],
     );
 
+    const getRowThemeOverride: GetRowThemeCallback = useCallback(
+        (row) => ({
+            bgCell: row >= rows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
+        }),
+        [rows.length, tableTheme.bgCell, tableTheme.bgCellMedium],
+    );
+
     return (
         <>
             <Sizer
@@ -407,9 +415,7 @@ export const Table = ({ expressionObj, onValueChange, className, fieldErrors }: 
             >
                 <DataEditor
                     customRenderers={customRenderers}
-                    getRowThemeOverride={(row) => ({
-                        bgCell: row >= rows.length ? tableTheme.bgCellMedium : tableTheme.bgCell,
-                    })}
+                    getRowThemeOverride={getRowThemeOverride}
                     ref={ref}
                     className={overrideGroupRenameInput}
                     columns={tableColumns}
