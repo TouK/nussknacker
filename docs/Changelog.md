@@ -5,6 +5,10 @@
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 
+1.15.3 (Not released yet)
+-------------------------
+* [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
+
 1.15.2 (7 June 2024)
 -------------------------
 * [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
