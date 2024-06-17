@@ -95,6 +95,10 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
           .sortBy(_.`last-modification`)
           .reverse
       }
+      .map { jobs =>
+        logger.trace("Fetched jobs: " + jobs)
+        jobs
+      }
       .map(WithDataFreshnessStatus.fresh)
       .recoverWith(recoverWithMessage("retrieve Flink jobs"))
   }
