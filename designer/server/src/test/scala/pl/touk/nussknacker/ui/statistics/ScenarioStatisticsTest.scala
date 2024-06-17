@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
-import pl.touk.nussknacker.engine.api.Service
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -457,6 +457,14 @@ class ScenarioStatisticsTest
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService)
   )
 
-  object TestService extends Service {}
+  object TestService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("paramStringEditor")
+        param: String
+    ): Future[String] = ???
+
+  }
 
 }
