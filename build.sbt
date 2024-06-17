@@ -1274,7 +1274,8 @@ lazy val liteKafkaComponentsTests: Project = (project in lite("components/kafka-
     libraryDependencies ++= {
       Seq(
         "org.scalacheck"    %% "scalacheck"                    % scalaCheckV    % Test,
-        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % Test,
+        "org.scalatestplus" %% "mockito-4-11"                  % scalaTestPlusV % Test,
       )
     },
   )
@@ -1844,7 +1845,12 @@ lazy val restmodel = (project in file("designer/restmodel"))
       )
     }
   )
-  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % Test)
+  .dependsOn(
+    extensionsApi,
+    security,
+    commonApi % "test->test",
+    testUtils % Test,
+  )
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)

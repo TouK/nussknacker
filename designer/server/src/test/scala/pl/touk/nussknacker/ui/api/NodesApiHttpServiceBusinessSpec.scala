@@ -504,7 +504,7 @@ class NodesApiHttpServiceBusinessSpec
         .applicationState {
           createSavedScenario(exampleScenario)
         }
-        .basicAuth("allpermuser", "allpermuser")
+        .basicAuthAllPermUser()
         .jsonBody(exampleNodeValidationRequestForFragment(fragmentName))
         .when()
         .post(s"$nuDesignerHttpAddress/api/nodes/${exampleScenario.name}/validation")
@@ -592,38 +592,6 @@ class NodesApiHttpServiceBusinessSpec
              |      "fieldName": "numberOfThreads",
              |      "errorType": "SaveAllowed",
              |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property parallelism",
-             |      "description": "Property parallelism is not known",
-             |      "fieldName": "parallelism",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property checkpointIntervalInSeconds",
-             |      "description": "Property checkpointIntervalInSeconds is not known",
-             |      "fieldName": "checkpointIntervalInSeconds",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property spillStateToDisk",
-             |      "description": "Property spillStateToDisk is not known",
-             |      "fieldName": "spillStateToDisk",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property useAsyncInterpretation",
-             |      "description": "Property useAsyncInterpretation is not known",
-             |      "fieldName": "useAsyncInterpretation",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
              |    }
              |  ],
              |  "validationPerformed": true
@@ -646,7 +614,7 @@ class NodesApiHttpServiceBusinessSpec
              |      "numberOfThreads": "1",
              |      "spillStateToDisk": "true",
              |      "environment": "test",
-             |      "useAsyncInterpretation": "1"
+             |      "useAsyncInterpretation": "true"
              |    },
              |    "metaDataType": "StreamMetaData"
              |  },
@@ -665,38 +633,6 @@ class NodesApiHttpServiceBusinessSpec
              |      "message": "Scenario name cannot be blank",
              |      "description": "Blank scenario name",
              |      "fieldName": "$$id",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property parallelism",
-             |      "description": "Property parallelism is not known",
-             |      "fieldName": "parallelism",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property checkpointIntervalInSeconds",
-             |      "description": "Property checkpointIntervalInSeconds is not known",
-             |      "fieldName": "checkpointIntervalInSeconds",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property spillStateToDisk",
-             |      "description": "Property spillStateToDisk is not known",
-             |      "fieldName": "spillStateToDisk",
-             |      "errorType": "SaveAllowed",
-             |      "details": null
-             |    },
-             |    {
-             |      "typ": "UnknownProperty",
-             |      "message": "Unknown property useAsyncInterpretation",
-             |      "description": "Property useAsyncInterpretation is not known",
-             |      "fieldName": "useAsyncInterpretation",
              |      "errorType": "SaveAllowed",
              |      "details": null
              |    },
@@ -852,7 +788,7 @@ class NodesApiHttpServiceBusinessSpec
     "return 404 for not existent processing type" in {
       val notExistentProcessingType = "not-existent"
       given()
-        .basicAuth("allpermuser", "allpermuser")
+        .basicAuthAllPermUser()
         .jsonBody(exampleParametersValidationRequestBody)
         .when()
         .post(s"$nuDesignerHttpAddress/api/parameters/$notExistentProcessingType/validate")

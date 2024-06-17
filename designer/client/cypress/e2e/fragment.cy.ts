@@ -227,7 +227,6 @@ describe("Fragment", () => {
             .matchImage({
                 screenshotConfig: {
                     padding: 16,
-                    blackout: ["> :not(#nk-graph-main) > div"],
                 },
             });
 

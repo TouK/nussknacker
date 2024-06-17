@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.{ApiVer
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.process.ScenarioWithDetailsConversions
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -35,7 +35,7 @@ class StandardRemoteEnvironmentSpec
     with BeforeAndAfterAll {
 
   implicit val system: ActorSystem = ActorSystem("nussknacker-designer")
-  implicit val user: LoggedUser    = LoggedUser("1", "test")
+  implicit val user: LoggedUser    = RealLoggedUser("1", "test")
 
   val migrationApiAdapterService = new MigrationApiAdapterService()
 

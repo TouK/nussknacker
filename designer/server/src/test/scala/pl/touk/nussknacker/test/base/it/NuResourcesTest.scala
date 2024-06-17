@@ -53,7 +53,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcess
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import pl.touk.nussknacker.ui.util.{MultipartUtils, NuPathMatchers}
 import slick.dbio.DBIOAction
 
@@ -178,7 +178,7 @@ trait NuResourcesTest
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   protected def createLoggedUser(id: String, name: String, permissions: Permission.Permission*): LoggedUser = {
-    LoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
+    RealLoggedUser(id, name, Map(Category1.stringify -> permissions.toSet))
   }
 
   protected def createDBProcessService(processStateProvider: ProcessStateProvider): DBProcessService =
@@ -294,18 +294,22 @@ trait NuResourcesTest
   protected def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, None, None), name)(testCode)
 
   protected def updateCanonicalProcessAndAssertSuccess(process: CanonicalProcess): Assertion =
     updateCanonicalProcess(process) {
       status shouldEqual StatusCodes.OK
     }
 
-  protected def updateCanonicalProcess(process: CanonicalProcess, comment: String = "")(
+  protected def updateCanonicalProcess(process: CanonicalProcess, comment: Option[String] = None)(
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(
+        CanonicalProcessConverter.toScenarioGraph(process),
+        comment.map(UpdateProcessComment(_)),
+        None
+      ),
       process.name
     )(
       testCode

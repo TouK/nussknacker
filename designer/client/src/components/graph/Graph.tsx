@@ -5,12 +5,17 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lo
 import React from "react";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import { updateNodeCounts } from "./EspNode/element";
-import { GraphPaperContainer } from "./focusable";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
 import { Events, GraphProps } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
-import { RangeSelectedEventData, RangeSelectEvents, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
+import {
+    RangeSelectedEventData,
+    RangeSelectEvents,
+    RangeSelectPlugin,
+    RangeSelectStartEventData,
+    SelectionMode,
+} from "./RangeSelectPlugin";
 import { prepareSvg } from "./svg-export/prepareSvg";
 import * as GraphUtils from "./utils/graphUtils";
 import { handleGraphEvent } from "./utils/graphUtils";
@@ -28,12 +33,12 @@ import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { Scenario } from "../Process/types";
-import { nodeFocused, nodeValidationError } from "./focusableStyled";
-import { dragHovered } from "./GraphStyled";
+import { dragHovered, nodeFocused, nodeValidationError } from "./graphStyledWrapper";
 import { isEdgeConnected } from "./GraphPartialsInTS/EdgeUtils";
 import { Theme } from "@mui/material";
 import { getCellsToLayout } from "./GraphPartialsInTS/calcLayout";
-import "./jqueryPassiveEvents";
+import { PaperContainer } from "./paperContainer";
+import { EventTrackingSelector, EventTrackingType, TrackEventParams } from "../../containers/event-tracking";
 
 // TODO: this is needed here due to our webpack config - needs fixing (NU-1559).
 styles;
@@ -51,6 +56,7 @@ type Props = GraphProps & {
     showModalNodeDetails: (node: NodeType, scenario: Scenario, readonly?: boolean) => void;
     isPristine?: boolean;
     theme: Theme;
+    handleStatisticsEvent: (event: TrackEventParams) => void;
 };
 
 function handleActionOnLongPress<T extends dia.CellView>(
@@ -372,10 +378,15 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom = new PanZoomPlugin(this.processGraphPaper, this.viewport);
 
         if (this.props.isFragment !== true && this.props.nodeSelectionEnabled) {
-            const { toggleSelection, resetSelection } = this.props;
+            const { toggleSelection, resetSelection, handleStatisticsEvent } = this.props;
             new RangeSelectPlugin(this.processGraphPaper, this.props.theme);
             this.processGraphPaper
-                .on(RangeSelectEvents.START, () => {
+                .on(RangeSelectEvents.START, (data: RangeSelectStartEventData) => {
+                    handleStatisticsEvent({
+                        selector: EventTrackingSelector.RangeSelectNodes,
+                        event: data.source === "pointer" ? EventTrackingType.DoubleClick : EventTrackingType.KeyboardAndClick,
+                    });
+
                     this.panAndZoom.toggle(false);
                 })
                 .on(RangeSelectEvents.STOP, () => {
@@ -700,7 +711,8 @@ export class Graph extends React.Component<Props> {
         const { divId, isFragment } = this.props;
         return (
             <>
-                <GraphPaperContainer ref={this.setEspGraphRef} onResize={isFragment ? () => this.fit() : null} id={divId} />
+                {/* for now this can't use theme nor other dynamic props to maintain reference with jointjs. */}
+                <PaperContainer ref={this.setEspGraphRef} onResize={isFragment ? () => this.fit() : null} id={divId} />
                 {!isFragment && <ComponentDragPreview scale={() => this.zoom} />}
             </>
         );

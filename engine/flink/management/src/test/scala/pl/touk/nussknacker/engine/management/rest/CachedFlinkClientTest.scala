@@ -28,13 +28,13 @@ class CachedFlinkClientTest
     val cachingFlinkClient = new CachedFlinkClient(delegate, 10 seconds, 10)
 
     val results = List(
-      cachingFlinkClient.findJobsByName("foo")(DataFreshnessPolicy.Fresh).futureValue,
-      cachingFlinkClient.findJobsByName("foo")(DataFreshnessPolicy.Fresh).futureValue,
+      cachingFlinkClient.getJobsOverviews()(DataFreshnessPolicy.Fresh).futureValue,
+      cachingFlinkClient.getJobsOverviews()(DataFreshnessPolicy.Fresh).futureValue,
     )
 
     results.map(_.cached) should contain only false
 
-    verify(delegate, times(2)).findJobsByName(any[String])(any[DataFreshnessPolicy])
+    verify(delegate, times(2)).getJobsOverviews()(any[DataFreshnessPolicy])
   }
 
   test("should cache jobs by name for DataFreshnessPolicy.CanBeCached") {
@@ -42,13 +42,13 @@ class CachedFlinkClientTest
     val cachingFlinkClient = new CachedFlinkClient(delegate, 10 seconds, 10)
 
     val results = List(
-      cachingFlinkClient.findJobsByName("foo")(DataFreshnessPolicy.CanBeCached).futureValue,
-      cachingFlinkClient.findJobsByName("foo")(DataFreshnessPolicy.CanBeCached).futureValue,
+      cachingFlinkClient.getJobsOverviews()(DataFreshnessPolicy.CanBeCached).futureValue,
+      cachingFlinkClient.getJobsOverviews()(DataFreshnessPolicy.CanBeCached).futureValue,
     )
 
     results.map(_.cached) should contain allOf (false, true)
 
-    verify(delegate, times(1)).findJobsByName(any[String])(any[DataFreshnessPolicy])
+    verify(delegate, times(1)).getJobsOverviews()(any[DataFreshnessPolicy])
   }
 
   test("should cache job configs by default") {
@@ -66,10 +66,41 @@ class CachedFlinkClientTest
     verify(delegate, times(1)).getJobConfig(any[String])
   }
 
+  test("shouldn't cache job configs with missing deploymentId") {
+    val delegate           = mock[FlinkClient]
+    val cachingFlinkClient = new CachedFlinkClient(delegate, 10 seconds, 10)
+
+    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+      val config = flinkRestModel.ExecutionConfig(
+        `job-parallelism` = 1,
+        `user-config` = Map.empty
+      )
+      Future.successful(config)
+    }
+    cachingFlinkClient
+      .getJobConfig("foo")
+      .futureValue
+      .`user-config`
+      .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe empty
+
+    when(delegate.getJobConfig(any[String])).thenAnswer { _: InvocationOnMock =>
+      val config = flinkRestModel.ExecutionConfig(
+        `job-parallelism` = 1,
+        `user-config` = Map(CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("someDeploymentId"))
+      )
+      Future.successful(config)
+    }
+    cachingFlinkClient
+      .getJobConfig("foo")
+      .futureValue
+      .`user-config`
+      .get(CachedFlinkClient.DeploymentIdUserConfigKey) shouldBe defined
+  }
+
   private def prepareMockedFlinkClient: FlinkClient = {
     val delegate = mock[FlinkClient]
 
-    when(delegate.findJobsByName(any[String])(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
+    when(delegate.getJobsOverviews()(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
       val jobs = List(
         JobOverview(
           "123",
@@ -88,7 +119,8 @@ class CachedFlinkClientTest
       val config = flinkRestModel.ExecutionConfig(
         `job-parallelism` = 1,
         `user-config` = Map(
-          "time" -> Json.fromLong(System.currentTimeMillis())
+          "time"                                      -> Json.fromLong(System.currentTimeMillis()),
+          CachedFlinkClient.DeploymentIdUserConfigKey -> Json.fromString("fooDeploymentId")
         )
       )
 

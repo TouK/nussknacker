@@ -97,7 +97,7 @@ class MigrationService(
       }
     }
     val updateScenarioCommand =
-      UpdateScenarioCommand(scenarioGraph, updateProcessComment, forwardedUsernameO)
+      UpdateScenarioCommand(scenarioGraph, Some(updateProcessComment), forwardedUsernameO)
 
     val processingTypeValidated = scenarioParametersService.combined.queryProcessingTypeWithWritePermission(
       Some(parameters.category),
@@ -120,7 +120,6 @@ class MigrationService(
       processId <- getProcessId(processName)
       processIdWithName = ProcessIdWithName(processId, processName)
       _ <- checkLoggedUserCanWriteToProcess(processId)
-      _ <- checkLoggedUserCanOverrideProcess(processId, forwardedUsernameO)
       _ <- updateProcessAndNotifyListeners(updateScenarioCommand, processIdWithName)
     } yield ()
 
@@ -150,22 +149,6 @@ class MigrationService(
           )
           .map(_.validationResult)
       )
-      .leftMap(MigrationError.from(_))
-  }
-
-  private def checkLoggedUserCanOverrideProcess(processId: ProcessId, forwardedUsername: Option[RemoteUserName])(
-      implicit loggedUser: LoggedUser
-  ) = {
-    EitherT
-      .liftF[Future, NuDesignerError, Boolean](
-        processAuthorizer
-          .check(processId, Permission.OverrideUsername, loggedUser)
-          .map(_ || forwardedUsername.isEmpty)
-      )
-      .subflatMap {
-        case true  => Right(())
-        case false => Left(new UnauthorizedError(loggedUser))
-      }
       .leftMap(MigrationError.from(_))
   }
 

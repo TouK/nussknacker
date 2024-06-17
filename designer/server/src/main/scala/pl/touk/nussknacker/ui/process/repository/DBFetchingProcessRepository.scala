@@ -35,7 +35,8 @@ object DBFetchingProcessRepository {
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
     actionRepository: ProcessActionRepository
-) extends FetchingProcessRepository[F]
+)(protected implicit val ec: ExecutionContext)
+    extends FetchingProcessRepository[F]
     with LazyLogging {
 
   import api._
@@ -76,10 +77,18 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
         actionRepository
           .getLastActionPerProcess(ProcessActionState.FinishedStates, Some(ScenarioActionName.StateActions))
       )
-      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
+      // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
+      // so that the presence of such an action means that the process is currently deployed
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(
-        actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ScenarioActionName.Deploy)))
-      )
+        actionRepository
+          .getLastActionPerProcess(
+            ProcessActionState.FinishedStates,
+            Some(Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel))
+          )
+      ).map(_.filter { case (_, action) =>
+        action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
+      })
+
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield latestProcesses
       .map { case ((_, processVersion), process) =>
@@ -180,10 +189,13 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       processVersion = processVersion,
       lastActionData = actions.headOption,
       lastStateActionData = actions.find(a => ScenarioActionName.StateActions.contains(a.actionName)),
-      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
-      lastDeployedActionData = actions.headOption.filter(a =>
-        a.actionName == ScenarioActionName.Deploy && a.state == ProcessActionState.Finished
-      ),
+      // For last deploy action we are interested in Deploys that are Finished (not ExecutionFinished) and that are not Cancelled
+      // so that the presence of such an action means that the process is currently deployed
+      lastDeployedActionData = actions
+        .find(action => Set(ScenarioActionName.Deploy, ScenarioActionName.Cancel).contains(action.actionName))
+        .filter(action =>
+          action.actionName == ScenarioActionName.Deploy && action.state == ProcessActionState.Finished
+        ),
       isLatestVersion = isLatestVersion,
       tags = Some(tags),
       history = Some(
@@ -223,26 +235,25 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](
       modifiedBy = processVersion.user,
       createdAt = process.createdAt.toInstant,
       createdBy = process.createdBy,
-      json = convertToTargetShape(processVersion, process),
+      json = convertToTargetShape(processVersion),
       history = history.map(_.toList),
       modelVersion = processVersion.modelVersion
     )
   }
 
   private def convertToTargetShape[PS: ScenarioShapeFetchStrategy](
-      processVersion: ProcessVersionEntityData,
-      process: ProcessEntityData
+      processVersion: ProcessVersionEntityData
   ): PS = {
     (processVersion.json, processVersion.componentsUsages, implicitly[ScenarioShapeFetchStrategy[PS]]) match {
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchCanonical) =>
-        canonical.asInstanceOf[PS]
+        canonical
       case (Some(canonical), _, ScenarioShapeFetchStrategy.FetchScenarioGraph) =>
         val scenarioGraph =
           CanonicalProcessConverter.toScenarioGraph(canonical)
-        scenarioGraph.asInstanceOf[PS]
-      case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
+        scenarioGraph
+      case (_, _, ScenarioShapeFetchStrategy.NotFetch) => ()
       case (_, Some(componentsUsages), ScenarioShapeFetchStrategy.FetchComponentsUsages) =>
-        componentsUsages.asInstanceOf[PS]
+        componentsUsages
       case (_, _, strategy) =>
         throw new IllegalArgumentException(
           s"Missing scenario json data, it's required to convert for strategy: $strategy."

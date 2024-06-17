@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.io.ByteArrayInputStream
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -16,7 +16,7 @@ import scala.util.Random
 
 class ScenarioAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
   private implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  private implicit val user: LoggedUser             = LoggedUser("test user", "test user")
+  private implicit val user: LoggedUser             = RealLoggedUser("test user", "test user")
   private val service = new ScenarioAttachmentService(AttachmentsConfig(10), TestProcessActivityRepository)
 
   test("should respect size limit") {

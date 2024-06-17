@@ -80,10 +80,10 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .recoverWith(recoverWithMessage("delete jar"))
   }
 
-  def findJobsByName(
-      jobName: String
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[JobOverview]]] = {
-    logger.trace(s"Checking fetching scenario $jobName state")
+  override def getJobsOverviews()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[JobOverview]]] = {
+    logger.trace(s"Fetching jobs overview")
     basicRequest
       .readTimeout(config.scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
@@ -92,7 +92,6 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .flatMap(SttpJson.failureToFuture)
       .map { jobs =>
         jobs.jobs
-          .filter(_.name == jobName)
           .sortBy(_.`last-modification`)
           .reverse
       }
@@ -100,7 +99,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .recoverWith(recoverWithMessage("retrieve Flink jobs"))
   }
 
-  def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
+  override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
     basicRequest
       .get(flinkUrl.addPath("jobs", jobId, "config"))
       .response(asJson[JobConfig])
@@ -140,7 +139,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       }
   }
 
-  def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
+  override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     basicRequest
       .patch(flinkUrl.addPath("jobs", deploymentId.value))
       .send(backend)
@@ -149,14 +148,17 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
 
   }
 
-  def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override def makeSavepoint(
+      deploymentId: ExternalDeploymentId,
+      savepointDir: Option[String]
+  ): Future[SavepointResult] = {
     val savepointRequest = basicRequest
       .post(flinkUrl.addPath("jobs", deploymentId.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
     processSavepointRequest(deploymentId, savepointRequest, "make savepoint")
   }
 
-  def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+  override def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     // because of https://issues.apache.org/jira/browse/FLINK-28758 we can't use '/stop' endpoint,
     // so jobs ends up in CANCELED state, not FINISHED - we should switch back when we get rid of old Kafka source
     val stopRequest = basicRequest
@@ -182,7 +184,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
 
   private val timeoutExtractor = DeeplyCheckingExceptionExtractor.forClass[TimeoutException]
 
-  def runProgram(
+  override def runProgram(
       jarFile: File,
       mainClass: String,
       args: List[String],
@@ -217,7 +219,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
     }
   }
 
-  def getClusterOverview: Future[ClusterOverview] = {
+  override def getClusterOverview: Future[ClusterOverview] = {
     basicRequest
       .get(flinkUrl.addPath("overview"))
       .response(asJson[ClusterOverview])
@@ -225,7 +227,7 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .flatMap(SttpJson.failureToFuture)
   }
 
-  def getJobManagerConfig: Future[Configuration] = {
+  override def getJobManagerConfig: Future[Configuration] = {
     basicRequest
       .get(flinkUrl.addPath("jobmanager", "config"))
       .response(asJson[List[KeyValueEntry]])

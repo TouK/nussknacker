@@ -12,8 +12,11 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CachingProcessStateDeploymentManager(delegate: DeploymentManager, cacheTTL: FiniteDuration)
-    extends DeploymentManager {
+class CachingProcessStateDeploymentManager(
+    delegate: DeploymentManager,
+    cacheTTL: FiniteDuration,
+    override val deploymentSynchronisationSupport: DeploymentSynchronisationSupport
+) extends DeploymentManager {
 
   private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine
     .newBuilder()
@@ -68,7 +71,7 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
     scenarioStateCacheTTL
       .map { cacheTTL =>
         logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
-        new CachingProcessStateDeploymentManager(delegate, cacheTTL)
+        new CachingProcessStateDeploymentManager(delegate, cacheTTL, delegate.deploymentSynchronisationSupport)
       }
       .getOrElse {
         logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")

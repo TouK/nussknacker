@@ -34,12 +34,12 @@ class ScenarioParametersApiHttpServiceSecuritySpec
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category1",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    },
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category2",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    }
                |  ],
                |  "engineSetupErrors": {}
@@ -59,7 +59,7 @@ class ScenarioParametersApiHttpServiceSecuritySpec
                |    {
                |      "processingMode": "Unbounded-Stream",
                |      "category": "Category1",
-               |      "engineSetupName": "Flink"
+               |      "engineSetupName": "Mockable"
                |    }
                |  ],
                |  "engineSetupErrors": {}
@@ -105,6 +105,41 @@ class ScenarioParametersApiHttpServiceSecuritySpec
               |  "engineSetupErrors": {}
               |}""".stripMargin
           )
+      }
+    }
+    "impersonating user has permission to impersonate should" - {
+      "return parameters combination for categories the impersonated user has a write access" in {
+        given()
+          .when()
+          .basicAuthAllPermUser()
+          .impersonateLimitedWriterUser()
+          .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
+          .Then()
+          .statusCode(200)
+          .equalsJsonBody(
+            s"""{
+               |  "combinations": [
+               |    {
+               |      "processingMode": "Unbounded-Stream",
+               |      "category": "Category1",
+               |      "engineSetupName": "Mockable"
+               |    }
+               |  ],
+               |  "engineSetupErrors": {}
+               |}""".stripMargin
+          )
+      }
+    }
+    "impersonating user does not have permission to impersonate should" - {
+      "forbid access" in {
+        given()
+          .when()
+          .basicAuthWriter()
+          .impersonateLimitedWriterUser()
+          .get(s"$nuDesignerHttpAddress/api/scenarioParametersCombinations")
+          .Then()
+          .statusCode(403)
+          .equalsPlainBody("The supplied authentication is not authorized to impersonate")
       }
     }
   }

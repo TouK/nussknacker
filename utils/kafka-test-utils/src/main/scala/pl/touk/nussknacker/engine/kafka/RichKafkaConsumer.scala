@@ -41,6 +41,12 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
     LazyList.continually(()).flatMap(new Poller(secondsToWait))
   }
 
+  def getEndOffsets(topic: String, secondsToWait: Int = DefaultSecondsToWait) = {
+    val partitions = fetchTopicPartitions(topic, secondsToWait)
+    consumer.assign(partitions.asJava)
+    consumer.endOffsets(partitions.asJava)
+  }
+
   private def fetchTopicPartitions(topic: String, secondsToWait: Int) = {
     implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
     // We have to repeat it in eventually - partitionsFor with duration parameter sometimes just returns empty list

@@ -8,7 +8,7 @@ import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import java.sql.Timestamp
 import java.time.Instant
 
-trait ProcessActionEntityFactory extends BaseEntityFactory {
+trait ProcessActionEntityFactory extends BaseEntityFactory with CommentEntityFactory {
 
   import profile.api._
 
@@ -16,7 +16,6 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
     LTableQuery(new ProcessActionEntity(_))
 
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
-  val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
     def id: Rep[ProcessActionId] = column[ProcessActionId]("id", O.PrimaryKey)
@@ -30,6 +29,12 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
     def performedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("performed_at")
 
     def user: Rep[String] = column[String]("user")
+
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
@@ -60,6 +65,8 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       processId,
       processVersionId,
       user,
+      impersonatedByIdentity,
+      impersonatedByUsername,
       createdAt,
       performedAt,
       actionName,
@@ -80,6 +87,8 @@ final case class ProcessActionEntityData(
     processId: ProcessId,
     processVersionId: Option[VersionId],
     user: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String],
     createdAt: Timestamp,
     performedAt: Option[Timestamp],
     actionName: ScenarioActionName,

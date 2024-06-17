@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
+import pl.touk.nussknacker.engine.newdeployment
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -31,6 +32,8 @@ trait DeploymentManagerInconsistentStateHandlerMixIn {
 }
 
 trait DeploymentManager extends AutoCloseable {
+
+  def deploymentSynchronisationSupport: DeploymentSynchronisationSupport
 
   def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result]
 
@@ -71,3 +74,13 @@ trait DeploymentManager extends AutoCloseable {
     Future.failed(new NotImplementedError())
 
 }
+
+sealed trait DeploymentSynchronisationSupport
+
+trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSupport {
+
+  def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]]
+
+}
+
+case object NoDeploymentSynchronisationSupport extends DeploymentSynchronisationSupport

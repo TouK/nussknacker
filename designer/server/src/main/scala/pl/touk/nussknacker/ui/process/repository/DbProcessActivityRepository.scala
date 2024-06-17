@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.process.repository
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
+import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
+import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -34,12 +34,12 @@ trait ProcessActivityRepository {
 
 }
 
-final case class DbProcessActivityRepository(protected val dbRef: DbRef)
-    extends ProcessActivityRepository
+final case class DbProcessActivityRepository(protected val dbRef: DbRef, commentRepository: CommentRepository)(
+    protected implicit val ec: ExecutionContext
+) extends ProcessActivityRepository
     with LazyLogging
     with BasicRepository
-    with NuTables
-    with CommentActions {
+    with NuTables {
 
   import profile.api._
 
@@ -47,7 +47,7 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Unit] = {
-    run(newCommentAction(processId, processVersionId, Option(comment))).map(_ => ())
+    run(commentRepository.saveComment(processId, processVersionId, loggedUser, comment)).map(_ => ())
   }
 
   override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = {
@@ -85,6 +85,8 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
         fileName = attachmentToAdd.fileName,
         data = attachmentToAdd.data,
         user = loggedUser.username,
+        impersonatedByIdentity = loggedUser.impersonatingUserId,
+        impersonatedByUsername = loggedUser.impersonatingUserName,
         createDate = Timestamp.from(Instant.now())
       )
     } yield ()

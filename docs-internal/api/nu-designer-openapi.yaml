@@ -10,6 +10,13 @@ paths:
       summary: Show component usage
       operationId: getApiComponentsIdUsages
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: id
         in: path
         required: true
@@ -63,6 +70,12 @@ paths:
                     modifiedBy: admin
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -85,12 +98,24 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
                 type: string
               example: Component {id} not exist.
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -100,6 +125,14 @@ paths:
       - Components
       summary: Listing components
       operationId: getApiComponents
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -128,57 +161,8 @@ paths:
                     usageCount: 2
                     allowedProcessingModes:
                     - Request-Response
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-      security:
-      - {}
-      - httpAuth: []
-  /api/processManagement/customAction/{scenarioName}/validation:
-    post:
-      tags:
-      - CustomAction
-      summary: Endpoint to validate input in custom action fields
-      operationId: postApiProcessmanagementCustomactionScenarionameValidation
-      parameters:
-      - name: scenarioName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CustomActionRequest'
-        required: true
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomActionValidationDto'
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -205,11 +189,108 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processManagement/customAction/{scenarioName}/validation:
+    post:
+      tags:
+      - CustomAction
+      summary: Endpoint to validate input in custom action fields
+      operationId: postApiProcessmanagementCustomactionScenarionameValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomActionRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomActionValidationDto'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
           description: ''
           content:
             text/plain:
               schema:
                 type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -263,6 +344,14 @@ paths:
       - App
       summary: Deployed processes health check service
       operationId: getApiAppHealthcheckProcessDeployment
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -275,253 +364,8 @@ paths:
                   summary: All deployed processes are healthy
                   value:
                     status: OK
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '500':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
-              examples:
-                Example:
-                  summary: Some processes are unhealthy
-                  value:
-                    status: ERROR
-                    message: Scenarios with status PROBLEM
-                    processes:
-                    - process1
-                    - process2
-      security:
-      - {}
-      - httpAuth: []
-  /api/app/healthCheck/process/validation:
-    get:
-      tags:
-      - App
-      summary: Deployed processes validation service
-      operationId: getApiAppHealthcheckProcessValidation
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
-              examples:
-                Example:
-                  summary: There are no validation errors among the processes
-                  value:
-                    status: OK
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-        '500':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
-              examples:
-                Example:
-                  summary: Some processes have validation errors
-                  value:
-                    status: ERROR
-                    message: Scenarios with validation errors
-                    processes:
-                    - process2
-                    - process3
-      security:
-      - {}
-      - httpAuth: []
-  /api/app/processingtype/reload:
-    post:
-      tags:
-      - App
-      summary: Processing type data reload service
-      operationId: postApiAppProcessingtypeReload
-      responses:
-        '204':
-          description: ''
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-      security:
-      - {}
-      - httpAuth: []
-  /api/app/config:
-    get:
-      tags:
-      - App
-      summary: Server configuration viewer service
-      operationId: getApiAppConfig
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                Example:
-                  summary: Server configuration response
-                  value:
-                    environment: local
-                    scenarioTypes:
-                      development-tests:
-                        type: development-tests
-                      modelConfig:
-                        classPath:
-                        - model/devModel.jar
-                        - model/flinkExecutor.jar
-                        - components/flink
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-      security:
-      - {}
-      - httpAuth: []
-  /api/app/config/categoriesWithProcessingType:
-    get:
-      tags:
-      - App
-      summary: Configured categories with their processing types service
-      operationId: getApiAppConfigCategorieswithprocessingtype
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Map_String'
-              examples:
-                Example:
-                  summary: Configured categories and their processing types
-                  value:
-                    Category1: streaming
-                    Category2: streaming2
-        '401':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authentication failed
-                  value: The supplied authentication is invalid
-        '403':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                Example:
-                  summary: Authorization failed
-                  value: The supplied authentication is not authorized to access this
-                    resource
-      security:
-      - {}
-      - httpAuth: []
-  /api/deployments/{deploymentId}/status:
-    get:
-      tags:
-      - Deployments
-      summary: Get status of a deployment
-      operationId: getApiDeploymentsDeploymentidStatus
-      parameters:
-      - name: deploymentId
-        in: path
-        description: Identifier in the UUID format that will be used for the verification
-          of deployment's status
-        required: true
-        schema:
-          type: string
-          format: uuid
-        example: a9a1e269-0b71-4582-a948-603482d27298
-      responses:
-        '200':
-          description: ''
-          content:
-            text/plain:
-              schema:
-                type: string
         '400':
-          description: 'Invalid value for: path parameter deploymentId'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
           content:
             text/plain:
               schema:
@@ -548,7 +392,443 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '500':
           description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
+              examples:
+                Example:
+                  summary: Some processes are unhealthy
+                  value:
+                    status: ERROR
+                    message: Scenarios with status PROBLEM
+                    processes:
+                    - process1
+                    - process2
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/app/healthCheck/process/validation:
+    get:
+      tags:
+      - App
+      summary: Deployed processes validation service
+      operationId: getApiAppHealthcheckProcessValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+              examples:
+                Example:
+                  summary: There are no validation errors among the processes
+                  value:
+                    status: OK
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '500':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
+              examples:
+                Example:
+                  summary: Some processes have validation errors
+                  value:
+                    status: ERROR
+                    message: Scenarios with validation errors
+                    processes:
+                    - process2
+                    - process3
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/app/processingtype/reload:
+    post:
+      tags:
+      - App
+      summary: Processing type data reload service
+      operationId: postApiAppProcessingtypeReload
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/app/config:
+    get:
+      tags:
+      - App
+      summary: Server configuration viewer service
+      operationId: getApiAppConfig
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                Example:
+                  summary: Server configuration response
+                  value:
+                    environment: local
+                    scenarioTypes:
+                      development-tests:
+                        type: development-tests
+                      modelConfig:
+                        classPath:
+                        - model/devModel.jar
+                        - model/flinkExecutor.jar
+                        - components/flink
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/app/config/categoriesWithProcessingType:
+    get:
+      tags:
+      - App
+      summary: Configured categories with their processing types service
+      operationId: getApiAppConfigCategorieswithprocessingtype
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Map_String'
+              examples:
+                Example:
+                  summary: Configured categories and their processing types
+                  value:
+                    Category1: streaming
+                    Category2: streaming2
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/deployments/{deploymentId}/status:
+    get:
+      tags:
+      - Deployments
+      summary: Get status of a deployment
+      operationId: getApiDeploymentsDeploymentidStatus
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: deploymentId
+        in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDeploymentStatusResponse'
+              examples:
+                RUNNING status:
+                  value:
+                    name: RUNNING
+                    modifiedAt: '2024-01-01T00:00:00Z'
+                PROBLEM status:
+                  value:
+                    name: PROBLEM
+                    problemDescription: There are some problems with deployment.
+                    modifiedAt: '2024-01-01T00:00:00Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter deploymentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -557,6 +837,17 @@ paths:
                 Example:
                   summary: No deployment {deploymentId} found
                   value: Deployment a9a1e269-0b71-4582-a948-603482d27298 not found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -567,6 +858,13 @@ paths:
       summary: Run the deployment of a scenario
       operationId: putApiDeploymentsDeploymentid
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: deploymentId
         in: path
         description: Identifier in the UUID format that will be used for the verification
@@ -602,6 +900,17 @@ paths:
                 Example1:
                   summary: Comment is required
                   value: Comment is required.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      filter: Failed to parse expression: Bad expression
+                    Global errors: Empty scenario
+                    Properties errors: Configured property parallelism is missing
+                Example3:
+                  summary: Deploy validation error
+                  value: Not enough free slots on Flink cluster
         '401':
           description: ''
           content:
@@ -623,6 +932,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '409':
           description: ''
           content:
@@ -634,6 +954,17 @@ paths:
                   summary: Deployment with id {deploymentId} already exists
                   value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
                     exists
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -644,6 +975,13 @@ paths:
       summary: Get list of dictionary entries matching the label pattern
       operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -669,7 +1007,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/DictEntry'
         '400':
-          description: 'Invalid value for: query parameter label'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter label'
           content:
             text/plain:
               schema:
@@ -696,11 +1035,23 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
                 type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -712,6 +1063,13 @@ paths:
         expected type
       operationId: postApiProcessdefinitiondataProcessingtypeDicts
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -760,11 +1118,23 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
                 type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -774,6 +1144,14 @@ paths:
       - Migrations
       summary: Migration between environments service
       operationId: postApiMigrate
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       requestBody:
         content:
           application/json:
@@ -843,6 +1221,28 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -852,6 +1252,14 @@ paths:
       - Migrations
       summary: current version of the scenario description version being used
       operationId: getApiMigrationScenarioDescriptionVersion
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -859,6 +1267,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiVersion'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -880,6 +1294,28 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -890,6 +1326,13 @@ paths:
       summary: Additional info for provided node
       operationId: postApiNodesScenarionameAdditionalinfo
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -940,7 +1383,8 @@ paths:
                       Results for a can be found [here](http://touk.pl?id=a)
                     type: MarkdownAdditionalInfo
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -967,7 +1411,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -976,6 +1421,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -986,6 +1442,13 @@ paths:
       summary: Validate provided Node
       operationId: postApiNodesScenarionameValidation
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1115,7 +1578,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1124,6 +1588,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1134,6 +1609,13 @@ paths:
       summary: Suggest possible variables
       operationId: postApiParametersProcessingtypeSuggestions
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -1251,7 +1733,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1260,6 +1743,17 @@ paths:
                 Example:
                   summary: 'ProcessingType type: {processingType} not found'
                   value: 'ProcessingType type: ''processingType'' not found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1270,6 +1764,13 @@ paths:
       summary: Validate given parameters
       operationId: postApiParametersProcessingtypeValidate
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: processingType
         in: path
         required: true
@@ -1376,7 +1877,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1385,6 +1887,17 @@ paths:
                 Example:
                   summary: 'ProcessingType type: {processingType} not found'
                   value: 'ProcessingType type: ''processingType'' not found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1395,6 +1908,13 @@ paths:
       summary: Additional info for provided properties
       operationId: postApiPropertiesScenarionameAdditionalinfo
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1435,7 +1955,8 @@ paths:
                     content: 2 threads will be used on environment '{scenarioName}'
                     type: MarkdownAdditionalInfo
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -1462,7 +1983,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1471,6 +1993,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1481,6 +2014,13 @@ paths:
       summary: Validate node properties
       operationId: postApiPropertiesScenarionameValidation
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1549,7 +2089,8 @@ paths:
                       errorType: SaveAllowed
                     validationPerformed: true
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -1576,7 +2117,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1585,6 +2127,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1594,6 +2147,14 @@ paths:
       - Notifications
       summary: Endpoint to display notifications
       operationId: getApiNotifications
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -1614,6 +2175,12 @@ paths:
                     - versions
                     - activity
                     - state
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1635,6 +2202,28 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1645,6 +2234,13 @@ paths:
       summary: Add scenario comment service
       operationId: postApiProcessesScenarionameVersionidActivityComments
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1666,8 +2262,8 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: path parameter versionId, Invalid value
-            for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter versionId, Invalid value for: body'
           content:
             text/plain:
               schema:
@@ -1694,7 +2290,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1703,6 +2300,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1713,6 +2321,13 @@ paths:
       summary: Delete process comment service
       operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1728,7 +2343,8 @@ paths:
         '200':
           description: ''
         '400':
-          description: 'Invalid value for: path parameter commentId'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter commentId'
           content:
             text/plain:
               schema:
@@ -1755,7 +2371,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1774,6 +2391,17 @@ paths:
                 Example:
                   summary: 'Unable to delete comment with id: {commentId}'
                   value: 'Unable to delete comment with id: 1'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1784,6 +2412,13 @@ paths:
       summary: Scenario activity service
       operationId: getApiProcessesScenarionameActivity
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: scenarioName
         in: path
         required: true
@@ -1812,6 +2447,12 @@ paths:
                       fileName: some_file.txt
                       user: test
                       createDate: '2024-01-17T14:21:17Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1834,7 +2475,8 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
@@ -1843,6 +2485,17 @@ paths:
                 Example:
                   summary: No scenario {scenarioName} found
                   value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1852,6 +2505,14 @@ paths:
       - App
       summary: Service providing available combinations of scenario's parameters
       operationId: getApiScenarioparameterscombinations
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -1876,6 +2537,12 @@ paths:
                     engineSetupErrors:
                       Flink:
                       - Invalid Flink configuration
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1897,6 +2564,28 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1906,6 +2595,14 @@ paths:
       - Statistics
       summary: Register statistics service
       operationId: postApiStatistic
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       requestBody:
         content:
           application/json:
@@ -1916,7 +2613,8 @@ paths:
         '204':
           description: ''
         '400':
-          description: 'Invalid value for: body'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
           content:
             text/plain:
               schema:
@@ -1942,6 +2640,28 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -1951,6 +2671,14 @@ paths:
       - Statistics
       summary: Statistics URL service
       operationId: getApiStatisticUsage
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -1964,6 +2692,12 @@ paths:
                   value:
                     urls:
                     - https://stats.nussknacker.io/?a_n=1&a_t=0&a_v=0&c=3&c_n=82&c_t=0&c_v=0&f_m=0&f_v=0&fingerprint=development&n_m=2&n_ma=0&n_mi=2&n_v=1&s_a=0&s_dm_c=1&s_dm_e=1&s_dm_f=2&s_dm_l=0&s_f=1&s_pm_b=0&s_pm_rr=1&s_pm_s=3&s_s=3&source=sources&u_ma=0&u_mi=0&u_v=0&v_m=2&v_ma=1&v_mi=3&v_v=2&version=1.15.0-SNAPSHOT
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -1985,6 +2719,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -1995,6 +2740,17 @@ paths:
                 Example:
                   summary: Statistics generation failed.
                   value: Statistics generation failed.
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2004,6 +2760,14 @@ paths:
       - User
       summary: Logged user info service
       operationId: getApiUser
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -2035,6 +2799,12 @@ paths:
                     - Category2
                     categoryPermissions: {}
                     globalPermissions: []
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -2056,6 +2826,28 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
       - {}
       - httpAuth: []
@@ -2655,6 +3447,22 @@ components:
           type: string
         nodeId:
           type: string
+    GetDeploymentStatusResponse:
+      title: GetDeploymentStatusResponse
+      type: object
+      required:
+      - name
+      - modifiedAt
+      properties:
+        name:
+          type: string
+        problemDescription:
+          type:
+          - string
+          - 'null'
+        modifiedAt:
+          type: string
+          format: date-time
     HealthCheckProcessErrorResponseDto:
       title: HealthCheckProcessErrorResponseDto
       type: object
@@ -3691,7 +4499,7 @@ components:
       - FILTER_SCENARIOS_BY_CATEGORY
       - FILTER_SCENARIOS_BY_AUTHOR
       - FILTER_SCENARIOS_BY_OTHER
-      - SORT_SCENARIOS
+      - SORT_SCENARIOS_BY_SORT_OPTION
       - SEARCH_COMPONENTS_BY_NAME
       - FILTER_COMPONENTS_BY_GROUP
       - FILTER_COMPONENTS_BY_PROCESSING_MODE
@@ -3705,10 +4513,11 @@ components:
       - FILTER_COMPONENT_USAGES_BY_AUTHOR
       - FILTER_COMPONENT_USAGES_BY_OTHER
       - CLICK_SCENARIO_FROM_COMPONENT_USAGES
-      - CLICK_GLOBAL_METRICS
+      - CLICK_GLOBAL_METRICS_TAB
       - CLICK_ACTION_DEPLOY
       - CLICK_ACTION_METRICS
       - CLICK_VIEW_ZOOM_IN
+      - CLICK_VIEW_ZOOM_OUT
       - CLICK_VIEW_RESET
       - CLICK_EDIT_UNDO
       - CLICK_EDIT_REDO
@@ -3729,15 +4538,33 @@ components:
       - CLICK_TEST_GENERATE_FILE
       - CLICK_TEST_HIDE
       - CLICK_MORE_SCENARIO_DETAILS
-      - CLICK_ROLL_UP_PANEL
       - CLICK_EXPAND_PANEL
-      - MOVE_PANEL
+      - CLICK_COLLAPSE_PANEL
+      - MOVE_TOOLBAR_PANEL
       - SEARCH_NODES_IN_SCENARIO
       - SEARCH_COMPONENTS_IN_SCENARIO
       - CLICK_OLDER_VERSION
       - CLICK_NEWER_VERSION
-      - FIRED_KEY_STROKE
       - CLICK_NODE_DOCUMENTATION
+      - CLICK_COMPONENTS_TAB
+      - CLICK_SCENARIO_SAVE
+      - CLICK_TEST_COUNTS
+      - CLICK_SCENARIO_CANCEL
+      - CLICK_SCENARIO_ARCHIVE_TOGGLE
+      - CLICK_SCENARIO_UNARCHIVE
+      - CLICK_SCENARIO_CUSTOM_ACTION
+      - CLICK_SCENARIO_CUSTOM_LINK
+      - DOUBLE_CLICK_RANGE_SELECT_NODES
+      - KEYBOARD_AND_CLICK_RANGE_SELECT_NODES
+      - KEYBOARD_COPY_NODE
+      - KEYBOARD_PASTE_NODE
+      - KEYBOARD_CUT_NODE
+      - KEYBOARD_SELECT_ALL_NODES
+      - KEYBOARD_REDO_SCENARIO_CHANGES
+      - KEYBOARD_UNDO_SCENARIO_CHANGES
+      - KEYBOARD_DELETE_NODES
+      - KEYBOARD_DESELECT_ALL_NODES
+      - KEYBOARD_FOCUS_SEARCH_NODE_FIELD
     StatisticUrlResponseDto:
       title: StatisticUrlResponseDto
       type: object

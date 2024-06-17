@@ -3,7 +3,32 @@
 1.16.0 (Not released yet)
 -------------------------
 
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) [#6172](https://github.com/TouK/nussknacker/pull/6172) Batch processing mode related improvements:
+    * Deployments API returns correct status of deployment instead of returning always the last deployment's status
+    * Deployments API returns more information about status of a deployment: problem description and status modification time
+    * Status of a deployment is cached on the Designer side - in case of retention of finished job on Flink, status is still returned as FINISHED
+    * Overlapping deployment metrics/counts workaround: Ensure that only one deployment is performed for each scenario at a time
+* [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
+* [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
+* [#6185](https://github.com/TouK/nussknacker/pull/6185) Improvement: Make UniversalKafkaSinkFactory available at BoundedStream
+
+1.15.3 (Not released yet)
+-------------------------
+* [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
+
+1.15.2 (7 June 2024)
+-------------------------
+* [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
+  * Deployed version of scenario is now shown properly even if other actions followed deploy.
+  * Scenario state is now not impacted by actions that don't actually change it.
+
+1.15.1 (5 June 2024)
+-------------------------
+* [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
+* [#6127](https://github.com/TouK/nussknacker/pull/6127) Ad-hoc tests available in scenarios without `flink-dropwizard-metrics-deps` in classPath
 
 1.15.0 (17 May 2024)
 -------------------------

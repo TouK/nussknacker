@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import db.util.DBIOActionInstances._
-import pl.touk.nussknacker.ui.db.DbRef
-import slick.jdbc.JdbcProfile
+import pl.touk.nussknacker.ui.db.{DbRef, SqlStates}
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner.TransactionsRunAttemptsExceedException
+import slick.jdbc.{JdbcProfile, TransactionIsolation}
 
-import scala.concurrent.Future
+import java.sql.SQLException
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import scala.util.{Failure, Success, Try}
 
-class DBIOActionRunner(dbRef: DbRef) {
+class DBIOActionRunner(dbRef: DbRef)(implicit ec: ExecutionContext) {
 
   protected lazy val profile: JdbcProfile = dbRef.profile
   protected lazy val api: profile.API     = profile.api
@@ -16,6 +20,23 @@ class DBIOActionRunner(dbRef: DbRef) {
   def runInTransaction[T](action: DB[T]): Future[T] =
     run(action.transactionally)
 
+  def runInSerializableTransactionWithRetry[T](
+      action: DB[T],
+      maxRetries: Int = 10,
+      initialDelay: FiniteDuration = 10.millis
+  ): Future[T] = {
+    val transactionAction = action.transactionally.withTransactionIsolation(TransactionIsolation.Serializable)
+    def doRun(): Future[Try[T]] = {
+      run(transactionAction).map(Success(_)).recover {
+        case ex: SQLException if ex.getSQLState == SqlStates.SerializationFailure => Failure(ex)
+      }
+    }
+    retry
+      .JitterBackoff(maxRetries, initialDelay)
+      .apply(doRun())
+      .map(_.fold[T](ex => throw new TransactionsRunAttemptsExceedException(ex, maxRetries), identity))
+  }
+
   def run[T](action: DB[T]): Future[T] =
     dbRef.db.run(action)
 
@@ -23,6 +44,9 @@ class DBIOActionRunner(dbRef: DbRef) {
 
 object DBIOActionRunner {
 
-  def apply(db: DbRef): DBIOActionRunner = new DBIOActionRunner(db)
+  def apply(db: DbRef)(implicit ec: ExecutionContext): DBIOActionRunner = new DBIOActionRunner(db)
+
+  class TransactionsRunAttemptsExceedException(cause: Throwable, limit: Int)
+      extends Exception(s"Transactions exceeded $limit attempts limit", cause)
 
 }

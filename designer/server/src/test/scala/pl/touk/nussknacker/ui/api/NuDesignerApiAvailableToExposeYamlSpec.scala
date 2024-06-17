@@ -4,10 +4,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
-import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
-import pl.touk.nussknacker.ui.security.api.AnonymousAccess
+import pl.touk.nussknacker.ui.security.api.AuthManager
+import pl.touk.nussknacker.ui.security.api.AuthManager.ImpersonationConsideringInputEndpoint
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
@@ -58,7 +59,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "FILTER_SCENARIOS_BY_CATEGORY",
           "FILTER_SCENARIOS_BY_AUTHOR",
           "FILTER_SCENARIOS_BY_OTHER",
-          "SORT_SCENARIOS",
+          "SORT_SCENARIOS_BY_SORT_OPTION",
           "SEARCH_COMPONENTS_BY_NAME",
           "FILTER_COMPONENTS_BY_GROUP",
           "FILTER_COMPONENTS_BY_PROCESSING_MODE",
@@ -72,10 +73,11 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "FILTER_COMPONENT_USAGES_BY_AUTHOR",
           "FILTER_COMPONENT_USAGES_BY_OTHER",
           "CLICK_SCENARIO_FROM_COMPONENT_USAGES",
-          "CLICK_GLOBAL_METRICS",
+          "CLICK_GLOBAL_METRICS_TAB",
           "CLICK_ACTION_DEPLOY",
           "CLICK_ACTION_METRICS",
           "CLICK_VIEW_ZOOM_IN",
+          "CLICK_VIEW_ZOOM_OUT",
           "CLICK_VIEW_RESET",
           "CLICK_EDIT_UNDO",
           "CLICK_EDIT_REDO",
@@ -96,15 +98,33 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
           "CLICK_TEST_GENERATE_FILE",
           "CLICK_TEST_HIDE",
           "CLICK_MORE_SCENARIO_DETAILS",
-          "CLICK_ROLL_UP_PANEL",
           "CLICK_EXPAND_PANEL",
-          "MOVE_PANEL",
+          "CLICK_COLLAPSE_PANEL",
+          "MOVE_TOOLBAR_PANEL",
           "SEARCH_NODES_IN_SCENARIO",
           "SEARCH_COMPONENTS_IN_SCENARIO",
           "CLICK_OLDER_VERSION",
           "CLICK_NEWER_VERSION",
-          "FIRED_KEY_STROKE",
-          "CLICK_NODE_DOCUMENTATION"
+          "CLICK_NODE_DOCUMENTATION",
+          "CLICK_COMPONENTS_TAB",
+          "CLICK_SCENARIO_SAVE",
+          "CLICK_TEST_COUNTS",
+          "CLICK_SCENARIO_CANCEL",
+          "CLICK_SCENARIO_ARCHIVE_TOGGLE",
+          "CLICK_SCENARIO_UNARCHIVE",
+          "CLICK_SCENARIO_CUSTOM_ACTION",
+          "CLICK_SCENARIO_CUSTOM_LINK",
+          "DOUBLE_CLICK_RANGE_SELECT_NODES",
+          "KEYBOARD_AND_CLICK_RANGE_SELECT_NODES",
+          "KEYBOARD_COPY_NODE",
+          "KEYBOARD_PASTE_NODE",
+          "KEYBOARD_CUT_NODE",
+          "KEYBOARD_SELECT_ALL_NODES",
+          "KEYBOARD_REDO_SCENARIO_CHANGES",
+          "KEYBOARD_UNDO_SCENARIO_CHANGES",
+          "KEYBOARD_DELETE_NODES",
+          "KEYBOARD_DESELECT_ALL_NODES",
+          "KEYBOARD_FOCUS_SEARCH_NODE_FIELD"
         )
       ),
     )
@@ -145,9 +165,10 @@ object NuDesignerApiAvailableToExpose {
   private def createInstanceOf(clazz: Class[_ <: BaseEndpointDefinitions]) = {
     val basicAuth = auth
       .basic[Option[String]]()
-      .map { AnonymousAccess.optionalStringToAuthCredentialsMapping(false) }
+      .map(_.map(PassedAuthCredentials))(_.map(_.value))
+      .withPossibleImpersonation(false)
 
-    Try(clazz.getConstructor(classOf[EndpointInput[AuthCredentials]]))
+    Try(clazz.getConstructor(classOf[EndpointInput[PassedAuthCredentials]]))
       .map(_.newInstance(basicAuth))
       .orElse {
         Try(clazz.getDeclaredConstructor())
@@ -155,7 +176,7 @@ object NuDesignerApiAvailableToExpose {
       }
       .getOrElse(
         throw new IllegalStateException(
-          s"Class ${clazz.getName} is required to have either one parameter constructor or constructor iwhtout parameters"
+          s"Class ${clazz.getName} is required to have either one parameter constructor or constructor without parameters"
         )
       )
   }

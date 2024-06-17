@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.{
   ProcessAction,
@@ -12,11 +13,11 @@ import pl.touk.nussknacker.engine.api.deployment.{
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, ProcessingType, VersionId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{CommentEntityData, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -43,11 +44,11 @@ trait ProcessActionRepository {
 
 class DbProcessActionRepository(
     protected val dbRef: DbRef,
+    commentRepository: CommentRepository,
     buildInfos: ProcessingTypeDataProvider[Map[String, String], _]
 )(implicit ec: ExecutionContext)
     extends DbioRepository
     with NuTables
-    with CommentActions
     with ProcessActionRepository
     with LazyLogging {
 
@@ -88,7 +89,7 @@ class DbProcessActionRepository(
       buildInfoProcessingType: Option[ProcessingType]
   )(implicit user: LoggedUser): DB[Unit] = {
     run(for {
-      comment <- newCommentAction(processId, processVersion, comment)
+      comment <- saveCommentWhenPassed(processId, processVersion, comment)
       updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
       _ <-
         if (updated) {
@@ -178,7 +179,7 @@ class DbProcessActionRepository(
   )(implicit user: LoggedUser): DB[ProcessAction] = {
     val now = Instant.now()
     run(for {
-      comment <- newCommentAction(processId, processVersion, comment)
+      comment <- saveCommentWhenPassed(processId, processVersion, comment)
       result <- insertAction(
         None,
         processId,
@@ -213,6 +214,8 @@ class DbProcessActionRepository(
       processId = processId,
       processVersionId = processVersion,
       user = user.username, // TODO: it should be user.id not name
+      impersonatedByIdentity = user.impersonatingUserId,
+      impersonatedByUsername = user.impersonatingUserName,
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       actionName = actionName,
@@ -304,7 +307,11 @@ class DbProcessActionRepository(
       actionState: Set[ProcessActionState],
       actionNamesOpt: Option[Set[ScenarioActionName]]
   ): DB[Map[ProcessId, ProcessAction]] = {
-    val query = processActionsTable
+    val queryWithActionNamesFilter = actionNamesOpt
+      .map(actionNames => processActionsTable.filter { action => action.actionName.inSet(actionNames) })
+      .getOrElse(processActionsTable)
+
+    val finalQuery = queryWithActionNamesFilter
       .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
@@ -318,11 +325,7 @@ class DbProcessActionRepository(
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
     run(
-      actionNamesOpt
-        .map(actionNames => query.filter { case (_, (entity, _)) => entity.actionName.inSet(actionNames) })
-        .getOrElse(query)
-        .result
-        .map(_.toMap.mapValuesNow(toFinishedProcessAction))
+      finalQuery.result.map(_.toMap.mapValuesNow(toFinishedProcessAction))
     )
   }
 
@@ -373,5 +376,16 @@ class DbProcessActionRepository(
       comment = actionData._2.map(_.content),
       buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
     )
+
+  private def saveCommentWhenPassed(
+      scenarioId: ProcessId,
+      scenarioGraphVersionId: => VersionId,
+      commentOpt: Option[Comment]
+  )(
+      implicit user: LoggedUser
+  ): DB[Option[CommentEntityData]] =
+    commentOpt
+      .map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, user, _))
+      .sequence
 
 }

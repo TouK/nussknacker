@@ -120,7 +120,7 @@ export function AddProcessForm({
                                 Processing mode defines how scenario deployed on an engine interacts with the outside world. Click here to
                                 <Link
                                     sx={{ cursor: "pointer", ml: 0.5 }}
-                                    href="https://nussknacker.io/documentation/about/ProcessingModes"
+                                    href="https://nussknacker.io/documentation/docs/about/ProcessingModes"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -201,7 +201,7 @@ export function AddProcessForm({
                                     To read more about engines,
                                     <Link
                                         sx={{ cursor: "pointer", ml: 0.5 }}
-                                        href="https://nussknacker.io/documentation/about/engines"
+                                        href="https://nussknacker.io/documentation/docs/about/engines"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >

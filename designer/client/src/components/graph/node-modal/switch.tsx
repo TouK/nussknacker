@@ -1,5 +1,4 @@
 import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { isEmpty, isEqual } from "lodash";
 import { useDiffMark } from "./PathsToMark";
@@ -17,7 +16,6 @@ import { getNodeExpressionType } from "./NodeDetailsContent/selectors";
 interface Props {
     edges: Edge[];
     errors?: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
@@ -33,7 +31,6 @@ interface Props {
 export function Switch({
     edges,
     errors = [],
-    findAvailableVariables,
     isEditMode,
     node,
     parameterDefinitions,
@@ -71,7 +68,7 @@ export function Switch({
                     showValidation={showValidation}
                     showSwitch={showSwitch}
                     node={node}
-                    findAvailableVariables={findAvailableVariables}
+                    variableTypes={variableTypes}
                     parameterDefinitions={parameterDefinitions}
                     errors={errors}
                     renderFieldLabel={renderFieldLabel}
