@@ -439,7 +439,7 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterSchedule1Finished
       .latestDeploymentForSchedule(schedule1)
       .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Finished
+      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
     stateAfterSchedule1Finished
       .latestDeploymentForSchedule(schedule2)
       .state
