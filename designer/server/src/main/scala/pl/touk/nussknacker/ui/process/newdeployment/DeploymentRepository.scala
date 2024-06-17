@@ -64,8 +64,6 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
       }
       .sequence
       .map(_.combineAll)
-      // For the performance reasons it is better to run all updates in the one session, transactionally should enforce it
-      .transactionally
   }
 
   def updateDeploymentStatus(id: DeploymentId, status: DeploymentStatus): DB[Boolean] = {
@@ -75,9 +73,7 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
         .filter(d => d.id === id && (d.statusName =!= status.name || d.statusProblemDescription =!= problemDescription))
         .map(d => (d.statusName, d.statusProblemDescription, d.statusModifiedAt))
         .update((status.name, problemDescription, Timestamp.from(clock.instant())))
-        .map { result =>
-          if (result > 0) true else false
-        }
+        .map(_ > 0)
     )
   }
 

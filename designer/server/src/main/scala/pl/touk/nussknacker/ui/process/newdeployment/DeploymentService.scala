@@ -92,7 +92,10 @@ class DeploymentService(
     EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
       nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
       _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments, scenarioMetadata.name)
-      _                      <- saveDeployment(command, scenarioMetadata)
+      _ = {
+        logger.debug(s"Saving deployment: ${command.id}")
+      }
+      _ <- saveDeployment(command, scenarioMetadata)
     } yield ()).value))
   }
 
