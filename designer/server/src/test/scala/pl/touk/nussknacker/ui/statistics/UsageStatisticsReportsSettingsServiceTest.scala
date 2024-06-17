@@ -28,7 +28,8 @@ class UsageStatisticsReportsSettingsServiceTest
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(Nil)),
       fetchActivity = (_: List[ScenarioStatisticsInputData]) => Future.successful(Right(Nil)),
       fetchComponentList = () => Future.successful(Right(Nil)),
-      fetchFeStatistics = () => Future.successful(Map.empty[String, Long])
+      fetchFeStatistics = () => Future.successful(Map.empty[String, Long]),
+      List.empty
     )
 
     sut.prepareStatisticsUrl().futureValue shouldBe Right(Nil)

@@ -483,7 +483,8 @@ class AkkaHttpBasedRouteProvider(
         fingerprintService,
         processActivityRepository,
         componentService,
-        feStatisticsRepository
+        feStatisticsRepository,
+        processingTypeDataProvider.mapValues(_.designerModelData.modelData),
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(

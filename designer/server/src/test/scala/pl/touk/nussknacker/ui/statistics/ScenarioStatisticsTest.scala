@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
+import pl.touk.nussknacker.engine.api.Service
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -213,6 +215,7 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
+      List.empty
     ).prepareStatisticsUrl().futureValue.value
 
     urlStrings.length shouldEqual 1
@@ -230,8 +233,11 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
+      componentWithImplementation
     ).determineQueryParams().value.futureValue.value
+
     params should contain(AccountService.toString -> "5")
+    params should contain(Custom.toString -> "1")
     params shouldNot contain(Choice.toString)
   }
 
@@ -297,6 +303,7 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
+      componentWithImplementation
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
@@ -313,7 +320,7 @@ class ScenarioStatisticsTest
       UptimeInSecondsAverage -> "0",
       UptimeInSecondsMax     -> "0",
       UptimeInSecondsMin     -> "0",
-      ComponentsCount        -> "2",
+      ComponentsCount        -> "3",
       FragmentsUsedMedian    -> "1",
       FragmentsUsedAverage   -> "1",
       NodesMedian            -> "3",
@@ -331,6 +338,7 @@ class ScenarioStatisticsTest
       UnknownDMCount         -> "0",
       ActiveScenarioCount    -> "2",
       AccountService         -> "5",
+      Custom                 -> "1",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }
@@ -431,7 +439,24 @@ class ScenarioStatisticsTest
       ),
       0,
       AllowedProcessingModes.All
+    ),
+    ComponentListElement(
+      DesignerWideComponentId("someCustomComponent"),
+      "someCustomComponent",
+      "icon",
+      ComponentType.Service,
+      ComponentGroupName("someCustomGroup"),
+      List("Streaming"),
+      List.empty,
+      1,
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
   )
+
+  private val componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
+    ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService)
+  )
+
+  object TestService extends Service {}
 
 }
