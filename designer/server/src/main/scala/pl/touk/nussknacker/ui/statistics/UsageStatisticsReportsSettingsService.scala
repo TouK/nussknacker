@@ -3,10 +3,12 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
@@ -36,13 +38,14 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       scenarioActivityRepository: ProcessActivityRepository,
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
+      processingTypeDataProvider: ProcessingTypeDataProvider[ModelData, _]
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
+    implicit val user: LoggedUser            = NussknackerInternalUser.instance
 
     def fetchNonArchivedScenarioParameters(): Future[Either[StatisticError, List[ScenarioStatisticsInputData]]] = {
       // TODO: Warning, here is a security leak. We report statistics in the scope of processing types to which
       //       given user has no access rights.
-      val user                                  = NussknackerInternalUser.instance
       val deploymentManagerTypeByProcessingType = deploymentManagerTypes.all(user)
       processService
         .getLatestProcessesWithDetails(
@@ -90,7 +93,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchNonArchivedScenarioParameters,
       fetchActivity,
       fetchComponentList,
-      () => ignoringErrorsFEStatisticsRepository.read()
+      () => ignoringErrorsFEStatisticsRepository.read(),
+      processingTypeDataProvider.all.values.flatMap(modelData => modelData.modelDefinition.components).toList
     )
 
   }
@@ -117,7 +121,8 @@ class UsageStatisticsReportsSettingsService(
       Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
     ],
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
-    fetchFeStatistics: () => Future[Map[String, Long]]
+    fetchFeStatistics: () => Future[Map[String, Long]],
+    components: List[ComponentDefinitionWithImplementation]
 )(implicit ec: ExecutionContext) {
   private val statisticsUrls = new StatisticsUrls(urlConfig)
 
@@ -143,7 +148,7 @@ class UsageStatisticsReportsSettingsService(
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
       componentList <- new EitherT(fetchComponentList())
-      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList)
+      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
     } yield basicStatistics ++
       scenariosStatistics ++
