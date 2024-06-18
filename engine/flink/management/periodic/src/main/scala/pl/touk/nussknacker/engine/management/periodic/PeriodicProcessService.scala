@@ -211,13 +211,6 @@ class PeriodicProcessService(
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
       })
-      _ <-
-        if (scheduleDeploymentsWithStatus.map(_._2).contains(None) && retries > 0) {
-          Future.successful(Thread.sleep(1000L))
-          synchronizeDeploymentsStates(processName, schedules, retries - 1)
-        } else {
-          Future.unit
-        }
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
