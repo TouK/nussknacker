@@ -1160,8 +1160,7 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
     name := "nussknacker-flink-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"     % flinkV % Provided,
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV % Provided,
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       )
     }
   )
@@ -1760,9 +1759,8 @@ lazy val flinkBaseUnboundedComponents = (project in flink("components/base-unbou
   .settings(
     name := "nussknacker-flink-base-unbounded-components",
     libraryDependencies ++= Seq(
-      "org.apache.flink"          % "flink-streaming-java"     % flinkV % Provided,
-      "org.apache.flink"          % "flink-metrics-dropwizard" % flinkV % Provided,
-      "com.clearspring.analytics" % "stream"                   % "2.9.8"
+      "org.apache.flink"          % "flink-streaming-java" % flinkV % Provided,
+      "com.clearspring.analytics" % "stream"               % "2.9.8"
       // It is used only in QDigest which we don't use, while it's >20MB in size...
         exclude ("it.unimi.dsi", "fastutil")
     )
