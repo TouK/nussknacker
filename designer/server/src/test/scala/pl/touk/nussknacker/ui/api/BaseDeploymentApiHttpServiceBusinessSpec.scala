@@ -66,6 +66,10 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       )
     )
 
+  protected val fragment: CanonicalProcess = ScenarioBuilder
+    .fragment(scenarioName)
+    .fragmentOutput("out", "out")
+
   private lazy val inputDirectory = {
     val directory = Files.createTempDirectory(
       s"nusssknacker-${getClass.getSimpleName}-transactions-",

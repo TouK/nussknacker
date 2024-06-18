@@ -9,6 +9,7 @@ import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
@@ -164,6 +165,39 @@ class DeploymentApiHttpServiceBusinessSpec
               checkDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
             }
         }
+      }
+
+      "when invoked for fragment should" - {
+        "return bad request status code" in {
+          given()
+            .applicationState {
+              createSavedFragment(fragment)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
+            .Then()
+            .statusCode(400)
+            .equalsPlainBody("Deployment of fragment is not allowed")
+        }
+      }
+    }
+
+    "when invoked for archived scenario should" - {
+      "return bad request status code" in {
+        given()
+          .applicationState {
+            val scenarioId = createSavedScenario(scenario)
+            archiveScenario(ProcessIdWithName(scenarioId, ProcessName(scenarioName)))
+          }
+          .when()
+          .basicAuthAdmin()
+          .jsonBody(correctDeploymentRequest)
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
+          .Then()
+          .statusCode(400)
+          .equalsPlainBody("Deployment of archived scenario is not allowed")
       }
     }
 

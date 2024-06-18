@@ -113,14 +113,20 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
   def createArchivedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _ <- dbioRunner.runInTransaction(
-        DBIOAction.seq(
-          writeScenarioRepository.archive(processId = ProcessIdWithName(id, scenarioName), isArchived = true),
-          actionRepository.markProcessAsArchived(processId = id, VersionId(1))
-        )
-      )
+      _  <- archiveScenarioF(ProcessIdWithName(id, scenarioName), VersionId(1))
     } yield id).futureValue
   }
+
+  def archiveScenario(idWithName: ProcessIdWithName, version: VersionId = VersionId(1)): Unit =
+    archiveScenarioF(idWithName, version).futureValue
+
+  private def archiveScenarioF(idWithName: ProcessIdWithName, version: VersionId): Future[Unit] =
+    dbioRunner.runInTransaction(
+      DBIOAction.seq(
+        writeScenarioRepository.archive(processId = idWithName, isArchived = true),
+        actionRepository.markProcessAsArchived(processId = idWithName.id, version)
+      )
+    )
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy
