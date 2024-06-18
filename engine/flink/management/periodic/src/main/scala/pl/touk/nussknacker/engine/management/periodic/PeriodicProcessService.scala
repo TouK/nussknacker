@@ -206,6 +206,7 @@ class PeriodicProcessService(
       schedules: SchedulesState
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
+      _ <- Future.successful(Thread.sleep(15000L)) // 15 seconds to be sure Flink's runtime statuses are up 2 date
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
