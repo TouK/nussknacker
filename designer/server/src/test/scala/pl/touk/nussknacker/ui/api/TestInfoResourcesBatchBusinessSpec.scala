@@ -27,11 +27,8 @@ class TestInfoResourcesBatchBusinessSpec
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails {
 
-//  TODO: This case works when testing from IDEA manually, but in test IllegalAccessError is thrown:
-//   class org.apache.flink.table.catalog.ContextResolvedTable tried to access method 'org.apache.flink.table.catalog.ObjectIdentifier org.apache.flink.table.catalog.ObjectIdentifier.ofAnonymous(java.lang.String)'
-//   maybe because of classloader juggling? but why doesn't it blow up when launching from IDEA manually?
-  "The endpoint for dumping source data from table should" - {
-    "return counts for batch scenario" in {
+  "The endpoint for test data generation should" - {
+    "return 200 and random results" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario)
@@ -42,7 +39,7 @@ class TestInfoResourcesBatchBusinessSpec
         .post(s"$nuDesignerHttpAddress/api/testInfo/${exampleScenario.name}/generate/10")
         .Then()
         .statusCode(200)
-//      TODO: add assertion for source data results in response body
+//      TODO: add assertion for random results
     }
   }
 

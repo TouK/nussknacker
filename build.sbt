@@ -603,7 +603,6 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         flinkExecutor / prepareItLibs,
         flinkDevModel / Compile / assembly,
         flinkDevModelJava / Compile / assembly,
-        experimentalFlinkTableApiComponents / Compile / assembly,
         flinkBaseComponents / Compile / assembly,
         flinkBaseUnboundedComponents / Compile / assembly,
         flinkKafkaComponents / Compile / assembly,
@@ -1812,21 +1811,17 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-table"                 % flinkV,
-        "org.apache.flink" % "flink-table-api-java"        % flinkV,
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
-//
-//        "org.apache.flink" % "flink-connector-datagen" % flinkV,
-        "org.apache.flink" % "flink-streaming-java"        % flinkV,
-        "org.apache.flink" % "flink-clients"               % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
         "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
+        "org.apache.flink" % "flink-connector-files"       % flinkV,
         "org.apache.flink" % "flink-json"                  % flinkV,
+        "org.apache.flink" % "flink-csv"                   % flinkV,
       )
     }
   )
   .dependsOn(
-    utilsInternal        % Provided,
     flinkComponentsApi   % Provided,
     componentsApi        % Provided,
     commonUtils          % Provided,
@@ -1920,7 +1915,6 @@ lazy val designer = (project in file("designer/server"))
     Test / test                      := (Test / test)
       .dependsOn(
         defaultModel / Compile / assembly,
-        experimentalFlinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
         flinkExecutor / Compile / assembly,
         flinkExecutor / prepareItLibs
@@ -2004,21 +1998,22 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
-    testUtils                         % Test,
-    flinkTestUtils                    % Test,
-    componentsApi                     % "test->test",
+    experimentalFlinkTableApiComponents % Test,
+    testUtils                           % Test,
+    flinkTestUtils                      % Test,
+    componentsApi                       % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
     // that are also load added their test dependencies on the classpath by the Idea. It causes that
     // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
     // is missing from this classloader
-    flinkDeploymentManager            % Provided,
-    liteEmbeddedDeploymentManager     % Provided,
-    liteK8sDeploymentManager          % Provided,
-    developmentTestsDeploymentManager % Provided,
-    devPeriodicDM                     % Provided,
-    schemedKafkaComponentsUtils       % Provided,
+    flinkDeploymentManager              % Provided,
+    liteEmbeddedDeploymentManager       % Provided,
+    liteK8sDeploymentManager            % Provided,
+    developmentTestsDeploymentManager   % Provided,
+    devPeriodicDM                       % Provided,
+    schemedKafkaComponentsUtils         % Provided,
   )
 
 /*

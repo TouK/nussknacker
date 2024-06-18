@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
-import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.configuration.{Configuration, CoreOptions, DeploymentOptions, PipelineOptions}
+import org.apache.flink.configuration._
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.delegation.ExecutorFactory
-import org.apache.flink.table.factories.FactoryUtil
+import org.apache.flink.table.api.{DataTypes, EnvironmentSettings, Schema, TableDescriptor}
 import org.apache.flink.types.Row
-import org.apache.flink.util.Preconditions.checkNotNull
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
@@ -35,7 +31,8 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
+
+import java.nio.file.Path
 
 class TableSource(
     tableDefinition: TableDefinition,
@@ -96,45 +93,62 @@ class TableSource(
 //  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
 
+  // TODO: change api to handle generated and dumped data
   override def generateTestData(size: Int): TestData = {
 
-    // TODO: extract classpath-extracting method instead of creating modelClassLoader
-    // TODO: check what we need to load - for tests we need more than
-    val classPathUrls = ModelClassLoader(List("components/flink-dev/flinkTable.jar"), None).urls
+    // TODO: is this reliable for non-intellij idea runs?
+    // TODO: check what we need to load - for tests we need only flink classes, connectors and formats
+    val classPathUrls = List(Path.of("components/flink-dev/flinkTable.jar").toUri.toURL)
 
-    // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
-    // the necessary classes
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      val effectiveConfiguration = new Configuration()
+    val classLoader = getClass.getClassLoader
 
+    val flinkLocalEnvConfiguration = {
+      val conf = new Configuration()
       // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
-      effectiveConfiguration.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+      conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 
       // without this, on the task level the classloader is basically empty
-      effectiveConfiguration.set(
+      conf.set(
         PipelineOptions.CLASSPATHS,
         classPathUrls.map(_.toString).asJava
       )
+      conf.set(DeploymentOptions.TARGET, "local")
+      conf.set(DeploymentOptions.ATTACHED, java.lang.Boolean.TRUE)
 
-      val env      = StreamExecutionEnvironment.getExecutionEnvironment(effectiveConfiguration)
-      val tableEnv = StreamTableEnvironment.create(env)
-
-      sqlStatements.foreach(tableEnv.executeSql)
-      val tableWithLimit = tableEnv.from(tableDefinition.tableName).limit(size)
-
-      val rowsIterator = tableEnv.toDataStream(tableWithLimit).executeAndCollect()
-      val rowsList     = scala.collection.mutable.ArrayBuffer.empty[Row]
-      while (rowsIterator.hasNext) {
-        rowsList.append(rowsIterator.next())
+      if (enableFlinkBatchExecutionMode) {
+        conf.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.BATCH)
       }
+      conf
+    }
+
+    // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
+    // the necessary classes
+    ThreadUtils.withThisAsContextClassLoader(classLoader) {
+      val env = new StreamExecutionEnvironment(flinkLocalEnvConfiguration, classLoader)
+      val tableEnv = StreamTableEnvironment.create(
+        env,
+        EnvironmentSettings.newInstance.withConfiguration(flinkLocalEnvConfiguration).build()
+      )
+
+      // TODO: extract
+      val cols   = tableDefinition.columns.map(c => DataTypes.FIELD(c.columnName, c.flinkDataType)).asJava
+      val schema = Schema.newBuilder().fromRowDataType(DataTypes.ROW(cols)).build()
+
+      tableEnv.createTable(
+        dataGenerationInternalTableName,
+        TableDescriptor.forConnector("datagen").option("number-of-rows", size.toString).schema(schema).build()
+      )
+
+      val tableWithLimit = tableEnv.from(dataGenerationInternalTableName).limit(size)
+      val rowsList       = tableEnv.toDataStream(tableWithLimit).executeAndCollect().asScala.toList
 
       // TODO: check if closing like this is ok, some IllegalStateExceptions get logged
-      rowsIterator.close()
       env.close()
 
       // TODO: is this way of encoding ok? fail on unknown?
+      // TODO: extract encoder/decoder to be the same for this and record parsing for test running
       val encoder = BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader)
-      val testRecords = rowsList.toList.map(row =>
+      val testRecords = rowsList.map(row =>
         TestRecord(
           // TODO: make the field order deterministic
           encoder.encode(
@@ -151,5 +165,6 @@ class TableSource(
 
 object TableSource {
   private type RECORD = java.util.Map[String, Any]
-  private val filteringInternalViewName = "filteringView"
+  private val filteringInternalViewName       = "filteringView"
+  private val dataGenerationInternalTableName = "datagenTable"
 }
