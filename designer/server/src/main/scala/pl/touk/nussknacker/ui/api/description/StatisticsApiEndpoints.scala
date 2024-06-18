@@ -2,7 +2,9 @@ package pl.touk.nussknacker.ui.api.description
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
-import enumeratum.{CirceEnum, Enum, EnumEntry}
+import enumeratum.values.{StringEnum, StringEnumEntry}
+import io.circe.generic.extras.semiauto.{deriveEnumerationDecoder, deriveEnumerationEncoder}
+import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
@@ -89,9 +91,12 @@ object StatisticsApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class StatisticDto private (name: StatisticName)
 
-    sealed abstract class StatisticName(override val entryName: String) extends EnumEntry
+    sealed abstract class StatisticName(val value: String) extends StringEnumEntry
 
-    object StatisticName extends Enum[StatisticName] with CirceEnum[StatisticName] {
+    object StatisticName extends StringEnum[StatisticName] {
+      implicit val encoder: Encoder[StatisticName] = deriveEnumerationEncoder[StatisticName]
+      implicit val decoder: Decoder[StatisticName] = deriveEnumerationDecoder[StatisticName]
+
       case object SearchScenariosByName                extends StatisticName("f_ssbn")
       case object FilterScenariosByStatus              extends StatisticName("f_fsbs")
       case object FilterScenariosByProcessingMode      extends StatisticName("f_fsbpm")

@@ -53,7 +53,7 @@ class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
       ("enumName", "enumValues"),
       (
         "StatisticName",
-        StatisticName.values.map(_.entryName).toSet
+        StatisticName.values.map(_.value).toSet
       ),
     )
     val generatedSpec = NuDesignerApiAvailableToExpose.generateOpenApiYaml
