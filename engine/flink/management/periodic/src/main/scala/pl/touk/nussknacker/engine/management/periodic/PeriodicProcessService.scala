@@ -203,8 +203,7 @@ class PeriodicProcessService(
   // - deployment ids that need to be reschedules
   private def synchronizeDeploymentsStates(
       processName: ProcessName,
-      schedules: SchedulesState,
-      retries: Int = 4
+      schedules: SchedulesState
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
