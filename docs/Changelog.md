@@ -17,6 +17,7 @@
   * Array constructor expressions are now illegal.
 * [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
   increased from `500ms` to `10s` to avoid scenario starting problems
+* [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
 
 1.16.1 (16 July 2024)
 -------------------------
