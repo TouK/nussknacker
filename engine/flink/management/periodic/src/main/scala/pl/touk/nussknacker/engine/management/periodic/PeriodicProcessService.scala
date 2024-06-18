@@ -198,6 +198,23 @@ class PeriodicProcessService(
     } yield ()
   }
 
+  private def getScheduleDeploymentsWithStatus(
+      processName: ProcessName,
+      schedules: SchedulesState,
+      retries: Int = 3
+  ): Future[List[(ScheduleDeploymentData, Option[StatusDetails])]] =
+    for {
+      runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
+      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
+        (deployment, runtimeStatuses.getStatus(deployment.id))
+      })
+      retriedScheduleDeploymentsWithStatus <-
+        if (scheduleDeploymentsWithStatus.map(_._2).contains(None) && retries > 0) {
+          Future.successful(Thread.sleep(1000L))
+          getScheduleDeploymentsWithStatus(processName, schedules, retries - 1)
+        } else Future.successful(scheduleDeploymentsWithStatus)
+    } yield retriedScheduleDeploymentsWithStatus
+
   // Returns tuple of lists:
   // - matching, active deployment ids on DM side
   // - deployment ids that need to be reschedules
@@ -206,10 +223,7 @@ class PeriodicProcessService(
       schedules: SchedulesState
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
-      runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
-      scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
-        (deployment, runtimeStatuses.getStatus(deployment.id))
-      })
+      scheduleDeploymentsWithStatus <- getScheduleDeploymentsWithStatus(processName, schedules)
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
