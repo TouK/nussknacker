@@ -439,14 +439,14 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterSchedule1Finished
       .latestDeploymentForSchedule(schedule1)
       .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
+      .status shouldBe PeriodicProcessDeploymentStatus.Finished
     stateAfterSchedule1Finished
       .latestDeploymentForSchedule(schedule2)
       .state
       .status shouldBe PeriodicProcessDeploymentStatus.Scheduled
     val latestDeploymentSchedule2 = mostImportantActiveDeployment
-    latestDeploymentSchedule2.scheduleName.value.value shouldBe schedule1
-    latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule1)
+    latestDeploymentSchedule2.scheduleName.value.value shouldBe schedule2
+    latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
 
     currentTime = timeToTriggerSchedule2
     val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
@@ -457,15 +457,24 @@ class PeriodicProcessServiceIntegrationTest
     stateAfterSchedule2Deploy
       .latestDeploymentForSchedule(schedule1)
       .state
-      .status shouldBe PeriodicProcessDeploymentStatus.Deployed
+      .status shouldBe PeriodicProcessDeploymentStatus.Finished
     stateAfterSchedule2Deploy
       .latestDeploymentForSchedule(schedule2)
       .state
       .status shouldBe PeriodicProcessDeploymentStatus.Deployed
-    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule1
+    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule2
 
     service.handleFinished.futureValue
-    service.getLatestDeploymentsForActiveSchedules(processName).futureValue should not be empty
+    service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
+    val inactiveStates = service
+      .getLatestDeploymentsForLatestInactiveSchedules(
+        processName,
+        inactiveProcessesMaxCount = 1,
+        deploymentsPerScheduleMaxCount = 1
+      )
+      .futureValue
+    inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
+    inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
   }
 
   it should "handle failed event handler" in withFixture() { f =>
