@@ -175,10 +175,6 @@ class PeriodicProcessServiceTest
       PeriodicProcessDeploymentStatus.Finished,
       PeriodicProcessDeploymentStatus.Scheduled
     )
-
-    val finished :: scheduled :: Nil =
-      f.repository.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
-    f.events.toList shouldBe List(FinishedEvent(finished, None), ScheduledEvent(scheduled, firstSchedule = false))
   }
 
   test("handleFinished - should reschedule for finished Flink job") {

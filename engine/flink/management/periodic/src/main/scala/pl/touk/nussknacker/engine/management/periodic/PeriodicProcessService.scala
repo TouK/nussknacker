@@ -203,14 +203,21 @@ class PeriodicProcessService(
   // - deployment ids that need to be reschedules
   private def synchronizeDeploymentsStates(
       processName: ProcessName,
-      schedules: SchedulesState
+      schedules: SchedulesState,
+      retries: Int = 4
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
-      _ <- Future.successful(Thread.sleep(15000L)) // 15 seconds to be sure Flink's runtime statuses are up 2 date
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
       })
+      _ <-
+        if (scheduleDeploymentsWithStatus.map(_._2).contains(None) && retries > 0) {
+          Future.successful(Thread.sleep(1000L))
+          synchronizeDeploymentsStates(processName, schedules, retries - 1)
+        } else {
+          Future.unit
+        }
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
