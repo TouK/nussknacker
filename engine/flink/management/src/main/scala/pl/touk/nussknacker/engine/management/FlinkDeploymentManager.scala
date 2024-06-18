@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -176,7 +177,8 @@ abstract class FlinkDeploymentManager(
           deploymentData,
           canonicalProcess
         ),
-        savepointPath
+        savepointPath,
+        command.deploymentData.deploymentId.toNewDeploymentIdOpt
       )
       _ <- runResult.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
     } yield runResult
@@ -255,7 +257,9 @@ abstract class FlinkDeploymentManager(
       processName: ProcessName,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      // TODO: make it mandatory - see TODO in newdeployment.DeploymentService
+      deploymentId: Option[newdeployment.DeploymentId]
   ): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager

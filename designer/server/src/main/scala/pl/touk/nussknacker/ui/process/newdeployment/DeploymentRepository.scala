@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.newdeployment
 import cats.implicits.{toFoldableOps, toTraverseOps}
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentStatus, DeploymentStatusName, ProblemDeploymentStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessingType}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables, SqlStates}
@@ -23,6 +23,23 @@ class DeploymentRepository(dbRef: DbRef, clock: Clock)(implicit ec: ExecutionCon
   override protected val profile: JdbcProfile = dbRef.profile
 
   import profile.api._
+
+  def getProcessingTypeDeploymentsIdsInNotMatchingStatus(
+      processingType: ProcessingType,
+      statusNames: Set[DeploymentStatusName]
+  ): DB[Set[DeploymentId]] = {
+    toEffectAll(
+      deploymentsTable
+        .join(processesTable)
+        .on(_.scenarioId === _.id)
+        .filter { case (deployment, scenarioMetadata) =>
+          scenarioMetadata.processingType === processingType && !(deployment.statusName inSet statusNames)
+        }
+        .map(_._1.id)
+        .result
+        .map(_.toSet)
+    )
+  }
 
   def getScenarioDeploymentsInNotMatchingStatus(
       scenarioId: ProcessId,

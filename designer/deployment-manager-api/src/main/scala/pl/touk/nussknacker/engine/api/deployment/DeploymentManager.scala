@@ -79,7 +79,9 @@ sealed trait DeploymentSynchronisationSupport
 
 trait DeploymentSynchronisationSupported extends DeploymentSynchronisationSupport {
 
-  def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]]
+  def getDeploymentStatusesToUpdate(
+      deploymentIdsToCheck: Set[newdeployment.DeploymentId]
+  ): Future[Map[newdeployment.DeploymentId, DeploymentStatus]]
 
 }
 

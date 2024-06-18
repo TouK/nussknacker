@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
 import pl.touk.nussknacker.engine.sttp.SttpJson
+import pl.touk.nussknacker.engine.sttp.SttpJson.asOptionalJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
 import sttp.client3._
 import sttp.client3.circe._
@@ -103,6 +104,15 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       .recoverWith(recoverWithMessage("retrieve Flink jobs"))
   }
 
+  override def getJobDetails(jobId: String): Future[Option[JobDetails]] = {
+    basicRequest
+      .get(flinkUrl.addPath("jobs", jobId))
+      .response(asOptionalJson[JobDetails])
+      .send(backend)
+      .flatMap(SttpJson.failureToFuture)
+      .recoverWith(recoverWithMessage("retrieve Flink job details"))
+  }
+
   override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
     basicRequest
       .get(flinkUrl.addPath("jobs", jobId, "config"))
@@ -192,13 +202,15 @@ class HttpFlinkClient(config: FlinkConfig, flinkUrl: Uri)(
       jarFile: File,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      jobId: Option[String]
   ): Future[Option[ExternalDeploymentId]] = {
     val program =
       DeployProcessRequest(
         entryClass = mainClass,
         savepointPath = savepointPath,
-        programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" ")
+        programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "),
+        jobId = jobId
       )
     uploadJarFileIfNotExists(jarFile).flatMap { flinkJarFile =>
       basicRequest

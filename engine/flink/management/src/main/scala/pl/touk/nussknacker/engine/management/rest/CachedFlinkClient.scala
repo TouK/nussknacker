@@ -5,7 +5,7 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCached, Fresh}
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, JobOverview}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ExecutionConfig, JobDetails, JobOverview}
 
 import java.io.File
 import scala.compat.java8.FutureConverters._
@@ -69,6 +69,8 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
         }
       )
 
+  override def getJobDetails(jobId: String): Future[Option[JobDetails]] = delegate.getJobDetails(jobId)
+
   override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] =
     delegate.cancel(deploymentId)
 
@@ -85,9 +87,10 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
       jarFile: File,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      jobId: Option[String]
   ): Future[Option[ExternalDeploymentId]] =
-    delegate.runProgram(jarFile, mainClass, args, savepointPath)
+    delegate.runProgram(jarFile, mainClass, args, savepointPath, jobId)
 
   // TODO: Do we need cache here?
   override def getClusterOverview: Future[flinkRestModel.ClusterOverview] =
