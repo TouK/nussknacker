@@ -22,10 +22,12 @@ import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesReposi
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
 import pl.touk.nussknacker.engine.management.periodic.service._
+import retry.Success
 
 import java.time.chrono.ChronoLocalDateTime
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime}
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -201,19 +203,17 @@ class PeriodicProcessService(
   private def getScheduleDeploymentsWithStatus(
       processName: ProcessName,
       schedules: SchedulesState,
-      retries: Int = 3
   ): Future[List[(ScheduleDeploymentData, Option[StatusDetails])]] =
     for {
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
       })
-      retriedScheduleDeploymentsWithStatus <-
-        if (scheduleDeploymentsWithStatus.map(_._2).contains(None) && retries > 0) {
-          Future.successful(Thread.sleep(1000L))
-          getScheduleDeploymentsWithStatus(processName, schedules, retries - 1)
-        } else Future.successful(scheduleDeploymentsWithStatus)
-    } yield retriedScheduleDeploymentsWithStatus
+    } yield scheduleDeploymentsWithStatus
+
+  implicit val successSchedulesDeploymentsWithStatusFetch
+      : Success[List[(ScheduleDeploymentData, Option[StatusDetails])]] =
+    Success[List[(ScheduleDeploymentData, Option[StatusDetails])]](!_.map(_._2).contains(None))
 
   // Returns tuple of lists:
   // - matching, active deployment ids on DM side
@@ -223,7 +223,9 @@ class PeriodicProcessService(
       schedules: SchedulesState
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
-      scheduleDeploymentsWithStatus <- getScheduleDeploymentsWithStatus(processName, schedules)
+      scheduleDeploymentsWithStatus <- retry.Pause(3, 1.second).apply { () =>
+        getScheduleDeploymentsWithStatus(processName, schedules)
+      }
       needRescheduleDeployments <- Future
         .sequence(scheduleDeploymentsWithStatus.map { case (deploymentData, statusOpt) =>
           synchronizeDeploymentState(deploymentData, statusOpt).run.map { needReschedule =>
