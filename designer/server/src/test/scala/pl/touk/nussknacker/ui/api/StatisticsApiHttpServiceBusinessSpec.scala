@@ -53,16 +53,18 @@ class StatisticsApiHttpServiceBusinessSpec
   override implicit def patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(0.5, Seconds))
 
-  private val nuVersion              = BuildInfo.version
-  private val questDbPath            = BetterFile.temp / "nu"
-  private val now                    = Instant.now()
-  private val yesterday              = now.plus(-1L, ChronoUnit.DAYS)
-  private val yesterdayPartitionName = DateTimeFormatter.ISO_LOCAL_DATE.format(yesterday.atZone(ZoneOffset.UTC))
-  private val statisticsNames        = StatisticName.values
-  private val statisticsNamesSize    = statisticsNames.size
-  private val statisticsByIndex      = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
-  private val quote                  = '"'
-  private val random                 = new Random()
+  private val nuVersion                  = BuildInfo.version
+  private val questDbPath                = BetterFile.temp / "nu"
+  private val now                        = Instant.now()
+  private val yesterday                  = now.plus(-1L, ChronoUnit.DAYS)
+  private val twoDaysBefore              = yesterday.plus(-1L, ChronoUnit.DAYS)
+  private val yesterdayPartitionName     = DateTimeFormatter.ISO_LOCAL_DATE.format(yesterday.atZone(ZoneOffset.UTC))
+  private val twoDaysBeforePartitionName = DateTimeFormatter.ISO_LOCAL_DATE.format(twoDaysBefore.atZone(ZoneOffset.UTC))
+  private val statisticsNames            = StatisticName.values
+  private val statisticsNamesSize        = statisticsNames.size
+  private val statisticsByIndex          = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
+  private val quote                      = '"'
+  private val random                     = new Random()
 
   private val mockedClock = mock[Clock](new Answer[Instant] {
     override def answer(invocation: InvocationOnMock): Instant = Instant.now()
@@ -188,8 +190,13 @@ class StatisticsApiHttpServiceBusinessSpec
       val statisticName = randomStatisticName()
       given()
         .applicationState {
+          when(mockedClock.instant()).thenReturn(yesterday, twoDaysBefore, now)
           createStatistics(statisticName)
-          when(mockedClock.instant()).thenReturn(yesterday, now)
+          createStatistics(statisticName)
+          eventually {
+            isPartitionPresent(yesterdayPartitionName) shouldBe true
+            isPartitionPresent(twoDaysBeforePartitionName) shouldBe true
+          }
         }
         .when()
         .basicAuthReader()
@@ -200,10 +207,8 @@ class StatisticsApiHttpServiceBusinessSpec
         .equalsPlainBody("")
         .verifyApplicationState {
           eventually {
-            isYesterdayPartitionPresent shouldBe true
-          }
-          eventually {
-            isYesterdayPartitionPresent shouldBe false
+            isPartitionPresent(yesterdayPartitionName) shouldBe false
+            isPartitionPresent(twoDaysBeforePartitionName) shouldBe false
           }
         }
     }
@@ -242,15 +247,11 @@ class StatisticsApiHttpServiceBusinessSpec
       .basicAuthReader()
       .jsonBody(buildRegisterStatisticsRequest(statisticsNames: _*))
       .post(s"$nuDesignerHttpAddress/api/statistic")
-      .Then()
-      .verifyApplicationState {
-        verifyStatisticsExists(statisticsNames.map(n => n.entryName -> new GreaterThanOrEqualToLongMatcher(1)): _*)
-      }
 
-  private def isYesterdayPartitionPresent = {
+  private def isPartitionPresent(partitionName: String) = {
     Try {
       questDbPath
-        .collectChildren(f => f.name.startsWith(yesterdayPartitionName) && f.isDirectory, maxDepth = 2)
+        .collectChildren(f => f.name.startsWith(partitionName) && f.isDirectory, maxDepth = 2)
         .hasNext
     }.recover { case _ =>
       false

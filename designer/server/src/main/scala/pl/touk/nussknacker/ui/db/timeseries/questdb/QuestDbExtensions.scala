@@ -29,6 +29,7 @@ private[questdb] trait QuestDbExtensions {
     def tableExists(tableName: String): Boolean =
       engine.getTableStatus(tableName) == TableUtils.TABLE_EXISTS
 
+    // TODO move recover only to flush data task
     def runWithExceptionHandling[T](
         recoverFromCriticalError: () => Try[Unit],
         tableName: String,
