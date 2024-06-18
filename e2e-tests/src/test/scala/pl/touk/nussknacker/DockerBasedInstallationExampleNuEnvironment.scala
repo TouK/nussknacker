@@ -26,7 +26,7 @@ trait DockerBasedInstallationExampleNuEnvironment
   def loadFlinkStreamingScenarioFromResource(scenarioName: String, scenarioJsonFile: File): Unit = {
     val escapedScenarioJson = scenarioJsonFile.contentAsString().replaceAll("\"", "\\\\\"")
     specSetupService.executeBash(
-      s"/app/scripts/utils/nu/load-scenario-from-json.sh \"$scenarioName\" \"${escapedScenarioJson}\" "
+      s"""/app/scripts/utils/nu/load-scenario-from-json.sh "$scenarioName" "$escapedScenarioJson" """
     )
   }
 
@@ -68,6 +68,9 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
       new JFile("examples/installation/docker-compose.yml"),
       new JFile(Resource.getUrl("spec-setup/spec-setup.override.yml").toURI),
       new JFile(Resource.getUrl("spec-setup/debuggable-nu-designer.override.yml").toURI)
+    ),
+    env = Map(
+      "NUSSKNACKER_VERSION" -> "1.16.0-SNAPSHOT"
     ),
     logConsumers = Seq(
       ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying))

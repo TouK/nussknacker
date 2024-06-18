@@ -18,9 +18,10 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 val scala212 = "2.12.10"
 val scala213 = "2.13.12"
 
-val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
-  case "2.12" => scala212
-  case "2.13" => scala213
+def defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
+  case None | Some("2.13") => scala213
+  case Some("2.12")        => scala212
+  case Some(unsupported)   => throw new IllegalArgumentException(s"Nu doesn't support $unsupported Scala version")
 }
 
 lazy val supportedScalaVersions = List(scala212, scala213)
@@ -354,6 +355,7 @@ val jmxPrometheusJavaagentV   = "0.20.0"
 val wireMockV                 = "2.35.2"
 val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.3"
+val ujsonV                    = "3.1.2"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(
@@ -1124,7 +1126,7 @@ lazy val testUtils = (project in utils("test-utils"))
         "org.typelevel"                 %% "cats-effect"             % catsEffectV,
         "io.circe"                      %% "circe-parser"            % circeV,
         "org.testcontainers"             % "testcontainers"          % testContainersJavaV,
-        "com.lihaoyi"                   %% "ujson"                   % "3.1.2",
+        "com.lihaoyi"                   %% "ujson"                   % ujsonV,
         // This lib produces more descriptive errors during validation than everit
         "com.networknt"                  % "json-schema-validator"   % "1.4.0",
         "com.softwaremill.sttp.tapir"   %% "tapir-core"              % tapirV,
@@ -1587,19 +1589,18 @@ lazy val security = (project in file("security"))
   .settings(
     name := "nussknacker-security",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"          %% "akka-http"         % akkaHttpV,
-      "com.typesafe.akka"          %% "akka-stream"       % akkaV,
-      "com.typesafe.akka"          %% "akka-http-testkit" % akkaHttpV % Test,
-      "com.typesafe.akka"          %% "akka-testkit"      % akkaV     % Test,
-      "de.heikoseeberger"          %% "akka-http-circe"   % akkaHttpCirceV,
-      "com.typesafe"                % "config"            % configV,
-      "at.favre.lib"                % "bcrypt"            % bcryptV,
+      "com.typesafe.akka"           %% "akka-http"                      % akkaHttpV,
+      "com.typesafe.akka"           %% "akka-stream"                    % akkaV,
+      "com.typesafe.akka"           %% "akka-http-testkit"              % akkaHttpV            % Test,
+      "com.typesafe.akka"           %% "akka-testkit"                   % akkaV                % Test,
+      "de.heikoseeberger"           %% "akka-http-circe"                % akkaHttpCirceV,
+      "com.typesafe"                 % "config"                         % configV,
+      "at.favre.lib"                 % "bcrypt"                         % bcryptV,
       // Packages below are only for plugin providers purpose
-      "io.circe"                   %% "circe-core"        % circeV,
-      "com.github.jwt-scala"       %% "jwt-circe"         % jwtCirceV,
-      "com.typesafe.scala-logging" %% "scala-logging"     % scalaLoggingV,
-      "com.auth0"                   % "jwks-rsa"          % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
-
+      "io.circe"                    %% "circe-core"                     % circeV,
+      "com.github.jwt-scala"        %% "jwt-circe"                      % jwtCirceV,
+      "com.typesafe.scala-logging"  %% "scala-logging"                  % scalaLoggingV,
+      "com.auth0"                    % "jwks-rsa"                       % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.tapir" %% "tapir-core"                     % tapirV,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"               % tapirV,
       "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
@@ -2018,25 +2019,29 @@ lazy val designer = (project in file("designer/server"))
   )
 
 lazy val e2eTests = (project in file("e2e-tests"))
-  .settings(commonSettings)
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(
+    (Test / test) := forScalaVersion(
+      scalaVersion.value,
+      Def.task {
+        sLog.value.info(s"Tests skipped for '${scalaVersion.value}' Scala version")
+      }.value,
+      (2, 12) -> (Test / test).dependsOn(dist / Docker / publishLocal).value,
+    )
+  )
+  .settings(
     libraryDependencies ++= {
       Seq(
-        "com.github.pathikrit"        %% "better-files"                   % betterFilesV         % Test,
-        "ch.qos.logback"               % "logback-classic"                % logbackV             % Test,
-        "com.typesafe.scala-logging"  %% "scala-logging"                  % scalaLoggingV        % Test,
-        "org.scalatest"               %% "scalatest"                      % scalaTestV           % Test,
-        "com.softwaremill.sttp.tapir" %% "tapir-sttp-client"              % tapirV               % Test,
-        "com.dimafeng"                %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
+        "com.github.pathikrit"       %% "better-files"                   % betterFilesV         % Test,
+        "ch.qos.logback"              % "logback-classic"                % logbackV             % Test,
+        "com.typesafe.scala-logging" %% "scala-logging"                  % scalaLoggingV        % Test,
+        "org.scalatest"              %% "scalatest"                      % scalaTestV           % Test,
+        "com.dimafeng"               %% "testcontainers-scala-scalatest" % testContainersScalaV % Test,
+        "com.lihaoyi"                %% "ujson"                          % ujsonV               % Test,
       ) ++
         restAssuredDependency(scalaVersion.value)
     }
-  )
-  .dependsOn(
-    designer  % Test,
-    testUtils % Test
   )
 
 /*

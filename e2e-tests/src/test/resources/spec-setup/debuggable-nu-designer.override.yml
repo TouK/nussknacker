@@ -1,6 +1,7 @@
 services:
 
   designer:
+    image: touk/nussknacker:1.16.0-SNAPSHOT_scala-2.12
     ports:
       - "5005:5005"
     environment:
