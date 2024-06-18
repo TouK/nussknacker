@@ -242,6 +242,8 @@ class PeriodicProcessService(
             status
           ) && deployment.state.status != PeriodicProcessDeploymentStatus.Finished =>
         markFinished(deployment, processState).needsReschedule(value = true)
+      case None if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed =>
+        markFinished(deployment, processState).needsReschedule(value = true)
       case _ =>
         scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
     }

@@ -161,6 +161,26 @@ class PeriodicProcessServiceTest
     f.periodicProcessService.findToBeDeployed.futureValue shouldBe Symbol("empty")
   }
 
+  // Flink job could disappear from Flink console.
+  test("handleFinished - should reschedule scenario if Flink job is missing") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
+    f.repository.deploymentEntities should have size 2
+    f.repository.deploymentEntities.map(_.status) shouldBe List(
+      PeriodicProcessDeploymentStatus.Finished,
+      PeriodicProcessDeploymentStatus.Scheduled
+    )
+
+    val finished :: scheduled :: Nil =
+      f.repository.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
+    f.events.toList shouldBe List(FinishedEvent(finished, None), ScheduledEvent(scheduled, firstSchedule = false))
+  }
+
   test("handleFinished - should reschedule for finished Flink job") {
     val f               = new Fixture
     val processActionId = randomProcessActionId
@@ -255,7 +275,7 @@ class PeriodicProcessServiceTest
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.map(
       _.status
-    ) should contain only (PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.Scheduled)
+    ) should contain only (PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
   }
 
   test("handleFinished - should not reschedule scenario with different processing type") {
