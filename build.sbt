@@ -2017,29 +2017,13 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings(commonSettings)
   .configs(SlowTests)
   .settings(slowTestsSettings)
-  .settings(
-    Test / testOptions += forScalaVersion(scalaVersion.value) {
-      case (2, 12) =>
-        Tests.Setup { () =>
-          streams.value.log.info("Building Nu Designer docker image from the sources for a sake of E2E tests")
-          (distribution / Docker / publishLocal).value.a
-        }
-      case (2, 13) => Tests.Setup(() => ())
-    },
-    (Test / test) := Def.taskDyn {
-      forScalaVersion(scalaVersion.value) {
-        case (2, 12) =>
-          val runTests = (Test / test).value
-          Def.task(runTests)
-        case (2, 13) =>
-          Def.task {
-            streams.value.log.info(
-              "E2E tests are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
-            )
-          }
-      }
-    }.value
-  )
+  .settings {
+    // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
+    forScalaVersion(defaultScalaV) {
+      case (2, 12) => doTest
+      case (2, 13) => doNotTest
+    }
+  }
   .settings(
     libraryDependencies ++= {
       Seq(
@@ -2055,6 +2039,23 @@ lazy val e2eTests = (project in file("e2e-tests"))
   )
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
+  .dependsOn(testUtils % Test)
+
+lazy val doTest = Seq(
+  Test / testOptions += Tests.Setup { () =>
+    streams.value.log.info("Building Nu Designer docker image from the sources for a sake of E2E tests")
+    (distribution / Docker / publishLocal).value.a
+  }
+)
+
+lazy val doNotTest = Seq(
+  Test / test := {
+    streams.value.log.info(
+      "E2E tests are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
+    )
+  },
+  Test / testOptions += Tests.Setup(() => ())
+)
 
 /*
   We want to simplify dependency management in downstream projects using BOM pattern
