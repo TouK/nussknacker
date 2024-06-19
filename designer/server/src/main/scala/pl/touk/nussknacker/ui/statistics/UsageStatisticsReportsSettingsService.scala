@@ -20,10 +20,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
-import java.net.{URI, URL, URLEncoder}
-import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
 
@@ -31,6 +28,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
   def apply(
       config: UsageStatisticsReportsConfig,
+      urlConfig: StatisticUrlConfig,
       processService: ProcessService,
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
@@ -87,6 +85,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
     new UsageStatisticsReportsSettingsService(
       config,
+      urlConfig,
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
@@ -111,6 +110,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
 class UsageStatisticsReportsSettingsService(
     config: UsageStatisticsReportsConfig,
+    urlConfig: StatisticUrlConfig,
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
     fetchActivity: List[ScenarioStatisticsInputData] => Future[
@@ -119,13 +119,14 @@ class UsageStatisticsReportsSettingsService(
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
     fetchFeStatistics: () => Future[Map[String, Long]]
 )(implicit ec: ExecutionContext) {
+  private val statisticsUrls = new StatisticsUrls(urlConfig)
 
-  def prepareStatisticsUrl(): Future[Either[StatisticError, List[URL]]] = {
+  def prepareStatisticsUrl(): Future[Either[StatisticError, List[String]]] = {
     if (config.enabled) {
       val maybeUrls = for {
         queryParams <- determineQueryParams()
         fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-        urls <- EitherT.fromEither[Future](new StatisticsUrlsDomainService(fingerprint, queryParams).prepareUrls())
+        urls        <- EitherT.pure[Future, StatisticError](statisticsUrls.prepare(fingerprint, queryParams))
       } yield urls
       maybeUrls.value
     } else {

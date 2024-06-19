@@ -79,7 +79,7 @@ import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPer
 import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
-import pl.touk.nussknacker.ui.statistics.{FingerprintService, UsageStatisticsReportsSettingsService}
+import pl.touk.nussknacker.ui.statistics.{FingerprintService, StatisticUrlConfig, UsageStatisticsReportsSettingsService}
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -473,9 +473,11 @@ class AkkaHttpBasedRouteProvider(
       }
 
       val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+      val statisticUrlConfig           = StatisticUrlConfig()
       val fingerprintService           = new FingerprintService(new FingerprintRepositoryImpl(dbRef))
       val usageStatisticsReportsSettingsService = UsageStatisticsReportsSettingsService(
         usageStatisticsReportsConfig,
+        statisticUrlConfig,
         processService,
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
         fingerprintService,

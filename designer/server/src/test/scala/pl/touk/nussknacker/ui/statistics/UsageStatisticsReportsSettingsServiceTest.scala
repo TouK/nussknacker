@@ -23,6 +23,7 @@ class UsageStatisticsReportsSettingsServiceTest
   test("should not generate an url if it's not configured") {
     val sut = new UsageStatisticsReportsSettingsService(
       config = UsageStatisticsReportsConfig(enabled = false, None, None),
+      urlConfig = StatisticUrlConfig(),
       fingerprintService = fingerprintService,
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(Nil)),
       fetchActivity = (_: List[ScenarioStatisticsInputData]) => Future.successful(Right(Nil)),

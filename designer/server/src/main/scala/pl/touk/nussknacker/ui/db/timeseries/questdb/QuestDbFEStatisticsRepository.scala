@@ -158,7 +158,7 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
     for {
       questDbConfig <- Resource.eval(IO(QuestDbConfig.apply(config)))
       repository <- questDbConfig match {
-        case enabledCfg @ QuestDbConfig.Enabled(_, _, _, _, _) =>
+        case enabledCfg: QuestDbConfig.Enabled =>
           createRepositoryResource(system, clock, enabledCfg)
             .handleErrorWith { t: Throwable =>
               logger.warn("Creating QuestDb failed", t)
