@@ -32,6 +32,7 @@ import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
+import java.net.URLClassLoader
 import java.nio.file.Path
 
 class TableSource(
@@ -100,12 +101,14 @@ class TableSource(
     // TODO: check what we need to load - for tests we need only flink classes, connectors and formats
     val classPathUrls = List(Path.of("components/flink-dev/flinkTable.jar").toUri.toURL)
 
-    val classLoader = getClass.getClassLoader
+    // TODO: build classloader with urls
+    val classLoader = URLClassLoader.newInstance(classPathUrls.toArray)
 
     val flinkLocalEnvConfiguration = {
       val conf = new Configuration()
       // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
       conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+      conf.set(CoreOptions.CHECK_LEAKED_CLASSLOADER, java.lang.Boolean.FALSE)
 
       // without this, on the task level the classloader is basically empty
       conf.set(
@@ -115,9 +118,10 @@ class TableSource(
       conf.set(DeploymentOptions.TARGET, "local")
       conf.set(DeploymentOptions.ATTACHED, java.lang.Boolean.TRUE)
 
-      if (enableFlinkBatchExecutionMode) {
-        conf.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.BATCH)
-      }
+//      TODO: is it necessary?
+//      if (enableFlinkBatchExecutionMode) {
+//        conf.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.BATCH)
+//      }
       conf
     }
 
@@ -127,7 +131,10 @@ class TableSource(
       val env = new StreamExecutionEnvironment(flinkLocalEnvConfiguration, classLoader)
       val tableEnv = StreamTableEnvironment.create(
         env,
-        EnvironmentSettings.newInstance.withConfiguration(flinkLocalEnvConfiguration).build()
+        EnvironmentSettings.newInstance
+          .withConfiguration(flinkLocalEnvConfiguration)
+          .withClassLoader(classLoader)
+          .build()
       )
 
       // TODO: extract

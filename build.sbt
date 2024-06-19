@@ -1998,22 +1998,21 @@ lazy val designer = (project in file("designer/server"))
     deploymentManagerApi,
     restmodel,
     listenerApi,
-    experimentalFlinkTableApiComponents % Test,
-    testUtils                           % Test,
-    flinkTestUtils                      % Test,
-    componentsApi                       % "test->test",
+    testUtils                         % Test,
+    flinkTestUtils                    % Test,
+    componentsApi                     % "test->test",
     // All DeploymentManager dependencies are added because they are needed to run NussknackerApp* with
     // dev-application.conf. Currently, we doesn't have a separate classpath for DMs like we have for components.
     // schemedKafkaComponentsUtils is added because loading the provided liteEmbeddedDeploymentManager causes
     // that are also load added their test dependencies on the classpath by the Idea. It causes that
     // UniversalKafkaSourceFactory is loaded from app classloader and GenericRecord which is defined in typesToExtract
     // is missing from this classloader
-    flinkDeploymentManager              % Provided,
-    liteEmbeddedDeploymentManager       % Provided,
-    liteK8sDeploymentManager            % Provided,
-    developmentTestsDeploymentManager   % Provided,
-    devPeriodicDM                       % Provided,
-    schemedKafkaComponentsUtils         % Provided,
+    flinkDeploymentManager            % Provided,
+    liteEmbeddedDeploymentManager     % Provided,
+    liteK8sDeploymentManager          % Provided,
+    developmentTestsDeploymentManager % Provided,
+    devPeriodicDM                     % Provided,
+    schemedKafkaComponentsUtils       % Provided,
   )
 
 /*
