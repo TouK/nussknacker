@@ -10,7 +10,7 @@ import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
 import pl.touk.nussknacker.test.config.WithDesignerConfig
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 
-trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with BeforeAndAfterAll {
+trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with WithClock with BeforeAndAfterAll {
   this: Suite with WithDesignerConfig =>
 
   private val port = nextPort()
@@ -22,7 +22,7 @@ trait NuItTest extends WithHsqlDbTesting with DefaultUniquePortProvider with Bef
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     releaseAppResources = new NussknackerAppFactory()
-      .createApp(adjustNuTestConfig())
+      .createApp(adjustNuTestConfig(), clock)
       .allocated
       .unsafeRunSync()
       ._2
