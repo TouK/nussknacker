@@ -37,7 +37,7 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       _                      <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry        <- createGeneralPurposeMetricsRegistry()
       db                     <- DbRef.create(config.resolved)
-      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock)
+      feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, config.resolved)
       server = new NussknackerHttpServer(
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory, feStatisticsRepository)(
           system,
