@@ -42,12 +42,12 @@ private[questdb] class RetentionTask(private val engine: CairoEngine, private va
   def close(): Unit =
     walPurgeJob.close()
 
-  // This check is needed because if the retention task would drop last partition, the db can't create new partition
   private def getPartitions(sqlContext: SqlExecutionContext): List[(String, Long)] =
     engine.select(selectAllPartitionsQuery, sqlContext).fetch(sqlContext) { record =>
       record.getStrA(0).toString -> record.getTimestamp(1) / 1000L
     }
 
+  // This check is needed because if the retention task would drop last partition, the db can't create new partition
   private def ensureOnePartitionExist(
       clock: Clock,
       allPartitions: List[(String, Long)]
