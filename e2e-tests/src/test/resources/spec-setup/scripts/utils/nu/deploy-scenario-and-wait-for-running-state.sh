@@ -66,7 +66,8 @@ function checkDeploymentStatus() {
     exit 22
   fi
 
-  echo "$BODY"
+  local SCENARIO_STATUS=$(echo "$BODY" | jq '.name')
+  echo "$SCENARIO_STATUS"
 }
 
 echo "Deploying scenario $SCENARIO_NAME ..."
