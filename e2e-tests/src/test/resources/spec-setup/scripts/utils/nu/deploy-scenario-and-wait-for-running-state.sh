@@ -66,7 +66,7 @@ function checkDeploymentStatus() {
     exit 22
   fi
 
-  local SCENARIO_STATUS=$(echo "$BODY" | jq '.name')
+  local SCENARIO_STATUS=$(echo "$BODY" | jq -r '.name')
   echo "$SCENARIO_STATUS"
 }
 
