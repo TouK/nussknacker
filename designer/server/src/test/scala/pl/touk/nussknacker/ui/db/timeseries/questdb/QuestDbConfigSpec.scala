@@ -12,7 +12,7 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
     val config = ConfigFactory.parseString("""
         |{
         |  questDbSettings {
-        |    enabled: false,
+        |    enabled: true,
         |    instanceId: "test",
         |    directory: "dir"
         |    flushTaskDelay: 10 seconds
@@ -27,13 +27,12 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
         |}
         |""".stripMargin)
 
-    QuestDbConfig(config) shouldBe new QuestDbConfig(
-      enabled = false,
+    QuestDbConfig(config) shouldBe QuestDbConfig.Enabled(
       instanceId = "test",
       directory = Some("dir"),
       flushTaskDelay = 10 seconds,
       retentionTaskDelay = 60 seconds,
-      poolConfig = QuestDbPoolConfig(
+      poolConfig = QuestDbConfig.QuestDbPoolConfig(
         corePoolSize = 1,
         maxPoolSize = 3,
         keepAliveTimeInSeconds = 30,
@@ -43,21 +42,30 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
   }
 
   test("should return defaults") {
-    val config = ConfigFactory.empty()
-
-    QuestDbConfig(config) shouldBe new QuestDbConfig(
-      enabled = true,
+    QuestDbConfig(ConfigFactory.empty()) shouldBe QuestDbConfig.Enabled(
       instanceId = "designer-statistics",
       directory = None,
       flushTaskDelay = 30 seconds,
       retentionTaskDelay = 24 hours,
-      poolConfig = QuestDbPoolConfig(
+      poolConfig = QuestDbConfig.QuestDbPoolConfig(
         corePoolSize = 2,
         maxPoolSize = 4,
         keepAliveTimeInSeconds = 60,
         queueCapacity = 8
       )
     )
+  }
+
+  test("should return disabled config") {
+    val config = ConfigFactory.parseString("""
+                                             |{
+                                             |  questDbSettings {
+                                             |    enabled: false
+                                             |  }
+                                             |}
+                                             |""".stripMargin)
+
+    QuestDbConfig(config) shouldBe QuestDbConfig.Disabled
   }
 
 }

@@ -8,9 +8,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.questdb.cairo.CairoEngine
 import io.questdb.cairo.security.AllowAllSecurityContext
 import io.questdb.griffin.SqlExecutionContextImpl
-import io.questdb.log.LogFactory
-import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
+  BuildCairoEngineExtension,
   CairoEngineExtension,
   RecordCursorFactoryExtension
 }
@@ -20,9 +19,8 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepositor
   selectQuery,
   tableName
 }
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.StandardOpenOption
 import java.time.Clock
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.{ArrayBlockingQueue, ThreadPoolExecutor, TimeUnit}
@@ -144,9 +142,32 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
        |    WHERE timestamp_floor('d', ts) = timestamp_floor('d', now())
        | GROUP BY name""".stripMargin
 
-  def create(system: ActorSystem, clock: Clock, config: QuestDbConfig): Resource[IO, FEStatisticsRepository[Future]] =
+  def create(system: ActorSystem, clock: Clock, config: Config): Resource[IO, FEStatisticsRepository[Future]] =
     for {
-      _               <- Resource.eval(IO(logger.info(s"QuestDb configuration $config")))
+      questDbConfig <- Resource.eval(IO(QuestDbConfig.apply(config)))
+      repository <- questDbConfig match {
+        case enabledCfg @ QuestDbConfig.Enabled(_, _, _, _, _) =>
+          createRepositoryResource(system, clock, enabledCfg)
+            .handleErrorWith { t: Throwable =>
+              logger.warn("Creating QuestDb failed", t)
+              createNoOpFEStatisticRepository
+            }
+        case QuestDbConfig.Disabled =>
+          logger.debug("QuestDb is disabled - collecting FE statistics is skipped")
+          createNoOpFEStatisticRepository
+      }
+    } yield repository
+
+  private def createNoOpFEStatisticRepository: Resource[IO, FEStatisticsRepository[Future]] =
+    Resource.pure[IO, FEStatisticsRepository[Future]](NoOpFEStatisticsRepository)
+
+  private def createRepositoryResource(
+      system: ActorSystem,
+      clock: Clock,
+      config: QuestDbConfig.Enabled
+  ): Resource[IO, FEStatisticsRepository[Future]] =
+    for {
+      _               <- Resource.eval(IO(logger.debug(s"QuestDb configuration $config")))
       executorService <- createExecutorService(config.poolConfig)
       cairoEngine     <- createCairoEngine(config)
       repository      <- createRepository(executorService, cairoEngine, clock)
@@ -154,7 +175,9 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
       _ <- scheduleTask(system, Duration.Zero, config.retentionTaskDelay, () => repository.scheduleRetention())
     } yield repository
 
-  private def createExecutorService(config: QuestDbPoolConfig): Resource[IO, ExecutionContextExecutorService] =
+  private def createExecutorService(
+      config: QuestDbConfig.QuestDbPoolConfig
+  ): Resource[IO, ExecutionContextExecutorService] =
     Resource.make(
       acquire = for {
         executorService <- IO(
@@ -170,23 +193,27 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
       } yield ec
     )(release = ec => IO(ec.shutdown()))
 
-  private def createCairoEngine(config: QuestDbConfig): Resource[IO, AtomicReference[CairoEngine]] =
+  private def createCairoEngine(config: QuestDbConfig.Enabled): Resource[IO, AtomicReference[CairoEngine]] =
     Resource.make(
       acquire = IO {
-        val nuDir = resolveRootDir(config)
-        createRootDirIfNotExists(nuDir)
-        configureLogging(nuDir)
+        val nuDir  = resolveRootDir(config)
         val engine = buildCairoEngine(nuDir)
         new AtomicReference(engine)
       }
     )(release = engine => IO(closeCairoEngine(engine.get())))
 
-  private def resolveRootDir(config: QuestDbConfig): File = {
+  private def resolveRootDir(config: QuestDbConfig.Enabled): File = {
     config.directory.map(d => File(d)).getOrElse(File.temp / s"nu/${config.instanceId}")
   }
 
-  private def buildCairoEngine(rootDir: File): CairoEngine =
-    new CairoEngine(new CustomCairoConfiguration(rootDir.canonicalPath))
+  private def buildCairoEngine(rootDir: File): CairoEngine = {
+    logger.debug("Statistics path: {}", rootDir)
+    val canonicalPath = rootDir
+      .createDirIfNotExists()
+      .configureLogging()
+      .canonicalPath
+    new CairoEngine(new CustomCairoConfiguration(canonicalPath))
+  }
 
   private def closeCairoEngine(engine: CairoEngine): Unit =
     Try(engine.close()) match {
@@ -206,24 +233,6 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
     } yield repository
   )(release = repository => IO(repository.close()))
 
-  private def createRootDirIfNotExists(nuDir: File): Unit = {
-    nuDir.createDirectories()
-    logger.debug("Statistics path: {}", nuDir)
-  }
-
-  private def configureLogging(rootDir: File): Unit = {
-    rootDir
-      .createChild("conf/log.conf", createParents = true)
-      .writeText(
-        """
-          |writers=stdout
-          |w.stdout.class=io.questdb.log.LogConsoleWriter
-          |w.stdout.level=ERROR
-          |""".stripMargin
-      )(Seq(StandardOpenOption.TRUNCATE_EXISTING), StandardCharsets.UTF_8)
-    LogFactory.configureRootDir(rootDir.canonicalPath)
-  }
-
   private def scheduleTask(
       system: ActorSystem,
       initialDelay: FiniteDuration,
@@ -240,13 +249,8 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   private def recreateCairoEngine(engine: AtomicReference[CairoEngine]): Unit = {
     val cairoEngine = engine.get()
     closeCairoEngine(cairoEngine)
-    val nuDir = File(cairoEngine.getConfiguration.getRoot)
-    if (nuDir.exists) {
-      Try(nuDir.delete())
-    }
-    createRootDirIfNotExists(nuDir)
-    configureLogging(nuDir)
-    engine.set(buildCairoEngine(nuDir))
+    val rootDir = cairoEngine.deleteRootDir()
+    engine.set(buildCairoEngine(rootDir))
   }
 
 }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.db.timeseries
 
 import scala.concurrent.Future
 
-class NopFEStatisticsRepository extends FEStatisticsRepository[Future] {
+object NoOpFEStatisticsRepository extends FEStatisticsRepository[Future] {
 
   override def read(): Future[Map[String, Long]] = Future.successful(Map.empty)
 
