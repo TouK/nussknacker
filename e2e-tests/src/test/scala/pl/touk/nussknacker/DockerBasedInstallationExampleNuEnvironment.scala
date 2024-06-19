@@ -9,6 +9,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import pl.touk.nussknacker.ContainerExt._
 import pl.touk.nussknacker.DockerBasedInstallationExampleNuEnvironment.JSON
 import ujson.Value
+import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.{File => JFile}
 
@@ -70,7 +71,7 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
       new JFile(Resource.getUrl("spec-setup/debuggable-nu-designer.override.yml").toURI)
     ),
     env = Map(
-      "NUSSKNACKER_VERSION" -> "1.16.0-SNAPSHOT"
+      "NUSSKNACKER_VERSION" -> BuildInfo.version
     ),
     logConsumers = Seq(
       ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying))

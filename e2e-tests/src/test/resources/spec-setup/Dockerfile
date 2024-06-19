@@ -1,4 +1,3 @@
-#todo: explain why
 FROM bitnami/kafka:3.7.0
 
 USER root
