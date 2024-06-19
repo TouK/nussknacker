@@ -161,6 +161,17 @@ def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*):
     .getOrElse(default)
 }
 
+def forScalaVersion2[T](version: String)(provide: PartialFunction[(Int, Int), T]): T = {
+  CrossVersion.partialVersion(version) match {
+    case Some((major, minor)) if provide.isDefinedAt((major.toInt, minor.toInt)) =>
+      provide((major.toInt, minor.toInt))
+    case Some(_)                                                                 =>
+      throw new IllegalArgumentException(s"Scala version $version is not handled")
+    case None                                                                    =>
+      throw new IllegalArgumentException(s"Invalid Scala version $version")
+  }
+}
+
 lazy val commonSettings =
   publishSettings ++
     Seq(
@@ -2018,17 +2029,41 @@ lazy val designer = (project in file("designer/server"))
     schemedKafkaComponentsUtils       % Provided,
   )
 
+lazy val myCustomTask  = taskKey[Unit]("My custom task with logging")
+lazy val myCustomTask2 = taskKey[Unit]("My custom task with logging")
+lazy val myCustomTask3 = taskKey[Unit]("My custom task with logging")
+
 lazy val e2eTests = (project in file("e2e-tests"))
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(
-    (Test / test) := forScalaVersion(
-      scalaVersion.value,
-      Def.task {
-        sLog.value.info(s"Tests skipped for '${scalaVersion.value}' Scala version")
-      }.value,
-      (2, 12) -> (Test / test).dependsOn(dist / Docker / publishLocal).value,
-    )
+    myCustomTask2 := {
+      val log = streams.value.log
+      log.info("Skipped myCustomTask2")
+    },
+    myCustomTask3 := {
+      val log = streams.value.log
+      log.info("Skipped myCustomTask3")
+    },
+    myCustomTask  := {
+      val log = streams.value.log
+      log.info("Running my custom task...")
+      // Your task logic here
+      (dist / Docker / publishLocal).value
+      log.info("Finished running my custom task.")
+    },
+    (Test / test) := forScalaVersion2(scalaVersion.value) {
+      case (2, 12) =>
+        streams.value.log.info("scala 2.12 test task ...")
+        Def.sequential(myCustomTask, Test / test).value
+        streams.value.log.info("scala 2.12 test task!")
+      case (2, 13) =>
+        streams.value.log.info("scala 2.13 test task ...")
+        myCustomTask3
+        streams.value.log.info("scala 2.12 test task!")
+    }
+    //      (2, 12) -> myCustomTask3.value, //,
+    //      (2, 13) -> myCustomTask2.value,
   )
   .settings(
     libraryDependencies ++= {
