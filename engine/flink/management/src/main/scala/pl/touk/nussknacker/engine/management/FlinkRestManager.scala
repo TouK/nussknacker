@@ -76,8 +76,14 @@ class FlinkRestManager(
             .map { jobOverview =>
               val status = mapJobStatus(jobOverview)
               client.getJobConfig(jobOverview.jid).map { jobConfig =>
-                jobConfig.`user-config`
-                  .get("deploymentId")
+                val deploymentIdOpt = jobConfig.`user-config`.get("deploymentId")
+                if (deploymentIdOpt.isEmpty) {
+                  logger.warn(
+                    s"Job [id=${jobOverview.jid}, name=${jobOverview.name}] has no deploymentId. " +
+                      s"It will be ignored during deployment status synchronization"
+                  )
+                }
+                deploymentIdOpt
                   .flatMap(_.asString)
                   .flatMap(newdeployment.DeploymentId.fromString)
                   .map(_ -> status)
