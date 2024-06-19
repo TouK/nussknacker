@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -21,6 +21,8 @@ object ScenarioStatistics {
 
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
+
+  private val builtinNames = BuiltInComponentId.All.map(_.name)
 
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     scenariosInputData
@@ -123,7 +125,7 @@ object ScenarioStatistics {
     if (componentList.isEmpty) {
       Map.empty
     } else {
-      val builtinNames = List("choice", "filter", "record-variable", "split", "variable")
+
       // Get number of available components to check how many custom components created
       val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
       val componentsWithUsageByName: Map[String, Long] =
@@ -131,7 +133,7 @@ object ScenarioStatistics {
           .map { comp =>
             components.find(compo => compo.name.equals(comp.name)) match {
               case Some(comps) =>
-                if (comps.component.getClass.toString.contains("pl.touk.nussknacker")) {
+                if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
                   (comp.name, comp.usageCount)
                 } else {
                   ("Custom", comp.usageCount)
