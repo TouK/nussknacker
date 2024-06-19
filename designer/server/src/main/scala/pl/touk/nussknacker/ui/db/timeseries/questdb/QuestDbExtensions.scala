@@ -1,10 +1,14 @@
 package pl.touk.nussknacker.ui.db.timeseries.questdb
 
+import better.files.File
 import com.typesafe.scalalogging.LazyLogging
 import io.questdb.cairo.{CairoEngine, CairoException, TableUtils}
 import io.questdb.cairo.sql.{Record, RecordCursorFactory}
 import io.questdb.griffin.{SqlException, SqlExecutionContext}
+import io.questdb.log.LogFactory
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.StandardOpenOption
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Try, Using}
 
@@ -26,6 +30,15 @@ private[questdb] trait QuestDbExtensions {
   }
 
   implicit class CairoEngineExtension(engine: CairoEngine) extends LazyLogging {
+
+    def deleteRootDir(): File = {
+      val nuDir = File(engine.getConfiguration.getRoot)
+      if (nuDir.exists) {
+        Try(nuDir.delete())
+      }
+      nuDir
+    }
+
     def tableExists(tableName: String): Boolean =
       engine.getTableStatus(tableName) == TableUtils.TABLE_EXISTS
 
@@ -60,6 +73,26 @@ private[questdb] trait QuestDbExtensions {
       recoverFromCriticalError().flatMap { _ =>
         Try(dbAction())
       }
+    }
+
+  }
+
+  implicit class BuildCairoEngineExtension(rootDir: File) {
+    def createDirIfNotExists(): File =
+      rootDir.createDirectories()
+
+    def configureLogging(): File = {
+      rootDir
+        .createChild("conf/log.conf", createParents = true)
+        .writeText(
+          """
+            |writers=stdout
+            |w.stdout.class=io.questdb.log.LogConsoleWriter
+            |w.stdout.level=ERROR
+            |""".stripMargin
+        )(Seq(StandardOpenOption.TRUNCATE_EXISTING), StandardCharsets.UTF_8)
+      LogFactory.configureRootDir(rootDir.canonicalPath)
+      rootDir
     }
 
   }

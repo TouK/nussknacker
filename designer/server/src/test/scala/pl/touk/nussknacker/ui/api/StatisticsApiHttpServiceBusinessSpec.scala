@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
 import better.files.{File => BetterFile}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -21,7 +23,8 @@ import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConf
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingConfigRestAssuredUsersExtensions,
-  WithAccessControlCheckingDesignerConfig
+  WithAccessControlCheckingDesignerConfig,
+  WithDesignerConfig
 }
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
@@ -48,29 +51,36 @@ class StatisticsApiHttpServiceBusinessSpec
     with RestAssuredVerboseLoggingIfValidationFails
     with Eventually
     with MockitoSugar
-    with Matchers {
+    with Matchers
+    with WithDesignerConfig {
 
   override implicit def patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(0.5, Seconds))
 
-  private val nuVersion                  = BuildInfo.version
-  private val questDbPath                = BetterFile.temp / "nu"
-  private val now                        = Instant.now()
-  private val yesterday                  = now.plus(-1L, ChronoUnit.DAYS)
+  private val nuVersion                 = BuildInfo.version
+  private val questDbRelativePathString = s"it-tests/${UUID.randomUUID().toString}"
+  private val questDbPath               = BetterFile.temp / "nu" / questDbRelativePathString
+  private val now                       = Instant.now()
+  private val yesterday                 = now.plus(-1L, ChronoUnit.DAYS)
   private val twoDaysBefore              = yesterday.plus(-1L, ChronoUnit.DAYS)
-  private val yesterdayPartitionName     = DateTimeFormatter.ISO_LOCAL_DATE.format(yesterday.atZone(ZoneOffset.UTC))
+  private val yesterdayPartitionName    = DateTimeFormatter.ISO_LOCAL_DATE.format(yesterday.atZone(ZoneOffset.UTC))
   private val twoDaysBeforePartitionName = DateTimeFormatter.ISO_LOCAL_DATE.format(twoDaysBefore.atZone(ZoneOffset.UTC))
-  private val statisticsNames            = StatisticName.values
-  private val statisticsNamesSize        = statisticsNames.size
-  private val statisticsByIndex          = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
-  private val quote                      = '"'
-  private val random                     = new Random()
+  private val statisticsNames           = StatisticName.values
+  private val statisticsNamesSize       = statisticsNames.size
+  private val statisticsByIndex         = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
+  private val quote                     = '"'
+  private val random                    = new Random()
 
   private val mockedClock = mock[Clock](new Answer[Instant] {
     override def answer(invocation: InvocationOnMock): Instant = Instant.now()
   })
 
   override def clock: Clock = mockedClock
+
+  override def designerConfig: Config = super.designerConfig
+    .withValue("questDbSettings.instanceId", fromAnyRef(questDbRelativePathString))
+    .withValue("questDbSettings.flushTaskDelay", fromAnyRef("2 seconds"))
+    .withValue("questDbSettings.retentionTaskDelay", fromAnyRef("2 seconds"))
 
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)
