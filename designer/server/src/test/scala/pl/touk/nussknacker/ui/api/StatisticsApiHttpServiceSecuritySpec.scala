@@ -10,7 +10,6 @@ import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingDesignerConfig
 }
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers}
-import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticName.SearchScenariosByName
 
 class StatisticsApiHttpServiceSecuritySpec
     extends AnyFreeSpecLike
@@ -62,7 +61,7 @@ class StatisticsApiHttpServiceSecuritySpec
         given()
           .when()
           .basicAuthReader()
-          .jsonBody(s"""{"statistics": [{"name": "$SearchScenariosByName"}]}""")
+          .jsonBody("""{"statistics": [{"name": "SEARCH_SCENARIOS_BY_NAME"}]}""")
           .post(s"$nuDesignerHttpAddress/api/statistic")
           .Then()
           .statusCode(204)
@@ -76,7 +75,7 @@ class StatisticsApiHttpServiceSecuritySpec
         given()
           .when()
           .basicAuthUnknownUser()
-          .jsonBody(s"""{"statistics": [{"name": "$SearchScenariosByName"}]}""")
+          .jsonBody("""{"statistics": [{"name": "SEARCH_SCENARIOS_BY_NAME"}]}""")
           .post(s"$nuDesignerHttpAddress/api/statistic")
           .Then()
           .statusCode(401)

@@ -50,7 +50,7 @@ class StatisticsApiHttpService(
   private def saveStatistics(request: RegisterStatisticsRequestDto): Future[Unit] = {
     // todo change to groupMapReduce in scala 2.13
     val groupedByName = request.statistics
-      .groupBy(_.name.value)
+      .groupBy(_.name.entryName)
       .map { case (k, v) =>
         k -> v.size.toLong
       }
