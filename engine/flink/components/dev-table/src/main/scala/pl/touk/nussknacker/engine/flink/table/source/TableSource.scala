@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-import java.net.URLClassLoader
+import java.net.{URL, URLClassLoader}
 import java.nio.file.Path
 
 class TableSource(
@@ -99,16 +99,16 @@ class TableSource(
 
     // TODO: is this reliable for non-intellij idea runs?
     // TODO: check what we need to load - for tests we need only flink classes, connectors and formats
-    val classPathUrls = List(Path.of("components/flink-dev/flinkTable.jar").toUri.toURL)
+    val classPathUrls = List(
+      "components/flink-dev/flinkTableLocalEnvDeps.jar"
+    ).map(Path.of(_).toUri.toURL)
 
-    // TODO: build classloader with urls
-    val classLoader = URLClassLoader.newInstance(classPathUrls.toArray)
+    val classLoader = new URLClassLoader(classPathUrls.toArray, getClass.getClassLoader)
 
     val flinkLocalEnvConfiguration = {
       val conf = new Configuration()
       // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
       conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
-      conf.set(CoreOptions.CHECK_LEAKED_CLASSLOADER, java.lang.Boolean.FALSE)
 
       // without this, on the task level the classloader is basically empty
       conf.set(
@@ -116,15 +116,10 @@ class TableSource(
         classPathUrls.map(_.toString).asJava
       )
       conf.set(DeploymentOptions.TARGET, "local")
+      // TODO: experiment with attached
       conf.set(DeploymentOptions.ATTACHED, java.lang.Boolean.TRUE)
-
-//      TODO: is it necessary?
-//      if (enableFlinkBatchExecutionMode) {
-//        conf.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.BATCH)
-//      }
       conf
     }
-
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
@@ -146,8 +141,9 @@ class TableSource(
         TableDescriptor.forConnector("datagen").option("number-of-rows", size.toString).schema(schema).build()
       )
 
+      // TODO: wrong classloader gets used and java.lang.ClassNotFoundException: org.codehaus.janino.CompilerFactory is thrown
       val tableWithLimit = tableEnv.from(dataGenerationInternalTableName).limit(size)
-      val rowsList       = tableEnv.toDataStream(tableWithLimit).executeAndCollect().asScala.toList
+      val rowsList       = tableEnv.toDataStream(tableWithLimit).executeAndCollect(size).asScala.toList
 
       // TODO: check if closing like this is ok, some IllegalStateExceptions get logged
       env.close()
