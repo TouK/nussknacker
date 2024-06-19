@@ -6,14 +6,17 @@
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
 * [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
 * [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
-* [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) [#6172](https://github.com/TouK/nussknacker/pull/6172) Batch processing mode related improvements:
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) [#6172](https://github.com/TouK/nussknacker/pull/6172) [#6221](https://github.com/TouK/nussknacker/pull/6221) Batch processing mode related improvements:
     * Deployments API returns correct status of deployment instead of returning always the last deployment's status
     * Deployments API returns more information about status of a deployment: problem description and status modification time
     * Status of a deployment is cached on the Designer side - in case of retention of finished job on Flink, status is still returned as FINISHED
     * Overlapping deployment metrics/counts workaround: Ensure that only one deployment is performed for each scenario at a time
+    * Blocking of deployment of a fragment
+    * Blocking of deployment of an archived scenario
 * [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
 * [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
 * [#6185](https://github.com/TouK/nussknacker/pull/6185) Improvement: Make UniversalKafkaSinkFactory available at BoundedStream
+* [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
 
 1.15.3 (Not released yet)
 -------------------------

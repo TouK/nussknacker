@@ -233,6 +233,10 @@ object DeploymentApiEndpoints {
 
     final case class ScenarioNotFoundError(scenarioName: ProcessName) extends BadRequestRunDeploymentError
 
+    case object DeploymentOfFragmentError extends BadRequestRunDeploymentError
+
+    case object DeploymentOfArchivedScenarioError extends BadRequestRunDeploymentError
+
     final case class CommentValidationError(message: String) extends BadRequestRunDeploymentError
 
     final case class ScenarioGraphValidationError(errors: ValidationErrors) extends BadRequestRunDeploymentError
@@ -248,6 +252,8 @@ object DeploymentApiEndpoints {
     implicit val badRequestRunDeploymentErrorCodec: Codec[String, BadRequestRunDeploymentError, CodecFormat.TextPlain] =
       BaseEndpointDefinitions.toTextPlainCodecSerializationOnly[BadRequestRunDeploymentError] {
         case ScenarioNotFoundError(scenarioName)  => s"Scenario $scenarioName not found"
+        case DeploymentOfFragmentError            => s"Deployment of fragment is not allowed"
+        case DeploymentOfArchivedScenarioError    => s"Deployment of archived scenario is not allowed"
         case CommentValidationError(message)      => message
         case ScenarioGraphValidationError(errors) => toHumanReadableMessage(errors)
         case DeployValidationError(message)       => message
