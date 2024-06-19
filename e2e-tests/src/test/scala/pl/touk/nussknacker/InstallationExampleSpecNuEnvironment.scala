@@ -4,11 +4,13 @@ import better.files._
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 class InstallationExampleSpecNuEnvironment
     extends AnyFreeSpecLike
     with DockerBasedInstallationExampleNuEnvironment
-    with Matchers {
+    with Matchers
+    with VeryPatientScalaFutures {
 
   override def afterStart(): Unit = {
     super.afterStart()
