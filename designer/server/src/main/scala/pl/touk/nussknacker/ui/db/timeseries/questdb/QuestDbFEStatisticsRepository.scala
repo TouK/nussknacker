@@ -10,19 +10,19 @@ import io.questdb.cairo.security.AllowAllSecurityContext
 import io.questdb.cairo.sql.RecordCursorFactory
 import io.questdb.cairo.wal.WalWriter
 import io.questdb.griffin.{SqlExecutionContext, SqlExecutionContextImpl}
-import io.questdb.log.LogFactory
-import pl.touk.nussknacker.ui.db.timeseries.FEStatisticsRepository
-import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.RecordCursorFactoryExtension
+import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
+import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbExtensions.{
+  BuildCairoEngineExtension,
+  CairoEngineExtension,
+  RecordCursorFactoryExtension
+}
 import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepository.{
   createTableQuery,
   recreateCairoEngine,
   selectQuery,
   tableName
 }
-import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, NoOpFEStatisticsRepository}
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.StandardOpenOption
 import java.time.Clock
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
