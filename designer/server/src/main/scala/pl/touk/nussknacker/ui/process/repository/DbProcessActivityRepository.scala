@@ -34,8 +34,9 @@ trait ProcessActivityRepository {
 
 }
 
-final case class DbProcessActivityRepository(protected val dbRef: DbRef, commentRepository: CommentRepository)
-    extends ProcessActivityRepository
+final case class DbProcessActivityRepository(protected val dbRef: DbRef, commentRepository: CommentRepository)(
+    protected implicit val ec: ExecutionContext
+) extends ProcessActivityRepository
     with LazyLogging
     with BasicRepository
     with NuTables {

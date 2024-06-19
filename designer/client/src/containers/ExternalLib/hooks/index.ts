@@ -1,1 +1,0 @@
-export { useExternalLib } from "./useExternalLib";

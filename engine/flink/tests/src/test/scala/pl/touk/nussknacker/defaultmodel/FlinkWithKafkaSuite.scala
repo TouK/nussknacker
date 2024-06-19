@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.defaultmodel
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
@@ -55,7 +55,8 @@ abstract class FlinkWithKafkaSuite
     with BeforeAndAfterAll
     with BeforeAndAfter
     with WithConfig
-    with Matchers {
+    with Matchers
+    with WithKafkaComponentsConfig {
 
   private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 
@@ -109,7 +110,7 @@ abstract class FlinkWithKafkaSuite
 
   protected def avroAsJsonSerialization = false
 
-  private lazy val kafkaComponentsConfig = ConfigFactory
+  override def kafkaComponentsConfig: Config = ConfigFactory
     .empty()
     .withValue(
       KafkaConfigProperties.bootstrapServersProperty("config"),
@@ -289,4 +290,8 @@ class TestDefaultConfigCreator extends DefaultConfigCreator {
   override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
     Seq(LoggingListener)
 
+}
+
+trait WithKafkaComponentsConfig {
+  def kafkaComponentsConfig: Config
 }

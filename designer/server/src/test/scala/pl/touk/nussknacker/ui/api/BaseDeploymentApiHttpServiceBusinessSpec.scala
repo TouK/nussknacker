@@ -5,24 +5,23 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.apache.commons.io.FileUtils
 import org.hamcrest.Matchers.{anyOf, equalTo}
-import org.scalatest.Suite
+import org.scalatest.{LoneElement, Suite}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.concurrent.PatienceConfiguration.Interval
+import org.scalatest.concurrent.PatienceConfiguration.{Interval, Timeout}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
-import org.scalatest.{LoneElement, Suite}
 import org.testcontainers.containers.BindMode
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithFlinkContainersDeploymentManager
 }
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
 
 import java.io.File
 import java.nio.file.attribute.PosixFilePermissions
@@ -126,19 +125,21 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     super.afterAll()
   }
 
-  protected def waitForDeploymentStatusMatches(
+  protected def waitForDeploymentStatusNameMatches(
       requestedDeploymentId: DeploymentId,
-      expectedStatus: StateStatus
+      expectedStatusName: DeploymentStatusName
   ): Unit = {
-    // A little bit longer interval than default to avoid too many log entries of requests
-    eventually(Interval(Span(2, Seconds))) {
-      checkDeploymentStatusMatches(requestedDeploymentId, expectedStatus)
+
+    withClue(s"Deployment: $requestedDeploymentId") {
+      eventually(Timeout(Span(60, Seconds)), Interval(Span(3, Seconds))) {
+        checkDeploymentStatusNameMatches(requestedDeploymentId, expectedStatusName)
+      }
     }
   }
 
-  protected def checkDeploymentStatusMatches(
+  protected def checkDeploymentStatusNameMatches(
       requestedDeploymentId: DeploymentId,
-      expectedStatuses: StateStatus*
+      expectedStatusNames: DeploymentStatusName*
   ): Unit = {
     given()
       .when()
@@ -146,7 +147,7 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       .get(s"$nuDesignerHttpAddress/api/deployments/$requestedDeploymentId/status")
       .Then()
       .statusCode(200)
-      .body(anyOf(expectedStatuses.map(status => equalTo[String](status.name)): _*))
+      .body("name", anyOf(expectedStatusNames.map(statusName => equalTo[String](statusName.value)): _*))
   }
 
   protected def getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName(

@@ -58,9 +58,9 @@ Out of the box, Nussknacker provides following ExceptionHandler types:
 - VerboselyLogging - log error to Flink logs on `error` level, together with all variables (should be used mainly for debugging)
 - Kafka - send errors to Kafka topic, see [common config](../../integration/KafkaIntegration.md#exception-handling) for the details.
 
-### Configuring restart strategies 
+### Configuring restart strategies
 
-We rely on Flink restart strategies described [in documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/execution/task_failure_recovery/).
+We rely on Flink restart strategies described [in documentation](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/task_failure_recovery/).
 It's also possible to configure restart strategies per scenario, using additional properties.           
 
 ```
@@ -86,7 +86,7 @@ It's also possible to configure restart strategies per scenario, using additiona
 ### Flink Component provider configuration
 
 #### Configuring offset for Tumbling aggregate time windows
-`components.base.aggregateWindowsConfig.tumblingWindowsOffset` - use [ISO_8601 Duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) format to configure it. 
+`components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset` - use [ISO_8601 Duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) format to configure it. 
 This configuration is optional, by default offset is equal 0.
 This setting applies only to windows in tumbling aggregate. Might be useful when you need daily windows to be aligned to different than UTC timezone.
 See example in Flink [docs](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/windows/#tumbling-windows)

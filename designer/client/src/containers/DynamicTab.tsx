@@ -1,13 +1,12 @@
 import * as queryString from "query-string";
 import React, { memo, useMemo } from "react";
 import ErrorBoundary from "../components/common/ErrorBoundary";
-import { splitUrl } from "./ExternalLib";
-import { ModuleUrl } from "./ExternalLib/types";
+import { ModuleUrl, splitUrl } from "@touk/federated-component";
 import { NotFound } from "./errors/NotFound";
 import SystemUtils from "../common/SystemUtils";
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline";
 import { useNavigate, useParams } from "react-router-dom";
-import { RemoteComponent } from "./ExternalLib/RemoteComponent";
+import { RemoteComponent } from "../components/RemoteComponent";
 
 export type BaseTab = {
     tab: BaseTabData;
@@ -52,7 +51,12 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     const [urlValue, scope] = useMemo(() => splitUrl(url), [url]);
     return (
         <ErrorBoundary FallbackComponent={() => <NotFound />}>
-            <ScopedCssBaseline style={{ flex: 1, overflow: "hidden" }}>
+            <ScopedCssBaseline
+                style={{
+                    flex: 1,
+                    overflow: "hidden",
+                }}
+            >
                 <RemoteComponent url={urlValue} scope={scope} {...componentProps} />
             </ScopedCssBaseline>
         </ErrorBoundary>
@@ -70,7 +74,10 @@ export const IframeTab = ({ tab }: BaseTab) => {
     }
     return (
         <iframe
-            src={queryString.stringifyUrl({ url, query: { iframe: true, ...accessTokenParam } })}
+            src={queryString.stringifyUrl({
+                url,
+                query: { iframe: true, ...accessTokenParam },
+            })}
             width="100%"
             height="100%"
             frameBorder="0"
@@ -80,7 +87,9 @@ export const IframeTab = ({ tab }: BaseTab) => {
 
 function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
     const navigate = useNavigate();
-    const { "*": rest } = useParams<{ "*": string }>();
+    const { "*": rest } = useParams<{
+        "*": string;
+    }>();
     return useMemo(
         () => ({
             basepath: window.location.pathname.replace(rest, ""),

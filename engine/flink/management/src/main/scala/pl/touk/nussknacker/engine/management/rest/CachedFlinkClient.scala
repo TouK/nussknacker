@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.rest
 
-import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
+import com.github.benmanes.caffeine.cache.{AsyncCache, Cache, Caffeine}
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy.{CanBeCached, Fresh}
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
@@ -16,44 +16,58 @@ import scala.concurrent.duration.FiniteDuration
 class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDuration, jobsConfigCacheSize: Int)
     extends FlinkClient {
 
+  // In scala 2.12, Unit is not an AnyRef, so it is impossible to use it with buildAsync.
+  // TODO: switch to Unit after migration to >= 2.13 only scala version(s)
+  private val jobsOverviewCacheSingleKey = ""
+
   private val jobsOverviewCache: AsyncCache[String, List[JobOverview]] =
     Caffeine
       .newBuilder()
       .expireAfterWrite(java.time.Duration.ofMillis(jobsOverviewCacheTTL.toMillis))
       .buildAsync[String, List[JobOverview]]()
 
-  private val jobsConfigCache: AsyncCache[String, ExecutionConfig] =
+  private val jobsConfigCache: Cache[String, ExecutionConfig] =
     Caffeine
       .newBuilder()
       .maximumSize(jobsConfigCacheSize)
-      .buildAsync[String, ExecutionConfig]()
+      .build[String, ExecutionConfig]()
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] =
     delegate.deleteJarIfExists(jarFileName)
 
-  override def findJobsByName(
-      jobName: String
-  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[JobOverview]]] =
+  override def getJobsOverviews()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[JobOverview]]] =
     freshnessPolicy match {
       case Fresh =>
-        val resultFuture = delegate.findJobsByName(jobName)
-        jobsOverviewCache.put(jobName, resultFuture.map(_.value).toJava.toCompletableFuture)
+        val resultFuture = delegate.getJobsOverviews()
+        jobsOverviewCache.put(jobsOverviewCacheSingleKey, resultFuture.map(_.value).toJava.toCompletableFuture)
         resultFuture
       case CanBeCached =>
-        Option(jobsOverviewCache.getIfPresent(jobName))
+        Option(jobsOverviewCache.getIfPresent(jobsOverviewCacheSingleKey))
           .map(_.toScala.map(WithDataFreshnessStatus.cached))
           .getOrElse(
             jobsOverviewCache
-              .get(jobName, (_, _) => delegate.findJobsByName(jobName).map(_.value).toJava.toCompletableFuture)
+              .get(
+                jobsOverviewCacheSingleKey,
+                (_, _) => delegate.getJobsOverviews().map(_.value).toJava.toCompletableFuture
+              )
               .toScala
               .map(WithDataFreshnessStatus.fresh)
           )
     }
 
   override def getJobConfig(jobId: String): Future[ExecutionConfig] =
-    jobsConfigCache
-      .get(jobId, (_, _) => delegate.getJobConfig(jobId).toJava.toCompletableFuture)
-      .toScala
+    Option(jobsConfigCache.getIfPresent(jobId))
+      .map(Future.successful)
+      .getOrElse(
+        delegate.getJobConfig(jobId).map { jobConfig =>
+          if (jobConfig.`user-config`.contains(CachedFlinkClient.DeploymentIdUserConfigKey)) {
+            jobsConfigCache.put(jobId, jobConfig)
+          }
+          jobConfig
+        }
+      )
 
   override def cancel(deploymentId: ExternalDeploymentId): Future[Unit] =
     delegate.cancel(deploymentId)
@@ -82,5 +96,11 @@ class CachedFlinkClient(delegate: FlinkClient, jobsOverviewCacheTTL: FiniteDurat
   // TODO: Do we need cache here?
   override def getJobManagerConfig: Future[Configuration] =
     delegate.getJobManagerConfig
+
+}
+
+object CachedFlinkClient {
+
+  val DeploymentIdUserConfigKey = "deploymentId"
 
 }

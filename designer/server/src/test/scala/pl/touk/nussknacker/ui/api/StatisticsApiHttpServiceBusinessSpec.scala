@@ -7,10 +7,14 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import io.restassured.response.ValidatableResponse
 import org.hamcrest.Matchers.{equalTo, matchesRegex}
 import org.hamcrest.{BaseMatcher, Description, Matcher}
+import org.mockito.Mockito.when
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
 import org.scalatest.concurrent.Eventually
-import org.scalatest.concurrent.PatienceConfiguration.Interval
 import org.scalatest.freespec.AnyFreeSpecLike
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
+import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
@@ -24,10 +28,14 @@ import pl.touk.nussknacker.test.{
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails
 }
+import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticName
 import pl.touk.nussknacker.ui.statistics._
 
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant, ZoneOffset}
 import java.util.UUID
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 class StatisticsApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
@@ -38,10 +46,31 @@ class StatisticsApiHttpServiceBusinessSpec
     with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
-    with Eventually {
+    with Eventually
+    with MockitoSugar
+    with Matchers {
 
-  private val nuVersion   = BuildInfo.version
-  private val questDbPath = BetterFile.temp / "nu"
+  override implicit def patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = Span(5, Seconds), interval = Span(0.5, Seconds))
+
+  private val nuVersion                  = BuildInfo.version
+  private val questDbPath                = BetterFile.temp / "nu"
+  private val now                        = Instant.now()
+  private val yesterday                  = now.plus(-1L, ChronoUnit.DAYS)
+  private val twoDaysBefore              = yesterday.plus(-1L, ChronoUnit.DAYS)
+  private val yesterdayPartitionName     = DateTimeFormatter.ISO_LOCAL_DATE.format(yesterday.atZone(ZoneOffset.UTC))
+  private val twoDaysBeforePartitionName = DateTimeFormatter.ISO_LOCAL_DATE.format(twoDaysBefore.atZone(ZoneOffset.UTC))
+  private val statisticsNames            = StatisticName.values
+  private val statisticsNamesSize        = statisticsNames.size
+  private val statisticsByIndex          = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
+  private val quote                      = '"'
+  private val random                     = new Random()
+
+  private val mockedClock = mock[Clock](new Answer[Instant] {
+    override def answer(invocation: InvocationOnMock): Instant = Instant.now()
+  })
+
+  override def clock: Clock = mockedClock
 
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)
@@ -57,10 +86,10 @@ class StatisticsApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .bodyWithStatisticsURL(
-          ("c_n", new GreaterThanOrEqualToLongMatcher(62L)),
-          ("fingerprint", matchesRegex("[\\w-]+?")),
-          ("source", equalTo("sources")),
-          ("version", equalTo(nuVersion)),
+          (ComponentsCount.name, new GreaterThanOrEqualToLongMatcher(62L)),
+          (NuFingerprint.name, matchesRegex("[\\w-]+?")),
+          (NuSource.name, equalTo("sources")),
+          (NuVersion.name, equalTo(nuVersion)),
         )
     }
 
@@ -90,9 +119,9 @@ class StatisticsApiHttpServiceBusinessSpec
           (NodesMin.name, equalTo("2")),
           (NodesAverage.name, equalTo("2")),
           (ActiveScenarioCount.name, equalTo("0")),
-          (UnknownDMCount.name, equalTo("0")),
+          (UnknownDMCount.name, equalTo("1")),
           (LiteEmbeddedDMCount.name, equalTo("0")),
-          (FlinkDMCount.name, equalTo("1")),
+          (FlinkDMCount.name, equalTo("0")),
           (LiteK8sDMCount.name, equalTo("0")),
           (FragmentCount.name, equalTo("0")),
           (BoundedStreamCount.name, equalTo("0")),
@@ -114,59 +143,79 @@ class StatisticsApiHttpServiceBusinessSpec
 
   "The register statistics endpoint should" - {
     "save statistics asynchronously in DB and return NoContent" in {
+      val statistic1 = randomStatisticName()
+      val statistic2 = randomStatisticName()
       given()
         .when()
         .basicAuthReader()
-        .jsonBody("""
-              |{
-              | "statistics": [
-              |  {"name": "SEARCH_SCENARIOS_BY_NAME"},
-              |  {"name": "FILTER_SCENARIOS_BY_STATUS"},
-              |  {"name": "SEARCH_SCENARIOS_BY_NAME"}
-              | ]
-              |}""".stripMargin)
+        .jsonBody(
+          buildRegisterStatisticsRequest(
+            statistic1,
+            statistic2,
+            statistic2
+          )
+        )
         .post(s"$nuDesignerHttpAddress/api/statistic")
         .Then()
         .statusCode(204)
         .equalsPlainBody("")
         .verifyApplicationState {
           verifyStatisticsExists(
-            ("FILTER_SCENARIOS_BY_STATUS", new GreaterThanOrEqualToLongMatcher(1)),
-            ("SEARCH_SCENARIOS_BY_NAME", new GreaterThanOrEqualToLongMatcher(2))
+            (statistic1.entryName, new GreaterThanOrEqualToLongMatcher(1)),
+            (statistic2.entryName, new GreaterThanOrEqualToLongMatcher(2))
           )
         }
     }
 
-    "recover if DB files from disk are removed" ignore {
+    "recover if DB files from disk are removed" in {
+      val statisticName = randomStatisticName()
       given()
         .applicationState {
           removeQuestDBFiles()
         }
         .when()
         .basicAuthReader()
-        .jsonBody("""
-                    |{
-                    | "statistics": [
-                    |  {"name": "SEARCH_SCENARIOS_BY_NAME"},
-                    |  {"name": "FILTER_SCENARIOS_BY_STATUS"},
-                    |  {"name": "SEARCH_SCENARIOS_BY_NAME"}
-                    | ]
-                    |}""".stripMargin)
+        .jsonBody(buildRegisterStatisticsRequest(statisticName))
         .post(s"$nuDesignerHttpAddress/api/statistic")
         .Then()
         .statusCode(204)
         .equalsPlainBody("")
         .verifyApplicationState {
-          verifyStatisticsExists(
-            ("FILTER_SCENARIOS_BY_STATUS", new GreaterThanOrEqualToLongMatcher(1)),
-            ("SEARCH_SCENARIOS_BY_NAME", new GreaterThanOrEqualToLongMatcher(2))
-          )
+          verifyStatisticsExists((statisticName.entryName, new GreaterThanOrEqualToLongMatcher(1)))
+          questDbPath.exists shouldBe true
+        }
+    }
+
+    "remove old partitions with periodic job" in {
+      val statisticName = randomStatisticName()
+      given()
+        .applicationState {
+          when(mockedClock.instant()).thenReturn(yesterday, twoDaysBefore, now)
+          createStatistics(statisticName)
+          createStatistics(statisticName)
+          eventually {
+            isPartitionPresent(yesterdayPartitionName) shouldBe true
+            isPartitionPresent(twoDaysBeforePartitionName) shouldBe true
+          }
+        }
+        .when()
+        .basicAuthReader()
+        .jsonBody(buildRegisterStatisticsRequest(statisticName))
+        .post(s"$nuDesignerHttpAddress/api/statistic")
+        .Then()
+        .statusCode(204)
+        .equalsPlainBody("")
+        .verifyApplicationState {
+          eventually {
+            isPartitionPresent(yesterdayPartitionName) shouldBe false
+            isPartitionPresent(twoDaysBeforePartitionName) shouldBe false
+          }
         }
     }
   }
 
   private def verifyStatisticsExists[M <: Comparable[M]](queryParamPairs: (String, Matcher[M])*): Unit = {
-    eventually(Interval(Span(2, Seconds))) {
+    eventually {
       given()
         .basicAuthReader()
         .when()
@@ -177,8 +226,36 @@ class StatisticsApiHttpServiceBusinessSpec
     }
   }
 
+  private def randomStatisticName(): StatisticName =
+    statisticsByIndex.getOrElse(random.nextInt(statisticsNamesSize), StatisticName.ClickEditDelete)
+
+  private def buildRegisterStatisticsRequest(statisticsNames: StatisticName*): String =
+    s"""
+      |{
+      | "statistics": [
+      |  ${statisticsNames.map(name => s"{${quote}name${quote}: ${quote}${name.entryName}${quote}}").mkString(",\n")}
+      | ]
+      |}""".stripMargin
+
   private def removeQuestDBFiles(): Unit = {
-    questDbPath.delete(swallowIOExceptions = true)
+    questDbPath.delete()
+  }
+
+  private def createStatistics(statisticsNames: StatisticName*): Unit =
+    given()
+      .when()
+      .basicAuthReader()
+      .jsonBody(buildRegisterStatisticsRequest(statisticsNames: _*))
+      .post(s"$nuDesignerHttpAddress/api/statistic")
+
+  private def isPartitionPresent(partitionName: String) = {
+    Try {
+      questDbPath
+        .collectChildren(f => f.name.startsWith(partitionName) && f.isDirectory, maxDepth = 2)
+        .hasNext
+    }.recover { case _ =>
+      false
+    }.get
   }
 
   implicit class BodyWithStatisticsURL[T <: ValidatableResponse](validatableResponse: T) {

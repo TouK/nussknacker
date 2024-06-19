@@ -8,7 +8,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.entity.{CommentEntityData, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -29,9 +29,7 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
-  @JsonCodec final case class RemoteUserName(name: String) extends AnyVal {
-    def display: String = s"Remote[$name]"
-  }
+  @JsonCodec final case class RemoteUserName(name: String) extends AnyVal
 
   object RemoteUserName {
     val headerName = "Remote-User-Name".toLowerCase
@@ -109,7 +107,7 @@ class DBProcessRepository(
       action: CreateProcessAction
   )(implicit loggedUser: LoggedUser): DB[Option[ProcessCreated]] = {
     // TODO: we should use loggedUser.id
-    val userName = action.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
+    val userName = action.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L),
       name = action.processName,
@@ -152,7 +150,7 @@ class DBProcessRepository(
   def updateProcess(
       updateProcessAction: UpdateProcessAction
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
-    val userName = updateProcessAction.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
+    val userName = updateProcessAction.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
 
     def addNewCommentToVersion(scenarioId: ProcessId, scenarioGraphVersionId: VersionId) = {
       updateProcessAction.comment

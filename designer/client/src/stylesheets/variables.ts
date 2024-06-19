@@ -6,3 +6,5 @@ export const PANEL_BUTTON_SIZE = SIDEBAR_WIDTH / 4;
 export const PANEL_BUTTON_SMALL_SIZE = SIDEBAR_WIDTH / 6;
 
 export const MODAL_HEADER_HEIGHT = 30;
+
+export const ACTION_DIALOG_WIDTH = 652;

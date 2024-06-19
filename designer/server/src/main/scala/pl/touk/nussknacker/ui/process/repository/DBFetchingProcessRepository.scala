@@ -35,7 +35,8 @@ object DBFetchingProcessRepository {
 abstract class DBFetchingProcessRepository[F[_]: Monad](
     protected val dbRef: DbRef,
     actionRepository: ProcessActionRepository
-) extends FetchingProcessRepository[F]
+)(protected implicit val ec: ExecutionContext)
+    extends FetchingProcessRepository[F]
     with LazyLogging {
 
   import api._

@@ -42,6 +42,7 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolver
 import pl.touk.nussknacker.ui.validation.UIProcessValidator
 import sttp.client3.testing.SttpBackendStub
 
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -160,6 +161,13 @@ object TestFactory {
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDbRef)
 
+  def newScenarioGraphVersionService(dbRef: DbRef) = new ScenarioGraphVersionService(
+    newScenarioGraphVersionRepository(dbRef),
+    mapProcessingTypeDataProvider(Streaming.stringify -> processValidator),
+    scenarioResolverByProcessingType,
+    newDBIOActionRunner(dbRef)
+  )
+
   def newScenarioGraphVersionRepository(dbRef: DbRef) = new ScenarioGraphVersionRepository(dbRef)
 
   def newFragmentRepository(dbRef: DbRef): DefaultFragmentRepository =
@@ -177,9 +185,9 @@ object TestFactory {
 
   def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef, newCommentRepository(dbRef))
 
-  def newDeploymentRepository(dbRef: DbRef) = new DeploymentRepository(dbRef)
+  def newScenarioMetadataRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
 
-  def newScenarioRepository(dbRef: DbRef) = new ScenarioMetadataRepository(dbRef)
+  def newDeploymentRepository(dbRef: DbRef, clock: Clock) = new DeploymentRepository(dbRef, clock)
 
   def asAdmin(route: RouteWithUser): Route =
     route.securedRouteWithErrorHandling(adminUser())

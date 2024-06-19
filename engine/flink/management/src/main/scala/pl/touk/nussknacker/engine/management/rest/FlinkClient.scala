@@ -17,7 +17,7 @@ trait FlinkClient {
 
   def deleteJarIfExists(jarFileName: String): Future[Unit]
 
-  def findJobsByName(jobName: String)(
+  def getJobsOverviews()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[JobOverview]]]
 
