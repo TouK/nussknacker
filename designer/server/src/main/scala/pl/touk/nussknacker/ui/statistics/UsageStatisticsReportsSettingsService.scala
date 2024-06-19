@@ -36,6 +36,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
+      // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
       processingTypeDataProvider: ProcessingTypeDataProvider[ModelData, _]
@@ -80,6 +81,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
     }
 
+    // TODO: We shouldn't depend on DTOs, need to extract usageCount and check if all available components are present using processingTypeDataProvider
     def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
       implicit val user: LoggedUser = NussknackerInternalUser.instance
       componentService.getComponentsList
