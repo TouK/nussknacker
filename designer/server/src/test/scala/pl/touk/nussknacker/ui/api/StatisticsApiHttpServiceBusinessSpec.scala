@@ -18,6 +18,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
@@ -32,6 +34,7 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails
 }
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticName
+import pl.touk.nussknacker.ui.statistics.ComponentKeys.Filter
 import pl.touk.nussknacker.ui.statistics._
 
 import java.time.format.DateTimeFormatter
@@ -83,6 +86,7 @@ class StatisticsApiHttpServiceBusinessSpec
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)
     .source("sourceId", "barSource")
+    .filter("filterId", Expression(Language.Spel, ""))
     .emptySink("sinkId", "barSink")
 
   "The statistic URL endpoint should" - {
@@ -101,7 +105,7 @@ class StatisticsApiHttpServiceBusinessSpec
         )
     }
 
-    "return single URL without with scenarios details" in {
+    "return single URL with scenarios details" in {
       given()
         .applicationState {
           createSavedScenario(exampleScenario, category = Category1)
@@ -122,10 +126,10 @@ class StatisticsApiHttpServiceBusinessSpec
           (FragmentsUsedMedian.name, equalTo("0")),
           (FragmentsUsedAverage.name, equalTo("0")),
           (NuFingerprint.name, matchesRegex("[\\w-]+?")),
-          (NodesMedian.name, equalTo("2")),
-          (NodesMax.name, equalTo("2")),
-          (NodesMin.name, equalTo("2")),
-          (NodesAverage.name, equalTo("2")),
+          (NodesMedian.name, equalTo("3")),
+          (NodesMax.name, equalTo("3")),
+          (NodesMin.name, equalTo("3")),
+          (NodesAverage.name, equalTo("3")),
           (ActiveScenarioCount.name, equalTo("0")),
           (UnknownDMCount.name, equalTo("1")),
           (LiteEmbeddedDMCount.name, equalTo("0")),
@@ -145,6 +149,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsMin.name, equalTo("1")),
           (VersionsAverage.name, equalTo("1")),
           (NuVersion.name, equalTo(nuVersion)),
+          (Filter.toString, equalTo("1"))
         )
     }
   }
