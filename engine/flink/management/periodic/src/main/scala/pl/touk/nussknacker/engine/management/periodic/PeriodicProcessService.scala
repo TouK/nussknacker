@@ -207,7 +207,7 @@ class PeriodicProcessService(
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
-      _ = logger.info(s"Process '$processName' runtime statuses: ${runtimeStatuses.map(_.toString)}")
+      _ = logger.debug(s"Process '$processName' runtime statuses: ${runtimeStatuses.map(_.toString)}")
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
       })
