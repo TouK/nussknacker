@@ -7,20 +7,20 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import pl.touk.nussknacker.test.ContainerExt._
-import pl.touk.nussknacker.DockerBasedInstallationExampleNuEnvironment.JSON
+import pl.touk.nussknacker.DockerBasedInstallationExampleNuEnvironment.{JSON, singletonContainer}
 import ujson.Value
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.{File => JFile}
 
+// Before running tests in this module, a fresh docker image should be built from sources and placed in the local
+// registry. If you run tests based on this trait in Intellij Idea and the images is not built, you can do it manually:
+// `bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt dist/Docker/publishLocal"`
 trait DockerBasedInstallationExampleNuEnvironment
-    extends ForAllTestContainer
-    with BeforeAndAfterAll
+    extends BeforeAndAfterAll
     with BeforeAndAfterEach
     with LazyLogging {
   this: Suite =>
-
-  override val container: DockerComposeContainer = DockerBasedInstallationExampleNuEnvironment.singletonContainer
 
   private lazy val specSetupService = unsafeContainerByServiceName("spec-setup")
 
@@ -54,7 +54,7 @@ trait DockerBasedInstallationExampleNuEnvironment
     specSetupService.executeBash(s"""/app/scripts/utils/kafka/purge-topic.sh "$topic" """)
   }
 
-  private def unsafeContainerByServiceName(name: String) = container
+  private def unsafeContainerByServiceName(name: String) = singletonContainer
     .getContainerByServiceName(name)
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
@@ -64,7 +64,7 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
 
   type JSON = Value
 
-  val singletonContainer = new DockerComposeContainer(
+  val singletonContainer: DockerComposeContainer = new DockerComposeContainer(
     composeFiles = Seq(
       new JFile("examples/installation/docker-compose.yml"),
       new JFile(Resource.getUrl("spec-setup/spec-setup.override.yml").toURI),
@@ -79,6 +79,16 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
     waitingFor = Some(
       WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
     )
-  )
+  ) {
+    override def start(): Unit = {
+      println("STARTING DC")
+      super.start()
+    }
+    override def stop(): Unit = {
+      println("STOPPING DC")
+      super.stop()
+    }
+  }
+  singletonContainer.start()
 
 }

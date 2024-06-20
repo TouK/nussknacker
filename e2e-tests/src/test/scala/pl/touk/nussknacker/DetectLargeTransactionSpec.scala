@@ -4,23 +4,13 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class InstallationExampleSpec
+class DetectLargeTransactionSpec
     extends AnyFreeSpecLike
     with DockerBasedInstallationExampleNuEnvironment
     with Matchers
     with VeryPatientScalaFutures {
 
-//  override def afterStart(): Unit = {
-//    super.afterStart()
-//    val scenarioName = "InstallationExampleDetectLargeTransactions"
-//    loadFlinkStreamingScenarioFromResource(
-//      scenarioName = scenarioName,
-//      scenarioJsonFile = File(getClass.getResource(s"/scenarios/$scenarioName.json"))
-//    )
-//    deployAndWaitForRunningState(scenarioName)
-//  }
-
-  "Make sure that the installation example is functional" in {
+  "Large transactions should be properly detected" in {
     val smallAmountTransactions = List(
       transactionJson(amount = 1),
       transactionJson(amount = 2),
@@ -33,18 +23,18 @@ class InstallationExampleSpec
     )
 
     (smallAmountTransactions ::: largeAmountTransactions).foreach { transaction =>
-      sendMessageToKafka("transactions", transaction)
+      sendMessageToKafka("Transactions", transaction)
     }
 
     eventually {
-      val processedTransactions = readAllMessagesFromKafka("processedEvents")
+      val processedTransactions = readAllMessagesFromKafka("ProcessedTransactions")
       processedTransactions should equal(largeAmountTransactions)
     }
   }
 
   override protected def afterEach(): Unit = {
-    purgeKafkaTopic("transactions")
-    purgeKafkaTopic("processedEvents")
+    purgeKafkaTopic("Transactions")
+    purgeKafkaTopic("ProcessedTransactions")
     super.afterEach()
   }
 
