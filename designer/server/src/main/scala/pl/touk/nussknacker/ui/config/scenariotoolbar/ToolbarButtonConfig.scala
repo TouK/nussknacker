@@ -10,10 +10,10 @@ final case class ToolbarButtonConfig(
     title: Option[String],
     icon: Option[String],
     url: Option[String],
-    markdownContent: Option[String],
-    docs: Option[DocsButtonConfig],
     hidden: Option[ToolbarCondition],
-    disabled: Option[ToolbarCondition]
+    disabled: Option[ToolbarCondition],
+    markdownContent: Option[String] = None,
+    docs: Option[DocsButtonConfig] = None
 ) {
 
   if (ToolbarButtonConfigType.requiresNameParam(`type`)) {

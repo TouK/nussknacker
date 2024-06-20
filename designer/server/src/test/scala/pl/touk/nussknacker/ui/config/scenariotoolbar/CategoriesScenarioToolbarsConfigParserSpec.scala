@@ -73,14 +73,10 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
                 Some("/assets/buttons/save.svg"),
                 None,
                 None,
-                None,
-                None,
                 Some(ToolbarCondition(None, Some(true), None))
               ),
               ToolbarButtonConfig(
                 ToolbarButtonConfigType.ProcessDeploy,
-                None,
-                None,
                 None,
                 None,
                 None,
@@ -94,8 +90,6 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
                 Some("Metrics for process $processName"),
                 Some("/assets/buttons/metrics.svg"),
                 Some("/metrics/$processName"),
-                None,
-                None,
                 None,
                 None
               )
@@ -119,7 +113,7 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
           Some(Small),
           Some(
             List(
-              ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None, None, None, None)
+              ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None, None)
             )
           ),
           None
