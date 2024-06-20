@@ -14,8 +14,6 @@ describe("Compare", () => {
     });
 
     it("should fill window", () => {
-        cy.viewport(1440, 1200);
-
         cy.contains(/^compare$/i)
             .should("be.visible")
             .should("be.enabled")
