@@ -29,7 +29,7 @@ function createEmptyScenario() {
   local CATEGORY=$3
   local ENGINE=$4
 
-  local BODY="{
+  local REQUEST_BODY="{
     \"name\": \"$SCENARIO_NAME\",
     \"processingMode\": \"$PROCESSING_MODE\",
     \"category\": \"$CATEGORY\",
@@ -37,16 +37,19 @@ function createEmptyScenario() {
     \"isFragment\": false
   }"
 
-  local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
+  local RESPONSE
+  RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X POST "http://nginx:8080/api/processes" \
-    -H "Content-Type: application/json" -d "$BODY"
+    -H "Content-Type: application/json" -d "$REQUEST_BODY"
   )
 
-  local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+  local HTTP_STATUS
+  HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
 
   if [ "$HTTP_STATUS" != "201" ]; then
-    local BODY=$(echo "$RESPONSE" | sed \$d)
-    echo -e "Error: Cannot create empty scenario $SCENARIO_NAME.\nHTTP status: $HTTP_STATUS, response body: $BODY"
+    local RESPONSE_BODY
+    RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
+    echo -e "Error: Cannot create empty scenario $SCENARIO_NAME.\nHTTP status: $HTTP_STATUS, response body: $RESPONSE_BODY"
     exit 12
   fi
 
@@ -64,21 +67,25 @@ function importScenarioFromFile() {
   local SCENARIO_NAME=$1
   local SCENARIO_FILE=$2
 
-  local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
+  local RESPONSE
+  RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X POST "http://nginx:8080/api/processes/import/$SCENARIO_NAME" \
     -F "process=@$SCENARIO_FILE"
   )
 
   # Check response body and status code
-  local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+  local HTTP_STATUS
+  HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+
+  local RESPONSE_BODY
+  RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
 
   if [ "$HTTP_STATUS" == "200" ]; then
-    local BODY=$(echo "$RESPONSE" | sed \$d)
-    local SCENARIO_GRAPH=$(echo "$BODY" | jq '.scenarioGraph')
+    local SCENARIO_GRAPH
+    SCENARIO_GRAPH=$(echo "$RESPONSE_BODY" | jq '.scenarioGraph')
     echo "$SCENARIO_GRAPH"
   else
-    local BODY=$(echo "$RESPONSE" | sed \$d)
-    echo -e "Error: Cannot import scenario $SCENARIO_NAME.\nHTTP status: $HTTP_STATUS, response body: $BODY"
+    echo -e "Error: Cannot import scenario $SCENARIO_NAME.\nHTTP status: $HTTP_STATUS, response body: $RESPONSE_BODY"
     exit 22
   fi
 }
@@ -94,21 +101,24 @@ function saveScenario() {
   local SCENARIO_NAME=$1
   local SCENARIO_GRAPH_JSON=$2
 
-  local BODY="{
+  local REQUEST_BODY="{
     \"scenarioGraph\": $SCENARIO_GRAPH_JSON,
     \"comment\": \"\"
   }"
 
-  local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
+  local RESPONSE
+  RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X PUT "http://nginx:8080/api/processes/$SCENARIO_NAME" \
-    -H "Content-Type: application/json" -d "$BODY"
+    -H "Content-Type: application/json" -d "$REQUEST_BODY"
   )
 
-  local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+  local HTTP_STATUS
+  HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
 
   if [ "$HTTP_STATUS" != "200" ]; then
-    local BODY=$(echo "$RESPONSE" | sed \$d)
-    echo -e "Error: Cannot save scenario $SCENARIO_NAME.\nHTTP status: $HTTP_STATUS, response body: $BODY"
+    local RESPONSE_BODY
+    RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
+    echo -e "Error: Cannot save scenario $SCENARIO_NAME.\nHTTP status: $HTTP_STATUS, response body: $RESPONSE_BODY"
     exit 32
   fi
 

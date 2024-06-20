@@ -22,22 +22,25 @@ function deployScenario() {
   local SCENARIO_NAME=$1
   local DEPLOYMENT_ID=$2
 
-  local BODY="{
+  local REQUEST_BODY="{
     \"scenarioName\": \"$SCENARIO_NAME\",
     \"nodesDeploymentData\": {},
     \"comment\": \"\"
   }"
 
-  local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
+  local RESPONSE
+  RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X PUT "http://nginx:8080/api/deployments/$DEPLOYMENT_ID" \
-    -H "Content-Type: application/json" -d "$BODY"
+    -H "Content-Type: application/json" -d "$REQUEST_BODY"
   )
 
-  local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+  local HTTP_STATUS
+  HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
 
   if [ "$HTTP_STATUS" != "202" ]; then
-    local BODY=$(echo "$RESPONSE" | sed \$d)
-    echo -e "Error: Cannot run scenario $SCENARIO_NAME deployment.\nHTTP status: $HTTP_STATUS, response body: $BODY"
+    local RESPONSE_BODY
+    RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
+    echo -e "Error: Cannot run scenario $SCENARIO_NAME deployment.\nHTTP status: $HTTP_STATUS, response body: $RESPONSE_BODY"
     exit 12
   fi
 

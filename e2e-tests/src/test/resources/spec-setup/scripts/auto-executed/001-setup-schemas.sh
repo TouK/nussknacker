@@ -16,23 +16,25 @@ function createJsonSchema() {
   echo "Creating schema '$SCHEMA_NAME' ..."
   ESCAPED_JSON_SCHEMA=$(awk 'BEGIN{ORS="\\n"} {gsub(/"/, "\\\"")} 1' < "$SCHEMA_FILE")
 
-
-  local BODY="{
+  local REQUEST_BODY="{
     \"schema\": \"$ESCAPED_JSON_SCHEMA\",
     \"schemaType\": \"JSON\",
     \"references\": []
   }"
 
-  local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
+  local RESPONSE
+  RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X POST "http://schema-registry:8081/subjects/${SCHEMA_NAME}/versions" \
-    -H "Content-Type: application/vnd.schemaregistry.v1+json" -d "$BODY"
+    -H "Content-Type: application/vnd.schemaregistry.v1+json" -d "$REQUEST_BODY"
   )
 
-  local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+  local HTTP_STATUS
+  HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
 
   if [[ "$HTTP_STATUS" != 200 ]] ; then
-    local BODY=$(echo "$RESPONSE" | sed \$d)
-    echo -e "Error: Cannot create schema $SCHEMA_NAME.\nHTTP status: $HTTP_STATUS, response body: $BODY"
+    local RESPONSE_BODY
+    RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
+    echo -e "Error: Cannot create schema $SCHEMA_NAME.\nHTTP status: $HTTP_STATUS, response body: $RESPONSE_BODY"
     exit 12
   fi
 
