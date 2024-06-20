@@ -1,6 +1,6 @@
 import { css, cx } from "@emotion/css";
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
-import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
+import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import Handlebars from "./handlebars.svg";
 import { styled, useTheme } from "@mui/material";
 

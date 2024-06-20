@@ -3,7 +3,10 @@
     "exclude": ["node_modules", ".federated-types"],
     "compilerOptions": {
         "module": "esnext",
-        "moduleResolution": "Node"
+        "moduleResolution": "Node",
+        "paths": {
+            "react": ["./node_modules/@types/react"]
+        }
     },
     "ts-node": {
         "compilerOptions": {
