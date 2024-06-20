@@ -33,7 +33,7 @@ import scala.util.{Failure, Success, Try}
 
 // TODO list:
 // 4. Limiting db file space on disk?
-// 6. API should have better types (missing domain layer for FE statistics names).
+// 6. API should have better types (missing domain layer for FE statistics names and domain objects for statistics).
 // 7. Changing table definition and recreate
 private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[CairoEngine], private val clock: Clock)(
     private implicit val ec: ExecutionContextExecutorService
@@ -158,7 +158,7 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
     for {
       questDbConfig <- Resource.eval(IO(QuestDbConfig.apply(config)))
       repository <- questDbConfig match {
-        case enabledCfg @ QuestDbConfig.Enabled(_, _, _, _, _) =>
+        case enabledCfg: QuestDbConfig.Enabled =>
           createRepositoryResource(system, clock, enabledCfg)
             .handleErrorWith { t: Throwable =>
               logger.warn("Creating QuestDb failed", t)

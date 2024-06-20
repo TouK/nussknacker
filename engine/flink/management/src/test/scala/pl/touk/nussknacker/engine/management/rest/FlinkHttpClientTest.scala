@@ -8,6 +8,7 @@ import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.engine.sttp.HttpClientError
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.testing.SttpBackendStub
@@ -134,7 +135,7 @@ class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures wi
     }
 
     checkIfWrapped(flinkClient.cancel(deploymentId))
-    checkIfWrapped(flinkClient.runProgram(jarFile, "any", Nil, None))
+    checkIfWrapped(flinkClient.runProgram(jarFile, "any", Nil, None, Some(DeploymentId.generate.toString)))
   }
 
 }
