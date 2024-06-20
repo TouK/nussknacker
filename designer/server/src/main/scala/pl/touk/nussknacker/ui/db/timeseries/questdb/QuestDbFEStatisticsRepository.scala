@@ -33,7 +33,7 @@ import scala.util.{Failure, Success, Try}
 
 // TODO list:
 // 4. Limiting db file space on disk?
-// 6. API should have better types (missing domain layer for FE statistics names).
+// 6. API should have better types (missing domain layer for FE statistics names and domain objects for statistics).
 // 7. Changing table definition and recreate
 private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[CairoEngine], private val clock: Clock)(
     private implicit val ec: ExecutionContextExecutorService
