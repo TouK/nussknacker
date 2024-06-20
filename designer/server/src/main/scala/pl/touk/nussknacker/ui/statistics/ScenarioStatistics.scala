@@ -213,7 +213,7 @@ object ScenarioStatistics {
     else orderedList.last
   }
 
-  def mapNameToStat(name: String): String = {
+  private def mapNameToStat(name: String): String = {
     val response = name.replaceAll("[aeiouAEIOU-]", "").toLowerCase
     "c_" + response
   }
