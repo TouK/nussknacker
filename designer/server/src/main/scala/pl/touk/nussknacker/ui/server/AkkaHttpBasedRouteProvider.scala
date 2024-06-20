@@ -45,6 +45,7 @@ import pl.touk.nussknacker.ui.definition.{
 }
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
@@ -484,7 +485,15 @@ class AkkaHttpBasedRouteProvider(
         processActivityRepository,
         componentService,
         feStatisticsRepository,
-        processingTypeDataProvider.mapValues(_.designerModelData.modelData),
+        processingTypeDataProvider
+          .mapValues { processingTypeData =>
+            prepareAlignedComponentsDefinitionProvider(processingTypeData)
+              .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment = false, List.empty)
+          }
+          .all
+          .values
+          .flatten
+          .toList,
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(

@@ -119,6 +119,7 @@ object ScenarioStatistics {
     }
   }
 
+  // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
   def getComponentStatistic(
       componentList: List[component.ComponentListElement],
       components: List[ComponentDefinitionWithImplementation]

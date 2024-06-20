@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
@@ -39,7 +38,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
-      processingTypeDataProvider: ProcessingTypeDataProvider[ModelData, _]
+      componentList: List[ComponentDefinitionWithImplementation]
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
@@ -81,9 +80,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
     }
 
-    // TODO: We shouldn't depend on DTOs, need to extract usageCount and check if all available components are present using processingTypeDataProvider
     def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
-      implicit val user: LoggedUser = NussknackerInternalUser.instance
       componentService.getComponentsList
         .map(Right(_))
     }
@@ -96,7 +93,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchActivity,
       fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
-      processingTypeDataProvider.all.values.flatMap(modelData => modelData.modelDefinition.components).toList
+      componentList
     )
 
   }
