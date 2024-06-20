@@ -344,7 +344,7 @@ class ScenarioStatisticsTest
   }
 
   test("check if all known components are present in ComponentKeys") {
-    val enumValues = ComponentKeys.valuesToEntriesMap.map { case (a, b) => (a, b.toString) }
+    val enumValues = ComponentKeys.valuesToEntriesMap.map { case (value, componentKey) => (value, componentKey.name) }
     val names = Map(
       "c_ggrgt"                  -> "Aggregate",
       "c_ggrgttmblng"            -> "AggregateTumbling",
