@@ -5,7 +5,8 @@ import pl.touk.nussknacker.engine.api.deployment.{
   DeploymentStatus,
   DeploymentSynchronisationSupport,
   DeploymentSynchronisationSupported,
-  NoDeploymentSynchronisationSupport
+  NoDeploymentSynchronisationSupport,
+  ProblemDeploymentStatus
 }
 import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.util.logging.LazyLoggingWithTraces
@@ -25,6 +26,8 @@ class DeploymentsStatusesSynchronizer(
     extends LazyLoggingWithTraces {
 
   def synchronizeAll(): Future[Unit] = {
+    val finalStatusesNames =
+      Set(DeploymentStatus.Canceled.name, DeploymentStatus.Finished.name, ProblemDeploymentStatus.name)
     synchronizationSupport
       .all(NussknackerInternalUser.instance)
       .toList
@@ -33,14 +36,18 @@ class DeploymentsStatusesSynchronizer(
           case synchronisationSupported: DeploymentSynchronisationSupported =>
             logger.trace(s"Running synchronization of deployments statuses for processing type: $processingType")
             for {
-              statusesByDeploymentId <- synchronisationSupported.getDeploymentStatusesToUpdate.recover {
-                case NonFatal(ex) =>
+              deploymentIdsToCheck <- dbioActionRunner.run(
+                repository.getProcessingTypeDeploymentsIdsInNotMatchingStatus(processingType, finalStatusesNames)
+              )
+              statusesByDeploymentId <- synchronisationSupported
+                .getDeploymentStatusesToUpdate(deploymentIdsToCheck)
+                .recover { case NonFatal(ex) =>
                   logger.debugWithTraceStack(
                     s"Error during fetching of deployment statuses for processing type [$processingType]: ${ex.getMessage}. Synchronisation will be skipped",
                     ex
                   )
                   Map.empty[newdeployment.DeploymentId, DeploymentStatus]
-              }
+                }
               updateResult <- dbioActionRunner.run(repository.updateDeploymentStatuses(statusesByDeploymentId))
               _ = {
                 Option(updateResult).filterNot(_.isEmpty) match {

@@ -221,7 +221,8 @@ class MockDeploymentManager(
       processName: ProcessName,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      deploymentId: Option[newdeployment.DeploymentId]
   ): Future[Option[ExternalDeploymentId]] = ???
 
   override def customActionsDefinitions: List[CustomActionDefinition] = {

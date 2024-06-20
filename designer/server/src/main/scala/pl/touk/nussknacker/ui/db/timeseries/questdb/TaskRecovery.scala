@@ -38,7 +38,10 @@ private[questdb] class TaskRecovery(
 
   private def recoverWithRetry[T](dbAction: () => T): Try[T] = {
     recoverFromCriticalError().flatMap { _ =>
-      Try(dbAction())
+      Try(dbAction()).recoverWith { case ex =>
+        logger.warn("DB exception", ex)
+        Failure(ex)
+      }
     }
   }
 

@@ -226,7 +226,9 @@ class EmbeddedDeploymentManager(
   override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
     new DeploymentSynchronisationSupported {
 
-      override def getDeploymentStatusesToUpdate: Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+      override def getDeploymentStatusesToUpdate(
+          deploymentIdsToCheck: Set[newdeployment.DeploymentId]
+      ): Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
         Future.successful(
           (
             for {

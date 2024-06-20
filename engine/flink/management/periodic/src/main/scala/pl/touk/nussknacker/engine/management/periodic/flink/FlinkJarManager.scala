@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic.flink
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.BaseModelData
+import org.apache.flink.api.common.JobID
+import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
@@ -87,7 +88,13 @@ private[periodic] class FlinkJarManager(
       deploymentData,
       deploymentWithJarData.process
     )
-    flinkClient.runProgram(jarFile, FlinkStreamingRestManager.MainClassName, args, None)
+    flinkClient.runProgram(
+      jarFile,
+      FlinkStreamingRestManager.MainClassName,
+      args,
+      None,
+      deploymentData.deploymentId.toNewDeploymentIdOpt.map(toJobId)
+    )
   }
 
   override def deleteJar(jarFileName: String): Future[Unit] = {
@@ -102,6 +109,10 @@ private[periodic] class FlinkJarManager(
     val jarPath = jarsDir.resolve(jarFileName)
     val deleted = Files.deleteIfExists(jarPath)
     logger.info(s"Deleted: ($deleted) jar in: $jarPath")
+  }
+
+  private def toJobId(did: newdeployment.DeploymentId) = {
+    new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits).toHexString
   }
 
 }
