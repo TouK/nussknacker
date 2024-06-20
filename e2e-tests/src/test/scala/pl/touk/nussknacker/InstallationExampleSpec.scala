@@ -1,26 +1,24 @@
 package pl.touk.nussknacker
 
-import better.files._
-import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
-class InstallationExampleSpecNuEnvironment
+class InstallationExampleSpec
     extends AnyFreeSpecLike
     with DockerBasedInstallationExampleNuEnvironment
     with Matchers
     with VeryPatientScalaFutures {
 
-  override def afterStart(): Unit = {
-    super.afterStart()
-    val scenarioName = "InstallationExampleDetectLargeTransactions"
-    loadFlinkStreamingScenarioFromResource(
-      scenarioName = scenarioName,
-      scenarioJsonFile = File(getClass.getResource(s"/scenarios/$scenarioName.json"))
-    )
-    deployAndWaitForRunningState(scenarioName)
-  }
+//  override def afterStart(): Unit = {
+//    super.afterStart()
+//    val scenarioName = "InstallationExampleDetectLargeTransactions"
+//    loadFlinkStreamingScenarioFromResource(
+//      scenarioName = scenarioName,
+//      scenarioJsonFile = File(getClass.getResource(s"/scenarios/$scenarioName.json"))
+//    )
+//    deployAndWaitForRunningState(scenarioName)
+//  }
 
   "Make sure that the installation example is functional" in {
     val smallAmountTransactions = List(

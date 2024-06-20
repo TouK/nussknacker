@@ -20,7 +20,7 @@
             "name": "Topic",
             "expression": {
               "language": "spel",
-              "expression": "'transactions'"
+              "expression": "'Transactions'"
             }
           },
           {
@@ -68,7 +68,7 @@
             "name": "Topic",
             "expression": {
               "language": "spel",
-              "expression": "'processedEvents'"
+              "expression": "'ProcessedTransactions'"
             }
           },
           {

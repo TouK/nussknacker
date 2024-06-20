@@ -57,19 +57,23 @@ function checkDeploymentStatus() {
 
   local DEPLOYMENT_ID=$1
 
-  local RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
+  local RESPONSE
+  RESPONSE=$(curl -s -L -w "\n%{http_code}" -u admin:admin \
     -X GET "http://nginx:8080/api/deployments/$DEPLOYMENT_ID/status"
   )
 
-  local HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
-  local BODY=$(echo "$RESPONSE" | sed \$d)
+  local HTTP_STATUS
+  HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+  local RESPONSE_BODY
+  RESPONSE_BODY=$(echo "$RESPONSE" | sed \$d)
 
   if [ "$HTTP_STATUS" != "200" ]; then
-    echo -e "Error: Cannot check deployment $DEPLOYMENT_ID status.\nHTTP status: $HTTP_STATUS, response body: $BODY"
+    echo -e "Error: Cannot check deployment $DEPLOYMENT_ID status.\nHTTP status: $HTTP_STATUS, response body: $RESPONSE_BODY"
     exit 22
   fi
 
-  local SCENARIO_STATUS=$(echo "$BODY" | jq -r '.name')
+  local SCENARIO_STATUS
+  SCENARIO_STATUS=$(echo "$RESPONSE_BODY" | jq -r '.name')
   echo "$SCENARIO_STATUS"
 }
 

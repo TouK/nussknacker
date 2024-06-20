@@ -1,4 +1,4 @@
-package pl.touk.nussknacker
+package pl.touk.nussknacker.test
 
 import com.typesafe.scalalogging.LazyLogging
 import org.testcontainers.containers.ContainerState

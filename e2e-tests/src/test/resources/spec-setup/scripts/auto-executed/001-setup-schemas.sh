@@ -43,12 +43,16 @@ function createJsonSchema() {
 
 echo "Starting to add preconfigured schemas ..."
 
-for FILE in "../../data/schema-registry"/*; do
-  if [ -f "$FILE" ]; then
-    FILENAME=$(basename "$FILE")
-    SCHEMA_NAME="$FILENAME-value"
-    createJsonSchema "$SCHEMA_NAME" "$FILE"
+while IFS= read -r NAME; do
+
+  if [[ $NAME == "#"* ]]; then
+    continue
   fi
-done
+
+  SCHEMA_NAME="$NAME-value"
+  createJsonSchema "$SCHEMA_NAME" "$(realpath ../../data/schema-registry/schemas/"$NAME")"
+
+done < "../../data/schema-registry/active-schemas"
+
 
 echo "DONE!"
