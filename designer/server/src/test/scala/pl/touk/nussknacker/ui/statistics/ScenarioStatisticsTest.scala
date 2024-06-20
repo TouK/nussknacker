@@ -228,6 +228,7 @@ class ScenarioStatisticsTest
   test("should determine statistics for components") {
     val params = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
