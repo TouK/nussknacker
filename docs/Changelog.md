@@ -3,6 +3,7 @@
 1.15.3 (Not released yet)
 -------------------------
 * [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
+* [#6230](https://github.com/TouK/nussknacker/pull/6230) Avoid potential race condition by preventing the marking of freshly deployed jobs as finished when synchronizing deployment states
 
 1.15.2 (7 June 2024)
 -------------------------
