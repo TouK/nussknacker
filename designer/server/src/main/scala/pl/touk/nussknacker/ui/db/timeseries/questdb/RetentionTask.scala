@@ -13,9 +13,14 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.RetentionTask.{
 
 import java.time.Clock
 import java.time.temporal.ChronoUnit
+import scala.util.Try
 
-private[questdb] class RetentionTask(private val engine: CairoEngine, private val tableName: String)
-    extends LazyLogging {
+private[questdb] class RetentionTask(
+    private val engine: CairoEngine,
+    private val tableName: String,
+    private val sqlContextPool: ThreadAwareObjectPool[SqlExecutionContext],
+    private val clock: Clock
+) extends LazyLogging {
 
   private val walPurgeJob = {
     val job = new WalPurgeJob(engine)
@@ -25,10 +30,10 @@ private[questdb] class RetentionTask(private val engine: CairoEngine, private va
 
   private val selectAllPartitionsQuery = buildSelectAllPartitionsQuery(tableName)
 
-  // todo compact data?
-  def run(sqlContext: SqlExecutionContext, clock: Clock): Unit = {
+  def runUnsafe(): Unit = Try {
     logger.info("Cleaning up old data")
     // TODO: remove it if automatic retention will be available: https://github.com/questdb/questdb/issues/4369
+    val sqlContext    = sqlContextPool.get()
     val allPartitions = getPartitions(sqlContext)
     ensureOnePartitionExist(clock, allPartitions).foreach { partitionsToDrop =>
       val query = buildDropPartitionsQuery(tableName, partitionsToDrop)
