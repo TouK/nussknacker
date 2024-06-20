@@ -44,7 +44,7 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
             return null;
         }
 
-        return JSON.parse(expressionObj.expression);
+        return tryParseOrNull(expressionObj.expression);
     });
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);

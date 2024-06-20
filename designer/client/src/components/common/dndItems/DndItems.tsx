@@ -1,7 +1,7 @@
 import update from "immutability-helper";
 import { cloneDeep } from "lodash";
 import React, { useCallback, useRef } from "react";
-import { Draggable, DraggableChildrenFn } from "react-beautiful-dnd";
+import { Draggable, DraggableChildrenFn } from "@hello-pangea/dnd";
 import { DragHandle, DragHandlerContext } from "./DragHandle";
 import { DropTarget } from "./DropTarget";
 import { FakeFormWindow } from "./FakeFormWindow";

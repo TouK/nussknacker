@@ -36,7 +36,7 @@ function useAliasUsageHighlight(token = "alias") {
     const [keywords, setKeywords] = useState<string>("");
     const ref = useRef<ReactAce>();
     const editor = ref.current?.editor;
-    const session = useMemo(() => editor?.getSession() as EditSession, [editor]);
+    const session = useMemo(() => editor?.getSession() as unknown as EditSession, [editor]);
 
     const getValuesForToken = useCallback(
         (line: string, index: number) =>

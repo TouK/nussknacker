@@ -44,6 +44,10 @@ class DeploymentApiHttpService(
                     ConcurrentDeploymentsForScenarioArePerformedError(scenarioName, concurrentDeploymentsIds)
                   case DeploymentService.ScenarioNotFoundError(scenarioName) =>
                     ScenarioNotFoundError(scenarioName)
+                  case DeploymentService.DeploymentOfFragmentError =>
+                    DeploymentOfFragmentError
+                  case DeploymentService.DeploymentOfArchivedScenarioError =>
+                    DeploymentOfArchivedScenarioError
                   case DeploymentService.NoPermissionError => NoPermissionError
                   case DeploymentService.ScenarioGraphValidationError(errors) =>
                     ScenarioGraphValidationError(errors)

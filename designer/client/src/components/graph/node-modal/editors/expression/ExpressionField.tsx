@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { ReactNode, useCallback } from "react";
 import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
 import { UnknownFunction } from "../../../../../types/common";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
@@ -20,7 +20,7 @@ type Props = {
     parameterDefinition: UIParameter;
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     testResultsToShow: NodeResultsForContext;
-    renderFieldLabel: UnknownFunction;
+    renderFieldLabel: (paramName: string) => ReactNode;
     variableTypes: VariableTypes;
     fieldErrors: FieldError[];
 };
