@@ -412,10 +412,10 @@ class ScenarioStatisticsTest
       AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
     ),
     ComponentListElement(
-      DesignerWideComponentId("builtin-choice"),
+      DesignerWideComponentId("service-builtin-choice"),
       "choice",
       "/assets/components/Switch.svg",
-      ComponentType.BuiltIn,
+      ComponentType.Service,
       ComponentGroupName("base"),
       List(
         "BatchDev",
@@ -454,7 +454,8 @@ class ScenarioStatisticsTest
   )
 
   private val componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
-    ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService)
+    ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
+    ComponentDefinitionWithImplementation.withEmptyConfig("choice", TestService),
   )
 
   object TestService extends Service {
