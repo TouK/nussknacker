@@ -16,10 +16,7 @@ import java.io.{File => JFile}
 // Before running tests in this module, a fresh docker image should be built from sources and placed in the local
 // registry. If you run tests based on this trait in Intellij Idea and the images is not built, you can do it manually:
 // `bash -c "export NUSSKNACKER_SCALA_VERSION=2.12 && sbt dist/Docker/publishLocal"`
-trait DockerBasedInstallationExampleNuEnvironment
-    extends BeforeAndAfterAll
-    with BeforeAndAfterEach
-    with LazyLogging {
+trait DockerBasedInstallationExampleNuEnvironment extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 
   private lazy val specSetupService = unsafeContainerByServiceName("spec-setup")
@@ -43,8 +40,8 @@ trait DockerBasedInstallationExampleNuEnvironment
   }
 
   def readAllMessagesFromKafka(topic: String): List[JSON] = {
-    val stdout = specSetupService.executeBashAndReadStdout(s"""/app/scripts/utils/kafka/read-from-topic.sh "$topic" """)
-    stdout
+    specSetupService
+      .executeBashAndReadStdout(s"""/app/scripts/utils/kafka/read-from-topic.sh "$topic" """)
       .split("\n")
       .toList
       .map(ujson.read(_))
@@ -79,16 +76,8 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
     waitingFor = Some(
       WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
     )
-  ) {
-    override def start(): Unit = {
-      println("STARTING DC")
-      super.start()
-    }
-    override def stop(): Unit = {
-      println("STOPPING DC")
-      super.stop()
-    }
-  }
+  )
+
   singletonContainer.start()
 
 }

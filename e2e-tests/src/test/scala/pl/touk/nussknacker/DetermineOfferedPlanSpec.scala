@@ -39,24 +39,18 @@ class DetermineOfferedPlanSpec
     super.afterEach()
   }
 
-  private def customerJson(name: String, age: Int, gender: String, isBigSpender: Boolean) = {
-    ujson.read(s"""
-         |{
-         |  "name": "$name",
-         |  "age": $age,
-         |  "gender": "$gender",
-         |  "isBigSpender": $isBigSpender
-         |}
-         |""".stripMargin)
-  }
+  private def customerJson(name: String, age: Int, gender: String, isBigSpender: Boolean) =
+    ujson.Obj(
+      "name"         -> name,
+      "age"          -> age,
+      "gender"       -> gender,
+      "isBigSpender" -> isBigSpender
+    )
 
-  private def smsWithOfferJson(name: String, offer: String) = {
-    ujson.read(s"""
-         |{
-         |  "name": "$name",
-         |  "assignedOffer": "$offer"
-         |}
-         |""".stripMargin)
-  }
+  private def smsWithOfferJson(name: String, offer: String) =
+    ujson.Obj(
+      "name"          -> name,
+      "assignedOffer" -> offer
+    )
 
 }

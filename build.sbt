@@ -18,7 +18,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 val scala212 = "2.12.10"
 val scala213 = "2.13.12"
 
-def defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
+lazy val defaultScalaV = sys.env.get("NUSSKNACKER_SCALA_VERSION") match {
   case None | Some("2.13") => scala213
   case Some("2.12")        => scala212
   case Some(unsupported)   => throw new IllegalArgumentException(s"Nu doesn't support $unsupported Scala version")
@@ -2053,8 +2053,7 @@ lazy val doNotTest = Seq(
     streams.value.log.info(
       "E2E tests are skipped for Scala 2.13 because Nu installation example is currently based on Scala 2.12"
     )
-  },
-  Test / testOptions += Tests.Setup(() => ())
+  }
 )
 
 /*

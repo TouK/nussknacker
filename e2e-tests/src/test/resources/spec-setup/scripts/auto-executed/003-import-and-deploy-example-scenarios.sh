@@ -19,14 +19,16 @@ function importAndDeployScenario() {
 
 echo "Starting to import and deploy example scenarios ..."
 
-while IFS= read -r EXAMPLE_SCENARIO_NAME; do
+while IFS= read -r EXAMPLE_SCENARIO_FILENAME; do
 
-  if [[ $EXAMPLE_SCENARIO_NAME == "#"* ]]; then
+  if [[ $EXAMPLE_SCENARIO_FILENAME == "#"* ]]; then
     continue
   fi
 
-  importAndDeployScenario "$EXAMPLE_SCENARIO_NAME" "$(realpath ../../data/nu/scenarios/"$EXAMPLE_SCENARIO_NAME.json")"
+  EXAMPLE_SCENARIO_NAME=$(basename "$EXAMPLE_SCENARIO_FILENAME" ".json")
 
-done < "../../data/nu/examples"
+  importAndDeployScenario "$EXAMPLE_SCENARIO_NAME" "$(realpath ../../data/nu/scenarios/"$EXAMPLE_SCENARIO_FILENAME")"
+
+done < "../../data/nu/examples.txt"
 
 echo "DONE!"

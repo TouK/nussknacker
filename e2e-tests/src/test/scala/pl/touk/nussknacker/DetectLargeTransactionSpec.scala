@@ -39,5 +39,5 @@ class DetectLargeTransactionSpec
   }
 
   private def transactionJson(amount: Int) =
-    ujson.read(s"""{ "clientId": "100", "amount":$amount, "isLast":false }""")
+    ujson.Obj("clientId" -> "100", "amount" -> amount, "isLast" -> false)
 }
