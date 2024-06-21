@@ -167,6 +167,9 @@ class DynamicNodeValidator(
       ProcessCompilationError,
       (TypedParameter, Option[NodeParameter])
     ] = {
+      val validatorsCompilationResult = parameter.validators
+        .map(v => expressionCompiler.compileValidator(v, parameter.name, parameter.typ))
+        .sequence
 
       if (parameter.branchParam) {
         val params = branchParametersFromNode
@@ -179,10 +182,12 @@ class DynamicNodeValidator(
           .sequence
         params
           .andThen { branchParams =>
-            expressionCompiler
-              .compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
-              .map((_, None))
-              .andThen(Validations.validate(parameter, _))
+            validatorsCompilationResult.andThen { validators =>
+              expressionCompiler
+                .compileBranchParam(branchParams, inputContext.asInstanceOf[Map[String, ValidationContext]], parameter)
+                .map((_, None))
+                .andThen(Validations.validate(validators, _))
+            }
           }
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
@@ -194,10 +199,12 @@ class DynamicNodeValidator(
           case e: ValidationContext => e
           case _                    => globalVariablesPreparer.prepareValidationContextWithGlobalVariablesOnly(metaData)
         }
-        expressionCompiler
-          .compileParam(singleParam, ctxToUse, parameter)
-          .map((_, extraNodeParamOpt))
-          .andThen(Validations.validate(parameter, _))
+        validatorsCompilationResult.andThen { validators =>
+          expressionCompiler
+            .compileParam(singleParam, ctxToUse, parameter)
+            .map((_, extraNodeParamOpt))
+            .andThen(Validations.validate(validators, _))
+        }
       }
     }
 
