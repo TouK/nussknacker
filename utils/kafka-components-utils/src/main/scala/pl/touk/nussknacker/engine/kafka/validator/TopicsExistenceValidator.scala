@@ -3,11 +3,9 @@ package pl.touk.nussknacker.engine.kafka.validator
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
-import org.apache.kafka.common.config.ConfigResource
+import org.apache.kafka.clients.admin.{Admin, ListTopicsOptions}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.kafka.CachedTopicsExistenceValidatorConfig.AutoCreateTopicPropertyName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
@@ -31,66 +29,50 @@ trait WithCachedTopicsExistenceValidator extends TopicsExistenceValidator {
 
 class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExistenceValidator with LazyLogging {
   private def config = kafkaConfig.topicsExistenceValidationConfig.validatorConfig
-  @transient private lazy val autoCreateSettingCache =
-    new SingleValueCache[Boolean](expireAfterAccess = None, expireAfterWrite = Some(config.autoCreateFlagFetchCacheTtl))
+
   @transient private lazy val topicListCache =
     new SingleValueCache[List[String]](expireAfterAccess = None, expireAfterWrite = Some(config.topicsFetchCacheTtl))
 
   def validateTopics(topics: List[String]): Validated[TopicExistenceValidationException, List[String]] = {
-    if (!kafkaConfig.topicsExistenceValidationConfig.enabled || isAutoCreateEnabled()) {
-      Valid(topics)
+    if (kafkaConfig.topicsExistenceValidationConfig.enabled) {
+      doValidate(topics)
     } else {
-      topicListCache
-        .get()
-        .flatMap(existingTopics => {
-          if (topics.diff(existingTopics).isEmpty)
-            Some(Valid(topics))
-          else
-            None
-        })
-        .getOrElse {
-          val existingTopics = usingAdminClient {
-            _.listTopics(new ListTopicsOptions().timeoutMs(config.adminClientTimeout.toMillis.toInt))
-              .names()
-              .get()
-              .asScala
-              .toList
-          }
-          topicListCache.put(existingTopics)
-          val notExistingTopics = topics.diff(existingTopics)
-          if (notExistingTopics.isEmpty)
-            Valid(topics)
-          else
-            Invalid(new TopicExistenceValidationException(notExistingTopics))
-        }
+      Valid(topics)
     }
   }
 
-  private def isAutoCreateEnabled(): Boolean = autoCreateSettingCache.getOrCreate {
-    val timeout = config.adminClientTimeout.toMillis.toInt
-    val randomKafkaNodeId = usingAdminClient {
-      _.describeCluster(new DescribeClusterOptions().timeoutMs(timeout)).nodes().get().asScala.head.id().toString
+  private def doValidate(topics: List[String]) = {
+    topicListCache.get() match {
+      case Some(cachedTopics) if topics.diff(cachedTopics).isEmpty =>
+        Valid(topics)
+      case Some(_) | None =>
+        fetchTopicsAndValidate(topics)
     }
-    usingAdminClient {
-      _.describeConfigs(
-        List(new ConfigResource(ConfigResource.Type.BROKER, randomKafkaNodeId)).asJava,
-        new DescribeConfigsOptions().timeoutMs(config.adminClientTimeout.toMillis.toInt)
-      )
-        .values()
-        .values()
+  }
+
+  private def fetchTopicsAndValidate(requestedTopics: List[String]) = {
+    val existingTopics    = fetchAllTopicsAndCache()
+    val notExistingTopics = requestedTopics.diff(existingTopics)
+    if (notExistingTopics.isEmpty) Valid(requestedTopics)
+    else Invalid(TopicExistenceValidationException(notExistingTopics))
+  }
+
+  private def fetchAllTopicsAndCache() = {
+    val existingTopics = usingAdminClient {
+      _.listTopics(new ListTopicsOptions().timeoutMs(config.adminClientTimeout.toMillis.toInt))
+        .names()
+        .get()
         .asScala
-        .map(_.get())
-        .head // we ask for config of one node, but `describeConfigs` api have `List` of nodes, so here we got single element list
-        .get(AutoCreateTopicPropertyName)
-        .value()
-        .toBoolean
+        .toList
     }
+    topicListCache.put(existingTopics)
+    existingTopics
   }
 
   private def usingAdminClient[T]: (Admin => T) => T = KafkaUtils.usingAdminClient[T](kafkaConfig)
 }
 
-class TopicExistenceValidationException(topics: List[String])
+final case class TopicExistenceValidationException(topics: List[String])
     extends RuntimeException(
       s"Topic${if (topics.size > 1) "s" else ""} ${topics.mkString(", ")} ${if (topics.size > 1) "do" else "does"} not exist"
     ) {
