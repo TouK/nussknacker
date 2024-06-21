@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import enumeratum.values.{StringEnum, StringEnumEntry}
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -24,6 +23,10 @@ object ScenarioStatistics {
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
 
   private val builtinComponentsNames = BuiltInComponentId.All.map(_.name)
+
+  private val vowelsRegex = "[aeiouAEIOU-]"
+
+  private val componentStatisticPrefix = "c_"
 
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     scenariosInputData
@@ -130,19 +133,19 @@ object ScenarioStatistics {
 
       // Get number of available components to check how many custom components created
       val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsWithUsageByName: Map[String, Long] =
+      val componentsWithUsageByComponentId: Map[String, Long] =
         withoutFragments
           .map { comp =>
-            components.find(compo => compo.name.equals(comp.name)) match {
+            components.find(compo => compo.id.equals(comp.componentId)) match {
               case Some(comps) =>
                 if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
-                  (comp.name, comp.usageCount)
+                  (comp.componentId.name, comp.usageCount)
                 } else {
                   ("Custom", comp.usageCount)
                 }
               case None =>
                 builtinComponentsNames.find(builtin => builtin == comp.name) match {
-                  case Some(_) => (comp.name.capitalize, comp.usageCount)
+                  case Some(_) => (comp.componentId.name.capitalize, comp.usageCount)
                   case None    => ("Custom", comp.usageCount)
                 }
             }
@@ -150,19 +153,19 @@ object ScenarioStatistics {
           .groupBy(_._1)
           .mapValuesNow(_.map(_._2).sum)
 
-      val componentsWithUsageByNameCount = componentsWithUsageByName.size
+      val componentsWithUsageByComponentIdCount = componentsWithUsageByComponentId.size
 
       // Get usage statistics for each component
-      val componentUsed = componentsWithUsageByName.filter(_._2 > 0)
+      val componentUsed = componentsWithUsageByComponentId.filter(_._2 > 0)
       val componentUsedMap: Map[String, Long] = componentUsed
         .map { case (name, usages) =>
-          (shortenedStatisticName(name, Some("c")), usages)
+          (mapNameToStat(name), usages)
         }
 
       (
         componentUsedMap ++
           Map(
-            ComponentsCount.toString -> componentsWithUsageByNameCount
+            ComponentsCount.toString -> componentsWithUsageByComponentIdCount
           )
       ).mapValuesNow(_.toString)
     }
@@ -214,12 +217,10 @@ object ScenarioStatistics {
     else orderedList.last
   }
 
-  def shortenedStatisticName(name: String, prefix: Option[String]): String = {
-    val shortenedName = name.replaceAll("[aeiouAEIOU-]", "").toLowerCase
-    prefix match {
-      case Some(prefix) => prefix + "_" + shortenedName
-      case None         => shortenedName
-    }
+  def mapNameToStat(componentId: String): String = {
+    val shortenedName = componentId.replaceAll(vowelsRegex, "").toLowerCase
+
+    componentStatisticPrefix + shortenedName
   }
 
 }
