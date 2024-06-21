@@ -149,7 +149,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsAverage.name, equalTo("1")),
           (NuVersion.name, equalTo(nuVersion)),
           //  TODO: Should make a proper test for component mapping
-          ("c_fltr", equalTo("1"))
+          ("c_bltnfltr", equalTo("1"))
         )
     }
   }

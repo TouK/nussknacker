@@ -22,8 +22,6 @@ object ScenarioStatistics {
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
 
-  private val builtinComponentsNames = BuiltInComponentId.All.map(_.name)
-
   private val vowelsRegex = "[aeiouAEIOU-]"
 
   private val componentStatisticPrefix = "c_"
@@ -144,10 +142,7 @@ object ScenarioStatistics {
                   ("Custom", comp.usageCount)
                 }
               case None =>
-                builtinComponentsNames.find(builtin => builtin == comp.name) match {
-                  case Some(_) => (comp.componentId.toString.capitalize, comp.usageCount)
-                  case None    => ("Custom", comp.usageCount)
-                }
+                ("Custom", comp.usageCount)
             }
           }
           .groupBy(_._1)
