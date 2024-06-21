@@ -236,9 +236,9 @@ class ScenarioStatisticsTest
       componentWithImplementation
     ).determineQueryParams().value.futureValue.value
 
-    params should contain("c_ccntsrvc" -> "5")
+    params should contain("c_srvcccntsrvc" -> "5")
     params should contain("c_cstm" -> "1")
-    params shouldNot contain("c_chc")
+    params.keySet shouldNot contain("c_bltnchc")
   }
 
   test("should combined statistics for all scenarios") {
@@ -337,7 +337,7 @@ class ScenarioStatisticsTest
       LiteEmbeddedDMCount    -> "0",
       UnknownDMCount         -> "0",
       ActiveScenarioCount    -> "2",
-      "c_ccntsrvc"           -> "5",
+      "c_srvcccntsrvc"       -> "5",
       "c_cstm"               -> "1",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
