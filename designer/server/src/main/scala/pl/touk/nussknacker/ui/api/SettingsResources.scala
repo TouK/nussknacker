@@ -110,7 +110,8 @@ object TopTabType extends Enumeration {
     requiredPermission: Option[String],
     // Deprecated: use accessTokenInQuery.enabled setting instead
     addAccessTokenInQueryParam: Option[Boolean],
-    accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings())
+    accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings()),
+    spacerBefore: Option[Boolean] = Some(false)
 )
 
 @JsonCodec final case class AccessTokenInQueryTabSettings(
