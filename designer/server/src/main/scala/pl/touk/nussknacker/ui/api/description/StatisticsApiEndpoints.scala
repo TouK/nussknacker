@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.description
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import enumeratum.EnumEntry.UpperSnakecase
-import enumeratum.values.{StringCirceEnum, StringEnum, StringEnumEntry}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.security.AuthCredentials
@@ -90,90 +90,84 @@ object StatisticsApiEndpoints {
     @derive(encoder, decoder, schema)
     final case class StatisticDto private (name: StatisticName)
 
-    sealed abstract class StatisticName(val value: String, val shortName: String)
-        extends StringEnumEntry
-        with UpperSnakecase
+    sealed trait StatisticName extends EnumEntry with UpperSnakecase {
+      val shortName: String
+    }
 
-    object StatisticName extends StringEnum[StatisticName] with StringCirceEnum[StatisticName] {
+    object StatisticName extends Enum[StatisticName] with CirceEnum[StatisticName] {
 
-      case object SearchScenariosByName   extends StatisticName("SEARCH_SCENARIOS_BY_NAME", "f_ssbn")
-      case object FilterScenariosByStatus extends StatisticName("FILTER_SCENARIOS_BY_STATUS", "f_fsbs")
-      case object FilterScenariosByProcessingMode
-          extends StatisticName("FILTER_SCENARIOS_BY_PROCESSING_MODE", "f_fsbpm")
-      case object FilterScenariosByCategory extends StatisticName("FILTER_SCENARIOS_BY_CATEGORY", "f_fsbc")
-      case object FilterScenariosByAuthor   extends StatisticName("FILTER_SCENARIOS_BY_AUTHOR", "f_fsba")
-      case object FilterScenariosByOther    extends StatisticName("FILTER_SCENARIOS_BY_OTHER", "f_fsbo")
-      case object SortScenariosBySortOption extends StatisticName("SORT_SCENARIOS_BY_SORT_OPTION", "f_ssbso")
-      case object SearchComponentsByName    extends StatisticName("SEARCH_COMPONENTS_BY_NAME", "f_scbn")
-      case object FilterComponentsByGroup   extends StatisticName("FILTER_COMPONENTS_BY_GROUP", "f_fcbg")
-      case object FilterComponentsByProcessingMode
-          extends StatisticName("FILTER_COMPONENTS_BY_PROCESSING_MODE", "f_fcbpm")
-      case object FilterComponentsByCategory extends StatisticName("FILTER_COMPONENTS_BY_CATEGORY", "f_fcbc")
-      case object FilterComponentsByMultipleCategories
-          extends StatisticName("FILTER_COMPONENTS_BY_MULTIPLE_CATEGORIES", "f_fcbmc")
-      case object FilterComponentsByUsages      extends StatisticName("FILTER_COMPONENTS_BY_USAGES", "f_fcbu")
-      case object ClickComponentUsages          extends StatisticName("CLICK_COMPONENT_USAGES", "f_ccu")
-      case object SearchComponentUsagesByName   extends StatisticName("SEARCH_COMPONENT_USAGES_BY_NAME", "f_scubn")
-      case object FilterComponentUsagesByStatus extends StatisticName("FILTER_COMPONENT_USAGES_BY_STATUS", "f_fcubs")
-      case object FilterComponentUsagesByCategory
-          extends StatisticName("FILTER_COMPONENT_USAGES_BY_CATEGORY", "f_fcubc")
-      case object FilterComponentUsagesByAuthor extends StatisticName("FILTER_COMPONENT_USAGES_BY_AUTHOR", "f_fcuba")
-      case object FilterComponentUsagesByOther  extends StatisticName("FILTER_COMPONENT_USAGES_BY_OTHER", "f_fcubo")
-      case object ClickScenarioFromComponentUsages
-          extends StatisticName("CLICK_SCENARIO_FROM_COMPONENT_USAGES", "f_csfcu")
-      case object ClickGlobalMetricsTab       extends StatisticName("CLICK_GLOBAL_METRICS_TAB", "f_cgmt")
-      case object ClickActionDeploy           extends StatisticName("CLICK_ACTION_DEPLOY", "f_cad")
-      case object ClickActionMetrics          extends StatisticName("CLICK_ACTION_METRICS", "f_cam")
-      case object ClickViewZoomIn             extends StatisticName("CLICK_VIEW_ZOOM_IN", "f_cvzi")
-      case object ClickViewZoomOut            extends StatisticName("CLICK_VIEW_ZOOM_OUT", "f_cvzo")
-      case object ClickViewReset              extends StatisticName("CLICK_VIEW_RESET", "f_cvr")
-      case object ClickEditUndo               extends StatisticName("CLICK_EDIT_UNDO", "f_ceu")
-      case object ClickEditRedo               extends StatisticName("CLICK_EDIT_REDO", "f_cer")
-      case object ClickEditCopy               extends StatisticName("CLICK_EDIT_COPY", "f_cec")
-      case object ClickEditPaste              extends StatisticName("CLICK_EDIT_PASTE", "f_cep")
-      case object ClickEditDelete             extends StatisticName("CLICK_EDIT_DELETE", "f_ced")
-      case object ClickEditLayout             extends StatisticName("CLICK_EDIT_LAYOUT", "f_cel")
-      case object ClickScenarioProperties     extends StatisticName("CLICK_SCENARIO_PROPERTIES", "f_csp")
-      case object ClickScenarioCompare        extends StatisticName("CLICK_SCENARIO_COMPARE", "f_csco")
-      case object ClickScenarioMigrate        extends StatisticName("CLICK_SCENARIO_MIGRATE", "f_csm")
-      case object ClickScenarioImport         extends StatisticName("CLICK_SCENARIO_IMPORT", "f_csi")
-      case object ClickScenarioJson           extends StatisticName("CLICK_SCENARIO_JSON", "f_csj")
-      case object ClickScenarioPdf            extends StatisticName("CLICK_SCENARIO_PDF", "f_cspd")
-      case object ClickScenarioArchive        extends StatisticName("CLICK_SCENARIO_ARCHIVE", "f_csa")
-      case object ClickTestGenerated          extends StatisticName("CLICK_TEST_GENERATED", "f_ctg")
-      case object ClickTestAdhoc              extends StatisticName("CLICK_TEST_ADHOC", "f_cta")
-      case object ClickTestFromFile           extends StatisticName("CLICK_TEST_FROM_FILE", "f_ctff")
-      case object ClickTestGenerateFile       extends StatisticName("CLICK_TEST_GENERATE_FILE", "f_ctgt")
-      case object ClickTestHide               extends StatisticName("CLICK_TEST_HIDE", "f_cth")
-      case object ClickMoreScenarioDetails    extends StatisticName("CLICK_MORE_SCENARIO_DETAILS", "f_cmsd")
-      case object ClickExpandPanel            extends StatisticName("CLICK_EXPAND_PANEL", "f_cexp")
-      case object ClickCollapsePanel          extends StatisticName("CLICK_COLLAPSE_PANEL", "f_ccp")
-      case object MoveToolbarPanel            extends StatisticName("MOVE_TOOLBAR_PANEL", "f_mtp")
-      case object SearchNodesInScenario       extends StatisticName("SEARCH_NODES_IN_SCENARIO", "f_snis")
-      case object SearchComponentsInScenario  extends StatisticName("SEARCH_COMPONENTS_IN_SCENARIO", "f_scis")
-      case object ClickOlderVersion           extends StatisticName("CLICK_OLDER_VERSION", "f_cov")
-      case object ClickNewerVersion           extends StatisticName("CLICK_NEWER_VERSION", "f_cnv")
-      case object ClickNodeDocumentation      extends StatisticName("CLICK_NODE_DOCUMENTATION", "f_cnd")
-      case object ClickComponentsTab          extends StatisticName("CLICK_COMPONENTS_TAB", "f_cct")
-      case object ClickScenarioSave           extends StatisticName("CLICK_SCENARIO_SAVE", "f_css")
-      case object ClickTestCounts             extends StatisticName("CLICK_TEST_COUNTS", "f_ctc")
-      case object ClickScenarioCancel         extends StatisticName("CLICK_SCENARIO_CANCEL", "f_csc")
-      case object ClickScenarioArchiveToggle  extends StatisticName("CLICK_SCENARIO_ARCHIVE_TOGGLE", "f_csat")
-      case object ClickScenarioUnarchive      extends StatisticName("CLICK_SCENARIO_UNARCHIVE", "f_csu")
-      case object ClickScenarioCustomAction   extends StatisticName("CLICK_SCENARIO_CUSTOM_ACTION", "f_csca")
-      case object ClickScenarioCustomLink     extends StatisticName("CLICK_SCENARIO_CUSTOM_LINK", "f_cscl")
-      case object DoubleClickRangeSelectNodes extends StatisticName("DOUBLE_CLICK_RANGE_SELECT_NODES", "f_dcrsn")
-      case object KeyboardAndClickRangeSelectNodes
-          extends StatisticName("KEYBOARD_AND_CLICK_RANGE_SELECT_NODES", "f_kacrsn")
-      case object KeyboardCopyNode             extends StatisticName("KEYBOARD_COPY_NODE", "f_kcon")
-      case object KeyboardPasteNode            extends StatisticName("KEYBOARD_PASTE_NODE", "f_kpn")
-      case object KeyboardCutNode              extends StatisticName("KEYBOARD_CUT_NODE", "f_kcn")
-      case object KeyboardSelectAllNodes       extends StatisticName("KEYBOARD_SELECT_ALL_NODES", "f_ksan")
-      case object KeyboardRedoScenarioChanges  extends StatisticName("KEYBOARD_REDO_SCENARIO_CHANGES", "f_krsc")
-      case object KeyboardUndoScenarioChanges  extends StatisticName("KEYBOARD_UNDO_SCENARIO_CHANGES", "f_kusc")
-      case object KeyboardDeleteNodes          extends StatisticName("KEYBOARD_DELETE_NODES", "f_kdn")
-      case object KeyboardDeselectAllNodes     extends StatisticName("KEYBOARD_DESELECT_ALL_NODES", "f_kdan")
-      case object KeyboardFocusSearchNodeField extends StatisticName("KEYBOARD_FOCUS_SEARCH_NODE_FIELD", "f_kfsnf")
+      case object SearchScenariosByName                extends StatisticName { override val shortName = "f_ssbn"   }
+      case object FilterScenariosByStatus              extends StatisticName { override val shortName = "f_fsbs"   }
+      case object FilterScenariosByProcessingMode      extends StatisticName { override val shortName = "f_fsbpm"  }
+      case object FilterScenariosByCategory            extends StatisticName { override val shortName = "f_fsbc"   }
+      case object FilterScenariosByAuthor              extends StatisticName { override val shortName = "f_fsba"   }
+      case object FilterScenariosByOther               extends StatisticName { override val shortName = "f_fsbo"   }
+      case object SortScenariosBySortOption            extends StatisticName { override val shortName = "f_ssbso"  }
+      case object SearchComponentsByName               extends StatisticName { override val shortName = "f_scbn"   }
+      case object FilterComponentsByGroup              extends StatisticName { override val shortName = "f_fcbg"   }
+      case object FilterComponentsByProcessingMode     extends StatisticName { override val shortName = "f_fcbpm"  }
+      case object FilterComponentsByCategory           extends StatisticName { override val shortName = "f_fcbc"   }
+      case object FilterComponentsByMultipleCategories extends StatisticName { override val shortName = "f_fcbmc"  }
+      case object FilterComponentsByUsages             extends StatisticName { override val shortName = "f_fcbu"   }
+      case object ClickComponentUsages                 extends StatisticName { override val shortName = "f_ccu"    }
+      case object SearchComponentUsagesByName          extends StatisticName { override val shortName = "f_scubn"  }
+      case object FilterComponentUsagesByStatus        extends StatisticName { override val shortName = "f_fcubs"  }
+      case object FilterComponentUsagesByCategory      extends StatisticName { override val shortName = "f_fcubc"  }
+      case object FilterComponentUsagesByAuthor        extends StatisticName { override val shortName = "f_fcuba"  }
+      case object FilterComponentUsagesByOther         extends StatisticName { override val shortName = "f_fcubo"  }
+      case object ClickScenarioFromComponentUsages     extends StatisticName { override val shortName = "f_csfcu"  }
+      case object ClickGlobalMetricsTab                extends StatisticName { override val shortName = "f_cgmt"   }
+      case object ClickActionDeploy                    extends StatisticName { override val shortName = "f_cad"    }
+      case object ClickActionMetrics                   extends StatisticName { override val shortName = "f_cam"    }
+      case object ClickViewZoomIn                      extends StatisticName { override val shortName = "f_cvzi"   }
+      case object ClickViewZoomOut                     extends StatisticName { override val shortName = "f_cvzo"   }
+      case object ClickViewReset                       extends StatisticName { override val shortName = "f_cvr"    }
+      case object ClickEditUndo                        extends StatisticName { override val shortName = "f_ceu"    }
+      case object ClickEditRedo                        extends StatisticName { override val shortName = "f_cer"    }
+      case object ClickEditCopy                        extends StatisticName { override val shortName = "f_cec"    }
+      case object ClickEditPaste                       extends StatisticName { override val shortName = "f_cep"    }
+      case object ClickEditDelete                      extends StatisticName { override val shortName = "f_ced"    }
+      case object ClickEditLayout                      extends StatisticName { override val shortName = "f_cel"    }
+      case object ClickScenarioProperties              extends StatisticName { override val shortName = "f_csp"    }
+      case object ClickScenarioCompare                 extends StatisticName { override val shortName = "f_csco"   }
+      case object ClickScenarioMigrate                 extends StatisticName { override val shortName = "f_csm"    }
+      case object ClickScenarioImport                  extends StatisticName { override val shortName = "f_csi"    }
+      case object ClickScenarioJson                    extends StatisticName { override val shortName = "f_csj"    }
+      case object ClickScenarioPdf                     extends StatisticName { override val shortName = "f_cspd"   }
+      case object ClickScenarioArchive                 extends StatisticName { override val shortName = "f_csa"    }
+      case object ClickTestGenerated                   extends StatisticName { override val shortName = "f_ctg"    }
+      case object ClickTestAdhoc                       extends StatisticName { override val shortName = "f_cta"    }
+      case object ClickTestFromFile                    extends StatisticName { override val shortName = "f_ctff"   }
+      case object ClickTestGenerateFile                extends StatisticName { override val shortName = "f_ctgt"   }
+      case object ClickTestHide                        extends StatisticName { override val shortName = "f_cth"    }
+      case object ClickMoreScenarioDetails             extends StatisticName { override val shortName = "f_cmsd"   }
+      case object ClickExpandPanel                     extends StatisticName { override val shortName = "f_cexp"   }
+      case object ClickCollapsePanel                   extends StatisticName { override val shortName = "f_ccp"    }
+      case object MoveToolbarPanel                     extends StatisticName { override val shortName = "f_mtp"    }
+      case object SearchNodesInScenario                extends StatisticName { override val shortName = "f_snis"   }
+      case object SearchComponentsInScenario           extends StatisticName { override val shortName = "f_scis"   }
+      case object ClickOlderVersion                    extends StatisticName { override val shortName = "f_cov"    }
+      case object ClickNewerVersion                    extends StatisticName { override val shortName = "f_cnv"    }
+      case object ClickNodeDocumentation               extends StatisticName { override val shortName = "f_cnd"    }
+      case object ClickComponentsTab                   extends StatisticName { override val shortName = "f_cct"    }
+      case object ClickScenarioSave                    extends StatisticName { override val shortName = "f_css"    }
+      case object ClickTestCounts                      extends StatisticName { override val shortName = "f_ctc"    }
+      case object ClickScenarioCancel                  extends StatisticName { override val shortName = "f_csc"    }
+      case object ClickScenarioArchiveToggle           extends StatisticName { override val shortName = "f_csat"   }
+      case object ClickScenarioUnarchive               extends StatisticName { override val shortName = "f_csu"    }
+      case object ClickScenarioCustomAction            extends StatisticName { override val shortName = "f_csca"   }
+      case object ClickScenarioCustomLink              extends StatisticName { override val shortName = "f_cscl"   }
+      case object DoubleClickRangeSelectNodes          extends StatisticName { override val shortName = "f_dcrsn"  }
+      case object KeyboardAndClickRangeSelectNodes     extends StatisticName { override val shortName = "f_kacrsn" }
+      case object KeyboardCopyNode                     extends StatisticName { override val shortName = "f_kcon"   }
+      case object KeyboardPasteNode                    extends StatisticName { override val shortName = "f_kpn"    }
+      case object KeyboardCutNode                      extends StatisticName { override val shortName = "f_kcn"    }
+      case object KeyboardSelectAllNodes               extends StatisticName { override val shortName = "f_ksan"   }
+      case object KeyboardRedoScenarioChanges          extends StatisticName { override val shortName = "f_krsc"   }
+      case object KeyboardUndoScenarioChanges          extends StatisticName { override val shortName = "f_kusc"   }
+      case object KeyboardDeleteNodes                  extends StatisticName { override val shortName = "f_kdn"    }
+      case object KeyboardDeselectAllNodes             extends StatisticName { override val shortName = "f_kdan"   }
+      case object KeyboardFocusSearchNodeField         extends StatisticName { override val shortName = "f_kfsnf"  }
 
       override def values = findValues
     }

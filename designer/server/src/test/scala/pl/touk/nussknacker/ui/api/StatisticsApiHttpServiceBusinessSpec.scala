@@ -169,8 +169,8 @@ class StatisticsApiHttpServiceBusinessSpec
         .equalsPlainBody("")
         .verifyApplicationState {
           verifyStatisticsExists(
-            (statistic1.entryName, new GreaterThanOrEqualToLongMatcher(1)),
-            (statistic2.entryName, new GreaterThanOrEqualToLongMatcher(2))
+            (statistic1.shortName, new GreaterThanOrEqualToLongMatcher(1)),
+            (statistic2.shortName, new GreaterThanOrEqualToLongMatcher(2))
           )
         }
     }
@@ -189,7 +189,7 @@ class StatisticsApiHttpServiceBusinessSpec
         .statusCode(204)
         .equalsPlainBody("")
         .verifyApplicationState {
-          verifyStatisticsExists((statisticName.entryName, new GreaterThanOrEqualToLongMatcher(1)))
+          verifyStatisticsExists((statisticName.shortName, new GreaterThanOrEqualToLongMatcher(1)))
           questDbPath.exists shouldBe true
         }
     }
