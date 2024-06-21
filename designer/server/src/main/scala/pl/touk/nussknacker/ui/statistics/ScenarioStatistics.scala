@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
@@ -20,6 +21,10 @@ object ScenarioStatistics {
 
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
+
+  private val vowelsRegex = "[aeiouyAEIOUY-]"
+
+  private val componentStatisticPrefix = "c_"
 
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     scenariosInputData
@@ -115,16 +120,49 @@ object ScenarioStatistics {
     }
   }
 
-  def getComponentStatistic(componentList: List[component.ComponentListElement]): Map[String, String] = {
+  // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
+  def getComponentStatistic(
+      componentList: List[component.ComponentListElement],
+      components: List[ComponentDefinitionWithImplementation]
+  ): Map[String, String] = {
     if (componentList.isEmpty) {
       Map.empty
     } else {
-      val withoutFragments      = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsByNameCount = withoutFragments.groupBy(_.name).size
 
-      Map(
-        ComponentsCount -> componentsByNameCount
-      ).map { case (k, v) => (k.toString, v.toString) }
+      // Get number of available components to check how many custom components created
+      val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
+      val componentsWithUsageByComponentId: Map[String, Long] =
+        withoutFragments
+          .map { comp =>
+            components.find(compo => compo.id.equals(comp.componentId)) match {
+              case Some(comps) =>
+                if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
+                  (comp.componentId.toString, comp.usageCount)
+                } else {
+                  ("Custom", comp.usageCount)
+                }
+              case None =>
+                ("Custom", comp.usageCount)
+            }
+          }
+          .groupBy(_._1)
+          .mapValuesNow(_.map(_._2).sum)
+
+      val componentsWithUsageByComponentIdCount = componentsWithUsageByComponentId.size
+
+      // Get usage statistics for each component
+      val componentUsed = componentsWithUsageByComponentId.filter(_._2 > 0)
+      val componentUsedMap: Map[String, Long] = componentUsed
+        .map { case (name, usages) =>
+          (mapNameToStat(name), usages)
+        }
+
+      (
+        componentUsedMap ++
+          Map(
+            ComponentsCount.toString -> componentsWithUsageByComponentIdCount
+          )
+      ).mapValuesNow(_.toString)
     }
   }
 
@@ -174,6 +212,12 @@ object ScenarioStatistics {
     else orderedList.last
   }
 
+  def mapNameToStat(componentId: String): String = {
+    val shortenedName = componentId.replaceAll(vowelsRegex, "").toLowerCase
+
+    componentStatisticPrefix + shortenedName
+  }
+
 }
 
 sealed abstract class StatisticKey(val name: String) {
@@ -181,7 +225,7 @@ sealed abstract class StatisticKey(val name: String) {
 }
 
 case object AuthorsCount           extends StatisticKey("a_n")
-case object CategoriesCount        extends StatisticKey("c")
+case object CategoriesCount        extends StatisticKey("ca")
 case object ComponentsCount        extends StatisticKey("c_n")
 case object VersionsMedian         extends StatisticKey("v_m")
 case object AttachmentsTotal       extends StatisticKey("a_t")
@@ -192,8 +236,8 @@ case object VersionsAverage        extends StatisticKey("v_v")
 case object UptimeInSecondsAverage extends StatisticKey("u_v")
 case object UptimeInSecondsMax     extends StatisticKey("u_ma")
 case object UptimeInSecondsMin     extends StatisticKey("u_mi")
-case object CommentsAverage        extends StatisticKey("c_v")
-case object CommentsTotal          extends StatisticKey("c_t")
+case object CommentsAverage        extends StatisticKey("co_v")
+case object CommentsTotal          extends StatisticKey("co_t")
 case object FragmentsUsedMedian    extends StatisticKey("fr_m")
 case object FragmentsUsedAverage   extends StatisticKey("fr_v")
 case object NodesMedian            extends StatisticKey("n_m")
