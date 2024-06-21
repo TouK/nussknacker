@@ -139,13 +139,13 @@ object ScenarioStatistics {
             components.find(compo => compo.id.equals(comp.componentId)) match {
               case Some(comps) =>
                 if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
-                  (comp.componentId.name, comp.usageCount)
+                  (comp.componentId.toString, comp.usageCount)
                 } else {
                   ("Custom", comp.usageCount)
                 }
               case None =>
                 builtinComponentsNames.find(builtin => builtin == comp.name) match {
-                  case Some(_) => (comp.componentId.name.capitalize, comp.usageCount)
+                  case Some(_) => (comp.componentId.toString.capitalize, comp.usageCount)
                   case None    => ("Custom", comp.usageCount)
                 }
             }
