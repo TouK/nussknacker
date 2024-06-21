@@ -27,7 +27,6 @@ import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.statistics.ComponentKeys._
 
 import java.net.URI
 import java.time.Instant
@@ -237,9 +236,9 @@ class ScenarioStatisticsTest
       componentWithImplementation
     ).determineQueryParams().value.futureValue.value
 
-    params should contain(AccountService.toString -> "5")
-    params should contain(Custom.toString -> "1")
-    params shouldNot contain(Choice.toString)
+    params should contain("c_ccntsrvc" -> "5")
+    params should contain("c_cstm" -> "1")
+    params shouldNot contain("c_chc")
   }
 
   test("should combined statistics for all scenarios") {
@@ -338,101 +337,10 @@ class ScenarioStatisticsTest
       LiteEmbeddedDMCount    -> "0",
       UnknownDMCount         -> "0",
       ActiveScenarioCount    -> "2",
-      AccountService         -> "5",
-      Custom                 -> "1",
+      "c_ccntsrvc"           -> "5",
+      "c_cstm"               -> "1",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
-  }
-
-  test("check if all known components are present in ComponentKeys") {
-    val enumValues = ComponentKeys.valuesToEntriesMap.map { case (value, componentKey) => (value, componentKey.name) }
-    val names = Map(
-      "c_ggrgt"                  -> "Aggregate",
-      "c_ggrgttmblng"            -> "AggregateTumbling",
-      "c_lstrtrnbjctsrvc"        -> "ListReturnObjectService",
-      "c_cmpnntsrvc"             -> "ComponentService",
-      "c_clssnstncsrc"           -> "ClassInstanceSource",
-      "c_dtstypssrvc"            -> "DatesTypesService",
-      "c_chnmsrvc"               -> "EchoEnumService",
-      "c_ccntsrvc"               -> "AccountService",
-      "c_dynmcsrvc"              -> "DynamicService",
-      "c_ptnltypssrvc"           -> "OptionalTypesService",
-      "c_mntr"                   -> "Monitor",
-      "c_ggrgtsldng"             -> "AggregateSliding",
-      "c_hdvrbls"                -> "HideVariables",
-      "c_snglsdjn"               -> "SingleSideJoin",
-      "c_dly"                    -> "Delay",
-      "c_chc"                    -> "Choice",
-      "c_rqst"                   -> "Request",
-      "c_ddnd"                   -> "DeadEnd",
-      "c_nrchrnllrslt"           -> "EnricherNullResult",
-      "c_mltplprmssrvc"          -> "MultipleParamsService",
-      "c_nnwthdtrs"              -> "UnionWithEditors",
-      "c_dcsntbl"                -> "DecisionTable",
-      "c_rlkfkjsnsmplprdct"      -> "RealKafkaJsonSampleProduct",
-      "c_nn"                     -> "Union",
-      "c_dbqry"                  -> "DbQuery",
-      "c_kfktrnsctn"             -> "KafkaTransaction",
-      "c_prmsrvc"                -> "ParamService",
-      "c_rlkfk"                  -> "RealKafka",
-      "c_mdlcnfgrdr"             -> "ModelConfigReader",
-      "c_nsrc"                   -> "OneSource",
-      "c_vrbl"                   -> "Variable",
-      "c_cnstntstttrnsfrmr"      -> "ConstantStateTransformer",
-      "c_lstvrblwthfltr"         -> "LastVariableWithFilter",
-      "c_sttfl"                  -> "Stateful",
-      "c_nrchwthddtnldt"         -> "EnrichWithAdditionalData",
-      "c_sndcmmnctn"             -> "SendCommunication",
-      "c_clnthttpsrvc"           -> "ClientHttpService",
-      "c_flltrjn"                -> "FullOuterJoin",
-      "c_prvsvl"                 -> "PreviousValue",
-      "c_dblkp"                  -> "DbLookup",
-      "c_cnfgrtrsrvc"            -> "ConfiguratorService",
-      "c_cmmnctnsrc"             -> "CommunicationSource",
-      "c_kfk"                    -> "Kafka",
-      "c_rspns"                  -> "Response",
-      "c_srvcmdlsrvc"            -> "ServiceModelService",
-      "c_prvddcmpnntcmpnntv1"    -> "ProvidedComponentComponentV1",
-      "c_smpltypscstmnd"         -> "SimpleTypesCustomNode",
-      "c_ddndlt"                 -> "DeadEndLite",
-      "c_cllctntypssrvc"         -> "CollectionTypesService",
-      "c_nnrtrnbjctsrvc"         -> "UnionReturnObjectService",
-      "c_cmpgnsrvc"              -> "CampaignService",
-      "c_prvddcmpnntcmpnntv2"    -> "ProvidedComponentComponentV2",
-      "c_bnddsrc"                -> "BoundedSource",
-      "c_prdc"                   -> "Periodic",
-      "c_ddtnlvrbl"              -> "AdditionalVariable",
-      "c_cmmnctnsnk"             -> "CommunicationSink",
-      "c_csvsrclt"               -> "CsvSourceLite",
-      "c_ggrgtsssn"              -> "AggregateSession",
-      "c_csvsrc"                 -> "CsvSource",
-      "c_srvcwthdctprmtrdtr"     -> "ServiceWithDictParameterEditor",
-      "c_cllct"                  -> "Collect",
-      "c_cstmvldtdsrvc"          -> "CustomValidatedService",
-      "c_cmplxrtrnbjctsrvc"      -> "ComplexReturnObjectService",
-      "c_prvddcmpnntcmpnntv3"    -> "ProvidedComponentComponentV3",
-      "c_kfkstrng"               -> "KafkaString",
-      "c_frch"                   -> "ForEach",
-      "c_splt"                   -> "Split",
-      "c_nrchr"                  -> "Enricher",
-      "c_cnstntstttrnsfrmrlngvl" -> "ConstantStateTransformerLongValue",
-      "c_fltr"                   -> "Filter",
-      "c_smpltypssrvc"           -> "SimpleTypesService",
-      "c_gnrcsrcwthcstmvrbls"    -> "GenericSourceWithCustomVariables",
-      "c_sndsms"                 -> "SendSms",
-      "c_nnmm"                   -> "UnionMemo",
-      "c_cstmfltr"               -> "CustomFilter",
-      "c_sqlsrc"                 -> "SqlSource",
-      "c_lg"                     -> "Log",
-      "c_dynmcmltplprmssrvc"     -> "DynamicMultipleParamsService",
-      "c_nnrtrntyptrnsfrmr"      -> "NoneReturnTypeTransformer",
-      "c_tbl"                    -> "Table",
-      "c_rcrdvrbl"               -> "RecordVariable",
-      "c_mtngsrvc"               -> "MeetingService",
-      "c_trnsctnsrvc"            -> "TransactionService",
-      "c_cstm"                   -> "Custom"
-    )
-    enumValues should contain theSameElementsAs names
   }
 
   private def processActivityList = {
