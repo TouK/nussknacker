@@ -22,7 +22,7 @@ object ScenarioStatistics {
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
 
-  private val vowelsRegex = "[aeiouAEIOU-]"
+  private val vowelsRegex = "[aeiouyAEIOUY-]"
 
   private val componentStatisticPrefix = "c_"
 
