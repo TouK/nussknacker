@@ -9,7 +9,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.test.base.it.NuResourcesTest
 import pl.touk.nussknacker.test.utils.domain.TestFactory.withoutPermissions
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 
 class SettingsResourcesSpec
@@ -24,14 +24,12 @@ class SettingsResourcesSpec
 
   private val authenticationConfig: BasicAuthenticationConfiguration =
     BasicAuthenticationConfiguration.create(testConfig)
-  private val analyticsConfig: Option[AnalyticsConfig] = AnalyticsConfig(testConfig)
   private val usageStatisticsReportsConfig: UsageStatisticsReportsConfig =
     UsageStatisticsReportsConfig(true, None, None)
 
   private val settingsRoute = new SettingsResources(
     featureTogglesConfig,
     authenticationConfig.name,
-    analyticsConfig,
     usageStatisticsReportsConfig
   )
 
