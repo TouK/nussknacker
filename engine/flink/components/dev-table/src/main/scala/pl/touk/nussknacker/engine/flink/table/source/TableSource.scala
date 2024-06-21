@@ -97,13 +97,12 @@ class TableSource(
   // TODO: change api to handle generated and dumped data
   override def generateTestData(size: Int): TestData = {
 
-    // TODO: is this reliable for non-intellij idea runs?
     // TODO: check what we need to load - for tests we need only flink classes, connectors and formats
     val classPathUrls = List(
-      "components/flink-dev/flinkTableLocalEnvDeps.jar"
+      "components/flink-dev/flinkTable.jar"
     ).map(Path.of(_).toUri.toURL)
 
-    val classLoader = new URLClassLoader(classPathUrls.toArray, getClass.getClassLoader)
+    val classLoader = getClass.getClassLoader
 
     val flinkLocalEnvConfiguration = {
       val conf = new Configuration()

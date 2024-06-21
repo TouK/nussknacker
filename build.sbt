@@ -106,8 +106,8 @@ def defaultMergeStrategy: String => MergeStrategy = {
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
   // this prevents problem with table api in runtime:
   // https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
-//  TODO: Makes jobs fail but tests run on local env dont work without it
-  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
+//  TODO local: Makes jobs fail but tests run on local env dont work without it - check it again
+//  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
   // merge Netty version information files
@@ -493,8 +493,7 @@ devArtifacts := {
   modelArtifacts.value ++ List(
     (flinkDevModel / assembly).value                       -> "model/devModel.jar",
     (devPeriodicDM / assembly).value                       -> "managers/devPeriodicDM.jar",
-    (experimentalFlinkTableApiComponents / assembly).value -> "components/flink-dev/flinkTable.jar",
-    (flinkTableLocalEnvDeps / assembly).value              -> "components/flink-dev/flinkTableLocalEnvDeps.jar",
+    (experimentalFlinkTableApiComponents / assembly).value -> "components/flink-dev/flinkTable.jar"
   )
 }
 
@@ -1812,6 +1811,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-table"                 % flinkV,
+        "org.apache.flink" % "flink-clients"               % flinkV,
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
@@ -1828,27 +1828,6 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
     commonUtils          % Provided,
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
-  )
-
-// TODO: how to build dependency-only-jar cleaner?
-lazy val flinkTableLocalEnvDeps = (project in flink("."))
-  .settings(
-    name                             := "flinkTableLocalEnvDeps",
-    assembly / assemblyJarName       := "flinkTableLocalEnvDeps.jar",
-    assembly / assemblyOption        := (assembly / assemblyOption).value.withIncludeScala(false).withIncludeDependency(true),
-    libraryDependencies ++= {
-      Seq(
-        "org.apache.flink" % "flink-table"                 % flinkV,
-        "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
-        "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
-        "org.apache.flink" % "flink-clients"               % flinkV,
-        "org.apache.flink" % "flink-table-runtime"         % flinkV
-      )
-    },
-    assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", _*) => MergeStrategy.discard
-      case _                        => MergeStrategy.first
-    }
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
