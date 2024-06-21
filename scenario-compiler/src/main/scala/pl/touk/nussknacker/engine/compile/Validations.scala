@@ -58,10 +58,10 @@ object Validations {
     if (notUsedParams.nonEmpty) MissingParameters(notUsedParams).invalidNel[Unit] else valid(())
   }
 
-  def validate[T](paramDefinition: Parameter, parameter: (TypedParameter, T))(
+  def validate[T](validators: List[Validator], parameter: (TypedParameter, T))(
       implicit nodeId: NodeId
   ): ValidatedNel[PartSubGraphCompilationError, (TypedParameter, T)] = {
-    validate(paramDefinition.validators, parameter._1).map((_, parameter._2))
+    validate(validators, parameter._1).map((_, parameter._2))
   }
 
   def validate(validators: List[Validator], parameter: TypedParameter)(

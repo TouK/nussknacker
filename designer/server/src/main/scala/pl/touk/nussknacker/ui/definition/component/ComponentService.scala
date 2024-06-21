@@ -195,7 +195,7 @@ class DefaultComponentService(
           ComponentsValidator.validateComponents(components).map { _ =>
             val categories = components.flatMap(_.categories).toList.distinct.sorted
             // Categories is the only thing that have to be overriden. They are different for each processing type.
-            // For other component properties we validated that are the same.
+            // For other component properties we validated that are the same or we allow differences (icon).
             head.copy(categories = categories)
           }
       }
