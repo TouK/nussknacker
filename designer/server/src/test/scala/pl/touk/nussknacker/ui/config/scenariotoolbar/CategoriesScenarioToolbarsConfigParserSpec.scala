@@ -75,7 +75,15 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
                 None,
                 Some(ToolbarCondition(None, Some(true), None))
               ),
-              ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
+              ToolbarButtonConfig(
+                ToolbarButtonConfigType.ProcessDeploy,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None
+              ),
               ToolbarButtonConfig(
                 ToolbarButtonConfigType.CustomLink,
                 Some("metrics"),

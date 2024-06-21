@@ -39,7 +39,8 @@ describe("Process view", () => {
             .matchImage({ diffConfig: { threshold: 0.08 } });
         cy.get("[data-testid=search-panel]")
             .contains(/source/i)
-            .dblclick();
+            .click()
+            .click();
         cy.get("[data-testid=window]")
             .contains(/^source$/i)
             .should("be.visible");

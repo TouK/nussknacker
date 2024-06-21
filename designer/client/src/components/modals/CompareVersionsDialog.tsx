@@ -232,7 +232,7 @@ const CompareVersionsDialog = (props: WindowContentProps) => {
 
     return (
         <WindowContent buttons={buttons} icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />} {...props}>
-            <CompareModal className={cx("modalContentDark", css({ minWidth: 980, padding: "1em" }))}>
+            <CompareModal className={cx("modalContentDark", css({ padding: "1em" }))}>
                 <VersionsForm />
             </CompareModal>
         </WindowContent>

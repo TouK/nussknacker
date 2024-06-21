@@ -1,5 +1,4 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import NussknackerInitializer from "./containers/NussknackerInitializer";
 import { SettingsProvider } from "./containers/SettingsInitializer";
@@ -11,6 +10,7 @@ import { css } from "@emotion/css";
 import RootErrorBoundary from "./components/common/RootErrorBoundary";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
+import { createRoot } from "react-dom/client";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -21,6 +21,8 @@ rootContainer.className = css({
 document.body.appendChild(rootContainer);
 
 const router = createBrowserRouter(rootRoutes, { basename: BASE_PATH.replace(/\/$/, "") });
+
+const root = createRoot(rootContainer);
 
 const Root = () => {
     return (
@@ -41,4 +43,4 @@ const Root = () => {
     );
 };
 
-ReactDOM.render(<Root />, rootContainer);
+root.render(<Root />);

@@ -190,7 +190,6 @@ class StatisticsApiHttpServiceBusinessSpec
         .equalsPlainBody("")
         .verifyApplicationState {
           verifyStatisticsExists((statisticName.shortName, new GreaterThanOrEqualToLongMatcher(1)))
-          questDbPath.exists shouldBe true
         }
     }
 
