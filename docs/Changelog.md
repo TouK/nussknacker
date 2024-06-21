@@ -18,6 +18,7 @@
 * [#6185](https://github.com/TouK/nussknacker/pull/6185) Improvement: Make UniversalKafkaSinkFactory available at BoundedStream
 * [#6208](https://github.com/TouK/nussknacker/pull/6208) Fix issue with node window positioning after closing a full-screen window node.
 * [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
+* [#6245](https://github.com/TouK/nussknacker/pull/6245) Parameter validations defined in AdditionalUIConfigProvider now properly impact dynamic components.
 
 1.15.3 (Not released yet)
 -------------------------

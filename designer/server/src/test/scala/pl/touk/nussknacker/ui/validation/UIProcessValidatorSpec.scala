@@ -22,7 +22,8 @@ import pl.touk.nussknacker.engine.api.parameter.{
   ValueInputWithDictEditor,
   ValueInputWithFixedValuesProvided
 }
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, ProcessingType}
+import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.build.GraphBuilder.fragmentOutput
@@ -46,6 +47,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.{LocalModelData, ModelDefinitionBuilder}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{
   RenderNotAllowed,
@@ -75,7 +77,7 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
 class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with OptionValues {
@@ -1064,7 +1066,56 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validate service parameter based on additional config from provider - MandatoryParameterValidator") {
+  test(
+    "validate service parameter (dynamic component) based on additional config from provider - MandatoryParameterValidator"
+  ) {
+    val process = processWithEagerServiceWithDynamicComponent("")
+
+    val validator = new UIProcessValidator(
+      processingType = "Streaming",
+      validator = ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+          List(ComponentDefinition("eagerServiceWithDynamicComponent", EagerServiceWithDynamicComponent)),
+          additionalConfigsFromProvider = Map(
+            DesignerWideComponentId("streaming-service-eagerServiceWithDynamicComponent") -> ComponentAdditionalConfig(
+              parameterConfigs = Map(
+                ParameterName("param") -> ParameterAdditionalUIConfig(required = true, None, None, None, None)
+              )
+            )
+          )
+        )
+      ),
+      scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      additionalValidators = List.empty,
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "EmptyMandatoryParameter",
+                _,
+                _,
+                Some("param"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
+    "validate service parameter (static component) based on additional config from provider - MandatoryParameterValidator"
+  ) {
     val process = processWithOptionalParameterService("")
 
     val validator = new UIProcessValidator(
@@ -1109,7 +1160,9 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
     result.warnings shouldBe ValidationWarnings.success
   }
 
-  test("validate service parameter based on additional config from provider - ValidationExpressionParameterValidator") {
+  test(
+    "validate service parameter (static component) based on additional config from provider - ValidationExpressionParameterValidator"
+  ) {
     val process = processWithOptionalParameterService("'Barabasz'")
 
     val validator = new UIProcessValidator(
@@ -1152,6 +1205,60 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("optionalParam"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
+    "validate service parameter (dynamic component) based on additional config from provider - ValidationExpressionParameterValidator"
+  ) {
+    val process = processWithEagerServiceWithDynamicComponent("'Barabasz'")
+
+    val validator = new UIProcessValidator(
+      processingType = "Streaming",
+      validator = ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+          List(ComponentDefinition("eagerServiceWithDynamicComponent", EagerServiceWithDynamicComponent)),
+          additionalConfigsFromProvider = Map(
+            DesignerWideComponentId("streaming-service-eagerServiceWithDynamicComponent") -> ComponentAdditionalConfig(
+              parameterConfigs = Map(
+                ParameterName("param") -> ParameterAdditionalUIConfig(
+                  required = false,
+                  initialValue = None,
+                  hintText = None,
+                  valueEditor = None,
+                  valueCompileTimeValidation =
+                    Some(ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message")))
+                )
+              )
+            )
+          )
+        )
+      ),
+      scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      additionalValidators = List.empty,
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '#value.length() < 7'",
+                Some("param"),
                 NodeValidationErrorType.SaveAllowed,
                 None
               )
@@ -2007,6 +2114,44 @@ private object UIProcessValidatorSpec {
     ): Future[String] = ???
 
   }
+
+  object EagerServiceWithDynamicComponent extends EagerServiceWithStaticParametersAndReturnType {
+
+    override def parameters: List[Parameter] = List(
+      Parameter[String](ParameterName("param")).copy(
+        validators = List.empty
+      )
+    )
+
+    override def returnType: typing.TypingResult = Typed[String]
+
+    override def invoke(eagerParameters: Map[ParameterName, Any])(
+        implicit ec: ExecutionContext,
+        collector: ServiceInvocationCollector,
+        contextId: ContextId,
+        metaData: MetaData,
+        componentUseCase: ComponentUseCase
+    ): Future[Any] = {
+      Future.successful(eagerParameters.head._2.toString)
+    }
+
+  }
+
+  private def processWithEagerServiceWithDynamicComponent(paramValue: String) = createGraph(
+    List(
+      Source("inID", SourceRef(ProcessTestData.existingSourceFactory, List())),
+      Enricher(
+        "custom",
+        ServiceRef(
+          "eagerServiceWithDynamicComponent",
+          List(NodeParameter(ParameterName("param"), Expression.spel(paramValue)))
+        ),
+        "out"
+      ),
+      Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
+    ),
+    List(Edge("inID", "custom", None), Edge("custom", "out", None))
+  )
 
   private def processWithOptionalParameterService(optionalParamValue: String) = createGraph(
     List(
