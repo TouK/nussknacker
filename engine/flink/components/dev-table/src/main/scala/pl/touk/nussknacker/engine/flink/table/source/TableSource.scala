@@ -97,7 +97,7 @@ class TableSource(
   // TODO: change api to handle generated and dumped data
   override def generateTestData(size: Int): TestData = {
 
-    // TODO: check what we need to load - for tests we need only flink classes, connectors and formats
+    // TODO: how to get path of jar cleaner? Through config?
     val classPathUrls = List(
       "components/flink-dev/flinkTable.jar"
     ).map(Path.of(_).toUri.toURL)
