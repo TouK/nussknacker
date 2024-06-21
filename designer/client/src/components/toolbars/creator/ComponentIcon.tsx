@@ -4,9 +4,9 @@ import { useSelector } from "react-redux";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { NodeType, ProcessDefinitionData } from "../../../types";
-import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
 import { Icon } from "./Icon";
+import { createRoot } from "react-dom/client";
 
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
@@ -16,7 +16,8 @@ const preloadBeImage = memoize((src: string): string | null => {
 
     const id = `svg${++preloadedIndex}`;
     const div = document.createElement("div");
-    ReactDOM.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />, div);
+    const root = createRoot(div);
+    root.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />);
     document.body.appendChild(div);
     return `#${id}`;
 });

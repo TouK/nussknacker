@@ -159,7 +159,7 @@ export default forwardRef(function AceWrapper(
             editorProps={DEFAULF_EDITOR_PROPS}
             setOptions={{ ...DEFAULT_OPTIONS, showLineNumbers }}
             enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
-            commands={[...DEFAULT_COMMANDS, ...commands] as ICommand[]}
+            commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
         />
     );
 });
