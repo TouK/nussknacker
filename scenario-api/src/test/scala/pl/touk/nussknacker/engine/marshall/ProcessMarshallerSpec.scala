@@ -28,7 +28,7 @@ class ProcessMarshallerSpec
     with Inside
     with TableDrivenPropertyChecks {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private lazy val testStreamMetaData = StreamMetaData(Some(2), Some(true))
 
@@ -43,11 +43,11 @@ class ProcessMarshallerSpec
       ScenarioBuilder
         .streaming("process1")
         .source("a", "")
-        .filter("b", "alamakota == 'true'", nestedGraph("b"))
+        .filter("b", "alamakota == 'true'".spel, nestedGraph("b"))
         .customNode("b", "alamakota == 'true'", "someRef")
-        .buildVariable("c", "fooVar", "f1" -> "expr1", "f2" -> "expr2")
-        .enricher("d", "barVar", "dService", "p1" -> "expr3")
-        .switch("f", "expr4", "eVar", nestedGraph("e"), Case("e1", GraphBuilder.emptySink("endE1", "")))
+        .buildVariable("c", "fooVar", "f1" -> "expr1".spel, "f2" -> "expr2".spel)
+        .enricher("d", "barVar", "dService", "p1" -> "expr3".spel)
+        .switch("f", "expr4".spel, "eVar", nestedGraph("e"), Case("e1".spel, GraphBuilder.emptySink("endE1", "")))
 
     val result = marshallAndUnmarshall(process)
 
@@ -58,7 +58,7 @@ class ProcessMarshallerSpec
     val process = ScenarioBuilder
       .streaming("process1")
       .source("a", "")
-      .processorEnd("d", "dService", "p1" -> "expr3")
+      .processorEnd("d", "dService", "p1" -> "expr3".spel)
 
     val result = marshallAndUnmarshall(process)
 
@@ -69,7 +69,7 @@ class ProcessMarshallerSpec
     val process = ScenarioBuilder
       .streaming("process1")
       .source("a", "")
-      .endingCustomNode("d", None, "endingCustomNode", "p1" -> "expr3")
+      .endingCustomNode("d", None, "endingCustomNode", "p1" -> "expr3".spel)
 
     val result = marshallAndUnmarshall(process)
 
@@ -107,7 +107,7 @@ class ProcessMarshallerSpec
         .streaming("process1")
         .additionalFields(additionalFields.description, additionalFields.properties)
         .source("a", "")
-        .processorEnd("d", "dService", "p1" -> "expr3")
+        .processorEnd("d", "dService", "p1" -> "expr3".spel)
 
       val result = marshallAndUnmarshall(process)
 

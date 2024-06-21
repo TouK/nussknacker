@@ -27,7 +27,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val avroSchema: avro.Schema = AvroTestData.personSchema
   val jsonSchema: Schema      = JsonTestData.schemaPerson
@@ -40,7 +40,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     .source(
       "my-source",
       KafkaUniversalName,
-      topicParamName.value         -> s"'$inputTopic'",
+      topicParamName.value         -> s"'$inputTopic'".spel,
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(
@@ -60,7 +60,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     .source(
       "my-source",
       KafkaUniversalName,
-      topicParamName.value         -> s"'$inputTopic'",
+      topicParamName.value         -> s"'$inputTopic'".spel,
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
     .emptySink(

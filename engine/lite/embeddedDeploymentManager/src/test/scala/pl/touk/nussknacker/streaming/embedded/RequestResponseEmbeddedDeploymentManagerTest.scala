@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManagerProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestResponseComponentProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.test.{AvailablePortFinder, ValidatedValuesDetailedMessage, VeryPatientScalaFutures}

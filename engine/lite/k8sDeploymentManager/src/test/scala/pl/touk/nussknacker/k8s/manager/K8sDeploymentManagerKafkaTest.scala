@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
@@ -71,16 +71,16 @@ class K8sDeploymentManagerKafkaTest
     def deployScenario(version: Int) = {
       val scenario = ScenarioBuilder
         .streamingLite("foo scenario \u2620")
-        .source("source", "kafka", "Topic" -> s"'$input'", "Schema version" -> "'latest'")
+        .source("source", "kafka", "Topic" -> s"'$input'".spel, "Schema version" -> "'latest'".spel)
         .emptySink(
           "sink",
           "kafka",
-          "Topic"                 -> s"'$output'",
-          "Schema version"        -> "'latest'",
-          "Key"                   -> "",
-          "Raw editor"            -> "true",
-          "Value validation mode" -> "'strict'",
-          "Value"                 -> s"{ original: #input, version: $version }"
+          "Topic"                 -> s"'$output'".spel,
+          "Schema version"        -> "'latest'".spel,
+          "Key"                   -> "".spel,
+          "Raw editor"            -> "true".spel,
+          "Value validation mode" -> "'strict'".spel,
+          "Value"                 -> s"{ original: #input, version: $version }".spel
         )
 
       val pversion = ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), "testUser", Some(22))
@@ -435,16 +435,16 @@ class K8sDeploymentManagerKafkaTest
     val manager = prepareManager(modelData, deployConfig)
     val scenario = ScenarioBuilder
       .streamingLite("foo scenario \u2620")
-      .source("source", "kafka", "Topic" -> s"'$input'", "Schema version" -> "'latest'")
+      .source("source", "kafka", "Topic" -> s"'$input'".spel, "Schema version" -> "'latest'".spel)
       .emptySink(
         "sink",
         "kafka",
-        "Topic"                 -> s"'$output'",
-        "Schema version"        -> "'latest'",
-        "Key"                   -> "",
-        "Raw editor"            -> "true",
-        "Value validation mode" -> "'strict'",
-        "Value"                 -> "#input"
+        "Topic"                 -> s"'$output'".spel,
+        "Schema version"        -> "'latest'".spel,
+        "Key"                   -> "".spel,
+        "Raw editor"            -> "true".spel,
+        "Value validation mode" -> "'strict'".spel,
+        "Value"                 -> "#input".spel
       )
     logger.info(s"Running kafka test on ${scenario.name} $input - $output")
     val version = ProcessVersion(VersionId(11), scenario.name, ProcessId(1234), "testUser", Some(22))

@@ -47,7 +47,7 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Upd
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
 import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
 
@@ -556,8 +556,8 @@ class ProcessesResourcesSpec
   test("save correct process json with ok status") {
     val validProcess = ScenarioBuilder
       .streaming("valid")
-      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'")
-      .emptySink("end", "kafka-string", "Topic" -> s"'output'", "Value" -> "#input")
+      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'".spel)
+      .emptySink("end", "kafka-string", "Topic" -> s"'output'".spel, "Value" -> "#input".spel)
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
       val fetchedScenario = fetchScenario(validProcess.name)
