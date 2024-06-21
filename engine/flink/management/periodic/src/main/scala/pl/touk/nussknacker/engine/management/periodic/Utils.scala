@@ -11,10 +11,10 @@ import scala.util.{Failure, Success}
 
 object Utils extends LazyLogging {
 
-  private val GracefulStopTimeout    = 5 seconds
-  private val ActorResolutionTimeout = 5 seconds
+  private val GracefulStopTimeout    = 10 seconds
+  private val ActorResolutionTimeout = 10 seconds
   private val ActorResolutionPause   = 50 milliseconds
-  private val ActorResolutionRetries = 50
+  private val ActorResolutionRetries = 400
 
   def runSafely(action: => Unit): Unit = try {
     action
