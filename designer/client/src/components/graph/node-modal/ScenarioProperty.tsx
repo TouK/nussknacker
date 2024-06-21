@@ -2,13 +2,13 @@ import { get } from "lodash";
 import EditableEditor from "./editors/EditableEditor";
 import React, { useCallback } from "react";
 import { ExpressionLang } from "./editors/expression/types";
-import { getValidationErrorsForField, PossibleValue } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeValidationError, PropertiesType } from "../../../types";
 
 export interface ScenarioPropertyConfig {
     editor: any;
     label: string;
-    values: Array<PossibleValue>;
+    defaultValue: string | null;
 }
 
 interface Props {

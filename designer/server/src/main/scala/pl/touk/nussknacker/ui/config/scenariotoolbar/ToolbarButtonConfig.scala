@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.config.scenariotoolbar
 
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.ToolbarButtonType
+import pl.touk.nussknacker.ui.process.DocsButtonConfig
 
 final case class ToolbarButtonConfig(
     `type`: ToolbarButtonType,
@@ -10,7 +11,9 @@ final case class ToolbarButtonConfig(
     icon: Option[String],
     url: Option[String],
     hidden: Option[ToolbarCondition],
-    disabled: Option[ToolbarCondition]
+    disabled: Option[ToolbarCondition],
+    markdownContent: Option[String] = None,
+    docs: Option[DocsButtonConfig] = None
 ) {
 
   if (ToolbarButtonConfigType.requiresNameParam(`type`)) {

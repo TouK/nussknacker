@@ -1,0 +1,190 @@
+{
+  "metaData" : {
+    "id" : "DetermineOfferedPlan",
+    "additionalFields": {
+      "description": null,
+      "properties": {
+        "parallelism": "1",
+        "spillStateToDisk": "true"
+      },
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "Customers",
+      "ref" : {
+        "typ" : "kafka",
+        "parameters" : [
+          {
+            "name" : "Topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'Customers'"
+            }
+          },
+          {
+            "name" : "Schema version",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'latest'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 181,
+          "y" : 10
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "id" : "DecisionTable",
+      "service" : {
+        "id" : "decision-table",
+        "parameters" : [
+          {
+            "name" : "Decision Table",
+            "expression" : {
+              "language" : "tabularDataDefinition",
+              "expression" : "{\n  \"rows\": [\n    [\n      null,\n      \"17\",\n      null,\n      null,\n      \"Junior Package\"\n    ],\n    [\n      \"18\",\n      \"30\",\n      \"Male\",\n      \"true\",\n      \"Premium Data Plan\"\n    ],\n    [\n      \"18\",\n      \"30\",\n      \"Male\",\n      \"false\",\n      \"Standard Data Plan\"\n    ],\n    [\n      \"18\",\n      \"30\",\n      \"Female\",\n      \"true\",\n      \"Premium Data Plan\"\n    ],\n    [\n      \"18\",\n      \"30\",\n      \"Female\",\n      \"false\",\n      \"Standard Data Plan\"\n    ],\n    [\n      \"31\",\n      \"50\",\n      \"Male\",\n      \"true\",\n      \"Family Package\"\n    ],\n    [\n      \"31\",\n      \"50\",\n      null,\n      \"false\",\n      \"Standard Data Plan\"\n    ],\n    [\n      \"51\",\n      null,\n      null,\n      null,\n      \"Senior Citizen Plan\"\n    ]\n  ],\n  \"columns\": [\n    {\n      \"name\": \"MinAge\",\n      \"type\": \"java.lang.Integer\"\n    },\n    {\n      \"name\": \"MaxAge\",\n      \"type\": \"java.lang.Integer\"\n    },\n    {\n      \"name\": \"Gender\",\n      \"type\": \"java.lang.String\"\n    },\n    {\n      \"name\": \"IsBigSpender\",\n      \"type\": \"java.lang.Boolean\"\n    },\n    {\n      \"name\": \"OfferedPlan\",\n      \"type\": \"java.lang.String\"\n    }\n  ]\n}"
+            }
+          },
+          {
+            "name" : "Match condition",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "(#ROW.MinAge != null ? #input.age > #ROW.MinAge : true) && \n(#ROW.MaxAge != null ? #input.age <= #ROW.MaxAge : true) && \n(#ROW.Gender != null ? #input.gender == #ROW.Gender : true) && \n(#ROW.IsBigSpender != null ? #input.isBigSpender == #ROW.IsBigSpender : true)"
+            }
+          }
+        ]
+      },
+      "output" : "offeredPlans",
+      "additionalFields" : {
+        "description" : "Plans assigned to customers",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 180
+        }
+      },
+      "type" : "Enricher"
+    },
+    {
+      "id" : "OfferedPlansOutput",
+      "varName" : "outputVar",
+      "value" : {
+        "language" : "spel",
+        "expression" : "#offeredPlans"
+      },
+      "additionalFields" : {
+        "description" : "list of cars that need service",
+        "layoutData" : {
+          "x" : 180,
+          "y" : 360
+        }
+      },
+      "type" : "Variable"
+    },
+    {
+      "nextFalse" : [
+        {
+          "id" : "SendPremiumPlanSMS",
+          "ref" : {
+            "typ" : "kafka",
+            "parameters" : [
+              {
+                "name" : "Topic",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "'SmsesWithOffer'"
+                }
+              },
+              {
+                "name" : "Schema version",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "'latest'"
+                }
+              },
+              {
+                "name" : "Key",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : ""
+                }
+              },
+              {
+                "name" : "Raw editor",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "false"
+                }
+              },
+              {
+                "name" : "assignedOffer",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#offeredPlans[0].OfferedPlan"
+                }
+              },
+              {
+                "name" : "name",
+                "expression" : {
+                  "language" : "spel",
+                  "expression" : "#input.name"
+                }
+              }
+            ]
+          },
+          "endResult" : null,
+          "isDisabled" : null,
+          "additionalFields" : {
+            "description" : null,
+            "layoutData" : {
+              "x" : 446,
+              "y" : 708
+            }
+          },
+          "type" : "Sink"
+        }
+      ],
+      "id" : "IsStandardPlan",
+      "expression" : {
+        "language" : "spel",
+        "expression" : "#offeredPlans[0].OfferedPlan == \"Standard Data Plan\""
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 180,
+          "y" : 540
+        }
+      },
+      "type" : "Filter"
+    },
+    {
+      "id" : "dead-end",
+      "ref" : {
+        "typ" : "dead-end",
+        "parameters" : [
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : -73,
+          "y" : 714
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

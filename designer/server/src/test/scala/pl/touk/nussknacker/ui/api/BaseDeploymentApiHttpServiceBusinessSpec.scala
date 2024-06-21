@@ -14,7 +14,6 @@ import org.testcontainers.containers.BindMode
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatusName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.flink.test.docker.FileSystemBind
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.NuItTest
@@ -22,6 +21,7 @@ import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithFlinkContainersDeploymentManager
 }
+import pl.touk.nussknacker.test.containers.FileSystemBind
 
 import java.io.File
 import java.nio.file.attribute.PosixFilePermissions

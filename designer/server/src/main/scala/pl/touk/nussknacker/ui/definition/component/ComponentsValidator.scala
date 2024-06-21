@@ -53,6 +53,7 @@ private[component] object ComponentsValidator {
       ComponentGroupNameAttribute,
       components.map(_.componentGroupName)
     )
+
     val wrongConfigurations =
       wrongConfiguredNames ++ wrongConfiguredIcons ++ wrongConfiguredTypes ++ wrongConfiguredGroups
     wrongConfigurations.toList

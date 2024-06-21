@@ -7,7 +7,6 @@ import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.test.utils.domain.ReflectionBasedUtils
 import pl.touk.nussknacker.test.utils.{InvalidExample, OpenAPIExamplesValidator, OpenAPISchemaComponents}
-import pl.touk.nussknacker.ui.security.api.AuthManager
 import pl.touk.nussknacker.ui.security.api.AuthManager.ImpersonationConsideringInputEndpoint
 import pl.touk.nussknacker.ui.services.NuDesignerExposedApiHttpService
 import pl.touk.nussknacker.ui.util.Project
