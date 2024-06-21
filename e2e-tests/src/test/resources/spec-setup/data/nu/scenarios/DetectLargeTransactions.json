@@ -1,0 +1,125 @@
+{
+  "metaData": {
+    "id": "DetectLargeTransactions",
+    "additionalFields": {
+      "description": null,
+      "properties": {
+        "parallelism": "1",
+        "spillStateToDisk": "true"
+      },
+      "metaDataType": "StreamMetaData"
+    }
+  },
+  "nodes": [
+    {
+      "id": "transactions",
+      "ref": {
+        "typ": "kafka",
+        "parameters": [
+          {
+            "name": "Topic",
+            "expression": {
+              "language": "spel",
+              "expression": "'Transactions'"
+            }
+          },
+          {
+            "name": "Schema version",
+            "expression": {
+              "language": "spel",
+              "expression": "'latest'"
+            }
+          }
+        ]
+      },
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "type": "Source"
+    },
+    {
+      "nextFalse": [
+      ],
+      "id": "only large ones",
+      "expression": {
+        "language": "spel",
+        "expression": "#input.amount > 20"
+      },
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 180
+        }
+      },
+      "type": "Filter"
+    },
+    {
+      "id": "send for audit",
+      "ref": {
+        "typ": "kafka",
+        "parameters": [
+          {
+            "name": "Topic",
+            "expression": {
+              "language": "spel",
+              "expression": "'ProcessedTransactions'"
+            }
+          },
+          {
+            "name": "Schema version",
+            "expression": {
+              "language": "spel",
+              "expression": "'latest'"
+            }
+          },
+          {
+            "name": "Key",
+            "expression": {
+              "language": "spel",
+              "expression": ""
+            }
+          },
+          {
+            "name": "Raw editor",
+            "expression": {
+              "language": "spel",
+              "expression": "true"
+            }
+          },
+          {
+            "name": "Value validation mode",
+            "expression": {
+              "language": "spel",
+              "expression": "'strict'"
+            }
+          },
+          {
+            "name": "Value",
+            "expression": {
+              "language": "spel",
+              "expression": "#input"
+            }
+          }
+        ]
+      },
+      "endResult": null,
+      "isDisabled": null,
+      "additionalFields": {
+        "description": null,
+        "layoutData": {
+          "x": 0,
+          "y": 360
+        }
+      },
+      "type": "Sink"
+    }
+  ],
+  "additionalBranches": [
+  ]
+}
