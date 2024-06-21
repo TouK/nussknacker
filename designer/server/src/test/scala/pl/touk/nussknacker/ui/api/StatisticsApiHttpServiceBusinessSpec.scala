@@ -34,7 +34,6 @@ import pl.touk.nussknacker.test.{
   RestAssuredVerboseLoggingIfValidationFails
 }
 import pl.touk.nussknacker.ui.api.description.StatisticsApiEndpoints.Dtos.StatisticName
-import pl.touk.nussknacker.ui.statistics.ComponentKeys.Filter
 import pl.touk.nussknacker.ui.statistics._
 
 import java.time.format.DateTimeFormatter
@@ -149,7 +148,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsMin.name, equalTo("1")),
           (VersionsAverage.name, equalTo("1")),
           (NuVersion.name, equalTo(nuVersion)),
-          (Filter.toString, equalTo("1"))
+          ("c_fltr", equalTo("1"))
         )
     }
   }

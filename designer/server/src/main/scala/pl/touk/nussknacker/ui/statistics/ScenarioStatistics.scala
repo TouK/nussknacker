@@ -23,7 +23,7 @@ object ScenarioStatistics {
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
 
-  private val builtinNames = BuiltInComponentId.All.map(_.name)
+  private val builtinComponentsNames = BuiltInComponentId.All.map(_.name)
 
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     scenariosInputData
@@ -141,7 +141,7 @@ object ScenarioStatistics {
                   ("Custom", comp.usageCount)
                 }
               case None =>
-                builtinNames.find(builtin => builtin == comp.name) match {
+                builtinComponentsNames.find(builtin => builtin == comp.name) match {
                   case Some(_) => (comp.name.capitalize, comp.usageCount)
                   case None    => ("Custom", comp.usageCount)
                 }
@@ -152,11 +152,11 @@ object ScenarioStatistics {
 
       val componentsWithUsageByNameCount = componentsWithUsageByName.size
 
-//       Get usage statistics for each component
+      // Get usage statistics for each component
       val componentUsed = componentsWithUsageByName.filter(_._2 > 0)
       val componentUsedMap: Map[String, Long] = componentUsed
         .map { case (name, usages) =>
-          (mapNameToStat(name), usages)
+          (shortenedStatisticName(name, Some("c")), usages)
         }
 
       (
@@ -214,9 +214,12 @@ object ScenarioStatistics {
     else orderedList.last
   }
 
-  private def mapNameToStat(name: String): String = {
-    val response = name.replaceAll("[aeiouAEIOU-]", "").toLowerCase
-    "c_" + response
+  def shortenedStatisticName(name: String, prefix: Option[String]): String = {
+    val shortenedName = name.replaceAll("[aeiouAEIOU-]", "").toLowerCase
+    prefix match {
+      case Some(prefix) => prefix + "_" + shortenedName
+      case None         => shortenedName
+    }
   }
 
 }
@@ -258,102 +261,3 @@ case object ActiveScenarioCount    extends StatisticKey("s_a")
 case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
 case object NuFingerprint          extends StatisticKey("fingerprint")
 case object NuVersion              extends StatisticKey("version")
-
-sealed abstract class ComponentKeys(val value: String, val name: String) extends StringEnumEntry {
-  override def toString: String = value
-}
-
-object ComponentKeys extends StringEnum[ComponentKeys] {
-  case object Aggregate                  extends ComponentKeys("c_ggrgt", "Aggregate")
-  case object AggregateTumbling          extends ComponentKeys("c_ggrgttmblng", "AggregateTumbling")
-  case object ListReturnObjectService    extends ComponentKeys("c_lstrtrnbjctsrvc", "ListReturnObjectService")
-  case object ComponentService           extends ComponentKeys("c_cmpnntsrvc", "ComponentService")
-  case object ClassInstanceSource        extends ComponentKeys("c_clssnstncsrc", "ClassInstanceSource")
-  case object DatesTypesService          extends ComponentKeys("c_dtstypssrvc", "DatesTypesService")
-  case object EchoEnumService            extends ComponentKeys("c_chnmsrvc", "EchoEnumService")
-  case object AccountService             extends ComponentKeys("c_ccntsrvc", "AccountService")
-  case object DynamicService             extends ComponentKeys("c_dynmcsrvc", "DynamicService")
-  case object OptionalTypesService       extends ComponentKeys("c_ptnltypssrvc", "OptionalTypesService")
-  case object Monitor                    extends ComponentKeys("c_mntr", "Monitor")
-  case object AggregateSliding           extends ComponentKeys("c_ggrgtsldng", "AggregateSliding")
-  case object HideVariables              extends ComponentKeys("c_hdvrbls", "HideVariables")
-  case object SingleSideJoin             extends ComponentKeys("c_snglsdjn", "SingleSideJoin")
-  case object Delay                      extends ComponentKeys("c_dly", "Delay")
-  case object Choice                     extends ComponentKeys("c_chc", "Choice")
-  case object Request                    extends ComponentKeys("c_rqst", "Request")
-  case object DeadEnd                    extends ComponentKeys("c_ddnd", "DeadEnd")
-  case object EnricherNullResult         extends ComponentKeys("c_nrchrnllrslt", "EnricherNullResult")
-  case object MultipleParamsService      extends ComponentKeys("c_mltplprmssrvc", "MultipleParamsService")
-  case object UnionWithEditors           extends ComponentKeys("c_nnwthdtrs", "UnionWithEditors")
-  case object DecisionTable              extends ComponentKeys("c_dcsntbl", "DecisionTable")
-  case object RealKafkaJsonSampleProduct extends ComponentKeys("c_rlkfkjsnsmplprdct", "RealKafkaJsonSampleProduct")
-  case object Union                      extends ComponentKeys("c_nn", "Union")
-  case object DbQuery                    extends ComponentKeys("c_dbqry", "DbQuery")
-  case object KafkaTransaction           extends ComponentKeys("c_kfktrnsctn", "KafkaTransaction")
-  case object ParamService               extends ComponentKeys("c_prmsrvc", "ParamService")
-  case object RealKafka                  extends ComponentKeys("c_rlkfk", "RealKafka")
-  case object ModelConfigReader          extends ComponentKeys("c_mdlcnfgrdr", "ModelConfigReader")
-  case object OneSource                  extends ComponentKeys("c_nsrc", "OneSource")
-  case object Variable                   extends ComponentKeys("c_vrbl", "Variable")
-  case object ConstantStateTransformer   extends ComponentKeys("c_cnstntstttrnsfrmr", "ConstantStateTransformer")
-  case object LastVariableWithFilter     extends ComponentKeys("c_lstvrblwthfltr", "LastVariableWithFilter")
-  case object Stateful                   extends ComponentKeys("c_sttfl", "Stateful")
-  case object EnrichWithAdditionalData   extends ComponentKeys("c_nrchwthddtnldt", "EnrichWithAdditionalData")
-  case object SendCommunication          extends ComponentKeys("c_sndcmmnctn", "SendCommunication")
-  case object ClientHttpService          extends ComponentKeys("c_clnthttpsrvc", "ClientHttpService")
-  case object FullOuterJoin              extends ComponentKeys("c_flltrjn", "FullOuterJoin")
-  case object PreviousValue              extends ComponentKeys("c_prvsvl", "PreviousValue")
-  case object DbLookup                   extends ComponentKeys("c_dblkp", "DbLookup")
-  case object ConfiguratorService        extends ComponentKeys("c_cnfgrtrsrvc", "ConfiguratorService")
-  case object CommunicationSource        extends ComponentKeys("c_cmmnctnsrc", "CommunicationSource")
-  case object Kafka                      extends ComponentKeys("c_kfk", "Kafka")
-  case object Response                   extends ComponentKeys("c_rspns", "Response")
-  case object ServiceModelService        extends ComponentKeys("c_srvcmdlsrvc", "ServiceModelService")
-  case object ProvidedComponentComponentV1
-      extends ComponentKeys("c_prvddcmpnntcmpnntv1", "ProvidedComponentComponentV1")
-  case object SimpleTypesCustomNode    extends ComponentKeys("c_smpltypscstmnd", "SimpleTypesCustomNode")
-  case object DeadEndLite              extends ComponentKeys("c_ddndlt", "DeadEndLite")
-  case object CollectionTypesService   extends ComponentKeys("c_cllctntypssrvc", "CollectionTypesService")
-  case object UnionReturnObjectService extends ComponentKeys("c_nnrtrnbjctsrvc", "UnionReturnObjectService")
-  case object CampaignService          extends ComponentKeys("c_cmpgnsrvc", "CampaignService")
-  case object ProvidedComponentComponentV2
-      extends ComponentKeys("c_prvddcmpnntcmpnntv2", "ProvidedComponentComponentV2")
-  case object BoundedSource      extends ComponentKeys("c_bnddsrc", "BoundedSource")
-  case object Periodic           extends ComponentKeys("c_prdc", "Periodic")
-  case object AdditionalVariable extends ComponentKeys("c_ddtnlvrbl", "AdditionalVariable")
-  case object CommunicationSink  extends ComponentKeys("c_cmmnctnsnk", "CommunicationSink")
-  case object CsvSourceLite      extends ComponentKeys("c_csvsrclt", "CsvSourceLite")
-  case object AggregateSession   extends ComponentKeys("c_ggrgtsssn", "AggregateSession")
-  case object CsvSource          extends ComponentKeys("c_csvsrc", "CsvSource")
-  case object ServiceWithDictParameterEditor
-      extends ComponentKeys("c_srvcwthdctprmtrdtr", "ServiceWithDictParameterEditor")
-  case object Collect                    extends ComponentKeys("c_cllct", "Collect")
-  case object CustomValidatedService     extends ComponentKeys("c_cstmvldtdsrvc", "CustomValidatedService")
-  case object ComplexReturnObjectService extends ComponentKeys("c_cmplxrtrnbjctsrvc", "ComplexReturnObjectService")
-  case object ProvidedComponentComponentV3
-      extends ComponentKeys("c_prvddcmpnntcmpnntv3", "ProvidedComponentComponentV3")
-  case object KafkaString extends ComponentKeys("c_kfkstrng", "KafkaString")
-  case object ForEach     extends ComponentKeys("c_frch", "ForEach")
-  case object Split       extends ComponentKeys("c_splt", "Split")
-  case object Enricher    extends ComponentKeys("c_nrchr", "Enricher")
-  case object ConstantStateTransformerLongValue
-      extends ComponentKeys("c_cnstntstttrnsfrmrlngvl", "ConstantStateTransformerLongValue")
-  case object Filter             extends ComponentKeys("c_fltr", "Filter")
-  case object SimpleTypesService extends ComponentKeys("c_smpltypssrvc", "SimpleTypesService")
-  case object GenericSourceWithCustomVariables
-      extends ComponentKeys("c_gnrcsrcwthcstmvrbls", "GenericSourceWithCustomVariables")
-  case object SendSms                      extends ComponentKeys("c_sndsms", "SendSms")
-  case object UnionMemo                    extends ComponentKeys("c_nnmm", "UnionMemo")
-  case object CustomFilter                 extends ComponentKeys("c_cstmfltr", "CustomFilter")
-  case object SqlSource                    extends ComponentKeys("c_sqlsrc", "SqlSource")
-  case object Log                          extends ComponentKeys("c_lg", "Log")
-  case object DynamicMultipleParamsService extends ComponentKeys("c_dynmcmltplprmssrvc", "DynamicMultipleParamsService")
-  case object NoneReturnTypeTransformer    extends ComponentKeys("c_nnrtrntyptrnsfrmr", "NoneReturnTypeTransformer")
-  case object Table                        extends ComponentKeys("c_tbl", "Table")
-  case object RecordVariable               extends ComponentKeys("c_rcrdvrbl", "RecordVariable")
-  case object MeetingService               extends ComponentKeys("c_mtngsrvc", "MeetingService")
-  case object TransactionService           extends ComponentKeys("c_trnsctnsrvc", "TransactionService")
-  case object Custom                       extends ComponentKeys("c_cstm", "Custom")
-
-  val values: IndexedSeq[ComponentKeys] = findValues
-}
