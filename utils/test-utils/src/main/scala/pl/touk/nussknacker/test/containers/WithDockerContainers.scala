@@ -2,13 +2,13 @@ package pl.touk.nussknacker.test.containers
 
 import org.scalatest.Suite
 import org.testcontainers.containers.{BindMode, Network}
-import pl.touk.nussknacker.test.containers.LogLevelConfigurableSlf4jLogConsumer.LoggerLevel
+import pl.touk.nussknacker.test.containers.LogLevelConfigurableScalaLoggingConsumer.LoggerLevel
 
 trait WithDockerContainers { self: Suite =>
 
   // dedicated method because withPrefix is mutable
-  protected def logConsumer(prefix: String): LogLevelConfigurableSlf4jLogConsumer =
-    new LogLevelConfigurableSlf4jLogConsumer(
+  protected def logConsumer(prefix: String): LogLevelConfigurableScalaLoggingConsumer =
+    new LogLevelConfigurableScalaLoggingConsumer(
       stdoutLogLevel = LoggerLevel.Debug,
       stderrLogLevel = LoggerLevel.Error
     ).withPrefix(prefix)

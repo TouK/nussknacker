@@ -3,15 +3,15 @@ package pl.touk.nussknacker.test.containers
 import com.typesafe.scalalogging.LazyLogging
 import org.testcontainers.containers.output.OutputFrame.OutputType
 import org.testcontainers.containers.output.{BaseConsumer, OutputFrame}
-import pl.touk.nussknacker.test.containers.LogLevelConfigurableSlf4jLogConsumer.LoggerLevel
+import pl.touk.nussknacker.test.containers.LogLevelConfigurableScalaLoggingConsumer.LoggerLevel
 
-class LogLevelConfigurableSlf4jLogConsumer(stdoutLogLevel: LoggerLevel, stderrLogLevel: LoggerLevel)
-    extends BaseConsumer[LogLevelConfigurableSlf4jLogConsumer]
+class LogLevelConfigurableScalaLoggingConsumer(stdoutLogLevel: LoggerLevel, stderrLogLevel: LoggerLevel)
+    extends BaseConsumer[LogLevelConfigurableScalaLoggingConsumer]
     with LazyLogging {
 
   private var prefix: String = ""
 
-  def withPrefix(prefix: String): LogLevelConfigurableSlf4jLogConsumer = {
+  def withPrefix(prefix: String): LogLevelConfigurableScalaLoggingConsumer = {
     this.prefix = "[" + prefix + "] "
     this
   }
@@ -41,7 +41,7 @@ class LogLevelConfigurableSlf4jLogConsumer(stdoutLogLevel: LoggerLevel, stderrLo
 
 }
 
-object LogLevelConfigurableSlf4jLogConsumer {
+object LogLevelConfigurableScalaLoggingConsumer {
 
   sealed trait LoggerLevel
 
