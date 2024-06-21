@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "title": "Person",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "gender": {
+      "description": "The person's gender",
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "description": "The person's full name"
+    },
+    "isBigSpender": {
+      "description": "Indicates if the person is a big spender",
+      "type": "boolean"
+    },
+    "age": {
+      "type": "integer",
+      "description": "The person's age in years"
+    }
+  }
+}

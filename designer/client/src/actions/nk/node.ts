@@ -6,6 +6,7 @@ import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { getScenarioGraph } from "../../reducers/selectors/graph";
+import { flushSync } from "react-dom";
 
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
@@ -84,6 +85,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
         const scenarioGraph = getScenarioGraph(state);
 
         batchGroupBy.startOrContinue();
+
         dispatch({
             type: "NODES_DISCONNECTED",
             from: from.id,
@@ -110,7 +112,6 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
                 processDefinitionData,
             });
         }
-
         dispatch(layoutChanged());
         batchGroupBy.end();
     };
@@ -119,8 +120,13 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {
     return (dispatch) => {
         batchGroupBy.startOrContinue();
-        dispatch({ type: "NODE_ADDED", node, position });
-        dispatch(layoutChanged());
+
+        // We need to disable automatic React batching https://react.dev/blog/2022/03/29/react-v18#new-feature-automatic-batching
+        // since it breaks redux undo in this case
+        flushSync(() => {
+            dispatch({ type: "NODE_ADDED", node, position });
+            dispatch(layoutChanged());
+        });
         batchGroupBy.end();
     };
 }

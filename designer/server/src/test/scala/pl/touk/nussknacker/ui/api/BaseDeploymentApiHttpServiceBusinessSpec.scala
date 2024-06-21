@@ -66,6 +66,10 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       )
     )
 
+  protected val fragment: CanonicalProcess = ScenarioBuilder
+    .fragment(scenarioName)
+    .fragmentOutput("out", "out")
+
   private lazy val inputDirectory = {
     val directory = Files.createTempDirectory(
       s"nusssknacker-${getClass.getSimpleName}-transactions-",
@@ -129,8 +133,11 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
       requestedDeploymentId: DeploymentId,
       expectedStatusName: DeploymentStatusName
   ): Unit = {
-    eventually(Timeout(Span(120, Seconds)), Interval(Span(3, Seconds))) {
-      checkDeploymentStatusNameMatches(requestedDeploymentId, expectedStatusName)
+
+    withClue(s"Deployment: $requestedDeploymentId") {
+      eventually(Timeout(Span(60, Seconds)), Interval(Span(3, Seconds))) {
+        checkDeploymentStatusNameMatches(requestedDeploymentId, expectedStatusName)
+      }
     }
   }
 

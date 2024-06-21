@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.test.base.it
 
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.base.db.WithTestDb
 import pl.touk.nussknacker.test.config.WithBatchDesignerConfig
@@ -17,6 +17,14 @@ trait WithBatchConfigScenarioHelper {
 
   def createSavedScenario(scenario: CanonicalProcess): ProcessId = {
     rawScenarioHelper.createSavedScenario(scenario, usedCategory.stringify, isFragment = false)
+  }
+
+  def createSavedFragment(fragment: CanonicalProcess): ProcessId = {
+    rawScenarioHelper.createSavedScenario(fragment, usedCategory.stringify, isFragment = true)
+  }
+
+  def archiveScenario(idWithName: ProcessIdWithName): Unit = {
+    rawScenarioHelper.archiveScenario(idWithName)
   }
 
 }

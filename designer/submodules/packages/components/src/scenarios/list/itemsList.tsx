@@ -140,9 +140,9 @@ export function ItemsList(props: {
     return (
         <div ref={ref}>
             <WindowScroller scrollElement={scrollParent}>
-                {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop }) => (
+                {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop, registerChild }) => (
                     <>
-                        <Paper sx={{ flex: 1 }}>
+                        <Paper ref={registerChild} sx={{ flex: 1 }}>
                             <ScenarioAndFragmentsList
                                 height={height}
                                 width={width}

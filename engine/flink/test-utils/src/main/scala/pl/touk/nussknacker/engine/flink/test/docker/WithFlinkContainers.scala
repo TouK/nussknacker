@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
-import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
 
 trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLogging =>
@@ -45,7 +44,6 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
     ).configure { self =>
       self.withNetwork(network)
-      self.setNetworkAliases(asList("jobmanager"))
       self.withLogConsumer(logConsumer(prefix = "jobmanager"))
       self.withFileSystemBind(savepointDir.toString, savepointDir.toString, BindMode.READ_WRITE)
       jobManagerExtraFSBinds.foreach { bind =>
@@ -65,7 +63,6 @@ trait WithFlinkContainers extends WithDockerContainers { self: Suite with LazyLo
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Successful registration at resource manager.*"))
     ).configure { self =>
       self.setNetwork(network)
-      self.setNetworkAliases(asList("taskmanager"))
       self.withLogConsumer(logConsumer(prefix = "taskmanager"))
       taskManagerExtraFSBinds.foreach { bind =>
         self.withFileSystemBind(bind.hostPath, bind.containerPath, bind.mode)

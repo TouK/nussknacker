@@ -9,6 +9,7 @@ import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
@@ -71,7 +72,7 @@ class DeploymentApiHttpServiceBusinessSpec
   "The deployment requesting endpoint" - {
     "authenticated as user with deploy access" - {
       "when invoked once should" - {
-        "return accepted status code and run deployment that will process input files" ignore {
+        "return accepted status code and run deployment that will process input files" in {
           val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
@@ -97,7 +98,7 @@ class DeploymentApiHttpServiceBusinessSpec
       }
 
       "when invoked twice with the same deployment id should" - {
-        "return conflict status code" ignore {
+        "return conflict status code" in {
           val requestedDeploymentId = DeploymentId.generate
           given()
             .applicationState {
@@ -115,7 +116,7 @@ class DeploymentApiHttpServiceBusinessSpec
       }
 
       "when invoked twice with different deployment id, run concurrently" - {
-        "return conflict status code" ignore {
+        "return conflict status code" in {
           `given`()
             .applicationState {
               createSavedScenario(scenario)
@@ -139,7 +140,7 @@ class DeploymentApiHttpServiceBusinessSpec
       }
 
       "when invoked twice with different deployment id, run one by one should" - {
-        "return status of correct deployment" ignore {
+        "return status of correct deployment" in {
           val firstDeploymentId  = DeploymentId.generate
           val secondDeploymentId = DeploymentId.generate
           `given`()
@@ -165,10 +166,43 @@ class DeploymentApiHttpServiceBusinessSpec
             }
         }
       }
+
+      "when invoked for fragment should" - {
+        "return bad request status code" in {
+          given()
+            .applicationState {
+              createSavedFragment(fragment)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
+            .Then()
+            .statusCode(400)
+            .equalsPlainBody("Deployment of fragment is not allowed")
+        }
+      }
+    }
+
+    "when invoked for archived scenario should" - {
+      "return bad request status code" in {
+        given()
+          .applicationState {
+            val scenarioId = createSavedScenario(scenario)
+            archiveScenario(ProcessIdWithName(scenarioId, ProcessName(scenarioName)))
+          }
+          .when()
+          .basicAuthAdmin()
+          .jsonBody(correctDeploymentRequest)
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
+          .Then()
+          .statusCode(400)
+          .equalsPlainBody("Deployment of archived scenario is not allowed")
+      }
     }
 
     "not authenticated should" - {
-      "return unauthenticated status code" ignore {
+      "return unauthenticated status code" in {
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -182,7 +216,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "badly authenticated should" - {
-      "return unauthenticated status code" ignore {
+      "return unauthenticated status code" in {
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -197,7 +231,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "authenticated without read access to category should" - {
-      "forbid access" ignore {
+      "forbid access" in {
         given()
           .applicationState {
             createSavedScenario(scenario)
@@ -212,7 +246,7 @@ class DeploymentApiHttpServiceBusinessSpec
     }
 
     "authenticated without deploy access to category should" - {
-      "forbid access" ignore {
+      "forbid access" in {
         given()
           .applicationState {
             createSavedScenario(scenario)

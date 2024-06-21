@@ -20,7 +20,7 @@ if ! docker compose config > /dev/null; then
   exit 3
 fi
 
-docker compose up -d --build
+docker compose up -d --build --wait
 
 echo ""
 echo "Nussknacker and its dependencies are up and running."

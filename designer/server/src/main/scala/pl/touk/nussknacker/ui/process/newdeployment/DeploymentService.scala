@@ -65,6 +65,8 @@ class DeploymentService(
         category = scenarioMetadata.processCategory,
         permission = Permission.Deploy
       )
+      _ <- EitherT.cond[Future](!scenarioMetadata.isFragment, (), DeploymentOfFragmentError)
+      _ <- EitherT.cond[Future](!scenarioMetadata.isArchived, (), DeploymentOfArchivedScenarioError)
       scenarioGraphVersion <- EitherT(
         scenarioGraphVersionService.getValidResolvedLatestScenarioGraphVersion(scenarioMetadata, command.user)
       ).leftMap[RunDeploymentError](error => ScenarioGraphValidationError(error.errors))
@@ -92,7 +94,10 @@ class DeploymentService(
     EitherT(dbioRunner.runInSerializableTransactionWithRetry((for {
       nonFinishedDeployments <- getConcurrentlyPerformedDeploymentsForScenario(scenarioMetadata)
       _                      <- checkNoConcurrentDeploymentsForScenario(nonFinishedDeployments, scenarioMetadata.name)
-      _                      <- saveDeployment(command, scenarioMetadata)
+      _ = {
+        logger.debug(s"Saving deployment: ${command.id}")
+      }
+      _ <- saveDeployment(command, scenarioMetadata)
     } yield ()).value))
   }
 
@@ -269,6 +274,10 @@ object DeploymentService {
   ) extends RunDeploymentError
 
   final case class ScenarioNotFoundError(scenarioName: ProcessName) extends RunDeploymentError
+
+  case object DeploymentOfFragmentError extends RunDeploymentError
+
+  case object DeploymentOfArchivedScenarioError extends RunDeploymentError
 
   final case class DeploymentNotFoundError(id: DeploymentId) extends GetDeploymentStatusError
 
