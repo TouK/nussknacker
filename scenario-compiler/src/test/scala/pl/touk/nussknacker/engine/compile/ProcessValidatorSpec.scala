@@ -1189,7 +1189,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         "''".spel,
         "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''".spel).emptySink("id2", "sink"),
-        Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3".spel).emptySink("end3", "sink"))
+        Case("false".spel, GraphBuilder.buildSimpleVariable("id3", "result", "#var3".spel).emptySink("end3", "sink"))
       )
 
     validate(process, definitionWithTypedSource).result should matchPattern {

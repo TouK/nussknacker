@@ -253,7 +253,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process2 = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
+      .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}".spel)
 
     val interpreter2 = prepareInterpreter(process = process2)
     interpreter2.sinkTypes shouldBe Map(
@@ -288,7 +288,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .requestResponse("proc1")
       .source("start", "request1-post-source")
       .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true".spel)
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'".spel)
 
     val result = runProcess(process, Request1("abc", "b"))
 
@@ -334,7 +334,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
             "spl",
             (1 to 5).map(v =>
               GraphBuilder
-                .buildVariable(s"var$v", "v1", "value" -> s"'v$v'".spel, "rank" -> v.toString)
+                .buildVariable(s"var$v", "v1", "value" -> s"'v$v'".spel, "rank" -> v.toString.spel)
                 .branchEnd(s"branch$v", "joinWithSort")
             ): _*
           ),
