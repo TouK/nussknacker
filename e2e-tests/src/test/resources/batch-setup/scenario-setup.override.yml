@@ -1,0 +1,9 @@
+services:
+
+  scenario-setup:
+    build:
+      context: ../../e2e-tests/src/test/resources/batch-setup/scenario-setup/
+      dockerfile: Dockerfile
+    depends_on:
+      nginx:
+        condition: service_healthy

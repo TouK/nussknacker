@@ -1,0 +1,16 @@
+services:
+
+  designer:
+    environment:
+      CONFIG_FILE: "/opt/nussknacker/conf/application.conf,/opt/nussknacker/conf/batch-customizations.conf"
+      TABLES_DEFINITION_FILE: "/opt/nussknacker/conf/tables-definition.sql"
+    volumes:
+      - ../../e2e-tests/src/test/resources/batch-setup/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
+      - ../../e2e-tests/src/test/resources/batch-setup/test-data/tables-definition.sql:/opt/nussknacker/conf/tables-definition.sql
+
+  flink-jobmanager:
+    environment:
+      TABLES_DEFINITION_FILE: "/opt/nussknacker/conf/tables-definition.sql"
+    volumes:
+      - ../../e2e-tests/src/test/resources/batch-setup/tables-definition.sql:/opt/nussknacker/conf/tables-definition.sql
+      - ../../e2e-tests/src/test/resources/batch-setup/test-data:/opt/flink/data/test-data

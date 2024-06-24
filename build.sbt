@@ -2037,7 +2037,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
   )
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
-  .dependsOn(testUtils % Test)
+  .dependsOn(testUtils % Test, scenarioApi % Test, designer % Test)
 
 lazy val doTest = Seq(
   Test / testOptions += Tests.Setup { () =>
