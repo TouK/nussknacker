@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 
@@ -81,7 +80,10 @@ object ScenarioStatistics {
         .mapValuesNow(_.toString)
   }
 
-  def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
+  def getGeneralStatistics(
+      scenariosInputData: List[ScenarioStatisticsInputData],
+      components: List[ComponentDefinitionWithImplementation]
+  ): Map[String, String] = {
     if (scenariosInputData.isEmpty) {
       emptyGeneralStatistics
     } else {
@@ -102,7 +104,10 @@ object ScenarioStatistics {
       //        Author stats
       val authorsCount = scenariosInputData.map(_.createdBy).toSet.size
       //        Fragment stats
-      val fragmentsUsedCount   = scenariosInputData.filterNot(_.isFragment).map(_.fragmentsUsedCount).sorted
+      val fragmentsUsedCount = scenariosInputData
+        .filterNot(_.isFragment)
+        .map(_.componentsAndFragmentsUsedCount.getOrElse(ComponentId(ComponentType.Fragment, "fragment"), 0))
+        .sorted
       val fragmentsUsedMedian  = calculateMedian(fragmentsUsedCount)
       val fragmentsUsedAverage = calculateAverage(fragmentsUsedCount)
       //          Uptime stats
@@ -121,22 +126,49 @@ object ScenarioStatistics {
           ).map { case (k, v) => (k.toString, v.toString) }
         }
       }
+      // Components stats
+      val componentsUsedMap = scenariosInputData
+        .map(_.componentsAndFragmentsUsedCount)
+        .flatMap(_.toList)
+        .filterNot(_._1.`type` == ComponentType.Fragment)
+        .groupBy(_._1)
+        .map { case (componentId, listOfUsages) =>
+          val usages = listOfUsages.map { case (componentId, usage) =>
+            usage
+          }.sum
+          (mapNameToStat(componentId.toString), usages)
+        }
+        .mapValuesNow(_.toString)
+
+      val componentsCount =
+        components
+          .groupBy(_.id)
+          .map { case (componentId, list) =>
+            if (list.head.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
+              componentId.toString
+            } else "Custom"
+          }
+          .toSet
+          .size
+
       Map(
-        NodesMedian          -> nodesMedian,
-        NodesAverage         -> nodesAverage,
-        NodesMax             -> nodesMax,
-        NodesMin             -> nodesMin,
-        CategoriesCount      -> categoriesCount,
-        VersionsMedian       -> versionsMedian,
-        VersionsAverage      -> versionsAverage,
-        VersionsMax          -> versionsMax,
-        VersionsMin          -> versionsMin,
-        AuthorsCount         -> authorsCount,
-        FragmentsUsedMedian  -> fragmentsUsedMedian,
-        FragmentsUsedAverage -> fragmentsUsedAverage
+        NodesMedian              -> nodesMedian,
+        NodesAverage             -> nodesAverage,
+        NodesMax                 -> nodesMax,
+        NodesMin                 -> nodesMin,
+        CategoriesCount          -> categoriesCount,
+        VersionsMedian           -> versionsMedian,
+        VersionsAverage          -> versionsAverage,
+        VersionsMax              -> versionsMax,
+        VersionsMin              -> versionsMin,
+        AuthorsCount             -> authorsCount,
+        FragmentsUsedMedian      -> fragmentsUsedMedian,
+        FragmentsUsedAverage     -> fragmentsUsedAverage,
+        ComponentsCount -> componentsCount
       )
         .map { case (k, v) => (k.toString, v.toString) } ++
-        uptimeStatsMap
+        uptimeStatsMap ++
+        componentsUsedMap
     }
   }
 
@@ -161,52 +193,6 @@ object ScenarioStatistics {
         CommentsTotal      -> commentsTotal,
         CommentsAverage    -> commentsAverage
       ).map { case (k, v) => (k.toString, v.toString) }
-    }
-  }
-
-  // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
-  def getComponentStatistic(
-      componentList: List[component.ComponentListElement],
-      components: List[ComponentDefinitionWithImplementation]
-  ): Map[String, String] = {
-    if (componentList.isEmpty) {
-      emptyComponentStatistics
-    } else {
-
-      // Get number of available components to check how many custom components created
-      val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsWithUsageByComponentId: Map[String, Long] =
-        withoutFragments
-          .map { comp =>
-            components.find(compo => compo.id.equals(comp.componentId)) match {
-              case Some(comps) =>
-                if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
-                  (comp.componentId.toString, comp.usageCount)
-                } else {
-                  ("Custom", comp.usageCount)
-                }
-              case None =>
-                ("Custom", comp.usageCount)
-            }
-          }
-          .groupBy(_._1)
-          .mapValuesNow(_.map(_._2).sum)
-
-      val componentsWithUsageByComponentIdCount = componentsWithUsageByComponentId.size
-
-      // Get usage statistics for each component
-      val componentUsed = componentsWithUsageByComponentId.filter(_._2 > 0)
-      val componentUsedMap: Map[String, Long] = componentUsed
-        .map { case (name, usages) =>
-          (mapNameToStat(name), usages)
-        }
-
-      (
-        componentUsedMap ++
-          Map(
-            ComponentsCount.toString -> componentsWithUsageByComponentIdCount
-          )
-      ).mapValuesNow(_.toString)
     }
   }
 
