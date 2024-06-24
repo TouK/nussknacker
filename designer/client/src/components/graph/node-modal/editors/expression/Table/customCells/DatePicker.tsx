@@ -41,7 +41,7 @@ export const DatePicker: ProvideEditorComponent<DatePickerCell> = (props) => {
     return (
         <DTPicker
             inputProps={{
-                style: { minWidth: target.width, minHeight: target.height, padding: 0 },
+                style: { minWidth: target.width, minHeight: target.height, padding: 0, outline: 0 },
                 value: value.data.date,
                 autoFocus: true,
                 onFocus: (event) => {
