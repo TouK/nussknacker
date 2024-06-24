@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
+import pl.touk.nussknacker.batch.DockerBasedBatchExampleNuEnvironment.singletonContainer
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.{File => JFile}
@@ -13,9 +14,7 @@ import java.io.{File => JFile}
 trait DockerBasedBatchExampleNuEnvironment extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 
-  private lazy val env = DockerBasedBatchExampleNuEnvironment
-
-  private def unsafeContainerByServiceName(name: String) = env.singletonContainer
+  private def unsafeContainerByServiceName(name: String) = singletonContainer
     .getContainerByServiceName(name)
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
@@ -32,7 +31,8 @@ object DockerBasedBatchExampleNuEnvironment extends LazyLogging {
     composeFiles = Seq(
       new JFile("examples/installation/docker-compose.yml"),
       new JFile(Resource.getUrl("batch-setup/scenario-setup.override.yml").toURI),
-      new JFile(Resource.getUrl("batch-setup/batch-nu-designer.override.yml").toURI)
+      new JFile(Resource.getUrl("batch-setup/batch-nu-designer.override.yml").toURI),
+      new JFile(Resource.getUrl("spec-setup/debuggable-nu-designer.override.yml").toURI)
     ),
     env = Map(
       "NUSSKNACKER_VERSION" -> BuildInfo.version
