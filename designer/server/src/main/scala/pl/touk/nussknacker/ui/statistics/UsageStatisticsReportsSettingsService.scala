@@ -3,11 +3,12 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.component.ComponentListElement
@@ -54,7 +55,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
         )(user)
         .map { scenariosDetails =>
           Right(
-            scenariosDetails.map(scenario =>
+            scenariosDetails.map(scenario => {
               ScenarioStatisticsInputData(
                 isFragment = scenario.isFragment,
                 processingMode = scenario.processingMode,
@@ -64,11 +65,11 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
                 scenarioCategory = scenario.processCategory,
                 scenarioVersion = scenario.processVersionId,
                 createdBy = scenario.createdBy,
-                fragmentsUsedCount = getFragmentsUsedInScenario(scenario.scenarioGraph),
+                componentsAndFragmentsUsedCount = getComponentsUsedInScenario(scenario.scenarioGraph),
                 lastDeployedAction = scenario.lastDeployedAction,
                 scenarioId = scenario.processId
               )
-            )
+            })
           )
         }
     }
@@ -98,14 +99,31 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
   }
 
-  private def getFragmentsUsedInScenario(scenarioGraph: Option[ScenarioGraph]): Int = {
+  private def getComponentsUsedInScenario(scenarioGraph: Option[ScenarioGraph]): Map[ComponentId, Int] = {
     scenarioGraph match {
       case Some(graph) =>
-        graph.nodes.map {
-          case _: FragmentInput => 1
-          case _                => 0
-        }.sum
-      case None => 0
+        graph.nodes
+          .map {
+            case data: node.CustomNodeData           => ComponentId(ComponentType.CustomComponent, data.componentId)
+            case data: node.Source                   => ComponentId(ComponentType.Source, data.componentId)
+            case data: node.Sink                     => ComponentId(ComponentType.Sink, data.componentId)
+            case data: node.VariableBuilder          => BuiltInComponentId.RecordVariable
+            case data: node.Variable                 => BuiltInComponentId.Variable
+            case data: node.Enricher                 => ComponentId(ComponentType.Service, data.componentId)
+            case data: node.Processor                => ComponentId(ComponentType.Service, data.componentId)
+            case data: FragmentInput                 => ComponentId(ComponentType.Fragment, "fragment")
+            case data: node.FragmentUsageOutput      => ComponentId(ComponentType.Fragment, "fragment")
+            case data: node.Filter                   => BuiltInComponentId.Filter
+            case data: node.Switch                   => BuiltInComponentId.Choice
+            case data: node.Split                    => BuiltInComponentId.Split
+            case data: node.FragmentInputDefinition  => BuiltInComponentId.FragmentInputDefinition
+            case data: node.FragmentOutputDefinition => BuiltInComponentId.FragmentOutputDefinition
+            case data: node.BranchEndData            => ComponentId(ComponentType.Sink, data.id)
+          }
+          .filterNot(comp => comp.`type` == ComponentType.BuiltIn && (comp.name == "input" || comp.name == "output"))
+          .groupBy(identity)
+          .map { case (id, list) => (id, list.size) }
+      case None => Map.empty
     }
   }
 
@@ -143,17 +161,17 @@ class UsageStatisticsReportsSettingsService(
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
       scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
       basicStatistics     = determineBasicStatistics(config)
-      generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
+      generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData, components)
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
       componentList <- new EitherT(fetchComponentList())
-      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
+//      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
       activityStatistics ++
-      componentStatistics ++
+//      componentStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
       }
@@ -180,7 +198,7 @@ private[statistics] case class ScenarioStatisticsInputData(
     scenarioCategory: String,
     scenarioVersion: VersionId,
     createdBy: String,
-    fragmentsUsedCount: Int,
+    componentsAndFragmentsUsedCount: Map[ComponentId, Int],
     lastDeployedAction: Option[ProcessAction],
     scenarioId: Option[ProcessId]
 )
