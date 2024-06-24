@@ -785,7 +785,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .streaming("process1")
       .source("id1", "source")
       .buildVariable("bv1", "doesExist", "v1" -> "42".spel)
-      .filter("sampleFilter", "#doesExist.v1.spel + #doesNotExist1 + #doesNotExist2 > 10".spel)
+      .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10".spel)
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(
@@ -928,7 +928,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .customNodeNoOutput("noOutput", "withoutReturnType", "par1" -> "'1'".spel)
       .customNode("cNode1", "out1", "custom", "par1" -> "'1'".spel)
       .filter("sampleFilter1", "#out1.value2 > 0".spel)
-      .filter("sampleFilter2", "#out1.terefere.spel".spel)
+      .filter("sampleFilter2", "#out1.terefere".spel)
       .emptySink("id2", "sink")
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode.build
 
@@ -1250,7 +1250,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNodeNoOutput("custom", "customTransformer")
-        .buildSimpleVariable("result-id2", "result", "''.spel".spel)
+        .buildSimpleVariable("result-id2", "result", "''".spel)
         .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
