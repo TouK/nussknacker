@@ -13,7 +13,7 @@ import java.io.{File => JFile}
 trait DockerBasedBatchExampleNuEnvironment extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 
-  private val env = DockerBasedBatchExampleNuEnvironment
+  private lazy val env = DockerBasedBatchExampleNuEnvironment
 
   private def unsafeContainerByServiceName(name: String) = env.singletonContainer
     .getContainerByServiceName(name)
