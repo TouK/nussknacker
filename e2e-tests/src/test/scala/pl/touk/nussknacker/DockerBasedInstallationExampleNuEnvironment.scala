@@ -56,13 +56,13 @@ trait DockerBasedInstallationExampleNuEnvironment extends BeforeAndAfterAll with
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
   override def beforeAll(): Unit = {
-    singletonContainer.start
-    super.beforeAll
+    singletonContainer.start()
+    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    singletonContainer.stop
-    super.afterAll
+    singletonContainer.stop()
+    super.afterAll()
   }
 
 }
