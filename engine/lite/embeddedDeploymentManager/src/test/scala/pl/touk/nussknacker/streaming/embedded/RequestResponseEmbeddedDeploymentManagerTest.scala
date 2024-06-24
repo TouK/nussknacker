@@ -123,7 +123,12 @@ class RequestResponseEmbeddedDeploymentManagerTest
         )
       )
       .source("source", "request")
-      .emptySink("sink", "response", SinkRawEditorParamName.value -> "false", "transformed" -> "#input.productId")
+      .emptySink(
+        "sink",
+        "response",
+        SinkRawEditorParamName.value -> "false".spel,
+        "transformed"                -> "#input.productId".spel
+      )
 
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
 
