@@ -55,6 +55,16 @@ trait DockerBasedInstallationExampleNuEnvironment extends BeforeAndAfterAll with
     .getContainerByServiceName(name)
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
+  override def beforeAll(): Unit = {
+    singletonContainer.start
+    super.beforeAll
+  }
+
+  override def afterAll(): Unit = {
+    singletonContainer.stop
+    super.afterAll
+  }
+
 }
 
 object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
@@ -77,7 +87,5 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
       WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
     )
   )
-
-  singletonContainer.start()
 
 }

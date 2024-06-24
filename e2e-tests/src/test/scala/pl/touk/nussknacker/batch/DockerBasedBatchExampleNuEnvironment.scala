@@ -23,6 +23,16 @@ trait DockerBasedBatchExampleNuEnvironment extends BeforeAndAfterAll with Before
     s"http://${nginxContainer.getHost}:${nginxContainer.getBoundPortNumbers.get(0)}"
   }
 
+  override def beforeAll(): Unit = {
+    singletonContainer.start
+    super.beforeAll
+  }
+
+  override def afterAll(): Unit = {
+    singletonContainer.stop
+    super.afterAll
+  }
+
 }
 
 object DockerBasedBatchExampleNuEnvironment extends LazyLogging {
@@ -44,7 +54,5 @@ object DockerBasedBatchExampleNuEnvironment extends LazyLogging {
       WaitingForService("scenario-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
     )
   )
-
-  singletonContainer.start()
 
 }
