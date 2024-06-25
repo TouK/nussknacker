@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.batch
+package pl.touk.nussknacker
 
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScena
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
-    with DockerBasedBatchExampleNuEnvironment
+    with DockerBasedInstallationExampleNuEnvironment
     with Matchers
     with VeryPatientScalaFutures
     with NuRestAssureExtensions
@@ -23,8 +23,25 @@ class BatchDataGenerationSpec
       .when()
       .request()
       .preemptiveBasicAuth("admin", "admin")
+      .jsonBody("""
+          |{
+          |    "name" : "SumTransactions",
+          |    "category" : "Default",
+          |    "isFragment" : false,
+          |    "processingMode" : "Bounded-Stream"
+          |}
+          |""".stripMargin)
+      .post("http://localhost:8080/api/processes")
+      .Then()
+      .statusCode(201)
+
+    // TODO: cleanup
+    given()
+      .when()
+      .request()
+      .preemptiveBasicAuth("admin", "admin")
       .jsonBody(toScenarioGraph(exampleScenario).asJson.spaces2)
-      .post(s"$nginxServiceUrl/api/testInfo/SumTransactions/generate/10")
+      .post("http://localhost:8080/api/testInfo/SumTransactions/generate/10")
       .Then()
       .statusCode(200)
     //  TODO: add assertion for random results
