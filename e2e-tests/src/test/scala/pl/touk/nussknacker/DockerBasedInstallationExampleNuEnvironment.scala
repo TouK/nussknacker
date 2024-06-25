@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
-import pl.touk.nussknacker.test.ContainerExt._
+import pl.touk.nussknacker.test.containers.ContainerExt._
 import pl.touk.nussknacker.DockerBasedInstallationExampleNuEnvironment.{JSON, singletonContainer}
 import ujson.Value
 import pl.touk.nussknacker.engine.version.BuildInfo

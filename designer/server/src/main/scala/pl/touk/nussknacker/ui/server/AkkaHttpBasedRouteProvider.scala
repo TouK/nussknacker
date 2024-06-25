@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{IO, Resource}
@@ -29,7 +28,6 @@ import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.{
-  AnalyticsConfig,
   AttachmentsConfig,
   ComponentLinksConfigExtractor,
   FeatureTogglesConfig,
@@ -45,6 +43,7 @@ import pl.touk.nussknacker.ui.definition.{
 }
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataStateFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
+import pl.touk.nussknacker.ui.initialization.Initialization.nussknackerUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
@@ -74,9 +73,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.version.{ScenarioGraphVersionRepository, ScenarioGraphVersionService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
-import pl.touk.nussknacker.ui.security.api.CreationError.ImpersonationNotAllowed
-import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
-import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, LoggedUser, NussknackerInternalUser}
+import pl.touk.nussknacker.ui.security.api.{AuthManager, AuthenticationResources, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.services.{ManagementApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.repository.FingerprintRepositoryImpl
 import pl.touk.nussknacker.ui.statistics.{FingerprintService, StatisticUrlConfig, UsageStatisticsReportsSettingsService}
@@ -144,8 +141,6 @@ class AkkaHttpBasedRouteProvider(
         }
       )
     } yield {
-      val analyticsConfig = AnalyticsConfig(resolvedConfig)
-
       val migrations     = processingTypeDataProvider.mapValues(_.designerModelData.modelData.migrations)
       val modelBuildInfo = processingTypeDataProvider.mapValues(_.designerModelData.modelData.buildInfo)
 
@@ -483,7 +478,16 @@ class AkkaHttpBasedRouteProvider(
         fingerprintService,
         processActivityRepository,
         componentService,
-        feStatisticsRepository
+        feStatisticsRepository,
+        processingTypeDataProvider
+          .mapValues { processingTypeData =>
+            prepareAlignedComponentsDefinitionProvider(processingTypeData)
+              .getAlignedComponentsWithBuiltInComponentsAndFragments(forFragment = false, List.empty)
+          }
+          .all
+          .values
+          .flatten
+          .toList,
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(
@@ -496,7 +500,6 @@ class AkkaHttpBasedRouteProvider(
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
         authenticationResources.name,
-        analyticsConfig,
         usageStatisticsReportsConfig
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
