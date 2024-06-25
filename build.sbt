@@ -2023,7 +2023,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
     }
   }
   .settings(
-    ThisBuild / parallelExecution := false,
+    Test / parallelExecution := false,
     libraryDependencies ++= {
       Seq(
         "com.github.pathikrit"       %% "better-files"                   % betterFilesV         % Test,
