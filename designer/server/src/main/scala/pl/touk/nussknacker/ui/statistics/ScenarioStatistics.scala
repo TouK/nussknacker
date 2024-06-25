@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -34,8 +34,25 @@ object ScenarioStatistics {
   }
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
+    val empty = Map(
+      NodesMedian            -> 0,
+      NodesAverage           -> 0,
+      NodesMax               -> 0,
+      NodesMin               -> 0,
+      CategoriesCount        -> 0,
+      VersionsMedian         -> 0,
+      VersionsAverage        -> 0,
+      VersionsMax            -> 0,
+      VersionsMin            -> 0,
+      AuthorsCount           -> 0,
+      FragmentsUsedMedian    -> 0,
+      FragmentsUsedAverage   -> 0,
+      UptimeInSecondsAverage -> 0,
+      UptimeInSecondsMax     -> 0,
+      UptimeInSecondsMin     -> 0,
+    ).map { case (k, v) => (k.toString, v.toString) }
     if (scenariosInputData.isEmpty) {
-      Map.empty
+      empty
     } else {
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
@@ -77,30 +94,36 @@ object ScenarioStatistics {
           )
         }
       }
-
-      (Map(
-        NodesMedian          -> nodesMedian,
-        NodesAverage         -> nodesAverage,
-        NodesMax             -> nodesMax,
-        NodesMin             -> nodesMin,
-        CategoriesCount      -> categoriesCount,
-        VersionsMedian       -> versionsMedian,
-        VersionsAverage      -> versionsAverage,
-        VersionsMax          -> versionsMax,
-        VersionsMin          -> versionsMin,
-        AuthorsCount         -> authorsCount,
-        FragmentsUsedMedian  -> fragmentsUsedMedian,
-        FragmentsUsedAverage -> fragmentsUsedAverage
-      ) ++ uptimeStatsMap)
-        .map { case (k, v) => (k.toString, v.toString) }
+      empty ++
+        (Map(
+          NodesMedian          -> nodesMedian,
+          NodesAverage         -> nodesAverage,
+          NodesMax             -> nodesMax,
+          NodesMin             -> nodesMin,
+          CategoriesCount      -> categoriesCount,
+          VersionsMedian       -> versionsMedian,
+          VersionsAverage      -> versionsAverage,
+          VersionsMax          -> versionsMax,
+          VersionsMin          -> versionsMin,
+          AuthorsCount         -> authorsCount,
+          FragmentsUsedMedian  -> fragmentsUsedMedian,
+          FragmentsUsedAverage -> fragmentsUsedAverage
+        ) ++ uptimeStatsMap)
+          .map { case (k, v) => (k.toString, v.toString) }
     }
   }
 
   def getActivityStatistics(
       listOfActivities: List[DbProcessActivityRepository.ProcessActivity]
   ): Map[String, String] = {
+    val empty = Map(
+      AttachmentsAverage -> 0,
+      AttachmentsTotal   -> 0,
+      CommentsTotal      -> 0,
+      CommentsAverage    -> 0
+    ).map { case (k, v) => (k.toString, v.toString) }
     if (listOfActivities.isEmpty) {
-      Map.empty
+      empty
     } else {
       //        Attachment stats
       val sortedAttachmentCountList = listOfActivities.map(_.attachments.length)
@@ -111,12 +134,13 @@ object ScenarioStatistics {
       val commentsTotal   = comments.sum
       val commentsAverage = calculateAverage(comments)
 
-      Map(
-        AttachmentsAverage -> attachmentAverage,
-        AttachmentsTotal   -> attachmentsTotal,
-        CommentsTotal      -> commentsTotal,
-        CommentsAverage    -> commentsAverage
-      ).map { case (k, v) => (k.toString, v.toString) }
+      empty ++
+        Map(
+          AttachmentsAverage -> attachmentAverage,
+          AttachmentsTotal   -> attachmentsTotal,
+          CommentsTotal      -> commentsTotal,
+          CommentsAverage    -> commentsAverage
+        ).map { case (k, v) => (k.toString, v.toString) }
     }
   }
 
@@ -204,12 +228,12 @@ object ScenarioStatistics {
 
   private def getMax[T: Numeric](orderedList: List[T]): T = {
     if (orderedList.isEmpty) implicitly[Numeric[T]].zero
-    else orderedList.head
+    else orderedList.last
   }
 
   private def getMin[T: Numeric](orderedList: List[T]): T = {
     if (orderedList.isEmpty) implicitly[Numeric[T]].zero
-    else orderedList.last
+    else orderedList.head
   }
 
   def mapNameToStat(componentId: String): String = {
