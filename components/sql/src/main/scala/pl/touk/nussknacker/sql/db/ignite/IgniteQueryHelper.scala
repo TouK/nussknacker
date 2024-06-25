@@ -18,11 +18,6 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
       |where t.SCHEMA_NAME = ? and c.COLUMN_NAME not in ('_KEY', '_VAL')
       |""".stripMargin
 
-  // It is not certain that the query above will always return columns of table in the same order as they would be returned in
-  // ResultSet in jdbc.
-  // TODO_PAWEL use
-  val guaranteesOrderOfColumns = false
-
   def fetchTablesMeta: Map[String, TableDefinition] = {
     Using.resource(getConnection()) { connection =>
       getIgniteQueryResults(

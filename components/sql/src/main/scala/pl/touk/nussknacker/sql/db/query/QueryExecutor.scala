@@ -16,7 +16,7 @@ trait QueryExecutor {
     val fields = tableDef.columnDefs.map { columnDef =>
       columnDef.name -> columnDef.no
         .map(resultSet.getObject)
-        .getOrElse(() => resultSet.getObject(columnDef.name))
+        .getOrElse(resultSet.getObject(columnDef.name))
     }.toMap
     TypedMap(fields)
   }
