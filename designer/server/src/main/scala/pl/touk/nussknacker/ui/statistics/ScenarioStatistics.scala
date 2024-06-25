@@ -140,7 +140,7 @@ object ScenarioStatistics {
           ).map { case (k, v) => (k.toString, v.toString) }
         }
       }
-      // Components stats
+      // Components usage stat
       val componentsUsedMap = scenariosInputData
         .map(_.componentsAndFragmentsUsedCount)
         .flatMap(_.toList)
