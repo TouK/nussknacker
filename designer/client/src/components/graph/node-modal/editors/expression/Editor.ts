@@ -4,7 +4,7 @@ import { SqlEditor } from "./SqlEditor";
 import { StringEditor } from "./StringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionObj } from "./types";
-import React, { ForwardRefExoticComponent } from "react";
+import React, { ForwardRefExoticComponent, LegacyRef } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
 import { DurationEditor } from "./Duration/DurationEditor";
@@ -33,7 +33,7 @@ export type EditorProps = {
     showSwitch?: boolean;
     showValidation?: boolean;
     variableTypes?: VariableTypes;
-    ref?: React.Ref<unknown>;
+    ref?: LegacyRef<unknown>;
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> =

@@ -1,5 +1,4 @@
-import { Edge, EdgeKind, NodeType, NodeValidationError, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import { Edge, EdgeKind, NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
 import { useDiffMark } from "./PathsToMark";
 import { IdField } from "./IdField";
 import { StaticExpressionField } from "./StaticExpressionField";
@@ -11,7 +10,7 @@ import React from "react";
 export function Filter({
     edges,
     errors,
-    findAvailableVariables,
+    variableTypes,
     isEditMode,
     node,
     parameterDefinitions,
@@ -23,7 +22,7 @@ export function Filter({
 }: {
     edges: Edge[];
     errors: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
+    variableTypes?: VariableTypes;
     isEditMode?: boolean;
     node: NodeType;
     parameterDefinitions: UIParameter[];
@@ -50,7 +49,7 @@ export function Filter({
                 fieldLabel={"Expression"}
                 parameterDefinitions={parameterDefinitions}
                 showSwitch={showSwitch}
-                findAvailableVariables={findAvailableVariables}
+                variableTypes={variableTypes}
                 showValidation={showValidation}
                 errors={errors}
                 isEditMode={isEditMode}

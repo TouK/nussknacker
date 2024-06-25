@@ -1,5 +1,5 @@
 import { TableData } from "./tableState";
-import { expandTable, getNextColumnName, longestRow, normalizeValue } from "./helpers";
+import { expandTable, getNextColumnName, longestRow, normalizeValue, reorderArray } from "./helpers";
 import { Action, ActionTypes } from "./action";
 
 export function reducer(state: TableData, action: Action): TableData {
@@ -104,6 +104,15 @@ export function reducer(state: TableData, action: Action): TableData {
             return expandTable(state, action.rows, action.columns, action.dataType);
         case ActionTypes.replaceData:
             return action.data;
+        case ActionTypes.moveColumn: {
+            const { startIndex, endIndex } = action;
+
+            return {
+                ...state,
+                rows: state.rows.map((row) => reorderArray(row, startIndex, endIndex)),
+                columns: reorderArray(state.columns, startIndex, endIndex),
+            };
+        }
         default:
             return state;
     }

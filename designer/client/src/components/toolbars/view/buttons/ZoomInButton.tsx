@@ -11,7 +11,7 @@ export function ZoomInButton(props: ToolbarButtonProps) {
     const { t } = useTranslation();
     const dispatch = useDispatch();
     const graphGetter = useGraph();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const available = !disabled && graphGetter?.();
 
     return (
@@ -20,6 +20,7 @@ export function ZoomInButton(props: ToolbarButtonProps) {
             icon={<Icon />}
             disabled={!available}
             onClick={() => dispatch(zoomIn(graphGetter?.()))}
+            type={type}
         />
     );
 }

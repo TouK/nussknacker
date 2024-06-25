@@ -10,7 +10,7 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -26,7 +26,7 @@ class AppApiHttpServiceBusinessSpec
     with WithMockableDeploymentManager
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "The app health check endpoint should" - {
@@ -35,7 +35,7 @@ class AppApiHttpServiceBusinessSpec
         .applicationState {
           createDeployedExampleScenario(ProcessName("id1"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map("id1" -> SimpleStateStatus.Running)
           )
         }
@@ -62,7 +62,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id2"))
           createDeployedExampleScenario(ProcessName("id3"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map(
               "id1" -> ProblemStateStatus.FailedToGet,
               "id2" -> SimpleStateStatus.Running,
@@ -89,7 +89,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedCanceledExampleScenario(ProcessName("id1"))
           createDeployedExampleScenario(ProcessName("id2"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map("id2" -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin"))
           )
         }
@@ -112,7 +112,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id1"))
           createDeployedExampleScenario(ProcessName("id2"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map(
               "id1" -> SimpleStateStatus.Running,
               "id2" -> SimpleStateStatus.Running,
@@ -137,7 +137,7 @@ class AppApiHttpServiceBusinessSpec
         .applicationState {
           createDeployedExampleScenario(ProcessName("id1"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map("id1" -> SimpleStateStatus.Running)
           )
         }
@@ -162,7 +162,7 @@ class AppApiHttpServiceBusinessSpec
         .applicationState {
           createDeployedExampleScenario(ProcessName("id1"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map("id1" -> SimpleStateStatus.Running)
           )
         }
@@ -251,7 +251,7 @@ class AppApiHttpServiceBusinessSpec
           createDeployedExampleScenario(ProcessName("id2"))
           createDeployedExampleScenario(ProcessName("id3"))
 
-          MockableDeploymentManager.configure(
+          MockableDeploymentManager.configureScenarioStatuses(
             Map(
               "id1" -> ProblemStateStatus.FailedToGet,
               "id2" -> SimpleStateStatus.Running,

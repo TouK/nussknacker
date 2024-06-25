@@ -1,32 +1,35 @@
-import { styled, Typography } from "@mui/material";
-import React, { PropsWithChildren } from "react";
+import { styled } from "@mui/material";
+import { PropsOf } from "@emotion/react";
 import Icon from "../../../../assets/img/documentation.svg";
-import { MODAL_HEADER_HEIGHT } from "../../../../stylesheets/variables";
+import React from "react";
+import { Subtype } from "./Subtype";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
-const DocsLinkStyled = styled("a")(({ theme }) => ({
-    color: `${theme.palette.text.secondary} !important`,
-    height: `${MODAL_HEADER_HEIGHT}px`,
-    display: "inline-block",
-    textDecoration: "none !important",
-    svg: {
-        width: "14px",
-        height: "14px",
-        margin: theme.spacing(0, 0.5),
+const LinkStyled = styled("a")({
+    display: "flex",
+    "&, &:hover": {
+        color: "inherit",
+        textDecoration: "inherit",
     },
-}));
+});
 
-export const Docs = (props: PropsWithChildren<{ docsUrl: string; style?: React.CSSProperties }>) => {
-    const { children, docsUrl, style } = props;
-    return (
-        <DocsLinkStyled target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
-            <div style={style}>
-                {children && (
-                    <Typography mx={0.5} variant={"subtitle2"}>
-                        {children}
-                    </Typography>
-                )}
-                <Icon />
-            </div>
-        </DocsLinkStyled>
-    );
+const DocsIcon = styled(Icon)({
+    width: 14,
+    height: 14,
+});
+
+type DocsProps = PropsOf<typeof Subtype> & {
+    href: string;
 };
+
+export const Docs = ({ href, ...props }: DocsProps) => (
+    <LinkStyled
+        target="_blank"
+        href={href}
+        title="Documentation"
+        rel="noreferrer"
+        {...getEventTrackingProps({ selector: EventTrackingSelector.NodeDocumentation })}
+    >
+        <Subtype endIcon={<DocsIcon />} {...props} />
+    </LinkStyled>
+);

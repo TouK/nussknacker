@@ -63,7 +63,7 @@ export interface NodeResultsForContext {
     externalInvocationResultsForEveryContext: ExternalInvocationResult[];
     expressionResults: Record<string, any>;
     externalInvocationResultsForCurrentContext: ExternalInvocationResult[];
-    error: Error;
+    error: string;
 }
 
 //TODO move it to backend

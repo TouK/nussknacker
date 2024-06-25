@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.processingtype.{ProcessingTypeDataProvider, ValueWithRestriction}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,17 +25,19 @@ import scala.jdk.CollectionConverters._
 private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implicit executionContext: ExecutionContext)
     extends PatientScalaFutures {
 
-  private implicit val user: LoggedUser = LoggedUser("admin", "admin", Map.empty, isAdmin = true)
+  private implicit val user: LoggedUser = RealLoggedUser("admin", "admin", Map.empty, isAdmin = true)
 
   private val dbioRunner: DBIOActionRunner = new DBIOActionRunner(dbRef)
 
   private val actionRepository: DbProcessActionRepository = new DbProcessActionRepository(
     dbRef,
+    new CommentRepository(dbRef),
     mapProcessingTypeDataProvider(Map("engine-version" -> "0.1"))
   ) with DbioRepository
 
   private val writeScenarioRepository: DBProcessRepository = new DBProcessRepository(
     dbRef,
+    new CommentRepository(dbRef),
     mapProcessingTypeDataProvider(1)
   )
 
@@ -111,14 +113,20 @@ private[test] class ScenarioHelper(dbRef: DbRef, designerConfig: Config)(implici
   def createArchivedExampleScenario(scenarioName: ProcessName, category: String, isFragment: Boolean): ProcessId = {
     (for {
       id <- prepareValidScenario(scenarioName, category, isFragment)
-      _ <- dbioRunner.runInTransaction(
-        DBIOAction.seq(
-          writeScenarioRepository.archive(processId = ProcessIdWithName(id, scenarioName), isArchived = true),
-          actionRepository.markProcessAsArchived(processId = id, VersionId(1))
-        )
-      )
+      _  <- archiveScenarioF(ProcessIdWithName(id, scenarioName), VersionId(1))
     } yield id).futureValue
   }
+
+  def archiveScenario(idWithName: ProcessIdWithName, version: VersionId = VersionId(1)): Unit =
+    archiveScenarioF(idWithName, version).futureValue
+
+  private def archiveScenarioF(idWithName: ProcessIdWithName, version: VersionId): Future[Unit] =
+    dbioRunner.runInTransaction(
+      DBIOAction.seq(
+        writeScenarioRepository.archive(processId = idWithName, isArchived = true),
+        actionRepository.markProcessAsArchived(processId = idWithName.id, version)
+      )
+    )
 
   private def prepareDeploy(scenarioId: ProcessId, processingType: String): Future[_] = {
     val actionName = ScenarioActionName.Deploy

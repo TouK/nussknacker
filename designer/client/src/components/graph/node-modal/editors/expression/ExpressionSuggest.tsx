@@ -1,6 +1,6 @@
 import "ace-builds/src-noconflict/ace";
-import { isEmpty } from "lodash";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { isEmpty, isEqual } from "lodash";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
@@ -43,6 +43,16 @@ interface Props {
 
 const ExpressionSuggestRow = styled("div")({});
 
+function useDeepMemo<T>(factory: () => T, deps: React.DependencyList): T {
+    const ref = useRef<{ value: T; deps: React.DependencyList }>();
+
+    if (!ref.current || !isEqual(deps, ref.current.deps)) {
+        ref.current = { value: factory(), deps };
+    }
+
+    return ref.current.value;
+}
+
 export function ExpressionSuggest(props: Props): JSX.Element {
     const { isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
@@ -53,9 +63,9 @@ export function ExpressionSuggest(props: Props): JSX.Element {
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
-    const expressionSuggester = useMemo(
+    const expressionSuggester = useDeepMemo(
         () => new BackendExpressionSuggester(language, variableTypes, processingType, HttpService),
-        [processingType, variableTypes, language],
+        [language, variableTypes, processingType],
     );
 
     const [isLoading, setIsLoading] = useState(false);

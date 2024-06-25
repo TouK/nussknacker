@@ -9,9 +9,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
@@ -132,9 +132,14 @@ class K8sDeploymentManager(
       .flatMap(_.strategy)
     for {
       resourceQuotas <- k8sClient.list[ResourceQuotaList]()
-      oldDeployment <- k8sClient.getOption[Deployment](
-        objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
-      )
+      oldDeployment <- updateStrategy match {
+        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+          k8sClient.getOption[Deployment](
+            objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
+          )
+        case DeploymentUpdateStrategy.DontReplaceDeployment =>
+          throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+      }
       _ <- Future.fromTry(
         K8sPodsResourceQuotaChecker
           .hasReachedQuotaLimit(
@@ -155,6 +160,13 @@ class K8sDeploymentManager(
     val scalingOptions = determineScalingOptions(canonicalProcess)
     logger.debug(s"Deploying $processVersion")
     for {
+      _ <- Future {
+        updateStrategy match {
+          case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) => ()
+          case DeploymentUpdateStrategy.DontReplaceDeployment =>
+            throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+        }
+      }
       configMap <- k8sUtils.createOrUpdate(
         configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
           Map(
@@ -368,6 +380,12 @@ class K8sDeploymentManager(
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
   override protected def executionContext: ExecutionContext = dependencies.executionContext
+
+  // TODO We don't handle deployment synchronization on k8s DM because with current resources model it wasn't trivial to implement it.
+  //      The design of resources is that each scenario has only one k8s deployment and we don't want to rollout this deployment when
+  //      when nothing important is changed (e.g. deploymentId is changed). We should rethink if we want to handle multiple deployments
+  //      for each scenario in this case and where store the deploymentId
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }
 

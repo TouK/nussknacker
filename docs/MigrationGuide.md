@@ -2,6 +2,51 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.16.0 (Not released yet)
+
+### Code API changes
+
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates. 
+  `processes` and `process_versions` tables won't store username with this part anymore in `createdBy` and `modifiedBy` columns.
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
+    * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
+    * `AuthManager` is now responsible for authentication and authorization. `AuthenticationResources` handles only plugin specific
+      authentication now. This leads to following changes
+      in `AuthenticationResources` API:
+        * `authenticate()` returns `AuthenticationDirective[AuthenticatedUser]` and not `Directive1[AuthenticatedUser]`
+        * `authenticate(authCredentials)` receives `PassedAuthCredentials` parameter type instead of `AuthCredentials`
+          as anonymous access is no longer part of `AuthenticationResources` logic
+        * `authenticationMethod()` returns `EndpointInput[Option[PassedAuthCredentials]]` instead of `EndpointInput[AuthCredentials]`.
+          The `Option[PassedAuthCredentials]` should hold the value that will be passed to the mentioned `authenticate(authCredentials)`.
+        * `AuthenticationResources` extends `AnonymousAccessSupport` trait:
+          * `AnonymousAccessSupport` has one method `getAnonymousRole()` which returns anonymous role name. If you do not want to have
+            an anonymous access mechanism for your authentication method you can extend your `AuthenticationResources`
+            implementation with `NoAnonymousAccessSupport` trait.
+        * `AuthenticationResources` has a field `impersonationSupport` of type `ImpersonationSupport`:
+          * `ImpersonationSupport` is a trait stating whether authentication method supports impersonation.
+            If you don't want impersonation support you can assign `NoImpersonationSupport` object to it.
+            If you wish to have it - assign `ImpersonationSupported` abstract class to it and
+            implement `getImpersonatedUserData(impersonatedUserIdentity)` method which returns required
+            user's data for the impersonation by user's `identity`.
+    * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
+      It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
+    * `AuthenticationConfiguration` has one additional Boolean property `isAdminImpersonationPossible` which defines whether admin users can be impersonated by users with the `Impersonate` permission.
+      The property is set to `false` by default for `BasicAuthenticationConfiguration`, `OAuth2Configuration` and `DummyAuthenticationConfiguration`.
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) [#6155](https://github.com/TouK/nussknacker/pull/6155) `DeploymentManager` API changes:
+  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
+    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
+  * `DMValidateScenarioCommand.updateStrategy` was added
+    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+  * `deploymentSynchronisationSupport` field was added for purpose of synchronisation of statuses. If synchronisation mechanism is not used in context of given DM, 
+    you should return `NoDeploymentSynchronisationSupport` object. The synchronisation mechanism is used by `/api/deployments/{deploymentId}/status` endpoint. Other endpoints don't use it.
+
+### Configuration changes
+
+* [#6082](https://github.com/TouK/nussknacker/pull/6082) Default Influx database was changed from `esp` to `nussknacker_metrics`
+
+### Other changes
+
 ## In version 1.15.0
 
 ### Code API changes

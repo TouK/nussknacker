@@ -36,7 +36,7 @@ const standardPalette: PaletteOptions = {
     },
 };
 
-export const darkModePalette = {
+export const darkModePalette: PaletteOptions = {
     ...standardPalette,
     custom: {
         environmentAlert: {
@@ -99,9 +99,18 @@ export const darkModePalette = {
             },
         },
         windows: {
-            compareVersions: { backgroundColor: "#1ba1af", color: "white" },
-            customAction: { backgroundColor: "white", color: "black" },
-            default: { backgroundColor: "#2D8E54", color: "white" },
+            compareVersions: {
+                backgroundColor: "#1ba1af",
+                color: "white",
+            },
+            customAction: {
+                backgroundColor: "white",
+                color: "black",
+            },
+            default: {
+                backgroundColor: "#2D8E54",
+                color: "white",
+            },
         },
     },
 };

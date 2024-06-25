@@ -5,22 +5,21 @@ import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{
+  DateParameterEditor,
+  LiteralIntegerValidator,
+  MandatoryParameterValidator,
+  StringParameterEditor
+}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment._
 import pl.touk.nussknacker.engine.management.{FlinkProcessTestRunner, FlinkStreamingPropertiesConfig}
-import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.definition.{
-  DateParameterEditor,
-  LiteralIntegerValidator,
-  MandatoryParameterValidator,
-  StringParameterEditor,
-  TextareaParameterEditor
-}
 
 import java.net.URI
 import java.util.UUID
@@ -36,8 +35,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
 
-  import pl.touk.nussknacker.engine.ModelData._
   import SimpleStateStatus._
+  import pl.touk.nussknacker.engine.ModelData._
 
   // Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"
@@ -88,7 +87,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
   }
 
   override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] = command match {
-    case DMValidateScenarioCommand(_, _, canonicalProcess) =>
+    case DMValidateScenarioCommand(_, _, canonicalProcess, _) =>
       if (description(canonicalProcess).contains(descriptionForValidationFail)) {
         Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
       } else {
@@ -221,6 +220,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem, modelData: BaseMode
     MinSleepTimeSeconds + random.nextInt(MaxSleepTimeSeconds - MinSleepTimeSeconds + 1),
     TimeUnit.SECONDS
   )
+
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }
 

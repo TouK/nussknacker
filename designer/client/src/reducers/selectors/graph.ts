@@ -1,4 +1,4 @@
-import { isEmpty } from "lodash";
+import { isEmpty, isEqual } from "lodash";
 import { createSelector } from "reselect";
 import ProcessUtils from "../../common/ProcessUtils";
 import NodeUtils from "../../components/graph/NodeUtils";
@@ -7,11 +7,14 @@ import { ScenarioGraph } from "../../types";
 import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
+import { TestFormParameters } from "../../common/TestResultUtils";
 
 export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getScenario = createSelector(getGraph, (g) => g.scenario);
-export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph));
+export const getScenarioGraph = createSelector(getGraph, (g) => g.scenario.scenarioGraph || ({} as ScenarioGraph), {
+    memoizeOptions: { equalityCheck: isEqual, resultEqualityCheck: isEqual },
+});
 export const getProcessNodesIds = createSelector(getScenarioGraph, (p) => NodeUtils.nodesFromScenarioGraph(p).map((n) => n.id));
 export const getProcessName = createSelector(getScenario, (d) => d?.name);
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName);
@@ -56,7 +59,7 @@ export const isArchivePossible = createSelector(
     (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
-export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters);
+export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters || ([] as TestFormParameters[]));
 export const getTestResults = createSelector(getGraph, (g) => g.testResults);
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || ({} as ProcessCounts));
 export const getShowRunProcessDetails = createSelector(

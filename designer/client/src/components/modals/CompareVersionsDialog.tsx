@@ -19,6 +19,8 @@ import { CompareContainer, CompareModal, VersionHeader } from "./Styled";
 import { FormControl, FormLabel } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Option, TypeSelect } from "../graph/node-modal/fragment-input-definition/TypeSelect";
+import { WindowHeaderIconStyled } from "../graph/node-modal/nodeDetails/NodeDetailsStyled";
+import Icon from "../../assets/img/toolbarButtons/compare.svg";
 
 interface State {
     currentDiffId: string;
@@ -229,8 +231,8 @@ const CompareVersionsDialog = (props: WindowContentProps) => {
     const buttons: WindowButtonProps[] = useMemo(() => [{ title: t("dialog.button.ok", "OK"), action: props.close }], [props.close, t]);
 
     return (
-        <WindowContent buttons={buttons} {...props}>
-            <CompareModal className={cx("modalContentDark", css({ minWidth: 980, padding: "1em" }))}>
+        <WindowContent buttons={buttons} icon={<WindowHeaderIconStyled as={Icon} type={props.data.kind} />} {...props}>
+            <CompareModal className={cx("modalContentDark", css({ padding: "1em" }))}>
                 <VersionsForm />
             </CompareModal>
         </WindowContent>

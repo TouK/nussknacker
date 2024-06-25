@@ -1,8 +1,14 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionState, ScenarioActionName}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentStatusName,
+  ProcessActionId,
+  ProcessActionState,
+  ScenarioActionName
+}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import slick.ast.BaseTypedType
 import slick.jdbc.{JdbcProfile, JdbcType}
 
@@ -24,10 +30,16 @@ trait BaseEntityFactory {
   implicit def processActionIdMapping: BaseColumnType[ProcessActionId] =
     MappedColumnType.base[ProcessActionId, UUID](_.value, ProcessActionId.apply)
 
-  implicit def scenarioActionName: JdbcType[ScenarioActionName] with BaseTypedType[ScenarioActionName] =
+  implicit def scenarioActionName: BaseColumnType[ScenarioActionName] =
     MappedColumnType.base[ScenarioActionName, String](_.toString, ScenarioActionName.apply)
 
-  implicit def processActionState: JdbcType[ProcessActionState] with BaseTypedType[ProcessActionState] =
+  implicit def processActionState: BaseColumnType[ProcessActionState] =
     MappedColumnType.base[ProcessActionState, String](_.toString, ProcessActionState.withName)
+
+  protected implicit def deploymentIdMapping: BaseColumnType[DeploymentId] =
+    MappedColumnType.base[DeploymentId, UUID](_.value, DeploymentId.apply)
+
+  implicit def deploymentStatusName: BaseColumnType[DeploymentStatusName] =
+    MappedColumnType.base[DeploymentStatusName, String](_.value, DeploymentStatusName.apply)
 
 }

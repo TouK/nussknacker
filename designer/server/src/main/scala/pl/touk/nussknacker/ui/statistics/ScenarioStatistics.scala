@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
@@ -20,6 +21,10 @@ object ScenarioStatistics {
 
   private val knownDeploymentManagerTypes =
     Set(flinkDeploymentManagerType, liteK8sDeploymentManagerType, liteEmbeddedDeploymentManagerType)
+
+  private val vowelsRegex = "[aeiouyAEIOUY-]"
+
+  private val componentStatisticPrefix = "c_"
 
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     scenariosInputData
@@ -60,15 +65,15 @@ object ScenarioStatistics {
       val uptimeStatsMap = {
         if (sortedUptimes.isEmpty) {
           Map(
-            UptimeAverage -> 0,
-            UptimeMax     -> 0,
-            UptimeMin     -> 0,
+            UptimeInSecondsAverage -> 0,
+            UptimeInSecondsMax     -> 0,
+            UptimeInSecondsMin     -> 0,
           )
         } else {
           Map(
-            UptimeAverage -> calculateAverage(sortedUptimes),
-            UptimeMax     -> getMax(sortedUptimes),
-            UptimeMin     -> getMin(sortedUptimes)
+            UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
+            UptimeInSecondsMax     -> getMax(sortedUptimes),
+            UptimeInSecondsMin     -> getMin(sortedUptimes)
           )
         }
       }
@@ -115,16 +120,49 @@ object ScenarioStatistics {
     }
   }
 
-  def getComponentStatistic(componentList: List[component.ComponentListElement]): Map[String, String] = {
+  // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
+  def getComponentStatistic(
+      componentList: List[component.ComponentListElement],
+      components: List[ComponentDefinitionWithImplementation]
+  ): Map[String, String] = {
     if (componentList.isEmpty) {
       Map.empty
     } else {
-      val withoutFragments      = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsByNameCount = withoutFragments.groupBy(_.name).size
 
-      Map(
-        ComponentsCount -> componentsByNameCount
-      ).map { case (k, v) => (k.toString, v.toString) }
+      // Get number of available components to check how many custom components created
+      val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
+      val componentsWithUsageByComponentId: Map[String, Long] =
+        withoutFragments
+          .map { comp =>
+            components.find(compo => compo.id.equals(comp.componentId)) match {
+              case Some(comps) =>
+                if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
+                  (comp.componentId.toString, comp.usageCount)
+                } else {
+                  ("Custom", comp.usageCount)
+                }
+              case None =>
+                ("Custom", comp.usageCount)
+            }
+          }
+          .groupBy(_._1)
+          .mapValuesNow(_.map(_._2).sum)
+
+      val componentsWithUsageByComponentIdCount = componentsWithUsageByComponentId.size
+
+      // Get usage statistics for each component
+      val componentUsed = componentsWithUsageByComponentId.filter(_._2 > 0)
+      val componentUsedMap: Map[String, Long] = componentUsed
+        .map { case (name, usages) =>
+          (mapNameToStat(name), usages)
+        }
+
+      (
+        componentUsedMap ++
+          Map(
+            ComponentsCount.toString -> componentsWithUsageByComponentIdCount
+          )
+      ).mapValuesNow(_.toString)
     }
   }
 
@@ -148,7 +186,7 @@ object ScenarioStatistics {
       LiteK8sDMCount       -> (inputData.deploymentManagerType == liteK8sDeploymentManagerType),
       LiteEmbeddedDMCount  -> (inputData.deploymentManagerType == liteEmbeddedDeploymentManagerType),
       UnknownDMCount       -> !knownDeploymentManagerTypes.contains(inputData.deploymentManagerType),
-      ActiveCount          -> inputData.status.contains(SimpleStateStatus.Running),
+      ActiveScenarioCount  -> inputData.status.contains(SimpleStateStatus.Running),
     ).map { case (k, v) => (k.toString, if (v) 1 else 0) }
   }
 
@@ -174,39 +212,48 @@ object ScenarioStatistics {
     else orderedList.last
   }
 
+  def mapNameToStat(componentId: String): String = {
+    val shortenedName = componentId.replaceAll(vowelsRegex, "").toLowerCase
+
+    componentStatisticPrefix + shortenedName
+  }
+
 }
 
 sealed abstract class StatisticKey(val name: String) {
   override def toString: String = name
 }
 
-case object AuthorsCount         extends StatisticKey("a_n")
-case object CategoriesCount      extends StatisticKey("c")
-case object ComponentsCount      extends StatisticKey("c_n")
-case object VersionsMedian       extends StatisticKey("v_m")
-case object AttachmentsTotal     extends StatisticKey("a_t")
-case object AttachmentsAverage   extends StatisticKey("a_v")
-case object VersionsMax          extends StatisticKey("v_ma")
-case object VersionsMin          extends StatisticKey("v_mi")
-case object VersionsAverage      extends StatisticKey("v_v")
-case object UptimeAverage        extends StatisticKey("u_v")
-case object UptimeMax            extends StatisticKey("u_ma")
-case object UptimeMin            extends StatisticKey("u_mi")
-case object CommentsAverage      extends StatisticKey("c_v")
-case object CommentsTotal        extends StatisticKey("c_t")
-case object FragmentsUsedMedian  extends StatisticKey("f_m")
-case object FragmentsUsedAverage extends StatisticKey("f_v")
-case object NodesMedian          extends StatisticKey("n_m")
-case object NodesAverage         extends StatisticKey("n_v")
-case object NodesMax             extends StatisticKey("n_ma")
-case object NodesMin             extends StatisticKey("n_mi")
-case object ScenarioCount        extends StatisticKey("s_s")
-case object FragmentCount        extends StatisticKey("s_f")
-case object UnboundedStreamCount extends StatisticKey("s_pm_s")
-case object BoundedStreamCount   extends StatisticKey("s_pm_b")
-case object RequestResponseCount extends StatisticKey("s_pm_rr")
-case object FlinkDMCount         extends StatisticKey("s_dm_f")
-case object LiteK8sDMCount       extends StatisticKey("s_dm_l")
-case object LiteEmbeddedDMCount  extends StatisticKey("s_dm_e")
-case object UnknownDMCount       extends StatisticKey("s_dm_c")
-case object ActiveCount          extends StatisticKey("s_a")
+case object AuthorsCount           extends StatisticKey("a_n")
+case object CategoriesCount        extends StatisticKey("ca")
+case object ComponentsCount        extends StatisticKey("c_n")
+case object VersionsMedian         extends StatisticKey("v_m")
+case object AttachmentsTotal       extends StatisticKey("a_t")
+case object AttachmentsAverage     extends StatisticKey("a_v")
+case object VersionsMax            extends StatisticKey("v_ma")
+case object VersionsMin            extends StatisticKey("v_mi")
+case object VersionsAverage        extends StatisticKey("v_v")
+case object UptimeInSecondsAverage extends StatisticKey("u_v")
+case object UptimeInSecondsMax     extends StatisticKey("u_ma")
+case object UptimeInSecondsMin     extends StatisticKey("u_mi")
+case object CommentsAverage        extends StatisticKey("co_v")
+case object CommentsTotal          extends StatisticKey("co_t")
+case object FragmentsUsedMedian    extends StatisticKey("fr_m")
+case object FragmentsUsedAverage   extends StatisticKey("fr_v")
+case object NodesMedian            extends StatisticKey("n_m")
+case object NodesAverage           extends StatisticKey("n_v")
+case object NodesMax               extends StatisticKey("n_ma")
+case object NodesMin               extends StatisticKey("n_mi")
+case object ScenarioCount          extends StatisticKey("s_s")
+case object FragmentCount          extends StatisticKey("s_f")
+case object UnboundedStreamCount   extends StatisticKey("s_pm_s")
+case object BoundedStreamCount     extends StatisticKey("s_pm_b")
+case object RequestResponseCount   extends StatisticKey("s_pm_rr")
+case object FlinkDMCount           extends StatisticKey("s_dm_f")
+case object LiteK8sDMCount         extends StatisticKey("s_dm_l")
+case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
+case object UnknownDMCount         extends StatisticKey("s_dm_c")
+case object ActiveScenarioCount    extends StatisticKey("s_a")
+case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
+case object NuFingerprint          extends StatisticKey("fingerprint")
+case object NuVersion              extends StatisticKey("version")

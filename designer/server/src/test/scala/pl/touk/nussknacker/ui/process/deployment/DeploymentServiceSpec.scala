@@ -10,6 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName.{Cancel, Deploy}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -139,7 +140,11 @@ class DeploymentServiceSpec
     val result =
       deploymentServiceWithCommentSettings
         .processCommand(
-          RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+          RunDeploymentCommand(
+            CommonCommandData(processIdWithName, None, user),
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            NodesDeploymentData.empty
+          )
         )
         .failed
         .futureValue
@@ -160,7 +165,11 @@ class DeploymentServiceSpec
     val processIdWithName        = prepareProcess(processName).dbioActionValues
 
     deploymentServiceWithCommentSettings.processCommand(
-      RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+      RunDeploymentCommand(
+        CommonCommandData(processIdWithName, None, user),
+        StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+        NodesDeploymentData.empty
+      )
     )
 
     eventually {
@@ -189,7 +198,7 @@ class DeploymentServiceSpec
     deploymentServiceWithCommentSettings.processCommand(
       RunDeploymentCommand(
         CommonCommandData(processIdWithName, Some(UserComment("samplePattern")), user),
-        None,
+        StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
         NodesDeploymentData.empty
       )
     )
@@ -239,7 +248,11 @@ class DeploymentServiceSpec
     deploymentManager.withWaitForDeployFinish(processName) {
       deploymentService
         .processCommand(
-          RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+          RunDeploymentCommand(
+            CommonCommandData(processIdWithName, None, user),
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+            NodesDeploymentData.empty
+          )
         )
         .futureValue
       deploymentService
@@ -359,7 +372,11 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, None, user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
           )
           .futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
@@ -381,7 +398,11 @@ class DeploymentServiceSpec
       val result =
         deploymentService
           .processCommand(
-            RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, None, user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
           )
           .failed
           .futureValue
@@ -832,7 +853,11 @@ class DeploymentServiceSpec
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService
           .processCommand(
-            RunDeploymentCommand(CommonCommandData(processIdWithName, None, user), None, NodesDeploymentData.empty)
+            RunDeploymentCommand(
+              CommonCommandData(processIdWithName, None, user),
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint,
+              NodesDeploymentData.empty
+            )
           )
           .futureValue
         deploymentService

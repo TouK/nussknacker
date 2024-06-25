@@ -5,7 +5,7 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.equalTo
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.{Category1, Category2}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestProcessingType.{
@@ -26,7 +26,7 @@ class NodesApiHttpServiceSecuritySpec
     with WithMockableDeploymentManager
     with WithAccessControlCheckingConfigRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "The endpoint for nodes additional info when" - {
@@ -551,38 +551,6 @@ class NodesApiHttpServiceSecuritySpec
                |      "fieldName": "numberOfThreads",
                |      "errorType": "SaveAllowed",
                |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property parallelism",
-               |      "description": "Property parallelism is not known",
-               |      "fieldName": "parallelism",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property checkpointIntervalInSeconds",
-               |      "description": "Property checkpointIntervalInSeconds is not known",
-               |      "fieldName": "checkpointIntervalInSeconds",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property spillStateToDisk",
-               |      "description": "Property spillStateToDisk is not known",
-               |      "fieldName": "spillStateToDisk",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property useAsyncInterpretation",
-               |      "description": "Property useAsyncInterpretation is not known",
-               |      "fieldName": "useAsyncInterpretation",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
                |    }
                |  ],
                |  "validationPerformed": true
@@ -675,38 +643,6 @@ class NodesApiHttpServiceSecuritySpec
                |      "message": "Property numberOfThreads (Number of threads) has invalid value",
                |      "description": "Expected one of 1, 2, got: a.",
                |      "fieldName": "numberOfThreads",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property parallelism",
-               |      "description": "Property parallelism is not known",
-               |      "fieldName": "parallelism",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property checkpointIntervalInSeconds",
-               |      "description": "Property checkpointIntervalInSeconds is not known",
-               |      "fieldName": "checkpointIntervalInSeconds",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property spillStateToDisk",
-               |      "description": "Property spillStateToDisk is not known",
-               |      "fieldName": "spillStateToDisk",
-               |      "errorType": "SaveAllowed",
-               |      "details": null
-               |    },
-               |    {
-               |      "typ": "UnknownProperty",
-               |      "message": "Unknown property useAsyncInterpretation",
-               |      "description": "Property useAsyncInterpretation is not known",
-               |      "fieldName": "useAsyncInterpretation",
                |      "errorType": "SaveAllowed",
                |      "details": null
                |    }

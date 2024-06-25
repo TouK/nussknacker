@@ -4,10 +4,11 @@ import { reducer } from "./reducer";
 import { Action, ActionTypes } from "./action";
 import { getParser } from "./expressionParser";
 import { getStringifier } from "./expressionStringifier";
+import { SupportedType } from "../TableEditor";
 
 export type DataColumn = {
     name: string;
-    type: string;
+    type: SupportedType;
     size?: string;
 };
 export type DataRow = string[];

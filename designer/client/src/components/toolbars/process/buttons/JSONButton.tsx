@@ -12,7 +12,7 @@ import HttpService from "../../../../http/HttpService";
 type Props = StateProps & ToolbarButtonProps;
 
 function JSONButton(props: Props) {
-    const { scenarioName, scenarioGraph, versionId, canExport, disabled } = props;
+    const { scenarioName, scenarioGraph, versionId, canExport, disabled, type } = props;
     const available = !disabled && canExport;
     const { t } = useTranslation();
 
@@ -24,6 +24,7 @@ function JSONButton(props: Props) {
             onClick={() => {
                 HttpService.exportProcess(scenarioName, scenarioGraph, versionId);
             }}
+            type={type}
         />
     );
 }

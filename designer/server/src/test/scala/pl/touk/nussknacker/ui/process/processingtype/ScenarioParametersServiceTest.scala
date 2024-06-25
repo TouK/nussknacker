@@ -16,7 +16,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import pl.touk.nussknacker.test.utils.domain.TestFactory
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.nio.file.Path
 import scala.jdk.CollectionConverters._
@@ -150,7 +150,7 @@ class ScenarioParametersServiceTest
       )
       .validValue
 
-    implicit val user: LoggedUser = LoggedUser(
+    implicit val user: LoggedUser = RealLoggedUser(
       "userWithLimitedAccess",
       "userWithLimitedAccess",
       Map(categoryWithAccess -> Set(Permission.Write))
@@ -170,7 +170,7 @@ class ScenarioParametersServiceTest
     val writeAccessEngineSetupName = EngineSetupName("writeAccessEngine")
     val noAccessEngineSetupName    = EngineSetupName("noAccessEngine")
     val noErrorEngineSetupName     = EngineSetupName("noErrorsEngine")
-    implicit val user: LoggedUser = LoggedUser(
+    implicit val user: LoggedUser = RealLoggedUser(
       id = "1",
       username = "user",
       categoryPermissions = Map(writeAccessCategory -> Set(Permission.Write))
@@ -211,7 +211,7 @@ class ScenarioParametersServiceTest
     val noAccessCategory                          = "noAccessCategory"
     val engineSetupNameUsedForMoreThanOneCategory = EngineSetupName("foo")
     val noErrorEngineSetupName                    = EngineSetupName("noErrorsEngine")
-    implicit val user: LoggedUser = LoggedUser(
+    implicit val user: LoggedUser = RealLoggedUser(
       id = "1",
       username = "user",
       categoryPermissions = Map(writeAccessCategory -> Set(Permission.Write))

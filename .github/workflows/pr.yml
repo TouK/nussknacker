@@ -101,7 +101,7 @@ jobs:
       - name: Build
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
-        run: CROSS_BUILD=false ./ciRunSbt.sh Compile/compile Test/compile
+        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
       - name: Tar artifacts
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
@@ -210,39 +210,6 @@ jobs:
           name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
 
-  crossCompile:
-    name: CrossCompile
-    runs-on: ubuntu-latest
-    needs: [ build, setup ]
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.11.0.17
-      - name: Cache ivy packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v3
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Compile
-        shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
   integrationTests:
     name: IntegrationTests
     needs: [ build, setup ]
@@ -552,7 +519,7 @@ jobs:
   #TODO: extract to different workflow?
   publish:
     runs-on: ubuntu-latest
-    needs: [build, build-fe, setup, tests, crossCompile, integrationTests, slowTests, frontendTests, cypressTests]
+    needs: [build, build-fe, setup, tests, integrationTests, slowTests, frontendTests, cypressTests]
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     env:

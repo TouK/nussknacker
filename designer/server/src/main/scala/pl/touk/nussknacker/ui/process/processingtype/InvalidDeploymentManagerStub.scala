@@ -43,5 +43,7 @@ object InvalidDeploymentManagerStub extends DeploymentManager {
 
   override def customActionsDefinitions: List[CustomActionDefinition] = List.empty
 
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
+
   override def close(): Unit = ()
 }

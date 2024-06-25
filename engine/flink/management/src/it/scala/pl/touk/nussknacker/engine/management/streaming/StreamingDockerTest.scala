@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -38,9 +39,9 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   protected def deployProcessAndWaitIfRunning(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
-      savepointPath: Option[String] = None
+      stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
   ): Assertion = {
-    deployProcess(process, processVersion, savepointPath)
+    deployProcess(process, processVersion, stateRestoringStrategy)
     eventually {
       val jobStatuses = deploymentManager.getProcessStates(process.name).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.name}, $jobStatuses")
@@ -52,10 +53,17 @@ trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matcher
   protected def deployProcess(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
-      savepointPath: Option[String] = None
+      stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
   ): Option[ExternalDeploymentId] = {
     deploymentManager
-      .processCommand(DMRunDeploymentCommand(processVersion, DeploymentData.empty, process, savepointPath))
+      .processCommand(
+        DMRunDeploymentCommand(
+          processVersion,
+          DeploymentData.empty,
+          process,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(stateRestoringStrategy)
+        )
+      )
       .futureValue
   }
 

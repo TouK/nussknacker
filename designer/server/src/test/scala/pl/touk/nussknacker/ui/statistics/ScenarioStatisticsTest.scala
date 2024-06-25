@@ -7,6 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
+import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
@@ -17,8 +18,9 @@ import pl.touk.nussknacker.engine.api.component.{
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -26,6 +28,7 @@ import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
+import java.net.URI
 import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -203,16 +206,39 @@ class ScenarioStatisticsTest
   }
 
   test("should determine query params with version and source ") {
-    val params = new UsageStatisticsReportsSettingsDeterminer(
+    val urlStrings = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty))
+      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Map.empty[String, Long]),
+      List.empty
+    ).prepareStatisticsUrl().futureValue.value
+
+    urlStrings.length shouldEqual 1
+    val urlString = urlStrings.head
+    urlString should include(s"fingerprint=$sampleFingerprint")
+    urlString should include("source=sources")
+    urlString should include(s"version=${BuildInfo.version}")
+  }
+
+  test("should determine statistics for components") {
+    val params = new UsageStatisticsReportsSettingsService(
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      StatisticUrlConfig(),
+      mockedFingerprintService,
+      () => Future.successful(Right(List.empty)),
+      _ => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(componentList)),
+      () => Future.successful(Map.empty[String, Long]),
+      componentWithImplementation
     ).determineQueryParams().value.futureValue.value
-    params should contain("fingerprint" -> sampleFingerprint)
-    params should contain("source" -> "sources")
-    params should contain("version" -> BuildInfo.version)
+
+    params should contain("c_srvcccntsrvc" -> "5")
+    params should contain("c_cstm" -> "1")
+    params.keySet shouldNot contain("c_bltnchc")
   }
 
   test("should combined statistics for all scenarios") {
@@ -269,45 +295,50 @@ class ScenarioStatisticsTest
       scenarioId = None
     )
 
-    val params = new UsageStatisticsReportsSettingsDeterminer(
+    val params = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       _ => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
+      () => Future.successful(Map.empty[String, Long]),
+      componentWithImplementation
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
-      AuthorsCount         -> "1",
-      AttachmentsTotal     -> "1",
-      AttachmentsAverage   -> "1",
-      CategoriesCount      -> "1",
-      CommentsTotal        -> "1",
-      CommentsAverage      -> "1",
-      VersionsMedian       -> "2",
-      VersionsMax          -> "2",
-      VersionsMin          -> "2",
-      VersionsAverage      -> "2",
-      UptimeAverage        -> "0",
-      UptimeMax            -> "0",
-      UptimeMin            -> "0",
-      ComponentsCount      -> "1",
-      FragmentsUsedMedian  -> "1",
-      FragmentsUsedAverage -> "1",
-      NodesMedian          -> "3",
-      NodesAverage         -> "2",
-      NodesMax             -> "2",
-      NodesMin             -> "4",
-      ScenarioCount        -> "3",
-      FragmentCount        -> "1",
-      UnboundedStreamCount -> "3",
-      BoundedStreamCount   -> "0",
-      RequestResponseCount -> "1",
-      FlinkDMCount         -> "3",
-      LiteK8sDMCount       -> "1",
-      LiteEmbeddedDMCount  -> "0",
-      UnknownDMCount       -> "0",
-      ActiveCount          -> "2",
+      AuthorsCount           -> "1",
+      AttachmentsTotal       -> "1",
+      AttachmentsAverage     -> "1",
+      CategoriesCount        -> "1",
+      CommentsTotal          -> "1",
+      CommentsAverage        -> "1",
+      VersionsMedian         -> "2",
+      VersionsMax            -> "2",
+      VersionsMin            -> "2",
+      VersionsAverage        -> "2",
+      UptimeInSecondsAverage -> "0",
+      UptimeInSecondsMax     -> "0",
+      UptimeInSecondsMin     -> "0",
+      ComponentsCount        -> "3",
+      FragmentsUsedMedian    -> "1",
+      FragmentsUsedAverage   -> "1",
+      NodesMedian            -> "3",
+      NodesAverage           -> "2",
+      NodesMax               -> "2",
+      NodesMin               -> "4",
+      ScenarioCount          -> "3",
+      FragmentCount          -> "1",
+      UnboundedStreamCount   -> "3",
+      BoundedStreamCount     -> "0",
+      RequestResponseCount   -> "1",
+      FlinkDMCount           -> "3",
+      LiteK8sDMCount         -> "1",
+      LiteEmbeddedDMCount    -> "0",
+      UnknownDMCount         -> "0",
+      ActiveScenarioCount    -> "2",
+      "c_srvcccntsrvc"       -> "5",
+      "c_cstm"               -> "1",
     ).map { case (k, v) => (k.toString, v) }
     params should contain allElementsOf expectedStats
   }
@@ -367,8 +398,74 @@ class ScenarioStatisticsTest
       List("Category1"),
       links = List.empty,
       usageCount = 3,
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
+    ),
+    ComponentListElement(
+      DesignerWideComponentId("request-response-service-accountservice"),
+      "accountService",
+      "/assets/components/Processor.svg",
+      ComponentType.Service,
+      ComponentGroupName("services"),
+      List("Category1"),
+      links = List.empty,
+      usageCount = 2,
       AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
+    ),
+    ComponentListElement(
+      DesignerWideComponentId("service-builtin-choice"),
+      "choice",
+      "/assets/components/Switch.svg",
+      ComponentType.Service,
+      ComponentGroupName("base"),
+      List(
+        "BatchDev",
+        "Category1",
+        "Category2",
+        "Default",
+        "DevelopmentTests",
+        "Periodic",
+        "RequestResponse",
+        "RequestResponseK8s",
+        "StreamingLite",
+        "StreamingLiteK8s"
+      ),
+      List(
+        ComponentLink(
+          "documentation",
+          "Documentation",
+          new URI("/assets/icons/documentation.svg"),
+          new URI("https://nussknacker.io/documentation/docs/scenarios_authoring/BasicNodes#choice")
+        )
+      ),
+      0,
+      AllowedProcessingModes.All
+    ),
+    ComponentListElement(
+      DesignerWideComponentId("someCustomComponent"),
+      "someCustomComponent",
+      "icon",
+      ComponentType.Service,
+      ComponentGroupName("someCustomGroup"),
+      List("Streaming"),
+      List.empty,
+      1,
+      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
     )
   )
+
+  private val componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
+    ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
+    ComponentDefinitionWithImplementation.withEmptyConfig("choice", TestService),
+  )
+
+  object TestService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("paramStringEditor")
+        param: String
+    ): Future[String] = ???
+
+  }
 
 }

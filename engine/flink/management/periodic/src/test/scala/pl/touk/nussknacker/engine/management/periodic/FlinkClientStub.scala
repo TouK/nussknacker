@@ -10,9 +10,11 @@ import scala.concurrent.Future
 
 class FlinkClientStub extends FlinkClient {
 
-  override def findJobsByName(jobName: String)(
+  override def getJobsOverviews()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[flinkRestModel.JobOverview]]] = ???
+
+  override def getJobDetails(jobId: String): Future[Option[flinkRestModel.JobDetails]] = ???
 
   override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = ???
 
@@ -29,7 +31,8 @@ class FlinkClientStub extends FlinkClient {
       jarFile: File,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      jobId: Option[String]
   ): Future[Option[ExternalDeploymentId]] = ???
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = Future.successful(())

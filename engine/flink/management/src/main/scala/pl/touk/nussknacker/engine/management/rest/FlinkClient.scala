@@ -6,7 +6,7 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobOverview}
+import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{ClusterOverview, JobDetails, JobOverview}
 import sttp.client3.SttpBackend
 
 import java.io.File
@@ -17,9 +17,11 @@ trait FlinkClient {
 
   def deleteJarIfExists(jarFileName: String): Future[Unit]
 
-  def findJobsByName(jobName: String)(
+  def getJobsOverviews()(
       implicit freshnessPolicy: DataFreshnessPolicy
   ): Future[WithDataFreshnessStatus[List[JobOverview]]]
+
+  def getJobDetails(jobId: String): Future[Option[JobDetails]]
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig]
 
@@ -37,7 +39,8 @@ trait FlinkClient {
       jarFile: File,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      jobId: Option[String]
   ): Future[Option[ExternalDeploymentId]]
 
 }

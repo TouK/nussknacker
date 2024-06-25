@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+import { alpha, styled, Typography } from "@mui/material";
 import { useStateWithRevertTimeout } from "./useStateWithRevertTimeout";
 import { useSelector } from "react-redux";
 import { getLoggedUser, getTabs } from "../../reducers/selectors/settings";
@@ -9,6 +9,8 @@ import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";
+import { EventTrackingSelector, getEventTrackingProps } from "../../containers/event-tracking";
+import { blendLighten } from "../../containers/theme/helpers";
 
 const PlainButton = styled("button")({
     background: "unset",
@@ -20,16 +22,6 @@ const PlainButton = styled("button")({
         outline: "unset",
     },
 });
-
-export const PlainLink = styled(TabElement)(({ theme }) => ({
-    "&, &:hover, &:focus": {
-        color: "inherit",
-        textDecoration: "none",
-    },
-    "&:hover": {
-        background: theme.palette.action.hover,
-    },
-}));
 
 const List = styled(TruncatedList)({
     // make sure to override global classname
@@ -71,7 +63,8 @@ const Popup = styled(FocusLock)(({ theme }) => ({
     zIndex: 1501,
     position: "absolute",
     inset: "3em 0 auto auto",
-    background: theme.palette.background.paper,
+    background: blendLighten(theme.palette.background.paper, 0.04),
+    filter: `drop-shadow(0 4px 8px ${alpha(theme.palette.common.black, 0.5)})`,
     backdropFilter: "blur(4px)",
 }));
 
@@ -110,6 +103,16 @@ function ExpandButton({ children }: PropsWithChildren<unknown>) {
     );
 }
 
+const Spacer = styled("span")(({ theme }) => ({
+    color: theme.palette.action.disabled,
+    border: "1px solid",
+    alignSelf: "stretch",
+    "li &": {
+        marginBlock: theme.spacing(1.5),
+        marginInline: theme.spacing(1),
+    },
+}));
+
 export function Menu(): JSX.Element {
     const tabs = useSelector(getTabs);
     const loggedUser = useSelector(getLoggedUser);
@@ -120,17 +123,18 @@ export function Menu(): JSX.Element {
                 .filter((t) => !t.requiredPermission || loggedUser.hasGlobalPermission(t.requiredPermission))
                 .filter((t) => !!t.title)
                 .map((tab) => (
-                    <PlainLink
-                        sx={(theme) => ({
-                            fontWeight: 400,
-                            padding: ".8em 1.2em",
-                            "&.active": {
-                                background: theme.palette.action.active,
-                            },
-                        })}
-                        key={tab.id}
-                        tab={tab}
-                    />
+                    <React.Fragment key={tab.id}>
+                        {tab.spacerBefore ? <Spacer /> : null}
+                        <Typography
+                            component={TabElement}
+                            tab={tab}
+                            {...(tab.id.toLowerCase() === "components"
+                                ? getEventTrackingProps({ selector: EventTrackingSelector.ComponentsTab })
+                                : tab.id.toLowerCase() === "metrics"
+                                ? getEventTrackingProps({ selector: EventTrackingSelector.GlobalMetricsTab })
+                                : null)}
+                        />
+                    </React.Fragment>
                 )),
         [loggedUser, tabs],
     );

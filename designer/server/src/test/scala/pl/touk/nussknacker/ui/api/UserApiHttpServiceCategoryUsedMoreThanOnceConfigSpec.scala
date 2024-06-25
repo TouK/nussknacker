@@ -9,7 +9,7 @@ import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
   WithCategoryUsedMoreThanOnceDesignerConfig
 }
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLoggingIfValidationFails}
 
 class UserApiHttpServiceCategoryUsedMoreThanOnceConfigSpec
     extends AnyFreeSpecLike
@@ -17,7 +17,7 @@ class UserApiHttpServiceCategoryUsedMoreThanOnceConfigSpec
     with WithCategoryUsedMoreThanOnceDesignerConfig
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
 
   "In designer configured with multiple processing types using the same category" - {

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
-  RestAssuredVerboseLogging,
+  RestAssuredVerboseLoggingIfValidationFails,
   VeryPatientScalaFutures
 }
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapters}
@@ -33,7 +33,7 @@ class MigrationApiHttpServiceBusinessSpec
     with WithMockableDeploymentManager
     with NuRestAssureExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with Eventually
     with VeryPatientScalaFutures {
 
@@ -70,8 +70,8 @@ class MigrationApiHttpServiceBusinessSpec
               exampleProcessName.value,
               processVersionId = 2,
               isFragment = false,
-              modifiedBy = "Remote[remoteUser]",
-              createdBy = "Remote[remoteUser]",
+              modifiedBy = "remoteUser",
+              createdBy = "remoteUser",
               modelVersion = 0,
               historyProcessVersions = List(1, 2),
               scenarioGraphNodeIds = List("sink", "source")
@@ -97,7 +97,7 @@ class MigrationApiHttpServiceBusinessSpec
               exampleProcessName.value,
               processVersionId = 2,
               isFragment = false,
-              modifiedBy = "Remote[remoteUser]",
+              modifiedBy = "remoteUser",
               createdBy = "admin",
               modelVersion = 0,
               historyProcessVersions = List(1, 2),
@@ -152,7 +152,7 @@ class MigrationApiHttpServiceBusinessSpec
               validFragment.name.value,
               processVersionId = 2,
               isFragment = true,
-              modifiedBy = "Remote[remoteUser]",
+              modifiedBy = "remoteUser",
               createdBy = "admin",
               modelVersion = 0,
               historyProcessVersions = List(1, 2),
@@ -176,8 +176,8 @@ class MigrationApiHttpServiceBusinessSpec
               validFragment.name.value,
               processVersionId = 2,
               isFragment = true,
-              modifiedBy = "Remote[remoteUser]",
-              createdBy = "Remote[remoteUser]",
+              modifiedBy = "remoteUser",
+              createdBy = "remoteUser",
               modelVersion = 0,
               historyProcessVersions = List(1, 2),
               scenarioGraphNodeIds = List("sink", "csv-source-lite")
