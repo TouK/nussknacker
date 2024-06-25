@@ -137,9 +137,10 @@ class PartSubGraphCompiler(nodeCompiler: NodeCompiler) {
       case CustomNode(id, _, nodeType, _, _) =>
         toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id, nodeType)), Map.empty, None)
 
-      // probably this shouldn't occur - otherwise we'd have empty fragment?
-      case FragmentInput(id, _, _, _, _) =>
-        toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(id))), Map.empty, None)
+      case fragmentInput @ FragmentInput(id, _, _, _, _) =>
+        val NodeCompilationResult(typingInfo, parameters, _, _, _) =
+          nodeCompiler.compileFragmentInput(fragmentInput, ctx)
+        toCompilationResult(Invalid(NonEmptyList.of(InvalidTailOfBranch(Set(id)))), typingInfo, parameters)
 
       case FragmentOutputDefinition(id, _, List(), _) =>
         // TODO: should we validate it's process?

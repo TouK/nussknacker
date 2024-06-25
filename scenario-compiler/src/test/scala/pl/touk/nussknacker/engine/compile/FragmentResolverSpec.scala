@@ -110,7 +110,9 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
     resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe Symbol("defined")
   }
 
-  test("not resolve fragment with bad outputs") {
+  test("resolve fragment with bad outputs") {
+    // resolved fragment with bad output results in process validation error later,
+    // but allows for the fragment to be typed (e.g. for DictParameterEditor)
 
     val process = ScenarioBuilder
       .streaming("test")
@@ -132,8 +134,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
     val resolvedValidated = FragmentResolver(List(fragment)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
-
+    resolvedValidated.isValid shouldBe true
   }
 
   test("not disable fragment with many outputs") {

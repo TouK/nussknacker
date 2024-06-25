@@ -81,7 +81,7 @@ class ProcessDictSubstitutor(
       case Some(DictKeyWithLabelExpressionTypingInfo(key, label, _)) =>
         Expression.dictKeyWithLabel(key, label)
       case _ => // can happen if the expression isn't compiled successfully (and so it's TypingInfo isn't available)
-        logger.debug(
+        logger.warn(
           s"Failed to resolve label for DictKeyWithLabel expression ${process.name} -> $nodeExpressionId: ${expr.expression}"
         )
         expr // returns with label: null

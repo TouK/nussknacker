@@ -110,8 +110,21 @@ trait GraphBuilder[R] {
       )
     )
 
+  def fragmentInput(id: String, parameters: List[FragmentParameter]): GraphBuilder[SourceNode] =
+    new SimpleGraphBuilder(
+      SourceNode(
+        FragmentInputDefinition(
+          id = id,
+          parameters = parameters
+        ),
+        _
+      )
+    )
+
   def fragmentOutput(id: String, outputName: String, params: (String, Expression)*): R =
-    creator(EndingNode(FragmentOutputDefinition(id, outputName, params.map(kv => Field(kv._1, kv._2)).toList)))
+    creator(
+      EndingNode(FragmentOutputDefinition(id, outputName, params.map(kv => Field(kv._1, kv._2)).toList))
+    )
 
   def filter(
       id: String,

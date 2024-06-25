@@ -7,12 +7,15 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
+import pl.touk.nussknacker.engine.api.parameter.{ParameterName, ValueInputWithDictEditor}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.UIGlobalError
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -114,6 +117,164 @@ class DictsFlowTest
       .rightValue shouldBe """{"key":"true","label":"ON"}""" // returns "ON" even though "OLD LABEL" was sent, because of ProcessDictSubstitutor
   }
 
+  test("handle labels correctly even if referenced fragment compilation fails - fragment with invalid end of branch") {
+    val fragmentName = "test_frag"
+
+    createEmptyScenario(ProcessName(fragmentName), isFragment = true)
+
+    // this fragment has only an input node, no valid end of branch
+    val fragmentJson = """{
+                         |  "scenarioGraph": {
+                         |    "properties": {
+                         |      "additionalFields": {
+                         |        "description": "desc",
+                         |        "properties": {},
+                         |        "metaDataType": "FragmentSpecificData"
+                         |      }
+                         |    },
+                         |    "nodes": [
+                         |      {
+                         |        "parameters": [
+                         |          {
+                         |            "uuid": "98de9a8c-4e2c-44ae-8e5a-1136b5fffbec",
+                         |            "name": "test",
+                         |            "required": false,
+                         |            "valueEditor": {
+                         |              "allowOtherValue": false,
+                         |              "dictId": "rgb",
+                         |              "type": "ValueInputWithDictEditor"
+                         |            },
+                         |            "typ": {
+                         |              "refClazzName": "java.lang.String"
+                         |            }
+                         |          }
+                         |        ],
+                         |        "type": "FragmentInputDefinition",
+                         |        "branchParametersTemplate": [],
+                         |        "id": "input"
+                         |      }
+                         |    ],
+                         |    "edges": []
+                         |  },
+                         |  "comment": ""
+                         |}""".stripMargin
+
+    val globalErrorFrag = extractGlobalValidationResult(fragmentName, fragmentJson)
+    globalErrorFrag.map(_.error.typ) shouldBe List("InvalidTailOfBranch")
+
+    val processName = "test_proc"
+
+    createEmptyScenario(ProcessName(processName))
+
+    val process = ScenarioBuilder
+      .streaming(processName)
+      .additionalFields(properties = Map.empty)
+      .source("source", "csv-source-lite")
+      .fragment(
+        fragmentName,
+        fragmentName,
+        List(("test", Expression.dictKeyWithLabel("H000000", None))),
+        Map.empty,
+        Map.empty
+      )
+
+    val globalErrorProcess = extractGlobalValidationResult(process)
+    globalErrorProcess.map(_.error.typ) shouldBe List("InvalidTailOfBranch")
+    globalErrorProcess.map(_.nodeIds) shouldBe List(List("test_frag"))
+
+    // Check that label bound to dictId-key is updated in BE response
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processes/$processName")
+        .auth
+        .basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+
+    response2.bodyAsJson.hcursor
+      .downField("scenarioGraph")
+      .downField("nodes")
+      .downAt(_.hcursor.get[String]("id").rightValue == "test_frag")
+      .downField("ref")
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").rightValue == "test")
+      .downField("expression")
+      .downField("expression")
+      .as[String]
+      .rightValue shouldBe """{"key":"H000000","label":"Black"}"""
+  }
+
+  test("handle labels correctly even if used fragment's resolution fails - unused output") {
+    val fragmentName = "test_frag"
+
+    createEmptyScenario(ProcessName(fragmentName), isFragment = true)
+
+    val fragment = ScenarioBuilder
+      .fragment(
+        fragmentName,
+        List(
+          FragmentParameter(
+            ParameterName("test"),
+            FragmentClazzRef[java.lang.String],
+            initialValue = None,
+            hintText = None,
+            valueEditor = Some(
+              ValueInputWithDictEditor(
+                dictId = "rgb",
+                allowOtherValue = false
+              )
+            ),
+            valueCompileTimeValidation = None
+          )
+        )
+      )
+      .fragmentOutput("output", "output")
+
+    extractNodeValidationResult(fragment).asObject.value shouldBe empty
+
+    val processName = "test_proc"
+
+    createEmptyScenario(ProcessName(processName))
+
+    // This process uses the defined fragment (which has output - not a sink), but doesn't direct it's output anywhere
+    val process = ScenarioBuilder
+      .streaming(processName)
+      .additionalFields(properties = Map.empty)
+      .source("source", "csv-source-lite")
+      .fragment(
+        fragmentName,
+        fragmentName,
+        List(("test", Expression.dictKeyWithLabel("H000000", None))),
+        Map("output" -> "fragmentOut"),
+        Map.empty
+      )
+
+    val globalErrorProcess = extractGlobalValidationResult(process)
+    globalErrorProcess.map(_.error.typ) shouldBe List("InvalidTailOfBranch")
+    globalErrorProcess.map(_.nodeIds) shouldBe List(List("test_frag-output"))
+
+    // Check that label bound to dictId-key is updated in BE response
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processes/${processName}")
+        .auth
+        .basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+
+    response2.bodyAsJson.hcursor
+      .downField("scenarioGraph")
+      .downField("nodes")
+      .downAt(_.hcursor.get[String]("id").rightValue == "test_frag")
+      .downField("ref")
+      .downField("parameters")
+      .downAt(_.hcursor.get[String]("name").rightValue == "test")
+      .downField("expression")
+      .downField("expression")
+      .as[String]
+      .rightValue shouldBe """{"key":"H000000","label":"Black"}"""
+  }
+
   test("save process with expression using dicts and get it back") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
@@ -143,7 +304,7 @@ class DictsFlowTest
       "ExpressionParserCompilationError"
     }
 
-    val invalidNodesAfterSave = extractValidationResult(process)
+    val invalidNodesAfterSave = extractNodeValidationResult(process)
     invalidNodesAfterSave.asObject.value should have size 1
     invalidNodesAfterSave.hcursor
       .downField(VariableNodeId)
@@ -257,7 +418,7 @@ class DictsFlowTest
     response1.code shouldEqual StatusCode.Ok
     response1.extractFieldJsonValue("errors", "invalidNodes").asObject.value shouldBe empty
 
-    extractValidationResult(process).asObject.value shouldBe empty
+    extractNodeValidationResult(process).asObject.value shouldBe empty
 
     val response2 = httpClient.send(
       quickRequest
@@ -273,13 +434,13 @@ class DictsFlowTest
     response2.extractFieldJsonValue("validationResult", "errors", "invalidNodes")
   }
 
-  private def createEmptyScenario(processName: ProcessName) = {
+  private def createEmptyScenario(scenarioName: ProcessName, isFragment: Boolean = false) = {
     val command = CreateScenarioCommand(
-      name = processName,
+      name = scenarioName,
       category = Some(Category1.stringify),
       processingMode = None,
       engineSetupName = None,
-      isFragment = false,
+      isFragment = isFragment,
       forwardedUserName = None
     )
     val response = httpClient.send(
@@ -293,18 +454,30 @@ class DictsFlowTest
     response.code shouldEqual StatusCode.Created
   }
 
-  private def extractValidationResult(process: CanonicalProcess): Json = {
-    val response = httpClient.send(
-      quickRequest
-        .put(uri"$nuDesignerHttpAddress/api/processes/${process.name}")
-        .contentType(MediaType.ApplicationJson)
-        .body(process.toJsonAsProcessToSave.spaces2)
-        .auth
-        .basic("admin", "admin")
-    )
+  private def extractNodeValidationResult(process: CanonicalProcess): Json = {
+    val response = saveProcess(process.name.value, process.toJsonAsProcessToSave.spaces2)
     response.code shouldEqual StatusCode.Ok
     response.extractFieldJsonValue("errors", "invalidNodes")
   }
+
+  private def extractGlobalValidationResult(process: CanonicalProcess): List[UIGlobalError] =
+    extractGlobalValidationResult(process.name.value, process.toJsonAsProcessToSave.spaces2)
+
+  private def extractGlobalValidationResult(scenarioName: String, scenarioJson: String): List[UIGlobalError] = {
+    val response = saveProcess(scenarioName, scenarioJson)
+    response.code shouldEqual StatusCode.Ok
+    response.extractFieldJsonValue("errors", "globalErrors").as[List[UIGlobalError]].rightValue
+  }
+
+  private def saveProcess(processName: String, processJson: String) =
+    httpClient.send(
+      quickRequest
+        .put(uri"$nuDesignerHttpAddress/api/processes/${processName}")
+        .contentType(MediaType.ApplicationJson)
+        .body(processJson)
+        .auth
+        .basic("admin", "admin")
+    )
 
   private def extractVariableExpressionFromGetProcessResponse(json: Json) = {
     import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
