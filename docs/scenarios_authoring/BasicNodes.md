@@ -95,16 +95,22 @@ Split node doesn't have additional parameters.
 
 ![for_each](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_foreach0.png)
 
-`for-each` transforms the stream so that subsequent nodes are executed once for every value (possibly multiple times).
+`for-each` transforms the incoming event to N events, where N is number of elements in the Elements list.
+&nbsp;
+
 This node has two parameters:
 - Elements - list of values over which to loop. It can contain both fixed values and expressions evaluated during execution.
-- Output Variable Name - the name of the variable to which element value will be assigned.
+- Output Variable Name - the name of the variable to which current element value will be assigned.
 
-For example, when
-- Elements is `{#input.value1, #input.value2}`
-- Output Variable Name is `outputVar`
+For example, when:
+- Elements is `{"John", "Betty"}`
+- Output Variable Name is `outputVar`,
+&nbsp;
 
-then nodes that follow `for-each` will be executed twice and the value of current element can be referenced as `#outputVar`.
+then two events will be emitted, with `#outputVar` equal to `John` for the first event and `Betty` for the second.
+
+&nbsp;
+The `#input` variable is available downstream the `for-each` node.  
 
 &nbsp;
 ## Union
@@ -116,9 +122,9 @@ Union merges multiple branches into one branch.
 In the Streaming processing mode events from the incoming branches are passed to the output branch without an attempt to combine or match them.
 &nbsp;
 
-In the Request - Response processing mode only one [response sink](./RRDataSourcesAndSinks.md#sink) can return value. If you have parallel branches of processing the Union node is used to merge them and then [Collect](./RRDataSourcesAndSinks.md#collect) node is used to collect results of processing in each of the merged branches. Check [Into doc](./Intro.md#nussknacker-scenario-diagram) for details on how to interpret the scenario graph in different processing modes.
+In the Request - Response processing mode only one [response sink](./RRDataSourcesAndSinks.md#sink) can return value. If you have parallel branches of processing the Union node is used to merge them and then [Collect](./RRDataSourcesAndSinks.md#collect) node is used to collect results of processing in each of the merged branches. Check [Introduction to Scenario Authoring](./Intro.md#nussknacker-scenario-diagram) for details on how to interpret the scenario graph in different processing modes.
 
-The #input variable will be no longer available downstream the union node; a new variable will be available instead, which is defined in the union node.
+The `#input` variable will be no longer available downstream the union node; a new variable will be available instead, which is defined in the union node.
 
 
 Branch names visible in the node configuration form are derived from node names preceding the union node.
@@ -127,8 +133,8 @@ Example:
 ![union_example](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_union1.png)
 
 Entry fields:
-- Output Variable Name - the name of the variable containing results of the merge (replacing previously defined variables, in particular #input).
+- Output Variable Name - the name of the variable containing results of the merge (replacing previously defined variables, in particular `#input`).
 - Output Expression - there is one expression for each of the input branches. When there is an incoming event from a particular input branch, the expression defined for that branch is evaluated and passed to the output branch. The expressions defined for respective branches need to be of identical data type. In the example above it is always a record containing fields `branchName` and `value`.
 
-Note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
+Note, that the `#input` variable used in the Output expression field refers to the content of the respective incoming branch.
 
