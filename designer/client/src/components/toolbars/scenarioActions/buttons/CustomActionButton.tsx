@@ -12,29 +12,23 @@ import { ACTION_DIALOG_WIDTH } from "../../../../stylesheets/variables";
 type CustomActionProps = {
     action: CustomAction;
     processName: string;
-    processStatus: StatusType | null;
 } & ToolbarButtonProps;
 
 export default function CustomActionButton(props: CustomActionProps) {
-    const { action, processStatus, disabled, type } = props;
+    const { action, disabled, type } = props;
 
     const { t } = useTranslation();
 
     const icon = action.icon ? <UrlIcon src={action.icon} FallbackComponent={DefaultIcon} /> : <DefaultIcon />;
 
-    const statusName = processStatus?.name;
-    const available = !disabled && action.allowedStateStatusNames.includes(statusName);
-
-    const toolTip = available
-        ? null
-        : t("panels.actions.custom-action.tooltips.disabled", "Disabled for {{statusName}} status.", { statusName });
+    const toolTip = disabled ? t("panels.actions.custom-action.tooltips.disabled", "Disabled for current state.") : null;
 
     const { open } = useWindows();
     return (
         <ToolbarButton
             name={action.name}
             title={toolTip}
-            disabled={!available}
+            disabled={disabled}
             icon={icon}
             onClick={() =>
                 open<CustomAction>({

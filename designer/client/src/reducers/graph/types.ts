@@ -20,4 +20,5 @@ export type GraphState = {
     testResults: TestResults;
     processCounts: ProcessCounts;
     unsavedNewName: string | null;
+    enabledCustomActions?: string[];
 };

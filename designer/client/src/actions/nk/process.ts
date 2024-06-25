@@ -5,6 +5,7 @@ import { Scenario, ProcessName, ProcessVersionId } from "../../components/Proces
 import { displayProcessActivity } from "./displayProcessActivity";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
+import { getProcessVersionId } from "../../reducers/selectors/graph";
 
 export type ScenarioActions =
     | { type: "CORRECT_INVALID_SCENARIO"; processDefinitionData: ProcessDefinitionData }
@@ -16,6 +17,7 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
 
         return HttpService.fetchProcessDetails(processName, versionId).then((response) => {
             dispatch(displayTestCapabilities(processName, response.data.scenarioGraph));
+            dispatch(updateEnabledCustomActions(processName, response.data.processVersionId));
             dispatch({
                 type: "DISPLAY_PROCESS",
                 scenario: response.data,
@@ -27,12 +29,13 @@ export function fetchProcessToDisplay(processName: ProcessName, versionId?: Proc
 
 export function loadProcessState(processName: ProcessName): ThunkAction {
     return (dispatch) =>
-        HttpService.fetchProcessState(processName).then(({ data }) =>
+        HttpService.fetchProcessState(processName).then(({ data }) => {
             dispatch({
                 type: "PROCESS_STATE_LOADED",
                 processState: data,
-            }),
-        );
+            });
+            dispatch(updateEnabledCustomActions(processName));
+        });
 }
 
 export function fetchTestFormParameters(processName: ProcessName, scenarioGraph: ScenarioGraph) {
@@ -51,6 +54,16 @@ export function displayTestCapabilities(processName: ProcessName, scenarioGraph:
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,
+            }),
+        );
+}
+
+export function updateEnabledCustomActions(processName: ProcessName, versionId?: ProcessVersionId) {
+    return (dispatch, getState) =>
+        HttpService.getEnabledCustomActions(processName, versionId == null ? getProcessVersionId(getState()) : versionId).then((data) =>
+            dispatch({
+                type: "UPDATE_ENABLED_CUSTOM_ACTIONS",
+                enabledCustomActions: data,
             }),
         );
 }

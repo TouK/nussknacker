@@ -505,6 +505,20 @@ class HttpService {
             });
     }
 
+    getEnabledCustomActions(processName: string, versionId: number): Promise<string[]> {
+        return api
+            .get(`/processManagement/customAction/${encodeURIComponent(processName)}/${versionId}`)
+            .then((res) => res.data)
+            .catch((error) => {
+                this.#addError(
+                    i18next.t("notification.error.failedToGetEnabledCustomActions", "Failed to get enabledCustomActions"),
+                    error,
+                    true,
+                );
+                return;
+            });
+    }
+
     getNodeAdditionalInfo(processName: string, node: NodeType, controller?: AbortController): Promise<AdditionalInfo | null> {
         return api
             .post<AdditionalInfo>(`/nodes/${encodeURIComponent(processName)}/additionalInfo`, node, {
