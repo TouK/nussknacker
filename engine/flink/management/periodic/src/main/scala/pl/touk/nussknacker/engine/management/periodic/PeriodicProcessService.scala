@@ -207,6 +207,7 @@ class PeriodicProcessService(
   ): Future[(Set[PeriodicProcessDeploymentId], Set[PeriodicProcessDeploymentId])] =
     for {
       runtimeStatuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh).map(_.value)
+      _ = logger.debug(s"Process '$processName' runtime statuses: ${runtimeStatuses.map(_.toString)}")
       scheduleDeploymentsWithStatus = schedules.schedules.values.toList.flatMap(_.latestDeployments.map { deployment =>
         (deployment, runtimeStatuses.getStatus(deployment.id))
       })
@@ -242,7 +243,13 @@ class PeriodicProcessService(
             status
           ) && deployment.state.status != PeriodicProcessDeploymentStatus.Finished =>
         markFinished(deployment, processState).needsReschedule(value = true)
-      case None if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed =>
+      case None
+          if deployment.state.status == PeriodicProcessDeploymentStatus.Deployed
+            && deployment.deployedAt.exists(_.isBefore(LocalDateTime.now().minusMinutes(5))) =>
+        // status is None if DeploymentManager isn't aware of a job that was just deployed
+        // this can be caused by a race in e.g. FlinkRestManager
+        // (because /jobs/overview used in getProcessStates isn't instantly aware of submitted jobs)
+        // so freshly deployed deployments aren't considered
         markFinished(deployment, processState).needsReschedule(value = true)
       case _ =>
         scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
