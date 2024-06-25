@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpres
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
+import scala.jdk.CollectionConverters.MapHasAsJava
+
 object Validations {
 
   import cats.data.ValidatedNel
@@ -82,7 +84,16 @@ object Validations {
     validators
       .flatMap { validator =>
         paramWithValueAndExpressionList.map { case (name, value, expression) =>
-          validator.isValid(name, Expression(expression.language, expression.original), value, None).toValidatedNel
+          val spelValidatorCompatibleValue = value match {
+            case Some(map: Map[_, _]) =>
+              // if Scala Map[_, _] is passed to ValidationExpressionParameterValidator, it always returns false
+              Some(map.asJava)
+            case v => v
+          }
+
+          validator
+            .isValid(name, Expression(expression.language, expression.original), spelValidatorCompatibleValue, None)
+            .toValidatedNel
         }
       }
       .sequence
