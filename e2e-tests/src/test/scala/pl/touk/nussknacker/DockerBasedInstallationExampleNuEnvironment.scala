@@ -66,6 +66,7 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
     composeFiles = Seq(
       new JFile("examples/installation/docker-compose.yml"),
       new JFile(Resource.getUrl("spec-setup/spec-setup.override.yml").toURI),
+      new JFile(Resource.getUrl("spec-setup/batch-nu-designer.override.yml").toURI),
       new JFile(Resource.getUrl("spec-setup/debuggable-nu-designer.override.yml").toURI)
     ),
     env = Map(
