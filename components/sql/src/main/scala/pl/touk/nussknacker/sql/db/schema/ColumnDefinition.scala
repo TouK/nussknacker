@@ -8,18 +8,18 @@ object ColumnDefinition {
 
   def apply(columnNo: Int, resultMeta: ResultSetMetaData): ColumnDefinition =
     ColumnDefinition(
-      no = columnNo,
+      no = Some(columnNo),
       name = resultMeta.getColumnName(columnNo),
       typing = Typed(Class.forName(resultMeta.getColumnClassName(columnNo)))
     )
 
-  def apply(columnNo: Int, typing: (String, TypingResult)): ColumnDefinition =
+  def apply(typing: (String, TypingResult)): ColumnDefinition =
     ColumnDefinition(
-      no = columnNo,
+      no = None,
       name = typing._1,
       typing = typing._2
     )
 
 }
 
-final case class ColumnDefinition(no: Int, name: String, typing: TypingResult)
+final case class ColumnDefinition(no: Option[Int], name: String, typing: TypingResult)
