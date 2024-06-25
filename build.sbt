@@ -53,7 +53,7 @@ val dockerUserName               = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName            = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp       = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val dockerUpBranchLatestFromProp = propOrEnv("dockerUpBranchLatest", "true").toBoolean
-val addDevArtifacts              = propOrEnv("addDevArtifacts", "false").toBoolean
+val addDevArtifacts              = propOrEnv("addDevArtifacts", "true").toBoolean
 val addManagerArtifacts          = propOrEnv("addManagerArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
