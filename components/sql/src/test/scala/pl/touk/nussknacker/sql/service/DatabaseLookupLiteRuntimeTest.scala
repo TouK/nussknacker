@@ -63,12 +63,13 @@ class DatabaseLookupLiteRuntimeTest
         "Key value"  -> "#input",
         "Cache TTL"  -> ""
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.NAME")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output")
 
-    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
+    val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
+    // TODO
     resultList.head shouldEqual "John"
   }
 
@@ -85,12 +86,13 @@ class DatabaseLookupLiteRuntimeTest
         "Key value"  -> "#input",
         "Cache TTL"  -> ""
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.name")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output")
 
     val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
+    // TODO
     resultList.head shouldEqual "John"
   }
 

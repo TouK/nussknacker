@@ -59,12 +59,13 @@ class IgniteEnrichmentLiteRuntimeTest
         "Key value"  -> "#input",
         "Cache TTL"  -> ""
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.NAME")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output")
 
-    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
+    val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
+    // TODO
     resultList.head shouldEqual "Warszawa"
   }
 
