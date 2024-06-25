@@ -49,7 +49,8 @@ object DockerBasedBatchExampleNuEnvironment extends LazyLogging {
       "NUSSKNACKER_VERSION" -> BuildInfo.version
     ),
     logConsumers = Seq(
-      ServiceLogConsumer("scenario-setup", new Slf4jLogConsumer(logger.underlying))
+      ServiceLogConsumer("scenario-setup", new Slf4jLogConsumer(logger.underlying)),
+      ServiceLogConsumer("designer", new Slf4jLogConsumer(logger.underlying))
     ),
     waitingFor = Some(
       WaitingForService("scenario-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))

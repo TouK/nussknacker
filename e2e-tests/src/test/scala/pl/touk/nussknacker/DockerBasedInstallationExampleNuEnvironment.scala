@@ -8,6 +8,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import pl.touk.nussknacker.test.ContainerExt._
 import pl.touk.nussknacker.DockerBasedInstallationExampleNuEnvironment.{JSON, singletonContainer}
+import pl.touk.nussknacker.batch.DockerBasedBatchExampleNuEnvironment.logger
 import ujson.Value
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -82,7 +83,8 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
       "NUSSKNACKER_VERSION" -> BuildInfo.version
     ),
     logConsumers = Seq(
-      ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying))
+      ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying)),
+      ServiceLogConsumer("designer", new Slf4jLogConsumer(logger.underlying))
     ),
     waitingFor = Some(
       WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
