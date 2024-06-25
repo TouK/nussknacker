@@ -12,12 +12,12 @@ object TableDefinition {
     )
 
   def apply2(fields: List[(String, TypingResult)]): TableDefinition = {
-    val columnDefinitions = fields.zipWithIndex
-      .map { case (typing, index) =>
-        ColumnDefinition(index + 1, typing)
+    val columnDefinitions = fields
+      .map { typing =>
+        ColumnDefinition(typing)
       }
     TableDefinition(
-      columnDefs = columnDefinitions.toList
+      columnDefs = columnDefinitions
     )
   }
 
