@@ -14,6 +14,7 @@ trait QueryExecutor {
 
   protected def toTypedMap(tableDef: TableDefinition, resultSet: ResultSet): TypedMap = {
     val fields = tableDef.columnDefs.map { columnDef =>
+      // TODO_PAWEL only in jdbc
       columnDef.name -> resultSet.getObject(columnDef.name)
     }.toMap
     TypedMap(fields)
