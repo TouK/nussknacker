@@ -36,8 +36,21 @@ object ScenarioStatistics {
       scenariosInputData: List[ScenarioStatisticsInputData],
       components: List[ComponentDefinitionWithImplementation]
   ): Map[String, String] = {
+    // Components are available independently from created scenarios
+    val componentsCount =
+      components
+        .groupBy(_.id)
+        .map { case (componentId, list) =>
+          if (list.head.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
+            componentId.toString
+          } else "Custom"
+        }
+        .toSet
+        .size
+
     if (scenariosInputData.isEmpty) {
-      Map.empty
+      Map(ComponentsCount -> componentsCount)
+        .map { case (k, v) => (k.toString, v.toString) }
     } else {
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
@@ -87,40 +100,36 @@ object ScenarioStatistics {
         .map(_.componentsAndFragmentsUsedCount)
         .flatMap(_.toList)
         .filterNot(_._1.`type` == ComponentType.Fragment)
+        .map { case (componentId, usages) =>
+          if (components.exists(component => component.id == componentId)) {
+            (componentId.toString, usages)
+          } else {
+            ("Custom", usages)
+          }
+        }
         .groupBy(_._1)
         .map { case (componentId, listOfUsages) =>
-          val usages = listOfUsages.map { case (componentId, usage) =>
+          val usages = listOfUsages.map { case (_, usage) =>
             usage
           }.sum
-          (mapNameToStat(componentId.toString), usages)
+          (mapNameToStat(componentId), usages)
         }
         .mapValuesNow(_.toString)
 
-      val componentsCount =
-        components
-          .groupBy(_.id)
-          .map { case (componentId, list) =>
-            if (list.head.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
-              componentId.toString
-            } else "Custom"
-          }
-          .toSet
-          .size
-
       (Map(
-        NodesMedian              -> nodesMedian,
-        NodesAverage             -> nodesAverage,
-        NodesMax                 -> nodesMax,
-        NodesMin                 -> nodesMin,
-        CategoriesCount          -> categoriesCount,
-        VersionsMedian           -> versionsMedian,
-        VersionsAverage          -> versionsAverage,
-        VersionsMax              -> versionsMax,
-        VersionsMin              -> versionsMin,
-        AuthorsCount             -> authorsCount,
-        FragmentsUsedMedian      -> fragmentsUsedMedian,
-        FragmentsUsedAverage     -> fragmentsUsedAverage,
-        ComponentsCount.toString -> componentsCount
+        NodesMedian          -> nodesMedian,
+        NodesAverage         -> nodesAverage,
+        NodesMax             -> nodesMax,
+        NodesMin             -> nodesMin,
+        CategoriesCount      -> categoriesCount,
+        VersionsMedian       -> versionsMedian,
+        VersionsAverage      -> versionsAverage,
+        VersionsMax          -> versionsMax,
+        VersionsMin          -> versionsMin,
+        AuthorsCount         -> authorsCount,
+        FragmentsUsedMedian  -> fragmentsUsedMedian,
+        FragmentsUsedAverage -> fragmentsUsedAverage,
+        ComponentsCount      -> componentsCount
       ) ++ uptimeStatsMap)
         .map { case (k, v) => (k.toString, v.toString) } ++ componentsUsedMap
     }
