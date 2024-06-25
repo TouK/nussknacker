@@ -11,7 +11,7 @@ object TableDefinition {
       columnDefs = (1 to resultMeta.getColumnCount).map(ColumnDefinition(_, resultMeta)).toList
     )
 
-  def apply2(fields: List[(String, TypingResult)]): TableDefinition = {
+  def applyList(fields: List[(String, TypingResult)]): TableDefinition = {
     val columnDefinitions = fields
       .map { typing =>
         ColumnDefinition(typing)
