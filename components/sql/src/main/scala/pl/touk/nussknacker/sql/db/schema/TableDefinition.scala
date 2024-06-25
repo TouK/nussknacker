@@ -11,13 +11,13 @@ object TableDefinition {
       columnDefs = (1 to resultMeta.getColumnCount).map(ColumnDefinition(_, resultMeta)).toList
     )
 
-  def applyList(fields: List[(String, TypingResult)]): TableDefinition = {
+  def apply(fields: Map[String, TypingResult]): TableDefinition = {
     val columnDefinitions = fields
       .map { typing =>
         ColumnDefinition(typing)
       }
     TableDefinition(
-      columnDefs = columnDefinitions
+      columnDefs = columnDefinitions.toList
     )
   }
 
