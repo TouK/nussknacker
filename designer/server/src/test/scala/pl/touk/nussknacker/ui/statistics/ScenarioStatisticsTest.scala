@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   ComponentGroupName,
+  ComponentId,
   ComponentType,
   DesignerWideComponentId,
   ProcessingMode
@@ -59,7 +60,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -88,7 +89,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -116,7 +117,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -145,7 +146,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -175,7 +176,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -212,7 +213,6 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty
     ).prepareStatisticsUrl().futureValue.value
@@ -231,7 +231,6 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation
     ).determineQueryParams().value.futureValue.value
@@ -251,7 +250,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 1,
+      componentsAndFragmentsUsedCount = Map(ComponentId(ComponentType.Fragment, "fragment") -> 1),
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -264,7 +263,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -277,7 +276,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 0,
+      componentsAndFragmentsUsedCount = Map.empty,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -290,7 +289,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      fragmentsUsedCount = 2,
+      componentsAndFragmentsUsedCount = Map(ComponentId(ComponentType.Fragment, "fragment") -> 2),
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -301,7 +300,6 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       _ => Future.successful(Right(processActivityList)),
-      () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation
     ).determineQueryParams().value.futureValue.value
