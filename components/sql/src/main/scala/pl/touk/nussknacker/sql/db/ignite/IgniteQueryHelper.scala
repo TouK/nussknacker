@@ -33,7 +33,7 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
           }
 
           // TODO
-          tableName -> TableDefinition(columnTypings.toMap)
+          tableName -> TableDefinition.apply2(columnTypings)
         }
     }
   }
