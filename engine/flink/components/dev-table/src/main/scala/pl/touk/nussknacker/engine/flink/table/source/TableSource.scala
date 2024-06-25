@@ -34,6 +34,8 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.net.{URL, URLClassLoader}
 import java.nio.file.Path
+import scala.collection.immutable.ListMap
+import scala.collection.mutable
 
 class TableSource(
     tableDefinition: TableDefinition,
@@ -94,75 +96,71 @@ class TableSource(
 //  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
 
-  // TODO: change api to handle generated and dumped data
   override def generateTestData(size: Int): TestData = {
-
-    // TODO: how to get path of jar cleaner? Through config?
-    val classPathUrls = List(
-      "components/flink-dev/flinkTable.jar"
-    ).map(Path.of(_).toUri.toURL)
-
     val classLoader = getClass.getClassLoader
 
-    val flinkLocalEnvConfiguration = {
-      val conf = new Configuration()
-      // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
-      conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
-
-      // without this, on the task level the classloader is basically empty
-      conf.set(
-        PipelineOptions.CLASSPATHS,
-        classPathUrls.map(_.toString).asJava
-      )
-      conf.set(DeploymentOptions.TARGET, "local")
-      // TODO: experiment with attached
-      conf.set(DeploymentOptions.ATTACHED, java.lang.Boolean.TRUE)
-      conf
-    }
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      val env = new StreamExecutionEnvironment(flinkLocalEnvConfiguration, classLoader)
+      val env = new StreamExecutionEnvironment(flinkMiniClusterTestingEnvConfig, classLoader)
       val tableEnv = StreamTableEnvironment.create(
         env,
         EnvironmentSettings.newInstance
-          .withConfiguration(flinkLocalEnvConfiguration)
+          .withConfiguration(flinkMiniClusterTestingEnvConfig)
           .withClassLoader(classLoader)
           .build()
       )
 
-      // TODO: extract
-      val cols   = tableDefinition.columns.map(c => DataTypes.FIELD(c.columnName, c.flinkDataType)).asJava
-      val schema = Schema.newBuilder().fromRowDataType(DataTypes.ROW(cols)).build()
-
+      // TODO: add support for dumping data from source
       tableEnv.createTable(
         dataGenerationInternalTableName,
-        TableDescriptor.forConnector("datagen").option("number-of-rows", size.toString).schema(schema).build()
+        TableDescriptor
+          .forConnector("datagen")
+          .option("number-of-rows", size.toString)
+          .schema(tableDefinition.toFlinkSchema())
+          .build()
       )
 
-      // TODO: wrong classloader gets used and java.lang.ClassNotFoundException: org.codehaus.janino.CompilerFactory is thrown
-      val tableWithLimit = tableEnv.from(dataGenerationInternalTableName).limit(size)
-      val rowsList       = tableEnv.toDataStream(tableWithLimit).executeAndCollect(size).asScala.toList
+      val tableWithLimit = tableEnv.from(dataGenerationInternalTableName)
+      val rowsList       = tableEnv.toDataStream(tableWithLimit).executeAndCollect().asScala.toList
 
       // TODO: check if closing like this is ok, some IllegalStateExceptions get logged
       env.close()
 
-      // TODO: is this way of encoding ok? fail on unknown?
       // TODO: extract encoder/decoder to be the same for this and record parsing for test running
-      val encoder = BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader)
-      val testRecords = rowsList.map(row =>
-        TestRecord(
-          // TODO: make the field order deterministic
-          encoder.encode(
-            row.getFieldNames(true).asScala.map(fName => fName -> row.getField(fName)).toMap
-          )
-        )
-      )
+      val testRecords = rowsList.map(row => {
+        val rowList    = tableDefinition.columns.map(_.columnName).map(colName => colName -> row.getField(colName))
+        val orderedMap = ListMap(rowList: _*)
+        TestRecord(rowEncoder.encode(orderedMap))
+      })
 
       TestData(testRecords)
     }
   }
 
+  // TODO local: how to get path of jar cleaner? Through config?
+  private lazy val classPathUrlsForMiniClusterTestingEnv = List(
+    "components/flink-dev/flinkTable.jar"
+  ).map(Path.of(_).toUri.toURL)
+
+  private lazy val flinkMiniClusterTestingEnvConfig = {
+    val conf = new Configuration()
+
+    // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
+    conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+
+    // without this, on Flink taskmanager level the classloader is basically empty
+    conf.set(
+      PipelineOptions.CLASSPATHS,
+      classPathUrlsForMiniClusterTestingEnv.map(_.toString).asJava
+    )
+    conf.set(DeploymentOptions.TARGET, "local")
+    // TODO local: experiment with attached
+    conf.set(DeploymentOptions.ATTACHED, java.lang.Boolean.TRUE)
+    conf
+  }
+
+  private lazy val rowEncoder = new BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader)
 }
 
 object TableSource {
