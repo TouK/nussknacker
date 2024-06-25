@@ -38,6 +38,7 @@ trait DockerBasedBatchExampleNuEnvironment extends BeforeAndAfterAll with Before
 object DockerBasedBatchExampleNuEnvironment extends LazyLogging {
 
   val singletonContainer: DockerComposeContainer = new DockerComposeContainer(
+    identifier = "nussknacker-batch-example",
     composeFiles = Seq(
       new JFile("examples/installation/docker-compose.yml"),
       new JFile(Resource.getUrl("batch-setup/scenario-setup.override.yml").toURI),
