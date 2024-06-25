@@ -12,5 +12,4 @@ services:
     environment:
       TABLES_DEFINITION_FILE: "/opt/nussknacker/conf/tables-definition.sql"
     volumes:
-      - ../../e2e-tests/src/test/resources/batch-setup/tables-definition.sql:/opt/nussknacker/conf/tables-definition.sql
       - ../../e2e-tests/src/test/resources/batch-setup/test-data:/opt/flink/data/test-data
