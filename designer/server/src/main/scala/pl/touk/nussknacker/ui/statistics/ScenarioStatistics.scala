@@ -25,6 +25,9 @@ object ScenarioStatistics {
 
   private val componentStatisticPrefix = "c_"
 
+  private def fromNussknackerPackage(component: ComponentDefinitionWithImplementation): Boolean =
+    component.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")
+
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     scenariosInputData
       .map(ScenarioStatistics.determineStatisticsForScenario)
@@ -41,7 +44,7 @@ object ScenarioStatistics {
       components
         .groupBy(_.id)
         .map { case (componentId, list) =>
-          if (list.head.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
+          if (fromNussknackerPackage(list.head)) {
             componentId.toString
           } else "Custom"
         }
@@ -101,7 +104,10 @@ object ScenarioStatistics {
         .flatMap(_.toList)
         .filterNot(_._1.`type` == ComponentType.Fragment)
         .map { case (componentId, usages) =>
-          if (components.exists(component => component.id == componentId)) {
+          if (components.exists(component =>
+              component.id == componentId &&
+                fromNussknackerPackage(component)
+            )) {
             (componentId.toString, usages)
           } else {
             ("Custom", usages)
@@ -112,9 +118,8 @@ object ScenarioStatistics {
           val usages = listOfUsages.map { case (_, usage) =>
             usage
           }.sum
-          (mapNameToStat(componentId), usages)
+          (mapNameToStat(componentId), usages.toString)
         }
-        .mapValuesNow(_.toString)
 
       (Map(
         NodesMedian          -> nodesMedian,
