@@ -67,7 +67,6 @@ object ScenarioActionName {
   val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
   val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
   val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
-  val RunNow: ScenarioActionName    = ScenarioActionName("RUN_NOW")
 
   val DefaultActions: List[ScenarioActionName] = Nil
 
