@@ -8,20 +8,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentGroupName,
-  ComponentId,
-  ComponentType,
-  DesignerWideComponentId,
-  ProcessingMode
-}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -288,7 +280,7 @@ class ScenarioStatisticsTest
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       StatisticUrlConfig(),
       mockedFingerprintService,
-      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(List(nonRunningScenario, k8sRRScenario, runningScenario))),
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
@@ -419,6 +411,68 @@ class ScenarioStatisticsTest
     params.keySet shouldBe (emptyScenarioRelatedStatistics ++ notScenarioRelatedStatistics).keySet
   }
 
+  val nonRunningScenario: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = false,
+    ProcessingMode.UnboundedStream,
+    DeploymentManagerType("flinkStreaming"),
+    Some(SimpleStateStatus.NotDeployed),
+    nodesCount = 3,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(2),
+    createdBy = "user",
+    componentsAndFragmentsUsedCount = Map(
+      ComponentId(ComponentType.Fragment, "fragment")      -> 1,
+      ComponentId(ComponentType.Service, "accountService") -> 3
+    ),
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
+  val runningScenario: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = false,
+    ProcessingMode.UnboundedStream,
+    DeploymentManagerType("flinkStreaming"),
+    Some(SimpleStateStatus.Running),
+    nodesCount = 2,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(2),
+    createdBy = "user",
+    componentsAndFragmentsUsedCount = Map(ComponentId(ComponentType.CustomComponent, "custom-component") -> 1),
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
+  val fragment: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = true,
+    ProcessingMode.UnboundedStream,
+    DeploymentManagerType("flinkStreaming"),
+    None,
+    nodesCount = 2,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(2),
+    createdBy = "user",
+    componentsAndFragmentsUsedCount = Map.empty,
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
+  val k8sRRScenario: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = false,
+    ProcessingMode.RequestResponse,
+    DeploymentManagerType("lite-k8s"),
+    Some(SimpleStateStatus.Running),
+    nodesCount = 4,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(2),
+    createdBy = "user",
+    componentsAndFragmentsUsedCount = Map(
+      ComponentId(ComponentType.Fragment, "fragment")      -> 2,
+      ComponentId(ComponentType.Service, "accountService") -> 2
+    ),
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
   private def processActivityList = {
     val scenarioActivity: ScenarioActivity = ScenarioActivity(
       comments = List(
@@ -464,72 +518,7 @@ class ScenarioStatisticsTest
     )
   }
 
-  private val componentList = List(
-    ComponentListElement(
-      DesignerWideComponentId("streaming-dev-service-accountservice"),
-      "accountService",
-      "/assets/components/Processor.svg",
-      ComponentType.Service,
-      ComponentGroupName("services"),
-      List("Category1"),
-      links = List.empty,
-      usageCount = 3,
-      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
-    ),
-    ComponentListElement(
-      DesignerWideComponentId("request-response-service-accountservice"),
-      "accountService",
-      "/assets/components/Processor.svg",
-      ComponentType.Service,
-      ComponentGroupName("services"),
-      List("Category1"),
-      links = List.empty,
-      usageCount = 2,
-      AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
-    ),
-    ComponentListElement(
-      DesignerWideComponentId("service-builtin-choice"),
-      "choice",
-      "/assets/components/Switch.svg",
-      ComponentType.Service,
-      ComponentGroupName("base"),
-      List(
-        "BatchDev",
-        "Category1",
-        "Category2",
-        "Default",
-        "DevelopmentTests",
-        "Periodic",
-        "RequestResponse",
-        "RequestResponseK8s",
-        "StreamingLite",
-        "StreamingLiteK8s"
-      ),
-      List(
-        ComponentLink(
-          "documentation",
-          "Documentation",
-          new URI("/assets/icons/documentation.svg"),
-          new URI("https://nussknacker.io/documentation/docs/scenarios_authoring/BasicNodes#choice")
-        )
-      ),
-      0,
-      AllowedProcessingModes.All
-    ),
-    ComponentListElement(
-      DesignerWideComponentId("someCustomComponent"),
-      "someCustomComponent",
-      "icon",
-      ComponentType.Service,
-      ComponentGroupName("someCustomGroup"),
-      List("Streaming"),
-      List.empty,
-      1,
-      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
-    )
-  )
-
-  private val componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
+  private def componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
     ComponentDefinitionWithImplementation.withEmptyConfig("choice", TestService),
   )
