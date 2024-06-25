@@ -39,7 +39,6 @@ class UsageStatisticsReportsSettingsServiceTest
       fingerprintService = fingerprintService,
       fetchNonArchivedScenariosInputData = () => Future.successful(Right(Nil)),
       fetchActivity = (_: List[ScenarioStatisticsInputData]) => Future.successful(Right(Nil)),
-      fetchComponentList = () => Future.successful(Right(Nil)),
       fetchFeStatistics = () => Future.successful(Map.empty[String, Long]),
       components = List.empty,
       designerClock = Clock.systemUTC()

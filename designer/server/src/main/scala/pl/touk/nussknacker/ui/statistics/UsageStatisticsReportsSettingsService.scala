@@ -83,18 +83,12 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
     }
 
-    def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
-      componentService.getComponentsList
-        .map(Right(_))
-    }
-
     new UsageStatisticsReportsSettingsService(
       config,
       urlConfig,
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
-      fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
       componentList,
       designerClock
@@ -140,7 +134,6 @@ class UsageStatisticsReportsSettingsService(
     fetchActivity: List[ScenarioStatisticsInputData] => Future[
       Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
     ],
-    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
     fetchFeStatistics: () => Future[Map[String, Long]],
     components: List[ComponentDefinitionWithImplementation],
     designerClock: Clock
@@ -172,7 +165,7 @@ class UsageStatisticsReportsSettingsService(
       generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData, components)
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
-      componentList <- new EitherT(fetchComponentList())
+//      componentList <- new EitherT(fetchComponentList())
 //      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
