@@ -11,10 +11,8 @@ import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithIm
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
-import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
@@ -36,8 +34,6 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
-      // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
-      componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
       componentList: List[ComponentDefinitionWithImplementation]
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
@@ -55,7 +51,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
         )(user)
         .map { scenariosDetails =>
           Right(
-            scenariosDetails.map(scenario => {
+            scenariosDetails.map(scenario =>
               ScenarioStatisticsInputData(
                 isFragment = scenario.isFragment,
                 processingMode = scenario.processingMode,
@@ -69,7 +65,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
                 lastDeployedAction = scenario.lastDeployedAction,
                 scenarioId = scenario.processId
               )
-            })
+            )
           )
         }
     }
@@ -98,21 +94,21 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       case Some(graph) =>
         graph.nodes
           .map {
-            case data: node.CustomNodeData           => ComponentId(ComponentType.CustomComponent, data.componentId)
-            case data: node.Source                   => ComponentId(ComponentType.Source, data.componentId)
-            case data: node.Sink                     => ComponentId(ComponentType.Sink, data.componentId)
-            case data: node.VariableBuilder          => BuiltInComponentId.RecordVariable
-            case data: node.Variable                 => BuiltInComponentId.Variable
-            case data: node.Enricher                 => ComponentId(ComponentType.Service, data.componentId)
-            case data: node.Processor                => ComponentId(ComponentType.Service, data.componentId)
-            case data: FragmentInput                 => ComponentId(ComponentType.Fragment, "fragment")
-            case data: node.FragmentUsageOutput      => ComponentId(ComponentType.Fragment, "fragment")
-            case data: node.Filter                   => BuiltInComponentId.Filter
-            case data: node.Switch                   => BuiltInComponentId.Choice
-            case data: node.Split                    => BuiltInComponentId.Split
-            case data: node.FragmentInputDefinition  => BuiltInComponentId.FragmentInputDefinition
-            case data: node.FragmentOutputDefinition => BuiltInComponentId.FragmentOutputDefinition
-            case data: node.BranchEndData            => ComponentId(ComponentType.Sink, data.id)
+            case node: node.CustomNodeData        => ComponentId(ComponentType.CustomComponent, node.componentId)
+            case node: node.Source                => ComponentId(ComponentType.Source, node.componentId)
+            case node: node.Sink                  => ComponentId(ComponentType.Sink, node.componentId)
+            case _: node.VariableBuilder          => BuiltInComponentId.RecordVariable
+            case _: node.Variable                 => BuiltInComponentId.Variable
+            case node: node.Enricher              => ComponentId(ComponentType.Service, node.componentId)
+            case node: node.Processor             => ComponentId(ComponentType.Service, node.componentId)
+            case _: FragmentInput                 => ComponentId(ComponentType.Fragment, "fragment")
+            case _: node.FragmentUsageOutput      => ComponentId(ComponentType.Fragment, "fragment")
+            case _: node.Filter                   => BuiltInComponentId.Filter
+            case _: node.Switch                   => BuiltInComponentId.Choice
+            case _: node.Split                    => BuiltInComponentId.Split
+            case _: node.FragmentInputDefinition  => BuiltInComponentId.FragmentInputDefinition
+            case _: node.FragmentOutputDefinition => BuiltInComponentId.FragmentOutputDefinition
+            case node: node.BranchEndData         => ComponentId(ComponentType.Sink, node.id)
           }
           .filterNot(comp => comp.`type` == ComponentType.BuiltIn && (comp.name == "input" || comp.name == "output"))
           .groupBy(identity)
@@ -157,14 +153,11 @@ class UsageStatisticsReportsSettingsService(
       generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData, components)
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
-//      componentList <- new EitherT(fetchComponentList())
-//      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
       activityStatistics ++
-//      componentStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
       }

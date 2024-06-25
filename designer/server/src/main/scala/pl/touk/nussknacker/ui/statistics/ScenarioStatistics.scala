@@ -95,7 +95,7 @@ object ScenarioStatistics {
           )
         }
       }
-      // Components stats
+      // Components usage stat
       val componentsUsedMap = scenariosInputData
         .map(_.componentsAndFragmentsUsedCount)
         .flatMap(_.toList)
