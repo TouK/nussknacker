@@ -12,4 +12,10 @@ export const GraphPage = styled(Page)(({ theme }) => ({
     backgroundColor: theme.palette.background.default,
     zIndex: 1,
     display: "grid",
+    pointerEvents: "none",
+    "& > *": {
+        gridArea: "1 / 1",
+        zIndex: 0,
+        pointerEvents: "auto",
+    },
 }));
