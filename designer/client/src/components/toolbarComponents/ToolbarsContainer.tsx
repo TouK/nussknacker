@@ -11,7 +11,7 @@ import {
     DroppableProvided,
     DroppableStateSnapshot,
 } from "@hello-pangea/dnd";
-import React, { CSSProperties, Suspense, useCallback, useMemo } from "react";
+import React, { CSSProperties, PropsWithChildren, Suspense, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { DragHandlerContext, SimpleDragHandle } from "../common/dndItems/DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
@@ -105,8 +105,8 @@ const DroppableContainer = styled("div")({
     },
 });
 
-export function ToolbarsContainer(props: Props): JSX.Element {
-    const { side, availableToolbars, className } = props;
+export function ToolbarsContainer(props: PropsWithChildren<Props>): JSX.Element {
+    const { side, availableToolbars, className, children } = props;
     const selector = useMemo(() => getOrderForPosition(side), [side]);
     const order = useSelector(selector);
 
@@ -161,9 +161,12 @@ export function ToolbarsContainer(props: Props): JSX.Element {
     );
 
     return (
-        <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE}>
-            {renderDroppable}
-        </Droppable>
+        <>
+            <Droppable droppableId={side} type={TOOLBAR_DRAGGABLE_TYPE}>
+                {renderDroppable}
+            </Droppable>
+            {children}
+        </>
     );
 }
 
