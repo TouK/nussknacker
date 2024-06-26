@@ -18,8 +18,9 @@ class BatchDataGenerationSpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers {
 
+//  private val containerValOnlyToInitializeSingletonEnv = DockerBasedInstallationExampleNuEnvironment.singletonContainer
+
   "Batch scenario generate file function should generate random results according to defined schema" in {
-    val eval = DockerBasedInstallationExampleNuEnvironment.singletonContainer
     given()
       .when()
       .request()
