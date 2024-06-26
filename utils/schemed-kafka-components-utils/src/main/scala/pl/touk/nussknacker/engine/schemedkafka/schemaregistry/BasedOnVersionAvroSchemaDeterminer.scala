@@ -23,7 +23,7 @@ class BasedOnVersionAvroSchemaDeterminer(
     schemaRegistryClient
       .getFreshSchema(topic, version, isKey = isKey)
       .leftMap(err =>
-        new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err)
+        new SchemaDeterminerError(s"Fetching schema error for topic: ${topic.name}, version: $versionOption", err)
       )
       .andThen(withMetadata =>
         withMetadata.schema match {
@@ -56,7 +56,7 @@ class ParsedSchemaDeterminer(
     schemaRegistryClient
       .getFreshSchema(topic, version, isKey = isKey)
       .leftMap(err =>
-        new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err)
+        new SchemaDeterminerError(s"Fetching schema error for topic: ${topic.name}, version: $versionOption", err)
       )
       .map(withMetadata =>
         RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))

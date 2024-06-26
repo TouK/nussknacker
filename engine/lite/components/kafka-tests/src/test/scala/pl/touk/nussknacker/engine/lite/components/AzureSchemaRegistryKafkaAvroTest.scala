@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.implicits.toShow
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -95,7 +94,7 @@ class AzureSchemaRegistryKafkaAvroTest
       scenario: CanonicalProcess
     ) = prepareAvroSetup
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUncategorizedTopicName))
 
     val inputValue = new GenericRecordBuilder(inputSchema)
       .set("a", "aValue")
@@ -123,7 +122,7 @@ class AzureSchemaRegistryKafkaAvroTest
     ) =
       prepareAvroSetup
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUncategorizedTopicName))
 
     val jsonPayloadTestRunner = TestScenarioRunner
       .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
@@ -176,7 +175,7 @@ class AzureSchemaRegistryKafkaAvroTest
     val inputTopic   = TopicName.OfSource(s"$scenarioName-input")
     val outputTopic  = TopicName.OfSink(s"$scenarioName-output")
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUncategorizedTopicName))
 
     val inputSchema  = SchemaBuilder.builder().intType()
     val outputSchema = SchemaBuilder.builder().longType()
@@ -217,7 +216,7 @@ class AzureSchemaRegistryKafkaAvroTest
     val inputTopic   = TopicName.OfSource(s"$scenarioName-input")
     val outputTopic  = TopicName.OfSink(s"$scenarioName-output")
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUncategorizedTopicName))
 
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
     val bDefaultValue = "bDefault"
@@ -295,21 +294,21 @@ class AzureSchemaRegistryKafkaAvroTest
     assemblyFields(fields).endRecord()
   }
 
-  private def registerTopic(topicNames: List[TopicName], retries: Int = 3): Unit = {
+  private def registerTopic(topicNames: List[UncategorizedTopicName], retries: Int = 3): Unit = {
     import scala.jdk.CollectionConverters._
-    logger.info(s"Register topics ${topicNames.mkString(",")}, retries = $retries")
+    logger.info(s"Register topics ${topicNames.map(_.name).mkString(",")}, retries = $retries")
     KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
-      val existingTopics     = admin.listTopics().names().get().asScala.toList
+      val existingTopics     = admin.listTopics().names().get().asScala.toList.map(UncategorizedTopicName.apply)
       val (toSkip, toCreate) = topicNames.partition(existingTopics.contains)
-      logger.info(s"Skip existing topics: ${toSkip.mkString(",")}")
+      logger.info(s"Skip existing topics: ${toSkip.map(_.name).mkString(",")}")
       if (toCreate.nonEmpty) {
-        val topicsToCreate = toCreate.map(name => new NewTopic(name.show, Collections.emptyMap())).asJavaCollection
+        val topicsToCreate = toCreate.map(topic => new NewTopic(topic.name, Collections.emptyMap())).asJavaCollection
         try {
-          logger.info(s"Create topics: ${topicNames.mkString(",")}")
+          logger.info(s"Create topics: ${topicNames.map(_.name).mkString(",")}")
           admin.createTopics(topicsToCreate).all().get(5, TimeUnit.SECONDS)
         } catch {
           case NonFatal(e) =>
-            logger.error(s"Other exception for ${topicNames.mkString(",")}", e)
+            logger.error(s"Other exception for ${topicNames.map(_.name).mkString(",")}", e)
             if (retries > 0) {
               Thread.sleep(1000)
               registerTopic(toCreate, retries - 1)

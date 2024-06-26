@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka
 
-import cats.implicits.toShow
 import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -12,7 +11,7 @@ object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](
       config: KafkaConfig,
-      topic: TopicName,
+      topic: TopicName.OfSink,
       serializationSchema: serialization.KafkaSerializationSchema[T],
       clientId: String
   ): FlinkKafkaProducer[T] = {
@@ -29,7 +28,7 @@ object PartitionByKeyFlinkKafkaProducer {
       // AT_LEAST_ONCE is default
       case None => FlinkKafkaProducer.Semantic.AT_LEAST_ONCE
     }
-    new FlinkKafkaProducer[T](topic.show, wrapToFlinkSerializationSchema(serializationSchema), props, semantic)
+    new FlinkKafkaProducer[T](topic.name, wrapToFlinkSerializationSchema(serializationSchema), props, semantic)
   }
 
 }

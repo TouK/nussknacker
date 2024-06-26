@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka.source
 
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
-import cats.implicits.toShow
 import io.circe.Json
 import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
@@ -228,11 +227,11 @@ class UniversalKafkaSourceFactory(
   private def prepareTestRecord(
       runtimeSchema: RuntimeSchemaData[ParsedSchema],
       universalSchemaSupport: UniversalSchemaSupport,
-      topic: TopicName
+      topic: TopicName.OfSource
   ): Any => TestRecord = any => {
     val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
     val serializedConsumerRecord =
-      SerializableConsumerRecord[Json, Json](None, json, Some(topic.show), None, None, None, None, None, None)
+      SerializableConsumerRecord[Json, Json](None, json, Some(topic.name), None, None, None, None, None, None)
     TestRecord(
       SchemaBasedSerializableConsumerRecord[Json, Json](
         None,

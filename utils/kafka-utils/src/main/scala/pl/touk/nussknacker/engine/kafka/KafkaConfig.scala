@@ -20,7 +20,7 @@ case class KafkaConfig(
     // for easier usage in AbstractConfluentKafkaAvroDeserializer and ConfluentKafkaAvroDeserializerFactory it is placed here
     // TODO rename to avroGenericRecordSchemaIdSerialization
     avroKryoGenericRecordSchemaIdSerialization: Option[Boolean] = None,
-    topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = true),
+    topicsExistenceValidationConfig: TopicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false),
     // By default we want to handle keys as ordinary String. For specific scenario,
     // when complex key with its own schema is provided, this flag is false
     // and all topics related to this config require both key and value schema definitions.
@@ -95,11 +95,16 @@ case class TopicsExistenceValidationConfig(
     validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig
 )
 
-case class CachedTopicsExistenceValidatorConfig(topicsFetchCacheTtl: FiniteDuration, adminClientTimeout: FiniteDuration)
+case class CachedTopicsExistenceValidatorConfig(
+    autoCreateFlagFetchCacheTtl: FiniteDuration,
+    topicsFetchCacheTtl: FiniteDuration,
+    adminClientTimeout: FiniteDuration
+)
 
 object CachedTopicsExistenceValidatorConfig {
 
   val DefaultConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig(
+    autoCreateFlagFetchCacheTtl = 5 minutes,
     topicsFetchCacheTtl = 30 seconds,
     adminClientTimeout = 500 millis
   )

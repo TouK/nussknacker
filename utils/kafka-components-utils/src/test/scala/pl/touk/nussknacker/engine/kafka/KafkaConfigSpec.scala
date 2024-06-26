@@ -45,7 +45,7 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
       None,
       None,
       None,
-      TopicsExistenceValidationConfig(enabled = true)
+      TopicsExistenceValidationConfig(enabled = false)
     )
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }

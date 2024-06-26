@@ -107,6 +107,7 @@ services:
 
   ### KAFKA-related services:
 
+# todo: fixme
 #  zookeeper:
 #    image: bitnami/zookeeper:3.9
 #    restart: unless-stopped

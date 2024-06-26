@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.kafka
 
-import cats.implicits.toShow
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
-import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
+import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
@@ -49,10 +48,10 @@ trait KafkaUtils extends LazyLogging {
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
-  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: TopicName, consumerGroupId: String): Unit = {
+  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: TopicName.OfSource, consumerGroupId: String): Unit = {
     val setToLatestOffset = config.forceLatestRead.contains(true)
     if (setToLatestOffset) {
-      KafkaUtils.setOffsetToLatest(topic.show, consumerGroupId, config)
+      KafkaUtils.setOffsetToLatest(topic.name, consumerGroupId, config)
     }
   }
 
@@ -96,16 +95,16 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def readLastMessages(
-      topic: TopicName,
+      topic: TopicName.OfSource,
       size: Int,
       config: KafkaConfig
   ): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
         consumer
-          .partitionsFor(topic.show)
+          .partitionsFor(topic.name)
           .asScala
-          .map(no => new TopicPartition(topic.show, no.partition()))
+          .map(no => new TopicPartition(topic.name, no.partition()))
           .view
           .flatMap { tp =>
             val partitions = Collections.singletonList(tp)
@@ -197,15 +196,14 @@ trait KafkaUtils extends LazyLogging {
     promise.future
   }
 
-  def producerCallback(promise: Promise[RecordMetadata]): Callback =
-    new Callback {
+  def producerCallback(promise: Promise[RecordMetadata]): Callback = new Callback {
 
-      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-        val result = if (exception == null) Success(metadata) else Failure(exception)
-        promise.complete(result)
-      }
-
+    override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+      val result = if (exception == null) Success(metadata) else Failure(exception)
+      promise.complete(result)
     }
+
+  }
 
   // It can't be in AzureUtils because it must be accessible from Lite Runtime
   val azureEventHubsUrl = ".servicebus.windows.net"
