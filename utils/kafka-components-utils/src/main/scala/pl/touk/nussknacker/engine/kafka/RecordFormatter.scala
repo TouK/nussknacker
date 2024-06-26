@@ -18,7 +18,7 @@ trait RecordFormatter extends Serializable {
 
   protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord
 
-  def parseRecord(topic: UncategorizedTopicName, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
+  def parseRecord(topic: TopicName.OfSource, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
 
   def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
     val testRecords = records.map { consumerRecord =>
@@ -56,7 +56,7 @@ object BasicRecordFormatter extends RecordFormatter {
     TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
 
   override def parseRecord(
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)

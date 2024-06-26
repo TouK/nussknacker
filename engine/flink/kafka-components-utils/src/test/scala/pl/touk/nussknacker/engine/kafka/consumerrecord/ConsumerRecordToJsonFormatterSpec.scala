@@ -9,7 +9,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.source.flink.{
@@ -62,7 +61,7 @@ class ConsumerRecordToJsonFormatterSpec
       Optional.empty[Integer]
     )
     val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
-    val resultObj  = sampleKeyValueFormatter.parseRecord(topic.toUncategorizedTopicName, testRecord)
+    val resultObj  = sampleKeyValueFormatter.parseRecord(topic, testRecord)
     checkResult(resultObj, givenObj)
   }
 
@@ -70,7 +69,7 @@ class ConsumerRecordToJsonFormatterSpec
     val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
     val givenObj   = new ConsumerRecord[Array[Byte], Array[Byte]](topic.name, 11, 22L, sampleKeyBytes, sampleValueBytes)
     val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
-    val resultObj  = sampleKeyValueFormatter.parseRecord(UncategorizedTopicName("topic"), testRecord)
+    val resultObj  = sampleKeyValueFormatter.parseRecord(TopicName.OfSource("topic"), testRecord)
     checkResult(resultObj, givenObj)
   }
 
@@ -80,7 +79,7 @@ class ConsumerRecordToJsonFormatterSpec
       new ConsumerRecord[Array[Byte], Array[Byte]](topic.name, 11, 22L, Array.emptyByteArray, sampleValueBytes)
     intercept[Exception] {
       val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
-      val resultObj  = sampleKeyValueFormatter.parseRecord(UncategorizedTopicName("topic"), testRecord)
+      val resultObj  = sampleKeyValueFormatter.parseRecord(TopicName.OfSource("topic"), testRecord)
     }.getMessage should startWith("Failed to decode")
   }
 
@@ -91,7 +90,7 @@ class ConsumerRecordToJsonFormatterSpec
         "value" -> Json.obj("id" -> Json.fromString("def"), "field" -> Json.fromString("ghi"))
       )
     )
-    val resultObj = sampleKeyValueFormatter.parseRecord(UncategorizedTopicName("topic"), testRecord)
+    val resultObj = sampleKeyValueFormatter.parseRecord(TopicName.OfSource("topic"), testRecord)
     val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]](
       "topic",
       0,
@@ -104,7 +103,7 @@ class ConsumerRecordToJsonFormatterSpec
 
   test("decode and format basic string-and-value-only test data using default values") {
     val testRecord = TestRecord(Json.fromString("lorem ipsum"))
-    val resultObj  = BasicRecordFormatter.parseRecord(UncategorizedTopicName("topic"), testRecord)
+    val resultObj  = BasicRecordFormatter.parseRecord(TopicName.OfSource("topic"), testRecord)
     val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]](
       "topic",
       0,

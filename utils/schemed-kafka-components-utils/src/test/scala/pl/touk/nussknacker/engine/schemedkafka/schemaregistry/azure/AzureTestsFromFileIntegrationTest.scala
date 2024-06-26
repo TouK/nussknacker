@@ -12,6 +12,8 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
+import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UncategorizedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
@@ -45,9 +47,9 @@ class AzureTestsFromFileIntegrationTest
     val factory   = serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](kafkaConfig, None, None)
     val formatter = serdeProvider.recordFormatterFactory.create[String, GenericRecord](kafkaConfig, factory)
 
-    val topic         = UncategorizedTopicName("avro-testfromfile")
+    val topic         = TopicName.OfSource("avro-testfromfile")
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
-    val schemaV1      = createRecordSchema(topic, aFieldOnly)
+    val schemaV1      = createRecordSchema(topic.toUncategorizedTopicName, aFieldOnly)
     val schemaV1Props = schemaRegistryClient.registerSchemaVersionIfNotExists(schemaV1)
 
     val key = "fooKey"
@@ -85,7 +87,7 @@ class AzureTestsFromFileIntegrationTest
   }
 
   private def wrapWithConsumerRecord(
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       key: String,
       schemaId: SchemaId,
       serializedValue: Array[Byte]

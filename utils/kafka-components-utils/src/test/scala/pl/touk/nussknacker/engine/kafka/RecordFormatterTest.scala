@@ -7,6 +7,7 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 
 import java.util.Optional
@@ -15,12 +16,11 @@ class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenProp
 
   object EmptyRecordFormatter extends RecordFormatter {
 
-    override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = TestRecord(
-      Json.Null
-    )
+    override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
+      TestRecord(Json.Null)
 
     override def parseRecord(
-        topic: UncategorizedTopicName,
+        topic: TopicName.OfSource,
         testRecord: TestRecord
     ): ConsumerRecord[Array[Byte], Array[Byte]] = ???
 
@@ -33,7 +33,7 @@ class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenProp
       TestRecord(Json.Null, timestamp = Some(customTimestamp))
 
     override def parseRecord(
-        topic: UncategorizedTopicName,
+        topic: TopicName.OfSource,
         testRecord: TestRecord
     ): ConsumerRecord[Array[Byte], Array[Byte]] = ???
 

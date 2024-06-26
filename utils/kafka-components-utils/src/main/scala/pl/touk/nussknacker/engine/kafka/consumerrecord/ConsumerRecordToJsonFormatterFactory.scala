@@ -4,9 +4,10 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, UncategorizedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -52,7 +53,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override def parseRecord(
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] =
@@ -61,7 +62,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
     def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = {
       (keyOpt.map(serialize[K]).orNull, serialize[V](value))
     }
-    serializableConsumerRecord.toKafkaConsumerRecord(topic.name, serializeKeyValue)
+    serializableConsumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
   private def serialize[T: Encoder](data: T): Array[Byte] = {

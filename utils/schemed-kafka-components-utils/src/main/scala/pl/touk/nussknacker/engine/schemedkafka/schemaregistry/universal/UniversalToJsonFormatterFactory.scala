@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AbstractSchemaBasedRecordFormatter
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json.KafkaJsonKeyValueDeserializationSchemaFactory
@@ -72,7 +73,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
 
   protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       jsonObj: Json
   ): Array[Byte] = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.
@@ -85,7 +86,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
 
   protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       jsonObj: Json
   ): Array[Byte] = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.

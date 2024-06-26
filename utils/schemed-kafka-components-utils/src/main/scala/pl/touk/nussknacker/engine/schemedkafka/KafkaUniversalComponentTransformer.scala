@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicN
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, UncategorizedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UncategorizedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName._
@@ -126,7 +126,10 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
   protected def extractPreparedTopic(params: Params): PreparedKafkaTopic[TN] =
     prepareTopic(params.extractUnsafe(topicParamName))
 
-  protected def prepareTopic(topicString: String): PreparedKafkaTopic[TN]
+  protected def prepareTopic(topicString: String): PreparedKafkaTopic[TN] =
+    KafkaComponentsUtils.prepareKafkaTopic(topicFrom(topicString), modelDependencies)
+
+  protected def topicFrom(value: String): TN
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)

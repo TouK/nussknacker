@@ -5,8 +5,8 @@ import cats.Show
 sealed trait TopicName
 
 object TopicName {
-  case class OfSource(name: String) extends TopicName
-  case class OfSink(name: String)   extends TopicName
+  final case class OfSource(name: String) extends TopicName
+  final case class OfSink(name: String)   extends TopicName
 
   implicit val show: Show[TopicName] = Show.show {
     case OfSource(name) => name

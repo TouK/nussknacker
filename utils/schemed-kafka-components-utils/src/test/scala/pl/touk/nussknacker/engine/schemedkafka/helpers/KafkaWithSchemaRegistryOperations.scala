@@ -73,7 +73,7 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
       expected: List[Any]
   ): Assertion = {
     val result =
-      consumeMessages(kafkaDeserializer, topic.name, expected.length).map(
+      consumeMessages(kafkaDeserializer, topic, expected.length).map(
         _.asInstanceOf[ConsumerRecord[Any, Any]].value()
       )
     result shouldBe expected
@@ -81,12 +81,12 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
 
   protected def consumeMessages(
       kafkaDeserializer: serialization.KafkaDeserializationSchema[_],
-      topic: String,
+      topic: TopicName.OfSink,
       count: Int
   ): List[Any] =
     kafkaClient
       .createConsumer()
-      .consumeWithConsumerRecord(topic)
+      .consumeWithConsumerRecord(topic.name)
       .take(count)
       .map { record =>
         kafkaDeserializer.deserialize(record)
@@ -110,12 +110,12 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
       .consumeWithConsumerRecord(topic.name)
       .take(count)
       .map { record =>
-        deserialize(topic.name, record.value())
+        deserialize(topic, record.value())
       }
       .toList
 
-  protected def deserialize(objectTopic: String, obj: Array[Byte]): Any =
-    prepareValueDeserializer.deserialize(objectTopic, obj)
+  protected def deserialize(objectTopic: TopicName.OfSink, obj: Array[Byte]): Any =
+    prepareValueDeserializer.deserialize(objectTopic.name, obj)
 
   /**
    * Default Confluent Avro serialization components

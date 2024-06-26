@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
@@ -161,8 +161,7 @@ class UniversalKafkaSourceFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  protected def prepareTopic(topicString: String): PreparedKafkaTopic[TopicName.OfSource] =
-    KafkaComponentsUtils.prepareKafkaTopic(TopicName.OfSource(topicString), modelDependencies)
+  override protected def topicFrom(value: String): TopicName.OfSource = TopicName.OfSource(value)
 
   override def implementation(
       params: Params,

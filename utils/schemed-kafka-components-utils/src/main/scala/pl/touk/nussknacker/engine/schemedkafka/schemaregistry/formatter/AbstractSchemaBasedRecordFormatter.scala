@@ -4,9 +4,10 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, UncategorizedTopicName, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaId,
   SchemaIdFromMessageExtractor,
@@ -18,8 +19,8 @@ import scala.reflect.ClassTag
 
 abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] extends RecordFormatter {
 
-  import pl.touk.nussknacker.engine.api.CirceUtil._
   import SchemaBasedSerializableConsumerRecord._
+  import pl.touk.nussknacker.engine.api.CirceUtil._
 
   protected def kafkaConfig: KafkaConfig
 
@@ -86,7 +87,7 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override def parseRecord(
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val record = decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
@@ -110,18 +111,18 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
       (keyBytes, valueBytes)
     }
 
-    record.consumerRecord.toKafkaConsumerRecord(topic.name, serializeKeyValue)
+    record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
   protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       jsonObj: Json
   ): Array[Byte]
 
   protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       jsonObj: Json
   ): Array[Byte]
 

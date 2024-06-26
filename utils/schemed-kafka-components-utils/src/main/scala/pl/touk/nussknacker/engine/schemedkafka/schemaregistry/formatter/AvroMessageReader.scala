@@ -8,13 +8,13 @@ import org.apache.avro.io.{DatumReader, DecoderFactory}
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.Serializer
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.api.process.TopicName
 
 private[schemaregistry] class AvroMessageReader(serializer: Serializer[Any]) {
 
   private val decoderFactory = DecoderFactory.get
 
-  def readJson(jsonObj: Json, schema: Schema, topic: UncategorizedTopicName): Array[Byte] = {
+  def readJson(jsonObj: Json, schema: Schema, topic: TopicName.OfSource): Array[Byte] = {
     try {
       val avroObj = jsonToAvro(jsonObj, schema)
       serializer.serialize(topic.name, new RecordHeaders(), avroObj)

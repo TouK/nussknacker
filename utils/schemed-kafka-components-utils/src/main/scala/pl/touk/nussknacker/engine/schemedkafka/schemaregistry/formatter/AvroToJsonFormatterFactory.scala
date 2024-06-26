@@ -3,22 +3,12 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{
-  KafkaConfig,
-  RecordFormatter,
-  RecordFormatterFactory,
-  UncategorizedTopicName,
-  serialization
-}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedSerializerFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
-  SchemaId,
-  SchemaIdFromMessageExtractor,
-  SchemaRegistryClient,
-  SchemaRegistryClientFactory
-}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 
 import scala.reflect.ClassTag
 
@@ -74,7 +64,7 @@ class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
 
   override protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       jsonObj: Json
   ): Array[Byte] = {
     val avroSchema = AvroUtils.extractSchema(
@@ -85,7 +75,7 @@ class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
 
   override protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: UncategorizedTopicName,
+      topic: TopicName.OfSource,
       jsonObj: Json
   ): Array[Byte] = {
     val avroSchema = AvroUtils.extractSchema(
