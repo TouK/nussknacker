@@ -27,7 +27,7 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'$outputTopic'",
+        topicParamName.value              -> s"'${outputTopic.name}'",
         schemaVersionParamName.value      -> "'latest'",
         "Key"                             -> "null",
         sinkRawEditorParamName.value      -> "true",
