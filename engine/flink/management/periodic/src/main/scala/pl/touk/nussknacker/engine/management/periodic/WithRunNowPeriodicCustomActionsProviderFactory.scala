@@ -54,6 +54,7 @@ class WithRunNowPeriodicCustomActionsProviderFactory extends PeriodicCustomActio
 
 }
 
+//TODO: replace custom action with dedicated command in core services
 case object InstantBatchCustomAction {
 
   // name is displayed as label under the button
