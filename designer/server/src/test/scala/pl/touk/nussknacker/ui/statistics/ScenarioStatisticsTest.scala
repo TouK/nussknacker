@@ -220,6 +220,7 @@ class ScenarioStatisticsTest
     urlStrings.length shouldEqual 1
     val urlString = urlStrings.head
     urlString should include(s"fingerprint=$sampleFingerprint")
+    urlString should include regex (s"$CorrelationId=\\w+")
     urlString should include("source=sources")
     urlString should include(s"version=${BuildInfo.version}")
   }

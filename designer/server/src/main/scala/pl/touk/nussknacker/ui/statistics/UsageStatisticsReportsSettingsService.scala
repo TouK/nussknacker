@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
@@ -130,7 +131,9 @@ class UsageStatisticsReportsSettingsService(
       val maybeUrls = for {
         queryParams <- determineQueryParams()
         fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-        urls        <- EitherT.pure[Future, StatisticError](statisticsUrls.prepare(fingerprint, queryParams))
+        urls <- EitherT.pure[Future, StatisticError](
+          statisticsUrls.prepare(fingerprint, Instant.now.hashCode.toHexString, queryParams)
+        )
       } yield urls
       maybeUrls.value
     } else {

@@ -130,6 +130,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsMin.name, equalTo("0")),
           (VersionsAverage.name, equalTo("0")),
           (NuVersion.name, equalTo(nuVersion)),
+          (CorrelationId.name, matchesRegex("\\w+")),
         )
     }
 
