@@ -39,13 +39,13 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
     val query = "select * from persons where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
-    st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
       argsCount = 1,
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
+    st.close()
     val implementation = service.implementation(
       params = Params(
         Map(
@@ -77,13 +77,13 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
     val query = "select iD, NaMe from persons where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
-    st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
       argsCount = 1,
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
+    st.close()
     val implementation = service.implementation(
       params = Params(
         Map(

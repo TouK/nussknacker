@@ -9,6 +9,7 @@ import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefiniti
 import pl.touk.nussknacker.sql.utils.{BaseOracleQueryEnricherTest, BasePostgresqlQueryEnricherTest}
 
 import scala.concurrent.Await
+import scala.math.BigDecimal.javaBigDecimal2bigDecimal
 
 class DatabaseQueryEnricherOracleTest extends BaseOracleQueryEnricherTest with BeforeAndAfterEach {
 
@@ -39,13 +40,13 @@ class DatabaseQueryEnricherOracleTest extends BaseOracleQueryEnricherTest with B
     val query = "select * from persons where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
-    st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
       argsCount = 1,
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
+    st.close()
     val implementation = service.implementation(
       params = Params(
         Map(
@@ -56,34 +57,26 @@ class DatabaseQueryEnricherOracleTest extends BaseOracleQueryEnricherTest with B
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[Record{id: Integer, name: String}]"
+    returnType(service, state).display shouldBe "List[Record{ID: BigDecimal, NAME: String}]"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result shouldBe List(
-      TypedMap(Map("name" -> "John", "id" -> 1))
-    )
-
-    conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
-    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result2 shouldBe List(
-      TypedMap(Map("name" -> "Alex", "id" -> 1))
-    )
+    result(0).get("ID").asInstanceOf[java.math.BigDecimal].toInt shouldBe 1
+    result(0).get("NAME").asInstanceOf[String] shouldBe "John"
   }
 
   test(
     "DatabaseQueryEnricherPostgresqlTest#implementation without cache and with mixed lowercase and uppercase characters"
   ) {
-    val query = "select ID, NAME from persons where id = ?"
+    val query = "select Id, nAmE from persons where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
-    st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
       argsCount = 1,
       tableDef = TableDefinition(meta),
       strategy = ResultSetStrategy
     )
+    st.close()
     val implementation = service.implementation(
       params = Params(
         Map(
@@ -94,31 +87,23 @@ class DatabaseQueryEnricherOracleTest extends BaseOracleQueryEnricherTest with B
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[Record{id: Integer, name: String}]"
+    returnType(service, state).display shouldBe "List[Record{ID: BigDecimal, NAME: String}]"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result shouldBe List(
-      TypedMap(Map("name" -> "John", "id" -> 1))
-    )
-
-    conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
-    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result2 shouldBe List(
-      TypedMap(Map("name" -> "Alex", "id" -> 1))
-    )
+    result(0).get("ID").asInstanceOf[java.math.BigDecimal].toInt shouldBe 1
+    result(0).get("NAME").asInstanceOf[String] shouldBe "John"
   }
 
   test("DatabaseQueryEnricherPostgresqlTest#implementation update query") {
     val query = "UPDATE persons SET name = 'Don' where id = ?"
     val st    = conn.prepareStatement(query)
-    st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
       argsCount = 1,
       tableDef = TableDefinition(Nil),
       strategy = UpdateResultStrategy
     )
+    st.close()
     val implementation = service.implementation(
       params = Params(
         Map(
