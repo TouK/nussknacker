@@ -19,6 +19,7 @@ class BatchDataGenerationSpec
     with NuRestAssureMatchers {
 
   "Batch scenario generate file function should generate random results according to defined schema" in {
+    val eval = DockerBasedInstallationExampleNuEnvironment.singletonContainer
     given()
       .when()
       .request()
