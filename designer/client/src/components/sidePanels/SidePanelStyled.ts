@@ -1,6 +1,6 @@
 import { styled } from "@mui/material";
 import { PANEL_WIDTH } from "../../stylesheets/variables";
-import { PanelSide } from "./SidePanel";
+import { PanelSide } from "../../actions/nk";
 
 type ScrollToggle = {
     side: PanelSide;
