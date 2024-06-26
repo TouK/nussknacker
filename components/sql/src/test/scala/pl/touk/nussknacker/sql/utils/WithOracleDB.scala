@@ -7,6 +7,7 @@ import org.testcontainers.utility.DockerImageName
 
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
+import scala.jdk.CollectionConverters._
 
 trait WithOracleDB {
   self: BeforeAndAfterAll with ForAllTestContainer =>
@@ -17,8 +18,7 @@ trait WithOracleDB {
     new OracleContainer(DockerImageName.parse("gvenzl/oracle-xe:21-slim-faststart"))
 
   {
-    // TODO_PAWEL do it other way
-    container.start()
+    container.container.setPortBindings(List("1521:1521").asJava)
   }
 
   val dbName: String = UUID.randomUUID().toString
@@ -26,7 +26,8 @@ trait WithOracleDB {
   private val driverClassName = "oracle.jdbc.driver.OracleDriver"
   private val username        = container.username
   private val password        = container.password
-  private val url             = container.jdbcUrl
+  // this url be read as container.jdbcUrl when service is started, but it is hard to postpone this step until it is started
+  private val url = "jdbc:oracle:thin:@localhost:1521/xepdb1"
 
   val oracleConfigValues: Map[String, String] = Map(
     "driverClassName" -> driverClassName,
