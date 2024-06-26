@@ -41,7 +41,7 @@ SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3
 | true                 | true                             | Boolean              |
 | {1,2,3,4}            | a list of integers from 1 to 4   | List[Integer]        |
 | {john:300, alex:400} | a record (name-value collection) | Record{alex: Integer(400), john: Integer(300)} |
-| 2 > 1                | true                             | boolean              |
+| 2 > 1                | true                             | Boolean              |
 | 2 > 1 ? 'a' : 'b'    | "a"                              | String               |
 | 42 + 2               | 44                               | Integer              |
 | 'AA' + 'BB'          | "AABB"                           | String               |
