@@ -280,7 +280,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("Should validate specific version") {
     val result =
       validate(
-        topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+        topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
         schemaVersionParamName.value -> "'1'"
       )
 
@@ -289,7 +289,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should validate latest version") {
     val result = validate(
-      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
 
@@ -331,7 +331,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should return sane error on invalid version") {
     val result = validate(
-      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
       schemaVersionParamName.value -> "'12345'"
     )
 
@@ -352,7 +352,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should properly detect input type") {
     val result = validate(
-      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
     )
 
