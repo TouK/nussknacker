@@ -53,7 +53,7 @@ val dockerUserName               = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName            = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp       = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val dockerUpBranchLatestFromProp = propOrEnv("dockerUpBranchLatest", "true").toBoolean
-val addDevArtifacts              = propOrEnv("addDevArtifacts", "false").toBoolean
+def addDevArtifacts()            = propOrEnv("addDevArtifacts", "false").toBoolean
 val addManagerArtifacts          = propOrEnv("addManagerArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
@@ -523,7 +523,7 @@ lazy val distribution: Project = sbt
         (if (addDevArtifacts)
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
          else Nil) ++
-        (if (addDevArtifacts) (devArtifacts).value: @sbtUnchecked
+        (if (addDevArtifacts()) (devArtifacts).value: @sbtUnchecked
          else (modelArtifacts).value: @sbtUnchecked) ++
         (flinkExecutor / additionalBundledArtifacts).value
     },
@@ -1983,7 +1983,7 @@ lazy val designer = (project in file("designer/server"))
             "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
             "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
           )
-        case _       => Seq(),
+        case _       => Seq()
       }
     }
   )
@@ -2018,7 +2018,12 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings {
     // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
     forScalaVersion(defaultScalaV) {
-      case (2, 12) => doTest
+      case (2, 12) => {
+        print(s"e2eTests: before addDevArtifacts is ${System.getProperty("addDevArtifacts")}")
+        System.setProperty("addDevArtifacts", "true")
+        print(s"e2eTests: after addDevArtifacts is ${System.getProperty("addDevArtifacts")}")
+        doTest
+      }
       case (2, 13) => doNotTest
     }
   }
