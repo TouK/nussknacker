@@ -50,6 +50,7 @@ import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
+import scala.jdk.CollectionConverters._
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
@@ -292,8 +293,14 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          val elementType = if (children.isEmpty) Unknown else children.reduce(getSupertype)
-          valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
+          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype)
+          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
+
+          val typedClass = Typed.genericTypeClass[java.util.List[_]](List(elementType))
+
+          valid(
+            TypedObjectWithValue(typedClass, childrenCombinedValue)
+          )
         }
 
       case e: InlineMap =>
@@ -492,7 +499,22 @@ private[spel] class Typer(
       childElementType: TypingResult
   ) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-    if (isSingleElementSelection) childElementType else parentType
+
+    if (isSingleElementSelection)
+      childElementType
+    else
+      // Limitation: if parentType is a collection or map then it has to lose known value, as properly determining it would require evaluating the expression
+      parentType match {
+        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
+          tc.withoutValue
+        case tc: SingleTypingResult if tc.objType.klass.isArray =>
+          tc.withoutValue
+        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
+          // for simple selections, like `[(#this.key=='someKey')]` we could perhaps handle it without evaluating much,
+          // just working on the AST (like isSingleElementSelection) and the fields in TypedObjectTypingResult
+          Typed.record(Map.empty)
+        case _ => parentType
+      }
   }
 
   private def checkEqualityLikeOperation(

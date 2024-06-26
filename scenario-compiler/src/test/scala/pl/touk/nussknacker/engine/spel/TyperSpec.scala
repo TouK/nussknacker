@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import scala.jdk.CollectionConverters.SeqHasAsJava
+
 class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   private implicit val defaultTyper: Typer = buildTyper()
@@ -45,9 +47,23 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     )
   }
 
-  test("detect proper selection types") {
+  test("detect proper List type with value") {
+    typeExpression("{1,2}").validValue.finalResult.typingResult shouldBe
+      TypedObjectWithValue(
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])),
+        List(1, 2).asJava
+      )
+  }
+
+  test("detect proper selection types - List") {
     typeExpression("{1,2}.?[(#this==1)]").validValue.finalResult.typingResult shouldBe
       Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
+    // see comment in Typer.resolveSelectionTypingResult
+  }
+
+  test("detect proper selection types - Map") {
+    typeExpression("{'field1': 1, 'field2': 2}.?[(#this.value==1)]").validValue.finalResult.typingResult shouldBe
+      Typed.record(Map.empty) // see comment in Typer.resolveSelectionTypingResult
   }
 
   test("detect proper first selection types") {
