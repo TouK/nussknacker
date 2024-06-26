@@ -93,12 +93,13 @@ There are a few notable exceptions:
 | `{}`                   | an empty list                  | List[Unknown]        |
 | `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{:}`                  | an empty record                | Record{}             |
-| `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
+| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)}] |
 | `#input`               | variable                       |                      |
-| `'AA' + 'BB'`          | "AABB"                         |             String   |
+| `'AA' + 'BB'`          | "AABB"                         | String               |
                                     
 ### Arithmetic Operators
 
+The `+`, `-`, `*` arithmetic operators work as expected. 
 
 | Operator | Equivalent symbolic operator | Example expression | Result |
 |----------|------------------------------|--------------------|--------|
@@ -110,12 +111,12 @@ There are a few notable exceptions:
 
 | Expression                                   | Result    | Type     |
 | ------------                                 | --------  | -------- |
-| `2 == 2`                                     | true      | boolean  |
-| `2 > 1`                                      | true      | boolean  |
-| `true AND false`                             | false     | boolean  |
-| `true && false`                              | false     | boolean  |
-| `true OR false`                              | true      | boolean  |
-| <code>true &#124;&#124; false</code>         | true      | boolean  |
+| `2 == 2`                                     | true      | Boolean  |
+| `2 > 1`                                      | true      | Boolean  |
+| `true AND false`                             | false     | Boolean  |
+| `true && false`                              | false     | Boolean  |
+| `true OR false`                              | true      | Boolean  |
+| <code>true &#124;&#124; false</code>         | true      | Boolean  |
 | `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |
 | `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |
 | `#nonNullVar == null ? 'Unknown' : 'Success'` | "Success" | String   |
@@ -134,6 +135,12 @@ There are a few notable exceptions:
 | `eq`     | `==`                         | `3 eq 3`           | true   |
 | `ne`     | `!=`                         | `4 ne 2`           | true   |
 | `not`    | `!`                          | `not true`         | false  |
+
+### Strings operators
+
+| Expression      | Result      | Type     |
+| --------------  | ----------- | -------- |
+| `'AA' + 'BB'`   | "AABB"      | String   |
 
 ### Method invocations
 
@@ -218,7 +225,7 @@ error. SpEL provides helpful safe navigation operator, it's basically shorthand 
 ### Invoking static methods
 
 It is possible to invoke Java static methods directly with SpEL. Nussknacker can prevent invocations
-of some of them due to security reasons. Invoking static methods is advanced functionality, which can lead
+of some of them due to security reasons. Invoking static methods is an advanced functionality, which can lead
 to incomprehensible expressions, also code completions will not work with many of them. 
 If you need to invoke the same method in many places, probably the best solution is to create additional helper.
 

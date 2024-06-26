@@ -9,7 +9,7 @@ Available features and services:
 - ML Enhanced Decisions - a component that enriches your data with insights inferred from ML models
 - Decision Webhooks - a subscription mechanism that allows performing actions in external systems based on the 
 results of decision scenarios
-- deployment of Flink engine scenarios to Ververica cloud
+- Ververica cloud integration
 - Priority bug fix support
 - Nussknacker training
 
