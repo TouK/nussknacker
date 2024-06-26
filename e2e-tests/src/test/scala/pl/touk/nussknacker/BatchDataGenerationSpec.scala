@@ -18,9 +18,12 @@ class BatchDataGenerationSpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers {
 
-//  private val containerValOnlyToInitializeSingletonEnv = DockerBasedInstallationExampleNuEnvironment.singletonContainer
+  println("BatchDataGenerationSpecPrint - before dereference to container")
+  private val containerValOnlyToInitializeSingletonEnv = DockerBasedInstallationExampleNuEnvironment.singletonContainer
+  println("BatchDataGenerationSpecPrint - after dereference to container")
 
   "Batch scenario generate file function should generate random results according to defined schema" in {
+    println("BatchDataGenerationSpecPrint - inside test")
     given()
       .when()
       .request()
@@ -47,6 +50,7 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(200)
     //  TODO: add assertion for random results
+    println("BatchDataGenerationSpecPrint - after test")
   }
 
   private lazy val simpleBatchTableScenario = ScenarioBuilder

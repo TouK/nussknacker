@@ -22,11 +22,11 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
     val records = tableSource.generateTestData(10)
 
     val expectedRegex =
-      """\{
-  "someString" : "[a-z0-9]*",
-  "someVarChar" : "[a-z0-9]*",
-  "someInt" : -?\d+
-\}"""
+      """|\{
+       |  "someString" : "[a-z0-9]*",
+       |  "someVarChar" : "[a-z0-9]*",
+       |  "someInt" : -?\d+
+       |\}""".stripMargin
 
     records.testRecords.size shouldBe 10
     records.testRecords.head.json.toString should fullyMatch regex expectedRegex
