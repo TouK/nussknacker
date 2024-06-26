@@ -174,7 +174,10 @@ const VersionsForm = () => {
             ...versions
                 .filter((currentVersion) => version !== currentVersion.processVersionId)
                 .map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
-            ...(state?.remoteVersions ?? []).map((version) => ({ label: createVersionElement(version), value: createVersionId(version) })),
+            ...(state?.remoteVersions ?? []).map((version) => ({
+                label: createVersionElement(version, remotePrefix),
+                value: createVersionId(version, remotePrefix),
+            })),
         ];
     }, [createVersionElement, state?.remoteVersions, version, versions]);
 
