@@ -514,22 +514,22 @@ lazy val distribution: Project = sbt
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
     Universal / mappings                     := {
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
+        if (addDevArtifacts()) (Universal / mappings).value
         else filterDevConfigArtifacts((Universal / mappings).value)
 
       universalMappingsWithDevConfigFilter ++
-        (managerArtifacts).value ++
-        (componentArtifacts).value ++
-        (if (addDevArtifacts)
+        managerArtifacts.value ++
+        componentArtifacts.value ++
+        (if (addDevArtifacts())
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
          else Nil) ++
         (if (addDevArtifacts()) (devArtifacts).value: @sbtUnchecked
-         else (modelArtifacts).value: @sbtUnchecked) ++
+         else modelArtifacts.value: @sbtUnchecked) ++
         (flinkExecutor / additionalBundledArtifacts).value
     },
     Universal / packageZipTarball / mappings := {
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
+        if (addDevArtifacts()) (Universal / mappings).value
         else filterDevConfigArtifacts((Universal / mappings).value)
       // we don't want docker-* stuff in .tgz
       universalMappingsWithDevConfigFilter filterNot { case (file, _) =>
