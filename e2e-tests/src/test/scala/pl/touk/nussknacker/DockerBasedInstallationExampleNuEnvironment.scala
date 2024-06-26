@@ -62,7 +62,6 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
   type JSON = Value
 
   val singletonContainer: DockerComposeContainer = new DockerComposeContainer(
-    identifier = "nussknacker-installation-example",
     composeFiles = Seq(
       new JFile("examples/installation/docker-compose.yml"),
       new JFile(Resource.getUrl("spec-setup/spec-setup.override.yml").toURI),
@@ -73,8 +72,7 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
       "NUSSKNACKER_VERSION" -> BuildInfo.version
     ),
     logConsumers = Seq(
-      ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying)),
-      ServiceLogConsumer("designer", new Slf4jLogConsumer(logger.underlying))
+      ServiceLogConsumer("spec-setup", new Slf4jLogConsumer(logger.underlying))
     ),
     waitingFor = Some(
       WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
