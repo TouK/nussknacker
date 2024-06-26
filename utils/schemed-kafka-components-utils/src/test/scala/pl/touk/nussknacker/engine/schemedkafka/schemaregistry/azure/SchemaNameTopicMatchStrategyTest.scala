@@ -40,8 +40,8 @@ class SchemaNameTopicMatchStrategyTest extends AnyFunSuite with Matchers with Op
     )
     val matchStrategy = SchemaNameTopicMatchStrategy(referenceTopics)
     matchStrategy.getAllMatchingTopics(schemasToMatch, isKey = false) shouldEqual List(
-      "foo.bar",
-      "foo-baz"
+      UncategorizedTopicName("foo.bar"),
+      UncategorizedTopicName("foo-baz")
     )
   }
 

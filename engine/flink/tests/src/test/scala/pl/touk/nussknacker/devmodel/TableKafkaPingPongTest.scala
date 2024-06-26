@@ -47,7 +47,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest1',
+       |  'topic' = '${inputTopicNameTest1.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -60,7 +60,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest2',
+       |  'topic' = '${inputTopicNameTest2.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -73,7 +73,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$outputTopicNameTest2',
+       |  'topic' = '${outputTopicNameTest2.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -86,7 +86,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest3',
+       |  'topic' = '${inputTopicNameTest3.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -99,7 +99,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$outputTopicNameTest3',
+       |  'topic' = '${outputTopicNameTest3.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',

@@ -48,7 +48,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -61,7 +61,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(1),
       "",
       givenObj
@@ -74,7 +74,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      PaymentDateTopic,
+      PaymentDateTopic.name,
       ExistingSchemaVersion(1),
       "",
       givenObj
@@ -87,7 +87,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(2),
       null,
       givenObj
@@ -100,7 +100,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       LatestSchemaVersion,
       null,
       givenObj
@@ -132,7 +132,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(3),
       null,
       givenObj
@@ -157,7 +157,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      IntTopicNoKey,
+      IntTopicNoKey.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -170,7 +170,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      IntTopicWithKey,
+      IntTopicWithKey.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -180,13 +180,13 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read last generated simple object with expected key schema and valid key") {
     val givenObj = 123123
 
-    val serializedKey   = keySerializer.serialize(IntTopicWithKey, -1)
-    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenObj)
-    kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
+    val serializedKey   = keySerializer.serialize(IntTopicWithKey.name, -1)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey.name, givenObj)
+    kafkaClient.sendRawMessage(IntTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      IntTopicWithKey,
+      IntTopicWithKey.name,
       ExistingSchemaVersion(1),
       new String(serializedKey, StandardCharsets.UTF_8),
       givenObj
@@ -200,7 +200,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      InvalidDefaultsTopic,
+      InvalidDefaultsTopic.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -212,11 +212,11 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val arrayOfInts  = List(123).asJava
     val arrayOfLongs = List(123L).asJava
     val wrappedObj   = new NonRecordContainer(ArrayOfIntsSchema, arrayOfInts)
-    pushMessageWithKey(null, wrappedObj, topic, useStringForKey = true)
+    pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      topic,
+      topic.name,
       ExistingSchemaVersion(2),
       null,
       arrayOfLongs
@@ -230,11 +230,11 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val recordV2         = FullNameV2.createRecord("Jan", null, "Kowalski")
     val arrayOfRecordsV2 = List(recordV2).asJava
     val wrappedObj       = new NonRecordContainer(ArrayOfRecordsV1Schema, arrayOfRecordsV1)
-    pushMessageWithKey(null, wrappedObj, topic, useStringForKey = true)
+    pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      topic,
+      topic.name,
       ExistingSchemaVersion(2),
       null,
       arrayOfRecordsV2
@@ -245,14 +245,14 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenKey   = 123
     val givenValue = 456
 
-    val serializedKey   = keySerializer.serialize(IntTopicWithKey, givenKey)
-    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenValue)
-    kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
+    val serializedKey   = keySerializer.serialize(IntTopicWithKey.name, givenKey)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey.name, givenValue)
+    kafkaClient.sendRawMessage(IntTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = false,
-      IntTopicWithKey,
+      IntTopicWithKey.name,
       ExistingSchemaVersion(1),
       givenKey,
       givenValue
@@ -263,14 +263,14 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenKey   = FullNameV1.record
     val givenValue = PaymentV1.record
 
-    val serializedKey   = keySerializer.serialize(RecordTopicWithKey, givenKey)
-    val serializedValue = valueSerializer.serialize(RecordTopicWithKey, givenValue)
-    kafkaClient.sendRawMessage(RecordTopicWithKey, serializedKey, serializedValue, Some(0))
+    val serializedKey   = keySerializer.serialize(RecordTopicWithKey.name, givenKey)
+    val serializedValue = valueSerializer.serialize(RecordTopicWithKey.name, givenValue)
+    kafkaClient.sendRawMessage(RecordTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = false,
-      RecordTopicWithKey,
+      RecordTopicWithKey.name,
       ExistingSchemaVersion(1),
       givenKey,
       givenValue
