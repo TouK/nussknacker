@@ -137,7 +137,7 @@ class TableSource(
     // without this, on Flink taskmanager level the classloader is basically empty
     conf.set(
       PipelineOptions.CLASSPATHS,
-      classPathUrlsForMiniClusterTestingEnv.map(_.toString).asJava
+      List("http://dummy-classpath.invalid").asJava
     )
     conf
   }

@@ -2019,9 +2019,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
     // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
     forScalaVersion(defaultScalaV) {
       case (2, 12) => {
-        print(s"e2eTests: before addDevArtifacts is ${System.getProperty("addDevArtifacts")}")
         System.setProperty("addDevArtifacts", "true")
-        print(s"e2eTests: after addDevArtifacts is ${System.getProperty("addDevArtifacts")}")
         doTest
       }
       case (2, 13) => doNotTest
