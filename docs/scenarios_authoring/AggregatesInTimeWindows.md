@@ -41,10 +41,12 @@ Two additional new variables will always be available 'downstream' of the aggreg
 
 Our imaginary banking application emits several events per each transaction. The data stream contains the following events:
 
-`{"subscriberId":1,"transactionId":11,"operation":"RECHARGE","amount":"500.00"}`
-`{"subscriberId":2,"transactionId":12,"operation":"RECHARGE","amount":"200.00"}`
-`{"subscriberId":1,"transactionId":13,"operation":"TRANSFER","amount":"5000.00"}`
-`{"subscriberId":1,"transactionId":14,"operation":"TRANSFER","amount":"1000.00"}`
+```json
+{"subscriberId":1,"transactionId":11,"operation":"RECHARGE","amount":"500.00"}
+{"subscriberId":2,"transactionId":12,"operation":"RECHARGE","amount":"200.00"}
+{"subscriberId":1,"transactionId":13,"operation":"TRANSFER","amount":"5000.00"}
+{"subscriberId":1,"transactionId":14,"operation":"TRANSFER","amount":"1000.00"}
+```
 
 Let’s assume that all the above events qualify to the time windows discussed below.
 
@@ -172,11 +174,11 @@ In all examples above there was only one field which was passed to the aggregato
 
 There are two fields `destinationBank` and `amount` passed to the respective aggregator functions. Note use of the #AGG helper in the definition of the aggregations. The aggregated values will be available as `#totalTransfers.destinationBank` and `#totalTransfers.amount`.
 
-A frequent requirement is to access a field from the groupBy clause downstream the aggregation node. Let's imagine that we need the value of the subscriberId for the emitted aggregate. One could extract subscriberId using the `#key` variable by applying a set of string manipulation functions. While this is doable even in complex cases (variable string lengths for each of the fields forming the composite groupBy expression) there is an easier way shown below:
+A frequent requirement is to access a field from the groupBy clause downstream the aggregation node. Let's imagine that we need the value of the `subscriberId` for the emitted aggregate. One could extract `subscriberId` using the `#key` variable by applying a set of string manipulation functions. While this is doable even in complex cases (variable string lengths for each of the fields forming the composite groupBy expression) there is an easier way shown below:
 
 ![alt_text](img/keyExtraction.png "extracting key from the composite key")
 
-The subscriberId will be available in a `#totalTransfers.subscriberId` variable.
+The `subscriberId` will be available in a `#totalTransfers.subscriberId` variable.
 
 ## Single-side-join
 
@@ -219,8 +221,7 @@ then a new event is still emitted, but some aggregates have a value of zero.
 Some additional notes:
 
 * Unlike single-side-join, full-outer-join can have more than two input branches
-* The input variable will not be available downstream. Output variable can be used to get the key of the
-  event that entered full-outer-join.
+* The `#input` variable will not be available downstream. Output variable can be used to get the key of the event that entered full-outer-join - see description field in the picture above.
 * Names of returned aggregates are generated based on the names of input nodes.
 
 ## Some closing fine points
