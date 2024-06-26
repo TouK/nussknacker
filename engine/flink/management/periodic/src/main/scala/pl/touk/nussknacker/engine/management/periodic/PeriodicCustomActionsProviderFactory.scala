@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.DMCustomActionCommand
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, CustomActionResult}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 
