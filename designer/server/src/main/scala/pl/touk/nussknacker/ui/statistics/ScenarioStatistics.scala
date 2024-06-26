@@ -26,15 +26,29 @@ object ScenarioStatistics {
 
   private val componentStatisticPrefix = "c_"
 
+  private val emptyScenarioStatistics: Map[String, String] = Map(
+    ScenarioCount        -> 0,
+    FragmentCount        -> 0,
+    UnboundedStreamCount -> 0,
+    BoundedStreamCount   -> 0,
+    RequestResponseCount -> 0,
+    FlinkDMCount         -> 0,
+    LiteK8sDMCount       -> 0,
+    LiteEmbeddedDMCount  -> 0,
+    UnknownDMCount       -> 0,
+    ActiveScenarioCount  -> 0
+  ).map { case (k, v) => (k.toString, v.toString) }
+
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
-    scenariosInputData
-      .map(ScenarioStatistics.determineStatisticsForScenario)
-      .combineAll
-      .mapValuesNow(_.toString)
+    emptyScenarioStatistics ++
+      scenariosInputData
+        .map(ScenarioStatistics.determineStatisticsForScenario)
+        .combineAll
+        .mapValuesNow(_.toString)
   }
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
-    val empty = Map(
+    val emptyGeneralStatistics = Map(
       NodesMedian            -> 0,
       NodesAverage           -> 0,
       NodesMax               -> 0,
@@ -52,7 +66,7 @@ object ScenarioStatistics {
       UptimeInSecondsMin     -> 0,
     ).map { case (k, v) => (k.toString, v.toString) }
     if (scenariosInputData.isEmpty) {
-      empty
+      emptyGeneralStatistics
     } else {
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
@@ -94,36 +108,35 @@ object ScenarioStatistics {
           )
         }
       }
-      empty ++
-        (Map(
-          NodesMedian          -> nodesMedian,
-          NodesAverage         -> nodesAverage,
-          NodesMax             -> nodesMax,
-          NodesMin             -> nodesMin,
-          CategoriesCount      -> categoriesCount,
-          VersionsMedian       -> versionsMedian,
-          VersionsAverage      -> versionsAverage,
-          VersionsMax          -> versionsMax,
-          VersionsMin          -> versionsMin,
-          AuthorsCount         -> authorsCount,
-          FragmentsUsedMedian  -> fragmentsUsedMedian,
-          FragmentsUsedAverage -> fragmentsUsedAverage
-        ) ++ uptimeStatsMap)
-          .map { case (k, v) => (k.toString, v.toString) }
+      (Map(
+        NodesMedian          -> nodesMedian,
+        NodesAverage         -> nodesAverage,
+        NodesMax             -> nodesMax,
+        NodesMin             -> nodesMin,
+        CategoriesCount      -> categoriesCount,
+        VersionsMedian       -> versionsMedian,
+        VersionsAverage      -> versionsAverage,
+        VersionsMax          -> versionsMax,
+        VersionsMin          -> versionsMin,
+        AuthorsCount         -> authorsCount,
+        FragmentsUsedMedian  -> fragmentsUsedMedian,
+        FragmentsUsedAverage -> fragmentsUsedAverage
+      ) ++ uptimeStatsMap)
+        .map { case (k, v) => (k.toString, v.toString) }
     }
   }
 
   def getActivityStatistics(
       listOfActivities: List[DbProcessActivityRepository.ProcessActivity]
   ): Map[String, String] = {
-    val empty = Map(
+    val emptyActivityStatistics = Map(
       AttachmentsAverage -> 0,
       AttachmentsTotal   -> 0,
       CommentsTotal      -> 0,
       CommentsAverage    -> 0
     ).map { case (k, v) => (k.toString, v.toString) }
     if (listOfActivities.isEmpty) {
-      empty
+      emptyActivityStatistics
     } else {
       //        Attachment stats
       val sortedAttachmentCountList = listOfActivities.map(_.attachments.length)
@@ -134,13 +147,12 @@ object ScenarioStatistics {
       val commentsTotal   = comments.sum
       val commentsAverage = calculateAverage(comments)
 
-      empty ++
-        Map(
-          AttachmentsAverage -> attachmentAverage,
-          AttachmentsTotal   -> attachmentsTotal,
-          CommentsTotal      -> commentsTotal,
-          CommentsAverage    -> commentsAverage
-        ).map { case (k, v) => (k.toString, v.toString) }
+      Map(
+        AttachmentsAverage -> attachmentAverage,
+        AttachmentsTotal   -> attachmentsTotal,
+        CommentsTotal      -> commentsTotal,
+        CommentsAverage    -> commentsAverage
+      ).map { case (k, v) => (k.toString, v.toString) }
     }
   }
 
@@ -150,7 +162,7 @@ object ScenarioStatistics {
       components: List[ComponentDefinitionWithImplementation]
   ): Map[String, String] = {
     if (componentList.isEmpty) {
-      Map.empty
+      Map(ComponentsCount.toString -> "0")
     } else {
 
       // Get number of available components to check how many custom components created
