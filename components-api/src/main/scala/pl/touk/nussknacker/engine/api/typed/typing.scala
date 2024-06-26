@@ -71,8 +71,8 @@ object typing {
       objType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
-    override def valueOpt: Option[Map[String, Any]] =
-      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*))
+    override def valueOpt: Option[java.util.Map[String, Any]] =
+      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*).asJava)
 
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
@@ -112,7 +112,7 @@ object typing {
     private val maxDataDisplaySize: Int         = 15
     private val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
-    override def valueOpt: Option[Any] = Some(value)
+    override def valueOpt: Option[Any] = Some(value) // tu wpada string (i pewnie long), Lista nie
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
@@ -190,7 +190,7 @@ object typing {
   }
 
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
-    override val valueOpt: None.type = None
+    override val valueOpt: None.type = None /// TODO ????
 
     override def withoutValue: TypedClass = this
 
