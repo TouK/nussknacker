@@ -1,7 +1,5 @@
 export type ActionTypes =
     | "LAYOUT_CHANGED"
-    | "TOGGLE_LEFT_PANEL"
-    | "TOGGLE_RIGHT_PANEL"
     | "LAYOUT"
     | "LOGGED_USER"
     | "UI_SETTINGS"

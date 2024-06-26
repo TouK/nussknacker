@@ -155,16 +155,16 @@ function Visualization() {
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
+                    <SpinnerWrapper isReady={!graphNotReady}>
+                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
+                    </SpinnerWrapper>
+
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
                             <BindKeyboardShortcuts disabled={windows.length > 0} />
                             <Toolbars isReady={dataResolved} />
                         </SelectionContextProvider>
                     </GraphProvider>
-
-                    <SpinnerWrapper isReady={!graphNotReady}>
-                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
-                    </SpinnerWrapper>
                 </GraphPage>
             </DndProvider>
         </ErrorHandler>
