@@ -16,6 +16,7 @@ class DeploymentComment private (value: Comment) {
     val prefix = actionName match {
       case ScenarioActionName.Deploy => PrefixDeployedDeploymentComment
       case ScenarioActionName.Cancel => PrefixCanceledDeploymentComment
+      case ScenarioActionName.RunNow => PrefixRunNowDeploymentComment
       case _                         => NoPrefix
     }
     new Comment {
@@ -29,6 +30,7 @@ object DeploymentComment {
 
   private val PrefixDeployedDeploymentComment = "Deployment: "
   private val PrefixCanceledDeploymentComment = "Stop: "
+  private val PrefixRunNowDeploymentComment   = "Run now: "
   private val NoPrefix                        = ""
 
   def createDeploymentComment(
