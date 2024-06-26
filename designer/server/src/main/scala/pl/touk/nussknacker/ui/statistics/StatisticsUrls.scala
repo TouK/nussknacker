@@ -8,13 +8,13 @@ import java.nio.charset.StandardCharsets
 
 class StatisticsUrls(cfg: StatisticUrlConfig) extends LazyLogging {
 
-  def prepare(fingerprint: Fingerprint, rawStatistics: Map[String, String]): List[String] =
+  def prepare(fingerprint: Fingerprint, correlationId: String, rawStatistics: Map[String, String]): List[String] =
     rawStatistics.toList
       // Sorting for purpose of easier testing
       .sortBy(_._1)
       .map(encodeQueryParam)
       .groupByMaxChunkSize(cfg.urlBytesSizeLimit)
-      .flatMap(queryParams => prepareUrlString(queryParams, queryParamsForEveryURL(fingerprint)))
+      .flatMap(queryParams => prepareUrlString(queryParams, queryParamsForEveryURL(fingerprint, correlationId)))
 
   private def encodeQueryParam(entry: (String, String)): String =
     s"${URLEncoder.encode(entry._1, StandardCharsets.UTF_8)}=${URLEncoder.encode(entry._2, StandardCharsets.UTF_8)}"
@@ -28,8 +28,9 @@ class StatisticsUrls(cfg: StatisticUrlConfig) extends LazyLogging {
     }
   }
 
-  private def queryParamsForEveryURL(fingerprint: Fingerprint): List[String] = List(
-    encodeQueryParam(NuFingerprint.name -> fingerprint.value)
+  private def queryParamsForEveryURL(fingerprint: Fingerprint, correlationId: String): List[String] = List(
+    encodeQueryParam(NuFingerprint.name -> fingerprint.value),
+    encodeQueryParam(CorrelationId.name -> correlationId)
   )
 
 }
