@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import org.hsqldb.jdbcDriver
 import org.scalatest.BeforeAndAfterAll
 import org.testcontainers.utility.DockerImageName
+import scala.jdk.CollectionConverters._
 
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
@@ -17,8 +18,7 @@ trait WithPostgresqlDB {
     PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
 
   {
-    // TODO_PAWEL do it other way
-    container.start()
+    container.container.setPortBindings(List("5432:5432").asJava)
   }
 
   val dbName: String = UUID.randomUUID().toString
@@ -26,7 +26,8 @@ trait WithPostgresqlDB {
   private val driverClassName = "org.postgresql.Driver"
   private val username        = container.username
   private val password        = container.password
-  private val url             = container.jdbcUrl
+  // this url be read as container.jdbcUrl when service is started, but it is hard to postpone this step until it is started
+  private val url = "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"
 
   val postgresqlConfigValues: Map[String, String] = Map(
     "driverClassName" -> driverClassName,
