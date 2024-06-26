@@ -18,12 +18,7 @@ class BatchDataGenerationSpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers {
 
-  println("BatchDataGenerationSpecPrint - before dereference to container")
-  private val containerValOnlyToInitializeSingletonEnv = DockerBasedInstallationExampleNuEnvironment.singletonContainer
-  println("BatchDataGenerationSpecPrint - after dereference to container")
-
   "Batch scenario generate file function should generate random results according to defined schema" in {
-    println("BatchDataGenerationSpecPrint - inside test")
     given()
       .when()
       .request()
@@ -40,17 +35,32 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(201)
 
-    // TODO: cleanup
-    given()
+    val testResultContent = given()
       .when()
       .request()
       .preemptiveBasicAuth("admin", "admin")
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
-      .post("http://localhost:8080/api/testInfo/SumTransactions/generate/10")
+      .post("http://localhost:8080/api/testInfo/asd/generate/10")
       .Then()
       .statusCode(200)
-    //  TODO: add assertion for random results
-    println("BatchDataGenerationSpecPrint - after test")
+      .extract()
+      .body()
+      .asString()
+
+    val expectedRegex =
+      """|\{
+         |   "sourceId":"sourceId",
+         |   "record":
+         |     \{
+         |         "datetime":"[0-9T.:-]*",
+         |         "client_id":"[a-z0-9]*",
+         |         "amount":[a-z0-9.]*,
+         |         "date":"[a-z0-9]*"
+         |     \}
+         |\}
+         |""".stripMargin.replace("\n", "").replace(" ", "")
+
+    testResultContent.split('\n').head should fullyMatch regex expectedRegex
   }
 
   private lazy val simpleBatchTableScenario = ScenarioBuilder

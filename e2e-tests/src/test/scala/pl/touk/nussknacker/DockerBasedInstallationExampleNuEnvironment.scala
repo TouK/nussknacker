@@ -19,8 +19,7 @@ import java.io.{File => JFile}
 trait DockerBasedInstallationExampleNuEnvironment extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 
-  println("DockerBasedInstallationExampleNuEnvironmentPrint Class - beginning of class")
-  private lazy val specSetupService = unsafeContainerByServiceName("spec-setup")
+  private val specSetupService = unsafeContainerByServiceName("spec-setup")
 
   def loadFlinkStreamingScenarioFromResource(scenarioName: String, scenarioJsonFile: File): Unit = {
     val escapedScenarioJson = scenarioJsonFile.contentAsString().replaceAll("\"", "\\\\\"")
@@ -56,15 +55,11 @@ trait DockerBasedInstallationExampleNuEnvironment extends BeforeAndAfterAll with
     .getContainerByServiceName(name)
     .getOrElse(throw new IllegalStateException(s"'$name' service not available!"))
 
-  println("DockerBasedInstallationExampleNuEnvironmentPrint Class - ending of class")
 }
 
 object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
 
-  println("DockerBasedInstallationExampleNuEnvironmentPrint Trait - ending of trait")
   type JSON = Value
-
-  println("BatchDataGenerationSpecPrint - before dereference to container")
 
   val singletonContainer: DockerComposeContainer = new DockerComposeContainer(
     composeFiles = Seq(
@@ -85,6 +80,5 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
   )
 
   singletonContainer.start()
-  println("DockerBasedInstallationExampleNuEnvironmentPrint Trait - ending of trait")
 
 }
