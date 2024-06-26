@@ -35,7 +35,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
     }
   }
 
-  test("DatabaseQueryEnricher#implementation without cache") {
+  test("DatabaseQueryEnricherPostgresqlTest#implementation without cache") {
     val query = "select * from persons where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
@@ -56,22 +56,24 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
+    returnType(service, state).display shouldBe "List[Record{id: Integer, name: String}]"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
+      TypedMap(Map("name" -> "John", "id" -> 1))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
+      TypedMap(Map("name" -> "Alex", "id" -> 1))
     )
   }
 
-  test("DatabaseQueryEnricher#implementation without cache and with mixed lowercase and uppercase characters") {
+  test(
+    "DatabaseQueryEnricherPostgresqlTest#implementation without cache and with mixed lowercase and uppercase characters"
+  ) {
     val query = "select iD, NaMe from persons where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
@@ -92,22 +94,22 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
+    returnType(service, state).display shouldBe "List[Record{id: Integer, name: String}]"
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
+      TypedMap(Map("name" -> "John", "id" -> 1))
     )
 
     conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
+      TypedMap(Map("name" -> "Alex", "id" -> 1))
     )
   }
 
-  test("DatabaseQueryEnricher#implementation update query") {
+  test("DatabaseQueryEnricherPostgresqlTest#implementation update query") {
     val query = "UPDATE persons SET name = 'Don' where id = ?"
     val st    = conn.prepareStatement(query)
     st.close()
