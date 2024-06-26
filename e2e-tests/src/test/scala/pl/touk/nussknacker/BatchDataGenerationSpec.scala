@@ -23,9 +23,9 @@ class BatchDataGenerationSpec
       .when()
       .request()
       .preemptiveBasicAuth("admin", "admin")
-      .jsonBody("""
+      .jsonBody(s"""
           |{
-          |    "name" : "SumTransactions",
+          |    "name" : ${simpleBatchTableScenario.name},
           |    "category" : "Default",
           |    "isFragment" : false,
           |    "processingMode" : "Bounded-Stream"
@@ -40,7 +40,7 @@ class BatchDataGenerationSpec
       .request()
       .preemptiveBasicAuth("admin", "admin")
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
-      .post("http://localhost:8080/api/testInfo/asd/generate/10")
+      .post(s"http://localhost:8080/api/testInfo/${simpleBatchTableScenario.name}/generate/10")
       .Then()
       .statusCode(200)
       .extract()
