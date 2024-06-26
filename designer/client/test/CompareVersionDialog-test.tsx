@@ -34,14 +34,14 @@ const graphReducer = {
                 history: [
                     {
                         processVersionId: 35,
-                        createDate: "2024-05-31T07:52:42.660408Z",
+                        createDate: "2024-05-31",
                         user: "admin",
                         modelVersion: 4,
                         actions: [],
                     },
                     {
                         processVersionId: 34,
-                        createDate: "2024-05-31T07:40:19.115208Z",
+                        createDate: "2024-05-31",
                         user: "admin",
                         modelVersion: 4,
                         actions: [],
@@ -57,12 +57,14 @@ const store = mockStore({
     settings: { featuresSettings: { remoteEnvironment: { targetEnvironmentId: "remote environment" } } },
 });
 
+const DOWN_ARROW = { keyCode: 40 };
+
 describe(CompareVersionsDialog.name, () => {
     afterAll(() => {
         mock.resetHandlers();
     });
 
-    it("should provide remote prefix for remote options", async () => {
+    it("should provide remote prefix for remote options and call correct remote endpoint when remote version selected", async () => {
         const remoteVersions: ProcessVersionType[] = [
             {
                 processVersionId: 1,
@@ -73,11 +75,10 @@ describe(CompareVersionsDialog.name, () => {
             },
         ];
 
-        mock.onGet(`/remoteEnvironment/${graphReducer.history.present.scenario.name}/versions`).reply(200, remoteVersions);
-
+        mock.onGet(`/remoteEnvironment/${graphReducer.history.present.scenario.name}/versions`).replyOnce(200, remoteVersions);
         mock.onGet(
             `/remoteEnvironment/${graphReducer.history.present.scenario.name}/${graphReducer.history.present.scenario.processVersionId}/compare/${remoteVersions[0].processVersionId}`,
-        ).reply(200, {});
+        ).replyOnce(200, {});
 
         render(
             <NuThemeProvider>
@@ -93,10 +94,9 @@ describe(CompareVersionsDialog.name, () => {
             </NuThemeProvider>,
         );
 
-        const DOWN_ARROW = { keyCode: 40 };
         fireEvent.keyDown(screen.getByText("Select..."), DOWN_ARROW);
 
-        expect(await screen.findByText("34 - created by admin 2024-05-31|09:40")).toBeInTheDocument();
+        expect(await screen.findByText("34 - created by admin 2024-05-31|00:00")).toBeInTheDocument();
 
         const remoteItemText = "1 on remote environment - created by test 2024-05-31|00:00";
 
@@ -106,5 +106,47 @@ describe(CompareVersionsDialog.name, () => {
 
         expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
         expect(await screen.findByText(remoteItemText)).toBeInTheDocument();
+    });
+
+    it("should select history version and call correct processes endpoint when history version selected", async () => {
+        const remoteVersions: ProcessVersionType[] = [
+            {
+                processVersionId: 1,
+                createDate: "2024-05-31",
+                user: "test",
+                modelVersion: 1,
+                actions: [],
+            },
+        ];
+
+        mock.onGet(`/remoteEnvironment/${graphReducer.history.present.scenario.name}/versions`).replyOnce(200, remoteVersions);
+        mock.onGet(
+            `/processes/${graphReducer.history.present.scenario.name}/${graphReducer.history.present.scenario.processVersionId}/compare/${graphReducer.history.present.scenario.history[1].processVersionId}`,
+        ).replyOnce(200, {});
+
+        render(
+            <NuThemeProvider>
+                <Provider store={store}>
+                    <CompareVersionsDialog
+                        data={{
+                            title: "compare versions",
+                            kind: 12,
+                            id: "8b0a9e43-9d18-4837-950c-858d35b7c60c",
+                        }}
+                    />
+                </Provider>
+            </NuThemeProvider>,
+        );
+
+        fireEvent.keyDown(screen.getByText("Select..."), DOWN_ARROW);
+
+        const historyItemText = "34 - created by admin 2024-05-31|00:00";
+
+        await waitFor(() => {
+            fireEvent.click(screen.getByText(historyItemText));
+        });
+
+        expect(await screen.findByText("Difference to pick")).toBeInTheDocument();
+        expect(await screen.findByText(historyItemText)).toBeInTheDocument();
     });
 });
