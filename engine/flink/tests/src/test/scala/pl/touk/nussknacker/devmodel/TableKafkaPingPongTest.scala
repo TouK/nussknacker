@@ -149,7 +149,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         "kafka",
         KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
         KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topics.output}'",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topics.output.name}'",
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
       )

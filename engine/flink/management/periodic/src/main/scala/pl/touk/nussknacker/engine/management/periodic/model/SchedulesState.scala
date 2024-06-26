@@ -46,6 +46,7 @@ case class ScheduleDeploymentData(
     id: PeriodicProcessDeploymentId,
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
+    deployedAt: Option[LocalDateTime],
     retriesLeft: Int,
     nextRetryAt: Option[LocalDateTime],
     state: PeriodicProcessDeploymentState
@@ -68,6 +69,7 @@ object ScheduleDeploymentData {
       deployment.id,
       deployment.createdAt,
       deployment.runAt,
+      deployment.deployedAt,
       deployment.retriesLeft,
       deployment.nextRetryAt,
       PeriodicProcessesRepository.createPeriodicDeploymentState(deployment)

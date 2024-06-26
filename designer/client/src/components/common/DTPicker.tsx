@@ -1,7 +1,7 @@
 import React from "react";
 import DateTimePicker from "react-datetime";
 import { useTranslation } from "react-i18next";
-import { styled } from "@mui/material";
+import { styled, SxProps } from "@mui/material";
 import { nodeInputCss } from "../NodeInput";
 
 const DTPickerStyled = styled(DateTimePicker)(nodeInputCss, { padding: 0 });
@@ -16,7 +16,15 @@ const style = {
     alignItems: "center",
 };
 
-export function DTPicker({ dateFormat, timeFormat, inputProps, onChange, value, open }: DateTimePicker.DatetimepickerProps): JSX.Element {
+export function DTPicker({
+    dateFormat,
+    timeFormat,
+    inputProps,
+    onChange,
+    value,
+    open,
+    sx,
+}: DateTimePicker.DatetimepickerProps & { sx?: SxProps }): JSX.Element {
     const { i18n } = useTranslation();
     return (
         <DTPickerStyled
@@ -27,6 +35,7 @@ export function DTPicker({ dateFormat, timeFormat, inputProps, onChange, value, 
             onChange={onChange}
             value={value}
             locale={i18n.language}
+            sx={sx}
         />
     );
 }

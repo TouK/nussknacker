@@ -18,7 +18,12 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", topicParamName.value -> s"'$inputTopic'", schemaVersionParamName.value -> "'latest'")
+      .source(
+        "source",
+        "kafka",
+        topicParamName.value         -> s"'${inputTopic.name}'",
+        schemaVersionParamName.value -> "'latest'"
+      )
       .emptySink(
         "sink",
         "kafka",

@@ -189,13 +189,13 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
+        topicParamName.value         -> s"'${inputTopic.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'",
+        topicParamName.value         -> s"'${outputTopic.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
         sinkKeyParamName.value       -> "",
         sinkRawEditorParamName.value -> "true",
@@ -246,14 +246,14 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
+        topicParamName.value         -> s"'${inputTopic.name}'",
         schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'"
       )
       .filter("filter-b-default", s"#input.b == '$bDefaultValue'")
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'",
+        topicParamName.value         -> s"'${outputTopic.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
         sinkKeyParamName.value       -> "",
         sinkRawEditorParamName.value -> "true",
