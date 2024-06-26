@@ -6,10 +6,11 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
+import org.scalatest.BeforeAndAfterEach
 
 import scala.concurrent.Await
 
-class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
+class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest with BeforeAndAfterEach {
 
   import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
@@ -21,6 +22,18 @@ class DatabaseQueryEnricherTest extends BaseHsqlQueryEnricherTest {
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')"
   )
+
+  override protected def afterEach(): Unit = {
+    val cleanupStatements = List(
+      "TRUNCATE TABLE persons;",
+      "INSERT INTO persons (id, name) VALUES (1, 'John')"
+    )
+    cleanupStatements.foreach { ddlStr =>
+      val ddlStatement = conn.prepareStatement(ddlStr)
+      try ddlStatement.execute()
+      finally ddlStatement.close()
+    }
+  }
 
   test("DatabaseQueryEnricher#implementation without cache") {
     val query = "select * from persons where id = ?"
