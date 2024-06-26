@@ -75,9 +75,9 @@ also in some context `Collection` can be met (it's Java API for handling lists, 
 See [Handling data/time](#handling-datetime) for detailed description of how to deal with date and time in Nussknacker.
 
 
-# SpEL syntax
+## SpEL syntax
 
-## Basics
+### Basics
                                   
 Most of the literals are similar to JSON ones, in fact in many cases JSON structure is valid SpEL. 
 There are a few notable exceptions:
@@ -93,26 +93,30 @@ There are a few notable exceptions:
 | `{}`                   | an empty list                  | List[Unknown]        |
 | `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{:}`                  | an empty record                | Record{}             |
-| `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
+| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)}] |
 | `#input`               | variable                       |                      |
+| `'AA' + 'BB'`          | "AABB"                         | String               |
                                     
-## Arithmetic Operators
+### Arithmetic Operators
 
-| Expression    | Result   | Type     |
-| ------------  | -------- | -------- |
-| `42 + 2`      | 44       | Integer  |
-| `'AA' + 'BB'` | "AABB"   | String   |
+The `+`, `-`, `*` arithmetic operators work as expected. 
 
-## Conditional Operators
+| Operator | Equivalent symbolic operator | Example expression | Result |
+|----------|------------------------------|--------------------|--------|
+| `div`    | `/`                          | `7 div 2`          | 3      |
+| `div`    | `/`                          | `7.0 div 2`        | 2.3333333333 |
+| `mod`    | `%`                          | `23 mod 7`         | 2      |
+
+### Conditional Operators
 
 | Expression                                   | Result    | Type     |
 | ------------                                 | --------  | -------- |
-| `2 == 2`                                     | true      | boolean  |
-| `2 > 1`                                      | true      | boolean  |
-| `true AND false`                             | false     | boolean  |
-| `true && false`                              | false     | boolean  |
-| `true OR false`                              | true      | boolean  |
-| <code>true &#124;&#124; false</code>         | true      | boolean  |
+| `2 == 2`                                     | true      | Boolean  |
+| `2 > 1`                                      | true      | Boolean  |
+| `true AND false`                             | false     | Boolean  |
+| `true && false`                              | false     | Boolean  |
+| `true OR false`                              | true      | Boolean  |
+| <code>true &#124;&#124; false</code>         | true      | Boolean  |
 | `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |
 | `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |
 | `#nonNullVar == null ? 'Unknown' : 'Success'` | "Success" | String   |
@@ -120,7 +124,7 @@ There are a few notable exceptions:
 | `#nullVar?:'Unknown'`                        | "Unknown" | String   |
 | `'john'?:'Unknown'`                          | "john"    | String   |
 
-## Relational operators
+### Relational operators
 
 | Operator | Equivalent symbolic operator | Example expression | Result |
 |----------|------------------------------|--------------------|--------|
@@ -130,11 +134,15 @@ There are a few notable exceptions:
 | `ge`     | `>=`                         | `4 ge 4`           | true   |
 | `eq`     | `==`                         | `3 eq 3`           | true   |
 | `ne`     | `!=`                         | `4 ne 2`           | true   |
-| `div`    | `/`                          | `6 div 2`          | 3      |
-| `mod`    | `%`                          | `23 mod 7`         | 2      |
 | `not`    | `!`                          | `not true`         | false  |
 
-## Method invocations
+### Strings operators
+
+| Expression      | Result      | Type     |
+| --------------  | ----------- | -------- |
+| `'AA' + 'BB'`   | "AABB"      | String   |
+
+### Method invocations
 
 As Nussknacker uses Java types, some objects are more than data containers - there are additional methods 
 that can be invoked on them. Method parameters are passed in parentheses, usually parameter details 
@@ -145,7 +153,7 @@ are shown in code completion hints.
 | `'someValue'.substring(4)` | "Value"    | String  |
 | `'someValue'.length()`     | 9          | Integer |
 
-## Accessing elements of a list or a record
+### Accessing elements of a list or a record
 
 | Expression                                                              | Result                                | Type              |
 |-------------------------------------------------------------------------|---------------------------------------|-------------------|
@@ -164,7 +172,7 @@ they occur before deployment of a scenario during expression validation.
 | `{1,2,3,4}[4]`                | Runtime error: Index out of bounds              |
 | `{jan:300, alex:400}['anna']` | Compilation error: No property 'anna' in record |
 
-## Filtering lists
+### Filtering lists
                           
 Special variable `#this` is used to operate on single element of list.
 Filtering all the elements uses a syntax of `.?`. 
@@ -179,7 +187,7 @@ To obtain the last matching element, the syntax is `.$`.
 | `{1,2,3,4}.^[#this ge 3]`                 | {3}          | Integer       |
 | `{1,2,3,4}.$[#this ge 3]`                 | {4}          | Integer       |
 
-## Transforming lists
+### Transforming lists
 
 Special variable `#this` is used to operate on single element of list.
             
@@ -201,7 +209,7 @@ listOfPersons = {person1, person2}
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
-## Safe navigation
+### Safe navigation
 
 When you access nested structure, you have to take care of null fields, otherwise you'll end up with 
 error. SpEL provides helpful safe navigation operator, it's basically shorthand for conditional operator:
@@ -214,10 +222,10 @@ error. SpEL provides helpful safe navigation operator, it's basically shorthand 
 | `#var?.foo` | {foo: 5}     | 5                              | Integer                         |
 | `#var?.foo` | null         | null                           | Null                            |
 
-## Invoking static methods
+### Invoking static methods
 
 It is possible to invoke Java static methods directly with SpEL. Nussknacker can prevent invocations
-of some of them due to security reasons. Invoking static methods is advanced functionality, which can lead
+of some of them due to security reasons. Invoking static methods is an advanced functionality, which can lead
 to incomprehensible expressions, also code completions will not work with many of them. 
 If you need to invoke the same method in many places, probably the best solution is to create additional helper.
 
@@ -225,12 +233,12 @@ If you need to invoke the same method in many places, probably the best solution
 | ------------           | --------  | -------- |
 | `T(java.lang.Math).PI` | 3.14159.. | Double   |
 
-## Chaining with dot
+### Chaining with dot
 | Expression                                                   | Result    | Type     |
 | ------------                                                 | --------  | -------- |
 | `{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double   |
 
-## Type conversions
+### Type conversions
 
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
 numeric types and between `String` and some useful logical value types. Some examples:
@@ -262,7 +270,7 @@ You can also use explicit conversions that are available in utility classes and 
 | `'' + 42`                                                       | '42'                      | String         |
 
 
-# Built-in helpers
+## Built-in helpers
 
 Nussknacker comes with the following helpers:
 
@@ -278,9 +286,9 @@ Nussknacker comes with the following helpers:
 | `UTIL`        | Various utilities (e.g. identifier generation) |
 
 
-# Handling date/time.
+## Handling date/time.
 
-## Date/time data types
+### Date/time data types
 
 Formats of date/time are pretty complex - especially in Java. There are basically three ways of storing date:
 - as timestamp - absolute value, number of milliseconds since 1970-01-01T00:00:00 UTC. In Nussknacker this is 
@@ -293,7 +301,7 @@ Formats of date/time are pretty complex - especially in Java. There are basicall
 - as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
   Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
 
-## Conversions between date/time types
+### Conversions between date/time types
 
 Conversions of different types of dates are handled either by
 - `#DATE` helper methods e.g.:
@@ -313,7 +321,7 @@ Conversions of different types of dates are handled either by
   - `#date.isBefore('2020-07-01')` - `2020-07-01` String was automatically converted to `LocalDate`
   - `#dateTime.isAfter('2020-05-01T11:00:00')` - `2020-05-01T11:00:00` String was automatically converted to `LocalDateTime`
 
-## Date/time utility methods
+### Date/time utility methods
 
 `DATE` helper contains also some other useful helper methods, mainly for date range checks and computations of periods and durations e.g.:
 - `#DATE.isBetween(#localTime, '09:00', '17:00')` - checks if `LocalTime` is in (inclusive) range `<09:00, 17:00>`
@@ -332,7 +340,7 @@ Some useful constants are also available:
 - `#DATE.UTCOffset` - UTC offset
 - `#DATE.defaultTimeZone` - Default time zone for Nussknacker application
 
-## Parsing of date/time
+### Parsing of date/time
 
 Also, `#DATE_FORMAT` helper methods can be used to parse or format certain data type from/to the String. It is not recommended to use parsing
 in scenarios because it will obfuscate logic. Better way is to configure properly message schema. But sometimes it is the only way to handle it. Available helpers:
@@ -342,7 +350,7 @@ in scenarios because it will obfuscate logic. Better way is to configure properl
 
 Equivalent variants of `parse` methods are available also for other date/time types: `LocalTime`, `LocalDate`, `LocalDateTime`, `Instant` and `ZonedDateTime`.
 
-## Formatting of date/time
+### Formatting of date/time
 
 To format date/time can be used `#DATE_FORMAT.format(#dateTime)` method which accept various date/time types and formats it in ISO-8601 format.
 Also `DateTimeFormatter` can be used directly via e.g. `#DATE_FORMAT.formatter('EEEE').format(#date)`. Other formatter factory methods:

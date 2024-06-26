@@ -14,7 +14,7 @@ Usually not all required data are in the data record - some data may reside in a
 Please check [Glossary](../about/GLOSSARY) to understand difference between component and the node (and between configuration of a component and configuration of a node). Understanding the role of [SpEL](/docs/scenarios_authoring/Intro#spel) will greatly accelerate your first steps with Nussknacker. 
 
 
-Enricher components need to be added to the Model configuration first; once they are added they will become available in the Designer's components toolbox. Check [configuration areas](/docs/installation_configuration_guide/ModelConfiguration/#components-configuration) for the overview of the configuration and [configuration of extra components](../integration/OpenAPI.md) for details of how to configure enricher components.
+Enricher components need to be added to the Model configuration first; once they are added they will become available in the Designer's components toolbox. Check [configuration areas](/docs/installation_configuration_guide/Common.md#configuration-areas) for the overview of the configuration and [configuration of extra components](../integration/OpenAPI.md) for details of how to configure enricher components.
 
 
 ## SQL enricher
@@ -41,10 +41,9 @@ DatabaseLookupEnricher is a specialized look-up component; it returns all column
 
 ![alt_text](img/databaseLookupEnricher.png "databaseLookup Enricher")
 
-### Decision Table
+## Decision Table
 
-Some decision trees can't be easily modeled using filter/switch/split nodes or resulting tree can be huge/unreadable. In such cases user may try to use the Decision Table component.  
-This can be helpful in situations like enriching data using static dictionary or matching business objects to specified segments based on multiple decision parameters.
+Some decision trees can't be easily modeled using filter/switch/split nodes or resulting tree can be huge/unreadable. In such cases user may try to use the Decision Table component. This can be helpful in situations like enriching data using static dictionary or matching business objects to specified segments based on multiple decision parameters.
 
 Our implementation of the decision table is more generic than the one described in [Wikipedia](https://en.wikipedia.org/wiki/Decision_table). 
 In our implementation, columns contain "decision parameters" and "decisions". 
@@ -54,7 +53,7 @@ This expression can refer to the variables used in the scenario and values in th
 The result will be a list of matched rows - the rows for which the **_match condition_** returned `true`.  
 As we do not differentiate the "decision parameter" columns and "decision" columns, the whole matched rows will be returned.
 
-#### Configuration
+### Configuration
 
 - **_Decision Table_**: 
 
