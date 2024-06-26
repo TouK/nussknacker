@@ -2,7 +2,7 @@
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
 import { lighten, styled, Theme, useTheme } from "@mui/material";
-import { PanelSide } from "./SidePanel";
+import { PanelSide } from "../../actions/nk";
 import { blendDarken } from "../../containers/theme/helpers";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
