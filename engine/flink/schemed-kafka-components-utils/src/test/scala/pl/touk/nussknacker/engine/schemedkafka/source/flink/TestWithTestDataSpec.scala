@@ -58,8 +58,16 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
     val topic             = UncategorizedTopicName("address")
     val expectedTimestamp = System.currentTimeMillis()
-    val inputMeta =
-      InputMeta(null, topic.name, 0, 1, expectedTimestamp, TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
+    val inputMeta = InputMeta(
+      key = null,
+      topic = topic.name,
+      partition = 0,
+      offset = 1,
+      timestamp = expectedTimestamp,
+      timestampType = TimestampType.CREATE_TIME,
+      headers = Collections.emptyMap(),
+      leaderEpoch = 0
+    )
     val id: Int = registerSchema(topic, Address.schema)
 
     val process = ScenarioBuilder

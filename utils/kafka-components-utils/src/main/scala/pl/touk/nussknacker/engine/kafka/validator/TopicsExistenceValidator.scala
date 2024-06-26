@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.validator
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import cats.implicits.toShow
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeConfigsOptions, ListTopicsOptions}
 import org.apache.kafka.common.config.ConfigResource
@@ -118,7 +117,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
 
 final case class TopicExistenceValidationException(topics: List[TopicName])
     extends RuntimeException(
-      s"Topic${if (topics.size > 1) "s" else ""} ${topics.map(_.show).mkString(", ")} ${if (topics.size > 1) "do"
+      s"Topic${if (topics.size > 1) "s" else ""} ${topics.map(_.toUncategorizedTopicName.name).mkString(", ")} ${if (topics.size > 1) "do"
         else "does"} not exist"
     ) {
   def toCustomNodeError(nodeId: String, paramName: Option[ParameterName]) =

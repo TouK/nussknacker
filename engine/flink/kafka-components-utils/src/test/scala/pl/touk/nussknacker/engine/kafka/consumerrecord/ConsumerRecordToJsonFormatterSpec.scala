@@ -50,15 +50,15 @@ class ConsumerRecordToJsonFormatterSpec
   test("prepare and parse test data from ConsumerRecord with key, with headers") {
     val (sampleKeyBytes, sampleValueBytes) = serializeKeyValue(Some(sampleKey), sampleValue)
     val givenObj = createConsumerRecord(
-      topic.name,
-      11,
-      22L,
-      100L,
-      TimestampType.NO_TIMESTAMP_TYPE,
-      sampleKeyBytes,
-      sampleValueBytes,
-      sampleHeaders,
-      Optional.empty[Integer]
+      topic = topic.name,
+      partition = 11,
+      offset = 22L,
+      timestamp = 100L,
+      timestampType = TimestampType.NO_TIMESTAMP_TYPE,
+      key = sampleKeyBytes,
+      value = sampleValueBytes,
+      headers = sampleHeaders,
+      leaderEpoch = Optional.empty[Integer]
     )
     val testRecord = sampleKeyValueFormatter.prepareGeneratedTestData(List(givenObj)).testRecords.loneElement
     val resultObj  = sampleKeyValueFormatter.parseRecord(topic, testRecord)

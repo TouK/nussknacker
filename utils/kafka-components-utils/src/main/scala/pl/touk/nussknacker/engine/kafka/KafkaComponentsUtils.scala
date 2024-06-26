@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 
 object KafkaComponentsUtils extends KafkaUtils {
 
-  def validateTopicsExistence(topics: List[PreparedKafkaTopic[_ <: TopicName]], kafkaConfig: KafkaConfig): Unit = {
+  def validateTopicsExistence[T <: TopicName](topics: List[PreparedKafkaTopic[T]], kafkaConfig: KafkaConfig): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
       .validateTopics(topics.map(_.prepared))
       .valueOr(err => throw err)
