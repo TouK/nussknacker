@@ -6,7 +6,7 @@ import org.apache.flink.configuration._
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{DataTypes, EnvironmentSettings, Schema, TableDescriptor}
+import org.apache.flink.table.api.{EnvironmentSettings, TableDescriptor}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TestDataGenerator,
   TestWithParametersSupport
 }
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -28,14 +28,10 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
+import pl.touk.nussknacker.engine.flink.table.utils.{RowConversions, RowToTestDataConverter}
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-import java.net.{URL, URLClassLoader}
 import java.nio.file.Path
-import scala.collection.immutable.ListMap
-import scala.collection.mutable
 
 class TableSource(
     tableDefinition: TableDefinition,
@@ -102,51 +98,40 @@ class TableSource(
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      val env = new StreamExecutionEnvironment(flinkMiniClusterTestingEnvConfig, classLoader)
+      val env =
+        StreamExecutionEnvironment.createLocalEnvironment(miniClusterTestingEnvParallelism, miniClusterTestingEnvConfig)
       val tableEnv = StreamTableEnvironment.create(
         env,
-        EnvironmentSettings.newInstance
-          .withConfiguration(flinkMiniClusterTestingEnvConfig)
-          .withClassLoader(classLoader)
-          .build()
+        EnvironmentSettings.newInstance.withConfiguration(miniClusterTestingEnvConfig).build()
       )
 
-      // TODO: add support for dumping data from source
       tableEnv.createTable(
         dataGenerationInternalTableName,
         TableDescriptor
           .forConnector("datagen")
           .option("number-of-rows", size.toString)
-          .schema(tableDefinition.toFlinkSchema())
+          .schema(tableDefinition.toFlinkSchema)
           .build()
       )
-
       val tableWithLimit = tableEnv.from(dataGenerationInternalTableName)
-      val rowsList       = tableEnv.toDataStream(tableWithLimit).executeAndCollect().asScala.toList
+      val rows           = tableEnv.toDataStream(tableWithLimit).executeAndCollect(size).asScala.toList
 
-      // TODO: check if closing like this is ok, some IllegalStateExceptions get logged
       env.close()
 
-      // TODO: extract encoder/decoder to be the same for this and record parsing for test running
-      val testRecords = rowsList.map(row => {
-        val rowList    = tableDefinition.columns.map(_.columnName).map(colName => colName -> row.getField(colName))
-        val orderedMap = ListMap(rowList: _*)
-        TestRecord(rowEncoder.encode(orderedMap))
-      })
-
-      TestData(testRecords)
+      rowToTestDataConverter.rowsToTestData(rows, tableDefinition)
     }
   }
 
-  // TODO local: how to get path of jar cleaner? Through config?
+  // TODO: how to get path of jar cleaner? Through config?
   private lazy val classPathUrlsForMiniClusterTestingEnv = List(
     "components/flink-dev/flinkTable.jar"
   ).map(Path.of(_).toUri.toURL)
 
-  private lazy val flinkMiniClusterTestingEnvConfig = {
+  private lazy val miniClusterTestingEnvConfig = {
     val conf = new Configuration()
 
-    // parent-first - otherwise linkage error with 'org.apache.commons.math3.random.RandomDataGenerator'
+    // parent-first - otherwise linkage error (loader constraint violation, a different class with the same name was
+    // previously loaded by 'app') for class 'org.apache.commons.math3.random.RandomDataGenerator'
     conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 
     // without this, on Flink taskmanager level the classloader is basically empty
@@ -154,17 +139,15 @@ class TableSource(
       PipelineOptions.CLASSPATHS,
       classPathUrlsForMiniClusterTestingEnv.map(_.toString).asJava
     )
-    conf.set(DeploymentOptions.TARGET, "local")
-    // TODO local: experiment with attached
-    conf.set(DeploymentOptions.ATTACHED, java.lang.Boolean.TRUE)
     conf
   }
 
-  private lazy val rowEncoder = new BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader)
+  private lazy val rowToTestDataConverter = new RowToTestDataConverter(getClass.getClassLoader)
 }
 
 object TableSource {
   private type RECORD = java.util.Map[String, Any]
-  private val filteringInternalViewName       = "filteringView"
-  private val dataGenerationInternalTableName = "datagenTable"
+  private val filteringInternalViewName        = "filteringView"
+  private val dataGenerationInternalTableName  = "datagenTable"
+  private val miniClusterTestingEnvParallelism = 1
 }

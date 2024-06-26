@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters._
 
 final case class TableDefinition(tableName: String, typingResult: TypingResult, columns: List[ColumnDefinition]) {
 
-  def toFlinkSchema(): Schema = {
+  def toFlinkSchema: Schema = {
     val cols = columns.map(c => DataTypes.FIELD(c.columnName, c.flinkDataType)).asJava
     Schema.newBuilder().fromRowDataType(DataTypes.ROW(cols)).build()
   }

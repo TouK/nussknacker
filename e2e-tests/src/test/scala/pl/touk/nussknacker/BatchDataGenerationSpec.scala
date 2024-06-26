@@ -42,14 +42,14 @@ class BatchDataGenerationSpec
       .when()
       .request()
       .preemptiveBasicAuth("admin", "admin")
-      .jsonBody(toScenarioGraph(exampleScenario).asJson.spaces2)
+      .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
       .post("http://localhost:8080/api/testInfo/SumTransactions/generate/10")
       .Then()
       .statusCode(200)
     //  TODO: add assertion for random results
   }
 
-  private lazy val exampleScenario = ScenarioBuilder
+  private lazy val simpleBatchTableScenario = ScenarioBuilder
     .streaming("SumTransactions")
     .source("sourceId", "table", "Table" -> Expression.spel("'transactions'"))
     .emptySink("end", "dead-end")
