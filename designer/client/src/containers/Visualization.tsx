@@ -55,7 +55,10 @@ function useProcessState(refreshTime = 10000) {
     const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
     const disabled = !name || isFragment || isArchived;
 
-    useInterval(fetch, { refreshTime, disabled });
+    useInterval(fetch, {
+        refreshTime,
+        disabled,
+    });
 }
 
 function useCountsIfNeeded() {
@@ -67,7 +70,10 @@ function useCountsIfNeeded() {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
     useEffect(() => {
-        const countParams = VisualizationUrl.extractCountParams({ from, to });
+        const countParams = VisualizationUrl.extractCountParams({
+            from,
+            to,
+        });
         if (name && countParams) {
             dispatch(fetchAndDisplayProcessCounts(name, countParams.from, countParams.to, scenarioGraph));
         }
@@ -75,7 +81,9 @@ function useCountsIfNeeded() {
 }
 
 function Visualization() {
-    const { processName } = useDecodedParams<{ processName: string }>();
+    const { processName } = useDecodedParams<{
+        processName: string;
+    }>();
     const dispatch = useDispatch();
 
     const graphRef = useRef<Graph>();
@@ -101,8 +109,14 @@ function Visualization() {
 
     const getPastePosition = useCallback(() => {
         const paper = getGraphInstance()?.processGraphPaper;
-        const { x, y } = paper?.getArea()?.center() || { x: 300, y: 100 };
-        return { x: Math.floor(x), y: Math.floor(y) };
+        const { x, y } = paper?.getArea()?.center() || {
+            x: 300,
+            y: 100,
+        };
+        return {
+            x: Math.floor(x),
+            y: Math.floor(y),
+        };
     }, [getGraphInstance]);
 
     useEffect(() => {
@@ -135,16 +149,16 @@ function Visualization() {
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
+                    <SpinnerWrapper isReady={!graphNotReady}>
+                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
+                    </SpinnerWrapper>
+
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
                             <BindKeyboardShortcuts disabled={windows.length > 0} />
                             <Toolbars isReady={dataResolved} />
                         </SelectionContextProvider>
                     </GraphProvider>
-
-                    <SpinnerWrapper isReady={!graphNotReady}>
-                        {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities} />}
-                    </SpinnerWrapper>
                 </GraphPage>
             </DndProvider>
         </ErrorHandler>

@@ -1,47 +1,34 @@
-import { styled } from "@mui/material";
+import { Fade, IconButton, styled } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
-import { PANEL_WIDTH } from "../stylesheets/variables";
-import { PanelSide } from "./sidePanels/SidePanel";
+import { PanelSide } from "../actions/nk";
+import { useSidePanel } from "./sidePanels/SidePanelsContext";
 
-interface IconWrapper {
-    type: PanelSide;
-    isOpened: boolean;
-}
-interface Props {
-    isOpened: boolean;
-    onToggle: () => void;
-    type: PanelSide;
-}
-
-const IconWrapper = styled("div")<IconWrapper>(({ isOpened, type, theme }) => ({
-    position: "absolute",
-    bottom: 0,
-    fontSize: 0,
-    lineHeight: 0,
-    height: "25px",
-    width: "25px",
+const IconWrapper = styled(IconButton)(({ theme }) => ({
+    borderRadius: 0,
     transition: theme.transitions.create(["left", "right"], {
         duration: theme.transitions.duration.short,
         easing: theme.transitions.easing.easeInOut,
     }),
-    zIndex: 100,
-    cursor: "pointer",
-    color: "who",
-    [type === PanelSide.Right ? "right" : "left"]: isOpened ? PANEL_WIDTH : 0,
 }));
 
-export default function SidePanelToggleButton(props: Props) {
+type Props = {
+    type: PanelSide;
+};
+
+export function SidePanelToggleButton({ type, ...props }: Props) {
     const { t } = useTranslation();
-    const { isOpened, onToggle, type } = props;
+    const { isOpened, switchVisible, toggleCollapse } = useSidePanel(type);
     const left = type === PanelSide.Left ? isOpened : !isOpened;
     const title = type === PanelSide.Left ? t("panel.toggle.left", "toggle left panel") : t("panel.toggle.right", "toggle right panel");
 
     return (
-        <IconWrapper title={title} type={type} isOpened={isOpened} onClick={onToggle}>
-            {left ? <LeftIcon /> : <RightIcon />}
-        </IconWrapper>
+        <Fade in={switchVisible}>
+            <IconWrapper title={title} onClick={toggleCollapse} disableFocusRipple color="inherit" size="small" {...props}>
+                {left ? <LeftIcon /> : <RightIcon />}
+            </IconWrapper>
+        </Fade>
     );
 }

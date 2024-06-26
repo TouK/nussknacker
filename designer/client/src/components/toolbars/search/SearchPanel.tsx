@@ -5,14 +5,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleToolbar } from "../../../actions/nk/toolbars";
 import { useDocumentListeners } from "../../../containers/useDocumentListeners";
 import { getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
-import { useSidePanel } from "../../sidePanels/SidePanel";
 import { SearchIcon } from "../../table/SearchFilter";
 import { Focusable } from "../../themed/InputWithIcon";
 import { ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { SearchResults } from "./SearchResults";
 import { SearchInputWithIcon } from "../../themed/SearchInput";
-import { EventTrackingSelector, getEventTrackingProps, EventTrackingType, useEventTracking } from "../../../containers/event-tracking";
+import { EventTrackingSelector, EventTrackingType, getEventTrackingProps, useEventTracking } from "../../../containers/event-tracking";
+import { useTheme } from "@mui/material";
+import { useSidePanel } from "../../sidePanels/SidePanelsContext";
 
 export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const { t } = useTranslation();
@@ -23,31 +24,52 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
     const clearFilter = useCallback(() => setFilter(""), []);
 
     const searchRef = useRef<Focusable>();
-    const sidePanel = useSidePanel();
+    const { isOpened, toggleCollapse } = useSidePanel();
+
+    const theme = useTheme();
+
+    const handleEscape = useCallback(
+        (e: KeyboardEvent) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            clearFilter();
+            const target = e.composedPath().shift();
+            if (target instanceof HTMLElement) {
+                target.blur();
+            }
+        },
+        [clearFilter],
+    );
+
+    const handleSearch = useCallback(
+        (e: KeyboardEvent) => {
+            if (!e.ctrlKey && !e.metaKey) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isOpened) {
+                toggleCollapse();
+            }
+            dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
+            setTimeout(() => {
+                searchRef.current.focus();
+            }, theme.transitions.duration.enteringScreen);
+            trackEvent({
+                selector: EventTrackingSelector.FocusSearchNodeField,
+                event: EventTrackingType.Keyboard,
+            });
+        },
+        [dispatch, isOpened, toggleCollapse, props.id, theme.transitions.duration.enteringScreen, toolbarsConfigId, trackEvent],
+    );
 
     useDocumentListeners({
         keydown: (e) => {
             switch (e.key.toUpperCase()) {
                 case "ESCAPE": {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    clearFilter();
-                    const target = e.composedPath().shift();
-                    if (target instanceof HTMLElement) {
-                        target.blur();
-                    }
+                    handleEscape(e);
                     break;
                 }
                 case "F": {
-                    if (!e.ctrlKey && !e.metaKey) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!sidePanel.isOpened) {
-                        sidePanel.onToggle();
-                    }
-                    dispatch(toggleToolbar(props.id, toolbarsConfigId, false));
-                    searchRef.current.focus();
-                    trackEvent({ selector: EventTrackingSelector.FocusSearchNodeField, event: EventTrackingType.Keyboard });
+                    handleSearch(e);
                     break;
                 }
             }
