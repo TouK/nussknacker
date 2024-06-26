@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
+import cats.implicits.toShow
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
@@ -9,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @tparam T type of serialized object
   */
 trait KafkaSerializationSchemaFactory[T] extends Serializable {
-  def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
+  def create(topic: TopicName, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
 }
 
 /**
@@ -22,6 +24,6 @@ trait KafkaSerializationSchemaFactory[T] extends Serializable {
 case class FixedKafkaSerializationSchemaFactory[T](deserializationSchema: String => KafkaSerializationSchema[T])
     extends KafkaSerializationSchemaFactory[T] {
 
-  override def create(topic: String, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
-    deserializationSchema(topic)
+  override def create(topic: TopicName, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
+    deserializationSchema(topic.show)
 }

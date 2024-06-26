@@ -6,9 +6,11 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
+import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
@@ -293,7 +295,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'${topicConfig.input}'",
+        topicParamName.value         -> s"'${topicConfig.input.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode(
@@ -305,7 +307,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .emptySink(
         "end",
         "kafka",
-        topicParamName.value              -> s"'${topicConfig.output}'",
+        topicParamName.value              -> s"'${topicConfig.output.name}'",
         schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
         sinkKeyParamName.value            -> "",
         sinkRawEditorParamName.value      -> "true",
@@ -314,9 +316,9 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       )
 
     pushMessage(LongFieldV1.record, topicConfig.input)
-    kafkaClient.createTopic(topicConfig.output)
+    kafkaClient.createTopic(topicConfig.output.name)
     run(process) {
-      val message = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head
+      val message = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output.name).take(1).head
       message.timestamp() shouldBe timeToSetInProcess
       message.timestampType() shouldBe TimestampType.CREATE_TIME
     }
@@ -331,14 +333,14 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'${topicConfig.input}'",
+        topicParamName.value         -> s"'${topicConfig.input.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "10000")
       .emptySink(
         "end",
         "kafka",
-        topicParamName.value              -> s"'${topicConfig.output}'",
+        topicParamName.value              -> s"'${topicConfig.output.name}'",
         schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
         sinkKeyParamName.value            -> "",
         sinkRawEditorParamName.value      -> "true",
@@ -349,7 +351,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     // Can't be too long ago, otherwise retention could delete it
     val timePassedThroughKafka = System.currentTimeMillis() - 120000L
     pushMessage(LongFieldV1.encodeData(-1000L), topicConfig.input, timestamp = timePassedThroughKafka)
-    kafkaClient.createTopic(topicConfig.output)
+    kafkaClient.createTopic(topicConfig.output.name)
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(LongFieldV1.encodeData(timePassedThroughKafka)))
     }
@@ -380,13 +382,13 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input", key = "#input.first")
     val process     = createAvroProcess(sourceParam, sinkParam, None)
 
-    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
     pushMessage(FullNameV1.record, topicConfig.input)
-    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
     run(process) {
       val consumer = kafkaClient.createConsumer()
-      val consumed = consumer.consumeWithJson[String](topicConfig.output).take(1).head
+      val consumed = consumer.consumeWithJson[String](topicConfig.output.name).take(1).head
       consumed.key() shouldEqual FullNameV1.BaseFirst
     }
   }
@@ -397,12 +399,12 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input")
     val process     = createAvroProcess(sourceParam, sinkParam, None)
 
-    kafkaClient.createTopic(topicConfig.input, partitions = 1)
+    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
     pushMessage(FullNameV1.record, topicConfig.input)
-    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
     run(process) {
-      val result = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head
+      val result = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output.name).take(1).head
       result.key() shouldEqual null
     }
   }
@@ -424,13 +426,13 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val sinkParam   = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input")
     val process     = createAvroProcess(sourceParam, sinkParam, None)
 
-    kafkaClient.createTopic(topicConfig.input, partitions = 1)
-    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
+    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
     import io.circe.syntax._
     val serializedKey   = SimpleJsonRecord("lorem", "ipsum").asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
-    val serializedValue = valueSerializer.serialize(topicConfig.input, Product.record)
-    kafkaClient.sendRawMessage(topicConfig.input, serializedKey, serializedValue).futureValue
+    val serializedValue = valueSerializer.serialize(topicConfig.input.name, Product.record)
+    kafkaClient.sendRawMessage(topicConfig.input.name, serializedKey, serializedValue).futureValue
 
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(Product.record))
@@ -442,7 +444,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     // register the same value schema for input and output topic
     val topicConfig = createAndRegisterTopicConfig("kafka-generic-source-with-key-schema", Product.schema)
     // register key schema for input topic
-    registerSchema(topicConfig.input, FullNameV1.schema, isKey = true)
+    registerSchema(topicConfig.input.toUncategorizedTopicName, FullNameV1.schema, isKey = true)
 
     // create process
     val sourceParam = SourceAvroParam.forUniversalWithKeySchemaSupport(topicConfig, LatestSchemaVersion)
@@ -450,9 +452,9 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val filterParam = Some(s"#inputMeta.key.first == '${FullNameV1.BaseFirst}'")
     val process     = createAvroProcess(sourceParam, sinkParam, filterParam)
 
-    kafkaClient.createTopic(topicConfig.input, partitions = 1)
-    pushMessageWithKey(FullNameV1.record, Product.record, topicConfig.input)
-    kafkaClient.createTopic(topicConfig.output, partitions = 1)
+    kafkaClient.createTopic(topicConfig.input.name, partitions = 1)
+    pushMessageWithKey(FullNameV1.record, Product.record, topicConfig.input.name)
+    kafkaClient.createTopic(topicConfig.output.name, partitions = 1)
 
     run(process) {
       consumeAndVerifyMessages(topicConfig.output, List(Product.record))
@@ -463,9 +465,18 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }
   }
 
-  private def verifyInputMeta[T](key: T, topic: String, partition: Int, offset: Long): Assertion = {
+  private def verifyInputMeta[T](key: T, topic: TopicName.OfSource, partition: Int, offset: Long): Assertion = {
     val expectedInputMeta =
-      InputMeta[T](key, topic, partition, offset, 0L, TimestampType.CREATE_TIME, Map.empty[String, String].asJava, 0)
+      InputMeta[T](
+        key,
+        topic.name,
+        partition,
+        offset,
+        0L,
+        TimestampType.CREATE_TIME,
+        Map.empty[String, String].asJava,
+        0
+      )
 
     eventually {
       val results = KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder.results.map(

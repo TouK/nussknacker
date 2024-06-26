@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.{ProcessingMode, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -13,10 +13,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
@@ -51,7 +52,7 @@ class UniversalKafkaSinkFactory(
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
-) extends KafkaUniversalComponentTransformer[Sink]
+) extends KafkaUniversalComponentTransformer[Sink, TopicName.OfSink]
     with SinkFactory {
 
   override type State = TransformationState
@@ -78,6 +79,9 @@ class UniversalKafkaSinkFactory(
     sinkRawEditorParamName,
     sinkValidationModeParamName
   )
+
+  override protected def prepareTopic(topicString: String): PreparedKafkaTopic[TopicName.OfSink] =
+    KafkaComponentsUtils.prepareKafkaTopic(TopicName.OfSink(topicString), modelDependencies)
 
   protected def rawEditorParameterStep(
       context: ValidationContext

@@ -70,7 +70,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
     support.formatMessage(data)
   }
 
-  protected def readRecordKeyMessage(schemaOpt: Option[ParsedSchema], topic: String, jsonObj: Json): Array[Byte] = {
+  protected def readRecordKeyMessage(
+      schemaOpt: Option[ParsedSchema],
+      topic: UncategorizedTopicName,
+      jsonObj: Json
+  ): Array[Byte] = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.
     val support = schemaOpt
       .map(_.schemaType())
@@ -79,7 +83,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
     support.readKeyMessage(topic, schemaOpt, jsonObj)
   }
 
-  protected def readValueMessage(schemaOpt: Option[ParsedSchema], topic: String, jsonObj: Json): Array[Byte] = {
+  protected def readValueMessage(
+      schemaOpt: Option[ParsedSchema],
+      topic: UncategorizedTopicName,
+      jsonObj: Json
+  ): Array[Byte] = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.
     val support = schemaOpt
       .map(_.schemaType())

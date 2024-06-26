@@ -20,6 +20,7 @@ import org.apache.flink.util.SerializedValue
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.TopicPartition
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
@@ -44,7 +45,7 @@ import scala.jdk.CollectionConverters._
 object DelayedFlinkKafkaConsumer {
 
   def apply[T](
-      topics: List[PreparedKafkaTopic],
+      topics: List[PreparedKafkaTopic[TopicName.OfSource]],
       schema: KafkaDeserializationSchema[T],
       config: KafkaConfig,
       consumerGroupId: String,
@@ -89,7 +90,7 @@ object DelayedFlinkKafkaConsumer {
 }
 
 class DelayedFlinkKafkaConsumer[T](
-    topics: List[PreparedKafkaTopic],
+    topics: List[PreparedKafkaTopic[TopicName.OfSource]],
     schema: KafkaDeserializationSchema[T],
     props: Properties,
     delayCalculator: DelayCalculator,
@@ -98,7 +99,7 @@ class DelayedFlinkKafkaConsumer[T](
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: NodeId
 ) extends FlinkKafkaConsumerHandlingExceptions[T](
-      topics.map(_.prepared).asJava,
+      topics.map(_.prepared.name).asJava,
       wrapToFlinkDeserializationSchema(schema),
       props,
       exceptionHandlerPreparer,

@@ -10,7 +10,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, UncategorizedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
@@ -66,7 +66,7 @@ class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with Option
   }
 
   test("json record formatting should work with specified schema id") {
-    val topic = "topic-with-json-schema"
+    val topic = UncategorizedTopicName("topic-with-json-schema")
     val jsonSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
@@ -82,7 +82,7 @@ class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with Option
     )
     val valueJsonBytes = obj("foo" -> fromString("bar")).noSpaces.getBytes(StandardCharsets.UTF_8)
     val record = new ConsumerRecord[Array[Byte], Array[Byte]](
-      topic,
+      topic.name,
       -1,
       -1L,
       -1L,

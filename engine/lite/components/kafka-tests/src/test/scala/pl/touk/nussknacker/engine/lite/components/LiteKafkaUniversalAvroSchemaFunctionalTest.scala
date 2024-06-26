@@ -13,8 +13,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
@@ -1165,8 +1167,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, Any]] = {
     val avroScenario   = createScenario(config)
-    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)
-    runner.registerAvroSchema(config.sinkTopic, config.sinkSchema)
+    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic.toUncategorizedTopicName, config.sourceSchema)
+    runner.registerAvroSchema(config.sinkTopic.toUncategorizedTopicName, config.sinkSchema)
 
     val input = KafkaAvroConsumerRecord(config.sourceTopic, config.inputData, sourceSchemaId)
     runner.runWithAvroData(avroScenario, List(input))
@@ -1178,13 +1180,13 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value         -> s"'${config.sourceTopic}'",
+        topicParamName.value         -> s"'${config.sourceTopic.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        topicParamName.value              -> s"'${config.sinkTopic}'",
+        topicParamName.value              -> s"'${config.sinkTopic.name}'",
         schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
         sinkKeyParamName.value            -> "",
         sinkValueParamName.value          -> s"${config.sinkDefinition}",
@@ -1193,7 +1195,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       )
 
   case class ScenarioConfig(
-      topic: String,
+      topicPrefix: String,
       inputData: Any,
       sourceSchema: Schema,
       sinkSchema: Schema,
@@ -1201,8 +1203,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       validationMode: Option[ValidationMode]
   ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic                = s"$topic-input"
-    lazy val sinkTopic                  = s"$topic-output"
+    lazy val sourceTopic                = TopicName.OfSource(s"$topicPrefix-input")
+    lazy val sinkTopic                  = TopicName.OfSink(s"$topicPrefix-output")
   }
 
   // RecordValid -> valid success record with base field

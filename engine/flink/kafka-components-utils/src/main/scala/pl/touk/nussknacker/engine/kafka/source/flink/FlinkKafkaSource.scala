@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
@@ -14,7 +13,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport, TopicName}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -29,6 +28,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
+import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{
   FlinkDeserializationSchemaWrapper,
@@ -37,12 +37,11 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
-import java.time.Duration
 import java.util.Properties
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
-    preparedTopics: List[PreparedKafkaTopic],
+    preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
     passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
@@ -71,7 +70,7 @@ class FlinkKafkaSource[T](
     )
   }
 
-  protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
+  protected lazy val topics: List[TopicName.OfSource] = preparedTopics.map(_.prepared)
 
   override val typeInformation: TypeInformation[T] = {
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
@@ -92,7 +91,7 @@ class FlinkKafkaSource[T](
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
     new FlinkKafkaConsumerHandlingExceptions[T](
-      topics.asJava,
+      topics.map(_.name).asJava,
       wrapToFlinkDeserializationSchema(deserializationSchema),
       KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)),
       flinkNodeContext.exceptionHandlerPreparer,
@@ -105,7 +104,7 @@ class FlinkKafkaSource[T](
   override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) => {
     // TODO: we assume parsing for all topics is the same
     val topic = topics.head
-    deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
+    deserializationSchema.deserialize(formatter.parseRecord(topic.toUncategorizedTopicName, testRecord))
   }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
@@ -128,7 +127,12 @@ class FlinkKafkaSource[T](
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): T = {
     val unflattenedParams = TestingParametersSupport.unflattenParameters(params)
-    deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(unflattenedParams)))
+    deserializeTestData(
+      formatter.parseRecord(
+        topics.head.toUncategorizedTopicName,
+        testParametersInfo.createTestRecord(unflattenedParams)
+      )
+    )
   }
 
   private def prepareConsumerGroupId(nodeContext: FlinkCustomNodeContext): String = overriddenConsumerGroup match {
@@ -174,7 +178,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
 }
 
 class FlinkConsumerRecordBasedKafkaSource[K, V](
-    preparedTopics: List[PreparedKafkaTopic],
+    preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
     kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],

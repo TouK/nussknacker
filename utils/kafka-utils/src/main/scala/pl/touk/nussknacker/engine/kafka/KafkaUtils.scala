@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
+import cats.implicits.toShow
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
@@ -7,6 +8,7 @@ import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaC
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.time
@@ -47,10 +49,10 @@ trait KafkaUtils extends LazyLogging {
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
-  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: String, consumerGroupId: String): Unit = {
+  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: TopicName, consumerGroupId: String): Unit = {
     val setToLatestOffset = config.forceLatestRead.contains(true)
     if (setToLatestOffset) {
-      KafkaUtils.setOffsetToLatest(topic, consumerGroupId, config)
+      KafkaUtils.setOffsetToLatest(topic.show, consumerGroupId, config)
     }
   }
 
@@ -94,16 +96,16 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def readLastMessages(
-      topic: String,
+      topic: TopicName,
       size: Int,
       config: KafkaConfig
   ): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     doWithTempKafkaConsumer(config, None) { consumer =>
       try {
         consumer
-          .partitionsFor(topic)
+          .partitionsFor(topic.show)
           .asScala
-          .map(no => new TopicPartition(topic, no.partition()))
+          .map(no => new TopicPartition(topic.show, no.partition()))
           .view
           .flatMap { tp =>
             val partitions = Collections.singletonList(tp)
@@ -210,4 +212,4 @@ trait KafkaUtils extends LazyLogging {
 
 }
 
-case class PreparedKafkaTopic(original: String, prepared: String)
+case class PreparedKafkaTopic[T <: TopicName](original: T, prepared: T)

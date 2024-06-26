@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import org.apache.flink.api.common.serialization.DeserializationSchema
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 /**
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 case class FixedKafkaDeserializationSchemaFactory[T](deserializationSchema: KafkaDeserializationSchema[T])
     extends KafkaDeserializationSchemaFactory[T] {
 
-  override def create(topics: List[String], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] =
+  override def create(topics: List[TopicName.OfSource], kafkaConfig: KafkaConfig): KafkaDeserializationSchema[T] =
     deserializationSchema
 }
 

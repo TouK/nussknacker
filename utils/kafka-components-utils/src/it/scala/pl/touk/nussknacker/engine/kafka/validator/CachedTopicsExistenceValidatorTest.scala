@@ -6,6 +6,7 @@ import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka._
 
 import java.util.Collections
@@ -20,12 +21,14 @@ class CachedTopicsExistenceValidatorTest extends AnyFunSuite with ForAllTestCont
   test("should validate existing topic") {
     val topic     = createTopic("test.topic.1")
     val validator = new CachedTopicsExistenceValidator(kafkaConfig)
-    validator.validateTopic(topic.name()) shouldBe Valid(topic.name())
+    validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
   test("should validate not existing topic") {
     val validator = new CachedTopicsExistenceValidator(kafkaConfig)
-    validator.validateTopic("not.existing") shouldBe Invalid(TopicExistenceValidationException("not.existing" :: Nil))
+    validator.validateTopic(notExistingTopic) shouldBe Invalid(
+      TopicExistenceValidationException(notExistingTopic :: Nil)
+    )
   }
 
   test("should not validate not existing topic when validation disabled") {
@@ -35,33 +38,38 @@ class CachedTopicsExistenceValidatorTest extends AnyFunSuite with ForAllTestCont
         topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
       )
     )
-    validator.validateTopic("not.existing") shouldBe Valid("not.existing")
+    validator.validateTopic(notExistingTopic) shouldBe Valid(notExistingTopic)
   }
 
   test("should fetch topics every time when not valid using cache") {
-    val topicName = "test.topic.2"
-    val validator = new CachedTopicsExistenceValidator(kafkaConfig)
-    validator.validateTopic(topicName) shouldBe Invalid(TopicExistenceValidationException(topicName :: Nil))
+    val topicName           = "test.topic.2"
+    val notExistingYetTopic = TopicName.OfSource(topicName)
+    val validator           = new CachedTopicsExistenceValidator(kafkaConfig)
+    validator.validateTopic(notExistingYetTopic) shouldBe Invalid(
+      TopicExistenceValidationException(notExistingYetTopic :: Nil)
+    )
 
-    createTopic(topicName)
+    val topic = createTopic(topicName)
 
-    validator.validateTopic(topicName) shouldBe Valid("test.topic.2")
+    validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
   test("should use cache when validating") {
     val topic     = createTopic("test.topic.3")
     val validator = new CachedTopicsExistenceValidator(kafkaConfig)
-    validator.validateTopic(topic.name()) shouldBe Valid(topic.name())
+    validator.validateTopic(topic) shouldBe Valid(topic)
     container.stop()
-    validator.validateTopic(topic.name()) shouldBe Valid(topic.name())
+    validator.validateTopic(topic) shouldBe Valid(topic)
   }
+
+  private lazy val notExistingTopic = TopicName.OfSource("not.existing")
 
   private def createTopic(name: String) = {
     val topic = new NewTopic(name, Collections.emptyMap())
     KafkaUtils.usingAdminClient(kafkaConfig) {
       _.createTopics(Collections.singletonList[NewTopic](topic))
     }
-    topic
+    TopicName.OfSource(topic.name())
   }
 
   private def kafkaConfig = KafkaConfig(

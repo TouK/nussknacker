@@ -7,7 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source, TopicName}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
@@ -26,8 +26,6 @@ import pl.touk.nussknacker.engine.kafka.source.flink.{
   FlinkKafkaSourceImplFactory
 }
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
-
-import java.time.Duration
 
 /**
   * `createDelayedKafkaSourceWithFixedDelay` is used to create KafkaSource with specified fixed delay (eg 2 hours).
@@ -48,7 +46,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
-      preparedTopics: List[PreparedKafkaTopic],
+      preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
@@ -91,7 +89,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
   }
 
   protected def createDelayedKafkaSourceWithFixedDelay(
-      preparedTopics: List[PreparedKafkaTopic],
+      preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
@@ -116,7 +114,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
   }
 
   protected def createDelayedKafkaSource(
-      preparedTopics: List[PreparedKafkaTopic],
+      preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],

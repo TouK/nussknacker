@@ -3,10 +3,12 @@ package pl.touk.nussknacker.engine.lite.components
 import org.everit.json.schema.{CombinedSchema, NullSchema, NumberSchema, Schema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider._
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner.LiteKafkaTestScenarioRunnerExt
@@ -23,11 +25,11 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
   private val runner = TestScenarioRunner.kafkaLiteBased().build()
 
   test("filled record after empty record with schema using refs") {
-    val inputTopic  = "schema-using-refs-input"
-    val outputTopic = "schema-using-refs-output"
-    runner.registerJsonSchema(inputTopic, RecordWithRef.jsonSchemaUsingRefs)
+    val inputTopic  = TopicName.OfSource("schema-using-refs-input")
+    val outputTopic = TopicName.OfSink("schema-using-refs-output")
+    runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, RecordWithRef.jsonSchemaUsingRefs)
     runner.registerJsonSchema(
-      outputTopic,
+      outputTopic.toUncategorizedTopicName,
       CombinedSchema.anyOf(List(NumberSchema.builder().build(), NullSchema.INSTANCE).asJava).build()
     )
     val scenario = createScenario(inputTopic, outputTopic)
@@ -42,11 +44,11 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
   }
 
   test("filled record after empty record with schema with inlined refs") {
-    val inputTopic  = "schema-with-inlined-refs-input"
-    val outputTopic = "schema-with-inlined-refs-output"
-    runner.registerJsonSchema(inputTopic, RecordWithRef.jsonSchemaWithInlinedRefs)
+    val inputTopic  = TopicName.OfSource("schema-with-inlined-refs-input")
+    val outputTopic = TopicName.OfSink("schema-with-inlined-refs-output")
+    runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, RecordWithRef.jsonSchemaWithInlinedRefs)
     runner.registerJsonSchema(
-      outputTopic,
+      outputTopic.toUncategorizedTopicName,
       CombinedSchema.anyOf(List(NumberSchema.builder().build(), NullSchema.INSTANCE).asJava).build()
     )
     val scenario = createScenario(inputTopic, outputTopic)
@@ -62,7 +64,7 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
     result.successes.map(_.value()) shouldEqual List("null", RecordWithRef.exampleValue.toString)
   }
 
-  private def createScenario(inputTopic: String, outputTopic: String): CanonicalProcess = {
+  private def createScenario(inputTopic: TopicName.OfSource, outputTopic: TopicName.OfSink): CanonicalProcess = {
     import spel.Implicits._
     ScenarioBuilder
       .streaming(classOf[KafkaJsonRefFunctionalSpec].getSimpleName)
@@ -70,13 +72,13 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
+        topicParamName.value         -> s"'${inputTopic.name}'",
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value              -> s"'$outputTopic'",
+        topicParamName.value              -> s"'${outputTopic.name}'",
         schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
         sinkKeyParamName.value            -> "",
         sinkValueParamName.value          -> s"#input.field",

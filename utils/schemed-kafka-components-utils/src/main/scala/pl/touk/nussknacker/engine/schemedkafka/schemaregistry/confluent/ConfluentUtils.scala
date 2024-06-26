@@ -10,6 +10,7 @@ import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
@@ -26,14 +27,14 @@ object ConfluentUtils extends LazyLogging {
 
   final val HeaderSize = 1 + IdSize // magic byte + schemaId (4 bytes int)
 
-  def topicSubject(topic: String, isKey: Boolean): String =
+  def topicSubject(topic: UncategorizedTopicName, isKey: Boolean): String =
     if (isKey) keySubject(topic) else valueSubject(topic)
 
-  def keySubject(topic: String): String =
-    topic + "-key"
+  def keySubject(topic: UncategorizedTopicName): String =
+    topic.name + "-key"
 
-  def valueSubject(topic: String): String =
-    topic + "-value"
+  def valueSubject(topic: UncategorizedTopicName): String =
+    topic.name + "-value"
 
   def topicFromSubject: PartialFunction[String, String] = { case ValueSubjectPattern(value) =>
     value

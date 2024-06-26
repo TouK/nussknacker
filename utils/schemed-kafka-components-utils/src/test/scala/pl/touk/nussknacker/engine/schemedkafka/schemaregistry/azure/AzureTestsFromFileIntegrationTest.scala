@@ -12,7 +12,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UncategorizedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
@@ -45,7 +45,7 @@ class AzureTestsFromFileIntegrationTest
     val factory   = serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](kafkaConfig, None, None)
     val formatter = serdeProvider.recordFormatterFactory.create[String, GenericRecord](kafkaConfig, factory)
 
-    val topic         = "avro-testfromfile"
+    val topic         = UncategorizedTopicName("avro-testfromfile")
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
     val schemaV1      = createRecordSchema(topic, aFieldOnly)
     val schemaV1Props = schemaRegistryClient.registerSchemaVersionIfNotExists(schemaV1)
@@ -58,7 +58,7 @@ class AzureTestsFromFileIntegrationTest
     val cr       = wrapWithConsumerRecord(topic, key, schemaId, AvroUtils.serializeContainerToBytesArray(value))
 
     val testData = formatter.prepareGeneratedTestData(List(cr))
-    testData.testRecords should have size (1)
+    testData.testRecords should have size 1
     val testRecord = testData.testRecords.head
 
     testRecord.json.hcursor.downField("keySchemaId").focus.value.isNull shouldBe true
@@ -74,7 +74,7 @@ class AzureTestsFromFileIntegrationTest
   }
 
   private def createRecordSchema(
-      topicName: String,
+      topicName: UncategorizedTopicName,
       assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]
   ) = {
     val fields = SchemaBuilder
@@ -84,11 +84,16 @@ class AzureTestsFromFileIntegrationTest
     new AvroSchema(assemblyFields(fields).endRecord())
   }
 
-  private def wrapWithConsumerRecord(topic: String, key: String, schemaId: SchemaId, serializedValue: Array[Byte]) = {
+  private def wrapWithConsumerRecord(
+      topic: UncategorizedTopicName,
+      key: String,
+      schemaId: SchemaId,
+      serializedValue: Array[Byte]
+  ) = {
     val keyBytes     = key.getBytes(StandardCharsets.UTF_8)
     val inputHeaders = new RecordHeaders(Array[Header](AzureUtils.avroContentTypeHeader(schemaId)))
     new ConsumerRecord(
-      topic,
+      topic.name,
       0,
       0,
       0,

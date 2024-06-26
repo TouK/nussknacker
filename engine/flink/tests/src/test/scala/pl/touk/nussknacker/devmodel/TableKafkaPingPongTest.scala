@@ -157,7 +157,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -192,7 +192,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -223,7 +223,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -236,13 +236,15 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
 
 object TestData {
 
-  val simpleTypesSchema: JsonSchema = new JsonSchema("""{
-                                                       |  "type": "object",
-                                                       |  "properties": {
-                                                       |    "someInt" : { "type": "integer" },
-                                                       |    "someString" : { "type": "string" }
-                                                       |  }
-                                                       |}
-                                                       |""".stripMargin)
+  val simpleTypesSchema: JsonSchema = new JsonSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "someInt" : { "type": "integer" },
+      |    "someString" : { "type": "string" }
+      |  }
+      |}
+      |""".stripMargin
+  )
 
 }

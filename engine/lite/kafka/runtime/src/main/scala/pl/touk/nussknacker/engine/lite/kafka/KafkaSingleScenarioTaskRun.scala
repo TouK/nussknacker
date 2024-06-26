@@ -20,6 +20,7 @@ import org.apache.kafka.common.errors.{
 }
 import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
@@ -66,7 +67,7 @@ class KafkaSingleScenarioTaskRun(
   // TODO: consider more elastic extractor definition (e.g. via configuration, as it is in flink executor)
   protected val extractor: WithExceptionExtractor = new DefaultWithExceptionExtractor
 
-  private val sourceToTopic: Map[String, Map[SourceId, LiteKafkaSource]] = interpreter.sources
+  private val sourceToTopic: Map[TopicName.OfSource, Map[SourceId, LiteKafkaSource]] = interpreter.sources
     .flatMap {
       case (sourceId, kafkaSource: LiteKafkaSource) =>
         kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource))
@@ -81,7 +82,7 @@ class KafkaSingleScenarioTaskRun(
 
     producer = prepareProducer
     consumer = prepareConsumer
-    consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
+    consumer.subscribe(sourceToTopic.keys.map(_.name).toSet.asJavaCollection)
 
     registerMetrics()
   }
@@ -140,7 +141,7 @@ class KafkaSingleScenarioTaskRun(
       records: ConsumerRecords[Array[Byte], Array[Byte]]
   ): List[(SourceId, ConsumerRecord[Array[Byte], Array[Byte]])] = {
     sourceToTopic.toList.flatMap { case (topic, sourcesSubscribedOnTopic) =>
-      val forTopic = records.records(topic).asScala.toList
+      val forTopic = records.records(topic.name).asScala.toList
       // TODO: try to handle source metrics in more generic way?
       sourcesSubscribedOnTopic.keys.foreach(sourceId =>
         forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp()))

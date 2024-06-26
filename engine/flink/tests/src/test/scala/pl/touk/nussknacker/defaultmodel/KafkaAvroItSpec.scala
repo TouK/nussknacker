@@ -2,6 +2,7 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericData
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.schemedkafka._
@@ -44,7 +45,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input.name}'",
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
@@ -54,7 +55,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
         KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
         KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output.name}'",
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${validationMode.name}'"
       )
@@ -66,7 +67,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input.name}'",
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(versionOption)
       )
       .emptySink(
@@ -75,7 +76,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
         KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true",
         KafkaUniversalComponentTransformer.sinkValueParamName.value     -> s"{first: #input.first, last: #input.last}",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.output.name}'",
         KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
         KafkaUniversalComponentTransformer.schemaVersionParamName.value      -> "'1'"
       )
@@ -89,9 +90,12 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
     run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val processed = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head
+      val processed = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output.name).take(1).head
       processed.timestamp shouldBe timeAgo
-      valueDeserializer.deserialize(topicConfig.output, processed.value()) shouldEqual givenMatchingAvroObjConvertedToV2
+      valueDeserializer.deserialize(
+        topicConfig.output.name,
+        processed.value()
+      ) shouldEqual givenMatchingAvroObjConvertedToV2
     }
   }
 
@@ -147,10 +151,10 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     }
   }
 
-  private def consumeOneAvroMessage(topic: String) =
+  private def consumeOneAvroMessage(topic: TopicName.OfSink) =
     valueDeserializer.deserialize(
-      topic,
-      kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(1).head.value()
+      topic.name,
+      kafkaClient.createConsumer().consumeWithConsumerRecord(topic.name).take(1).head.value()
     )
 
 }

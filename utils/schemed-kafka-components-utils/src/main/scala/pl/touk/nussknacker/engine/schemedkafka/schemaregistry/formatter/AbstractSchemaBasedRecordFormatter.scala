@@ -6,7 +6,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, UncategorizedTopicName, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaId,
   SchemaIdFromMessageExtractor,
@@ -85,7 +85,10 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
     * Step 2: Create key and value json-to-record interpreter based on schema id's provided in json.
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
-  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(
+      topic: UncategorizedTopicName,
+      testRecord: TestRecord
+  ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val record = decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
 
     def serializeKeyValue(keyOpt: Option[Json], value: Json): (Array[Byte], Array[Byte]) = {
@@ -107,12 +110,20 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
       (keyBytes, valueBytes)
     }
 
-    record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
+    record.consumerRecord.toKafkaConsumerRecord(topic.name, serializeKeyValue)
   }
 
-  protected def readRecordKeyMessage(schemaOpt: Option[ParsedSchema], topic: String, jsonObj: Json): Array[Byte]
+  protected def readRecordKeyMessage(
+      schemaOpt: Option[ParsedSchema],
+      topic: UncategorizedTopicName,
+      jsonObj: Json
+  ): Array[Byte]
 
-  protected def readValueMessage(schemaOpt: Option[ParsedSchema], topic: String, jsonObj: Json): Array[Byte]
+  protected def readValueMessage(
+      schemaOpt: Option[ParsedSchema],
+      topic: UncategorizedTopicName,
+      jsonObj: Json
+  ): Array[Byte]
 
 }
 

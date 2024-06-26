@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, UncategorizedTopicName}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -51,14 +51,17 @@ class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
     * Step 2: Use provided K,V Encoders to create key-value-to-bytes interpreter.
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
-  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(
+      topic: UncategorizedTopicName,
+      testRecord: TestRecord
+  ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] =
       deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
     val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
     def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = {
       (keyOpt.map(serialize[K]).orNull, serialize[V](value))
     }
-    serializableConsumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
+    serializableConsumerRecord.toKafkaConsumerRecord(topic.name, serializeKeyValue)
   }
 
   private def serialize[T: Encoder](data: T): Array[Byte] = {

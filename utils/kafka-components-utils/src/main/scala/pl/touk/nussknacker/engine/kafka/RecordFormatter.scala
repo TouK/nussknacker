@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator, TopicName}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.util.ListUtil
 
@@ -18,7 +18,7 @@ trait RecordFormatter extends Serializable {
 
   protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord
 
-  def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
+  def parseRecord(topic: UncategorizedTopicName, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
 
   def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
     val testRecords = records.map { consumerRecord =>
@@ -28,7 +28,7 @@ trait RecordFormatter extends Serializable {
     TestData(testRecords)
   }
 
-  def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): TestData = {
+  def generateTestData(topics: List[TopicName.OfSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
     val merged             = ListUtil.mergeLists(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
@@ -55,10 +55,13 @@ object BasicRecordFormatter extends RecordFormatter {
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
     TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
 
-  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(
+      topic: UncategorizedTopicName,
+      testRecord: TestRecord
+  ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
     new ConsumerRecord[Array[Byte], Array[Byte]](
-      topic,
+      topic.name,
       0,
       0L,
       Array[Byte](),
@@ -72,7 +75,7 @@ trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Sou
 
   protected def kafkaConfig: KafkaConfig
 
-  protected def topics: List[String]
+  protected def topics: List[TopicName.OfSource]
 
   protected def formatter: RecordFormatter
 

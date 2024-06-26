@@ -4,7 +4,13 @@ import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.kafka.{
+  KafkaConfig,
+  RecordFormatter,
+  RecordFormatterFactory,
+  UncategorizedTopicName,
+  serialization
+}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedSerializerFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
@@ -68,7 +74,7 @@ class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
 
   override protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: String,
+      topic: UncategorizedTopicName,
       jsonObj: Json
   ): Array[Byte] = {
     val avroSchema = AvroUtils.extractSchema(
@@ -79,7 +85,7 @@ class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
 
   override protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: String,
+      topic: UncategorizedTopicName,
       jsonObj: Json
   ): Array[Byte] = {
     val avroSchema = AvroUtils.extractSchema(
