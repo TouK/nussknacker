@@ -6,7 +6,11 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
-import pl.touk.nussknacker.engine.management.periodic.{CronSchedulePropertyExtractor, PeriodicDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.management.periodic.{
+  CronSchedulePropertyExtractor,
+  PeriodicDeploymentManagerProvider,
+  WithRunNowPeriodicCustomActionsProviderFactory
+}
 import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.{
   BaseModelData,
@@ -26,7 +30,10 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
     // TODO: make possible to use PeriodicDeploymentManagerProvider with non-flink DMs like embedded or lite-k8s
-    new PeriodicDeploymentManagerProvider(new FlinkStreamingDeploymentManagerProvider())
+    new PeriodicDeploymentManagerProvider(
+      delegate = new FlinkStreamingDeploymentManagerProvider(),
+      customActionsProviderFactory = new WithRunNowPeriodicCustomActionsProviderFactory
+    )
       .createDeploymentManager(modelData, dependencies, deploymentConfig, scenarioStateCacheTTL)
   }
 
