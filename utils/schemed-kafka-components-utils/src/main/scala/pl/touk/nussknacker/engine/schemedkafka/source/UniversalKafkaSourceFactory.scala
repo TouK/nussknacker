@@ -52,7 +52,7 @@ class UniversalKafkaSourceFactory(
 
   override type State = UniversalKafkaSourceFactoryState
 
-  override protected implicit lazy val topicValidationTypeEvidence: TopicValidationType[TopicName.ForSource] =
+  override protected implicit def topicValidationTypeEvidence: TopicValidationType[TopicName.ForSource] =
     implicitly[TopicValidationType[TopicName.ForSource]]
 
   override def typesToExtract: List[TypedClass] =

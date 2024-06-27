@@ -57,7 +57,7 @@ class UniversalKafkaSinkFactory(
 
   override type State = TransformationState
 
-  override protected implicit lazy val topicValidationTypeEvidence: TopicValidationType[TopicName.ForSink] =
+  override protected implicit def topicValidationTypeEvidence: TopicValidationType[TopicName.ForSink] =
     implicitly[TopicValidationType[TopicName.ForSink]]
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
