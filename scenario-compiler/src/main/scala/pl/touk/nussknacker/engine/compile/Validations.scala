@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.expression.parse.{TypedExpression, TypedExpres
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-import scala.jdk.CollectionConverters.MapHasAsJava
-
 object Validations {
 
   import cats.data.ValidatedNel
