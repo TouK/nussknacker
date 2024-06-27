@@ -21,8 +21,6 @@ trait WithPostgresqlDB {
     container.container.setPortBindings(List("5432:5432").asJava)
   }
 
-  val dbName: String = UUID.randomUUID().toString
-
   private val driverClassName = "org.postgresql.Driver"
   private val username        = container.username
   private val password        = container.password
