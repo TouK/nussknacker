@@ -1,20 +1,14 @@
 package pl.touk.nussknacker.sql.service
 
 import org.scalatest.BeforeAndAfterEach
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.{Context, Params}
-import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
 import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
 
-import java.sql.Connection
-import scala.concurrent.Await
-
-class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTest with BeforeAndAfterEach {
-
-  import scala.concurrent.duration._
-  import scala.jdk.CollectionConverters._
+class DatabaseQueryEnricherPostgresqlTest
+    extends BasePostgresqlQueryEnricherTest
+    with DatabaseQueryEnricherQueryWithEnricher
+    with BeforeAndAfterEach {
 
   override val service =
     new DatabaseQueryEnricher(postgresqlDbPoolConfig, new MetaDataProviderFactory().create(postgresqlDbPoolConfig))
@@ -34,63 +28,6 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
       try ddlStatement.execute()
       finally ddlStatement.close()
     }
-  }
-
-  def queryWithEnricher(
-      query: String,
-      parameters: Map[String, AnyRef],
-      connection: Connection,
-      databaseQueryEnricher: DatabaseQueryEnricher,
-      expectedDisplayType: String
-  ): List[TypedMap] = {
-    val st   = connection.prepareStatement(query)
-    val meta = st.getMetaData
-    val state = DatabaseQueryEnricher.TransformationState(
-      query = query,
-      argsCount = 1,
-      tableDef = TableDefinition(meta),
-      strategy = ResultSetStrategy
-    )
-    st.close()
-    val implementation = databaseQueryEnricher.implementation(
-      params = Params(
-        parameters.map { case (k, v) => (ParameterName(k), v) }
-          + (DatabaseQueryEnricher.cacheTTLParamName -> null)
-      ),
-      dependencies = Nil,
-      finalState = Some(state)
-    )
-    returnType(databaseQueryEnricher, state).display shouldBe expectedDisplayType
-    val resultFuture = implementation.invoke(Context.withInitialId)
-    Await.result(resultFuture, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-  }
-
-  def updateWithEnricher(
-      query: String,
-      connection: Connection,
-      parameters: Map[String, AnyRef],
-      databaseQueryEnricher: DatabaseQueryEnricher
-  ): Unit = {
-    val st = connection.prepareStatement(query)
-    st.close()
-    val state = DatabaseQueryEnricher.TransformationState(
-      query = query,
-      argsCount = 1,
-      tableDef = TableDefinition(Nil),
-      strategy = UpdateResultStrategy
-    )
-    val implementation = databaseQueryEnricher.implementation(
-      params = Params(
-        parameters.map { case (k, v) => (ParameterName(k), v) }
-          + (DatabaseQueryEnricher.cacheTTLParamName -> null)
-      ),
-      dependencies = Nil,
-      finalState = Some(state)
-    )
-    returnType(service, state).display shouldBe "Integer"
-    val resultFuture = implementation.invoke(Context.withInitialId)
-    val result       = Await.result(resultFuture, 5 seconds).asInstanceOf[Integer]
-    result shouldBe 1
   }
 
   test("DatabaseQueryEnricherPostgresqlTest#implementation without cache") {
