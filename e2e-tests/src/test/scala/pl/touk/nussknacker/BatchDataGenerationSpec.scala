@@ -53,7 +53,7 @@ class BatchDataGenerationSpec
       .asString()
 
     val firstLine  = testResultContent.split('\n').head
-    val testRecord = parse(firstLine).getOrElse(fail).asObject.get.toMap("record").asObject.get.toMap
+    val testRecord = parse(firstLine).getOrElse(fail()).asObject.get.toMap("record").asObject.get.toMap
 
     testRecord("client_id").isString shouldBe true
     testRecord("date").isString shouldBe true
