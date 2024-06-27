@@ -9,11 +9,10 @@ import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.spel
 
 class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val namespaceName: String            = "ns"
   private val inputTopic: String               = "input"
@@ -53,17 +52,17 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
       .source(
         sourceId,
         "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$inputTopic'",
-        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        KafkaUniversalComponentTransformer.topicParamName.value -> s"'$inputTopic'".spel,
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         "output",
         "kafka",
-        KafkaUniversalComponentTransformer.sinkKeyParamName.value       -> "",
-        KafkaUniversalComponentTransformer.sinkValueParamName.value     -> "#input",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$outputTopic'",
-        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true",
+        KafkaUniversalComponentTransformer.sinkKeyParamName.value   -> "".spel,
+        KafkaUniversalComponentTransformer.sinkValueParamName.value -> "#input".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'$outputTopic'".spel,
+        KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> s"true".spel,
       )
 
     run(process) {
