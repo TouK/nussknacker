@@ -1701,9 +1701,9 @@ lazy val sqlComponents = (project in component("sql"))
     libraryDependencies ++= Seq(
       "com.zaxxer"        % "HikariCP"                        % hikariCpV,
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
-      "org.apache.ignite" % "ignite-core"                     % "2.10.0"             % Provided,
-      "org.apache.ignite" % "ignite-indexing"                 % "2.10.0"             % Provided,
-      "org.postgresql"    % "postgresql"                      % "42.7.3"             % Provided,
+      "org.apache.ignite" % "ignite-core"                     % "2.10.0"             % Test,
+      "org.apache.ignite" % "ignite-indexing"                 % "2.10.0"             % Test,
+      "org.postgresql"    % "postgresql"                      % "42.7.3"             % Test,
       "org.scalatest"    %% "scalatest"                       % scalaTestV           % Test,
       "org.hsqldb"        % "hsqldb"                          % hsqldbV              % Test,
       "com.dimafeng"     %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
