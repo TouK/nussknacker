@@ -36,19 +36,6 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
     }
   }
 
-  test("DatabaseQueryEnricherPostgresqlTest#implementation without cache") {
-    val result = queryWithEnricher(
-      "select * from people where id = ?",
-      Map("arg1" -> 1.asInstanceOf[AnyRef]),
-      conn,
-      service,
-      "List[Record{id: Integer, name: String}]"
-    )
-    result shouldBe List(
-      TypedMap(Map("name" -> "John", "id" -> 1))
-    )
-  }
-
   def queryWithEnricher(
       query: String,
       parameters: Map[String, AnyRef],
@@ -104,6 +91,19 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
+  }
+
+  test("DatabaseQueryEnricherPostgresqlTest#implementation without cache") {
+    val result = queryWithEnricher(
+      "select * from people where id = ?",
+      Map("arg1" -> 1.asInstanceOf[AnyRef]),
+      conn,
+      service,
+      "List[Record{id: Integer, name: String}]"
+    )
+    result shouldBe List(
+      TypedMap(Map("name" -> "John", "id" -> 1))
+    )
   }
 
   test(

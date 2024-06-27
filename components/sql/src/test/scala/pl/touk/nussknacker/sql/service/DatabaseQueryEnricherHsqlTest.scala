@@ -8,6 +8,7 @@ import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefiniti
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 import org.scalatest.BeforeAndAfterEach
 
+import java.sql.Connection
 import scala.concurrent.Await
 
 class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with BeforeAndAfterEach {
@@ -35,10 +36,15 @@ class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with Befor
     }
   }
 
-  test("DatabaseQueryEnricher#implementation without cache") {
-    val query = "select * from people where id = ?"
-    val st    = conn.prepareStatement(query)
-    val meta  = st.getMetaData
+  def queryWithEnricher(
+      query: String,
+      parameters: Map[String, AnyRef],
+      connection: Connection,
+      databaseQueryEnricher: DatabaseQueryEnricher,
+      expectedDisplayType: String
+  ): List[TypedMap] = {
+    val st   = connection.prepareStatement(query)
+    val meta = st.getMetaData
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
       argsCount = 1,
@@ -46,70 +52,26 @@ class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with Befor
       strategy = ResultSetStrategy
     )
     st.close()
-    val implementation = service.implementation(
+    val implementation = databaseQueryEnricher.implementation(
       params = Params(
-        Map(
-          DatabaseQueryEnricher.cacheTTLParamName -> null,
-          ParameterName("arg1")                   -> 1
-        )
+        parameters.map { case (k, v) => (ParameterName(k), v) }
+          + (DatabaseQueryEnricher.cacheTTLParamName -> null)
       ),
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
+    returnType(databaseQueryEnricher, state).display shouldBe expectedDisplayType
     val resultF = implementation.invoke(Context.withInitialId)
-    val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
-    )
-
-    conn.prepareStatement("UPDATE people SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
-    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result2 shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
-    )
+    Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
   }
 
-  test("DatabaseQueryEnricher#implementation without cache and with mixed lowercase and uppercase characters") {
-    val query = "select iD, NaMe from people where id = ?"
-    val st    = conn.prepareStatement(query)
-    val meta  = st.getMetaData
-    val state = DatabaseQueryEnricher.TransformationState(
-      query = query,
-      argsCount = 1,
-      tableDef = TableDefinition(meta),
-      strategy = ResultSetStrategy
-    )
-    st.close()
-    val implementation = service.implementation(
-      params = Params(
-        Map(
-          DatabaseQueryEnricher.cacheTTLParamName -> null,
-          ParameterName("arg1")                   -> 1
-        )
-      ),
-      dependencies = Nil,
-      finalState = Some(state)
-    )
-    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
-    val resultF = implementation.invoke(Context.withInitialId)
-    val result  = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
-    )
-
-    conn.prepareStatement("UPDATE people SET name = 'Alex' WHERE id = 1").execute()
-    val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
-    val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
-    result2 shouldBe List(
-      TypedMap(Map("ID" -> 1, "NAME" -> "Alex"))
-    )
-  }
-
-  test("DatabaseQueryEnricher#implementation update query") {
-    val query = "UPDATE people SET name = 'Don' where id = ?"
-    val st    = conn.prepareStatement(query)
+  def updateWithEnricher(
+      query: String,
+      connection: Connection,
+      parameters: Map[String, AnyRef],
+      databaseQueryEnricher: DatabaseQueryEnricher
+  ): Unit = {
+    val st = connection.prepareStatement(query)
     st.close()
     val state = DatabaseQueryEnricher.TransformationState(
       query = query,
@@ -117,12 +79,10 @@ class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with Befor
       tableDef = TableDefinition(Nil),
       strategy = UpdateResultStrategy
     )
-    val implementation = service.implementation(
+    val implementation = databaseQueryEnricher.implementation(
       params = Params(
-        Map(
-          DatabaseQueryEnricher.cacheTTLParamName -> null,
-          ParameterName("arg1")                   -> 1
-        )
+        parameters.map { case (k, v) => (ParameterName(k), v) }
+          + (DatabaseQueryEnricher.cacheTTLParamName -> null)
       ),
       dependencies = Nil,
       finalState = Some(state)
@@ -131,6 +91,38 @@ class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with Befor
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
+  }
+
+  test("DatabaseQueryEnricher#implementation without cache") {
+    val result = queryWithEnricher(
+      "select * from people where id = ?",
+      Map("arg1" -> 1.asInstanceOf[AnyRef]),
+      conn,
+      service,
+      "List[Record{ID: Integer, NAME: String}]"
+    )
+    result shouldBe List(
+      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
+    )
+  }
+
+  test("DatabaseQueryEnricher#implementation without cache and with mixed lowercase and uppercase characters") {
+    val result = queryWithEnricher(
+      "select iD, NaMe from people where id = ?",
+      Map("arg1" -> 1.asInstanceOf[AnyRef]),
+      conn,
+      service,
+      "List[Record{ID: Integer, NAME: String}]"
+    )
+    result shouldBe List(
+      TypedMap(Map("NAME" -> "John", "ID" -> 1))
+    )
+  }
+
+  test("DatabaseQueryEnricher#implementation update query") {
+    val query = "UPDATE people SET name = 'Don' where id = ?"
+    updateWithEnricher(query, conn, Map("arg1" -> 1.asInstanceOf[AnyRef]), service)
+
     val queryResultSet = conn.prepareStatement("SELECT * FROM people WHERE id = 1").executeQuery()
     queryResultSet.next()
     queryResultSet.getObject("name") shouldBe "Don"
