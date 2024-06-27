@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
+import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -28,7 +29,6 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
-import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{
   FlinkDeserializationSchemaWrapper,
@@ -41,7 +41,7 @@ import java.util.Properties
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
-    preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+    preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
     passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
@@ -70,7 +70,7 @@ class FlinkKafkaSource[T](
     )
   }
 
-  protected lazy val topics: List[TopicName.ForSource] = preparedTopics.map(_.prepared)
+  protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
   override val typeInformation: TypeInformation[T] = {
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
@@ -81,7 +81,7 @@ class FlinkKafkaSource[T](
       consumerGroupId: String,
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
-    topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
+    topics.toList.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
     createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
@@ -91,7 +91,7 @@ class FlinkKafkaSource[T](
       flinkNodeContext: FlinkCustomNodeContext
   ): SourceFunction[T] = {
     new FlinkKafkaConsumerHandlingExceptions[T](
-      topics.map(_.name).asJava,
+      topics.map(_.name).toList.asJava,
       wrapToFlinkDeserializationSchema(deserializationSchema),
       KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)),
       flinkNodeContext.exceptionHandlerPreparer,
@@ -178,7 +178,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
 }
 
 class FlinkConsumerRecordBasedKafkaSource[K, V](
-    preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+    preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],

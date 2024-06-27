@@ -1,11 +1,15 @@
 package pl.touk.nussknacker.engine.kafka
 
+import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.kafka.validator.CachedTopicsExistenceValidator
 
 object KafkaComponentsUtils extends KafkaUtils {
 
-  def validateTopicsExistence[T <: TopicName](topics: List[PreparedKafkaTopic[T]], kafkaConfig: KafkaConfig): Unit = {
+  def validateTopicsExistence[T <: TopicName](
+      topics: NonEmptyList[PreparedKafkaTopic[T]],
+      kafkaConfig: KafkaConfig
+  ): Unit = {
     new CachedTopicsExistenceValidator(kafkaConfig = kafkaConfig)
       .validateTopics(topics.map(_.prepared))
       .valueOr(err => throw err)

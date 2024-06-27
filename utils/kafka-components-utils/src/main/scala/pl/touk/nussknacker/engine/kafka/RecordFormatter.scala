@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
+import cats.data.NonEmptyList
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -28,9 +29,9 @@ trait RecordFormatter extends Serializable {
     TestData(testRecords)
   }
 
-  def generateTestData(topics: List[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
+  def generateTestData(topics: NonEmptyList[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged             = ListUtil.mergeLists(listsFromAllTopics, size)
+    val merged             = ListUtil.mergeLists(listsFromAllTopics.toList, size)
     prepareGeneratedTestData(merged)
   }
 
@@ -75,7 +76,7 @@ trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Sou
 
   protected def kafkaConfig: KafkaConfig
 
-  protected def topics: List[TopicName.ForSource]
+  protected def topics: NonEmptyList[TopicName.ForSource]
 
   protected def formatter: RecordFormatter
 

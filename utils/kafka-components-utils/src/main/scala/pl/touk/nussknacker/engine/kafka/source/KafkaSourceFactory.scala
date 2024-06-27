@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import cats.data.NonEmptyList
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
@@ -74,7 +75,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   protected def topicsValidationErrors(
       topicsString: String
   )(implicit nodeId: NodeId): List[ProcessCompilationError.CustomNodeError] = {
-    val topics: List[TopicName] = topicNamesFrom(topicsString)
+    val topics         = topicNamesFrom(topicsString)
     val preparedTopics = topics.map(KafkaComponentsUtils.prepareKafkaTopic(_, modelDependencies)).map(_.prepared)
     validateTopics(preparedTopics).swap.toList.map(_.toCustomNodeError(nodeId.id, Some(TopicParamName)))
   }
@@ -188,7 +189,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   /**
    * Extracts topics from default topic parameter.
    */
-  protected def extractTopics(params: Params): List[TopicName.ForSource] = {
+  protected def extractTopics(params: Params): NonEmptyList[TopicName.ForSource] = {
     val paramValue = topicParameterDeclaration.extractValueUnsafe(params)
     topicNamesFrom(paramValue)
   }
@@ -199,7 +200,11 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelDependencies.config)
 
   private def topicNamesFrom(value: String) = {
-    value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList
+    val topics = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toSeq
+    NonEmptyList.fromFoldable(topics) match {
+      case Some(nel) => nel
+      case None      => throw new IllegalStateException(s"Cannot extract topics from value '$value'")
+    }
   }
 
 }
@@ -220,7 +225,7 @@ object KafkaSourceFactory {
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Any,
-        preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+        preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
         kafkaConfig: KafkaConfig,
         deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
         formatter: RecordFormatter,

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api._
@@ -32,7 +33,7 @@ object TestComponentProvider {
 
         override val nodeId: NodeId = nodeIdPassed
 
-        override val topics: List[TopicName.ForSource] = TopicName.ForSource(topicName) :: Nil
+        override val topics: NonEmptyList[TopicName.ForSource] = NonEmptyList.one(TopicName.ForSource(topicName))
 
         override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
           val value = new String(record.value())

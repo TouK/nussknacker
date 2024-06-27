@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
+import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.Params
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
@@ -19,7 +20,7 @@ class FlinkKafkaSourceImplFactory[K, V](
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
-      preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+      preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,

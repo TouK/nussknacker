@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.RuntimeContext
@@ -45,7 +46,7 @@ import scala.jdk.CollectionConverters._
 object DelayedFlinkKafkaConsumer {
 
   def apply[T](
-      topics: List[PreparedKafkaTopic[TopicName.ForSource]],
+      topics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       schema: KafkaDeserializationSchema[T],
       config: KafkaConfig,
       consumerGroupId: String,
@@ -90,7 +91,7 @@ object DelayedFlinkKafkaConsumer {
 }
 
 class DelayedFlinkKafkaConsumer[T](
-    topics: List[PreparedKafkaTopic[TopicName.ForSource]],
+    topics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
     schema: KafkaDeserializationSchema[T],
     props: Properties,
     delayCalculator: DelayCalculator,
@@ -99,7 +100,7 @@ class DelayedFlinkKafkaConsumer[T](
     convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
     nodeId: NodeId
 ) extends FlinkKafkaConsumerHandlingExceptions[T](
-      topics.map(_.prepared.name).asJava,
+      topics.map(_.prepared.name).toList.asJava,
       wrapToFlinkDeserializationSchema(schema),
       props,
       exceptionHandlerPreparer,

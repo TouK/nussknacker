@@ -3,15 +3,8 @@ package pl.touk.nussknacker.engine.lite.kafka
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.{
-  ConsumerConfig,
-  ConsumerRecord,
-  ConsumerRecords,
-  KafkaConsumer,
-  OffsetAndMetadata
-}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{
   AuthorizationException,
   InterruptException,
@@ -70,8 +63,9 @@ class KafkaSingleScenarioTaskRun(
   private val sourceToTopic: Map[TopicName.ForSource, Map[SourceId, LiteKafkaSource]] = interpreter.sources
     .flatMap {
       case (sourceId, kafkaSource: LiteKafkaSource) =>
-        kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource))
-      case (sourceId, other) => throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
+        kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource)).toList
+      case (sourceId, other) =>
+        throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
     }
     .groupBy(_._1)
     .mapValuesNow(_.values.toMap)
@@ -176,23 +170,6 @@ class KafkaSingleScenarioTaskRun(
     val nonTransient = extractor.extractOrThrow(error)
     val schema       = new KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig)
     schema.serialize(nonTransient, System.currentTimeMillis())
-  }
-
-  // See https://www.baeldung.com/kafka-exactly-once for details
-  private def retrieveMaxOffsetsOffsets(
-      records: ConsumerRecords[Array[Byte], Array[Byte]]
-  ): Map[TopicPartition, OffsetAndMetadata] = {
-    records
-      .iterator()
-      .asScala
-      .map { rec =>
-        val upcomingOffset = rec.offset() + 1
-        (new TopicPartition(rec.topic(), rec.partition()), upcomingOffset)
-      }
-      .toList
-      .groupBy(_._1)
-      .mapValuesNow(_.map(_._2).max)
-      .mapValuesNow(new OffsetAndMetadata(_))
   }
 
   // Errors from this method will be considered as fatal, handled by uncaughtExceptionHandler and probably causing System.exit

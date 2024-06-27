@@ -190,7 +190,7 @@ class UniversalKafkaSourceFactory(
       params,
       dependencies,
       finalState.get,
-      List(preparedTopic),
+      NonEmptyList.one(preparedTopic),
       kafkaConfig,
       deserializationSchema,
       recordFormatter,

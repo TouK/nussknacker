@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
+import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
@@ -24,7 +25,7 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V]
   protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V]
 
   override def create(
-      topics: List[TopicName.ForSource],
+      topics: NonEmptyList[TopicName.ForSource],
       kafkaConfig: KafkaConfig
   ): serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 

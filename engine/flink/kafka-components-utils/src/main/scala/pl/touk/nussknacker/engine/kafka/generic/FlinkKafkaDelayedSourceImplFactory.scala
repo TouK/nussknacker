@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
+import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -46,7 +47,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
-      preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+      preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,
@@ -89,7 +90,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
   }
 
   protected def createDelayedKafkaSourceWithFixedDelay(
-      preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+      preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
@@ -114,7 +115,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](
   }
 
   protected def createDelayedKafkaSource(
-      preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
+      preparedTopics: NonEmptyList[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],

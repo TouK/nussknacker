@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
+import cats.data.NonEmptyList
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
@@ -36,7 +37,7 @@ class ConsumerRecordToJsonFormatterSpec
   private lazy val sampleKeyValueFormatter = new ConsumerRecordToJsonFormatterFactory[SampleKey, SampleValue]
     .create(
       kafkaConfig,
-      deserializationSchemaFactory.create(List(topic), kafkaConfig)
+      deserializationSchemaFactory.create(NonEmptyList.one(topic), kafkaConfig)
     )
 
   test("check sample serializer and deserializer") {
