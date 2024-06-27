@@ -189,8 +189,11 @@ object typing {
 
   }
 
-  case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
-    override val valueOpt: None.type = None /// TODO ????
+  case class TypedClass private[typing] (
+      klass: Class[_],
+      params: List[TypingResult],
+      override val valueOpt: Option[Any] = None
+  ) extends SingleTypingResult {
 
     override def withoutValue: TypedClass = this
 
@@ -205,6 +208,10 @@ object typing {
     override def objType: TypedClass = this
 
     def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
+
+    def withKnownValue(valueOpt: Option[Any]): TypedClass = this.copy(
+      valueOpt = valueOpt
+    )
 
   }
 

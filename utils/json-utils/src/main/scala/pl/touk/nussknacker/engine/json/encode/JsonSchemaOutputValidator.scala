@@ -364,10 +364,10 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
 
     (schemaAsTypedResult, typingResult) match {
-      case (schema @ TypedClass(_, Nil), typing @ TypedClass(_, Nil))
+      case (schema @ TypedClass(_, Nil, _), typing @ TypedClass(_, Nil, _))
           if canBeAssignedToWithBigDecimalFallback(typing.primitiveClass, schema.primitiveClass) =>
         valid
-      case (TypedClass(_, Nil), TypedClass(_, Nil)) => invalid(typingResult, schema, rootSchema, path)
+      case (TypedClass(_, Nil, _), TypedClass(_, Nil, _)) => invalid(typingResult, schema, rootSchema, path)
       case _ =>
         condNel(
           typingResult.canBeSubclassOf(schemaAsTypedResult),

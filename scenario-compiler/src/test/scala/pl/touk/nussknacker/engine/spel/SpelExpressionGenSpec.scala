@@ -95,10 +95,10 @@ class SpelExpressionGenSpec
         case Success(evaluatedValue) =>
           inside(validate(expr, a, b)) { case Valid(typedExpression) =>
             typedExpression.typingInfo.typingResult match {
-              case TypedObjectWithValue(TypedClass(typedClass, Nil), typedValue) =>
+              case TypedObjectWithValue(TypedClass(typedClass, Nil, _), typedValue) =>
                 typedValue shouldEqual evaluatedValue
                 typedClass shouldEqual evaluatedValue.getClass
-              case TypedClass(typedClass, Nil) =>
+              case TypedClass(typedClass, Nil, _) =>
                 typedClass shouldEqual evaluatedValue.getClass
               case union: TypedUnion =>
                 val typedClasses = union.possibleTypes.map(_.asInstanceOf[TypedClass].klass)

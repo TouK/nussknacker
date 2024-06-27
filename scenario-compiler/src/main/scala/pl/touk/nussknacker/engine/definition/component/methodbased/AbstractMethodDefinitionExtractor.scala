@@ -73,7 +73,8 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
       val rawType = ClassDefinitionExtractor.extractMethodReturnType(method)
       (expectedReturnType, rawType) match {
         // uwrap Future, Source and so on
-        case (Some(monadGenericType), TypedClass(cl, genericParam :: Nil)) if monadGenericType.isAssignableFrom(cl) =>
+        case (Some(monadGenericType), TypedClass(cl, genericParam :: Nil, _))
+            if monadGenericType.isAssignableFrom(cl) =>
           Some(genericParam)
         case _ => None
       }

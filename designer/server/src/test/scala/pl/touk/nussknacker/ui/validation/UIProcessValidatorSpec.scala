@@ -1367,7 +1367,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             List(
               NodeParameter(
                 ParameterName("mapParam1"),
-                Expression.spel("""{'foo'}""")
+                Expression.spel("""{'foo', 'bar'}""")
               ),
               NodeParameter(
                 ParameterName("mapParam2"),
@@ -1424,7 +1424,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
               NodeValidationError(
                 "CustomParameterValidationError",
                 "some custom failure message",
-                "Please provide value that satisfies the validation expression '{'valid','otherValid'}.contains(#value.get('field'))'",
+                "Please provide value that satisfies the validation expression '#value.size() == 2 && #value[0] == 'foo''",
                 Some("mapParam2"),
                 NodeValidationErrorType.SaveAllowed,
                 None
