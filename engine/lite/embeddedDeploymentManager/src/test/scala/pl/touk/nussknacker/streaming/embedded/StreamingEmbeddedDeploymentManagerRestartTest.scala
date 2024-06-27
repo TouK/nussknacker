@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -21,18 +21,18 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       .source(
         "source",
         "kafka",
-        topicParamName.value         -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> "#input"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> "#input".spel
       )
 
     wrapInFailingLoader {

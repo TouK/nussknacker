@@ -46,7 +46,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   import LiteKafkaComponentProvider._
   import SpecialSpELElement._
   import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
@@ -555,8 +555,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value         -> s"'${config.sourceTopic.name}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
   }
@@ -656,18 +656,18 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value         -> s"'${config.sourceTopic.name}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        topicParamName.value              -> s"'${config.sinkTopic.name}'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkValueParamName.value          -> s"${config.sinkDefinition}",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"${config.sinkDefinition}".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'".spel
       )
 
   case class ScenarioConfig(

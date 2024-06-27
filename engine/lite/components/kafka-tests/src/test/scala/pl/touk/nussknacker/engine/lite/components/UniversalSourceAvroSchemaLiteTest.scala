@@ -20,7 +20,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val inputTopic  = TopicName.ForSource("input")
   private val outputTopic = TopicName.ForSink("output")
@@ -42,19 +42,19 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     .source(
       "my-source",
       KafkaUniversalName,
-      topicParamName.value         -> s"'${inputTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${inputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
     .emptySink(
       "my-sink",
       KafkaUniversalName,
-      topicParamName.value         -> s"'${outputTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      sinkKeyParamName.value       -> "",
-      sinkRawEditorParamName.value -> "false",
-      "first"                      -> s"#input.first",
-      "last"                       -> "#input.last",
-      "age"                        -> "#input.age"
+      topicParamName.value         -> s"'${outputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+      sinkKeyParamName.value       -> "".spel,
+      sinkRawEditorParamName.value -> "false".spel,
+      "first"                      -> s"#input.first".spel,
+      "last"                       -> "#input.last".spel,
+      "age"                        -> "#input.age".spel
     )
 
   test("should read data with json payload on avro schema based topic") {

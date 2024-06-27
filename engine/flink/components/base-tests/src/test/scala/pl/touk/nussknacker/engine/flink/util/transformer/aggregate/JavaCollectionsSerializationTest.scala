@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 
@@ -33,7 +33,12 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
       .streaming(processId)
       .parallelism(1)
       .source("start", "start")
-      .customNodeNoOutput("delay", "delay", "key" -> "#input.id", "delay" -> "T(java.time.Duration).parse('PT30M')")
+      .customNodeNoOutput(
+        "delay",
+        "delay",
+        "key"   -> "#input.id".spel,
+        "delay" -> "T(java.time.Duration).parse('PT30M')".spel
+      )
       .emptySink("end", "dead-end")
 
   // In Scala 2.13 all java collections class wrappers were rewritten from case class to regular class. Now kryo does not

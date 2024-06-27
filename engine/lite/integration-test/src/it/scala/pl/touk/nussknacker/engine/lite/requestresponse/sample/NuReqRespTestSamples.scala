@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 
 object NuReqRespTestSamples {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val pingSchema = """{
                              |  "type": "object",
@@ -33,7 +33,7 @@ object NuReqRespTestSamples {
       )
     )
     .source("source", "request")
-    .emptySink("sink", "response", sinkRawEditorParamName.value -> "false", "pong" -> "#input.ping")
+    .emptySink("sink", "response", sinkRawEditorParamName.value -> "false".spel, "pong" -> "#input.ping".spel)
 
   def jsonPingMessage(msg: String) = s"""{"ping":"$msg"}"""
   def jsonPongMessage(msg: String) = s"""{"pong":"$msg"}"""

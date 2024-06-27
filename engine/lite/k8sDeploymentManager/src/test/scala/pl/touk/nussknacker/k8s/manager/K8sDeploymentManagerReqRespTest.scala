@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -360,14 +360,14 @@ class K8sDeploymentManagerReqRespTest
         )
       )
       .source("source", "request")
-      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"")
+      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"".spel)
       .emptySink(
         "sink",
         "response",
-        "Raw editor" -> "false",
-        "pong"       -> "#input.ping",
-        "instanceId" -> "#instanceId",
-        "version"    -> version.toString
+        "Raw editor" -> "false".spel,
+        "pong"       -> "#input.ping".spel,
+        "instanceId" -> "#instanceId".spel,
+        "version"    -> version.toString.spel
       )
   }
 

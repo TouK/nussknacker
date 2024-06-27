@@ -25,7 +25,7 @@ class UniversalSourceJsonSchemaLiteTest
   import LiteKafkaComponentProvider._
   import io.circe.parser._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val schema = JsonSchemaBuilder.parseSchema("""{
       |  "type": "object",
@@ -73,20 +73,20 @@ class UniversalSourceJsonSchemaLiteTest
     .source(
       sourceName,
       KafkaUniversalName,
-      topicParamName.value         -> s"'${inputTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${inputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
     .emptySink(
       sinkName,
       KafkaUniversalName,
-      topicParamName.value         -> s"'${outputTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      sinkKeyParamName.value       -> "",
-      sinkRawEditorParamName.value -> "false",
-      "first"                      -> s"#input.first",
-      "last"                       -> "#input.last",
-      "age"                        -> "#input.age",
-      "sex"                        -> "#input.sex"
+      topicParamName.value         -> s"'${outputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+      sinkKeyParamName.value       -> "".spel,
+      sinkRawEditorParamName.value -> "false".spel,
+      "first"                      -> s"#input.first".spel,
+      "last"                       -> "#input.last".spel,
+      "age"                        -> "#input.age".spel,
+      "sex"                        -> "#input.sex".spel
     )
 
   private val scenarioWithRawEditor = ScenarioBuilder
@@ -94,17 +94,17 @@ class UniversalSourceJsonSchemaLiteTest
     .source(
       sourceName,
       KafkaUniversalName,
-      topicParamName.value         -> s"'${inputTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${inputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
     .emptySink(
       sinkName,
       KafkaUniversalName,
-      topicParamName.value         -> s"'${outputTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      sinkKeyParamName.value       -> "",
-      sinkRawEditorParamName.value -> "true",
-      sinkValueParamName.value     -> s"#input"
+      topicParamName.value         -> s"'${outputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+      sinkKeyParamName.value       -> "".spel,
+      sinkRawEditorParamName.value -> "true".spel,
+      sinkValueParamName.value     -> s"#input".spel
     )
 
   test("should read data on json schema based universal source when schemaId in header") {

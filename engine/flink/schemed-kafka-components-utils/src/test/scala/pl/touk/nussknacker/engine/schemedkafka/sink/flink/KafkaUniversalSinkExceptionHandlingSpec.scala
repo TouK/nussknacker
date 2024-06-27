@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
   UniversalSchemaBasedSerdeProvider
 }
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class KafkaUniversalSinkExceptionHandlingSpec
     extends AnyFunSuite
@@ -61,22 +61,22 @@ class KafkaUniversalSinkExceptionHandlingSpec
           GraphBuilder.emptySink(
             "avro-raw",
             "kafka",
-            topicParamName.value              -> s"'${topic.name}'",
-            schemaVersionParamName.value      -> "'1'",
-            sinkValueParamName.value          -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
-            sinkKeyParamName.value            -> generator.throwFromString(),
-            sinkRawEditorParamName.value      -> s"true",
-            sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'"
+            topicParamName.value              -> s"'${topic.name}'".spel,
+            schemaVersionParamName.value      -> "'1'".spel,
+            sinkValueParamName.value          -> s"""{first: 'Test', last: (${generator.throwFromString()})}""".spel,
+            sinkKeyParamName.value            -> generator.throwFromString().spel,
+            sinkRawEditorParamName.value      -> s"true".spel,
+            sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel
           ),
           GraphBuilder.emptySink(
             "avro",
             "kafka",
-            topicParamName.value         -> s"'${topic.name}'",
-            schemaVersionParamName.value -> "'1'",
-            sinkKeyParamName.value       -> generator.throwFromString(),
-            sinkRawEditorParamName.value -> s"false",
-            "first"                      -> generator.throwFromString(),
-            "last"                       -> generator.throwFromString()
+            topicParamName.value         -> s"'${topic.name}'".spel,
+            schemaVersionParamName.value -> "'1'".spel,
+            sinkKeyParamName.value       -> generator.throwFromString().spel,
+            sinkRawEditorParamName.value -> s"false".spel,
+            "first"                      -> generator.throwFromString().spel,
+            "last"                       -> generator.throwFromString().spel
           ),
         )
       )

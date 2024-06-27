@@ -2,6 +2,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.17.0 (Not released yet)
+
+### Code API changes
+
+* [#6248](https://github.com/TouK/nussknacker/pull/6248) Removed implicit conversion from string to SpeL
+  expression (`pl.touk.nussknacker.engine.spel.Implicits`). The conversion should be replaced by
+  `pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion.spel`. 
+
 ## In version 1.16.0 (Not released yet)
 
 ### Code API changes
