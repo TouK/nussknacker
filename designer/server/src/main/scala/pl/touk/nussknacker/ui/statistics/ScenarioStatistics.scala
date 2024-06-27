@@ -294,3 +294,4 @@ case object NuSource               extends StatisticKey("source") // f.e docker,
 case object NuFingerprint          extends StatisticKey("fingerprint")
 case object NuVersion              extends StatisticKey("version")
 case object CorrelationId          extends StatisticKey("co_id")
+case object DesignerUptime         extends StatisticKey("d_u")
