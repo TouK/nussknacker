@@ -36,11 +36,11 @@ trait WithPostgresqlDB {
     "url"             -> url
   )
 
-  def prepareHsqlDDLs: List[String]
+  def preparePostgresqlDDLs: List[String]
 
   override protected def beforeAll(): Unit = {
     conn = DriverManager.getConnection(url, username, password)
-    prepareHsqlDDLs.foreach { ddlStr =>
+    preparePostgresqlDDLs.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
       try ddlStatement.execute()
       finally ddlStatement.close()

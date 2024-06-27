@@ -18,15 +18,15 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
   override val service =
     new DatabaseQueryEnricher(postgresqlDbPoolConfig, new MetaDataProviderFactory().create(postgresqlDbPoolConfig))
 
-  override val prepareHsqlDDLs: List[String] = List(
-    "CREATE TABLE persons (id INT, name VARCHAR(40));",
-    "INSERT INTO persons (id, name) VALUES (1, 'John')"
+  override val preparePostgresqlDDLs: List[String] = List(
+    "CREATE TABLE people (id INT, name VARCHAR(40));",
+    "INSERT INTO people (id, name) VALUES (1, 'John')"
   )
 
   override protected def afterEach(): Unit = {
     val cleanupStatements = List(
-      "TRUNCATE TABLE persons;",
-      "INSERT INTO persons (id, name) VALUES (1, 'John')"
+      "TRUNCATE TABLE people;",
+      "INSERT INTO people (id, name) VALUES (1, 'John')"
     )
     cleanupStatements.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
@@ -36,7 +36,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
   }
 
   test("DatabaseQueryEnricherPostgresqlTest#implementation without cache") {
-    val query = "select * from persons where id = ?"
+    val query = "select * from people where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
     val state = DatabaseQueryEnricher.TransformationState(
@@ -63,7 +63,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
       TypedMap(Map("name" -> "John", "id" -> 1))
     )
 
-    conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
+    conn.prepareStatement("UPDATE people SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
@@ -74,7 +74,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
   test(
     "DatabaseQueryEnricherPostgresqlTest#implementation without cache and with mixed lowercase and uppercase characters"
   ) {
-    val query = "select iD, NaMe from persons where id = ?"
+    val query = "select iD, NaMe from people where id = ?"
     val st    = conn.prepareStatement(query)
     val meta  = st.getMetaData
     val state = DatabaseQueryEnricher.TransformationState(
@@ -101,7 +101,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
       TypedMap(Map("name" -> "John", "id" -> 1))
     )
 
-    conn.prepareStatement("UPDATE persons SET name = 'Alex' WHERE id = 1").execute()
+    conn.prepareStatement("UPDATE people SET name = 'Alex' WHERE id = 1").execute()
     val resultF2 = implementation.invoke(Context.withInitialId.withVariables(Map("arg1" -> 1)))
     val result2  = Await.result(resultF2, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result2 shouldBe List(
@@ -110,7 +110,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
   }
 
   test("DatabaseQueryEnricherPostgresqlTest#implementation update query") {
-    val query = "UPDATE persons SET name = 'Don' where id = ?"
+    val query = "UPDATE people SET name = 'Don' where id = ?"
     val st    = conn.prepareStatement(query)
     st.close()
     val state = DatabaseQueryEnricher.TransformationState(
@@ -133,7 +133,7 @@ class DatabaseQueryEnricherPostgresqlTest extends BasePostgresqlQueryEnricherTes
     val resultF = implementation.invoke(Context.withInitialId)
     val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
-    val queryResultSet = conn.prepareStatement("SELECT * FROM persons WHERE id = 1").executeQuery()
+    val queryResultSet = conn.prepareStatement("SELECT * FROM people WHERE id = 1").executeQuery()
     queryResultSet.next()
     queryResultSet.getObject("name") shouldBe "Don"
   }
