@@ -20,7 +20,7 @@ import java.util.Date
 
 class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("should accept same id in fragment and main process ") {
 
@@ -28,8 +28,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
-        .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "#input.value2")
-        .processorEnd("end1", "logService", "all" -> "#input.value2")
+        .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "#input.value2".spel)
+        .processorEnd("end1", "logService", "all" -> "#input.value2".spel)
     )
 
     val data = List(
@@ -48,8 +48,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
-        .fragmentOneOut("sub", "splitFragment", "output", "fragmentResult", "param" -> "#input.value2")
-        .processorEnd("end1", "logService", "all" -> "#input.value2")
+        .fragmentOneOut("sub", "splitFragment", "output", "fragmentResult", "param" -> "#input.value2".spel)
+        .processorEnd("end1", "logService", "all" -> "#input.value2".spel)
     )
 
     val data = List(
@@ -68,7 +68,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
         .streaming("proc1")
         .source("id", "input")
         .fragmentOneOut("sub", "fragmentGlobal", "output", "fragmentResult")
-        .processorEnd("end1", "logService", "all" -> "#input.value2")
+        .processorEnd("end1", "logService", "all" -> "#input.value2".spel)
     )
 
     val data = List(
@@ -86,8 +86,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
-        .fragmentOneOut("sub", "diamondFragment", "output33", "fragmentResult", "ala" -> "#input.id")
-        .processorEnd("end1", "logService", "all" -> "#input.value2")
+        .fragmentOneOut("sub", "diamondFragment", "output33", "fragmentResult", "ala" -> "#input.id".spel)
+        .processorEnd("end1", "logService", "all" -> "#input.value2".spel)
     )
 
     val data = List(
@@ -108,7 +108,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
         canonicalnode.FilterNode(
-          Filter("f1", "#param == 'a'"),
+          Filter("f1", "#param == 'a'".spel),
           List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
         ),
         canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
@@ -137,7 +137,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       MetaData("fragmentGlobal", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
-        canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"), List()),
+        canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4".spel), List()),
         canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ),
       List.empty
@@ -153,11 +153,11 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           Split("split"),
           List(
             List(
-              canonicalnode.FilterNode(Filter("filter2a", "true"), Nil),
+              canonicalnode.FilterNode(Filter("filter2a", "true".spel), Nil),
               FlatNode(BranchEndData(BranchEndDefinition("end1", "join1")))
             ),
             List(
-              canonicalnode.FilterNode(Filter("filter2b", "true"), Nil),
+              canonicalnode.FilterNode(Filter("filter2b", "true".spel), Nil),
               FlatNode(BranchEndData(BranchEndDefinition("end2", "join1")))
             )
           )
@@ -171,8 +171,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             "joinBranchExpression",
             Nil,
             List(
-              BranchParameters("end1", List(NodeParameter(ParameterName("value"), "#ala"))),
-              BranchParameters("end2", List(NodeParameter(ParameterName("value"), "#ala")))
+              BranchParameters("end1", List(NodeParameter(ParameterName("value"), "#ala".spel))),
+              BranchParameters("end2", List(NodeParameter(ParameterName("value"), "#ala".spel)))
             ),
             None
           )

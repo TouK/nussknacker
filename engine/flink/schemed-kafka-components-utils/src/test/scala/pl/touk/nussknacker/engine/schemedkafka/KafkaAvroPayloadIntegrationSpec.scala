@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
   MockSchemaRegistryClient
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
@@ -30,7 +29,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
 
@@ -293,24 +292,24 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'${topicConfig.input}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topicConfig.input}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .customNode(
         "transform",
         "extractedTimestamp",
         "extractAndTransformTimestamp",
-        "timestampToSet" -> (timeToSetInProcess.toString + "L")
+        "timestampToSet" -> (timeToSetInProcess.toString + "L").spel
       )
       .emptySink(
         "end",
         "kafka",
-        topicParamName.value              -> s"'${topicConfig.output}'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkRawEditorParamName.value      -> "true",
+        topicParamName.value              -> s"'${topicConfig.output}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
         sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-        sinkValueParamName.value          -> s"{field: #extractedTimestamp}"
+        sinkValueParamName.value          -> s"{field: #extractedTimestamp}".spel
       )
 
     pushMessage(LongFieldV1.record, topicConfig.input)
@@ -331,19 +330,19 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'${topicConfig.input}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topicConfig.input}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "10000")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "10000".spel)
       .emptySink(
         "end",
         "kafka",
-        topicParamName.value              -> s"'${topicConfig.output}'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkRawEditorParamName.value      -> "true",
+        topicParamName.value              -> s"'${topicConfig.output}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
         sinkValidationModeParamName.value -> validationModeParam(ValidationMode.strict),
-        sinkValueParamName.value          -> s"{field: #extractedTimestamp}"
+        sinkValueParamName.value          -> s"{field: #extractedTimestamp}".spel
       )
 
     // Can't be too long ago, otherwise retention could delete it

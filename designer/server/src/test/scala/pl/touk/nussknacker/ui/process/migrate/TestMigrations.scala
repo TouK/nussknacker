@@ -13,7 +13,7 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 
 class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   override def processMigrations: Map[Int, ProcessMigration] = Map(
     1 -> Migration1,
@@ -56,7 +56,10 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
-          ServiceRef(ProcessTestData.existingServiceId, NodeParameter(ParameterName("newParam"), "'abc'") :: parameters)
+          ServiceRef(
+            ProcessTestData.existingServiceId,
+            NodeParameter(ParameterName("newParam"), "'abc'".spel) :: parameters
+          )
         )
     }
 
@@ -69,7 +72,10 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Processor(_, ServiceRef(ProcessTestData.existingServiceId, parameters), _, _) =>
         n.copy(service =
-          ServiceRef(ProcessTestData.existingServiceId, NodeParameter(ParameterName("newParam"), "'abc'") :: parameters)
+          ServiceRef(
+            ProcessTestData.existingServiceId,
+            NodeParameter(ParameterName("newParam"), "'abc'".spel) :: parameters
+          )
         )
     }
 
@@ -137,7 +143,7 @@ class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
       case n @ Source(_, ref @ SourceRef(ProcessTestData.existingSourceFactory, parameters), _) =>
-        n.copy(ref = ref.copy(parameters = NodeParameter(ParameterName("newParam"), "'abc'") :: parameters))
+        n.copy(ref = ref.copy(parameters = NodeParameter(ParameterName("newParam"), "'abc'".spel) :: parameters))
     }
 
   }
