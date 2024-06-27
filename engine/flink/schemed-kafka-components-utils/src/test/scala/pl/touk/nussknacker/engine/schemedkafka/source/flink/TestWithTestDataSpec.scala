@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -75,11 +75,11 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'${topic.name}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode)
@@ -106,14 +106,14 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka",
-        topicParamName.value         -> s"'${topic.name}'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
       .emptySink(
         "end",
         "sinkForInputMeta",
-        SingleValueParamName -> "#input.name + '-' + #input.address.city + '-' + #input.address.street"
+        SingleValueParamName -> "#input.name + '-' + #input.address.city + '-' + #input.address.street".spel
       )
 
     val parameterExpressions = Map(
@@ -131,8 +131,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
   test("should handle fragment test parameters in test") {
     val fragment = ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[String])
-      .filter("filter", "#in != 'stop'")
-      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+      .filter("filter", "#in != 'stop'".spel)
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
 
     val parameterExpressions = Map(
       ParameterName("in") -> Expression.spel("'some-text-id'")

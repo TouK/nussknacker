@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
@@ -38,18 +38,18 @@ class StreamingEmbeddedDeploymentManagerTest
       .source(
         "source",
         "kafka",
-        topicParamName.value         -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> "#input"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> "#input".spel
       )
 
     wrapInFailingLoader {
@@ -79,18 +79,18 @@ class StreamingEmbeddedDeploymentManagerTest
       .source(
         "source",
         "kafka",
-        topicParamName.value         -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> "#input"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> "#input".spel
       )
 
     val deployedScenarioData =
@@ -120,18 +120,18 @@ class StreamingEmbeddedDeploymentManagerTest
       .source(
         "source",
         "kafka",
-        "Old Topic param"            -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        "Old Topic param"            -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> "#input"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> "#input".spel
       )
 
     val deployedScenarioData = DeployedScenarioData(
@@ -157,18 +157,18 @@ class StreamingEmbeddedDeploymentManagerTest
       .source(
         "source",
         "kafka",
-        "Old Topic param"            -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        "Old Topic param"            -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> "#input"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> "#input".spel
       )
 
     an[Exception] shouldBe thrownBy {
@@ -201,18 +201,18 @@ class StreamingEmbeddedDeploymentManagerTest
       .source(
         "source",
         "kafka",
-        topicParamName.value         -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> s"{message: #input.message, prefix: '$outputPrefix'}"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> s"{message: #input.message, prefix: '$outputPrefix'}".spel
       )
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
     def prefixMessage(prefix: String, message: String) =
@@ -271,18 +271,18 @@ class StreamingEmbeddedDeploymentManagerTest
       .source(
         "source",
         "kafka",
-        topicParamName.value         -> s"'${inputTopic.name}'",
-        schemaVersionParamName.value -> "'latest'"
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
+        schemaVersionParamName.value -> "'latest'".spel
       )
       .emptySink(
         "sink",
         "kafka",
-        topicParamName.value              -> s"'${outputTopic.name}'",
-        schemaVersionParamName.value      -> "'latest'",
-        "Key"                             -> "null",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> "'strict'",
-        sinkValueParamName.value          -> s"{message: #input.message, other: '1'}"
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        "Key"                             -> "null".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> "'strict'".spel,
+        sinkValueParamName.value          -> s"{message: #input.message, other: '1'}".spel
       )
 
     kafkaClient.sendMessage(inputTopic.name, message("1")).futureValue

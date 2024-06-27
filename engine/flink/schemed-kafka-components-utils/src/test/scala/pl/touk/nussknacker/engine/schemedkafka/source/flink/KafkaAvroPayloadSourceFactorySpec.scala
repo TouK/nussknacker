@@ -27,7 +27,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactory,
   SchemaVersionOption
 }
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
@@ -280,8 +280,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("Should validate specific version") {
     val result =
       validate(
-        topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
-        schemaVersionParamName.value -> "'1'"
+        topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+        schemaVersionParamName.value -> "'1'".spel
       )
 
     result.errors shouldBe Nil
@@ -289,8 +289,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should validate latest version") {
     val result = validate(
-      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
 
     result.errors shouldBe Nil
@@ -299,8 +299,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("Should return sane error on invalid topic") {
     val result =
       validate(
-        topicParamName.value         -> "'terefere'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> "'terefere'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
 
     result.errors shouldBe
@@ -331,8 +331,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should return sane error on invalid version") {
     val result = validate(
-      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
-      schemaVersionParamName.value -> "'12345'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+      schemaVersionParamName.value -> "'12345'".spel
     )
 
     result.errors shouldBe InvalidPropertyFixedValue(
@@ -352,8 +352,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should properly detect input type") {
     val result = validate(
-      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
 
     result.errors shouldBe Nil

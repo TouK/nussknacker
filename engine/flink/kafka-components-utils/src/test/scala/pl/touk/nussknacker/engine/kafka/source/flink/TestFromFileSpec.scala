@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -60,10 +60,10 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start",
         "kafka-jsonValueWithMeta",
-        TopicParamName.value -> s"'$topic'",
+        TopicParamName.value -> s"'$topic'".spel,
       )
-      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
+      .customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode)
@@ -83,8 +83,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   test("should test source emitting event extending DisplayWithEncoder") {
     val process = ScenarioBuilder
       .streaming("test")
-      .source("start", "kafka-jsonValueWithMeta", TopicParamName.value -> "'test.topic'")
-      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
+      .source("start", "kafka-jsonValueWithMeta", TopicParamName.value -> "'test.topic'".spel)
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta".spel)
     val inputMeta = InputMeta(
       key = null,
       topic = "test.topic",

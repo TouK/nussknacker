@@ -26,11 +26,11 @@ import pl.touk.nussknacker.engine.definition.model.{ModelDefinition, ModelDefini
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
-import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
+import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val components = List(
     ComponentDefinition("genericParameters", GenericParametersTransformer),
@@ -66,8 +66,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   private val expectedGenericParameters = List(
     Parameter[String](ParameterName("par1"))
-      .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-    Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0")),
+      .copy(
+        editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+        defaultValue = Some("''".spel)
+      ),
+    Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
     Parameter(ParameterName("val1"), Unknown),
     Parameter(ParameterName("val2"), Unknown),
     Parameter(ParameterName("val3"), Unknown)
@@ -80,11 +83,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
           "generic",
           "out1",
           "genericParameters",
-          "par1"     -> "'val1,val2,val3'",
-          "lazyPar1" -> "#input == null ? 1 : 5",
-          "val1"     -> "'aa'",
-          "val2"     -> "11",
-          "val3"     -> "{false}"
+          "par1"     -> "'val1,val2,val3'".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel,
+          "val1"     -> "'aa'".spel,
+          "val2"     -> "11".spel,
+          "val3"     -> "{false}".spel
         )
         .emptySink("end", "dummySink")
     )
@@ -109,11 +112,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .source(
           "sourceId",
           "genericParametersSource",
-          "par1"     -> "'val1,val2,val3'",
-          "lazyPar1" -> "'ll' == null ? 1 : 5",
-          "val1"     -> "'aa'",
-          "val2"     -> "11",
-          "val3"     -> "{false}"
+          "par1"     -> "'val1,val2,val3'".spel,
+          "lazyPar1" -> "'ll' == null ? 1 : 5".spel,
+          "val1"     -> "'aa'".spel,
+          "val2"     -> "11".spel,
+          "val3"     -> "{false}".spel
         )
         .emptySink("end", "dummySink")
     )
@@ -136,11 +139,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       processBase.emptySink(
         "end",
         "genericParametersSink",
-        "par1"     -> "'val1,val2,val3'",
-        "lazyPar1" -> "#input == null ? 1 : 5",
-        "val1"     -> "'aa'",
-        "val2"     -> "11",
-        "val3"     -> "{false}"
+        "par1"     -> "'val1,val2,val3'".spel,
+        "lazyPar1" -> "#input == null ? 1 : 5".spel,
+        "val1"     -> "'aa'".spel,
+        "val2"     -> "11".spel,
+        "val3"     -> "{false}".spel
       )
     )
     result.result shouldBe Symbol("valid")
@@ -154,21 +157,21 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .processor(
           "genericProcessor",
           "genericParametersProcessor",
-          "par1"     -> "'val1,val2,val3'",
-          "lazyPar1" -> "#input == null ? 1 : 5",
-          "val1"     -> "'aa'",
-          "val2"     -> "11",
-          "val3"     -> "{false}"
+          "par1"     -> "'val1,val2,val3'".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel,
+          "val1"     -> "'aa'".spel,
+          "val2"     -> "11".spel,
+          "val3"     -> "{false}".spel
         )
         .enricher(
           "genericEnricher",
           "out",
           "genericParametersProcessor",
-          "par1"     -> "'val1,val2,val3'",
-          "lazyPar1" -> "#input == null ? 1 : 5",
-          "val1"     -> "'aa'",
-          "val2"     -> "11",
-          "val3"     -> "{false}"
+          "par1"     -> "'val1,val2,val3'".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel,
+          "val1"     -> "'aa'".spel,
+          "val2"     -> "11".spel,
+          "val3"     -> "{false}".spel
         )
         .emptySink("end", "dummySink")
     )
@@ -184,11 +187,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .processor(
           "genericProcessor",
           "genericParametersThrowingException",
-          "par1"     -> "'val1,val2,val3'",
-          "lazyPar1" -> "#input == null ? 1 : 5",
-          "val1"     -> "'aa'",
-          "val2"     -> "11",
-          "val3"     -> "{false}"
+          "par1"     -> "'val1,val2,val3'".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel,
+          "val1"     -> "'aa'".spel,
+          "val2"     -> "11".spel,
+          "val3"     -> "{false}".spel
         )
         .emptySink("end", "dummySink")
     )
@@ -201,9 +204,9 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       processBase.emptySink(
         "end",
         "genericParametersSink",
-        "par1"     -> "'val1,val2'",
-        "lazyPar1" -> "#input == null ? 1 : 5",
-        "val1"     -> "''"
+        "par1"     -> "'val1,val2'".spel,
+        "lazyPar1" -> "#input == null ? 1 : 5".spel,
+        "val1"     -> "''".spel
       )
     )
     result.result should matchPattern {
@@ -213,8 +216,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     val parameters = result.parametersInNodes("end")
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
-        .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0")),
+        .copy(
+          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+          defaultValue = Some("''".spel)
+        ),
+      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
       Parameter(ParameterName("val1"), Unknown),
       Parameter(ParameterName("val2"), Unknown)
     )
@@ -224,7 +230,13 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val result = validate(
       processBase
-        .customNode("generic", "out1", "genericParameters", "par1" -> "12", "lazyPar1" -> "#input == null ? 1 : 5")
+        .customNode(
+          "generic",
+          "out1",
+          "genericParameters",
+          "par1"     -> "12".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel
+        )
         .emptySink("end", "dummySink")
     )
     result.result shouldBe Invalid(
@@ -252,9 +264,9 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
           "generic",
           "out1",
           "genericParameters",
-          "par1"     -> "'val1,val2'",
-          "lazyPar1" -> "#input == null ? 1 : 5",
-          "val1"     -> "''"
+          "par1"     -> "'val1,val2'".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel,
+          "val1"     -> "''".spel
         )
         .emptySink("end", "dummySink")
     )
@@ -274,8 +286,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     val parameters = result.parametersInNodes("generic")
     parameters shouldBe List(
       Parameter[String](ParameterName("par1"))
-        .copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0")),
+        .copy(
+          editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)),
+          defaultValue = Some("''".spel)
+        ),
+      Parameter[Long](ParameterName("lazyPar1")).copy(isLazyParameter = true, defaultValue = Some("0".spel)),
       Parameter(ParameterName("val1"), Unknown),
       Parameter(ParameterName("val2"), Unknown)
     )
@@ -285,7 +300,13 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val result = validate(
       processBase
-        .customNode("generic", "out1", "genericParameters", "par1" -> "12", "lazyPar1" -> "#input == null ? 1 : 5")
+        .customNode(
+          "generic",
+          "out1",
+          "genericParameters",
+          "par1"     -> "12".spel,
+          "lazyPar1" -> "#input == null ? 1 : 5".spel
+        )
         .emptySink("end", "dummySink")
     )
     result.result shouldBe Invalid(
@@ -311,11 +332,11 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       .sources(
         GraphBuilder
           .source("sourceId1", "mySource")
-          .buildSimpleVariable("var1", "intVal", "123")
+          .buildSimpleVariable("var1", "intVal", "123".spel)
           .branchEnd("branch1", "join1"),
         GraphBuilder
           .source("sourceId2", "mySource")
-          .buildSimpleVariable("var2", "strVal", "'abc'")
+          .buildSimpleVariable("var2", "strVal", "'abc'".spel)
           .branchEnd("branch2", "join1"),
         GraphBuilder
           .join(
@@ -323,10 +344,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
             "genericJoin",
             Some("outPutVar"),
             List(
-              "branch1" -> List("isLeft" -> "true"),
-              "branch2" -> List("isLeft" -> "false")
+              "branch1" -> List("isLeft" -> "true".spel),
+              "branch2" -> List("isLeft" -> "false".spel)
             ),
-            "rightValue" -> "#strVal + 'dd'"
+            "rightValue" -> "#strVal + 'dd'".spel
           )
           .emptySink("end", "dummySink")
       )
@@ -340,7 +361,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   test("should validate optional parameter default value") {
     val process = processBase
-      .emptySink("optionalParameters", "optionalParametersSink", "wrongOptionalParameter" -> "'123'")
+      .emptySink("optionalParameters", "optionalParametersSink", "wrongOptionalParameter" -> "'123'".spel)
 
     val result = validate(process)
 
@@ -348,7 +369,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     parameters shouldBe List(
       Parameter
         .optional[CharSequence](ParameterName("optionalParameter"))
-        .copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some(""))
+        .copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some("".spel))
     )
   }
 
@@ -367,7 +388,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   test("should omit redundant parameters for generic transformations") {
     val result = validate(
       processBase
-        .customNodeNoOutput("generic", "twoStepsInOne", "redundant" -> "''")
+        .customNodeNoOutput("generic", "twoStepsInOne", "redundant" -> "''".spel)
         .emptySink("end", "dummySink")
     )
 

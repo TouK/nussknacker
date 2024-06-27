@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ClassLoaderModelData, ConfigWithUnresolvedVersion}
 
@@ -22,9 +22,9 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
       ScenarioBuilder
         .streaming("sample_notification")
         .parallelism(1)
-        .source("start", "boundedSource", "elements" -> "{'one'}")
-        .processor("service1", "providedComponent-component-v1", "fromConfig-v1" -> "''")
-        .processor("service2", "providedComponent-component-v2", "fromConfig-v2" -> "''")
+        .source("start", "boundedSource", "elements" -> "{'one'}".spel)
+        .processor("service1", "providedComponent-component-v1", "fromConfig-v1" -> "''".spel)
+        .processor("service2", "providedComponent-component-v2", "fromConfig-v2" -> "''".spel)
         .emptySink("end", "monitor")
 
     run(process) {

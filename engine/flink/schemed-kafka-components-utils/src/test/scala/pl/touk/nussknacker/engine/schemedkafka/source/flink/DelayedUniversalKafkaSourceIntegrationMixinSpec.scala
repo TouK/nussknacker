@@ -76,7 +76,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       delay: String
   ): CanonicalProcess = {
 
-    import spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     ScenarioBuilder
       .streaming("kafka-universal-delayed-test")
@@ -84,12 +84,12 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        topicParamName.value               -> s"'${topic.name}'",
-        schemaVersionParamName.value       -> asSpelExpression(formatVersionParam(version)),
-        timestampFieldParamName.value      -> timestampField,
-        delayParameter.parameterName.value -> delay
+        topicParamName.value               -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value       -> formatVersionParam(version).spel,
+        timestampFieldParamName.value      -> timestampField.spel,
+        delayParameter.parameterName.value -> delay.spel
       )
-      .emptySink("out", "sinkForLongs", sinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", sinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()".spel)
   }
 
 }

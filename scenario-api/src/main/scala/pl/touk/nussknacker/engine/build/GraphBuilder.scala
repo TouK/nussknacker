@@ -15,8 +15,6 @@ import pl.touk.nussknacker.engine.graph.{EdgeType, node}
 
 trait GraphBuilder[R] {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
-
   def creator: GraphBuilder.Creator[R]
 
   def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
