@@ -61,8 +61,8 @@ class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with Befor
       finalState = Some(state)
     )
     returnType(databaseQueryEnricher, state).display shouldBe expectedDisplayType
-    val resultF = implementation.invoke(Context.withInitialId)
-    Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    val resultFuture = implementation.invoke(Context.withInitialId)
+    Await.result(resultFuture, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
   }
 
   def updateWithEnricher(
@@ -88,8 +88,8 @@ class DatabaseQueryEnricherHsqlTest extends BaseHsqlQueryEnricherTest with Befor
       finalState = Some(state)
     )
     returnType(service, state).display shouldBe "Integer"
-    val resultF = implementation.invoke(Context.withInitialId)
-    val result  = Await.result(resultF, 5 seconds).asInstanceOf[Integer]
+    val resultFuture = implementation.invoke(Context.withInitialId)
+    val result       = Await.result(resultFuture, 5 seconds).asInstanceOf[Integer]
     result shouldBe 1
   }
 
