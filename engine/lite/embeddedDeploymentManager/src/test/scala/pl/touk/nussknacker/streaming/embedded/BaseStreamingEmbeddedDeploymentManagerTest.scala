@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -36,8 +36,8 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
   sealed case class FixtureParam(
       deploymentManager: DeploymentManager,
       modelData: ModelData,
-      inputTopic: TopicName.OfSource,
-      outputTopic: TopicName.OfSink
+      inputTopic: TopicName.ForSource,
+      outputTopic: TopicName.ForSink
   ) {
 
     def deployScenario(scenario: CanonicalProcess): Unit = {
@@ -58,11 +58,11 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
 
   }
 
-  protected def generateInputTopicName: TopicName.OfSource =
-    TopicName.OfSource(s"input-${UUID.randomUUID().toString}")
+  protected def generateInputTopicName: TopicName.ForSource =
+    TopicName.ForSource(s"input-${UUID.randomUUID().toString}")
 
-  protected def generateOutputTopicName: TopicName.OfSink =
-    TopicName.OfSink(s"output-${UUID.randomUUID().toString}")
+  protected def generateOutputTopicName: TopicName.ForSink =
+    TopicName.ForSink(s"output-${UUID.randomUUID().toString}")
 
   private val defaultJsonSchema =
     """
@@ -85,13 +85,13 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
   protected def wrapInFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
 
   protected def prepareFixture(
-      inputTopic: TopicName.OfSource = generateInputTopicName,
-      outputTopic: TopicName.OfSink = generateOutputTopicName,
+      inputTopic: TopicName.ForSource = generateInputTopicName,
+      outputTopic: TopicName.ForSink = generateOutputTopicName,
       initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty,
       jsonSchema: String = defaultJsonSchema
   ): FixtureParam = {
-    registerJsonSchema(inputTopic.toUncategorizedTopicName, jsonSchema, isKey = false)
-    registerJsonSchema(outputTopic.toUncategorizedTopicName, jsonSchema, isKey = false)
+    registerJsonSchema(inputTopic.toUnspecialized, jsonSchema, isKey = false)
+    registerJsonSchema(outputTopic.toUnspecialized, jsonSchema, isKey = false)
 
     kafkaClient.createTopic(inputTopic.name, partitions = 1)
     kafkaClient.createTopic(outputTopic.name, partitions = 1)

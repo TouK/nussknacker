@@ -53,7 +53,7 @@ class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override def parseRecord(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] =

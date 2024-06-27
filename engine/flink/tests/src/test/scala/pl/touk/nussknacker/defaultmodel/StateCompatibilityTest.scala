@@ -67,7 +67,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     }
   }
 
-  private def stateCompatibilityProcess(inTopic: TopicName.OfSource, outTopic: TopicName.OfSink) = ScenarioBuilder
+  private def stateCompatibilityProcess(inTopic: TopicName.ForSource, outTopic: TopicName.ForSink) = ScenarioBuilder
     .streaming("stateCompatibilityTest")
     .parallelism(1)
     .source(
@@ -169,7 +169,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     env.stopJob(process1.name.value, jobExecutionResult)
   }
 
-  private def verifyOutputEvent(outTopic: TopicName.OfSink, input: InputEvent, previousInput: InputEvent): Unit = {
+  private def verifyOutputEvent(outTopic: TopicName.ForSink, input: InputEvent, previousInput: InputEvent): Unit = {
     val outputEvent = kafkaClient.createConsumer().consumeWithJson[OutputEvent](outTopic.name).take(1).head.message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput

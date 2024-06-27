@@ -19,7 +19,7 @@ class FlinkKafkaSourceImplFactory[K, V](
       params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Any,
-      preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
+      preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
       kafkaConfig: KafkaConfig,
       deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
       formatter: RecordFormatter,

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
@@ -13,14 +13,14 @@ trait KafkaAvroSourceSpecMixin {
 
   object KafkaAvroSourceMockSchemaRegistry {
 
-    val RecordTopic          = UncategorizedTopicName("testAvroRecordTopic1")
-    val RecordTopicWithKey   = UncategorizedTopicName("testAvroRecordTopic1WithKey")
-    val IntTopicWithKey      = UncategorizedTopicName("testAvroIntTopic1WithKey")
-    val IntTopicNoKey        = UncategorizedTopicName("testAvroIntTopic1NoKey")
-    val ArrayOfNumbersTopic  = UncategorizedTopicName("testArrayOfNumbersTopic")
-    val ArrayOfRecordsTopic  = UncategorizedTopicName("testArrayOfRecordsTopic")
-    val InvalidDefaultsTopic = UncategorizedTopicName("testAvroInvalidDefaultsTopic1")
-    val PaymentDateTopic     = UncategorizedTopicName("testPaymentDateTopic")
+    val RecordTopic          = UnspecializedTopicName("testAvroRecordTopic1")
+    val RecordTopicWithKey   = UnspecializedTopicName("testAvroRecordTopic1WithKey")
+    val IntTopicWithKey      = UnspecializedTopicName("testAvroIntTopic1WithKey")
+    val IntTopicNoKey        = UnspecializedTopicName("testAvroIntTopic1NoKey")
+    val ArrayOfNumbersTopic  = UnspecializedTopicName("testArrayOfNumbersTopic")
+    val ArrayOfRecordsTopic  = UnspecializedTopicName("testArrayOfRecordsTopic")
+    val InvalidDefaultsTopic = UnspecializedTopicName("testAvroInvalidDefaultsTopic1")
+    val PaymentDateTopic     = UnspecializedTopicName("testPaymentDateTopic")
 
     val IntSchema: Schema = AvroUtils.parseSchema(
       """{

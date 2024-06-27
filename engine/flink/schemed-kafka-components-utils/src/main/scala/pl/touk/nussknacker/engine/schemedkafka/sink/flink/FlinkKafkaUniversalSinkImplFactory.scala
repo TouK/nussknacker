@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 object FlinkKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory with Serializable {
 
   def createSink(
-      preparedTopic: PreparedKafkaTopic[TopicName.OfSink],
+      preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
       key: LazyParameter[AnyRef],
       value: LazyParameter[AnyRef],
       kafkaConfig: KafkaConfig,

@@ -8,8 +8,8 @@ import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UncategorizedTopicName}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
 import scala.jdk.CollectionConverters._
@@ -41,7 +41,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
     expireAfterWrite = Some(config.autoCreateFlagFetchCacheTtl)
   )
 
-  @transient private lazy val topicsCache = new SingleValueCache[Set[UncategorizedTopicName]](
+  @transient private lazy val topicsCache = new SingleValueCache[Set[UnspecializedTopicName]](
     expireAfterAccess = None,
     expireAfterWrite = Some(config.topicsFetchCacheTtl)
   )
@@ -63,9 +63,9 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
     }
   }
 
-  private def doAllExists(requestedTopics: Iterable[TopicName], existingTopics: Set[UncategorizedTopicName]) = {
+  private def doAllExists(requestedTopics: Iterable[TopicName], existingTopics: Set[UnspecializedTopicName]) = {
     val notExistingTopics =
-      requestedTopics.filterNot(topicName => existingTopics.contains(topicName.toUncategorizedTopicName))
+      requestedTopics.filterNot(topicName => existingTopics.contains(topicName.toUnspecialized))
     Either.cond(notExistingTopics.isEmpty, (), notExistingTopics.toList)
   }
 
@@ -84,7 +84,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
         .get()
         .asScala
         .toSet
-        .map(UncategorizedTopicName.apply)
+        .map(UnspecializedTopicName.apply)
     }
     topicsCache.put(existingTopics)
     existingTopics
@@ -117,7 +117,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
 
 final case class TopicExistenceValidationException(topics: List[TopicName])
     extends RuntimeException(
-      s"Topic${if (topics.size > 1) "s" else ""} ${topics.map(_.toUncategorizedTopicName.name).mkString(", ")} ${if (topics.size > 1) "do"
+      s"Topic${if (topics.size > 1) "s" else ""} ${topics.map(_.toUnspecialized.name).mkString(", ")} ${if (topics.size > 1) "do"
         else "does"} not exist"
     ) {
   def toCustomNodeError(nodeId: String, paramName: Option[ParameterName]) =

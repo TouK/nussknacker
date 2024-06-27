@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
@@ -1167,8 +1167,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, Any]] = {
     val avroScenario   = createScenario(config)
-    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic.toUncategorizedTopicName, config.sourceSchema)
-    runner.registerAvroSchema(config.sinkTopic.toUncategorizedTopicName, config.sinkSchema)
+    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic.toUnspecialized, config.sourceSchema)
+    runner.registerAvroSchema(config.sinkTopic.toUnspecialized, config.sinkSchema)
 
     val input = KafkaAvroConsumerRecord(config.sourceTopic, config.inputData, sourceSchemaId)
     runner.runWithAvroData(avroScenario, List(input))
@@ -1203,8 +1203,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       validationMode: Option[ValidationMode]
   ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic                = TopicName.OfSource(s"$topicPrefix-input")
-    lazy val sinkTopic                  = TopicName.OfSink(s"$topicPrefix-output")
+    lazy val sourceTopic                = TopicName.ForSource(s"$topicPrefix-input")
+    lazy val sinkTopic                  = TopicName.ForSink(s"$topicPrefix-output")
   }
 
   // RecordValid -> valid success record with base field

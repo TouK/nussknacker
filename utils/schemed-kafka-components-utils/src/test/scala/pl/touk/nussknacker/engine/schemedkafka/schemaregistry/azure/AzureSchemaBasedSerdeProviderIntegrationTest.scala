@@ -50,7 +50,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
     val valueSchemaData = Some(RuntimeSchemaData(schema, None).toParsedSchemaData)
     val pr = serdeProvider.serializationSchemaFactory
       // TODO: we should check if schema name matches our topic-schema name matching convention in the serializer
-      .create(TopicName.OfSink("notImportantTopicNme"), valueSchemaData, kafkaConfig)
+      .create(TopicName.ForSink("notImportantTopicNme"), valueSchemaData, kafkaConfig)
       .serialize(new KeyedValue[AnyRef, AnyRef](key, record), timestamp = 0L)
 
     val contentTypeHeader      = Option(pr.headers().lastHeader("content-type")).value

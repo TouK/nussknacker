@@ -13,8 +13,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.process.TopicName
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UncategorizedTopicName}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
@@ -47,9 +47,9 @@ class AzureTestsFromFileIntegrationTest
     val factory   = serdeProvider.deserializationSchemaFactory.create[String, GenericRecord](kafkaConfig, None, None)
     val formatter = serdeProvider.recordFormatterFactory.create[String, GenericRecord](kafkaConfig, factory)
 
-    val topic         = TopicName.OfSource("avro-testfromfile")
+    val topic         = TopicName.ForSource("avro-testfromfile")
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
-    val schemaV1      = createRecordSchema(topic.toUncategorizedTopicName, aFieldOnly)
+    val schemaV1      = createRecordSchema(topic.toUnspecialized, aFieldOnly)
     val schemaV1Props = schemaRegistryClient.registerSchemaVersionIfNotExists(schemaV1)
 
     val key = "fooKey"
@@ -76,7 +76,7 @@ class AzureTestsFromFileIntegrationTest
   }
 
   private def createRecordSchema(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]
   ) = {
     val fields = SchemaBuilder
@@ -87,7 +87,7 @@ class AzureTestsFromFileIntegrationTest
   }
 
   private def wrapWithConsumerRecord(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       key: String,
       schemaId: SchemaId,
       serializedValue: Array[Byte]

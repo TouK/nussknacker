@@ -32,7 +32,7 @@ object TestComponentProvider {
 
         override val nodeId: NodeId = nodeIdPassed
 
-        override val topics: List[TopicName.OfSource] = TopicName.OfSource(topicName) :: Nil
+        override val topics: List[TopicName.ForSource] = TopicName.ForSource(topicName) :: Nil
 
         override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
           val value = new String(record.value())

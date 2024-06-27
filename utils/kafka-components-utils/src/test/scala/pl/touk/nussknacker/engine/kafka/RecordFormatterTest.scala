@@ -20,7 +20,7 @@ class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenProp
       TestRecord(Json.Null)
 
     override def parseRecord(
-        topic: TopicName.OfSource,
+        topic: TopicName.ForSource,
         testRecord: TestRecord
     ): ConsumerRecord[Array[Byte], Array[Byte]] = ???
 
@@ -33,7 +33,7 @@ class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenProp
       TestRecord(Json.Null, timestamp = Some(customTimestamp))
 
     override def parseRecord(
-        topic: TopicName.OfSource,
+        topic: TopicName.ForSource,
         testRecord: TestRecord
     ): ConsumerRecord[Array[Byte], Array[Byte]] = ???
 

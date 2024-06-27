@@ -30,7 +30,7 @@ case class SerializableConsumerRecord[K, V](
     */
   @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
   def toKafkaConsumerRecord(
-      formatterTopic: TopicName.OfSource,
+      formatterTopic: TopicName.ForSource,
       serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     // serialize Key and Value to Array[Byte]

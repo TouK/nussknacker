@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicN
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UncategorizedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName._
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
@@ -64,9 +64,9 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
     val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
-      case Valid(topics) => Writer[List[ProcessCompilationError], List[UncategorizedTopicName]](Nil, topics)
+      case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
       case Invalid(e) =>
-        Writer[List[ProcessCompilationError], List[UncategorizedTopicName]](
+        Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](
           List(CustomNodeError(e.getMessage, Some(topicParamName))),
           Nil
         )
@@ -75,7 +75,7 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
     }
   }
 
-  private def getTopicParam(topics: List[UncategorizedTopicName]) = {
+  private def getTopicParam(topics: List[UnspecializedTopicName]) = {
     ParameterDeclaration
       .mandatory[String](topicParamName)
       .withCreator(
@@ -97,7 +97,7 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
   protected def getVersionParam(
       preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUncategorizedTopicName, isKey = false)
+    val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
       case Invalid(e) =>
@@ -140,7 +140,7 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
   ): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(
       schemaRegistryClient,
-      preparedTopic.prepared.toUncategorizedTopicName,
+      preparedTopic.prepared.toUnspecialized,
       version,
       isKey = false
     )
@@ -150,7 +150,7 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
   protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(
       schemaRegistryClient,
-      preparedTopic.prepared.toUncategorizedTopicName,
+      preparedTopic.prepared.toUnspecialized,
       LatestSchemaVersion,
       isKey = true
     )
@@ -162,7 +162,7 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
   ): ParsedSchemaDeterminer = {
     new ParsedSchemaDeterminer(
       schemaRegistryClient,
-      preparedTopic.prepared.toUncategorizedTopicName,
+      preparedTopic.prepared.toUnspecialized,
       version,
       isKey = false
     )
@@ -172,7 +172,7 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
   protected def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): ParsedSchemaDeterminer = {
     new ParsedSchemaDeterminer(
       schemaRegistryClient,
-      preparedTopic.prepared.toUncategorizedTopicName,
+      preparedTopic.prepared.toUnspecialized,
       LatestSchemaVersion,
       isKey = true
     )

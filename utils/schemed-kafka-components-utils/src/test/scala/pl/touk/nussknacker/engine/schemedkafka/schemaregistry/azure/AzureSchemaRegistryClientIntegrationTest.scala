@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.kafka.{
   KafkaUtils,
   SchemaRegistryCacheConfig,
   SchemaRegistryClientKafkaConfig,
-  UncategorizedTopicName
+  UnspecializedTopicName
 }
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -49,7 +49,7 @@ class AzureSchemaRegistryClientIntegrationTest
   private val schemaRegistryClient = AzureSchemaRegistryClientFactory.create(schemaRegistryConfig)
 
   test("getAllTopics should return topic for corresponding schema based on schema name") {
-    val givenTopic = UncategorizedTopicName("nu-cloud-integration-test")
+    val givenTopic = UnspecializedTopicName("nu-cloud-integration-test")
     registerTopic(givenTopic)
 
     val value  = new NuCloudIntegrationTestValue
@@ -65,7 +65,7 @@ class AzureSchemaRegistryClientIntegrationTest
   }
 
   test("getFreshSchema should return version for topic for corresponding schema based on schema name") {
-    val givenTopic = UncategorizedTopicName("nu-cloud-multiple-versions-test")
+    val givenTopic = UnspecializedTopicName("nu-cloud-multiple-versions-test")
     registerTopic(givenTopic)
 
     val aFieldOnlySchema =
@@ -101,7 +101,7 @@ class AzureSchemaRegistryClientIntegrationTest
     new AvroSchema(schema)
   }
 
-  private def registerTopic(topicName: UncategorizedTopicName): Unit = {
+  private def registerTopic(topicName: UnspecializedTopicName): Unit = {
     val kafkaConfig = KafkaConfig(Some(schemaRegistryConfig.kafkaProperties), None)
     KafkaUtils.usingAdminClient(kafkaConfig) {
       _.createTopics(Collections.singletonList[NewTopic](new NewTopic(topicName.name, Collections.emptyMap())))
@@ -109,7 +109,7 @@ class AzureSchemaRegistryClientIntegrationTest
   }
 
   private def createRecordSchema(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]
   ): AvroSchema = {
     val fields = SchemaBuilder

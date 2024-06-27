@@ -51,7 +51,7 @@ class UniversalKafkaSinkFactory(
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
-) extends KafkaUniversalComponentTransformer[Sink, TopicName.OfSink]
+) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {
 
   override type State = TransformationState
@@ -79,7 +79,7 @@ class UniversalKafkaSinkFactory(
     sinkValidationModeParamName
   )
 
-  override protected def topicFrom(value: String): TopicName.OfSink = TopicName.OfSink(value)
+  override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
   protected def rawEditorParameterStep(
       context: ValidationContext

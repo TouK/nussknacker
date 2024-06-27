@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroTestData, JsonTestData}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -34,8 +34,8 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   val avroSchema: avro.Schema = AvroTestData.personSchema
   val jsonSchema: Schema      = JsonTestData.schemaPerson
 
-  private val inputTopic  = TopicName.OfSource("input")
-  private val outputTopic = TopicName.OfSink("output")
+  private val inputTopic  = TopicName.ForSource("input")
+  private val outputTopic = TopicName.ForSink("output")
 
   private val scenario = ScenarioBuilder
     .streamingLite("check json serialization")
@@ -78,8 +78,8 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   test("should mix avro schema source and json schema sink") {
     // Given
     val runner   = createRunner
-    val schemaId = runner.registerAvroSchema(inputTopic.toUncategorizedTopicName, avroSchema)
-    runner.registerJsonSchema(outputTopic.toUncategorizedTopicName, jsonSchema)
+    val schemaId = runner.registerAvroSchema(inputTopic.toUnspecialized, avroSchema)
+    runner.registerJsonSchema(outputTopic.toUnspecialized, jsonSchema)
 
     val inputJsonBytes =
       """{
@@ -105,8 +105,8 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   test("should mix json schema source and avro schema sink") {
     // Given
     val runner   = createRunner
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, jsonSchema)
-    runner.registerAvroSchema(outputTopic.toUncategorizedTopicName, avroSchema)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, jsonSchema)
+    runner.registerAvroSchema(outputTopic.toUnspecialized, avroSchema)
 
     val inputJsonBytes =
       """{
@@ -144,8 +144,8 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   test("should fail json schema source with avro schema sink when json integer is cast to Long") {
     // Given
     val runner   = createRunner
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, jsonSchema)
-    runner.registerAvroSchema(outputTopic.toUncategorizedTopicName, avroSchema)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, jsonSchema)
+    runner.registerAvroSchema(outputTopic.toUnspecialized, avroSchema)
 
     val inputJsonBytes =
       """{
@@ -181,8 +181,8 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   test("should mix json schema source with avro schema sink when json integer is cast to Integer") {
     // Given
     val runner   = createRunner
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, JsonTestData.schemaPersonWithLimits)
-    runner.registerAvroSchema(outputTopic.toUncategorizedTopicName, avroSchema)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, JsonTestData.schemaPersonWithLimits)
+    runner.registerAvroSchema(outputTopic.toUnspecialized, avroSchema)
 
     val inputJsonBytes =
       """{

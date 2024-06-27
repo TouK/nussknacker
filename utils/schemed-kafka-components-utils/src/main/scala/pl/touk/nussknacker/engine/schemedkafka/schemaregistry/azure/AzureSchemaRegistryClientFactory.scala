@@ -58,7 +58,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override protected def getByTopicAndVersion(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       version: Int,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
@@ -79,7 +79,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   override protected def getLatestFreshSchema(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] = {
     getOneMatchingSchemaName(topicName, isKey).andThen { fullSchemaName =>
@@ -104,14 +104,14 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     SchemaWithMetadata(new AvroSchema(IOUtils.toString(response.getValue, StandardCharsets.UTF_8)), schemaId)
   }
 
-  override def getAllTopics: Validated[SchemaRegistryError, List[UncategorizedTopicName]] = {
+  override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] = {
     val topics        = fetchTopics(KafkaConfig(Some(config.kafkaProperties), None))
     val matchStrategy = SchemaNameTopicMatchStrategy(topics)
     getAllFullSchemaNames.map(matchStrategy.getAllMatchingTopics(_, isKey = false))
   }
 
   override def getAllVersions(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, List[Integer]] = {
     getOneMatchingSchemaName(topicName, isKey).andThen(getVersions)
@@ -122,11 +122,11 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
       .usingAdminClient(kafkaConfig) { admin =>
         admin.listTopics().names().get().asScala.toList
       }
-      .map(UncategorizedTopicName.apply)
+      .map(UnspecializedTopicName.apply)
   }
 
   private def getOneMatchingSchemaName(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, String] = {
     getAllFullSchemaNames.andThen { fullSchemaNames =>
@@ -154,7 +154,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
       .map(_.getValue.getSchemas().asScala.toList)
   }
 
-  override def registerSchema(topicName: UncategorizedTopicName, isKey: Boolean, schema: ParsedSchema): SchemaId = {
+  override def registerSchema(topicName: UnspecializedTopicName, isKey: Boolean, schema: ParsedSchema): SchemaId = {
     val schemaNameBasedOnTopic = SchemaNameTopicMatchStrategy.schemaNameFromTopicName(topicName, isKey)
     val avroSchema             = checkAvroSchema(schema).rawSchema()
     if (avroSchema.getType == Schema.Type.RECORD) {

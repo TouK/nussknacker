@@ -25,8 +25,8 @@ class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryC
 
 trait RecordFormatterSupport {
   def formatMessage(data: Any): Json
-  def readKeyMessage(topic: TopicName.OfSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
-  def readValueMessage(topic: TopicName.OfSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
+  def readKeyMessage(topic: TopicName.ForSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
+  def readValueMessage(topic: TopicName.ForSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
 }
 
 object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
@@ -34,20 +34,20 @@ object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
     BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
 
   override def readKeyMessage(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       schemaOpt: Option[ParsedSchema],
       jsonObj: Json
   ): Array[Byte] =
     readMessage(topic, schemaOpt, jsonObj)
 
   override def readValueMessage(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       schemaOpt: Option[ParsedSchema],
       jsonObj: Json
   ): Array[Byte] =
     readMessage(topic, schemaOpt, jsonObj)
 
-  private def readMessage(topic: TopicName.OfSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
+  private def readMessage(topic: TopicName.ForSource, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] =
     jsonObj match {
       // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
       case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
@@ -62,7 +62,7 @@ class AvroPayloadRecordFormatterSupport(keyMessageReader: AvroMessageReader, val
   override def formatMessage(data: Any): Json = AvroMessageFormatter.asJson(data)
 
   override def readKeyMessage(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       schemaOpt: Option[ParsedSchema],
       jsonObj: Json
   ): Array[Byte] =
@@ -76,7 +76,7 @@ class AvroPayloadRecordFormatterSupport(keyMessageReader: AvroMessageReader, val
     )
 
   override def readValueMessage(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       schemaOpt: Option[ParsedSchema],
       jsonObj: Json
   ): Array[Byte] =

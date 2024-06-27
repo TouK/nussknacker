@@ -61,7 +61,7 @@ trait KafkaAvroSpecMixin
     with VeryPatientScalaFutures
     with Serializable {
 
-  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.OfSource]
+  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
 
   import spel.Implicits._
 
@@ -244,7 +244,7 @@ trait KafkaAvroSpecMixin
   }
 
   case class UniversalSinkParam(
-      topic: TopicName.OfSink,
+      topic: TopicName.ForSink,
       versionOption: SchemaVersionOption,
       valueParams: List[(String, expression.Expression)],
       key: String,

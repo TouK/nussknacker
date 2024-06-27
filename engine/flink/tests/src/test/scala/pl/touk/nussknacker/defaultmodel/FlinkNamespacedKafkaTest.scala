@@ -7,7 +7,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -18,8 +18,8 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
   import spel.Implicits._
 
   private val namespaceName = "ns"
-  private val inputTopic    = TopicName.OfSource("input")
-  private val outputTopic   = TopicName.OfSink("output")
+  private val inputTopic    = TopicName.ForSource("input")
+  private val outputTopic   = TopicName.ForSink("output")
 
   override lazy val config: Config = ConfigFactory
     .load()
@@ -44,8 +44,8 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
     val namespacedInputTopic  = Namespaced(inputTopic)
     val namespacedOutputTopic = Namespaced(outputTopic)
 
-    val inputSubject  = ConfluentUtils.topicSubject(namespacedInputTopic.toUncategorizedTopicName, isKey = false)
-    val outputSubject = ConfluentUtils.topicSubject(namespacedOutputTopic.toUncategorizedTopicName, isKey = false)
+    val inputSubject  = ConfluentUtils.topicSubject(namespacedInputTopic.toUnspecialized, isKey = false)
+    val outputSubject = ConfluentUtils.topicSubject(namespacedOutputTopic.toUnspecialized, isKey = false)
     schemaRegistryMockClient.register(inputSubject, schema)
     schemaRegistryMockClient.register(outputSubject, schema)
 
@@ -94,14 +94,14 @@ class FlinkNamespacedKafkaTest extends FlinkWithKafkaSuite {
       ns.withNamespace(topic, namespaceName)
     }
 
-    implicit val sourceNamespaced: Namespaced[TopicName.OfSource] = new Namespaced[TopicName.OfSource] {
-      override def withNamespace(topic: TopicName.OfSource, namespace: String): TopicName.OfSource =
-        TopicName.OfSource(s"${namespace}_${topic.name}")
+    implicit val sourceNamespaced: Namespaced[TopicName.ForSource] = new Namespaced[TopicName.ForSource] {
+      override def withNamespace(topic: TopicName.ForSource, namespace: String): TopicName.ForSource =
+        TopicName.ForSource(s"${namespace}_${topic.name}")
     }
 
-    implicit val sinkNamespaced: Namespaced[TopicName.OfSink] = new Namespaced[TopicName.OfSink] {
-      override def withNamespace(topic: TopicName.OfSink, namespace: String): TopicName.OfSink =
-        TopicName.OfSink(s"${namespace}_${topic.name}")
+    implicit val sinkNamespaced: Namespaced[TopicName.ForSink] = new Namespaced[TopicName.ForSink] {
+      override def withNamespace(topic: TopicName.ForSink, namespace: String): TopicName.ForSink =
+        TopicName.ForSink(s"${namespace}_${topic.name}")
     }
 
   }

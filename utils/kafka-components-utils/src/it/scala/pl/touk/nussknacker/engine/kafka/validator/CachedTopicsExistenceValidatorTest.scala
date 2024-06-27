@@ -53,12 +53,12 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
       _.createTopics(Collections.singletonList[NewTopic](topic))
     }
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(TopicName.OfSource(topic.name())) shouldBe Symbol("valid")
+    v.validateTopic(TopicName.ForSource(topic.name())) shouldBe Symbol("valid")
   }
 
   test("should validate not existing topic") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(TopicName.OfSource("not.existing")) shouldBe Symbol("invalid")
+    v.validateTopic(TopicName.ForSource("not.existing")) shouldBe Symbol("invalid")
   }
 
   test("should not validate not existing topic when validation disabled") {
@@ -68,18 +68,18 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
         topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
       )
     )
-    v.validateTopic(TopicName.OfSource("not.existing")) shouldBe Symbol("valid")
+    v.validateTopic(TopicName.ForSource("not.existing")) shouldBe Symbol("valid")
   }
 
   test("should fetch topics every time when not valid using cache") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(TopicName.OfSource("test.topic.2")) shouldBe Symbol("invalid")
+    v.validateTopic(TopicName.ForSource("test.topic.2")) shouldBe Symbol("invalid")
 
     KafkaUtils.usingAdminClient(kafkaConfig) {
       _.createTopics(Collections.singletonList[NewTopic](new NewTopic("test.topic.2", Collections.emptyMap())))
     }
 
-    v.validateTopic(TopicName.OfSource("test.topic.2")) shouldBe Symbol("valid")
+    v.validateTopic(TopicName.ForSource("test.topic.2")) shouldBe Symbol("valid")
   }
 
 }
@@ -102,14 +102,14 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
 
   test("should validate not existing topic") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(TopicName.OfSource("not.existing")) shouldBe Symbol("valid")
+    v.validateTopic(TopicName.ForSource("not.existing")) shouldBe Symbol("valid")
   }
 
   test("should use cache when validating") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(TopicName.OfSource("not.existing")) shouldBe Symbol("valid")
+    v.validateTopic(TopicName.ForSource("not.existing")) shouldBe Symbol("valid")
     container.stop()
-    v.validateTopic(TopicName.OfSource("not.existing")) shouldBe Symbol("valid")
+    v.validateTopic(TopicName.ForSource("not.existing")) shouldBe Symbol("valid")
   }
 
 }

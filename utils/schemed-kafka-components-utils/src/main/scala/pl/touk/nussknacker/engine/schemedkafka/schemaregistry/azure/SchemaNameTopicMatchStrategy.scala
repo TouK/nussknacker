@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure
 
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.{
   FullSchemaNameDecomposed,
   toSchemaNamingConvention
@@ -9,12 +9,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTo
 // TODO: It probable should be configurable: e.g would be nice to have possibility to define static topic -> schemaName map in config
 //       Thanks to that it would be possible to use existing schemas that not follow our convention in Nussknacker.
 //       Also in case of ambiguity (>1 schemas with only different namespaces), we could pick the correct one schema.
-class SchemaNameTopicMatchStrategy(referenceTopicList: List[UncategorizedTopicName]) {
+class SchemaNameTopicMatchStrategy(referenceTopicList: List[UnspecializedTopicName]) {
 
   /**
     * List all reference topics matching schema names.
     */
-  def getAllMatchingTopics(fullSchemaNames: List[String], isKey: Boolean): List[UncategorizedTopicName] = {
+  def getAllMatchingTopics(fullSchemaNames: List[String], isKey: Boolean): List[UnspecializedTopicName] = {
     val coreSchemaNames = fullSchemaNames.collect { case _ @FullSchemaNameDecomposed(coreName, `isKey`) =>
       coreName
     }
@@ -30,15 +30,15 @@ object SchemaNameTopicMatchStrategy {
   val KeySuffix   = "Key"
   val ValueSuffix = "Value"
 
-  def apply(referenceTopicList: List[UncategorizedTopicName] = Nil): SchemaNameTopicMatchStrategy =
+  def apply(referenceTopicList: List[UnspecializedTopicName] = Nil): SchemaNameTopicMatchStrategy =
     new SchemaNameTopicMatchStrategy(
       referenceTopicList
     )
 
-  def valueSchemaNameFromTopicName(topicName: UncategorizedTopicName): String =
+  def valueSchemaNameFromTopicName(topicName: UnspecializedTopicName): String =
     schemaNameFromTopicName(topicName, isKey = false)
 
-  def schemaNameFromTopicName(topicName: UncategorizedTopicName, isKey: Boolean): String = {
+  def schemaNameFromTopicName(topicName: UnspecializedTopicName, isKey: Boolean): String = {
     val suffix = if (isKey) KeySuffix else ValueSuffix
     toSchemaNamingConvention(topicName) + suffix
   }
@@ -47,7 +47,7 @@ object SchemaNameTopicMatchStrategy {
     * List all schemas matching reference topics.
     */
   def getMatchingSchemas(
-      topicName: UncategorizedTopicName,
+      topicName: UnspecializedTopicName,
       fullSchemaNames: List[String],
       isKey: Boolean
   ): List[String] = {
@@ -62,7 +62,7 @@ object SchemaNameTopicMatchStrategy {
     * Transforms topic name to schema naming convention.
     * @see https://nussknacker.io/documentation/docs/integration/KafkaIntegration/#association-between-schema-with-topic
     */
-  def toSchemaNamingConvention(topicName: UncategorizedTopicName): String =
+  def toSchemaNamingConvention(topicName: UnspecializedTopicName): String =
     topicName.name.toLowerCase.replaceAll("\\W+", " ").split(" ").map(_.capitalize).mkString("")
 
   object FullSchemaNameDecomposed {

@@ -24,7 +24,7 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V]
   protected def createValueDeserializer(kafkaConfig: KafkaConfig): Deserializer[V]
 
   override def create(
-      topics: List[TopicName.OfSource],
+      topics: List[TopicName.ForSource],
       kafkaConfig: KafkaConfig
   ): serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 

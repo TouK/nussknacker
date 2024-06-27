@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
   * @tparam T type of serialized object
   */
 trait KafkaSerializationSchemaFactory[T] extends Serializable {
-  def create(topic: TopicName.OfSink, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
+  def create(topic: TopicName.ForSink, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T]
 }
 
 /**
@@ -23,6 +23,6 @@ trait KafkaSerializationSchemaFactory[T] extends Serializable {
 case class FixedKafkaSerializationSchemaFactory[T](deserializationSchema: String => KafkaSerializationSchema[T])
     extends KafkaSerializationSchemaFactory[T] {
 
-  override def create(topic: TopicName.OfSink, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
+  override def create(topic: TopicName.ForSink, kafkaConfig: KafkaConfig): KafkaSerializationSchema[T] =
     deserializationSchema(topic.name)
 }

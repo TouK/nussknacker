@@ -13,7 +13,7 @@ object sinks {
   object FlinkKafkaSinkImplFactory extends KafkaSinkImplFactory {
 
     override def prepareSink(
-        topic: PreparedKafkaTopic[TopicName.OfSink],
+        topic: PreparedKafkaTopic[TopicName.ForSink],
         value: LazyParameter[AnyRef],
         kafkaConfig: KafkaConfig,
         serializationSchema: KafkaSerializationSchema[AnyRef],

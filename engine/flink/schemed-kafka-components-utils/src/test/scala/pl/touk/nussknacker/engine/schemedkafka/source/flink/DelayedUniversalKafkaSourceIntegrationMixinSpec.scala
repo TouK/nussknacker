@@ -58,7 +58,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
     sinkForInputMetaResultsHolder().clear()
   }
 
-  protected def runAndVerify(topic: TopicName.OfSource, process: CanonicalProcess, givenObj: AnyRef): Unit = {
+  protected def runAndVerify(topic: TopicName.ForSource, process: CanonicalProcess, givenObj: AnyRef): Unit = {
     kafkaClient.createTopic(topic.name, partitions = 1)
     pushMessage(givenObj, topic)
     run(process) {
@@ -70,7 +70,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
   }
 
   protected def createProcessWithDelayedSource(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       version: SchemaVersionOption,
       timestampField: String,
       delay: String

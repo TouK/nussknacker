@@ -35,7 +35,7 @@ class KafkaSinkFactory(
       @ParamName("Topic") @NotBlank topic: String,
       @ParamName("Value") value: LazyParameter[AnyRef]
   ): Sink =
-    createSink(TopicName.OfSink(topic), value, processMetaData)
+    createSink(TopicName.ForSink(topic), value, processMetaData)
 
 }
 
@@ -45,7 +45,7 @@ abstract class BaseKafkaSinkFactory(
     implProvider: KafkaSinkImplFactory
 ) extends SinkFactory {
 
-  protected def createSink(topic: TopicName.OfSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
+  protected def createSink(topic: TopicName.ForSink, value: LazyParameter[AnyRef], processMetaData: MetaData): Sink = {
     val kafkaConfig   = KafkaConfig.parseConfig(modelDependencies.config)
     val preparedTopic = KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
     KafkaComponentsUtils.validateTopicsExistence(List(preparedTopic), kafkaConfig)
@@ -60,7 +60,7 @@ trait KafkaSinkImplFactory {
 
   // TODO: handle key passed by user - not only extracted by serialization schema from value
   def prepareSink(
-      topic: PreparedKafkaTopic[TopicName.OfSink],
+      topic: PreparedKafkaTopic[TopicName.ForSink],
       value: LazyParameter[AnyRef],
       kafkaConfig: KafkaConfig,
       serializationSchema: KafkaSerializationSchema[AnyRef],

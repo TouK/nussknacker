@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -22,8 +22,8 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val inputTopic  = TopicName.OfSource("input")
-  private val outputTopic = TopicName.OfSink("output")
+  private val inputTopic  = TopicName.ForSource("input")
+  private val outputTopic = TopicName.ForSink("output")
 
   private val schema = AvroUtils.parseSchema(s"""{
        |  "type": "record",
@@ -63,8 +63,8 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
       .load()
       .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
     val runner = TestScenarioRunner.kafkaLiteBased(config).build()
-    runner.registerAvroSchema(inputTopic.toUncategorizedTopicName, schema)
-    runner.registerAvroSchema(outputTopic.toUncategorizedTopicName, schema)
+    runner.registerAvroSchema(inputTopic.toUnspecialized, schema)
+    runner.registerAvroSchema(outputTopic.toUnspecialized, schema)
 
     // When
     val jsonRecord =

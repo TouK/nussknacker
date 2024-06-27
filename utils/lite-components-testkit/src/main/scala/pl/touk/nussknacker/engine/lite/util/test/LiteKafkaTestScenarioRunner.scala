@@ -15,7 +15,7 @@ import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UncategorizedTopicName}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.confluent.{AzureKafkaAvroElementSerde, ConfluentKafkaAvroElementSerde}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -169,10 +169,10 @@ class LiteKafkaTestScenarioRunner(
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
 
-  def registerJsonSchema(topic: UncategorizedTopicName, schema: EveritSchema): SchemaId =
+  def registerJsonSchema(topic: UnspecializedTopicName, schema: EveritSchema): SchemaId =
     schemaRegistryClient.registerSchema(topic, isKey = false, ConfluentUtils.convertToJsonSchema(schema))
 
-  def registerAvroSchema(topic: UncategorizedTopicName, schema: Schema): SchemaId =
+  def registerAvroSchema(topic: UnspecializedTopicName, schema: Schema): SchemaId =
     schemaRegistryClient.registerSchema(topic, isKey = false, ConfluentUtils.convertToAvroSchema(schema))
 
   private def serializeStringInput(input: StringInput): SerializedInput = {
@@ -257,10 +257,10 @@ object KafkaConsumerRecord {
   private val DefaultPartition = 1
   private val DefaultOffset    = 1
 
-  def apply[K, V](topic: TopicName.OfSource, value: V): ConsumerRecord[K, V] =
+  def apply[K, V](topic: TopicName.ForSource, value: V): ConsumerRecord[K, V] =
     new ConsumerRecord(topic.name, DefaultPartition, DefaultOffset, null.asInstanceOf[K], value)
 
-  def apply[K, V](topic: TopicName.OfSource, key: K, value: V): ConsumerRecord[K, V] =
+  def apply[K, V](topic: TopicName.ForSource, key: K, value: V): ConsumerRecord[K, V] =
     new ConsumerRecord(topic.name, DefaultPartition, DefaultOffset, key, value)
 }
 
@@ -268,11 +268,11 @@ case class KafkaAvroElement(data: Any, schemaId: SchemaId)
 
 object KafkaAvroConsumerRecord {
 
-  def apply(topic: TopicName.OfSource, value: Any, schemaId: SchemaId): ConsumerRecord[Any, KafkaAvroElement] =
+  def apply(topic: TopicName.ForSource, value: Any, schemaId: SchemaId): ConsumerRecord[Any, KafkaAvroElement] =
     KafkaConsumerRecord(topic, KafkaAvroElement(value, schemaId))
 
   def apply(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       key: Any,
       keySchemaId: SchemaId,
       value: Any,
@@ -281,7 +281,7 @@ object KafkaAvroConsumerRecord {
     KafkaConsumerRecord(topic, KafkaAvroElement(key, keySchemaId), KafkaAvroElement(value, valueSchemaId))
 
   def apply(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       key: String,
       value: Any,
       valueSchemaId: SchemaId

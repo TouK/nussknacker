@@ -30,7 +30,7 @@ abstract class KafkaSchemaBasedValueSerializationSchemaFactory extends KafkaSche
   ): Serializer[Any]
 
   override def create(
-      topic: TopicName.OfSink,
+      topic: TopicName.ForSink,
       schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
       kafkaConfig: KafkaConfig
   ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
@@ -71,7 +71,7 @@ abstract class KafkaSchemaBasedKeyValueSerializationSchemaFactory extends KafkaS
   ): Serializer[Any]
 
   override def create(
-      topic: TopicName.OfSink,
+      topic: TopicName.ForSink,
       schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
       kafkaConfig: KafkaConfig
   ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {

@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{
   StandardTimestampWatermarkHandler,
   TimestampWatermarkHandler
 }
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{
   FlinkDeserializationSchemaWrapper,
@@ -41,7 +41,7 @@ import java.util.Properties
 import scala.jdk.CollectionConverters._
 
 class FlinkKafkaSource[T](
-    preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
+    preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
     val kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[T],
     passedAssigner: Option[TimestampWatermarkHandler[T]], // TODO: rename to smth like overridingTimestampAssigner
@@ -70,7 +70,7 @@ class FlinkKafkaSource[T](
     )
   }
 
-  protected lazy val topics: List[TopicName.OfSource] = preparedTopics.map(_.prepared)
+  protected lazy val topics: List[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
   override val typeInformation: TypeInformation[T] = {
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
@@ -178,7 +178,7 @@ class FlinkKafkaConsumerHandlingExceptions[T](
 }
 
 class FlinkConsumerRecordBasedKafkaSource[K, V](
-    preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
+    preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
     kafkaConfig: KafkaConfig,
     deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
     timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],

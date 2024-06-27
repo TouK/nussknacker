@@ -67,7 +67,7 @@ class KafkaSingleScenarioTaskRun(
   // TODO: consider more elastic extractor definition (e.g. via configuration, as it is in flink executor)
   protected val extractor: WithExceptionExtractor = new DefaultWithExceptionExtractor
 
-  private val sourceToTopic: Map[TopicName.OfSource, Map[SourceId, LiteKafkaSource]] = interpreter.sources
+  private val sourceToTopic: Map[TopicName.ForSource, Map[SourceId, LiteKafkaSource]] = interpreter.sources
     .flatMap {
       case (sourceId, kafkaSource: LiteKafkaSource) =>
         kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource))

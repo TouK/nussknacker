@@ -34,7 +34,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.source.flink.TestWithTestDataSpec.sinkForInputMetaResultsHolder
 
@@ -56,7 +56,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   test("Should pass correct timestamp from test data") {
 
-    val topic             = UncategorizedTopicName("address")
+    val topic             = UnspecializedTopicName("address")
     val expectedTimestamp = System.currentTimeMillis()
     val inputMeta = InputMeta(
       key = null,
@@ -99,7 +99,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
   }
 
   test("Should pass parameters correctly and use them in scenario test") {
-    val topic = UncategorizedTopicName("company")
+    val topic = UnspecializedTopicName("company")
     registerSchema(topic, Company.schema)
     val process = ScenarioBuilder
       .streaming("test")
@@ -155,7 +155,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.exceptions shouldBe empty
   }
 
-  private def registerSchema(topic: UncategorizedTopicName, schema: Schema) = {
+  private def registerSchema(topic: UnspecializedTopicName, schema: Schema) = {
     val subject      = ConfluentUtils.topicSubject(topic, isKey = false)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryMockClient.register(subject, parsedSchema)

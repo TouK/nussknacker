@@ -151,7 +151,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     }
   }
 
-  private def consumeOneAvroMessage(topic: TopicName.OfSink) =
+  private def consumeOneAvroMessage(topic: TopicName.ForSink) =
     valueDeserializer.deserialize(
       topic.name,
       kafkaClient.createConsumer().consumeWithConsumerRecord(topic.name).take(1).head.value()

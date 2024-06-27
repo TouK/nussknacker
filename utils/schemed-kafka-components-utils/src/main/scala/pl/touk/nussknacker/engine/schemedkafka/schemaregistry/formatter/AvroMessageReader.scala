@@ -14,7 +14,7 @@ private[schemaregistry] class AvroMessageReader(serializer: Serializer[Any]) {
 
   private val decoderFactory = DecoderFactory.get
 
-  def readJson(jsonObj: Json, schema: Schema, topic: TopicName.OfSource): Array[Byte] = {
+  def readJson(jsonObj: Json, schema: Schema, topic: TopicName.ForSource): Array[Byte] = {
     try {
       val avroObj = jsonToAvro(jsonObj, schema)
       serializer.serialize(topic.name, new RecordHeaders(), avroObj)

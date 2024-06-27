@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.Universa
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 class FlinkKafkaUniversalSink(
-    preparedTopic: PreparedKafkaTopic[TopicName.OfSink],
+    preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
     key: LazyParameter[AnyRef],
     value: LazyParameter[AnyRef],
     kafkaConfig: KafkaConfig,

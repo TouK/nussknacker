@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
@@ -32,7 +32,7 @@ class MockConfluentSchemaRegistryClientBuilder {
   }
 
   private def register(mockSchemaRegistry: MockSchemaRegistryClient, item: RegistryItem): Int = {
-    val subject      = ConfluentUtils.topicSubject(UncategorizedTopicName(item.topic), item.isKey)
+    val subject      = ConfluentUtils.topicSubject(UnspecializedTopicName(item.topic), item.isKey)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(item.schema, Some(item.version))
     mockSchemaRegistry.register(subject, parsedSchema, item.version, item.id)
   }

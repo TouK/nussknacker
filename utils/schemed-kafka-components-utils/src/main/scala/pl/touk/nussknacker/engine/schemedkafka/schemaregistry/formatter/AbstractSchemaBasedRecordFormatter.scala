@@ -87,7 +87,7 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
   override def parseRecord(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val record = decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
@@ -116,13 +116,13 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 
   protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       jsonObj: Json
   ): Array[Byte]
 
   protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       jsonObj: Json
   ): Array[Byte]
 

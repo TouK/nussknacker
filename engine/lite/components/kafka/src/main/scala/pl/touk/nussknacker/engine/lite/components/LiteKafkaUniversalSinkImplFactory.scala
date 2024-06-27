@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.{KeyedValue, ThreadUtils}
 object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
 
   override def createSink(
-      preparedTopic: PreparedKafkaTopic[TopicName.OfSink],
+      preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
       keyParam: LazyParameter[AnyRef],
       valueParam: LazyParameter[AnyRef],
       kafkaConfig: KafkaConfig,

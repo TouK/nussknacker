@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
 
 // TODO: handle key passed by user - not only extracted by serialization schema from value
 class FlinkKafkaSink(
-    topic: PreparedKafkaTopic[TopicName.OfSink],
+    topic: PreparedKafkaTopic[TopicName.ForSink],
     value: LazyParameter[AnyRef],
     kafkaConfig: KafkaConfig,
     serializationSchema: KafkaSerializationSchema[AnyRef],

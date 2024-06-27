@@ -18,7 +18,7 @@ trait RecordFormatter extends Serializable {
 
   protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord
 
-  def parseRecord(topic: TopicName.OfSource, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
+  def parseRecord(topic: TopicName.ForSource, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
 
   def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
     val testRecords = records.map { consumerRecord =>
@@ -28,7 +28,7 @@ trait RecordFormatter extends Serializable {
     TestData(testRecords)
   }
 
-  def generateTestData(topics: List[TopicName.OfSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
+  def generateTestData(topics: List[TopicName.ForSource], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
     val merged             = ListUtil.mergeLists(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
@@ -56,7 +56,7 @@ object BasicRecordFormatter extends RecordFormatter {
     TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
 
   override def parseRecord(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       testRecord: TestRecord
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
@@ -75,7 +75,7 @@ trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Sou
 
   protected def kafkaConfig: KafkaConfig
 
-  protected def topics: List[TopicName.OfSource]
+  protected def topics: List[TopicName.ForSource]
 
   protected def formatter: RecordFormatter
 

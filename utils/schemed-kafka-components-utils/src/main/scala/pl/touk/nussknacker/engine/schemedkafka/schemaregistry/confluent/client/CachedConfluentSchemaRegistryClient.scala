@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaWithMetadata}
 
@@ -17,7 +17,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     with LazyLogging {
 
   override def getLatestFreshSchema(
-      topic: UncategorizedTopicName,
+      topic: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
@@ -26,7 +26,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     }
 
   override def getByTopicAndVersion(
-      topic: UncategorizedTopicName,
+      topic: UnspecializedTopicName,
       version: Int,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] =
@@ -39,15 +39,15 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       }
     }
 
-  override def getAllTopics: Validated[SchemaRegistryError, List[UncategorizedTopicName]] =
+  override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     handleClientError {
       caches.topicsCache.getOrCreate {
-        client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject).map(UncategorizedTopicName.apply)
+        client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject).map(UnspecializedTopicName.apply)
       }
     }
 
   override def getAllVersions(
-      topic: UncategorizedTopicName,
+      topic: UnspecializedTopicName,
       isKey: Boolean
   ): Validated[SchemaRegistryError, List[Integer]] =
     handleClientError {

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 trait KafkaSchemaBasedSerializationSchemaFactory extends Serializable {
 
   def create(
-      topic: TopicName.OfSink,
+      topic: TopicName.ForSink,
       schemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
       kafkaConfig: KafkaConfig
   ): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]]

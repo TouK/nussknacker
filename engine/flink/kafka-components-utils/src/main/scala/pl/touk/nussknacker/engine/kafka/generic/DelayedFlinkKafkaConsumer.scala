@@ -45,7 +45,7 @@ import scala.jdk.CollectionConverters._
 object DelayedFlinkKafkaConsumer {
 
   def apply[T](
-      topics: List[PreparedKafkaTopic[TopicName.OfSource]],
+      topics: List[PreparedKafkaTopic[TopicName.ForSource]],
       schema: KafkaDeserializationSchema[T],
       config: KafkaConfig,
       consumerGroupId: String,
@@ -90,7 +90,7 @@ object DelayedFlinkKafkaConsumer {
 }
 
 class DelayedFlinkKafkaConsumer[T](
-    topics: List[PreparedKafkaTopic[TopicName.OfSource]],
+    topics: List[PreparedKafkaTopic[TopicName.ForSource]],
     schema: KafkaDeserializationSchema[T],
     props: Properties,
     delayCalculator: DelayCalculator,

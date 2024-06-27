@@ -14,11 +14,11 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 
   protected def prepareTestCaseFixture(
       scenarioName: ProcessName,
-      prepareScenario: (TopicName.OfSource, TopicName.OfSink) => CanonicalProcess
+      prepareScenario: (TopicName.ForSource, TopicName.ForSink) => CanonicalProcess
   ): NuKafkaRuntimeTestTestCaseFixture = {
     val testCaseId  = NuRuntimeTestUtils.testCaseId(self.suiteName, scenarioName)
-    val inputTopic  = TopicName.OfSource(testCaseId + "-input")
-    val outputTopic = TopicName.OfSink(testCaseId + "-output")
+    val inputTopic  = TopicName.ForSource(testCaseId + "-input")
+    val outputTopic = TopicName.ForSink(testCaseId + "-output")
     val errorTopic  = testCaseId + "-error"
     kafkaClient.createTopic(inputTopic.name)
     kafkaClient.createTopic(outputTopic.name, 1)
@@ -32,8 +32,8 @@ trait NuKafkaRuntimeTestMixin { self: TestSuite =>
 }
 
 final case class NuKafkaRuntimeTestTestCaseFixture(
-    inputTopic: TopicName.OfSource,
-    outputTopic: TopicName.OfSink,
+    inputTopic: TopicName.ForSource,
+    outputTopic: TopicName.ForSink,
     errorTopic: String,
     scenarioFile: File
 )

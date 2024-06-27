@@ -64,7 +64,7 @@ class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
 
   override protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       jsonObj: Json
   ): Array[Byte] = {
     val avroSchema = AvroUtils.extractSchema(
@@ -75,7 +75,7 @@ class AvroToJsonFormatter[K: ClassTag, V: ClassTag](
 
   override protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       jsonObj: Json
   ): Array[Byte] = {
     val avroSchema = AvroUtils.extractSchema(

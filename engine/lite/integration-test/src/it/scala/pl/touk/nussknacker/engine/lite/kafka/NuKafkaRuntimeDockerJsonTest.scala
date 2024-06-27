@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -30,11 +30,11 @@ class NuKafkaRuntimeDockerJsonTest
 
   private def registerSchemas(): Unit = {
     schemaRegistryClient.register(
-      ConfluentUtils.valueSubject(fixture.inputTopic.toUncategorizedTopicName),
+      ConfluentUtils.valueSubject(fixture.inputTopic.toUnspecialized),
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
     schemaRegistryClient.register(
-      ConfluentUtils.valueSubject(fixture.outputTopic.toUncategorizedTopicName),
+      ConfluentUtils.valueSubject(fixture.outputTopic.toUnspecialized),
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
   }

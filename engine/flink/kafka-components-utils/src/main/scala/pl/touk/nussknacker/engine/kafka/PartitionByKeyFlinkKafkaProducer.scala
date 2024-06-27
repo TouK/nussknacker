@@ -11,7 +11,7 @@ object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](
       config: KafkaConfig,
-      topic: TopicName.OfSink,
+      topic: TopicName.ForSink,
       serializationSchema: serialization.KafkaSerializationSchema[T],
       clientId: String
   ): FlinkKafkaProducer[T] = {

@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{
   ProcessSettingsPreparer,
@@ -157,7 +157,7 @@ abstract class FlinkWithKafkaSuite
 
   protected def sendAvro(
       obj: Any,
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       timestamp: java.lang.Long = null
   ): Future[RecordMetadata] = {
     val serializedObj = valueSerializer.serialize(topic.name, obj)
@@ -166,7 +166,7 @@ abstract class FlinkWithKafkaSuite
 
   protected def sendAsJson(
       jsonString: String,
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       timestamp: java.lang.Long = null
   ): Future[RecordMetadata] = {
     val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
@@ -190,8 +190,8 @@ abstract class FlinkWithKafkaSuite
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
-      val inputSubject  = ConfluentUtils.topicSubject(topicConfig.input.toUncategorizedTopicName, topicConfig.isKey)
-      val outputSubject = ConfluentUtils.topicSubject(topicConfig.output.toUncategorizedTopicName, topicConfig.isKey)
+      val inputSubject  = ConfluentUtils.topicSubject(topicConfig.input.toUnspecialized, topicConfig.isKey)
+      val outputSubject = ConfluentUtils.topicSubject(topicConfig.output.toUnspecialized, topicConfig.isKey)
       schemaRegistryMockClient.register(inputSubject, schema)
       schemaRegistryMockClient.register(outputSubject, schema)
     })
@@ -232,18 +232,23 @@ object MockSchemaRegistryClientHolder extends Serializable {
 
 }
 
-case class TopicConfig(input: TopicName.OfSource, output: TopicName.OfSink, schemas: List[ParsedSchema], isKey: Boolean)
+case class TopicConfig(
+    input: TopicName.ForSource,
+    output: TopicName.ForSink,
+    schemas: List[ParsedSchema],
+    isKey: Boolean
+)
 
 object TopicConfig {
   private final val inputPrefix  = "test.generic.avro.input."
   private final val outputPrefix = "test.generic.avro.output."
 
-  def inputTopicName(testName: String): TopicName.OfSource = {
-    TopicName.OfSource(inputPrefix + testName)
+  def inputTopicName(testName: String): TopicName.ForSource = {
+    TopicName.ForSource(inputPrefix + testName)
   }
 
-  def outputTopicName(testName: String): TopicName.OfSink = {
-    TopicName.OfSink(outputPrefix + testName)
+  def outputTopicName(testName: String): TopicName.ForSink = {
+    TopicName.ForSink(outputPrefix + testName)
   }
 
   def apply(testName: String, schemas: List[ParsedSchema]): TopicConfig =

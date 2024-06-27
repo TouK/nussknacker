@@ -40,6 +40,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
   * `deploymentSynchronisationSupport` field was added for purpose of synchronisation of statuses. If synchronisation mechanism is not used in context of given DM, 
     you should return `NoDeploymentSynchronisationSupport` object. The synchronisation mechanism is used by `/api/deployments/{deploymentId}/status` endpoint. Other endpoints don't use it.
+* [#6249](https://github.com/TouK/nussknacker/pull/6249) `TopicName` trait was introduced and is used in context of specialized topic name (for kafka sources and sinks). Moreover, `UnspecializedTopicName` case class was added and is used in places when the specialization is unknown/not needed. 
 
 ### Configuration changes
 

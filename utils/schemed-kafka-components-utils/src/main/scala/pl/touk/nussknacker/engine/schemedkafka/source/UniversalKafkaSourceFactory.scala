@@ -45,7 +45,7 @@ class UniversalKafkaSourceFactory(
     val modelDependencies: ProcessObjectDependencies,
     protected val implProvider: KafkaSourceImplFactory[Any, Any]
 ) extends SourceFactory
-    with KafkaUniversalComponentTransformer[Source, TopicName.OfSource]
+    with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 
@@ -103,7 +103,7 @@ class UniversalKafkaSourceFactory(
 
   // Source specific FinalResults
   protected def prepareSourceFinalResults(
-      preparedTopic: PreparedKafkaTopic[TopicName.OfSource],
+      preparedTopic: PreparedKafkaTopic[TopicName.ForSource],
       valueValidationResult: Validated[
         ProcessCompilationError,
         (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)
@@ -161,7 +161,7 @@ class UniversalKafkaSourceFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
-  override protected def topicFrom(value: String): TopicName.OfSource = TopicName.OfSource(value)
+  override protected def topicFrom(value: String): TopicName.ForSource = TopicName.ForSource(value)
 
   override def implementation(
       params: Params,
@@ -202,7 +202,7 @@ class UniversalKafkaSourceFactory(
 
   private def prepareKafkaTestParametersInfo(
       runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
-      topic: TopicName.OfSource
+      topic: TopicName.ForSource
   )(
       implicit nodeId: NodeId
   ): KafkaTestParametersInfo = {
@@ -226,7 +226,7 @@ class UniversalKafkaSourceFactory(
   private def prepareTestRecord(
       runtimeSchema: RuntimeSchemaData[ParsedSchema],
       universalSchemaSupport: UniversalSchemaSupport,
-      topic: TopicName.OfSource
+      topic: TopicName.ForSource
   ): Any => TestRecord = any => {
     val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
     val serializedConsumerRecord =

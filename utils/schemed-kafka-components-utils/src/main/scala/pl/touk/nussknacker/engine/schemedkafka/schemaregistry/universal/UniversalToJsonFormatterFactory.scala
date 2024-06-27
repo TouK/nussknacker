@@ -73,7 +73,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
 
   protected def readRecordKeyMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       jsonObj: Json
   ): Array[Byte] = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.
@@ -86,7 +86,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](
 
   protected def readValueMessage(
       schemaOpt: Option[ParsedSchema],
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       jsonObj: Json
   ): Array[Byte] = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.

@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers.{Container, MultipleContainers}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRuntimeTestUtils}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -54,11 +54,11 @@ class NuKafkaRuntimeBinTest
 
   private def registerSchemas(): Unit = {
     schemaRegistryClient.register(
-      ConfluentUtils.valueSubject(fixture.inputTopic.toUncategorizedTopicName),
+      ConfluentUtils.valueSubject(fixture.inputTopic.toUnspecialized),
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
     schemaRegistryClient.register(
-      ConfluentUtils.valueSubject(fixture.outputTopic.toUncategorizedTopicName),
+      ConfluentUtils.valueSubject(fixture.outputTopic.toUnspecialized),
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
   }

@@ -23,7 +23,7 @@ object NuKafkaRuntimeTestSamples {
 
   val pingPongScenarioName: ProcessName = ProcessName("universal-ping-pong")
 
-  def pingPongScenario(inputTopic: TopicName.OfSource, outputTopic: TopicName.OfSink): CanonicalProcess =
+  def pingPongScenario(inputTopic: TopicName.ForSource, outputTopic: TopicName.ForSink): CanonicalProcess =
     ScenarioBuilder
       .streamingLite(pingPongScenarioName.value)
       .source("source", "kafka", "Topic" -> s"'${inputTopic.name}'", "Schema version" -> "'latest'")

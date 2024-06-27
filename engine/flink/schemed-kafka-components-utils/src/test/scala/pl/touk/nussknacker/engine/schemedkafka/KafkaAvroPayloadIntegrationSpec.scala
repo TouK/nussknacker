@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroPayloadIntegrationSpec.sinkForInputMetaResultsHolder
@@ -444,7 +444,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     // register the same value schema for input and output topic
     val topicConfig = createAndRegisterTopicConfig("kafka-generic-source-with-key-schema", Product.schema)
     // register key schema for input topic
-    registerSchema(topicConfig.input.toUncategorizedTopicName, FullNameV1.schema, isKey = true)
+    registerSchema(topicConfig.input.toUnspecialized, FullNameV1.schema, isKey = true)
 
     // create process
     val sourceParam = SourceAvroParam.forUniversalWithKeySchemaSupport(topicConfig, LatestSchemaVersion)
@@ -465,7 +465,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }
   }
 
-  private def verifyInputMeta[T](key: T, topic: TopicName.OfSource, partition: Int, offset: Long): Assertion = {
+  private def verifyInputMeta[T](key: T, topic: TopicName.ForSource, partition: Int, offset: Long): Assertion = {
     val expectedInputMeta = InputMeta[T](
       key = key,
       topic = topic.name,

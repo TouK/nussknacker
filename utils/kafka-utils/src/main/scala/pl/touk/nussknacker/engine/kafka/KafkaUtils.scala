@@ -48,7 +48,7 @@ trait KafkaUtils extends LazyLogging {
     // https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
     originalId.replaceAll("[^a-zA-Z0-9\\._\\-]", "_")
 
-  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: TopicName.OfSource, consumerGroupId: String): Unit = {
+  def setToLatestOffsetIfNeeded(config: KafkaConfig, topic: TopicName.ForSource, consumerGroupId: String): Unit = {
     val setToLatestOffset = config.forceLatestRead.contains(true)
     if (setToLatestOffset) {
       KafkaUtils.setOffsetToLatest(topic.name, consumerGroupId, config)
@@ -95,7 +95,7 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def readLastMessages(
-      topic: TopicName.OfSource,
+      topic: TopicName.ForSource,
       size: Int,
       config: KafkaConfig
   ): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {

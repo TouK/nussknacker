@@ -52,8 +52,8 @@ class KafkaAvroNamespacedSpec extends KafkaAvroSpecMixin with OptionValues {
       TopicConfig(InputPaymentWithNamespaced, OutputPaymentWithNamespaced, PaymentV1.schema, isKey = false)
     // Process should be created from topic without namespace..
     val processTopicConfig = TopicConfig(
-      input = TopicName.OfSource("input_payment"),
-      output = TopicName.OfSink("output_payment"),
+      input = TopicName.ForSource("input_payment"),
+      output = TopicName.ForSink("output_payment"),
       schema = PaymentV1.schema,
       isKey = false
     )
@@ -78,8 +78,8 @@ object KafkaAvroNamespacedMockSchemaRegistry {
 
   final val TestTopic: String           = "test_topic"
   final val SomeTopic: String           = "topic"
-  final val InputPaymentWithNamespaced  = TopicName.OfSource(s"${namespace}_input_payment")
-  final val OutputPaymentWithNamespaced = TopicName.OfSink(s"${namespace}_output_payment")
+  final val InputPaymentWithNamespaced  = TopicName.ForSource(s"${namespace}_input_payment")
+  final val OutputPaymentWithNamespaced = TopicName.ForSink(s"${namespace}_output_payment")
 
   private val IntSchema: Schema = AvroUtils.parseSchema(
     """{

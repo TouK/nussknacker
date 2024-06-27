@@ -5,12 +5,12 @@ import cats.data.Validated.{Invalid, Valid}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
 class BasedOnVersionAvroSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
-    topic: UncategorizedTopicName,
+    topic: UnspecializedTopicName,
     versionOption: SchemaVersionOption,
     isKey: Boolean
 ) extends AvroSchemaDeterminer {
@@ -43,7 +43,7 @@ class BasedOnVersionAvroSchemaDeterminer(
 
 class ParsedSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
-    topic: UncategorizedTopicName,
+    topic: UnspecializedTopicName,
     versionOption: SchemaVersionOption,
     isKey: Boolean
 ) {

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -32,7 +32,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
     with KafkaAvroSinkSpecMixin
     with CorrectExceptionHandlingSpec {
 
-  private val topic = TopicName.OfSink("topic1")
+  private val topic = TopicName.ForSink("topic1")
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
@@ -43,7 +43,7 @@ class KafkaUniversalSinkExceptionHandlingSpec
   ): Unit = UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
 
   test("should handle exceptions in kafka sinks") {
-    registerSchema(topic.toUncategorizedTopicName, FullNameV1.schema, isKey = false)
+    registerSchema(topic.toUnspecialized, FullNameV1.schema, isKey = false)
 
     val schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
     val universalProvider           = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)

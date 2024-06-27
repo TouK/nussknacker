@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.kafka.UncategorizedTopicName.ToUncategorizedTopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -65,8 +65,8 @@ class UniversalSourceJsonSchemaLiteTest
       |  }
       |}""".stripMargin)
 
-  private val inputTopic  = TopicName.OfSource("input")
-  private val outputTopic = TopicName.OfSink("output")
+  private val inputTopic  = TopicName.ForSource("input")
+  private val outputTopic = TopicName.ForSink("output")
 
   private val scenario = ScenarioBuilder
     .streamingLite("check json serialization")
@@ -110,8 +110,8 @@ class UniversalSourceJsonSchemaLiteTest
   test("should read data on json schema based universal source when schemaId in header") {
     // Given
 
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, schema)
-    runner.registerJsonSchema(outputTopic.toUncategorizedTopicName, schema)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, schema)
+    runner.registerJsonSchema(outputTopic.toUnspecialized, schema)
 
     // When
     val record =
@@ -146,8 +146,8 @@ class UniversalSourceJsonSchemaLiteTest
 
   test("should read data on json schema based universal source when schemaId in wire-format") {
     // Given
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, schema)
-    runner.registerJsonSchema(outputTopic.toUncategorizedTopicName, schema)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, schema)
+    runner.registerJsonSchema(outputTopic.toUnspecialized, schema)
 
     // When
     val stringRecord =
@@ -181,8 +181,8 @@ class UniversalSourceJsonSchemaLiteTest
 
   test("should raise compilation error in the case when written type is widen than a type in the sink") {
     // Given
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, schema)
-    runner.registerJsonSchema(outputTopic.toUncategorizedTopicName, schemaWithLimits)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, schema)
+    runner.registerJsonSchema(outputTopic.toUnspecialized, schemaWithLimits)
 
     // When
     val stringRecord =
@@ -216,8 +216,8 @@ class UniversalSourceJsonSchemaLiteTest
 
   test("should read/write data on json schema based universal source") {
     // Given
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, schemaWithLimits)
-    runner.registerJsonSchema(outputTopic.toUncategorizedTopicName, schemaWithLimits)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, schemaWithLimits)
+    runner.registerJsonSchema(outputTopic.toUnspecialized, schemaWithLimits)
 
     // When
     val stringRecord =
@@ -251,8 +251,8 @@ class UniversalSourceJsonSchemaLiteTest
 
   test("should read/write data on json schema when type in sink is wider than in source") {
     // Given
-    val schemaId = runner.registerJsonSchema(inputTopic.toUncategorizedTopicName, schemaWithLimits)
-    runner.registerJsonSchema(outputTopic.toUncategorizedTopicName, schema)
+    val schemaId = runner.registerJsonSchema(inputTopic.toUnspecialized, schemaWithLimits)
+    runner.registerJsonSchema(outputTopic.toUnspecialized, schema)
 
     // When
     val stringRecord =

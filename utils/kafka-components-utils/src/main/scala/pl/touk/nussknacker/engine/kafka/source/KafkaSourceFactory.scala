@@ -188,7 +188,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   /**
    * Extracts topics from default topic parameter.
    */
-  protected def extractTopics(params: Params): List[TopicName.OfSource] = {
+  protected def extractTopics(params: Params): List[TopicName.ForSource] = {
     val paramValue = topicParameterDeclaration.extractValueUnsafe(params)
     topicNamesFrom(paramValue)
   }
@@ -199,7 +199,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelDependencies.config)
 
   private def topicNamesFrom(value: String) = {
-    value.split(topicNameSeparator).map(_.trim).map(TopicName.OfSource.apply).toList
+    value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList
   }
 
 }
@@ -220,7 +220,7 @@ object KafkaSourceFactory {
         params: Params,
         dependencies: List[NodeDependencyValue],
         finalState: Any,
-        preparedTopics: List[PreparedKafkaTopic[TopicName.OfSource]],
+        preparedTopics: List[PreparedKafkaTopic[TopicName.ForSource]],
         kafkaConfig: KafkaConfig,
         deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
         formatter: RecordFormatter,

@@ -17,9 +17,10 @@ object KafkaComponentsUtils extends KafkaUtils {
   ): PreparedKafkaTopic[T] = {
     val doPrepareName: String => String = (name: String) => modelDependencies.namingStrategy.prepareName(name)
     (topic match {
-      case TopicName.OfSource(name) =>
-        PreparedKafkaTopic(TopicName.OfSource(name), TopicName.OfSource(doPrepareName(name)))
-      case TopicName.OfSink(name) => PreparedKafkaTopic(TopicName.OfSink(name), TopicName.OfSink(doPrepareName(name)))
+      case TopicName.ForSource(name) =>
+        PreparedKafkaTopic(TopicName.ForSource(name), TopicName.ForSource(doPrepareName(name)))
+      case TopicName.ForSink(name) =>
+        PreparedKafkaTopic(TopicName.ForSink(name), TopicName.ForSink(doPrepareName(name)))
     }).asInstanceOf[PreparedKafkaTopic[T]]
   }
 
