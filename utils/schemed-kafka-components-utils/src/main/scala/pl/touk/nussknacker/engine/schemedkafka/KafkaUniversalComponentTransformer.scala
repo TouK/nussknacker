@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, Prep
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
+import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
@@ -35,6 +36,8 @@ trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
     extends SingleInputDynamicComponent[T]
     with WithCachedTopicsExistenceValidator {
   self: Component =>
+
+  protected implicit def topicValidationTypeEvidence: TopicValidationType[TN]
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 

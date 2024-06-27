@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecor
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.source._
+import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
@@ -50,6 +51,9 @@ class UniversalKafkaSourceFactory(
     with UnboundedStreamComponent {
 
   override type State = UniversalKafkaSourceFactoryState
+
+  override protected implicit val topicValidationTypeEvidence: TopicValidationType[TopicName.ForSource] =
+    implicitly[TopicValidationType[TopicName.ForSource]]
 
   override def typesToExtract: List[TypedClass] =
     Typed.typedClass[GenericRecord] :: Typed.typedClass[TimestampType] :: Nil
