@@ -84,7 +84,7 @@ import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UI
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
@@ -95,7 +95,8 @@ class AkkaHttpBasedRouteProvider(
     dbRef: DbRef,
     metricsRegistry: MetricRegistry,
     processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
-    feStatisticsRepository: FEStatisticsRepository[Future]
+    feStatisticsRepository: FEStatisticsRepository[Future],
+    designerCreationTime: Instant
 )(implicit system: ActorSystem, materializer: Materializer)
     extends RouteProvider[Route]
     with Directives
@@ -488,6 +489,7 @@ class AkkaHttpBasedRouteProvider(
           .values
           .flatten
           .toList,
+        designerCreationTime
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(

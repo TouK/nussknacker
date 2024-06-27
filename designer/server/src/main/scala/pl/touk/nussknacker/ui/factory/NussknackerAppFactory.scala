@@ -39,7 +39,13 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
       db                     <- DbRef.create(config.resolved)
       feStatisticsRepository <- QuestDbFEStatisticsRepository.create(system, clock, config.resolved)
       server = new NussknackerHttpServer(
-        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataStateFactory, feStatisticsRepository)(
+        new AkkaHttpBasedRouteProvider(
+          db,
+          metricsRegistry,
+          processingTypeDataStateFactory,
+          feStatisticsRepository,
+          clock.instant()
+        )(
           system,
           materializer
         ),
