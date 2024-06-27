@@ -1812,6 +1812,7 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
         "org.apache.flink" % "flink-clients"               % flinkV,
         "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
+        "org.apache.flink" % "flink-connector-files"       % flinkV,
         "org.apache.flink" % "flink-json"                  % flinkV,
       )
     }

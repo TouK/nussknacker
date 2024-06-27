@@ -9,6 +9,11 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import io.circe.parser._
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import scala.util.Try
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
@@ -47,20 +52,18 @@ class BatchDataGenerationSpec
       .body()
       .asString()
 
-    val expectedRegex =
-      """|\{
-         |   "sourceId":"sourceId",
-         |   "record":
-         |     \{
-         |         "datetime":"[0-9T.:-]*",
-         |         "client_id":"[a-z0-9]*",
-         |         "amount":[a-z0-9.]*,
-         |         "date":"[a-z0-9]*"
-         |     \}
-         |\}
-         |""".stripMargin.replace("\n", "").replace(" ", "")
+    val firstLine  = testResultContent.split('\n').head
+    val testRecord = parse(firstLine).getOrElse(fail).asObject.get.toMap("record").asObject.get.toMap
 
-    testResultContent.split('\n').head should fullyMatch regex expectedRegex
+    testRecord("client_id").isString shouldBe true
+    testRecord("date").isString shouldBe true
+    testRecord("amount").isNumber shouldBe true
+    isParseableAsLocalDateTime(testRecord("datetime").asString.get) shouldBe true
+  }
+
+  private def isParseableAsLocalDateTime(str: String) = {
+    val flinkTimestampJsonPattern = "yyyy-MM-dd HH:mm:ss.SSS"
+    Try(LocalDateTime.parse(str, DateTimeFormatter.ofPattern(flinkTimestampJsonPattern))).isSuccess
   }
 
   private lazy val simpleBatchTableScenario = ScenarioBuilder

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
+import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
@@ -21,15 +22,11 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
     )
     val records = tableSource.generateTestData(10)
 
-    val expectedRegex =
-      """|\{
-       |  "someString" : "[a-z0-9]*",
-       |  "someVarChar" : "[a-z0-9]*",
-       |  "someInt" : -?\d+
-       |\}""".stripMargin
-
     records.testRecords.size shouldBe 10
-    records.testRecords.head.json.toString should fullyMatch regex expectedRegex
+    val mapRecord = records.testRecords.head.json.asObject.get.toMap
+    mapRecord("someString").isString shouldBe true
+    mapRecord("someVarChar").isString shouldBe true
+    mapRecord("someInt").isNumber shouldBe true
   }
 
 }
