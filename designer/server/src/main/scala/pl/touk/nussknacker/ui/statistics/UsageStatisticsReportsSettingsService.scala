@@ -39,7 +39,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
-      componentList: List[ComponentDefinitionWithImplementation]
+      componentList: List[ComponentDefinitionWithImplementation],
+      designerCreationTime: Instant
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
@@ -94,7 +95,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchActivity,
       fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
-      componentList
+      componentList,
+      designerCreationTime
     )
 
   }
@@ -122,7 +124,8 @@ class UsageStatisticsReportsSettingsService(
     ],
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
     fetchFeStatistics: () => Future[Map[String, Long]],
-    components: List[ComponentDefinitionWithImplementation]
+    components: List[ComponentDefinitionWithImplementation],
+    designerCreationTime: Instant
 )(implicit ec: ExecutionContext) {
   private val statisticsUrls = new StatisticsUrls(urlConfig)
 
@@ -152,6 +155,7 @@ class UsageStatisticsReportsSettingsService(
       componentList <- new EitherT(fetchComponentList())
       componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
+      designerUptimeStatistics = getDesignerUptimeStatistics
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
@@ -159,7 +163,8 @@ class UsageStatisticsReportsSettingsService(
       componentStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
-      }
+      } ++
+      designerUptimeStatistics
   }
 
   private def determineBasicStatistics(
@@ -170,6 +175,10 @@ class UsageStatisticsReportsSettingsService(
       NuSource.name  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       NuVersion.name -> BuildInfo.version
     )
+
+  private def getDesignerUptimeStatistics: Map[String, String] = {
+    Map(DesignerUptime.name -> (Instant.now().getEpochSecond - designerCreationTime.getEpochSecond).toString)
+  }
 
 }
 

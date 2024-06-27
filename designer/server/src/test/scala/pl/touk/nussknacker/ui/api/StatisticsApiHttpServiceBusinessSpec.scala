@@ -131,6 +131,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsAverage.name, equalTo("0")),
           (NuVersion.name, equalTo(nuVersion)),
           (CorrelationId.name, matchesRegex("\\w+")),
+          (DesignerUptime.name, matchesRegex("\\d+"))
         )
     }
 
@@ -178,6 +179,8 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsMin.name, equalTo("1")),
           (VersionsAverage.name, equalTo("1")),
           (NuVersion.name, equalTo(nuVersion)),
+          (CorrelationId.name, matchesRegex("\\w+")),
+          (DesignerUptime.name, matchesRegex("\\d+")),
           //  TODO: Should make a proper test for component mapping
           ("c_bltnfltr", equalTo("1"))
         )

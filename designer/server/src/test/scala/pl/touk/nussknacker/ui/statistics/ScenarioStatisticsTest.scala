@@ -214,13 +214,14 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
-      List.empty
+      List.empty,
+      Instant.now
     ).prepareStatisticsUrl().futureValue.value
 
     urlStrings.length shouldEqual 1
     val urlString = urlStrings.head
     urlString should include(s"fingerprint=$sampleFingerprint")
-    urlString should include regex (s"$CorrelationId=\\w+")
+    urlString should include regex s"$CorrelationId=\\w+"
     urlString should include("source=sources")
     urlString should include(s"version=${BuildInfo.version}")
   }
@@ -234,7 +235,8 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
-      componentWithImplementation
+      componentWithImplementation,
+      Instant.now
     ).determineQueryParams().value.futureValue.value
 
     params should contain("c_srvcccntsrvc" -> "5")
@@ -304,7 +306,8 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(processActivityList)),
       () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
-      componentWithImplementation
+      componentWithImplementation,
+      Instant.now
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
@@ -353,7 +356,8 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
-      List.empty
+      List.empty,
+      Instant.now
     ).determineQueryParams().value.futureValue.value
 
     params should contain allElementsOf Map(
