@@ -200,10 +200,10 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](
   override protected val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(modelDependencies.config)
 
   private def topicNamesFrom(value: String) = {
-    val topics = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toSeq
-    NonEmptyList.fromFoldable(topics) match {
-      case Some(nel) => nel
-      case None      => throw new IllegalStateException(s"Cannot extract topics from value '$value'")
+    val topicsList = value.split(topicNameSeparator).map(_.trim).map(TopicName.ForSource.apply).toList
+    NonEmptyList.fromList(topicsList) match {
+      case Some(topicsNel) => topicsNel
+      case None            => throw new IllegalStateException(s"Cannot extract topics from value '$value'")
     }
   }
 
