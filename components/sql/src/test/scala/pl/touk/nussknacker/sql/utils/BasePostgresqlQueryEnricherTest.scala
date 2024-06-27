@@ -37,7 +37,6 @@ trait BasePostgresqlQueryEnricherTest
     )
 
   override def beforeAll(): Unit = {
-    // TODO_PAWEL is it ok?
     service.open(LiteEngineRuntimeContextPreparer.noOp.prepare(jobData))
     super.beforeAll()
   }

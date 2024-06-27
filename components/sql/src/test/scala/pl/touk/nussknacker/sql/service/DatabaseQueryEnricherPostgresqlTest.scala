@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.{Context, Params}
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{MetaDataProviderFactory, TableDefinition}
-import pl.touk.nussknacker.sql.utils.{BaseHsqlQueryEnricherTest, BasePostgresqlQueryEnricherTest}
+import pl.touk.nussknacker.sql.utils.BasePostgresqlQueryEnricherTest
 
 import scala.concurrent.Await
 

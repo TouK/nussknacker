@@ -26,7 +26,7 @@ trait WithPostgresqlDB {
   private val driverClassName = "org.postgresql.Driver"
   private val username        = container.username
   private val password        = container.password
-  // this url be read as container.jdbcUrl when service is started, but it is hard to postpone this step until it is started
+  // this url can be read as container.jdbcUrl when service is started, but it is hard to postpone this step until this service is started
   private val url = "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF"
 
   val postgresqlConfigValues: Map[String, String] = Map(
@@ -39,10 +39,6 @@ trait WithPostgresqlDB {
   def prepareHsqlDDLs: List[String]
 
   override protected def beforeAll(): Unit = {
-    // DriverManager initializes drivers once per JVM start thus drivers loaded later are skipped.
-    // We must ensue that they are load manually
-    // TODO_PAWEL jaka klasa?
-    DriverManager.registerDriver(new jdbcDriver())
     conn = DriverManager.getConnection(url, username, password)
     prepareHsqlDDLs.foreach { ddlStr =>
       val ddlStatement = conn.prepareStatement(ddlStr)
