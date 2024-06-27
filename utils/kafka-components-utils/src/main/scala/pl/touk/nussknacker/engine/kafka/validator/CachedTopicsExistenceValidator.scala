@@ -50,7 +50,7 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
   }
 
   private def validateSourceTopics[T <: TopicName: TopicValidationType](topics: NonEmptyList[T]) = {
-    if (kafkaConfig.topicsExistenceValidationConfig.enabled && !isAutoCreateEnabled) {
+    if (kafkaConfig.topicsExistenceValidationConfig.enabled) {
       doValidate(topics)
     } else {
       Valid(topics)
