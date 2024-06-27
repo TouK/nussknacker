@@ -121,8 +121,8 @@ private object TraversableType {
   private val handledTypes = List(classOf[List[_]], classOf[Seq[_]])
 
   def unapply(typedClass: TypingResult): Option[(Class[_], TypingResult)] = typedClass match {
-    case TypedClass(klass, param :: Nil) => handledTypes.find(_.isAssignableFrom(klass)).map((_, param))
-    case _                               => None
+    case TypedClass(klass, param :: Nil, _) => handledTypes.find(_.isAssignableFrom(klass)).map((_, param))
+    case _                                  => None
   }
 
 }

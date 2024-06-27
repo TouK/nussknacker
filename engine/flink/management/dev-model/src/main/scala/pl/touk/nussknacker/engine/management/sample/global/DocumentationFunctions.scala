@@ -23,8 +23,8 @@ object DocumentationFunctions {
         arguments: List[TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
       arguments match {
-        case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
-        case _                                        => ArgumentTypeError.invalidNel
+        case TypedClass(`listClass`, t :: Nil, _) :: Nil => t.validNel
+        case _                                           => ArgumentTypeError.invalidNel
       }
     }
 
