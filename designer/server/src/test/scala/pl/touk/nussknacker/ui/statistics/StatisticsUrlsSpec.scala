@@ -11,7 +11,7 @@ class StatisticsUrlsSpec extends AnyFunSuite with Matchers {
 
     sut.prepare(
       new Fingerprint("t"),
-      correlationId = "cor_id",
+      new CorrelationId("cor_id"),
       Map(
         "q1" -> threeThousandCharsParam,
         "q2" -> threeThousandCharsParam,
@@ -29,7 +29,7 @@ class StatisticsUrlsSpec extends AnyFunSuite with Matchers {
   test("should generate correct url with encoded params") {
     sut.prepare(
       new Fingerprint("test"),
-      correlationId = "cor_id",
+      new CorrelationId("cor_id"),
       Map("f" -> "a b", "v" -> "1.6.5-a&b=c")
     ) shouldBe List("https://stats.nussknacker.io/?f=a+b&v=1.6.5-a%26b%3Dc&fingerprint=test&co_id=cor_id")
   }

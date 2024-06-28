@@ -44,7 +44,7 @@ class NussknackerAppFactory(processingTypeDataStateFactory: ProcessingTypeDataSt
           metricsRegistry,
           processingTypeDataStateFactory,
           feStatisticsRepository,
-          clock.instant()
+          clock
         )(
           system,
           materializer
