@@ -240,6 +240,10 @@ If you need to invoke the same method in many places, probably the best solution
 
 ### Type conversions
 
+It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
+
+#### Implicit conversion
+
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
 numeric types and between `String` and some useful logical value types. Some examples:
 
@@ -259,7 +263,15 @@ numeric types and between `String` and some useful logical value types. Some exa
 | `'USD'`                                  | String     | Currency               |
 | `'bf3bb3e0-b359-4e18-95dd-1d89c7dc5135'` | String     | UUID                   |
 
-You can also use explicit conversions that are available in utility classes and build-in java conversion mechanisms:
+Usage example:
+Let's create a current ZonedDateTime from the instant. We can get the current instant using: `#DATE.now`. To create a
+ZonedDateTime from Instant we need to invoke the `atZone` method, which requires a parameter of type `ZoneId`. Thanks to
+the implicit conversion we can pass the appropriate String instead of creating a `ZoneId`
+object: `#DATE.now.atZone('Europe/Warsaw')`.
+
+#### Explicit conversions
+
+Explicit conversions are available in utility classes and build-in java conversion mechanisms:
 
 | Expression                                                      | Result                    | Type           |
 | ------------                                                    | --------                  | --------       |
