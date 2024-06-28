@@ -121,7 +121,7 @@ class TableSource(
 
       val tempDir    = Files.createTempDirectory("tableSourceDataDump-")
       val tempDirUrl = tempDir.toUri.toURL
-      logger.info(s"Created temporary directory for dumping test data at: '$tempDirUrl'")
+      logger.debug(s"Created temporary directory for dumping test data at: '$tempDirUrl'")
 
       val result = Try {
         tableEnv.createTable(
@@ -162,10 +162,10 @@ class TableSource(
       .walk(dirPath)
       .sorted(java.util.Comparator.reverseOrder())
       .forEach(path => Files.deleteIfExists(path))
-    logger.info(s"Successfully deleted temporary test data dumping directory at: '${dirPath.toUri.toURL}'")
+    logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dirPath.toUri.toURL}'")
   } match {
     case Failure(e) =>
-      logger.info(
+      logger.error(
         s"Couldn't properly delete temporary test data dumping directory at: '${dirPath.toUri.toURL}'. Exception thrown: $e"
       )
     case Success(_) => ()
