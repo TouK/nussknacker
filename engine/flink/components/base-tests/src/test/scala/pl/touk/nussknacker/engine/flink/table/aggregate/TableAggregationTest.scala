@@ -21,7 +21,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedT
 class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
 
@@ -37,12 +37,12 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   // See: https://issues.apache.org/jira/browse/FLINK-15867
   test("should be able to aggregate by non-time primitive types") {
     val aggregatingBranches = nonTimePrimitives.zipWithIndex.map { case (expr, i) =>
-      aggregationTypeTestingBranch(groupByExpr = spelStr, aggregateByExpr = expr, idSuffix = i.toString)
+      aggregationTypeTestingBranch(groupByExpr = spelStr.spel, aggregateByExpr = expr.spel, idSuffix = i.toString)
     }
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
       .split(
         "split",
         aggregatingBranches: _*
@@ -55,12 +55,12 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   test("should be able to group by primitive types") {
     val aggregatingBranches = (nonTimePrimitives ++ tableApiSupportedTimePrimitives).zipWithIndex.map {
       case (expr, i) =>
-        aggregationTypeTestingBranch(groupByExpr = expr, aggregateByExpr = spelStr, idSuffix = i.toString)
+        aggregationTypeTestingBranch(groupByExpr = expr.spel, aggregateByExpr = spelStr.spel, idSuffix = i.toString)
     }
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
       .split(
         "split",
         aggregatingBranches: _*
@@ -74,8 +74,14 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   test("throws exception when using not supported OffsetDateTime in aggregate") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
-      .to(aggregationTypeTestingBranch(groupByExpr = spelOffsetDateTime, aggregateByExpr = spelStr, idSuffix = ""))
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .to(
+        aggregationTypeTestingBranch(
+          groupByExpr = spelOffsetDateTime.spel,
+          aggregateByExpr = spelStr.spel,
+          idSuffix = ""
+        )
+      )
 
     assertThrows[TableException] {
       runner.runWithoutData(scenario)
@@ -90,11 +96,11 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         id = "aggregate",
         outputVar = "agg",
         customNodeRef = "aggregate",
-        "groupBy"     -> "'strKey'",
-        "aggregateBy" -> "#input",
-        "aggregator"  -> "'First'",
+        "groupBy"     -> "'strKey'".spel,
+        "aggregateBy" -> "#input".spel,
+        "aggregator"  -> "'First'".spel,
       )
-      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg")
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
 
     val result = runner.runWithData(
       scenario,
@@ -114,11 +120,11 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         "aggregate",
         "agg",
         "aggregate",
-        TableAggregationFactory.groupByParamName.value            -> "#input.someKey",
-        TableAggregationFactory.aggregateByParamName.value        -> "#input.someAmount",
-        TableAggregationFactory.aggregatorFunctionParamName.value -> "'Sum'",
+        TableAggregationFactory.groupByParamName.value            -> "#input.someKey".spel,
+        TableAggregationFactory.aggregateByParamName.value        -> "#input.someAmount".spel,
+        TableAggregationFactory.aggregatorFunctionParamName.value -> "'Sum'".spel,
       )
-      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "{#key, #agg}")
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "{#key, #agg}".spel)
 
     val result = runner.runWithData(
       scenario,
@@ -146,7 +152,7 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
         customNodeRef = "aggregate",
         "groupBy"     -> groupByExpr,
         "aggregateBy" -> aggregateByExpr,
-        "aggregator"  -> "'First'",
+        "aggregator"  -> "'First'".spel,
       )
       .emptySink(s"end$idSuffix", "dead-end")
 

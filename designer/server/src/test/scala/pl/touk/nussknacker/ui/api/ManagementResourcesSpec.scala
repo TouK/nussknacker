@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.security.Permission
@@ -244,8 +244,13 @@ class ManagementResourcesSpec
       .streaming(processName.value)
       .parallelism(1)
       .source("startProcess", "csv-source")
-      .filter("input", "#input != null", Some(true))
-      .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'", SinkValueParamName.value -> "#input")
+      .filter("input", "#input != null".spel, Some(true))
+      .emptySink(
+        "end",
+        "kafka-string",
+        TopicParamName.value     -> "'end.topic'".spel,
+        SinkValueParamName.value -> "#input".spel
+      )
 
     saveCanonicalProcessAndAssertSuccess(processWithDisabledFilter)
     deployProcess(processName) ~> check {
@@ -258,7 +263,12 @@ class ManagementResourcesSpec
       .streaming(processName.value)
       .parallelism(1)
       .source("start", "not existing")
-      .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'", SinkValueParamName.value -> "#output")
+      .emptySink(
+        "end",
+        "kafka-string",
+        TopicParamName.value     -> "'end.topic'".spel,
+        SinkValueParamName.value -> "#output".spel
+      )
     saveCanonicalProcessAndAssertSuccess(invalidScenario)
 
     deploymentManager.withEmptyProcessState(invalidScenario.name) {
@@ -352,14 +362,19 @@ class ManagementResourcesSpec
 
   test("return test results of errors, including null") {
 
-    import pl.touk.nussknacker.engine.spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     val process = ScenarioBuilder
       .streaming(processName.value)
       .parallelism(1)
       .source("startProcess", "csv-source")
-      .filter("input", "new java.math.BigDecimal(null) == 0")
-      .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'", SinkValueParamName.value -> "''")
+      .filter("input", "new java.math.BigDecimal(null) == 0".spel)
+      .emptySink(
+        "end",
+        "kafka-string",
+        TopicParamName.value     -> "'end.topic'".spel,
+        SinkValueParamName.value -> "''".spel
+      )
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |"bela"""".stripMargin
@@ -372,14 +387,14 @@ class ManagementResourcesSpec
 
   test("refuses to test if too much data") {
 
-    import pl.touk.nussknacker.engine.spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     val process = {
       ScenarioBuilder
         .streaming(processName.value)
         .parallelism(1)
         .source("startProcess", "csv-source")
-        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'")
+        .emptySink("end", "kafka-string", TopicParamName.value -> "'end.topic'".spel)
     }
     saveCanonicalProcessAndAssertSuccess(process)
     val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))

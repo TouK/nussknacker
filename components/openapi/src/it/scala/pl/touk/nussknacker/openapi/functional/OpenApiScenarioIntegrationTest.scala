@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
@@ -36,7 +35,7 @@ class OpenApiScenarioIntegrationTest
     with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   // This tests don't use StubService implementation for handling requests - only for serving openapi definition. Invocation is handled by provided sttp backend.
   def withSwagger(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) =
@@ -68,7 +67,7 @@ class OpenApiScenarioIntegrationTest
   it should "should enrich scenario with data" in withSwagger(stubbedBackend) { testScenarioRunner =>
     // given
     val data     = List("10")
-    val scenario = scenarioWithEnricher(("customer_id", "#input"))
+    val scenario = scenarioWithEnricher(("customer_id", "#input".spel))
 
     // when
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -83,7 +82,7 @@ class OpenApiScenarioIntegrationTest
     testScenarioRunner =>
       // given
       val data     = List("10")
-      val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
+      val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input".spel))
 
       // when
       val result = testScenarioRunner.runWithData(scenario, data)
@@ -101,7 +100,7 @@ class OpenApiScenarioIntegrationTest
   ) { testScenarioRunner =>
     // given
     val data     = List("10")
-    val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
+    val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input".spel))
 
     // when
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -116,7 +115,7 @@ class OpenApiScenarioIntegrationTest
       .parallelism(1)
       .source("start", TestScenarioRunner.testDataSource)
       .enricher("customer", "customer", "getCustomer", params: _*)
-      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#customer")
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#customer".spel)
   }
 
   private def prepareScenarioRunner(
