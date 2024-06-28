@@ -1,5 +1,8 @@
 # Changelog
 
+1.13.3 (28 June 2024) This fix was introduced in 1.16.0 version and has only been backported to this version.
+------------------------
+* [#6285](https://github.com/TouK/nussknacker/pull/6285) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 
 1.13.2 (7 Mar 2024)
 ------------------------
