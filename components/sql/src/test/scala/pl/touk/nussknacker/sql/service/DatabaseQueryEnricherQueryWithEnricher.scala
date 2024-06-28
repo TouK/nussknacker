@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, UpdateResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.TableDefinition
 import pl.touk.nussknacker.sql.utils.BaseDatabaseQueryEnricherTest

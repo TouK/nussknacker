@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.sql.utils
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import org.hsqldb.jdbcDriver
 import org.scalatest.BeforeAndAfterAll
 import org.testcontainers.utility.DockerImageName
 import scala.jdk.CollectionConverters._
 
 import java.sql.{Connection, DriverManager}
-import java.util.UUID
 
 trait WithPostgresqlDB {
   self: BeforeAndAfterAll with ForAllTestContainer =>

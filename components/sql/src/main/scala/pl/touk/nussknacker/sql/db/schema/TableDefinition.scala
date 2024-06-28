@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.sql.db.schema
 
-import pl.touk.nussknacker.engine.api.typed.TypedObjectDefinition
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import java.sql.ResultSetMetaData
