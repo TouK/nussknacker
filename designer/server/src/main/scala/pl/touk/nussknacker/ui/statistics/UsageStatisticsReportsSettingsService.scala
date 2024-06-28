@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
@@ -127,7 +127,8 @@ class UsageStatisticsReportsSettingsService(
     components: List[ComponentDefinitionWithImplementation],
     designerClock: Clock
 )(implicit ec: ExecutionContext) {
-  private val statisticsUrls = new StatisticsUrls(urlConfig)
+  private val statisticsUrls       = new StatisticsUrls(urlConfig)
+  private val designerCreationTime = designerClock.instant()
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, List[String]]] = {
     if (config.enabled) {
@@ -178,7 +179,7 @@ class UsageStatisticsReportsSettingsService(
     )
 
   private def getDesignerUptimeStatistics: Map[String, String] = {
-    Map(DesignerUptime.name -> (Instant.now().getEpochSecond - designerClock.instant().getEpochSecond).toString)
+    Map(DesignerUptime.name -> (designerClock.instant().getEpochSecond - designerCreationTime.getEpochSecond).toString)
   }
 
 }
