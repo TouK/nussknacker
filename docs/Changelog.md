@@ -4,9 +4,7 @@
 1.13.2 (7 Mar 2024)
 ------------------------
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
-
-[//]: # (  // TODO_PAWEL should it be new pr number?)
-* [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
+* [#6285](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
  
 1.13.1 (7 Mar 2024)
 -------------------------
