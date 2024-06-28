@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
 import java.net.URI
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -48,6 +48,10 @@ class ScenarioStatisticsTest
         Future.successful(Right(new Fingerprint(sampleFingerprint)))
     }
   )
+
+  private val clock: Clock = Clock.systemUTC()
+
+  private val uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
   test("should determine statistics for running scenario with streaming processing mode and flink engine") {
     val scenarioData = ScenarioStatisticsInputData(
@@ -215,13 +219,13 @@ class ScenarioStatisticsTest
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
-      Instant.now
+      clock
     ).prepareStatisticsUrl().futureValue.value
 
     urlStrings.length shouldEqual 1
     val urlString = urlStrings.head
     urlString should include(s"fingerprint=$sampleFingerprint")
-    urlString should include regex s"$CorrelationId=\\w+"
+    urlString should include regex s"$CorrelationIdStat=$uuidRegex"
     urlString should include("source=sources")
     urlString should include(s"version=${BuildInfo.version}")
   }
@@ -236,7 +240,7 @@ class ScenarioStatisticsTest
       () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
-      Instant.now
+      clock
     ).determineQueryParams().value.futureValue.value
 
     params should contain("c_srvcccntsrvc" -> "5")
@@ -307,7 +311,7 @@ class ScenarioStatisticsTest
       () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
-      Instant.now
+      clock
     ).determineQueryParams().value.futureValue.value
 
     val expectedStats = Map(
@@ -357,7 +361,7 @@ class ScenarioStatisticsTest
       () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
-      Instant.now
+      clock
     ).determineQueryParams().value.futureValue.value
 
     params should contain allElementsOf Map(
