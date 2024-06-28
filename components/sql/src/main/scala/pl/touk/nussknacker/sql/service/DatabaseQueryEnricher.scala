@@ -238,7 +238,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     val getConnectionCallback   = () => dataSource.getConnection()
     val timeMeasurementCallback = () => timeMeasurement
 
-    val createInvoker = cacheTTLOption match {
+    cacheTTLOption match {
       case Some(cacheTTL) =>
         new DatabaseEnricherInvokerWithCache(
           query,
@@ -250,7 +250,6 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           outputType,
           getConnectionCallback,
           timeMeasurementCallback,
-          params
         )
       case None =>
         new DatabaseEnricherInvoker(
@@ -262,7 +261,6 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
           outputType,
           getConnectionCallback,
           timeMeasurementCallback,
-          params
         )
     }
   }
