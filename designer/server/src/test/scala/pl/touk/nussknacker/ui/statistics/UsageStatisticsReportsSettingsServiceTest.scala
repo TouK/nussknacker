@@ -8,7 +8,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -31,7 +31,7 @@ class UsageStatisticsReportsSettingsServiceTest
       fetchComponentList = () => Future.successful(Right(Nil)),
       fetchFeStatistics = () => Future.successful(Map.empty[String, Long]),
       List.empty,
-      Instant.now
+      Clock.systemUTC()
     )
 
     sut.prepareStatisticsUrl().futureValue shouldBe Right(Nil)

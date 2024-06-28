@@ -96,7 +96,7 @@ class AkkaHttpBasedRouteProvider(
     metricsRegistry: MetricRegistry,
     processingTypeDataStateFactory: ProcessingTypeDataStateFactory,
     feStatisticsRepository: FEStatisticsRepository[Future],
-    designerCreationTime: Instant
+    designerClock: Clock
 )(implicit system: ActorSystem, materializer: Materializer)
     extends RouteProvider[Route]
     with Directives
@@ -489,7 +489,7 @@ class AkkaHttpBasedRouteProvider(
           .values
           .flatten
           .toList,
-        designerCreationTime
+        designerClock
       )
 
       val statisticsApiHttpService = new StatisticsApiHttpService(

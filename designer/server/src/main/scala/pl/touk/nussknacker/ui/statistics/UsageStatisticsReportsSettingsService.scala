@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
-import java.time.Instant
+import java.time.{Clock, Instant}
 import scala.concurrent.{ExecutionContext, Future}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
@@ -40,7 +40,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
       componentList: List[ComponentDefinitionWithImplementation],
-      designerCreationTime: Instant
+      designerClock: Clock
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
@@ -96,7 +96,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
       componentList,
-      designerCreationTime
+      designerClock
     )
 
   }
@@ -125,7 +125,7 @@ class UsageStatisticsReportsSettingsService(
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
     fetchFeStatistics: () => Future[Map[String, Long]],
     components: List[ComponentDefinitionWithImplementation],
-    designerCreationTime: Instant
+    designerClock: Clock
 )(implicit ec: ExecutionContext) {
   private val statisticsUrls = new StatisticsUrls(urlConfig)
 
@@ -134,8 +134,9 @@ class UsageStatisticsReportsSettingsService(
       val maybeUrls = for {
         queryParams <- determineQueryParams()
         fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
+        correlationId = CorrelationId.apply()
         urls <- EitherT.pure[Future, StatisticError](
-          statisticsUrls.prepare(fingerprint, Instant.now.hashCode.toHexString, queryParams)
+          statisticsUrls.prepare(fingerprint, correlationId, queryParams)
         )
       } yield urls
       maybeUrls.value
@@ -177,7 +178,7 @@ class UsageStatisticsReportsSettingsService(
     )
 
   private def getDesignerUptimeStatistics: Map[String, String] = {
-    Map(DesignerUptime.name -> (Instant.now().getEpochSecond - designerCreationTime.getEpochSecond).toString)
+    Map(DesignerUptime.name -> (Instant.now().getEpochSecond - designerClock.instant().getEpochSecond).toString)
   }
 
 }

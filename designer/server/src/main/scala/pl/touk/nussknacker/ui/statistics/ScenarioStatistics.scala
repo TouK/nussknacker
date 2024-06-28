@@ -39,6 +39,21 @@ object ScenarioStatistics {
     ActiveScenarioCount  -> 0
   ).map { case (k, v) => (k.toString, v.toString) }
 
+  private val emptyActivityStatistics = Map(
+    AttachmentsAverage -> 0,
+    AttachmentsTotal   -> 0,
+    CommentsTotal      -> 0,
+    CommentsAverage    -> 0
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private val emptyComponentStatistics = Map(ComponentsCount.toString -> "0")
+
+  private val emptyUptimeStats = Map(
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+  )
+
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     emptyScenarioStatistics ++
       scenariosInputData
@@ -95,11 +110,7 @@ object ScenarioStatistics {
       }.sorted
       val uptimeStatsMap = {
         if (sortedUptimes.isEmpty) {
-          Map(
-            UptimeInSecondsAverage -> 0,
-            UptimeInSecondsMax     -> 0,
-            UptimeInSecondsMin     -> 0,
-          )
+          emptyUptimeStats
         } else {
           Map(
             UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
@@ -129,12 +140,6 @@ object ScenarioStatistics {
   def getActivityStatistics(
       listOfActivities: List[DbProcessActivityRepository.ProcessActivity]
   ): Map[String, String] = {
-    val emptyActivityStatistics = Map(
-      AttachmentsAverage -> 0,
-      AttachmentsTotal   -> 0,
-      CommentsTotal      -> 0,
-      CommentsAverage    -> 0
-    ).map { case (k, v) => (k.toString, v.toString) }
     if (listOfActivities.isEmpty) {
       emptyActivityStatistics
     } else {
@@ -162,7 +167,7 @@ object ScenarioStatistics {
       components: List[ComponentDefinitionWithImplementation]
   ): Map[String, String] = {
     if (componentList.isEmpty) {
-      Map(ComponentsCount.toString -> "0")
+      emptyComponentStatistics
     } else {
 
       // Get number of available components to check how many custom components created
@@ -293,5 +298,5 @@ case object ActiveScenarioCount    extends StatisticKey("s_a")
 case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
 case object NuFingerprint          extends StatisticKey("fingerprint")
 case object NuVersion              extends StatisticKey("version")
-case object CorrelationId          extends StatisticKey("co_id")
+case object CorrelationIdStat      extends StatisticKey("co_id")
 case object DesignerUptime         extends StatisticKey("d_u")
