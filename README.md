@@ -74,7 +74,7 @@ Nussknacker is typically used as a component of a larger system, but it can be u
 - [Typical deployment](https://nussknacker.io/documentation/docs/about/typical%20implementation/Streaming/)
 - [Authoring scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) 
 - [Customer success story](https://nussknacker.io/case-studies/real-time-marketing-for-a-telecom-service-provider/)
-- [Nussknacker Enterprise](https://nussknacker.io/documentation/about/NussknackerEnterprise/)
+- [Nussknacker Enterprise](https://nussknacker.io/documentation/docs/about/NussknackerEnterprise/)
 
 ## Quickstart
 
