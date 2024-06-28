@@ -32,12 +32,10 @@ object KafkaUniversalComponentTransformer {
 
 }
 
-trait KafkaUniversalComponentTransformer[T, TN <: TopicName]
+abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
     extends SingleInputDynamicComponent[T]
     with WithCachedTopicsExistenceValidator {
   self: Component =>
-
-  protected implicit def topicValidationTypeEvidence: TopicValidationType[TN]
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 

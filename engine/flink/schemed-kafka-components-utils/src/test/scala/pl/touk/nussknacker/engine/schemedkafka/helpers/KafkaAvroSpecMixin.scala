@@ -103,6 +103,7 @@ trait KafkaAvroSpecMixin
     ) {
       override protected def prepareKafkaConfig: KafkaConfig =
         super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
+
     }
   }
 
