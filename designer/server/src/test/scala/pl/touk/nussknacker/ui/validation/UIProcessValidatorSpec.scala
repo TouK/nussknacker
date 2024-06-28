@@ -85,11 +85,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   import UIProcessValidatorSpec._
   import spel.Implicits._
 
-  private val validationExpression = s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"
+  private val validationExpression =
+    Expression.spel(s"#${ValidationExpressionParameterValidator.variableName}.length() < 7")
+
   private val validationExpressionForRecord =
-    s"{'valid','otherValid'}.contains(#${ValidationExpressionParameterValidator.variableName}.get('field'))"
-  private val validationExpressionForList =
-    s"#value.size() == 2 && #value[0] == 'foo'"
+    Expression.spel(
+      s"{'valid','otherValid'}.contains(#${ValidationExpressionParameterValidator.variableName}.get('field'))"
+    )
+
+  private val validationExpressionForList = Expression.spel(s"#value.size() == 2 && #value[0] == 'foo'")
 
   test("check for not unique edge types") {
     val process = createGraph(
@@ -1495,7 +1499,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     "validationExpression" -> fromMap(
                       Map(
                         "language"   -> "spel",
-                        "expression" -> validationExpression
+                        "expression" -> validationExpression.expression
                       ).asJava
                     ),
                     "validationFailedMessage" -> "some custom failure message",
