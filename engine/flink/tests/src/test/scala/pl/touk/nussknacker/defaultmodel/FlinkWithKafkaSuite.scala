@@ -130,6 +130,7 @@ abstract class FlinkWithKafkaSuite
       fromAnyRef("earliest")
     )
     .withValue("config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
+    .withValue("config.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(
       s"config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}",
