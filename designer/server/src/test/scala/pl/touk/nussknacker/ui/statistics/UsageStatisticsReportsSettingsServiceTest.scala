@@ -8,7 +8,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

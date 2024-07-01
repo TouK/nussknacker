@@ -163,10 +163,10 @@ class UsageStatisticsReportsSettingsService(
       generalStatistics ++
       activityStatistics ++
       componentStatistics ++
+      designerUptimeStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
-      } ++
-      designerUptimeStatistics
+      }
   }
 
   private def determineBasicStatistics(

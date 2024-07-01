@@ -27,6 +27,13 @@ import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
+import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
+  emptyActivityStatistics,
+  emptyComponentStatistics,
+  emptyGeneralStatistics,
+  emptyScenarioStatistics,
+  emptyUptimeStats
+}
 
 import java.net.URI
 import java.time.{Clock, Instant}
@@ -52,6 +59,52 @@ class ScenarioStatisticsTest
   private val clock: Clock = Clock.systemUTC()
 
   private val uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+
+  private val emptyScenarioRelatedStatistics =
+    emptyScenarioStatistics ++ emptyComponentStatistics ++ emptyActivityStatistics ++ emptyUptimeStats ++ emptyGeneralStatistics
+
+  private val allScenarioRelatedStatistics = Map(
+    AuthorsCount           -> 0,
+    CategoriesCount        -> 0,
+    ComponentsCount        -> 0,
+    VersionsMedian         -> 0,
+    AttachmentsTotal       -> 0,
+    AttachmentsAverage     -> 0,
+    VersionsMax            -> 0,
+    VersionsMin            -> 0,
+    VersionsAverage        -> 0,
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+    CommentsAverage        -> 0,
+    CommentsTotal          -> 0,
+    FragmentsUsedMedian    -> 0,
+    FragmentsUsedAverage   -> 0,
+    NodesMedian            -> 0,
+    NodesAverage           -> 0,
+    NodesMax               -> 0,
+    NodesMin               -> 0,
+    ScenarioCount          -> 0,
+    FragmentCount          -> 0,
+    UnboundedStreamCount   -> 0,
+    BoundedStreamCount     -> 0,
+    RequestResponseCount   -> 0,
+    FlinkDMCount           -> 0,
+    LiteK8sDMCount         -> 0,
+    LiteEmbeddedDMCount    -> 0,
+    UnknownDMCount         -> 0,
+    ActiveScenarioCount    -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  // This statistics are added in UsageStatisticsReportsSettingsService
+  // Fingerprint and CorrelationId is added after `determineQueryParams`
+  private val notScenarioRelatedStatistics = Map(
+    NuSource       -> 0,
+    NuVersion      -> 0,
+    DesignerUptime -> 0,
+    //    NuFingerprint -> 0,
+    //    CorrelationIdStat -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
 
   test("should determine statistics for running scenario with streaming processing mode and flink engine") {
     val scenarioData = ScenarioStatisticsInputData(
@@ -364,38 +417,8 @@ class ScenarioStatisticsTest
       clock
     ).determineQueryParams().value.futureValue.value
 
-    params should contain allElementsOf Map(
-      AuthorsCount           -> 0,
-      AttachmentsTotal       -> 0,
-      AttachmentsAverage     -> 0,
-      CategoriesCount        -> 0,
-      CommentsTotal          -> 0,
-      CommentsAverage        -> 0,
-      VersionsMedian         -> 0,
-      VersionsMax            -> 0,
-      VersionsMin            -> 0,
-      VersionsAverage        -> 0,
-      UptimeInSecondsAverage -> 0,
-      UptimeInSecondsMax     -> 0,
-      UptimeInSecondsMin     -> 0,
-      ComponentsCount        -> 0,
-      FragmentsUsedMedian    -> 0,
-      FragmentsUsedAverage   -> 0,
-      NodesMedian            -> 0,
-      NodesAverage           -> 0,
-      NodesMax               -> 0,
-      NodesMin               -> 0,
-      ScenarioCount          -> 0,
-      FragmentCount          -> 0,
-      UnboundedStreamCount   -> 0,
-      BoundedStreamCount     -> 0,
-      RequestResponseCount   -> 0,
-      FlinkDMCount           -> 0,
-      LiteK8sDMCount         -> 0,
-      LiteEmbeddedDMCount    -> 0,
-      UnknownDMCount         -> 0,
-      ActiveScenarioCount    -> 0,
-    ).map { case (k, v) => (k.toString, v.toString) }
+    params.keySet shouldBe (allScenarioRelatedStatistics ++ notScenarioRelatedStatistics).keySet
+    params.keySet shouldBe (emptyScenarioRelatedStatistics ++ notScenarioRelatedStatistics).keySet
   }
 
   private def processActivityList = {
