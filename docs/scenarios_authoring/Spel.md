@@ -245,10 +245,12 @@ It is possible to convert from a type to another type and this can be done by im
 #### Implicit conversion
 
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
-numeric types and between `String` and some useful logical value types. Some examples:
+numeric types and between `String` and some useful logical value types. Implicit means when finding the "input value" of
+type "input type" (see the table below) in the context where "target type" is expected, Nussknacker will try to convert
+the type of the "input value" to the "target type". Some examples:
 
 | Input value                              | Input type | Conversion target type |
-| -----------                              | ---------- | ---------------------- |
+|------------------------------------------|------------|------------------------|
 | `12.34`                                  | Double     | BigDecimal             |
 | `12.34f`                                 | Float      | BigDecimal             |
 | `42`                                     | Integer    | BigDecimal             |
@@ -264,23 +266,24 @@ numeric types and between `String` and some useful logical value types. Some exa
 | `'bf3bb3e0-b359-4e18-95dd-1d89c7dc5135'` | String     | UUID                   |
 
 Usage example:
-Let's create a current ZonedDateTime from the instant. We can get the current instant using: `#DATE.now`. To create a
-ZonedDateTime from Instant we need to invoke the `atZone` method, which requires a parameter of type `ZoneId`. Thanks to
-the implicit conversion we can pass the appropriate String instead of creating a `ZoneId`
-object: `#DATE.now.atZone('Europe/Warsaw')`.
+
+| Expression                         | Input value       | Input type | Target type |
+|------------------------------------|-------------------|------------|-------------|
+| #DATE.now.atZone('Europe/Warsaw')  | `'Europe/Warsaw'` | String     | ZoneId      |
+
+More usage examples can be found in [this section](#conversions-between-datetime-types).
 
 #### Explicit conversions
 
 Explicit conversions are available in utility classes and build-in java conversion mechanisms:
 
-| Expression                                                      | Result                    | Type           |
-| ------------                                                    | --------                  | --------       |
-| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
-| `'' + 42`                                                       | '42'                      | String         |
-
+| Expression                                                      | Result                     | Type            |
+|-----------------------------------------------------------------|----------------------------|-----------------|
+| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
+| `'' + 42`                                                       | '42'                       | String          |
 
 ## Built-in helpers
 
