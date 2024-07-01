@@ -245,9 +245,9 @@ It is possible to convert from a type to another type and this can be done by im
 #### Implicit conversion
 
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
-numeric types and between `String` and some useful logical value types. Implicit means when finding the "input value" of
-type "input type" (see the table below) in the context where "target type" is expected, Nussknacker will try to convert
-the type of the "input value" to the "target type". Some examples:
+numeric types and between `String` and some useful logical value types. Implicit conversion means that when finding
+the "input value" of type "input type" (see the table below) in the context where "target type" is expected, Nussknacker
+will try to convert the type of the "input value" to the "target type". Some examples:
 
 | Input value                              | Input type | Conversion target type |
 |------------------------------------------|------------|------------------------|
@@ -267,9 +267,10 @@ the type of the "input value" to the "target type". Some examples:
 
 Usage example:
 
-| Expression                         | Input value       | Input type | Target type |
-|------------------------------------|-------------------|------------|-------------|
-| #DATE.now.atZone('Europe/Warsaw')  | `'Europe/Warsaw'` | String     | ZoneId      |
+| Expression                          | Input value       | Input type | Target type |
+|-------------------------------------|-------------------|------------|-------------|
+| `#DATE.now.atZone('Europe/Warsaw')` | `'Europe/Warsaw'` | String     | ZoneId      |
+| `'' + 42`                           | `42`              | Integer    | String      |
 
 More usage examples can be found in [this section](#conversions-between-datetime-types).
 
@@ -283,7 +284,6 @@ Explicit conversions are available in utility classes and build-in java conversi
 | `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
 | `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
 | `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
-| `'' + 42`                                                       | '42'                       | String          |
 
 ## Built-in helpers
 
