@@ -593,8 +593,28 @@ class ExpressionSuggesterSpec
     )
   }
 
+  test("should suggest completions of the previous token even if the whole expression is not proper SpEL expression") {
+    spelSuggestionsFor(
+      "#AN #hell",
+      0,
+      "#AN".length
+    ) shouldBe List(
+      suggestion("#ANOTHER", Typed[A]),
+    )
+
+    spelSuggestionsFor(
+      "#input. #ANOT",
+      0,
+      "#input.".length
+    ) shouldBe List(
+      suggestion("barB", Typed[B]),
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
+  }
+
   test("should not throw exception for invalid spel expression") {
-    spelSuggestionsFor("# #input.barB", 0, "#".length) shouldBe Nil
     spelSuggestionsFor("# - 2a") shouldBe Nil
     spelSuggestionsFor("foo") shouldBe Nil
     spelSuggestionsFor("##") shouldBe Nil

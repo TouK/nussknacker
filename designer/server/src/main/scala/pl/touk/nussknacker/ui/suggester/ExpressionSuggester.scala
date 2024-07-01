@@ -66,7 +66,7 @@ class ExpressionSuggester(
           )
           .flatMap {
             case Nil =>
-              val newExpression: Expression = restrictExpressionByCaretPosition2d(expression, caretPosition2d)
+              val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
 
               spelExpressionSuggester.expressionSuggestions(
                 newExpression,
