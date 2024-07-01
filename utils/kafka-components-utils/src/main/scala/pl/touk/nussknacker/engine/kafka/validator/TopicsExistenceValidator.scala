@@ -26,7 +26,7 @@ final case class TopicExistenceValidationException[T <: TopicName](topics: NonEm
 
 object TopicExistenceValidationException {
 
-  private[TopicExistenceValidationException] def message[T <: TopicName](topics: NonEmptyList[T]): String =
+  private def message[T <: TopicName](topics: NonEmptyList[T]): String =
     topics.tail match {
       case Nil => s"Topic ${topics.head.toUnspecialized.name} doesn't not exist"
       case _   => s"Topics ${topics.toList.map(_.toUnspecialized.name).mkString(", ")} do not exist"
