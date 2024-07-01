@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDa
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 
@@ -37,25 +37,25 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
   private val scenarioWithSingleSource = ScenarioBuilder
     .streaming("test")
     .source("left-source", "test-source")
-    .processorEnd("left-end", "mockService", "all" -> "{}")
+    .processorEnd("left-end", "mockService", "all" -> "{}".spel)
 
   private val scenarioWithSingleTestParametersSource = ScenarioBuilder
     .streaming("test")
     .source("left-source", "test-source-with-parameters-test")
-    .processorEnd("left-end", "mockService", "all" -> "{}")
+    .processorEnd("left-end", "mockService", "all" -> "{}".spel)
 
   private val scenarioWithMultipleSources = ScenarioBuilder
     .streaming("test")
     .sources(
       GraphBuilder
         .source("left-source", "test-source")
-        .processorEnd("left-end", "mockService", "all" -> "{}"),
+        .processorEnd("left-end", "mockService", "all" -> "{}".spel),
       GraphBuilder
         .source("right-source", "test-source2")
-        .processorEnd("right-end", "mockService", "all" -> "{}"),
+        .processorEnd("right-end", "mockService", "all" -> "{}".spel),
       GraphBuilder
         .source("source-no-test-support", "source-no-test-support")
-        .processorEnd("no-test-support-end", "mockService", "all" -> "{}")
+        .processorEnd("no-test-support-end", "mockService", "all" -> "{}".spel)
     )
 
   private val minimalFlinkConfig = ConfigFactory.empty

@@ -47,7 +47,6 @@ class PeriodicProcessServiceTest
     with TableDrivenPropertyChecks {
 
   import org.scalatest.LoneElement._
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -164,7 +163,12 @@ class PeriodicProcessServiceTest
   // Flink job could disappear from Flink console.
   test("handleFinished - should reschedule scenario if Flink job is missing") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.repository.addActiveProcess(
+      processName,
+      PeriodicProcessDeploymentStatus.Deployed,
+      runAt = LocalDateTime.now().minusMinutes(11),
+      deployedAt = Some(LocalDateTime.now().minusMinutes(10))
+    )
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -179,6 +183,30 @@ class PeriodicProcessServiceTest
     val finished :: scheduled :: Nil =
       f.repository.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
     f.events.toList shouldBe List(FinishedEvent(finished, None), ScheduledEvent(scheduled, firstSchedule = false))
+  }
+
+  // Flink job could not be available in Flink console if checked too quickly after submit.
+  test("handleFinished - shouldn't reschedule scenario if Flink job is missing but not deployed for long enough") {
+    val f = new Fixture
+    f.repository.addActiveProcess(
+      processName,
+      PeriodicProcessDeploymentStatus.Deployed,
+      runAt = LocalDateTime.now().minusSeconds(11),
+      deployedAt = Some(LocalDateTime.now().minusSeconds(10))
+    )
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
+    f.repository.deploymentEntities should have size 1
+    f.repository.deploymentEntities.map(_.status) shouldBe List(
+      PeriodicProcessDeploymentStatus.Deployed
+    )
+
+    val deployed :: Nil =
+      f.repository.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
+    f.events.toList shouldBe List.empty
   }
 
   test("handleFinished - should reschedule for finished Flink job") {
@@ -260,7 +288,8 @@ class PeriodicProcessServiceTest
     f.repository.addOnlyDeployment(
       periodicProcessId,
       status = PeriodicProcessDeploymentStatus.Deployed,
-      scheduleName = Some("schedule1")
+      scheduleName = Some("schedule1"),
+      deployedAt = Some(LocalDateTime.now().minusMinutes(10))
     )
     f.repository.addOnlyDeployment(
       periodicProcessId,

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCrea
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
@@ -22,7 +21,7 @@ class UnionTransformerSpec
 
   import ValidatedValuesDetailedMessage._
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val BranchFooId = "foo"
 
@@ -54,12 +53,12 @@ class UnionTransformerSpec
             "union-memo",
             Some(OutVariableName),
             List(
-              BranchFooId -> List("key" -> "'fooKey'", "value" -> "#input"),
-              BranchBarId -> List("key" -> "'barKey'", "value" -> "#input")
+              BranchFooId -> List("key" -> "'fooKey'".spel, "value" -> "#input".spel),
+              BranchBarId -> List("key" -> "'barKey'".spel, "value" -> "#input".spel)
             ),
-            "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
+            "stateTimeout" -> "T(java.time.Duration).parse('PT1M')".spel
           )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.$BranchFooId")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.$BranchFooId".spel)
       )
 
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -82,11 +81,11 @@ class UnionTransformerSpec
             "union",
             Some(OutVariableName),
             List(
-              BranchFooId -> List("Output expression" -> "{a: #input}"),
-              BranchBarId -> List("Output expression" -> "{a: '123'}")
+              BranchFooId -> List("Output expression" -> "{a: #input}".spel),
+              BranchBarId -> List("Output expression" -> "{a: '123'}".spel)
             )
           )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a".spel)
       )
 
     val result = testScenarioRunner.runWithData(scenario, data)
@@ -109,11 +108,11 @@ class UnionTransformerSpec
             "union",
             Some(OutVariableName),
             List(
-              BranchFooId -> List("Output expression" -> "{a: #input}"),
-              BranchBarId -> List("Output expression" -> "{a: '123'}")
+              BranchFooId -> List("Output expression" -> "{a: #input}".spel),
+              BranchBarId -> List("Output expression" -> "{a: '123'}".spel)
             )
           )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a".spel)
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
@@ -137,11 +136,11 @@ class UnionTransformerSpec
             "union",
             Some(OutVariableName),
             List(
-              BranchFooId -> List("Output expression" -> "{a: #input}"),
-              BranchBarId -> List("Output expression" -> "{b: 123}")
+              BranchFooId -> List("Output expression" -> "{a: #input}".spel),
+              BranchBarId -> List("Output expression" -> "{b: 123}".spel)
             )
           )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName.a".spel)
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).invalidValue
@@ -166,11 +165,11 @@ class UnionTransformerSpec
             "union",
             Some(OutVariableName),
             List(
-              BranchFooId -> List("Output expression" -> "#input"),
-              BranchBarId -> List("Output expression" -> "#input / (#input % 4)")
+              BranchFooId -> List("Output expression" -> "#input".spel),
+              BranchBarId -> List("Output expression" -> "#input / (#input % 4)".spel)
             )
           )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName")
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> s"#$OutVariableName".spel)
       )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue

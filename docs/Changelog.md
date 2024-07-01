@@ -20,10 +20,14 @@
 * [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
 * [#6245](https://github.com/TouK/nussknacker/pull/6245) Parameter validations defined in AdditionalUIConfigProvider now properly impact dynamic components.
 * [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
+* [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
 
-1.15.3 (Not released yet)
+1.15.3 (24 June 2024)
 -------------------------
 * [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
+* [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
+* [#6230](https://github.com/TouK/nussknacker/pull/6230) Avoid potential race condition by preventing the marking of freshly deployed jobs as finished when synchronizing deployment states.
+* [#6204](https://github.com/TouK/nussknacker/pull/6204) [#6055](https://github.com/TouK/nussknacker/pull/6055) Fixup to lifecycle of ExecutionContext used in Asynchronous IO Mode which could lead to RejectedExecutionException after scenario restart on Flink.
 
 1.15.2 (7 June 2024)
 -------------------------

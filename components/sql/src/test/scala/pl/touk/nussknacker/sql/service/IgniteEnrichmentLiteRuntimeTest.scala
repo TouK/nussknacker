@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
@@ -55,12 +55,12 @@ class IgniteEnrichmentLiteRuntimeTest
         "ignite-lookup-enricher",
         "output",
         "ignite-lookup-enricher",
-        "Table"      -> "'CITIES'",
-        "Key column" -> "'ID'",
-        "Key value"  -> "#input",
-        "Cache TTL"  -> ""
+        "Table"      -> "'CITIES'".spel,
+        "Key column" -> "'ID'".spel,
+        "Key value"  -> "#input".spel,
+        "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 

@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInputDefinition, FragmentOutputDefinition}
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.mock.StubFragmentRepository
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
@@ -16,7 +15,7 @@ import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 //about actual values, only assigns them to nodes
 class ProcessCounterTest extends AnyFunSuite with Matchers {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val defaultCounter = new ProcessCounter(new StubFragmentRepository(Map.empty))
 
@@ -27,7 +26,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .streaming("test")
       .parallelism(1)
       .source("source1", "")
-      .filter("filter1", "")
+      .filter("filter1", "".spel)
       .emptySink("sink11", "")
 
     val computed =
@@ -90,7 +89,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .streaming("test")
       .parallelism(1)
       .source("source1", "")
-      .filter("filter1", "")
+      .filter("filter1", "".spel)
       .fragmentOneOut("fragment1", "fragment1", "out1", "fragmentResult")
       .emptySink("sink11", "")
 
@@ -101,8 +100,8 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
             MetaData("fragment1", FragmentSpecificData()),
             List(
               FlatNode(FragmentInputDefinition("subInput1", List())),
-              FlatNode(Filter("subFilter1", "")),
-              FlatNode(Filter("subFilter2", "")),
+              FlatNode(Filter("subFilter1", "".spel)),
+              FlatNode(Filter("subFilter2", "".spel)),
               FlatNode(FragmentOutputDefinition("outId1", "out1", List.empty))
             ),
             List.empty
@@ -144,8 +143,8 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
   test("compute counts for fragment") {
     val fragment = ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[String])
-      .filter("filter", "#in != 'stop'")
-      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+      .filter("filter", "#in != 'stop'".spel)
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
 
     val counter = new ProcessCounter(fragmentRepository(List.empty))
 

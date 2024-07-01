@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode._
 
@@ -103,8 +103,8 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .customNode("for-each", forEachOutputVariableName, "for-each", "Elements" -> elements)
-      .buildSimpleVariable(forEachNodeResultId, "resultVar", resultExpression)
+      .customNode("for-each", forEachOutputVariableName, "for-each", "Elements" -> elements.spel)
+      .buildSimpleVariable(forEachNodeResultId, "resultVar", resultExpression.spel)
       .emptySink(sinkId, "dead-end")
 
   private def collectTestResults[T](

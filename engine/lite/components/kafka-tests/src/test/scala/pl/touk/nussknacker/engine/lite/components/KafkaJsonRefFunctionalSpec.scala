@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner.LiteKafkaTestScenarioRunnerExt
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -63,25 +62,25 @@ class KafkaJsonRefFunctionalSpec extends AnyFunSuite with Matchers with Validate
   }
 
   private def createScenario(inputTopic: String, outputTopic: String): CanonicalProcess = {
-    import spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
     ScenarioBuilder
       .streaming(classOf[KafkaJsonRefFunctionalSpec].getSimpleName)
       .parallelism(1)
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+        topicParamName.value         -> s"'$inputTopic'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value              -> s"'$outputTopic'",
-        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value            -> "",
-        sinkValueParamName.value          -> s"#input.field",
-        sinkRawEditorParamName.value      -> "true",
-        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'"
+        topicParamName.value              -> s"'$outputTopic'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"#input.field".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel
       )
   }
 

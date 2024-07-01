@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.utils._
@@ -59,12 +59,12 @@ class DatabaseLookupLiteRuntimeTest
         "sql-lookup-enricher",
         "output",
         "sql-lookup-enricher",
-        "Table"      -> "'PERSONS'",
-        "Key column" -> "'ID'",
-        "Key value"  -> "#input",
-        "Cache TTL"  -> ""
+        "Table"      -> "'PERSONS'".spel,
+        "Key column" -> "'ID'".spel,
+        "Key value"  -> "#input".spel,
+        "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
@@ -85,12 +85,12 @@ class DatabaseLookupLiteRuntimeTest
         "sql-lookup-enricher",
         "output",
         "sql-lookup-enricher",
-        "Table"      -> "'PERSONS_LOWER'",
-        "Key column" -> "'id'",
-        "Key value"  -> "#input",
-        "Cache TTL"  -> ""
+        "Table"      -> "'PERSONS_LOWER'".spel,
+        "Key column" -> "'id'".spel,
+        "Key value"  -> "#input".spel,
+        "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
