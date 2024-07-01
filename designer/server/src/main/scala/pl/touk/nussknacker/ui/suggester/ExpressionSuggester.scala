@@ -30,6 +30,25 @@ class ExpressionSuggester(
       scenarioPropertiesNames
     )
 
+  private def restrictExpressionByCaretPosition2d(
+      expression: Expression,
+      caretPosition2d: CaretPosition2d
+  ): Expression = {
+    val transformedPlainExpression = expression.expression
+      .split("\n")
+      .toList
+      .zipWithIndex
+      .filter(_._2 <= caretPosition2d.row)
+      .map {
+        case (s, caretPosition2d.row) => (s.take(caretPosition2d.column), caretPosition2d.row)
+        case (s, i)                   => (s, i)
+      }
+      .map(_._1)
+      .mkString("\n")
+
+    expression.copy(expression = transformedPlainExpression)
+  }
+
   def expressionSuggestions(
       expression: Expression,
       caretPosition2d: CaretPosition2d,
@@ -39,11 +58,23 @@ class ExpressionSuggester(
     expression.language match {
       // currently we only support Spel and SpelTemplate expressions
       case Language.Spel | Language.SpelTemplate =>
-        spelExpressionSuggester.expressionSuggestions(
-          expression,
-          caretPosition2d.normalizedCaretPosition(expression.expression),
-          validationContext
-        )
+        spelExpressionSuggester
+          .expressionSuggestions(
+            expression,
+            caretPosition2d.normalizedCaretPosition(expression.expression),
+            validationContext
+          )
+          .flatMap {
+            case Nil =>
+              val newExpression: Expression = restrictExpressionByCaretPosition2d(expression, caretPosition2d)
+
+              spelExpressionSuggester.expressionSuggestions(
+                newExpression,
+                caretPosition2d.normalizedCaretPosition(newExpression.expression),
+                validationContext
+              )
+            case suggestions => Future.successful(suggestions)
+          }
       case _ => Future.successful(Nil)
     }
   }
