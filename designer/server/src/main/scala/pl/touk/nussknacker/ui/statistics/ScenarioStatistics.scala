@@ -26,7 +26,7 @@ object ScenarioStatistics {
 
   private val componentStatisticPrefix = "c_"
 
-  private val emptyScenarioStatistics: Map[String, String] = Map(
+  private[statistics] val emptyScenarioStatistics: Map[String, String] = Map(
     ScenarioCount        -> 0,
     FragmentCount        -> 0,
     UnboundedStreamCount -> 0,
@@ -39,20 +39,39 @@ object ScenarioStatistics {
     ActiveScenarioCount  -> 0
   ).map { case (k, v) => (k.toString, v.toString) }
 
-  private val emptyActivityStatistics = Map(
+  private[statistics] val emptyActivityStatistics: Map[String, String] = Map(
     AttachmentsAverage -> 0,
     AttachmentsTotal   -> 0,
     CommentsTotal      -> 0,
     CommentsAverage    -> 0
   ).map { case (k, v) => (k.toString, v.toString) }
 
-  private val emptyComponentStatistics = Map(ComponentsCount.toString -> "0")
+  private[statistics] val emptyComponentStatistics: Map[String, String] =
+    Map(ComponentsCount.toString -> "0")
 
-  private val emptyUptimeStats = Map(
+  private[statistics] val emptyUptimeStats: Map[String, String] = Map(
     UptimeInSecondsAverage -> 0,
     UptimeInSecondsMax     -> 0,
     UptimeInSecondsMin     -> 0,
-  )
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyGeneralStatistics: Map[String, String] = Map(
+    NodesMedian            -> 0,
+    NodesAverage           -> 0,
+    NodesMax               -> 0,
+    NodesMin               -> 0,
+    CategoriesCount        -> 0,
+    VersionsMedian         -> 0,
+    VersionsAverage        -> 0,
+    VersionsMax            -> 0,
+    VersionsMin            -> 0,
+    AuthorsCount           -> 0,
+    FragmentsUsedMedian    -> 0,
+    FragmentsUsedAverage   -> 0,
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
 
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     emptyScenarioStatistics ++
@@ -63,23 +82,6 @@ object ScenarioStatistics {
   }
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
-    val emptyGeneralStatistics = Map(
-      NodesMedian            -> 0,
-      NodesAverage           -> 0,
-      NodesMax               -> 0,
-      NodesMin               -> 0,
-      CategoriesCount        -> 0,
-      VersionsMedian         -> 0,
-      VersionsAverage        -> 0,
-      VersionsMax            -> 0,
-      VersionsMin            -> 0,
-      AuthorsCount           -> 0,
-      FragmentsUsedMedian    -> 0,
-      FragmentsUsedAverage   -> 0,
-      UptimeInSecondsAverage -> 0,
-      UptimeInSecondsMax     -> 0,
-      UptimeInSecondsMin     -> 0,
-    ).map { case (k, v) => (k.toString, v.toString) }
     if (scenariosInputData.isEmpty) {
       emptyGeneralStatistics
     } else {
@@ -116,10 +118,10 @@ object ScenarioStatistics {
             UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
             UptimeInSecondsMax     -> getMax(sortedUptimes),
             UptimeInSecondsMin     -> getMin(sortedUptimes)
-          )
+          ).map { case (k, v) => (k.toString, v.toString) }
         }
       }
-      (Map(
+      Map(
         NodesMedian          -> nodesMedian,
         NodesAverage         -> nodesAverage,
         NodesMax             -> nodesMax,
@@ -132,8 +134,9 @@ object ScenarioStatistics {
         AuthorsCount         -> authorsCount,
         FragmentsUsedMedian  -> fragmentsUsedMedian,
         FragmentsUsedAverage -> fragmentsUsedAverage
-      ) ++ uptimeStatsMap)
-        .map { case (k, v) => (k.toString, v.toString) }
+      )
+        .map { case (k, v) => (k.toString, v.toString) } ++
+        uptimeStatsMap
     }
   }
 
@@ -253,7 +256,7 @@ object ScenarioStatistics {
     else orderedList.head
   }
 
-  def mapNameToStat(componentId: String): String = {
+  private def mapNameToStat(componentId: String): String = {
     val shortenedName = componentId.replaceAll(vowelsRegex, "").toLowerCase
 
     componentStatisticPrefix + shortenedName
@@ -295,8 +298,9 @@ case object LiteK8sDMCount         extends StatisticKey("s_dm_l")
 case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
 case object UnknownDMCount         extends StatisticKey("s_dm_c")
 case object ActiveScenarioCount    extends StatisticKey("s_a")
-case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
-case object NuFingerprint          extends StatisticKey("fingerprint")
-case object NuVersion              extends StatisticKey("version")
-case object CorrelationIdStat      extends StatisticKey("co_id")
-case object DesignerUptime         extends StatisticKey("d_u")
+// Not scenario related statistics
+case object NuSource          extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
+case object NuFingerprint     extends StatisticKey("fingerprint")
+case object NuVersion         extends StatisticKey("version")
+case object CorrelationIdStat extends StatisticKey("co_id")
+case object DesignerUptime    extends StatisticKey("d_u")
