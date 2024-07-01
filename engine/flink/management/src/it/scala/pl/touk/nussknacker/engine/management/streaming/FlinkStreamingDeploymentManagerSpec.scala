@@ -72,7 +72,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   test("cancel of not existing job should not fail") {
     deploymentManager
       .processCommand(DMCancelScenarioCommand(ProcessName("not existing job"), user = userToAct))
-      .futureValue shouldBe ()
+      .futureValue shouldBe (())
   }
 
   test("be able verify&redeploy kafka scenario") {
