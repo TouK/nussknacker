@@ -84,7 +84,7 @@ import pl.touk.nussknacker.ui.validation.{NodeValidator, ParametersValidator, UI
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
