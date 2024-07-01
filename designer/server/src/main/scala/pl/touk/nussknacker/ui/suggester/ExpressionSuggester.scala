@@ -30,7 +30,7 @@ class ExpressionSuggester(
       scenarioPropertiesNames
     )
 
-  private def restrictExpressionByCaretPosition2d(
+  private def truncateExpressionByCaretPosition2d(
       expression: Expression,
       caretPosition2d: CaretPosition2d
   ): Expression = {
