@@ -9,9 +9,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6248](https://github.com/TouK/nussknacker/pull/6248) Removed implicit conversion from string to SpeL
   expression (`pl.touk.nussknacker.engine.spel.Implicits`). The conversion should be replaced by
   `pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion.spel`.
-* [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of `topicsExistenceValidationConfig.enabled` 
-  setting, you have to be aware from now on, the topics existence will be validated by default (Kafka's `auto.create.topics.enable` 
-  will be taken into consideration only in case Sinks). Create proper topics manually if needed. 
+* [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
+  setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
+  is only considered in case of Sinks). Create proper topics manually if needed.
 
 ## In version 1.16.0 (Not released yet)
 
