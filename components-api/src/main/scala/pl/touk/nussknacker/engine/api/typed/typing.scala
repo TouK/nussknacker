@@ -112,7 +112,7 @@ object typing {
     private val maxDataDisplaySize: Int         = 15
     private val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
-    override def valueOpt: Option[Any] = Some(value) // tu wpada string (i pewnie long), Lista nie
+    override def valueOpt: Option[Any] = Some(value)
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
