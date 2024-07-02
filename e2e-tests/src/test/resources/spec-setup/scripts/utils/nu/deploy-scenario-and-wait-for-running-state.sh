@@ -73,7 +73,7 @@ function checkDeploymentStatus() {
   fi
 
   local SCENARIO_STATUS
-  SCENARIO_STATUS=$(echo "$RESPONSE_BODY")
+  SCENARIO_STATUS=$(echo "$RESPONSE_BODY" | jq -r '.name')
   echo "$SCENARIO_STATUS"
 }
 
