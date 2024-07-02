@@ -1362,21 +1362,20 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   test(
     "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator"
   ) {
-    // TODO rename the service and params to List* not Map*
     val process = createGraph(
       List(
         Source("inID", SourceRef(ProcessTestData.existingSourceFactory, List())),
         Enricher(
           "custom",
           ServiceRef(
-            "mapParameterService",
+            "listParameterService",
             List(
               NodeParameter(
-                ParameterName("mapParam1"),
+                ParameterName("listParam1"),
                 Expression.spel("""{'foo', 'bar'}""")
               ),
               NodeParameter(
-                ParameterName("mapParam2"),
+                ParameterName("listParam2"),
                 Expression.spel("""{'boo'}""")
               ),
             )
@@ -1403,12 +1402,12 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       validator = ProcessValidator.default(
         LocalModelData(
           ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
-          List(ComponentDefinition("mapParameterService", ListParameterService)),
+          List(ComponentDefinition("listParameterService", ListParameterService)),
           additionalConfigsFromProvider = Map(
-            DesignerWideComponentId("streaming-service-mapParameterService") -> ComponentAdditionalConfig(
+            DesignerWideComponentId("streaming-service-listParameterService") -> ComponentAdditionalConfig(
               parameterConfigs = Map(
-                ParameterName("mapParam1") -> commonParamConfig,
-                ParameterName("mapParam2") -> commonParamConfig
+                ParameterName("listParam1") -> commonParamConfig,
+                ParameterName("listParam2") -> commonParamConfig
               )
             )
           )
@@ -1431,7 +1430,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "CustomParameterValidationError",
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.size() == 2 && #value[0] == 'foo''",
-                Some("mapParam2"),
+                Some("listParam2"),
                 NodeValidationErrorType.SaveAllowed,
                 None
               )
@@ -2302,10 +2301,10 @@ private object UIProcessValidatorSpec {
 
     @MethodToInvoke
     def method(
-        @ParamName("mapParam1")
-        mapParam1: Option[java.util.List[String]],
-        @ParamName("mapParam2")
-        mapParam2: Option[java.util.List[String]]
+        @ParamName("listParam1")
+        listParam1: Option[java.util.List[String]],
+        @ParamName("listParam2")
+        listParam2: Option[java.util.List[String]]
     ): Future[String] = ???
 
   }
