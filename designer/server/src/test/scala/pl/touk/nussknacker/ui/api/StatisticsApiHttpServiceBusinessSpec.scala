@@ -70,6 +70,7 @@ class StatisticsApiHttpServiceBusinessSpec
   private val statisticsByIndex         = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
   private val quote                     = '"'
   private val random                    = new Random()
+  private val uuidRegex                 = "[0-9a-f]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8}"
 
   private val mockedClock = mock[Clock](new Answer[Instant] {
     override def answer(invocation: InvocationOnMock): Instant = Instant.now()
@@ -97,10 +98,41 @@ class StatisticsApiHttpServiceBusinessSpec
         .Then()
         .statusCode(200)
         .bodyWithStatisticsURL(
+          (AuthorsCount.name, equalTo("0")),
+          (AttachmentsTotal.name, equalTo("0")),
+          (AttachmentsAverage.name, equalTo("0")),
+          (CategoriesCount.name, equalTo("0")),
           (ComponentsCount.name, new GreaterThanOrEqualToLongMatcher(62L)),
+          (CommentsTotal.name, equalTo("0")),
+          (CommentsAverage.name, equalTo("0")),
+          (FragmentsUsedMedian.name, equalTo("0")),
+          (FragmentsUsedAverage.name, equalTo("0")),
           (NuFingerprint.name, matchesRegex("[\\w-]+?")),
+          (NodesMedian.name, equalTo("0")),
+          (NodesMax.name, equalTo("0")),
+          (NodesMin.name, equalTo("0")),
+          (NodesAverage.name, equalTo("0")),
+          (ActiveScenarioCount.name, equalTo("0")),
+          (UnknownDMCount.name, equalTo("0")),
+          (LiteEmbeddedDMCount.name, equalTo("0")),
+          (FlinkDMCount.name, equalTo("0")),
+          (LiteK8sDMCount.name, equalTo("0")),
+          (FragmentCount.name, equalTo("0")),
+          (BoundedStreamCount.name, equalTo("0")),
+          (RequestResponseCount.name, equalTo("0")),
+          (UnboundedStreamCount.name, equalTo("0")),
+          (ScenarioCount.name, equalTo("0")),
           (NuSource.name, equalTo("sources")),
+          (UptimeInSecondsMax.name, equalTo("0")),
+          (UptimeInSecondsMin.name, equalTo("0")),
+          (UptimeInSecondsAverage.name, equalTo("0")),
+          (VersionsMedian.name, equalTo("0")),
+          (VersionsMax.name, equalTo("0")),
+          (VersionsMin.name, equalTo("0")),
+          (VersionsAverage.name, equalTo("0")),
           (NuVersion.name, equalTo(nuVersion)),
+          (CorrelationIdStat.name, matchesRegex(uuidRegex)),
+          (DesignerUptimeInSeconds.name, matchesRegex("\\d+"))
         )
     }
 
@@ -148,6 +180,8 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsMin.name, equalTo("1")),
           (VersionsAverage.name, equalTo("1")),
           (NuVersion.name, equalTo(nuVersion)),
+          (CorrelationIdStat.name, matchesRegex(uuidRegex)),
+          (DesignerUptimeInSeconds.name, matchesRegex("\\d+")),
           //  TODO: Should make a proper test for component mapping
           ("c_bltnfltr", equalTo("1"))
         )
