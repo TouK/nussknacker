@@ -24,6 +24,7 @@
 * [#6208](https://github.com/TouK/nussknacker/pull/6208) Fix issue with node window positioning after closing a full-screen window node.
 * [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
 * [#6245](https://github.com/TouK/nussknacker/pull/6245) Parameter validations defined in AdditionalUIConfigProvider now properly impact dynamic components.
+* [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 * [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
 
 1.15.3 (24 June 2024)
@@ -133,6 +134,10 @@
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
 * [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
 * [#5558](https://github.com/TouK/nussknacker/pull/5558) Added: an info about `Processing mode` to the scenario and divided `Status` toolbar to `Scenario actions` and `Scenario details`
+
+1.13.3 (28 June 2024) This fix was introduced in 1.16.0 version and has only been backported to this version.
+------------------------
+* [#6285](https://github.com/TouK/nussknacker/pull/6285) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 
 1.13.2 (7 Mar 2024)
 ------------------------

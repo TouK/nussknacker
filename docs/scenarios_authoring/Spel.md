@@ -93,7 +93,7 @@ There are a few notable exceptions:
 | `{}`                   | an empty list                  | List[Unknown]        |
 | `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{:}`                  | an empty record                | Record{}             |
-| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)}] |
+| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)} |
 | `#input`               | variable                       |                      |
 | `'AA' + 'BB'`          | "AABB"                         | String               |
                                     
@@ -240,11 +240,17 @@ If you need to invoke the same method in many places, probably the best solution
 
 ### Type conversions
 
+It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
+
+#### Implicit conversion
+
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
-numeric types and between `String` and some useful logical value types. Some examples:
+numeric types and between `String` and some useful logical value types. Implicit conversion means that when finding
+the "input value" of type "input type" (see the table below) in the context where "target type" is expected, Nussknacker
+will try to convert the type of the "input value" to the "target type". Some examples:
 
 | Input value                              | Input type | Conversion target type |
-| -----------                              | ---------- | ---------------------- |
+|------------------------------------------|------------|------------------------|
 | `12.34`                                  | Double     | BigDecimal             |
 | `12.34f`                                 | Float      | BigDecimal             |
 | `42`                                     | Integer    | BigDecimal             |
@@ -259,16 +265,25 @@ numeric types and between `String` and some useful logical value types. Some exa
 | `'USD'`                                  | String     | Currency               |
 | `'bf3bb3e0-b359-4e18-95dd-1d89c7dc5135'` | String     | UUID                   |
 
-You can also use explicit conversions that are available in utility classes and build-in java conversion mechanisms:
+Usage example:
 
-| Expression                                                      | Result                    | Type           |
-| ------------                                                    | --------                  | --------       |
-| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
-| `'' + 42`                                                       | '42'                      | String         |
+| Expression                          | Input value       | Input type | Target type |
+|-------------------------------------|-------------------|------------|-------------|
+| `#DATE.now.atZone('Europe/Warsaw')` | `'Europe/Warsaw'` | String     | ZoneId      |
+| `'' + 42`                           | `42`              | Integer    | String      |
 
+More usage examples can be found in [this section](#conversions-between-datetime-types).
+
+#### Explicit conversions
+
+Explicit conversions are available in utility classes and build-in java conversion mechanisms:
+
+| Expression                                                      | Result                     | Type            |
+|-----------------------------------------------------------------|----------------------------|-----------------|
+| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
 
 ## Built-in helpers
 

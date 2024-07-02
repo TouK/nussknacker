@@ -355,6 +355,7 @@ val wireMockV                 = "2.35.2"
 val findBugsV                 = "3.0.2"
 val enumeratumV               = "1.7.3"
 val ujsonV                    = "3.1.2"
+val igniteV                   = "2.10.0"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion) {
@@ -494,6 +495,7 @@ lazy val distribution: Project = sbt
         (flinkBaseComponents / assembly).value           -> "components/flink/flinkBase.jar",
         (flinkBaseUnboundedComponents / assembly).value  -> "components/flink/flinkBaseUnbounded.jar",
         (flinkKafkaComponents / assembly).value          -> "components/flink/flinkKafka.jar",
+        (flinkTableApiComponents / assembly).value       -> "components/flink-table/flinkTable.jar",
         (liteBaseComponents / assembly).value            -> "components/lite/liteBase.jar",
         (liteKafkaComponents / assembly).value           -> "components/lite/liteKafka.jar",
         (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
@@ -509,9 +511,8 @@ lazy val distribution: Project = sbt
     },
     devArtifacts                             := {
       modelArtifacts.value ++ List(
-        (flinkDevModel / assembly).value                       -> "model/devModel.jar",
-        (devPeriodicDM / assembly).value                       -> "managers/devPeriodicDM.jar",
-        (experimentalFlinkTableApiComponents / assembly).value -> "components/flink-dev/flinkTable.jar",
+        (flinkDevModel / assembly).value -> "model/devModel.jar",
+        (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar",
       )
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
@@ -600,7 +601,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
         flinkExecutor / prepareItLibs,
         flinkDevModel / Compile / assembly,
         flinkDevModelJava / Compile / assembly,
-        experimentalFlinkTableApiComponents / Compile / assembly,
+        flinkTableApiComponents / Compile / assembly,
         flinkBaseComponents / Compile / assembly,
         flinkBaseUnboundedComponents / Compile / assembly,
         flinkKafkaComponents / Compile / assembly,
@@ -739,18 +740,18 @@ lazy val flinkTests = (project in flink("tests"))
     }
   )
   .dependsOn(
-    defaultModel                        % Test,
-    flinkExecutor                       % Test,
-    flinkKafkaComponents                % Test,
-    flinkBaseComponents                 % Test,
-    flinkBaseUnboundedComponents        % Test,
-    experimentalFlinkTableApiComponents % Test,
-    flinkTestUtils                      % Test,
-    kafkaTestUtils                      % Test,
-    flinkComponentsTestkit              % Test,
+    defaultModel                 % Test,
+    flinkExecutor                % Test,
+    flinkKafkaComponents         % Test,
+    flinkBaseComponents          % Test,
+    flinkBaseUnboundedComponents % Test,
+    flinkTableApiComponents      % Test,
+    flinkTestUtils               % Test,
+    kafkaTestUtils               % Test,
+    flinkComponentsTestkit       % Test,
     // for local development
-    designer                            % Test,
-    deploymentManagerApi                % Test
+    designer                     % Test,
+    deploymentManagerApi         % Test
   )
 
 lazy val defaultModel = (project in (file("defaultModel")))
@@ -1699,12 +1700,15 @@ lazy val sqlComponents = (project in component("sql"))
   .settings(
     name := "nussknacker-sql",
     libraryDependencies ++= Seq(
-      "com.zaxxer"        % "HikariCP"        % hikariCpV,
+      "com.zaxxer"        % "HikariCP"                        % hikariCpV,
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
-      "org.apache.ignite" % "ignite-core"     % "2.10.0"   % Provided,
-      "org.apache.ignite" % "ignite-indexing" % "2.10.0"   % Provided,
-      "org.scalatest"    %% "scalatest"       % scalaTestV % Test,
-      "org.hsqldb"        % "hsqldb"          % hsqldbV    % Test,
+      "org.apache.ignite" % "ignite-core"                     % igniteV              % Test,
+      "org.apache.ignite" % "ignite-indexing"                 % igniteV              % Test,
+      "org.postgresql"    % "postgresql"                      % postgresV            % Test,
+      "org.scalatest"    %% "scalatest"                       % scalaTestV           % Test,
+      "org.hsqldb"        % "hsqldb"                          % hsqldbV              % Test,
+      "com.dimafeng"     %% "testcontainers-scala-scalatest"  % testContainersScalaV % Test,
+      "com.dimafeng"     %% "testcontainers-scala-postgresql" % testContainersScalaV % Test,
     ),
   )
   .dependsOn(
@@ -1781,8 +1785,8 @@ lazy val flinkBaseComponentsTests = (project in flink("components/base-tests"))
     )
   )
   .dependsOn(
-    flinkComponentsTestkit              % Test,
-    experimentalFlinkTableApiComponents % Test
+    flinkComponentsTestkit  % Test,
+    flinkTableApiComponents % Test
   )
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka"))
@@ -1800,7 +1804,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
   )
 
 // TODO: check if any flink-table / connector / format dependencies' scope can be limited
-lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev-table"))
+lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkTable.jar"): _*)
   .settings(publishAssemblySettings: _*)
@@ -1912,7 +1916,7 @@ lazy val designer = (project in file("designer/server"))
     Test / test                      := (Test / test)
       .dependsOn(
         defaultModel / Compile / assembly,
-        experimentalFlinkTableApiComponents / Compile / assembly,
+        flinkTableApiComponents / Compile / assembly,
         flinkDevModel / Compile / assembly,
         flinkExecutor / Compile / assembly,
         flinkExecutor / prepareItLibs
@@ -2102,7 +2106,7 @@ lazy val modules = List[ProjectReference](
   flinkPeriodicDeploymentManager,
   flinkDevModel,
   flinkDevModelJava,
-  experimentalFlinkTableApiComponents,
+  flinkTableApiComponents,
   devPeriodicDM,
   defaultModel,
   openapiComponents,
