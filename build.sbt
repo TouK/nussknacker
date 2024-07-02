@@ -53,7 +53,7 @@ val dockerUserName               = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName            = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp       = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
 val dockerUpBranchLatestFromProp = propOrEnv("dockerUpBranchLatest", "true").toBoolean
-val addDevArtifacts              = propOrEnv("addDevArtifacts", "false").toBoolean
+def addDevArtifacts()            = propOrEnv("addDevArtifacts", "false").toBoolean
 val addManagerArtifacts          = propOrEnv("addManagerArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
@@ -105,9 +105,6 @@ lazy val publishSettings = Seq(
 def defaultMergeStrategy: String => MergeStrategy = {
   // remove JPMS module descriptors (a proper soultion would be to merge them)
   case PathList(ps @ _*) if ps.last == "module-info.class"            => MergeStrategy.discard
-  // this prevents problem with table api in runtime:
-  // https://stackoverflow.com/questions/60436823/issue-when-flink-upload-a-job-with-stream-sql-query
-  case PathList("org", "codehaus", "janino", "CompilerFactory.class") => MergeStrategy.discard
   // we override Spring's class and we want to keep only our implementation
   case PathList(ps @ _*) if ps.last == "NumberUtils.class"            => MergeStrategy.first
   // merge Netty version information files
@@ -518,22 +515,22 @@ lazy val distribution: Project = sbt
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
     Universal / mappings                     := {
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
+        if (addDevArtifacts()) (Universal / mappings).value
         else filterDevConfigArtifacts((Universal / mappings).value)
 
       universalMappingsWithDevConfigFilter ++
-        (managerArtifacts).value ++
-        (componentArtifacts).value ++
-        (if (addDevArtifacts)
+        managerArtifacts.value ++
+        componentArtifacts.value ++
+        (if (addDevArtifacts())
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
          else Nil) ++
-        (if (addDevArtifacts) (devArtifacts).value: @sbtUnchecked
-         else (modelArtifacts).value: @sbtUnchecked) ++
+        (if (addDevArtifacts()) (devArtifacts).value: @sbtUnchecked
+         else modelArtifacts.value: @sbtUnchecked) ++
         (flinkExecutor / additionalBundledArtifacts).value
     },
     Universal / packageZipTarball / mappings := {
       val universalMappingsWithDevConfigFilter =
-        if (addDevArtifacts) (Universal / mappings).value
+        if (addDevArtifacts()) (Universal / mappings).value
         else filterDevConfigArtifacts((Universal / mappings).value)
       // we don't want docker-* stuff in .tgz
       universalMappingsWithDevConfigFilter filterNot { case (file, _) =>
@@ -1817,7 +1814,9 @@ lazy val experimentalFlinkTableApiComponents = (project in flink("components/dev
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
+        "org.apache.flink" % "flink-clients"               % flinkV,
         "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
+        "org.apache.flink" % "flink-connector-files"       % flinkV,
         "org.apache.flink" % "flink-json"                  % flinkV,
       )
     }
@@ -1989,7 +1988,7 @@ lazy val designer = (project in file("designer/server"))
             "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
             "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0"
           )
-        case _       => Seq(),
+        case _       => Seq()
       }
     }
   )
@@ -2024,7 +2023,10 @@ lazy val e2eTests = (project in file("e2e-tests"))
   .settings {
     // TODO: it'd be better to use scalaVersion here, but for some reason it's hard to disable existing task dynamically
     forScalaVersion(defaultScalaV) {
-      case (2, 12) => doTest
+      case (2, 12) => {
+        System.setProperty("addDevArtifacts", "true")
+        doTest
+      }
       case (2, 13) => doNotTest
     }
   }
@@ -2043,7 +2045,7 @@ lazy val e2eTests = (project in file("e2e-tests"))
   )
   .enablePlugins(BuildInfoPlugin)
   .settings(buildInfoSettings)
-  .dependsOn(testUtils % Test)
+  .dependsOn(testUtils % Test, scenarioApi % Test, designer % Test)
 
 lazy val doTest = Seq(
   Test / testOptions += Tests.Setup { () =>
