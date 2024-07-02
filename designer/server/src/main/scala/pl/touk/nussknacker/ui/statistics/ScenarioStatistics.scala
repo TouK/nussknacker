@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{ComponentType, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -26,16 +26,64 @@ object ScenarioStatistics {
 
   private val componentStatisticPrefix = "c_"
 
+  private[statistics] val emptyScenarioStatistics: Map[String, String] = Map(
+    ScenarioCount        -> 0,
+    FragmentCount        -> 0,
+    UnboundedStreamCount -> 0,
+    BoundedStreamCount   -> 0,
+    RequestResponseCount -> 0,
+    FlinkDMCount         -> 0,
+    LiteK8sDMCount       -> 0,
+    LiteEmbeddedDMCount  -> 0,
+    UnknownDMCount       -> 0,
+    ActiveScenarioCount  -> 0
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyActivityStatistics: Map[String, String] = Map(
+    AttachmentsAverage -> 0,
+    AttachmentsTotal   -> 0,
+    CommentsTotal      -> 0,
+    CommentsAverage    -> 0
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyComponentStatistics: Map[String, String] =
+    Map(ComponentsCount.toString -> "0")
+
+  private[statistics] val emptyUptimeStats: Map[String, String] = Map(
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyGeneralStatistics: Map[String, String] = Map(
+    NodesMedian            -> 0,
+    NodesAverage           -> 0,
+    NodesMax               -> 0,
+    NodesMin               -> 0,
+    CategoriesCount        -> 0,
+    VersionsMedian         -> 0,
+    VersionsAverage        -> 0,
+    VersionsMax            -> 0,
+    VersionsMin            -> 0,
+    AuthorsCount           -> 0,
+    FragmentsUsedMedian    -> 0,
+    FragmentsUsedAverage   -> 0,
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
+
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
-    scenariosInputData
-      .map(ScenarioStatistics.determineStatisticsForScenario)
-      .combineAll
-      .mapValuesNow(_.toString)
+    emptyScenarioStatistics ++
+      scenariosInputData
+        .map(ScenarioStatistics.determineStatisticsForScenario)
+        .combineAll
+        .mapValuesNow(_.toString)
   }
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     if (scenariosInputData.isEmpty) {
-      Map.empty
+      emptyGeneralStatistics
     } else {
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
@@ -64,21 +112,16 @@ object ScenarioStatistics {
       }.sorted
       val uptimeStatsMap = {
         if (sortedUptimes.isEmpty) {
-          Map(
-            UptimeInSecondsAverage -> 0,
-            UptimeInSecondsMax     -> 0,
-            UptimeInSecondsMin     -> 0,
-          )
+          emptyUptimeStats
         } else {
           Map(
             UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
             UptimeInSecondsMax     -> getMax(sortedUptimes),
             UptimeInSecondsMin     -> getMin(sortedUptimes)
-          )
+          ).map { case (k, v) => (k.toString, v.toString) }
         }
       }
-
-      (Map(
+      Map(
         NodesMedian          -> nodesMedian,
         NodesAverage         -> nodesAverage,
         NodesMax             -> nodesMax,
@@ -91,8 +134,9 @@ object ScenarioStatistics {
         AuthorsCount         -> authorsCount,
         FragmentsUsedMedian  -> fragmentsUsedMedian,
         FragmentsUsedAverage -> fragmentsUsedAverage
-      ) ++ uptimeStatsMap)
-        .map { case (k, v) => (k.toString, v.toString) }
+      )
+        .map { case (k, v) => (k.toString, v.toString) } ++
+        uptimeStatsMap
     }
   }
 
@@ -100,7 +144,7 @@ object ScenarioStatistics {
       listOfActivities: List[DbProcessActivityRepository.ProcessActivity]
   ): Map[String, String] = {
     if (listOfActivities.isEmpty) {
-      Map.empty
+      emptyActivityStatistics
     } else {
       //        Attachment stats
       val sortedAttachmentCountList = listOfActivities.map(_.attachments.length)
@@ -126,7 +170,7 @@ object ScenarioStatistics {
       components: List[ComponentDefinitionWithImplementation]
   ): Map[String, String] = {
     if (componentList.isEmpty) {
-      Map.empty
+      emptyComponentStatistics
     } else {
 
       // Get number of available components to check how many custom components created
@@ -204,15 +248,15 @@ object ScenarioStatistics {
 
   private def getMax[T: Numeric](orderedList: List[T]): T = {
     if (orderedList.isEmpty) implicitly[Numeric[T]].zero
-    else orderedList.head
+    else orderedList.last
   }
 
   private def getMin[T: Numeric](orderedList: List[T]): T = {
     if (orderedList.isEmpty) implicitly[Numeric[T]].zero
-    else orderedList.last
+    else orderedList.head
   }
 
-  def mapNameToStat(componentId: String): String = {
+  private def mapNameToStat(componentId: String): String = {
     val shortenedName = componentId.replaceAll(vowelsRegex, "").toLowerCase
 
     componentStatisticPrefix + shortenedName
@@ -254,6 +298,9 @@ case object LiteK8sDMCount         extends StatisticKey("s_dm_l")
 case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
 case object UnknownDMCount         extends StatisticKey("s_dm_c")
 case object ActiveScenarioCount    extends StatisticKey("s_a")
-case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
-case object NuFingerprint          extends StatisticKey("fingerprint")
-case object NuVersion              extends StatisticKey("version")
+// Not scenario related statistics
+case object NuSource                extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
+case object NuFingerprint           extends StatisticKey("fingerprint")
+case object NuVersion               extends StatisticKey("version")
+case object CorrelationIdStat       extends StatisticKey("co_id")
+case object DesignerUptimeInSeconds extends StatisticKey("d_u")
