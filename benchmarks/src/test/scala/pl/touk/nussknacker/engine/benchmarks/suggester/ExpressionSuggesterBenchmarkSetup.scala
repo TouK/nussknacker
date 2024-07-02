@@ -3,13 +3,14 @@ package pl.touk.nussknacker.engine.benchmarks.suggester
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
-import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionExtractor, ClassDefinitionSet}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 
 import java.time.{Duration, LocalDateTime}
 import scala.concurrent.duration.{Duration => ScalaDuration}
