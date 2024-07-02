@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 if [ -z "$NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN" ]; then
     echo "NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN variable has to be defined"
