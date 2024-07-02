@@ -6,13 +6,12 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
-import pl.touk.nussknacker.engine.spel
 
 import java.util.Date
 
 class DictsSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("use dicts in indexer with enum values") {
     checkProcess("#input.enumValue == #enum['ONE']")
@@ -26,8 +25,8 @@ class DictsSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .filter("filter", filterExpression)
-      .processorEnd("proc2", "logService", "all" -> "#input")
+      .filter("filter", filterExpression.spel)
+      .processorEnd("proc2", "logService", "all" -> "#input".spel)
 
     val data = List(
       SimpleRecord("1", 3, "fooId", new Date(0), enumValue = SimpleJavaEnum.ONE),

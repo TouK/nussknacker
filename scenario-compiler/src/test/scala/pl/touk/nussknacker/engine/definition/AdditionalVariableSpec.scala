@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.definition.component.methodbased.MethodBasedCo
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class AdditionalVariableSpec extends AnyFunSuite with Matchers {
@@ -52,7 +52,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
     )
     val fragmentResolver = FragmentResolver(List.empty)
     val result = new NodeDataValidator(modelData).validate(
-      node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''") :: Nil)),
+      node.Source("sid", SourceRef("one", NodeParameter(ParameterName("toFail"), "''".spel) :: Nil)),
       ValidationContext.empty,
       Map.empty,
       Nil,

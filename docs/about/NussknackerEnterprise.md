@@ -9,13 +9,13 @@ Available features and services:
 - ML Enhanced Decisions - a component that enriches your data with insights inferred from ML models
 - Decision Webhooks - a subscription mechanism that allows performing actions in external systems based on the 
 results of decision scenarios
-- Dedicated bug fix support
+- Ververica cloud integration
+- Priority bug fix support
+- Nussknacker training
 
 Future plans:
 - State management in Lite engine in Streaming Processing mode - basic time windows based processing 
 - Automatic input / output logging from enrichers
-- Decision tables
-- Batch processing support
 - Redis integration component 
 
 For license and support terms contact info@nussknacker.io.

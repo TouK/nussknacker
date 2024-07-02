@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -31,9 +31,9 @@ class PeriodicSourceFactorySpec extends AnyFunSuite with FlinkSpec with PatientS
       .source(
         "periodic",
         "periodic",
-        "period" -> "T(java.time.Duration).ofSeconds(1)",
-        "count"  -> "1",
-        "value"  -> s"'$input'"
+        "period" -> "T(java.time.Duration).ofSeconds(1)".spel,
+        "count"  -> "1".spel,
+        "value"  -> s"'$input'".spel
       )
       .emptySink(sinkId, "dead-end")
 

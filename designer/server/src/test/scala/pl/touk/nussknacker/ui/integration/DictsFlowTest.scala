@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
@@ -235,7 +235,7 @@ class DictsFlowTest
       .streaming(processId)
       .additionalFields(properties = Map("param1" -> "true"))
       .source("source", "csv-source-lite")
-      .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
+      .buildSimpleVariable(VariableNodeId, VariableName, variableExpression.spel)
       .emptySink(EndNodeId, "dead-end-lite")
 
   private def saveProcessAndExtractValidationResult(

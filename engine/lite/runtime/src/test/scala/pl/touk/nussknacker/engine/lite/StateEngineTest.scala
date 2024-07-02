@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SourceFailure}
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 //TODO: test for test-from-file
 class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
@@ -53,14 +53,14 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
   private lazy val sampleScenarioWithState: CanonicalProcess = ScenarioBuilder
     .streamingLite("next")
     .source("start", "start")
-    .buildSimpleVariable("v1", "v1", "2 * #input")
-    .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")
-    .customNode("sum", "sum", "sum", "name" -> "'test'", "value" -> "#v1")
-    .emptySink("end", "end", "value" -> "#input + ':' + #sum")
+    .buildSimpleVariable("v1", "v1", "2 * #input".spel)
+    .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input".spel)
+    .customNode("sum", "sum", "sum", "name" -> "'test'".spel, "value" -> "#v1".spel)
+    .emptySink("end", "end", "value" -> "#input + ':' + #sum".spel)
 
   private lazy val sampleScenarioWithFailingSource: CanonicalProcess = ScenarioBuilder
     .streamingLite("next")
     .source("start", "failOnNumber1Source")
-    .emptySink("end", "end", "value" -> "#input")
+    .emptySink("end", "end", "value" -> "#input".spel)
 
 }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Servi
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.util.concurrent.TimeUnit
@@ -24,7 +24,7 @@ class ManyParamsInterpreterBenchmark {
   private val process: CanonicalProcess = ScenarioBuilder
     .streaming("t1")
     .source("source", "source")
-    .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
+    .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''".spel: Expression)): _*)
     .emptySink("sink", "sink")
 
   private val interpreterIOSyncService = prepareIoInterpreter(

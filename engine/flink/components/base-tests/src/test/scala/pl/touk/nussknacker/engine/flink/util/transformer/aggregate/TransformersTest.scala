@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinitio
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.helpers.ConfigCreatorWithCollectingListener
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -283,11 +283,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         "fragmentWithTumblingAggregate",
         "aggregate",
         "fragmentResult",
-        ("aggBy", asSpelExpression("#input.eId")),
-        ("key", asSpelExpression("#input.id"))
+        ("aggBy", "#input.eId".spel),
+        ("key", "#input.id".spel)
       )
-      .buildSimpleVariable("key", "key", "#fragmentResult.key")
-      .buildSimpleVariable("globalVarAccessTest", "globalVarAccessTest", "#meta.processName")
+      .buildSimpleVariable("key", "key", "#fragmentResult.key".spel)
+      .buildSimpleVariable("globalVarAccessTest", "globalVarAccessTest", "#meta.processName".spel)
       .emptySink("end", "dead-end")
 
     val resolvedScenario = resolveFragmentWithTumblingAggregate(scenario)
@@ -312,10 +312,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         "fragmentWithTumblingAggregate",
         "aggregate",
         "fragmentResult",
-        ("aggBy", asSpelExpression("#input.eId")),
-        ("key", asSpelExpression("#input.id"))
+        ("aggBy", "#input.eId".spel),
+        ("key", "#input.id".spel)
       )
-      .buildSimpleVariable("inputVarAccessTest", "inputVarAccessTest", "#input")
+      .buildSimpleVariable("inputVarAccessTest", "inputVarAccessTest", "#input".spel)
       .emptySink("end", "dead-end")
 
     val resolvedScenario = resolveFragmentWithTumblingAggregate(scenario)
@@ -700,12 +700,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     def params(data: AggregateData) = {
       val baseParams: List[(String, Expression)] = List(
-        "groupBy"             -> "#id",
-        "aggregateBy"         -> data.aggregateBy,
-        "aggregator"          -> data.aggregator,
-        data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')"
+        "groupBy"             -> "#id".spel,
+        "aggregateBy"         -> data.aggregateBy.spel,
+        "aggregator"          -> data.aggregator.spel,
+        data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')".spel
       )
-      baseParams ++ data.additionalParams.mapValuesNow(asSpelExpression).toList
+      baseParams ++ data.additionalParams.mapValuesNow(_.spel).toList
     }
 
     val beforeAggregate = ScenarioBuilder
@@ -713,7 +713,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .buildSimpleVariable("id", "id", "#input.id")
+      .buildSimpleVariable("id", "id", "#input.id".spel)
 
     aggregateData
       .foldLeft(beforeAggregate) { case (builder, definition) =>
@@ -727,7 +727,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           .buildSimpleVariable(
             s"after-aggregate-expression-${definition.idSuffix}",
             s"fooVar${definition.idSuffix}",
-            definition.afterAggregateExpression
+            definition.afterAggregateExpression.spel
           )
       }
       .emptySink("end", "dead-end")
@@ -752,15 +752,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
             Some("aggresult"),
             "aggregate-tumbling",
             List(
-              NodeParameter(ParameterName("groupBy"), asSpelExpression("#key")),
-              NodeParameter(ParameterName("aggregator"), asSpelExpression("#AGG.sum")),
-              NodeParameter(ParameterName("aggregateBy"), asSpelExpression("#aggBy")),
-              NodeParameter(ParameterName("windowLength"), asSpelExpression("T(java.time.Duration).parse('PT2H')")),
+              NodeParameter(ParameterName("groupBy"), "#key".spel),
+              NodeParameter(ParameterName("aggregator"), "#AGG.sum".spel),
+              NodeParameter(ParameterName("aggregateBy"), "#aggBy".spel),
+              NodeParameter(ParameterName("windowLength"), "T(java.time.Duration).parse('PT2H')".spel),
               NodeParameter(
                 ParameterName("emitWhen"),
-                asSpelExpression(
-                  "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"
-                )
+                "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd".spel
               )
             )
           )
@@ -769,7 +767,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           FragmentOutputDefinition(
             "out1",
             "aggregate",
-            List(Field("key", asSpelExpression("#key")), Field("aggresult", asSpelExpression("#aggresult")))
+            List(Field("key", "#key".spel), Field("aggresult", "#aggresult".spel))
           )
         )
       ),

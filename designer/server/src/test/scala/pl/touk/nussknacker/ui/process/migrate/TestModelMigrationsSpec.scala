@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   ValidationErrors,
@@ -120,7 +120,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
             ProcessTestData.sampleFragmentOneOut.name.value,
             "output",
             "fragmentResult",
-            "param1" -> "'foo'"
+            "param1" -> "'foo'".spel
           )
           .emptySink("sink", ProcessTestData.existingSinkFactory)
       )
@@ -152,7 +152,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
             ProcessTestData.sampleFragmentOneOut.name.value,
             "output",
             "fragmentResult",
-            "param1" -> "'foo'"
+            "param1" -> "'foo'".spel
           )
           .emptySink("sink", ProcessTestData.existingSinkFactory)
       )

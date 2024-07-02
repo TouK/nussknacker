@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.util.functions.DateUtils
 import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
@@ -25,8 +25,8 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val scenario = ScenarioBuilder
       .streamingLite("t1")
       .source("source", TestScenarioRunner.testDataSource)
-      .enricher("customByHand", "o1", "customByHand", "param" -> "#input")
-      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#o1")
+      .enricher("customByHand", "o1", "customByHand", "param" -> "#input".spel)
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#o1".spel)
 
     val runner = new LiteTestScenarioRunner(
       List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
@@ -43,8 +43,8 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     val scenario = ScenarioBuilder
       .streamingLite("t1")
       .source("source", TestScenarioRunner.testDataSource)
-      .buildVariable("v", "v", "varField" -> "#input.field")
-      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField")
+      .buildVariable("v", "v", "varField" -> "#input.field".spel)
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField".spel)
 
     val runner = new LiteTestScenarioRunner(List.empty, Map.empty, ConfigFactory.empty(), EngineRuntime)
 
@@ -59,8 +59,8 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       ScenarioBuilder
         .streamingLite("stream")
         .source("source", TestScenarioRunner.testDataSource)
-        .enricher("service", "output", TestService.ServiceId, "param" -> "#input")
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output")
+        .enricher("service", "output", TestService.ServiceId, "param" -> "#input".spel)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val runResults =
       TestScenarioRunner
@@ -79,8 +79,8 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       ScenarioBuilder
         .streamingLite("stream")
         .source("source", TestScenarioRunner.testDataSource)
-        .enricher("service", "output", TestService.ServiceId, "param" -> "#input")
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output")
+        .enricher("service", "output", TestService.ServiceId, "param" -> "#input".spel)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val runResults =
       TestScenarioRunner
@@ -98,7 +98,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#SAMPLE.foo")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#SAMPLE.foo".spel)
 
     val runResults =
       TestScenarioRunner
@@ -115,7 +115,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#NUMERIC.negate(#input)")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#NUMERIC.negate(#input)".spel)
 
     val runResults =
       TestScenarioRunner
@@ -131,8 +131,8 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .filter("filter", "#input / 0 != 0") // intentional throwing of an exception
-        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input")
+        .filter("filter", "#input / 0 != 0".spel) // intentional throwing of an exception
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
 
     val runResults =
       TestScenarioRunner

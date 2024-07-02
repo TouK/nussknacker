@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -86,7 +86,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
   }
 
   test("Convert branches to scenarioGraph") {
-    import pl.touk.nussknacker.engine.spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     val process = ScenarioBuilder
       .streamingLite("proc1")
@@ -96,7 +96,7 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
           .branchEnd("branch1", "join1"),
         GraphBuilder
           .source("sourceId2", "sourceType1")
-          .filter("filter2", "false")
+          .filter("filter2", "false".spel)
           .branchEnd("branch2", "join1"),
         GraphBuilder
           .join("join1", "union", Some("outPutVar"), List("branch1" -> Nil, "branch2" -> Nil))
@@ -160,15 +160,15 @@ class CanonicalProcessConverterSpec extends AnyFunSuite with Matchers with Table
 
     testCase(_.split(nodeId, branchEnd))
     testCase(
-      _.filter(nodeId, "false", branchEnd).emptySink("end2", "out1"),
+      _.filter(nodeId, "false".spel, branchEnd).emptySink("end2", "out1"),
       Some(FilterFalse),
       Set(Edge(nodeId, "end2", Some(FilterTrue)))
     )
-    testCase(_.switch(nodeId, "false", "out1", Case("1", branchEnd)), Some(NextSwitch("1")))
+    testCase(_.switch(nodeId, "false".spel, "out1", Case("1".spel, branchEnd)), Some(NextSwitch("1".spel)))
     testCase(
-      _.switch(nodeId, "false", "out1", branchEnd, Case("1", GraphBuilder.emptySink("end2", "out1"))),
+      _.switch(nodeId, "false".spel, "out1", branchEnd, Case("1".spel, GraphBuilder.emptySink("end2", "out1"))),
       Some(SwitchDefault),
-      Set(Edge(nodeId, "end2", Some(NextSwitch("1"))))
+      Set(Edge(nodeId, "end2", Some(NextSwitch("1".spel))))
     )
   }
 

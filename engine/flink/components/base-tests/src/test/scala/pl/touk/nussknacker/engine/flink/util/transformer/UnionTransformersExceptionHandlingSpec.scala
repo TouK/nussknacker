@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
@@ -33,7 +33,7 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
               "union1",
               "union",
               Some("out4"),
-              List(("union1", List[(String, Expression)](("Output expression", generator.throwFromString()))))
+              List(("union1", List[(String, Expression)](("Output expression", generator.throwFromString().spel))))
             )
             .emptySink("end3", "dead-end"),
           GraphBuilder
@@ -45,12 +45,12 @@ class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExc
                 (
                   "union2",
                   List[(String, Expression)](
-                    ("key", generator.throwFromString()),
-                    ("value", generator.throwFromString())
+                    ("key", generator.throwFromString().spel),
+                    ("value", generator.throwFromString().spel)
                   )
                 )
               ),
-              "stateTimeout" -> durationExpression
+              "stateTimeout" -> durationExpression.spel
             )
             .emptySink("end4", "dead-end")
         )

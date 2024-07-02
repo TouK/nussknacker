@@ -5,16 +5,12 @@ sidebar_position: 3
 
 # Scenario Deployment configuration
 
-In order to deploy scenario on the given [Engine](../about/engines), you need to configure the deployment.
+Deployment of a scenario onto the [Engine](../about/engines) is managed by the Designer's extension called [Deployment Manager](../about/GLOSSARY#deployment-manager).
+To enable a given [Deployment Manager](../about/GLOSSARY#deployment-manager) its jar package has to be placed in the Designer's classpath. Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers` directory. 
 
-Deployment of a scenario is managed by Designer's extension called [Deployment Manager](../about/GLOSSARY#deployment-manager).
-To enable given [Deployment Manager](../about/GLOSSARY#deployment-manager) you need to place its jar package in the Designer's classpath.
-Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers`
-directory. Depending on which [Deployment Manager](../about/GLOSSARY#deployment-manager) you've selected, you should provide parameters values for it specifically - see sections below to find out available parameters.
+Deployment specific configuration is provided in the `deploymentConfig` section of the configuration file - check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration file.
 
-Section with `deploymentConfig` needs to be placed in the correct place in the Designer's configuration. Check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration.
-
-Below you can find a snippet of scenario deployment configuration.
+Below is a snippet of scenario deployment configuration.
 
 ```
 deploymentConfig {     
@@ -170,13 +166,13 @@ Please note that you cannot override names or labels configured by Nussknacker.
 
 ### Overriding configuration passed to runtime.
 
-In most cases, the model configuration values passed to the Lite Engine runtime are the ones from
+In most cases, the Model configuration values passed to the Lite Engine runtime are the ones from
 the `modelConfig` section
 of [main configuration file](./Common.md#configuration-areas).
 However, there are two exception to this rule:
 
 - there
-  is [application.conf](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/runtime/src/universal/conf/application.conf)
+  is [application.conf](https://github.com/TouK/nussknacker/blob/staging/engine/lite/runtime-app/src/universal/conf/application.conf)
   file in the runtime image, which is used as additional source of certain defaults.
 - you can override the configuration coming from the main configuration file. The paragraph below describes how to use
   this mechanism.

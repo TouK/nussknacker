@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.RequestRespons
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -41,10 +41,10 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .filter("filter1", "#input.field1 == 'a'")
+      .filter("filter1", "#input.field1 == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1".spel)
 
     val creator   = new RequestResponseSampleComponents
     val contextId = firstIdForFirstSource(process)
@@ -60,8 +60,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .source("start", "request1-post-source")
       .split(
         "split",
-        GraphBuilder.emptySink("sink1", "response-sink", "value" -> "#input.field1"),
-        GraphBuilder.emptySink("sink2", "response-sink", "value" -> "#input.field2")
+        GraphBuilder.emptySink("sink1", "response-sink", "value" -> "#input.field1".spel),
+        GraphBuilder.emptySink("sink2", "response-sink", "value" -> "#input.field2".spel)
       )
 
     val result = runProcess(process, Request1("a", "b"))
@@ -74,10 +74,10 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .filter("filter1", "#input.field1 == 'a'")
+      .filter("filter1", "#input.field1 == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1".spel)
 
     val creator        = new RequestResponseSampleComponents
     val metricRegistry = new MetricRegistry
@@ -116,9 +116,9 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .customNode("for-each", "outPart", "for-each", "Elements" -> "#input.toList()")
-      .buildSimpleVariable("var1", "var1", "#outPart")
-      .emptySink("sink1", "response-sink", "value" -> "#outPart")
+      .customNode("for-each", "outPart", "for-each", "Elements" -> "#input.toList()".spel)
+      .buildSimpleVariable("var1", "var1", "#outPart".spel)
+      .emptySink("sink1", "response-sink", "value" -> "#outPart".spel)
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -130,7 +130,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .requestResponse("proc1")
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
-      .emptySink("sink1", "response-sink", "value" -> "#response.field1")
+      .emptySink("sink1", "response-sink", "value" -> "#response.field1".spel)
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -141,10 +141,10 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'")
-      .customNode("custom", "output", "extractor", "expression" -> "''")
-      .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'")
-      .emptySink("sink1", "response-sink", "value" -> "#response1.field1 + #response2.field1")
+      .enricher("enricher1", "response1", "eagerEnricherWithOpen", "name" -> "'1'".spel)
+      .customNode("custom", "output", "extractor", "expression" -> "''".spel)
+      .enricher("enricher2", "response2", "eagerEnricherWithOpen", "name" -> "'2'".spel)
+      .emptySink("sink1", "response-sink", "value" -> "#response1.field1 + #response2.field1".spel)
 
     val creator = new RequestResponseSampleComponents
     val result  = runProcess(process, Request1("a", "b"), creator)
@@ -165,7 +165,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .requestResponse("proc1")
       .source("start", "request1-post-source")
       .enricher("enricherWithOpenService", "response", "enricherWithOpenService")
-      .emptySink("sink1", "response-sink", "value" -> "#response.field1")
+      .emptySink("sink1", "response-sink", "value" -> "#response.field1".spel)
 
     val metricRegistry = new MetricRegistry
 
@@ -221,8 +221,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2")
-      .emptySink("sink1", "response-sink", "value" -> "#extracted")
+      .customNode("extract", "extracted", "extractor", "expression" -> "#input.field2".spel)
+      .emptySink("sink1", "response-sink", "value" -> "#extracted".spel)
 
     val result = runProcess(process, Request1("a", "b"))
 
@@ -233,7 +233,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'".spel)
 
     val result = runProcess(process, Request1("abc", "b"))
 
@@ -245,7 +245,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'".spel)
 
     val interpreter = prepareInterpreter(process = process)
     interpreter.sinkTypes shouldBe Map(NodeId("endNodeIID") -> Typed[String])
@@ -253,7 +253,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process2 = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}")
+      .emptySink("endNodeIID", "response-sink", "value" -> "{'str': #input.toString(), 'int': 15}".spel)
 
     val interpreter2 = prepareInterpreter(process = process2)
     interpreter2.sinkTypes shouldBe Map(
@@ -266,7 +266,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("exception-in-sink")
       .source("start", "request1-post-source")
-      .emptySink("sinkId", "failing-sink", "fail" -> "true")
+      .emptySink("sinkId", "failing-sink", "fail" -> "true".spel)
 
     val creator   = new RequestResponseSampleComponents
     val contextId = firstIdForFirstSource(process)
@@ -287,8 +287,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true")
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'")
+      .customNodeNoOutput("filter", "customFilter", "filterExpression" -> "true".spel)
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1 + 'd'".spel)
 
     val result = runProcess(process, Request1("abc", "b"))
 
@@ -303,8 +303,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
           .source("sourceId1", "request1-post-source")
           .split(
             "spl",
-            GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd("branch1", "join1"),
-            GraphBuilder.buildSimpleVariable("v1a", "v2", "'bb'").branchEnd("branch1a", "join1")
+            GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'".spel).branchEnd("branch1", "join1"),
+            GraphBuilder.buildSimpleVariable("v1a", "v2", "'bb'".spel).branchEnd("branch1a", "join1")
           ),
         GraphBuilder
           .join(
@@ -312,11 +312,11 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
             "union",
             Some("unionOutput"),
             List(
-              "branch1"  -> List("Output expression" -> "{a: #v1}"),
-              "branch1a" -> List("Output expression" -> "{a: #v2}")
+              "branch1"  -> List("Output expression" -> "{a: #v1}".spel),
+              "branch1a" -> List("Output expression" -> "{a: #v2}".spel)
             )
           )
-          .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#unionOutput.a")
+          .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#unionOutput.a".spel)
       )
 
     val result = runProcess(process, Request1("abc", "b"))
@@ -334,7 +334,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
             "spl",
             (1 to 5).map(v =>
               GraphBuilder
-                .buildVariable(s"var$v", "v1", "value" -> s"'v$v'", "rank" -> v.toString)
+                .buildVariable(s"var$v", "v1", "value" -> s"'v$v'".spel, "rank" -> v.toString.spel)
                 .branchEnd(s"branch$v", "joinWithSort")
             ): _*
           ),
@@ -344,22 +344,22 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
             "union",
             Some("unionOutput"),
             List(
-              "branch1" -> List("Output expression" -> "#v1"),
-              "branch2" -> List("Output expression" -> "#v1"),
-              "branch3" -> List("Output expression" -> "#v1"),
-              "branch4" -> List("Output expression" -> "#v1"),
-              "branch5" -> List("Output expression" -> "#v1")
+              "branch1" -> List("Output expression" -> "#v1".spel),
+              "branch2" -> List("Output expression" -> "#v1".spel),
+              "branch3" -> List("Output expression" -> "#v1".spel),
+              "branch4" -> List("Output expression" -> "#v1".spel),
+              "branch5" -> List("Output expression" -> "#v1".spel)
             )
           )
           .customNode(
             "sorter",
             "sorted",
             "sorter",
-            "maxCount" -> "2",
-            "rank"     -> "#unionOutput.rank",
-            "output"   -> "#unionOutput.value"
+            "maxCount" -> "2".spel,
+            "rank"     -> "#unionOutput.rank".spel,
+            "output"   -> "#unionOutput.value".spel
           )
-          .emptySink("endNodeIID", "response-sink", "value" -> "#sorted")
+          .emptySink("endNodeIID", "response-sink", "value" -> "#sorted".spel)
       )
 
     val result = runProcess(process, Request1("abc", "b"))

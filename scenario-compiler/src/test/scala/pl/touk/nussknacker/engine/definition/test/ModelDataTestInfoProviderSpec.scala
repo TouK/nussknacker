@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{
   GenericParametersSourceNoTestSupport,
   SourceWithTestParameters
 }
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -128,10 +128,10 @@ class ModelDataTestInfoProviderSpec
       .streaming("single source scenario")
       .sources(
         GraphBuilder
-          .source("source1", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .source("source1", "genericSourceNoSupport", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
         GraphBuilder
-          .source("source2", "genericSource", "par1" -> "'a'", "a" -> "42")
+          .source("source2", "genericSource", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
       )
 
@@ -145,10 +145,10 @@ class ModelDataTestInfoProviderSpec
       .streaming("single source scenario")
       .sources(
         GraphBuilder
-          .source("source1", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .source("source1", "genericSourceNoSupport", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
         GraphBuilder
-          .source("source2", "genericSourceNoGenerate", "par1" -> "'a'", "a" -> "42")
+          .source("source2", "genericSourceNoGenerate", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
       )
 
@@ -307,14 +307,14 @@ class ModelDataTestInfoProviderSpec
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {
     ScenarioBuilder
       .streaming("single source scenario")
-      .source("source1", sourceComponentId, "par1" -> "'a'", "a" -> "42")
+      .source("source1", sourceComponentId, "par1" -> "'a'".spel, "a" -> "42".spel)
       .emptySink("end", "dead-end")
   }
 
   private def createSimpleFragment(): CanonicalProcess = {
     ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[String])
-      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
   }
 
   private def createScenarioWithMultipleSources(): CanonicalProcess = {
@@ -322,19 +322,19 @@ class ModelDataTestInfoProviderSpec
       .streaming("single source scenario")
       .sources(
         GraphBuilder
-          .source("source1", "genericSource", "par1" -> "'a'", "a" -> "42")
+          .source("source1", "genericSource", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
         GraphBuilder
-          .source("source2", "sourceEmptyTimestamp", "par1" -> "'a'", "a" -> "42")
+          .source("source2", "sourceEmptyTimestamp", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
         GraphBuilder
-          .source("source3", "genericSource", "par1" -> "'a'", "a" -> "42")
+          .source("source3", "genericSource", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
         GraphBuilder
-          .source("source4", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .source("source4", "genericSourceNoSupport", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
         GraphBuilder
-          .source("source5", "sourceGeneratingEmptyData", "par1" -> "'a'", "a" -> "42")
+          .source("source5", "sourceGeneratingEmptyData", "par1" -> "'a'".spel, "a" -> "42".spel)
           .emptySink("end", "dead-end"),
       )
   }

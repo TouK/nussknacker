@@ -206,7 +206,8 @@ const config: Configuration = {
                 use: ["babel-loader"],
             },
             {
-                test: /\.(css|styl|less)?$/,
+                test: /\.(css|less)?$/,
+                sideEffects: true,
                 use: [
                     "style-loader",
                     {
@@ -224,12 +225,6 @@ const config: Configuration = {
             },
             {
                 test: /\.css?$/,
-                enforce: "pre",
-                exclude: /node_modules/,
-                use: cssPreLoaders,
-            },
-            {
-                test: /\.styl$/,
                 enforce: "pre",
                 exclude: /node_modules/,
                 use: cssPreLoaders,

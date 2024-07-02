@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRe
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testmode.TestProcess.{
   ExpressionInvocationResult,
   ExternalInvocationResult,
@@ -26,9 +26,9 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streamingLite("scenario1")
       .source("start", "start")
-      .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")
-      .customNode("sum", "sum", "sum", "name" -> "'test'", "value" -> "#input")
-      .emptySink("end", "end", "value" -> "#input + ':' + #sum")
+      .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input".spel)
+      .customNode("sum", "sum", "sum", "name" -> "'test'".spel, "value" -> "#input".spel)
+      .emptySink("end", "end", "value" -> "#input + ':' + #sum".spel)
     val scenarioTestData = ScenarioTestData(
       List(
         ScenarioTestJsonRecord("start", Json.fromString("A|2")),
@@ -70,8 +70,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streamingLite("scenario1")
       .sources(
-        GraphBuilder.source("source1", "start").emptySink("end1", "end", "value" -> "#input"),
-        GraphBuilder.source("source2", "start").emptySink("end2", "end", "value" -> "#input")
+        GraphBuilder.source("source1", "start").emptySink("end1", "end", "value" -> "#input".spel),
+        GraphBuilder.source("source2", "start").emptySink("end2", "end", "value" -> "#input".spel)
       )
     val scenarioTestData = ScenarioTestData(
       List(
@@ -100,7 +100,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streamingLite("scenario1")
       .source("source1", "parametersSupport")
-      .emptySink("end", "end", "value" -> "#input")
+      .emptySink("end", "end", "value" -> "#input".spel)
     val parameterExpressions = Map(
       ParameterName("contextId")        -> Expression(Language.Spel, "'some-ctx-id'"),
       ParameterName("numbers")          -> Expression(Language.Spel, "{1L, 2L, 3L}"),
@@ -129,11 +129,11 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streamingLite("scenario1")
       .source("source1", "parametersSupport")
-      .enricher("sumNumbers", "sum", "sumNumbers", "value" -> "#input.numbers")
+      .enricher("sumNumbers", "sum", "sumNumbers", "value" -> "#input.numbers".spel)
       .emptySink(
         "end",
         "end",
-        "value" -> "#sum + #input.additionalParams.extraValue + #UTIL.largestListElement(#input.numbers)"
+        "value" -> "#sum + #input.additionalParams.extraValue + #UTIL.largestListElement(#input.numbers)".spel
       )
 
     val parameterExpressions = Map(
@@ -171,8 +171,8 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
   test("should handle fragment test parameters in test") {
     val fragment = ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[String])
-      .filter("filter", "#in != 'stop'")
-      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+      .filter("filter", "#in != 'stop'".spel)
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in".spel)
 
     val parameterExpressions = Map(
       ParameterName("in") -> Expression(Language.Spel, "'some-text-id'")
@@ -193,7 +193,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
   test("should handle errors in fragment output") {
     val fragment = ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[Int])
-      .fragmentOutput("fragmentEnd", "output", "out" -> "4 / #in", "out_2" -> "8 / #in")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "4 / #in".spel, "out_2" -> "8 / #in".spel)
 
     val parameterExpressions = Map(
       ParameterName("in") -> Expression(Language.Spel, "0")

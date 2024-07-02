@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{
   SchemaNameTopicMatchStrategy
 }
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
@@ -153,17 +153,17 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$inputTopic'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value       -> "",
-        sinkRawEditorParamName.value -> "true",
-        sinkValueParamName.value     -> "#input"
+        topicParamName.value         -> s"'$outputTopic'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value       -> "".spel,
+        sinkRawEditorParamName.value -> "true".spel,
+        sinkValueParamName.value     -> "#input".spel
       )
     (inputTopic, inputSchema, inputSchemaId, outputTopic, outputSchema, outputSchemaId, scenario)
   }
@@ -186,17 +186,17 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'$inputTopic'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value       -> "",
-        sinkRawEditorParamName.value -> "true",
-        sinkValueParamName.value     -> "#input"
+        topicParamName.value         -> s"'$outputTopic'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value       -> "".spel,
+        sinkRawEditorParamName.value -> "true".spel,
+        sinkValueParamName.value     -> "#input".spel
       )
 
     val inputValue          = 123
@@ -243,18 +243,18 @@ class AzureSchemaRegistryKafkaAvroTest
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'",
-        schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'"
+        topicParamName.value         -> s"'$inputTopic'".spel,
+        schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'".spel
       )
-      .filter("filter-b-default", s"#input.b == '$bDefaultValue'")
+      .filter("filter-b-default", s"#input.b == '$bDefaultValue'".spel)
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'",
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-        sinkKeyParamName.value       -> "",
-        sinkRawEditorParamName.value -> "true",
-        sinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}"
+        topicParamName.value         -> s"'$outputTopic'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value       -> "".spel,
+        sinkRawEditorParamName.value -> "true".spel,
+        sinkValueParamName.value     -> "{a: #input.a, b: #input.b + 'xyz'}".spel
       )
 
     val inputValue = new GenericRecordBuilder(inputSchemaV1)

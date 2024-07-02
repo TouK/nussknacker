@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkBaseComponentProvider
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -38,24 +38,24 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
               "previousValue",
               "out1",
               "previousValue",
-              "groupBy" -> generator.throwFromString(),
-              "value"   -> generator.throwFromString()
+              "groupBy" -> generator.throwFromString().spel,
+              "value"   -> generator.throwFromString().spel
             )
             .customNode(
               "aggregate-sliding",
               "out2",
               "aggregate-sliding",
-              "groupBy"           -> generator.throwFromString(),
-              "aggregateBy"       -> generator.throwFromString(),
-              "aggregator"        -> "#AGG.first",
-              "windowLength"      -> durationExpression,
-              "emitWhenEventLeft" -> "false"
+              "groupBy"           -> generator.throwFromString().spel,
+              "aggregateBy"       -> generator.throwFromString().spel,
+              "aggregator"        -> "#AGG.first".spel,
+              "windowLength"      -> durationExpression.spel,
+              "emitWhenEventLeft" -> "false".spel
             )
             .customNodeNoOutput(
               "delay",
               "delay",
-              "key"   -> generator.throwFromString(),
-              "delay" -> "T(java.time.Duration).parse('PT0M')",
+              "key"   -> generator.throwFromString().spel,
+              "delay" -> "T(java.time.Duration).parse('PT0M')".spel,
             )
             .split(
               "branches",
@@ -64,11 +64,11 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
                   "aggregate-tumbling",
                   "out3",
                   "aggregate-tumbling",
-                  "groupBy"      -> generator.throwFromString(),
-                  "aggregateBy"  -> generator.throwFromString(),
-                  "aggregator"   -> "#AGG.first",
-                  "windowLength" -> durationExpression,
-                  "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent"
+                  "groupBy"      -> generator.throwFromString().spel,
+                  "aggregateBy"  -> generator.throwFromString().spel,
+                  "aggregator"   -> "#AGG.first".spel,
+                  "windowLength" -> durationExpression.spel,
+                  "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEvent".spel
                 )
                 .emptySink("end", "dead-end"),
               GraphBuilder
@@ -76,12 +76,12 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
                   "aggregate-session",
                   "out3",
                   "aggregate-session",
-                  "groupBy"             -> generator.throwFromString(),
-                  "aggregateBy"         -> generator.throwFromString(),
-                  "aggregator"          -> "#AGG.first",
-                  "sessionTimeout"      -> durationExpression,
-                  "endSessionCondition" -> "true",
-                  "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent"
+                  "groupBy"             -> generator.throwFromString().spel,
+                  "aggregateBy"         -> generator.throwFromString().spel,
+                  "aggregator"          -> "#AGG.first".spel,
+                  "sessionTimeout"      -> durationExpression.spel,
+                  "endSessionCondition" -> "true".spel,
+                  "emitWhen" -> "T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.SessionWindowTrigger).OnEvent".spel
                 )
                 .emptySink("end2", "dead-end"),
               GraphBuilder.branchEnd("union1", "union1"),
@@ -112,21 +112,21 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
               (
                 "left",
                 List(
-                  ("key", s"'left' + $keyParamExpression"),
-                  ("branchType", s"T(${classOf[BranchType].getName}).MAIN")
+                  ("key", s"'left' + $keyParamExpression".spel),
+                  ("branchType", s"T(${classOf[BranchType].getName}).MAIN".spel)
                 )
               ),
               (
                 "right",
                 List(
-                  ("key", s"'right' + $keyParamExpression"),
-                  ("branchType", s"T(${classOf[BranchType].getName}).JOINED")
+                  ("key", s"'right' + $keyParamExpression".spel),
+                  ("branchType", s"T(${classOf[BranchType].getName}).JOINED".spel)
                 )
               )
             ),
-            "aggregator"   -> "#AGG.first",
-            "aggregateBy"  -> s"'aggregate' + ${generator.throwFromString()}",
-            "windowLength" -> durationExpression
+            "aggregator"   -> "#AGG.first".spel,
+            "aggregateBy"  -> s"'aggregate' + ${generator.throwFromString()}".spel,
+            "windowLength" -> durationExpression.spel
           )
           .emptySink("end4", "dead-end")
       )

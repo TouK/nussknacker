@@ -12,13 +12,12 @@ import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, Record
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
-import pl.touk.nussknacker.engine.spel
 
 import java.util.{Date, UUID}
 
 class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
   import SingleValueSinkFactory._
 
   test("skip null records") {
@@ -26,7 +25,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .processorEnd("proc2", "logService", "all" -> "#input")
+      .processorEnd("proc2", "logService", "all" -> "#input".spel)
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0)),
@@ -63,7 +62,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .emptySink("end", "sinkForInts", SingleValueParamName -> "#input.value1 + 4")
+      .emptySink("end", "sinkForInts", SingleValueParamName -> "#input.value1 + 4".spel)
 
     val data = List(
       SimpleRecord("1", 3, "a", new Date(0))
@@ -78,8 +77,8 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val process = ScenarioBuilder
       .streaming("proc1")
-      .source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
-      .processorEnd("proc2", "logService", "all" -> "#input")
+      .source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)".spel)
+      .processorEnd("proc2", "logService", "all" -> "#input".spel)
 
     val data = List()
 
@@ -94,14 +93,14 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .streaming("proc1")
       .sources(
         GraphBuilder
-          .source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
+          .source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)".spel)
           .branchEnd("end1", "join1"),
         GraphBuilder
           .source("id2", "input")
           .branchEnd("end2", "join1"),
         GraphBuilder
           .join("join1", "sampleJoin", Some("input33"), List.empty)
-          .processorEnd("proc2", "logService", "all" -> "#input33")
+          .processorEnd("proc2", "logService", "all" -> "#input33".spel)
       )
 
     val rec  = SimpleRecord("1", 3, "a", new Date(0))
@@ -117,10 +116,10 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .streaming("proc1")
       .sources(
         GraphBuilder
-          .source("idInt", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
+          .source("idInt", "intInputWithParam", "param" -> "#processHelper.add(2, 3)".spel)
           .branchEnd("end1", "join1"),
         GraphBuilder
-          .source("idOtherInt", "intInputWithParam", "param" -> "15")
+          .source("idOtherInt", "intInputWithParam", "param" -> "15".spel)
           .branchEnd("end2", "join1"),
         GraphBuilder
           .source("id2", "input")
@@ -131,8 +130,8 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             "joinBranchExpression",
             Some("input2"),
             List(
-              "end1" -> List("value" -> "#input"),
-              "end2" -> List("value" -> "#input")
+              "end1" -> List("value" -> "#input".spel),
+              "end2" -> List("value" -> "#input".spel)
             )
           )
           .branchEnd("end2", "join2"),
@@ -142,11 +141,11 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             "joinBranchExpression",
             Some("input3"),
             List(
-              "end1" -> List("value" -> "#input"),
-              "end2" -> List("value" -> "#input2")
+              "end1" -> List("value" -> "#input".spel),
+              "end2" -> List("value" -> "#input2".spel)
             )
           )
-          .processorEnd("proc2", "logService", "all" -> "#input3")
+          .processorEnd("proc2", "logService", "all" -> "#input3".spel)
       )
 
     val rec  = SimpleRecord("1", 3, "a", new Date(0))
@@ -165,8 +164,8 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           .source("id", "input")
           .split(
             "split",
-            GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
-            GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
+            GraphBuilder.filter("left", "#input.id != 'a'".spel).branchEnd("end1", "join1"),
+            GraphBuilder.filter("right", "#input.id != 'b'".spel).branchEnd("end2", "join1")
           ),
         GraphBuilder
           .join(
@@ -174,11 +173,11 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             "joinBranchExpression",
             Some("input33"),
             List(
-              "end1" -> List("value" -> "#input"),
-              "end2" -> List("value" -> "#input")
+              "end1" -> List("value" -> "#input".spel),
+              "end2" -> List("value" -> "#input".spel)
             )
           )
-          .processorEnd("proc2", "logService", "all" -> "#input33")
+          .processorEnd("proc2", "logService", "all" -> "#input33".spel)
       )
 
     val recA = SimpleRecord("a", 3, "a", new Date(1))
@@ -197,9 +196,9 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("sampleVar", "var", "#processHelper.scalaOptionValue")
-      .enricher("enrich", "enriched", "serviceAcceptingOptionalValue", "scalaOptionParam" -> "#var")
-      .processorEnd("proc2", "logService", "all" -> "#enriched")
+      .buildSimpleVariable("sampleVar", "var", "#processHelper.scalaOptionValue".spel)
+      .enricher("enrich", "enriched", "serviceAcceptingOptionalValue", "scalaOptionParam" -> "#var".spel)
+      .processorEnd("proc2", "logService", "all" -> "#enriched".spel)
 
     val data = List(
       SimpleRecord("a", 3, "3", new Date(1))
@@ -214,7 +213,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .emptySink("sink", "eagerOptionalParameterSink", "optionalStringParam" -> "#processHelper.javaOptionalValue")
+      .emptySink("sink", "eagerOptionalParameterSink", "optionalStringParam" -> "#processHelper.javaOptionalValue".spel)
 
     val data = List(
       SimpleRecord("a", 3, "3", new Date(1))
@@ -229,8 +228,8 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("extractedVar", "extractedVar", "#processHelper.extractProperty(#typedMap, 'aField')")
-      .processorEnd("proc2", "logService", "all" -> "#extractedVar")
+      .buildSimpleVariable("extractedVar", "extractedVar", "#processHelper.extractProperty(#typedMap, 'aField')".spel)
+      .processorEnd("proc2", "logService", "all" -> "#extractedVar".spel)
 
     val data = List(
       SimpleRecord("a", 3, "3", new Date(1))
@@ -246,16 +245,16 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     val processWithService = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .processor("processor1", "eagerLifecycleService", "name" -> "'1'")
+      .processor("processor1", "eagerLifecycleService", "name" -> "'1'".spel)
       // just to test we open also in different process parts
-      .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
-      .processor("processor2", "eagerLifecycleService", "name" -> "'2'")
+      .customNodeNoOutput("custom", "customFilter", "input" -> "''".spel, "stringVal" -> "''".spel)
+      .processor("processor2", "eagerLifecycleService", "name" -> "'2'".spel)
       .processorEnd("enricher", "lifecycleService")
 
     val processWithoutService = ScenarioBuilder
       .streaming("proc1")
       .source("id", "input")
-      .processorEnd("proc2", "logService", "all" -> "''")
+      .processorEnd("proc2", "logService", "all" -> "''".spel)
 
     LifecycleService.reset()
     EagerLifecycleService.reset()
@@ -285,7 +284,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .streaming("proc")
       .source("start", "input")
       .enricher("componentUseCase", "componentUseCase", "returningComponentUseCaseService")
-      .emptySink("out", "sinkForStrings", SingleValueParamName -> "#componentUseCase.toString")
+      .emptySink("out", "sinkForStrings", SingleValueParamName -> "#componentUseCase.toString".spel)
 
     val data = List(
       SimpleRecord("a", 1, "a", new Date(1))
@@ -305,10 +304,10 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .split(
         "split",
         GraphBuilder
-          .enricher("throwingNonTransientErrorsNodeId", "out", "throwingNonTransientErrors", "throw" -> "true")
-          .emptySink("out1", "sinkForStrings", SingleValueParamName -> "'a'"),
+          .enricher("throwingNonTransientErrorsNodeId", "out", "throwingNonTransientErrors", "throw" -> "true".spel)
+          .emptySink("out1", "sinkForStrings", SingleValueParamName -> "'a'".spel),
         GraphBuilder
-          .emptySink("out2", "sinkForStrings", SingleValueParamName -> "'b'")
+          .emptySink("out2", "sinkForStrings", SingleValueParamName -> "'b'".spel)
       )
 
     // we test both sync and async to be sure collecting is handled correctly

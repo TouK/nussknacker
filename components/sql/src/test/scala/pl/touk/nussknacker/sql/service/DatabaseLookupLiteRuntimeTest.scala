@@ -6,12 +6,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.util
 import scala.jdk.CollectionConverters._
 
 class DatabaseLookupLiteRuntimeTest
@@ -58,18 +59,22 @@ class DatabaseLookupLiteRuntimeTest
         "sql-lookup-enricher",
         "output",
         "sql-lookup-enricher",
-        "Table"      -> "'PERSONS'",
-        "Key column" -> "'ID'",
-        "Key value"  -> "#input",
-        "Cache TTL"  -> ""
+        "Table"      -> "'PERSONS'".spel,
+        "Key column" -> "'ID'".spel,
+        "Key value"  -> "#input".spel,
+        "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.NAME")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
-    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
+    val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
-    resultList.head shouldEqual "John"
+    val resultScalaMap = resultList.head.asInstanceOf[util.HashMap[String, AnyRef]].asScala.map { case (key, value) =>
+      (key, value.toString)
+    }
+    resultScalaMap.get("ID") shouldEqual Some("1")
+    resultScalaMap.get("NAME") shouldEqual Some("John")
   }
 
   test("should enrich input with table with lower cases in column names") {
@@ -80,18 +85,22 @@ class DatabaseLookupLiteRuntimeTest
         "sql-lookup-enricher",
         "output",
         "sql-lookup-enricher",
-        "Table"      -> "'PERSONS_LOWER'",
-        "Key column" -> "'id'",
-        "Key value"  -> "#input",
-        "Cache TTL"  -> ""
+        "Table"      -> "'PERSONS_LOWER'".spel,
+        "Key column" -> "'id'".spel,
+        "Key value"  -> "#input".spel,
+        "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.name")
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
-    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
+    val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
-    resultList.head shouldEqual "John"
+    val resultScalaMap = resultList.head.asInstanceOf[util.HashMap[String, AnyRef]].asScala.map { case (key, value) =>
+      (key, value.toString)
+    }
+    resultScalaMap.get("name") shouldEqual Some("John")
+    resultScalaMap.get("id") shouldEqual Some("1")
   }
 
 }

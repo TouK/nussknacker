@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.components.LiteBaseComponentProvider
 import pl.touk.nussknacker.engine.lite.kafka.TestComponentProvider.{SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 
@@ -65,10 +65,10 @@ class KafkaTransactionalScenarioInterpreterTest
       .streamingLite("sample-union")
       .sources(
         GraphBuilder
-          .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'")
+          .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'".spel)
           .branchEnd("branchId1", "joinId1"),
         GraphBuilder
-          .source("sourceId2", "source", TopicParamName -> s"'${fixture.inputTopic}'")
+          .source("sourceId2", "source", TopicParamName -> s"'${fixture.inputTopic}'".spel)
           .branchEnd("branchId2", "joinId1"),
         GraphBuilder
           .join(
@@ -76,15 +76,15 @@ class KafkaTransactionalScenarioInterpreterTest
             "union",
             Some("unionOutput"),
             List(
-              "branchId1" -> List("Output expression" -> "{a: #input}"),
-              "branchId2" -> List("Output expression" -> "{a: #input}")
+              "branchId1" -> List("Output expression" -> "{a: #input}".spel),
+              "branchId2" -> List("Output expression" -> "{a: #input}".spel)
             )
           )
           .emptySink(
             "sinkId1",
             "sink",
-            TopicParamName     -> s"'${fixture.outputTopic}'",
-            SinkValueParamName -> "#unionOutput.a"
+            TopicParamName     -> s"'${fixture.outputTopic}'".spel,
+            SinkValueParamName -> "#unionOutput.a".spel
           )
       )
 
@@ -112,11 +112,11 @@ class KafkaTransactionalScenarioInterpreterTest
       .streamingLite("proc1")
       .sources(
         GraphBuilder
-          .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'")
+          .source("sourceId1", "source", TopicParamName -> s"'${fixture.inputTopic}'".spel)
           .split(
             "splitId1",
-            GraphBuilder.buildSimpleVariable("varId1", "v1", "'value1'").branchEnd("branch1", "joinId1"),
-            GraphBuilder.buildSimpleVariable("varId2", "v2", "'value2'").branchEnd("branch2", "joinId1")
+            GraphBuilder.buildSimpleVariable("varId1", "v1", "'value1'".spel).branchEnd("branch1", "joinId1"),
+            GraphBuilder.buildSimpleVariable("varId2", "v2", "'value2'".spel).branchEnd("branch2", "joinId1")
           ),
         GraphBuilder
           .join(
@@ -124,15 +124,15 @@ class KafkaTransactionalScenarioInterpreterTest
             "union",
             Some("unionOutput"),
             List(
-              "branch1" -> List("Output expression" -> "{a: #v1}"),
-              "branch2" -> List("Output expression" -> "{a: #v2}")
+              "branch1" -> List("Output expression" -> "{a: #v1}".spel),
+              "branch2" -> List("Output expression" -> "{a: #v2}".spel)
             )
           )
           .emptySink(
             "sinkId1",
             "sink",
-            TopicParamName     -> s"'${fixture.outputTopic}'",
-            SinkValueParamName -> "#unionOutput.a"
+            TopicParamName     -> s"'${fixture.outputTopic}'".spel,
+            SinkValueParamName -> "#unionOutput.a".spel
           )
       )
 
@@ -180,10 +180,15 @@ class KafkaTransactionalScenarioInterpreterTest
     val scenario = ScenarioBuilder
       .streamingLite("test")
       .parallelism(2)
-      .source("source", "source", TopicParamName -> s"'$inputTopic'")
-      .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length")
-      .customNode("for-each", "splitVar", "for-each", "Elements" -> "{#input, 'other'}")
-      .emptySink("sink", "sink", TopicParamName -> s"'$outputTopic'", SinkValueParamName -> "#splitVar + '-add'")
+      .source("source", "source", TopicParamName -> s"'$inputTopic'".spel)
+      .buildSimpleVariable("throw on 0", "someVar", "1 / #input.length".spel)
+      .customNode("for-each", "splitVar", "for-each", "Elements" -> "{#input, 'other'}".spel)
+      .emptySink(
+        "sink",
+        "sink",
+        TopicParamName     -> s"'$outputTopic'".spel,
+        SinkValueParamName -> "#splitVar + '-add'".spel
+      )
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "original"
@@ -461,8 +466,13 @@ class KafkaTransactionalScenarioInterpreterTest
   private def passThroughScenario(fixtureParam: FixtureParam) = {
     ScenarioBuilder
       .streamingLite("test")
-      .source("source", "source", TopicParamName -> s"'${fixtureParam.inputTopic}'")
-      .emptySink("sink", "sink", TopicParamName -> s"'${fixtureParam.outputTopic}'", SinkValueParamName -> "#input")
+      .source("source", "source", TopicParamName -> s"'${fixtureParam.inputTopic}'".spel)
+      .emptySink(
+        "sink",
+        "sink",
+        TopicParamName     -> s"'${fixtureParam.outputTopic}'".spel,
+        SinkValueParamName -> "#input".spel
+      )
   }
 
   case class FixtureParam(inputTopic: String, outputTopic: String, errorTopic: String)

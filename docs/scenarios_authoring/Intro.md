@@ -19,10 +19,10 @@ Every scenario has to start with a datasource - we have to specify what kind of 
 - flow control functions: filter, switch, split etc.
 - data enrichments from external sources (JDBC, OpenAPI)
 - aggregates in different types of time windows (available with Flink engine)
-- custom, tailor-made components, which extend default functionality
+- custom, tailor-made components, which extend base functionality
 - and more
 
-The nodes affect the data records as they flow through the scenario. In a typical scenario, you first check if a particular situation (data record) is of interest to you (you [filter](./BasicNodes.md#filter) out the ones that aren't). Then you fetch additional information needed to make the decision ([enrich](./Enrichers.md) the event) and add some conditional logic based on that information ([choice](./BasicNodes.md#choice)). If you want to explore more than one alternative, you can at any point [split](./BasicNodes.md#split) the flow into parallel paths. At the end of every scenario is a sink node (or nodes if there are parallel paths which haven't been [merged](./BasicNodes.md#union)). 
+The nodes affect the data records as they flow through the scenario. In a typical scenario, you first check if a particular situation (data record) is of interest to you (you [filter](./BasicNodes.md#filter) out the ones that aren't). Then you fetch additional information needed to make the decision ([enrich](./Enrichers.md) the data record) and add some conditional logic based on that information ([choice](./BasicNodes.md#choice)). If you want to explore more than one alternative, you can at any point [split](./BasicNodes.md#split) the flow into parallel paths. At the end of every scenario is a sink node (or nodes if there are parallel paths which haven't been [merged](./BasicNodes.md#union)). 
 
 In the **Streaming** [processing mode](../about/ProcessingModes) the data records processed by a scenario are called events. They are read from Kafka topics and processed by an [engine](/about/engines/) of choice: Flink or Lite. Events enter the scenario "via" a source node. The nodes process events; once the node finishes processing of an event, it hands it over to the next node in the processing flow. If there is a [split](./BasicNodes.md#split) node, the event gets "multiplied" and now two or more events "flow" in parallel through branches of the scenario.  There are also other nodes which can "produce" events; for example the [for-each](./BasicNodes.md#foreach) node or [time aggregate](AggregatesInTimeWindows.md) nodes. Finally, some nodes may terminate an event - for example the [filter](./BasicNodes.md#filter) node. The important takeaway here is that a single event that entered a scenario may result in zero, one or many events leaving the scenario (being written to Kafka topic).
 
@@ -35,18 +35,18 @@ Configuring Nussknacker nodes is about using SpEL to a large degree; knowledge o
 
 SpEL [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/expressions.html) is a powerful expression language that supports querying and manipulating data objects. What exactly does the term _expression_ mean and why is SpEL an _expression language_? In programming language terminology, an _expression_ is a union of values and functions that are joined to create a new value. SpEL only allows you to write expressions; therefore it is considered an expression language. A couple of examples:
 
-| Expression           | Result                         | Type                 |
-| ------------         | --------                       | --------             |
-| 'Hello World'        | "Hello World"                  | String               |
-| true                 | true                           | Boolean              |
-| {1,2,3,4}            | a list of integers from 1 to 4 | List[Integer]        |
-| {john:300, alex:400} | a map (name-value collection)  | Map[String, Integer] |
-| 2 > 1                | true                           | boolean              |
-| 2 > 1 ? 'a' : 'b'    | "a"                            | String               |
-| 42 + 2               | 44                             | Integer              |
-| 'AA' + 'BB'          | "AABB"                         | String               |
+| Expression           | Result                           | Type                 |
+| ------------         | --------                         | --------             |
+| 'Hello World'        | "Hello World"                    | String               |
+| true                 | true                             | Boolean              |
+| {1,2,3,4}            | a list of integers from 1 to 4   | List[Integer]        |
+| {john:300, alex:400} | a record (name-value collection) | Record{alex: Integer(400), john: Integer(300)} |
+| 2 > 1                | true                             | Boolean              |
+| 2 > 1 ? 'a' : 'b'    | "a"                              | String               |
+| 42 + 2               | 44                               | Integer              |
+| 'AA' + 'BB'          | "AABB"                           | String               |
 
-SpEL is used in Nussknacker to access data processed by a node or expand a node's configurability. For instance:
+SpEL is used in Nussknacker to access data processed by a node and supply node's parameters at runtime. For instance:
 
 
 * create a boolean expression (for example in filters) based on logical or relational (equal, greater than, etc) operators
@@ -83,9 +83,10 @@ If the event originated from a Kafka topic, the metadata associated with this ev
 * partition
 * timestamp 
 * timestampType 
-* topic. 
-Consult Kafka [documentation](https://kafka.apache.org/33/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
+* topic 
 
+
+Consult Kafka [documentation](https://kafka.apache.org/33/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
 
 The `#meta` variable carries meta information about the scenario under execution. This variables' contents can change during scenario execution as it's a dynamically allocated variable. The following meta information elements are available:
 

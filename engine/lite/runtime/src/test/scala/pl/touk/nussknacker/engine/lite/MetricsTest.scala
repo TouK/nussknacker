@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch,
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.lite.sample.SampleInput
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
 
@@ -29,10 +29,10 @@ class MetricsTest extends AnyFunSuite with Matchers {
     val sampleScenarioWithState = ScenarioBuilder
       .streamingLite(scenarioId)
       .source(sourceId, "start")
-      .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input")
+      .enricher("failOnNumber1", "out1", "failOnNumber1", "value" -> "#input".spel)
       // we don't care about sum, only about node count
-      .customNode("sum", "sum", "sum", "name" -> "''", "value" -> "0")
-      .emptySink("end", "end", "value" -> "''")
+      .customNode("sum", "sum", "sum", "name" -> "''".spel, "value" -> "0".spel)
+      .emptySink("end", "end", "value" -> "''".spel)
 
     runScenario(sampleScenarioWithState, List(0, 1, 2, 3), metricRegistry)
 
@@ -48,11 +48,11 @@ class MetricsTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streamingLite(scenarioId)
       .source("start", "start")
-      .filter("filter", "#input > 0")
+      .filter("filter", "#input > 0".spel)
       .split(
         "split",
-        GraphBuilder.emptySink("sink", "end", "value"                   -> "''"),
-        GraphBuilder.processorEnd("processor", "noOpProcessor", "value" -> "#input")
+        GraphBuilder.emptySink("sink", "end", "value"                   -> "''".spel),
+        GraphBuilder.processorEnd("processor", "noOpProcessor", "value" -> "#input".spel)
       )
 
     runScenario(scenario, List(0, 1, 2, 3), metricRegistry)
@@ -68,8 +68,13 @@ class MetricsTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streamingLite(scenarioId)
       .source("start", "start")
-      .filter("filter1", "#input > 0")
-      .switch("switch2", "#input", "output", Case("#input > 2", GraphBuilder.emptySink("end", "end", "value" -> "''")))
+      .filter("filter1", "#input > 0".spel)
+      .switch(
+        "switch2",
+        "#input".spel,
+        "output",
+        Case("#input > 2".spel, GraphBuilder.emptySink("end", "end", "value" -> "''".spel))
+      )
 
     runScenario(scenario, List(0, 1, 2, 3), metricRegistry)
 
@@ -111,9 +116,9 @@ class MetricsTest extends AnyFunSuite with Matchers {
     val scenario = ScenarioBuilder
       .streaming(scenarioId)
       .source("source1", "start")
-      .filter("filter1", "false")
-      .processor("processor1", "noOpProcessor", "value" -> "0")
-      .emptySink("sink1", "end", "value" -> "''")
+      .filter("filter1", "false".spel)
+      .processor("processor1", "noOpProcessor", "value" -> "0".spel)
+      .emptySink("sink1", "end", "value" -> "''".spel)
     val allNodes = scenario.collectAllNodes
 
     runScenario(scenario, Nil, metricRegistry)

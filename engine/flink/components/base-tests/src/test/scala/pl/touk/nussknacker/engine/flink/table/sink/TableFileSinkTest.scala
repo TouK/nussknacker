@@ -24,7 +24,7 @@ import scala.jdk.CollectionConverters._
 class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private lazy val outputDirectory1 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-1")
   private lazy val outputDirectory2 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-2")
@@ -100,8 +100,8 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
   test("should do file-to-file ping-pong for all primitive types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> "'input'")
-      .emptySink("end", "table", "Table" -> "'output1'", "Value" -> "#input")
+      .source("start", "table", "Table" -> "'input'".spel)
+      .emptySink("end", "table", "Table" -> "'output1'".spel, "Value" -> "#input".spel)
 
     val result = runner.runWithoutData(scenario)
     result.isValid shouldBe true
@@ -136,8 +136,8 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'")
-      .emptySink("end", "table", "Table" -> "'output2'", "Value" -> primitiveTypesExpression)
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .emptySink("end", "table", "Table" -> "'output2'".spel, "Value" -> primitiveTypesExpression)
 
     val result = runner.runWithoutData(
       scenario = scenario

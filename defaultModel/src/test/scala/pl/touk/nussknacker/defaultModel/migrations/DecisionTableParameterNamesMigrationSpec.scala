@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.node.Enricher
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matchers {
 
@@ -21,7 +21,7 @@ class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matc
         id = "decision-table-service",
         parameters = List(
           Parameter(ParameterName("Basic Decision Table"), exampleDecisionTableJson),
-          Parameter(ParameterName("Expression"), "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"),
+          Parameter(ParameterName("Expression"), "#ROW['age'] > #input.minAge && #ROW['DoB'] != null".spel),
         )
       ),
       output = "Output",
@@ -32,7 +32,7 @@ class DecisionTableParameterNamesMigrationSpec extends AnyFreeSpecLike with Matc
         id = "decision-table-service",
         parameters = List(
           Parameter(ParameterName("Decision Table"), exampleDecisionTableJson),
-          Parameter(ParameterName("Match condition"), "#ROW['age'] > #input.minAge && #ROW['DoB'] != null"),
+          Parameter(ParameterName("Match condition"), "#ROW['age'] > #input.minAge && #ROW['DoB'] != null".spel),
         )
       ),
       output = "Output",

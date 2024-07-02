@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.repository
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
@@ -13,10 +14,15 @@ class DeploymentComment private (value: Comment) {
 
   def toComment(actionName: ScenarioActionName): Comment = {
     // TODO: remove this prefixes after adding custom icons
+    // ... or after changing how the history of user activities is displayed (so far they are displayed as
+    // comments and versions panels). Prefix seems to be a workaround to indicate that it is related somehow to
+    // some action the user requested, and is used as visualization decoration. Comment should be saved "as is",
+    // without modifications.
     val prefix = actionName match {
-      case ScenarioActionName.Deploy => PrefixDeployedDeploymentComment
-      case ScenarioActionName.Cancel => PrefixCanceledDeploymentComment
-      case _                         => NoPrefix
+      case ScenarioActionName.Deploy     => PrefixDeployedDeploymentComment
+      case ScenarioActionName.Cancel     => PrefixCanceledDeploymentComment
+      case InstantBatchCustomAction.name => PrefixRunNowDeploymentComment
+      case _                             => NoPrefix
     }
     new Comment {
       override def value: String = prefix + DeploymentComment.this.value.value
@@ -29,6 +35,7 @@ object DeploymentComment {
 
   private val PrefixDeployedDeploymentComment = "Deployment: "
   private val PrefixCanceledDeploymentComment = "Stop: "
+  private val PrefixRunNowDeploymentComment   = "Run now: "
   private val NoPrefix                        = ""
 
   def createDeploymentComment(

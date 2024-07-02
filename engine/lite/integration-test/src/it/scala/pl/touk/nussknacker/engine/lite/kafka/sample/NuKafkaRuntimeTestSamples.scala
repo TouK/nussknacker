@@ -19,22 +19,22 @@ import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRe
 
 object NuKafkaRuntimeTestSamples {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val pingPongScenarioName: ProcessName = ProcessName("universal-ping-pong")
 
   def pingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
     .streamingLite(pingPongScenarioName.value)
-    .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+    .source("source", "kafka", "Topic" -> s"'$inputTopic'".spel, "Schema version" -> "'latest'".spel)
     .emptySink(
       "sink",
       "kafka",
-      topicParamName.value              -> s"'$outputTopic'",
-      schemaVersionParamName.value      -> "'latest'",
-      sinkRawEditorParamName.value      -> s"true",
-      sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'",
-      sinkKeyParamName.value            -> "",
-      sinkValueParamName.value          -> "#input"
+      topicParamName.value              -> s"'$outputTopic'".spel,
+      schemaVersionParamName.value      -> "'latest'".spel,
+      sinkRawEditorParamName.value      -> s"true".spel,
+      sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel,
+      sinkKeyParamName.value            -> "".spel,
+      sinkValueParamName.value          -> "#input".spel
     )
 
   val jsonPingMessage: String =

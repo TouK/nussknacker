@@ -26,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   val requestResponseSampleComponents = new RequestResponseSampleComponents
 
@@ -43,11 +43,11 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source(sourceId, "request1-post-source")
-      .filter("filter1", "#input.field1() == 'a'")
+      .filter("filter1", "#input.field1() == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .processor("eagerProcessor", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.field1()")
-      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+      .processor("eagerProcessor", "collectingEager", "static" -> "'s'".spel, "dynamic" -> "#input.field1()".spel)
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1".spel)
 
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d")))
 
@@ -86,11 +86,11 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source(sourceId, "request1-post-source")
-      .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true")
-      .filter("filter1", "#input.field1() == 'a'")
+      .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true".spel)
+      .filter("filter1", "#input.field1() == 'a'".spel)
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
-      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1".spel)
 
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b"), createTestRecord("c", "d'")))
 
@@ -117,7 +117,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source(sourceId, "request1-post-source")
-      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
+      .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()".spel)
 
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
 
@@ -150,8 +150,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
           .source(sourceId, "request1-post-source")
           .split(
             "spl",
-            GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'").branchEnd(branch1NodeId, "union1"),
-            GraphBuilder.buildSimpleVariable("v2", "v2", "'bb'").branchEnd(branch2NodeId, "union1")
+            GraphBuilder.buildSimpleVariable("v1", "v1", "'aa'".spel).branchEnd(branch1NodeId, "union1"),
+            GraphBuilder.buildSimpleVariable("v2", "v2", "'bb'".spel).branchEnd(branch2NodeId, "union1")
           ),
         GraphBuilder
           .join(
@@ -159,12 +159,12 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
             "union",
             Some("unionOutput"),
             List(
-              branch1NodeId -> List("Output expression" -> "{a: #v1}"),
-              branch2NodeId -> List("Output expression" -> "{a: #v2}")
+              branch1NodeId -> List("Output expression" -> "{a: #v1}".spel),
+              branch2NodeId -> List("Output expression" -> "{a: #v2}".spel)
             )
           )
-          .customNode("collect1", "outCollector", "collect", "Input expression" -> "#unionOutput")
-          .emptySink("endNodeIID", "response-sink", "value" -> "#outCollector.![#this.a]")
+          .customNode("collect1", "outCollector", "collect", "Input expression" -> "#unionOutput".spel)
+          .emptySink("endNodeIID", "response-sink", "value" -> "#outCollector.![#this.a]".spel)
       )
     val scenarioTestData = ScenarioTestData(List(createTestRecord("a", "b")))
 

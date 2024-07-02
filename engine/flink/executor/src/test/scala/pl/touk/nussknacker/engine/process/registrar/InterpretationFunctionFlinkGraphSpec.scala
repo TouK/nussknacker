@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar._
-import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 import scala.jdk.CollectionConverters._
 
@@ -100,42 +100,42 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
         // Source part contains services.
         .source("sourceId1", "input")
         .enricher("enricherId1", "outputValue", "enricherWithOpenService")
-        .filter("filterId1", "#input.value1 > 1")
-        .processor("processorId1", "logService", "all" -> "123")
+        .filter("filterId1", "#input.value1 > 1".spel)
+        .processor("processorId1", "logService", "all" -> "123".spel)
         .branchEnd("end1", "joinId"),
       GraphBuilder
         // Source part does not contain services.
         .source("sourceId2", "input")
-        .buildSimpleVariable("varId2", "var2", "42L")
+        .buildSimpleVariable("varId2", "var2", "42L".spel)
         .branchEnd("end2", "joinId"),
       GraphBuilder
         .join("joinId", "sampleJoin", Some("joinInput"), Nil)
-        .buildSimpleVariable("varId3", "var3", "5L")
+        .buildSimpleVariable("varId3", "var3", "5L".spel)
         .split(
           "split",
           // Only sink after custom node but interpretation function is needed for metrics etc.
           GraphBuilder
-            .customNode("customId4", "customOutput4", "stateCustom", "groupBy" -> "''", "stringVal" -> "''")
+            .customNode("customId4", "customOutput4", "stateCustom", "groupBy" -> "''".spel, "stringVal" -> "''".spel)
             .emptySink("sinkId4", "monitor"),
           // Only sync components.
           GraphBuilder
-            .customNode("customId5", "customOutput5", "stateCustom", "groupBy" -> "''", "stringVal" -> "''")
-            .buildSimpleVariable("varId5", "var5", "'xyz'")
-            .filter("filterId5", "true")
+            .customNode("customId5", "customOutput5", "stateCustom", "groupBy" -> "''".spel, "stringVal" -> "''".spel)
+            .buildSimpleVariable("varId5", "var5", "'xyz'".spel)
+            .filter("filterId5", "true".spel)
             .emptySink("sinkId5", "monitor"),
           // Contains a service.
           GraphBuilder
-            .customNode("customId6", "customOutput6", "stateCustom", "groupBy" -> "''", "stringVal" -> "''")
-            .processorEnd("processorId6", "logService", "all" -> "123"),
+            .customNode("customId6", "customOutput6", "stateCustom", "groupBy" -> "''".spel, "stringVal" -> "''".spel)
+            .processorEnd("processorId6", "logService", "all" -> "123".spel),
           // Contains a service.
           GraphBuilder
-            .customNode("customId7", "customOutput7", "stateCustom", "groupBy" -> "''", "stringVal" -> "''")
-            .buildSimpleVariable("varId7", "var7", "'XYZ'")
+            .customNode("customId7", "customOutput7", "stateCustom", "groupBy" -> "''".spel, "stringVal" -> "''".spel)
+            .buildSimpleVariable("varId7", "var7", "'XYZ'".spel)
             .enricher("enricherId7", "outputValue7", "enricherWithOpenService")
-            .processorEnd("processorId7", "logService", "all" -> "123"),
+            .processorEnd("processorId7", "logService", "all" -> "123".spel),
           // Only ending custom node.
           GraphBuilder
-            .endingCustomNode("customEnding8", None, "optionalEndingCustom", "param" -> "'param'"),
+            .endingCustomNode("customEnding8", None, "optionalEndingCustom", "param" -> "'param'".spel),
           // Only ending sink but interpretation function is needed for metrics etc.
           GraphBuilder
             .emptySink("sinkId9", "monitor"),

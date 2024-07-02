@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
   InputSchemaProperty,
   OutputSchemaProperty
 }
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
 
@@ -54,10 +54,10 @@ class CollectTransformerTest
 
   test("should collect elements after for-each") {
     val scenario = scenarioBuilderWithSchemas
-      .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input")
-      .buildSimpleVariable("someVar", "ourVar", "'x = ' + (#outForEach * 2)")
-      .customNode("collect", "outCollector", "collect", "Input expression" -> "#ourVar")
-      .emptySink("response", "response", SinkRawEditorParamName.value -> "true", "Value" -> "#outCollector")
+      .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input".spel)
+      .buildSimpleVariable("someVar", "ourVar", "'x = ' + (#outForEach * 2)".spel)
+      .customNode("collect", "outCollector", "collect", "Input expression" -> "#ourVar".spel)
+      .emptySink("response", "response", SinkRawEditorParamName.value -> "true".spel, "Value" -> "#outCollector".spel)
     val requestElements = (0 to 3).toList
 
     val responseElements = runScenarioAndExtractResponseElements(scenario, requestElements)
@@ -67,11 +67,11 @@ class CollectTransformerTest
 
   test("should collect elements after nested for-each") {
     val scenario = scenarioBuilderWithSchemas
-      .customNode("for-each1", "outForEach1", "for-each", "Elements" -> "#input")
-      .customNode("for-each2", "outForEach2", "for-each", "Elements" -> "#input")
-      .buildSimpleVariable("someVar", "outVar", "'i = ' + #outForEach1 + ', j = ' + #outForEach2")
-      .customNode("collect", "outCollector", "collect", "Input expression" -> "#outVar")
-      .emptySink("response", "response", SinkRawEditorParamName.value -> "true", "Value" -> "#outCollector")
+      .customNode("for-each1", "outForEach1", "for-each", "Elements" -> "#input".spel)
+      .customNode("for-each2", "outForEach2", "for-each", "Elements" -> "#input".spel)
+      .buildSimpleVariable("someVar", "outVar", "'i = ' + #outForEach1 + ', j = ' + #outForEach2".spel)
+      .customNode("collect", "outCollector", "collect", "Input expression" -> "#outVar".spel)
+      .emptySink("response", "response", SinkRawEditorParamName.value -> "true".spel, "Value" -> "#outCollector".spel)
     val requestElements = (0 to 3).toList
 
     val responseElements = runScenarioAndExtractResponseElements(scenario, requestElements)
@@ -85,11 +85,11 @@ class CollectTransformerTest
   test("should clear context variables") {
     val nodeIdWithError = "use previous ctx variable"
     val scenario = scenarioBuilderWithSchemas
-      .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input")
-      .buildSimpleVariable("this variable should disappear", "previousCtxVar", "'value'")
-      .customNode("collect", "outCollector", "collect", "Input expression" -> "#outForEach")
-      .buildSimpleVariable(nodeIdWithError, "newCtxVar", "#previousCtxVar")
-      .emptySink("response", "response", SinkRawEditorParamName.value -> "true", "Value" -> "{'abc'}")
+      .customNode("for-each", "outForEach", "for-each", "Elements" -> "#input".spel)
+      .buildSimpleVariable("this variable should disappear", "previousCtxVar", "'value'".spel)
+      .customNode("collect", "outCollector", "collect", "Input expression" -> "#outForEach".spel)
+      .buildSimpleVariable(nodeIdWithError, "newCtxVar", "#previousCtxVar".spel)
+      .emptySink("response", "response", SinkRawEditorParamName.value -> "true".spel, "Value" -> "{'abc'}".spel)
 
     val compilationError = runScenario(scenario, List(1)).invalidValue.toList.loneElement
 

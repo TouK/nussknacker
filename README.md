@@ -37,7 +37,7 @@ The way the data are processed and features available depend on the processing m
 
 Nussknacker supports three [processing modes](https://nussknacker.io/documentation/docs/about/ProcessingModes/): streaming, request-response and batch (planned in version 1.16). In streaming mode, Nussknacker uses Kafka as its primary interface: input streams of data and output streams of decisions. In request-response mode, it exposes HTTP endpoints with OpenAPI definitions. 
 
-There are two engines to which scenarios can be deployed: Flink and Light. Check out [this document](https://nussknacker.io/documentation/docs/about/engines/) to understand which of the two fits your use case better. 
+There are two engines to which scenarios can be deployed: Flink and Lite. Check out [this document](https://nussknacker.io/documentation/docs/about/engines/) to understand which of the two fits your use case better. 
 
 ## Why Nussknacker
 
@@ -74,7 +74,7 @@ Nussknacker is typically used as a component of a larger system, but it can be u
 - [Typical deployment](https://nussknacker.io/documentation/docs/about/typical%20implementation/Streaming/)
 - [Authoring scenarios with Nussknacker](https://nussknacker.io/documentation/docs/scenarios_authoring/Intro/) 
 - [Customer success story](https://nussknacker.io/case-studies/real-time-marketing-for-a-telecom-service-provider/)
-- [Nussknacker Enterprise](https://nussknacker.io/documentation/about/NussknackerEnterprise/)
+- [Nussknacker Enterprise](https://nussknacker.io/documentation/docs/about/NussknackerEnterprise/)
 
 ## Quickstart
 

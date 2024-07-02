@@ -33,11 +33,6 @@ Nussknacker can use one of two engines:
 - Lite - scenarios are deployed as microservices on K8s
 - Flink - (only Streaming mode) scenarios are deployed as Flink jobs
 
-### Processing mode
-Processing mode defines how [scenario](./GLOSSARY.md#scenario) deployed on an [engine](./GLOSSARY.md#engine) 
-interacts with the outside world. Currently, there are two processing modes: Streaming and Request-Response, 
-you can read more [here](./ProcessingModes.md).
-
 ### Model
 
 Nussknacker is a highly configurable tool, it can work with different [engines](./GLOSSARY.md#engine), multiple 
@@ -55,12 +50,16 @@ component many times (for example you can have many filters in one scenario) and
 
 Almost all nodes take parameters. For example a filter node takes a boolean expression as a parameter. This expression 
 is evaluated at runtime to decide whether a given event should pass the filter node.
-   
+  
    
 ### Nussknacker Designer
 
 Part of Nussknacker where authoring of [scenarios](./GLOSSARY.md#scenario) is performed.
    
+### Processing mode
+Processing mode defines how [scenario](./GLOSSARY.md#scenario) deployed on an [engine](./GLOSSARY.md#engine) 
+interacts with the outside world. Currently, there are two processing modes: Streaming and Request-Response, 
+you can read more [here](./ProcessingModes.md).
       
 ### Scenario
 

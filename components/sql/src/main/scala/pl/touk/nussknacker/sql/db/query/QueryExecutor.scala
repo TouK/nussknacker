@@ -14,7 +14,9 @@ trait QueryExecutor {
 
   protected def toTypedMap(tableDef: TableDefinition, resultSet: ResultSet): TypedMap = {
     val fields = tableDef.columnDefs.map { columnDef =>
-      columnDef.name -> resultSet.getObject(columnDef.no)
+      // we could here use method resultSet.getObject(Int) and pass column number as argument
+      // but in case of ignite db it is not certain which column index corresponds to which column.
+      columnDef.name -> resultSet.getObject(columnDef.name)
     }.toMap
     TypedMap(fields)
   }
