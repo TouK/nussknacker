@@ -173,7 +173,7 @@ class TableSource(
 
   // TODO: how to get path of jar cleaner? Through config?
   private lazy val classPathUrlsForMiniClusterTestingEnv = List(
-    "components/flink-dev/flinkTable.jar"
+    "components/flink-table/flinkTable.jar"
   ).map(Path.of(_).toUri.toURL)
 
   private lazy val miniClusterTestingEnvConfig = {
