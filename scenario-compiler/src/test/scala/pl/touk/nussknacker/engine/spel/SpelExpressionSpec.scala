@@ -350,9 +350,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     parse[Any]("null").toOption.get.returnType shouldBe TypedNull
     parse[java.util.List[String]]("{'t', null, 'a'}").toOption.get.returnType shouldBe
-      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
+      Typed
+        .genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
+        .withKnownValue(Some(List("t", null, "a").asJava))
     parse[java.util.List[Any]]("{5, 't', null}").toOption.get.returnType shouldBe
-      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[Any]))
+      Typed
+        .genericTypeClass(classOf[java.util.List[_]], List(Typed[Any]))
+        .withKnownValue(Some(List(5, "t", null).asJava))
 
     parse[Int]("true ? 8 : null").toOption.get.returnType shouldBe Typed[Int]
   }

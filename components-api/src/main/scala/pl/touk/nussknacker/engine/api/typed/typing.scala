@@ -195,7 +195,7 @@ object typing {
       override val valueOpt: Option[Any] = None
   ) extends SingleTypingResult {
 
-    override def withoutValue: TypedClass = this
+    override def withoutValue: TypedClass = this.copy(valueOpt = None)
 
     override def display: String = {
       val className =

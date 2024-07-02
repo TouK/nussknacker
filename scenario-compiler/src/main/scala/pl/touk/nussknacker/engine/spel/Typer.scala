@@ -498,7 +498,12 @@ private[spel] class Typer(
       childElementType: TypingResult
   ) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-    if (isSingleElementSelection) childElementType else parentType
+
+    if (isSingleElementSelection)
+      childElementType
+    else
+      // TODO: limitation - parentType has to lose known value, as properly determining it would require evaluating the expression
+      parentType.withoutValue
   }
 
   private def checkEqualityLikeOperation(
