@@ -404,18 +404,18 @@ object aggregates {
       agg.result(finalAggregate.getOrElse(agg.zero))
 
     override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = input match {
-      case TypedClass(input_type, input :: Nil) if input_type == classOf[Option[_]] =>
+      case TypedClass(input_type, input :: Nil, _) if input_type == classOf[Option[_]] =>
         agg.computeOutputType(input)
-      case TypedClass(input_type, _) =>
+      case TypedClass(input_type, _, _) =>
         Invalid(s"input type must be Option")
       case _ =>
         Invalid(s"input has invalid type")
     }
 
     override def computeStoredType(input: typing.TypingResult): Validated[String, typing.TypingResult] = input match {
-      case TypedClass(input_type, input :: Nil) if input_type == classOf[Option[_]] =>
+      case TypedClass(input_type, input :: Nil, _) if input_type == classOf[Option[_]] =>
         agg.computeStoredType(input).map(t => Typed.genericTypeClass[Option[_]](List(t)))
-      case TypedClass(input_type, _) =>
+      case TypedClass(input_type, _, _) =>
         Invalid(s"input type must be Option")
       case _ =>
         Invalid(s"input has invalid type")

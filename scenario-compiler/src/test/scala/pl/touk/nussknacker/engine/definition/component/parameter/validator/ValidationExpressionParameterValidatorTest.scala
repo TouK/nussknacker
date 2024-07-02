@@ -34,7 +34,14 @@ class ValidationExpressionParameterValidatorTest extends AnyFunSuite with TableD
         ("#value.toLowerCase() == \"left\" || #value.toLowerCase() == \"right\"", "param", "'up'", Some("up"), false),
         ("#value", "param", "'up'", Some("up"), false),
         ("#value", "param", "'up'", Some("up"), false),
-        ("#value.size() == 2 && #value[0] == 'foo'", "list", "{'foo', 'bar'}", Some(List("foo", "bar").asJava), true)
+        ("#value.size() == 2 && #value[0] == 'foo'", "list", "{'foo', 'bar'}", Some(List("foo", "bar").asJava), true),
+        (
+          "{'a','b'}.contains(#value.get('field'))",
+          "record",
+          """{'field': "a", 'otherField': 'c'}""",
+          Some(Map("field" -> "a", "otherField" -> "c").asJava),
+          true
+        ),
       )
     ) { (validationExpression, paramName, inputExpression, value, isValid) =>
       ValidationExpressionParameterValidator(new TestSpelExpression(validationExpression), None)

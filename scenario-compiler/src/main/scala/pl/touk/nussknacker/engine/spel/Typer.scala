@@ -50,6 +50,7 @@ import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
+import scala.jdk.CollectionConverters._
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
@@ -210,11 +211,12 @@ private[spel] class Typer(
     @tailrec
     def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
       typingResult match {
-        case TypedClass(clazz, param :: Nil)
+        case TypedClass(clazz, param :: Nil, _)
             if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) =>
           // TODO: validate indexer key - the only valid key is an integer - but its more complicated with references
           validNodeResult(param)
-        case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
+        case TypedClass(clazz, keyParam :: valueParam :: Nil, _)
+            if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) =>
           validNodeResult(valueParam)
         case d: TypedDict                    => dictTyper.typeDictValue(d, e).map(toNodeResult)
         case union: TypedUnion               => typeUnion(e, union)
@@ -292,8 +294,12 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          val elementType = if (children.isEmpty) Unknown else children.reduce(getSupertype)
-          valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
+          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype)
+          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
+
+          valid(
+            Typed.genericTypeClass[java.util.List[_]](List(elementType)).withKnownValue(Some(childrenCombinedValue))
+          )
         }
 
       case e: InlineMap =>
@@ -492,7 +498,12 @@ private[spel] class Typer(
       childElementType: TypingResult
   ) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-    if (isSingleElementSelection) childElementType else parentType
+
+    if (isSingleElementSelection)
+      childElementType
+    else
+      // TODO: limitation - parentType has to lose known value, as properly determining it would require evaluating the expression
+      parentType.withoutValue
   }
 
   private def checkEqualityLikeOperation(

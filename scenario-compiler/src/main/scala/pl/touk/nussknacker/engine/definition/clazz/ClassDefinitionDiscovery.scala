@@ -154,7 +154,7 @@ object ClassDefinitionDiscovery extends LazyLogging with ExecutionTimeMeasuring 
     def print: String
 
     protected def classNameWithStrippedPackages(cl: TypingResult): String = cl match {
-      case TypedClass(klass, _) => klass.getCanonicalName.replaceAll("(.).*?\\.", "$1.")
+      case TypedClass(klass, _, _) => klass.getCanonicalName.replaceAll("(.).*?\\.", "$1.")
       // In fact, should not happen except Unknown...
       case other => other.display
     }

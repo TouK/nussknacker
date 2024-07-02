@@ -19,7 +19,7 @@ object TableTypeConversions {
   @tailrec
   private def nuTypeToFlinkTableType(nuType: TypingResult): Option[DataType] = nuType match {
     case typing.TypedObjectWithValue(typedClass, _) => nuTypeToFlinkTableType(typedClass)
-    case typing.TypedClass(klass, _)                => classToFlinkTableType(klass)
+    case typing.TypedClass(klass, _, _)             => classToFlinkTableType(klass)
     case typing.TypedNull                           => Some(DataTypes.NULL)
     case _                                          => None
   }

@@ -82,7 +82,9 @@ object Validations {
     validators
       .flatMap { validator =>
         paramWithValueAndExpressionList.map { case (name, value, expression) =>
-          validator.isValid(name, Expression(expression.language, expression.original), value, None).toValidatedNel
+          validator
+            .isValid(name, Expression(expression.language, expression.original), value, None)
+            .toValidatedNel
         }
       }
       .sequence

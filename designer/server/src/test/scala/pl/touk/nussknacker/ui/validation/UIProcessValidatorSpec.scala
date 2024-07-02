@@ -85,7 +85,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
   import UIProcessValidatorSpec._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val validationExpression = s"#${ValidationExpressionParameterValidator.variableName}.length() < 7"
+  private val validationExpression =
+    Expression.spel(s"#${ValidationExpressionParameterValidator.variableName}.length() < 7")
+
+  private val validationExpressionForRecord =
+    Expression.spel(
+      s"{'valid','otherValid'}.contains(#${ValidationExpressionParameterValidator.variableName}.get('field'))"
+    )
+
+  private val validationExpressionForList = Expression.spel(s"#value.size() == 2 && #value[0] == 'foo'")
 
   test("check for not unique edge types") {
     val process = createGraph(
@@ -1180,7 +1188,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   hintText = None,
                   valueEditor = None,
                   valueCompileTimeValidation = Some(
-                    ParameterValueCompileTimeValidation(validationExpression.spel, Some("some custom failure message"))
+                    ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"))
                   )
                 )
               )
@@ -1235,7 +1243,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   hintText = None,
                   valueEditor = None,
                   valueCompileTimeValidation = Some(
-                    ParameterValueCompileTimeValidation(validationExpression.spel, Some("some custom failure message"))
+                    ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"))
                   )
                 )
               )
@@ -1261,6 +1269,168 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                 "some custom failure message",
                 "Please provide value that satisfies the validation expression '#value.length() < 7'",
                 Some("param"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
+    "validate Map service parameter based on additional config from provider - ValidationExpressionParameterValidator"
+  ) {
+    val process = createGraph(
+      List(
+        Source("inID", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef(
+            "mapParameterService",
+            List(
+              NodeParameter(
+                ParameterName("mapParam1"),
+                Expression.spel("""{'field': "valid", 'otherField': 'c'}""")
+              ),
+              NodeParameter(
+                ParameterName("mapParam2"),
+                Expression.spel("""{'field': "invalid", 'otherField': 'c'}""")
+              ),
+            )
+          ),
+          "out"
+        ),
+        Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val commonParamConfig = ParameterAdditionalUIConfig(
+      required = false,
+      initialValue = None,
+      hintText = None,
+      valueEditor = None,
+      valueCompileTimeValidation = Some(
+        ParameterValueCompileTimeValidation(validationExpressionForRecord, Some("some custom failure message"))
+      )
+    )
+
+    val validator = new UIProcessValidator(
+      processingType = "Streaming",
+      validator = ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+          List(ComponentDefinition("mapParameterService", MapParameterService)),
+          additionalConfigsFromProvider = Map(
+            DesignerWideComponentId("streaming-service-mapParameterService") -> ComponentAdditionalConfig(
+              parameterConfigs = Map(
+                ParameterName("mapParam1") -> commonParamConfig,
+                ParameterName("mapParam2") -> commonParamConfig
+              )
+            )
+          )
+        )
+      ),
+      scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      additionalValidators = List.empty,
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '{'valid','otherValid'}.contains(#value.get('field'))'",
+                Some("mapParam2"),
+                NodeValidationErrorType.SaveAllowed,
+                None
+              )
+            )
+          ) =>
+    }
+    result.warnings shouldBe ValidationWarnings.success
+  }
+
+  test(
+    "validate List service parameter based on additional config from provider - ValidationExpressionParameterValidator"
+  ) {
+    val process = createGraph(
+      List(
+        Source("inID", SourceRef(ProcessTestData.existingSourceFactory, List())),
+        Enricher(
+          "custom",
+          ServiceRef(
+            "listParameterService",
+            List(
+              NodeParameter(
+                ParameterName("listParam1"),
+                Expression.spel("""{'foo', 'bar'}""")
+              ),
+              NodeParameter(
+                ParameterName("listParam2"),
+                Expression.spel("""{'boo'}""")
+              ),
+            )
+          ),
+          "out"
+        ),
+        Sink("out", SinkRef(ProcessTestData.existingSinkFactory, List()))
+      ),
+      List(Edge("inID", "custom", None), Edge("custom", "out", None))
+    )
+
+    val commonParamConfig = ParameterAdditionalUIConfig(
+      required = false,
+      initialValue = None,
+      hintText = None,
+      valueEditor = None,
+      valueCompileTimeValidation = Some(
+        ParameterValueCompileTimeValidation(validationExpressionForList, Some("some custom failure message"))
+      )
+    )
+
+    val validator = new UIProcessValidator(
+      processingType = "Streaming",
+      validator = ProcessValidator.default(
+        LocalModelData(
+          ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"),
+          List(ComponentDefinition("listParameterService", ListParameterService)),
+          additionalConfigsFromProvider = Map(
+            DesignerWideComponentId("streaming-service-listParameterService") -> ComponentAdditionalConfig(
+              parameterConfigs = Map(
+                ParameterName("listParam1") -> commonParamConfig,
+                ParameterName("listParam2") -> commonParamConfig
+              )
+            )
+          )
+        )
+      ),
+      scenarioProperties = Map.empty,
+      scenarioPropertiesConfigFinalizer =
+        new ScenarioPropertiesConfigFinalizer(TestAdditionalUIConfigProvider, Streaming.stringify),
+      additionalValidators = List.empty,
+      fragmentResolver = new FragmentResolver(new StubFragmentRepository(Map.empty))
+    )
+
+    val result = validator.validate(process, ProcessTestData.sampleProcessName, isFragment = false)
+
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("custom") should matchPattern {
+      case Some(
+            List(
+              NodeValidationError(
+                "CustomParameterValidationError",
+                "some custom failure message",
+                "Please provide value that satisfies the validation expression '#value.size() == 2 && #value[0] == 'foo''",
+                Some("listParam2"),
                 NodeValidationErrorType.SaveAllowed,
                 None
               )
@@ -1330,7 +1500,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                     "validationExpression" -> fromMap(
                       Map(
                         "language"   -> "spel",
-                        "expression" -> validationExpression
+                        "expression" -> validationExpression.expression
                       ).asJava
                     ),
                     "validationFailedMessage" -> "some custom failure message",
@@ -1695,12 +1865,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            valueCompileTimeValidation = Some(
-              ParameterValueCompileTimeValidation(
-                validationExpression.spel,
-                None
-              )
-            )
+            valueCompileTimeValidation = Some(ParameterValueCompileTimeValidation(validationExpression, None))
           )
         )
       )
@@ -1736,10 +1901,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             hintText = None,
             valueEditor = None,
             valueCompileTimeValidation = Some(
-              ParameterValueCompileTimeValidation(
-                validationExpression.spel,
-                Some("some failed message")
-              )
+              ParameterValueCompileTimeValidation(validationExpression, Some("some failed message"))
             )
           )
         )
@@ -2119,6 +2281,30 @@ private object UIProcessValidatorSpec {
     def method(
         @ParamName("optionalParam")
         optionalParam: Option[String],
+    ): Future[String] = ???
+
+  }
+
+  object MapParameterService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("mapParam1")
+        mapParam1: Option[java.util.Map[String, String]],
+        @ParamName("mapParam2")
+        mapParam2: Option[java.util.Map[String, String]]
+    ): Future[String] = ???
+
+  }
+
+  object ListParameterService extends Service {
+
+    @MethodToInvoke
+    def method(
+        @ParamName("listParam1")
+        listParam1: Option[java.util.List[String]],
+        @ParamName("listParam2")
+        listParam2: Option[java.util.List[String]]
     ): Future[String] = ???
 
   }

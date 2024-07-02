@@ -203,9 +203,9 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case (f @ TypedClass(`fClass`, element :: Nil)) :: _ => f.copy(params = element.withoutValue :: Nil).validNel
-      case firstArgument :: _                              => firstArgument.validNel
-      case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case (f @ TypedClass(`fClass`, element :: Nil, _)) :: _ => f.copy(params = element.withoutValue :: Nil).validNel
+      case firstArgument :: _                                 => firstArgument.validNel
+      case _                                                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -216,9 +216,9 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case TypedClass(`fClass`, componentType :: Nil) :: _ => componentType.withoutValue.validNel
-      case firstArgument :: _                              => firstArgument.withoutValue.validNel
-      case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case TypedClass(`fClass`, componentType :: Nil, _) :: _ => componentType.withoutValue.validNel
+      case firstArgument :: _                                 => firstArgument.withoutValue.validNel
+      case _                                                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -259,9 +259,10 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case (listType @ TypedClass(`fClass`, firstComponentType :: Nil)) :: TypedClass(
+      case (listType @ TypedClass(`fClass`, firstComponentType :: Nil, _)) :: TypedClass(
             `fClass`,
-            secondComponentType :: Nil
+            secondComponentType :: Nil,
+            _
           ) :: Nil =>
         (firstComponentType, secondComponentType) match {
           case (TypedObjectTypingResult(x, _, infoX), TypedObjectTypingResult(y, _, infoY))

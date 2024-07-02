@@ -71,8 +71,8 @@ object typing {
       objType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
-    override def valueOpt: Option[Map[String, Any]] =
-      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*))
+    override def valueOpt: Option[java.util.Map[String, Any]] =
+      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*).asJava)
 
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
@@ -189,10 +189,13 @@ object typing {
 
   }
 
-  case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
-    override val valueOpt: None.type = None
+  case class TypedClass private[typing] (
+      klass: Class[_],
+      params: List[TypingResult],
+      override val valueOpt: Option[Any] = None
+  ) extends SingleTypingResult {
 
-    override def withoutValue: TypedClass = this
+    override def withoutValue: TypedClass = this.copy(valueOpt = None)
 
     override def display: String = {
       val className =
@@ -205,6 +208,10 @@ object typing {
     override def objType: TypedClass = this
 
     def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
+
+    def withKnownValue(valueOpt: Option[Any]): TypedClass = this.copy(
+      valueOpt = valueOpt
+    )
 
   }
 
