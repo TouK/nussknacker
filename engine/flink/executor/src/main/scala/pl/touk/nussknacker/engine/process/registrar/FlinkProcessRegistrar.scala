@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, S
 import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.util.OutputTag
+import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
@@ -121,6 +122,8 @@ class FlinkProcessRegistrar(
         compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )
 
+  private val LOG = LoggerFactory.getLogger(classOf[FlinkProcessRegistrar])
+
   private def register(
       env: StreamExecutionEnvironment,
       compilerDataForProcessPart: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
@@ -181,7 +184,7 @@ class FlinkProcessRegistrar(
       val source = part.obj.asInstanceOf[FlinkSource]
 
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
-
+      LOG.info(s"-----REGISTERING SOURCE PART $part")
       val start = source
         .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
         .process(new SourceMetricsFunction(part.id, compilerData.componentUseCase), contextTypeInformation)
