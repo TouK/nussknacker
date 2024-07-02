@@ -28,6 +28,7 @@ import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { Scenario } from "../components/Process/types";
 import { useInterval } from "./Interval";
 import { useWindowManager } from "@touk/window-manager";
+import { ScenarioDescription } from "./ScenarioDescription";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -156,7 +157,9 @@ function Visualization() {
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
                             <BindKeyboardShortcuts disabled={windows.length > 0} />
-                            <Toolbars isReady={dataResolved} />
+                            <Toolbars isReady={dataResolved}>
+                                <ScenarioDescription />
+                            </Toolbars>
                         </SelectionContextProvider>
                     </GraphProvider>
                 </GraphPage>
