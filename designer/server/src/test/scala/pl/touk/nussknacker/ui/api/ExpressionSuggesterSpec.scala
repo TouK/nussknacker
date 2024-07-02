@@ -21,9 +21,10 @@ import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegist
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ExpressionSuggesterTestData._
-import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import java.time.{Duration, LocalDateTime}
 import scala.collection.immutable.ListMap

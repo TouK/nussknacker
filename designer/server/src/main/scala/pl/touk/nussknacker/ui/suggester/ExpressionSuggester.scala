@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSugg
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,25 +31,6 @@ class ExpressionSuggester(
       scenarioPropertiesNames
     )
 
-  private def truncateExpressionByCaretPosition2d(
-      expression: Expression,
-      caretPosition2d: CaretPosition2d
-  ): Expression = {
-    val transformedPlainExpression = expression.expression
-      .split("\n")
-      .toList
-      .zipWithIndex
-      .filter(_._2 <= caretPosition2d.row)
-      .map {
-        case (s, caretPosition2d.row) => (s.take(caretPosition2d.column), caretPosition2d.row)
-        case (s, i)                   => (s, i)
-      }
-      .map(_._1)
-      .mkString("\n")
-
-    expression.copy(expression = transformedPlainExpression)
-  }
-
   def expressionSuggestions(
       expression: Expression,
       caretPosition2d: CaretPosition2d,
@@ -61,20 +43,9 @@ class ExpressionSuggester(
         spelExpressionSuggester
           .expressionSuggestions(
             expression,
-            caretPosition2d.normalizedCaretPosition(expression.expression),
+            caretPosition2d,
             validationContext
           )
-          .flatMap {
-            case Nil =>
-              val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
-
-              spelExpressionSuggester.expressionSuggestions(
-                newExpression,
-                caretPosition2d.normalizedCaretPosition(newExpression.expression),
-                validationContext
-              )
-            case suggestions => Future.successful(suggestions)
-          }
       case _ => Future.successful(Nil)
     }
   }
@@ -91,15 +62,6 @@ object ExpressionSuggester {
       modelData.modelClassLoader.classLoader,
       scenarioPropertiesNames
     )
-  }
-
-}
-
-@JsonCodec
-final case class CaretPosition2d(row: Int, column: Int) {
-
-  def normalizedCaretPosition(inputValue: String): Int = {
-    inputValue.split("\n").take(row).map(_.length).sum + row + column
   }
 
 }
