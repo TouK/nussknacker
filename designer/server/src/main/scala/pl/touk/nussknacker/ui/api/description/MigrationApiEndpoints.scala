@@ -31,7 +31,7 @@ import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError.{
   InvalidScenario
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._

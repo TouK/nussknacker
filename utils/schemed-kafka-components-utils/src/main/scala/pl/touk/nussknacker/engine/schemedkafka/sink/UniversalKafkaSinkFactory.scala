@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.{ProcessingMode, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 }
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -51,7 +51,7 @@ class UniversalKafkaSinkFactory(
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
-) extends KafkaUniversalComponentTransformer[Sink]
+) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {
 
   override type State = TransformationState
@@ -78,6 +78,8 @@ class UniversalKafkaSinkFactory(
     sinkRawEditorParamName,
     sinkValidationModeParamName
   )
+
+  override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
   protected def rawEditorParameterStep(
       context: ValidationContext

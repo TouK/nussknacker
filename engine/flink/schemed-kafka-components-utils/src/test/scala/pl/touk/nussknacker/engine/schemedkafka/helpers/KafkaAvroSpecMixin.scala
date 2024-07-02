@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   TypedNodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -61,7 +61,7 @@ trait KafkaAvroSpecMixin
     with VeryPatientScalaFutures
     with Serializable {
 
-  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
+  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
 
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
@@ -132,7 +132,7 @@ trait KafkaAvroSpecMixin
     })
 
     val baseSinkParams: List[(String, expression.Expression)] = List(
-      topicParamName.value         -> s"'${sink.topic}'".spel,
+      topicParamName.value         -> s"'${sink.topic.name}'".spel,
       schemaVersionParamName.value -> formatVersionParam(sink.versionOption).spel,
       sinkKeyParamName.value       -> sink.key.spel
     )
@@ -200,9 +200,9 @@ trait KafkaAvroSpecMixin
       expected: List[AnyRef],
       additionalVerificationBeforeScenarioCancel: => Unit
   ): Unit = {
-    kafkaClient.createTopic(topic.input, partitions = 1)
+    kafkaClient.createTopic(topic.input.name, partitions = 1)
     events.foreach(obj => pushMessage(obj, topic.input))
-    kafkaClient.createTopic(topic.output, partitions = 1)
+    kafkaClient.createTopic(topic.output.name, partitions = 1)
 
     run(process) {
       consumeAndVerifyMessages(topic.output, expected)
@@ -233,18 +233,18 @@ trait KafkaAvroSpecMixin
 
   object SourceAvroParam {
     def forUniversal(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
-      UniversalSourceParam(topicConfig.input, versionOption)
+      UniversalSourceParam(topicConfig.input.name, versionOption)
 
     def forUniversalWithKeySchemaSupport(
         topicConfig: TopicConfig,
         versionOption: SchemaVersionOption
     ): SourceAvroParam =
-      UniversalSourceWithKeySupportParam(topicConfig.input, versionOption)
+      UniversalSourceWithKeySupportParam(topicConfig.input.name, versionOption)
 
   }
 
   case class UniversalSinkParam(
-      topic: String,
+      topic: TopicName.ForSink,
       versionOption: SchemaVersionOption,
       valueParams: List[(String, expression.Expression)],
       key: String,
