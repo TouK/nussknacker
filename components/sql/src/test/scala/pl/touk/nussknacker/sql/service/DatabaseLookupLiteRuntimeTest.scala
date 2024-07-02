@@ -12,6 +12,7 @@ import pl.touk.nussknacker.sql.DatabaseEnricherComponentProvider
 import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.util
 import scala.jdk.CollectionConverters._
 
 class DatabaseLookupLiteRuntimeTest
@@ -63,13 +64,17 @@ class DatabaseLookupLiteRuntimeTest
         "Key value"  -> "#input".spel,
         "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.NAME".spel)
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
-    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
+    val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
-    resultList.head shouldEqual "John"
+    val resultScalaMap = resultList.head.asInstanceOf[util.HashMap[String, AnyRef]].asScala.map { case (key, value) =>
+      (key, value.toString)
+    }
+    resultScalaMap.get("ID") shouldEqual Some("1")
+    resultScalaMap.get("NAME") shouldEqual Some("John")
   }
 
   test("should enrich input with table with lower cases in column names") {
@@ -85,13 +90,17 @@ class DatabaseLookupLiteRuntimeTest
         "Key value"  -> "#input".spel,
         "Cache TTL"  -> "".spel
       )
-      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output.name".spel)
+      .emptySink("response", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
-    val validatedResult = testScenarioRunner.runWithData[Int, String](process, List(1))
+    val validatedResult = testScenarioRunner.runWithData[Int, AnyRef](process, List(1))
 
     val resultList = validatedResult.validValue.successes
     resultList should have length 1
-    resultList.head shouldEqual "John"
+    val resultScalaMap = resultList.head.asInstanceOf[util.HashMap[String, AnyRef]].asScala.map { case (key, value) =>
+      (key, value.toString)
+    }
+    resultScalaMap.get("name") shouldEqual Some("John")
+    resultScalaMap.get("id") shouldEqual Some("1")
   }
 
 }

@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
@@ -38,7 +39,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
-      componentList: List[ComponentDefinitionWithImplementation]
+      componentList: List[ComponentDefinitionWithImplementation],
+      designerClock: Clock
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
@@ -93,7 +95,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchActivity,
       fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
-      componentList
+      componentList,
+      designerClock
     )
 
   }
@@ -121,16 +124,21 @@ class UsageStatisticsReportsSettingsService(
     ],
     fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
     fetchFeStatistics: () => Future[Map[String, Long]],
-    components: List[ComponentDefinitionWithImplementation]
+    components: List[ComponentDefinitionWithImplementation],
+    designerClock: Clock
 )(implicit ec: ExecutionContext) {
-  private val statisticsUrls = new StatisticsUrls(urlConfig)
+  private val statisticsUrls    = new StatisticsUrls(urlConfig)
+  private val designerStartTime = designerClock.instant()
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, List[String]]] = {
     if (config.enabled) {
       val maybeUrls = for {
         queryParams <- determineQueryParams()
         fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-        urls        <- EitherT.pure[Future, StatisticError](statisticsUrls.prepare(fingerprint, queryParams))
+        correlationId = CorrelationId.apply()
+        urls <- EitherT.pure[Future, StatisticError](
+          statisticsUrls.prepare(fingerprint, correlationId, queryParams)
+        )
       } yield urls
       maybeUrls.value
     } else {
@@ -149,11 +157,13 @@ class UsageStatisticsReportsSettingsService(
       componentList <- new EitherT(fetchComponentList())
       componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
+      designerUptimeStatistics = getDesignerUptimeStatistics
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
       activityStatistics ++
       componentStatistics ++
+      designerUptimeStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
       }
@@ -167,6 +177,14 @@ class UsageStatisticsReportsSettingsService(
       NuSource.name  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       NuVersion.name -> BuildInfo.version
     )
+
+  private def getDesignerUptimeStatistics: Map[String, String] = {
+    Map(
+      DesignerUptimeInSeconds.name -> (designerClock
+        .instant()
+        .getEpochSecond - designerStartTime.getEpochSecond).toString
+    )
+  }
 
 }
 

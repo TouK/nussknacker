@@ -1,111 +1,174 @@
 package pl.touk.nussknacker.engine.kafka.validator
 
-import com.dimafeng.testcontainers.{ForAllTestContainer, ForEachTestContainer, KafkaContainer}
+import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
+import com.dimafeng.testcontainers.{ForAllTestContainer, KafkaContainer}
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
-import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidationConfigForTest.kafkaContainer
-import pl.touk.nussknacker.engine.kafka.{
-  CachedTopicsExistenceValidatorConfig,
-  KafkaConfig,
-  KafkaUtils,
-  TopicsExistenceValidationConfig
-}
+import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka._
 
-import java.util.Collections
+import java.util.{Collections, UUID}
 import scala.concurrent.duration.DurationInt
 
-object TopicsExistenceValidationConfigForTest {
+class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
+    extends BaseCachedTopicsExistenceValidatorTest(
+      kafkaAutoCreateEnabled = false
+    ) {
 
-  val config: TopicsExistenceValidationConfig = {
-    // longer timeout, as container might need some time to make initial assignements etc.
-    TopicsExistenceValidationConfig(
-      enabled = true,
-      validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 5 seconds)
+  test("should validate existing source topic") {
+    val topic     = createUniqueSourceTopic()
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(topic) shouldBe Valid(topic)
+  }
+
+  test("should validate not existing source topic") {
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(notExistingSourceTopic) shouldBe Invalid(
+      TopicExistenceValidationException(NonEmptyList.one(notExistingSourceTopic))
     )
   }
 
-  def kafkaContainer = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
-}
-
-class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest
-    extends AnyFunSuite
-    with ForAllTestContainer
-    with Matchers {
-  override val container: KafkaContainer =
-    kafkaContainer.configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
-
-  private def kafkaConfig = KafkaConfig(
-    Some(Map("bootstrap.servers" -> container.bootstrapServers)),
-    None,
-    None,
-    None,
-    TopicsExistenceValidationConfigForTest.config
-  )
-
-  test("should validate existing topic") {
-    val topic = new NewTopic("test.topic.1", Collections.emptyMap())
-    KafkaUtils.usingAdminClient(kafkaConfig) {
-      _.createTopics(Collections.singletonList[NewTopic](topic))
-    }
-    val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(topic.name()) shouldBe Symbol("valid")
+  test("should validate existing sink topic") {
+    val topic     = createUniqueSinkTopic()
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(topic) shouldBe Valid(topic)
   }
 
-  test("should validate not existing topic") {
-    val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("not.existing") shouldBe Symbol("invalid")
+  test("should validate not existing sink topic") {
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(notExistingSinkTopic) shouldBe Invalid(
+      TopicExistenceValidationException(NonEmptyList.one(notExistingSinkTopic))
+    )
   }
 
   test("should not validate not existing topic when validation disabled") {
-    val v = new CachedTopicsExistenceValidator(
-      kafkaConfig.copy(
-        kafkaProperties = Some(Map("bootstrap.servers" -> "broken address")),
+    val validator = new CachedTopicsExistenceValidator(
+      defaultKafkaConfig.copy(
         topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
       )
     )
-    v.validateTopic("not.existing") shouldBe Symbol("valid")
+    validator.validateTopic(notExistingSourceTopic) shouldBe Valid(notExistingSourceTopic)
   }
 
   test("should fetch topics every time when not valid using cache") {
-    val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("test.topic.2") shouldBe Symbol("invalid")
+    val notExistingYetTopicName = createUniqueSourceTopicName()
+    val validator               = new CachedTopicsExistenceValidator(defaultKafkaConfig)
 
-    KafkaUtils.usingAdminClient(kafkaConfig) {
-      _.createTopics(Collections.singletonList[NewTopic](new NewTopic("test.topic.2", Collections.emptyMap())))
-    }
+    validator.validateTopic(notExistingYetTopicName) shouldBe Invalid(
+      TopicExistenceValidationException(NonEmptyList.one(notExistingYetTopicName))
+    )
 
-    v.validateTopic("test.topic.2") shouldBe Symbol("valid")
+    createSourceTopic(notExistingYetTopicName)
+
+    validator.validateTopic(notExistingYetTopicName) shouldBe Valid(notExistingYetTopicName)
   }
 
 }
 
 class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest
-    extends AnyFunSuite
-    with ForEachTestContainer
-    with Matchers {
-  override val container: KafkaContainer =
-    kafkaContainer.configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "TRUE"))
+    extends BaseCachedTopicsExistenceValidatorTest(
+      kafkaAutoCreateEnabled = true
+    ) {
 
-  private def kafkaConfig = KafkaConfig(
-    Some(Map("bootstrap.servers" -> container.bootstrapServers)),
-    None,
-    None,
-    None,
-    TopicsExistenceValidationConfigForTest.config
-  )
+  test("should validate existing source topic") {
+    val topic     = createUniqueSourceTopic()
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(topic) shouldBe Valid(topic)
+  }
 
-  test("should validate not existing topic") {
-    val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("not.existing") shouldBe Symbol("valid")
+  test("should not validate not existing source topic") {
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(notExistingSourceTopic) shouldBe Invalid(
+      TopicExistenceValidationException(NonEmptyList.one(notExistingSourceTopic))
+    )
+  }
+
+  test("should validate existing sink topic") {
+    val topic     = createUniqueSinkTopic()
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(topic) shouldBe Valid(topic)
+  }
+
+  test("should validate not existing sink topic") {
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
+  }
+
+  test("should not validate not existing topic when validation disabled") {
+    val validator = new CachedTopicsExistenceValidator(
+      defaultKafkaConfig.copy(
+        topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)
+      )
+    )
+    validator.validateTopic(notExistingSourceTopic) shouldBe Valid(notExistingSourceTopic)
   }
 
   test("should use cache when validating") {
-    val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("not.existing") shouldBe Symbol("valid")
+    val validator = new CachedTopicsExistenceValidator(defaultKafkaConfig)
+    validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
     container.stop()
-    v.validateTopic("not.existing") shouldBe Symbol("valid")
+    validator.validateTopic(notExistingSinkTopic) shouldBe Valid(notExistingSinkTopic)
+  }
+
+}
+
+abstract class BaseCachedTopicsExistenceValidatorTest(kafkaAutoCreateEnabled: Boolean)
+    extends AnyFunSuite
+    with ForAllTestContainer
+    with Matchers {
+
+  override val container: KafkaContainer =
+    KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
+      .configure {
+        _.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", kafkaAutoCreateEnabled.toString.toUpperCase)
+      }
+
+  lazy val defaultKafkaConfig: KafkaConfig = KafkaConfig(
+    kafkaProperties = Some(Map("bootstrap.servers" -> container.bootstrapServers)),
+    kafkaEspProperties = None,
+    consumerGroupNamingStrategy = None,
+    avroKryoGenericRecordSchemaIdSerialization = None,
+    // longer timeout, as container might need some time to make initial assignments etc.
+    topicsExistenceValidationConfig = TopicsExistenceValidationConfig(
+      enabled = true,
+      validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 30 seconds)
+    )
+  )
+
+  val notExistingSourceTopic: TopicName.ForSource = TopicName.ForSource("source.not.existing")
+
+  val notExistingSinkTopic: TopicName.ForSink = TopicName.ForSink("sink.not.existing")
+
+  protected def createUniqueSourceTopic(): TopicName.ForSource = {
+    val name = createUniqueSourceTopicName()
+    createSourceTopic(name)
+  }
+
+  protected def createSourceTopic(sourceTopicName: TopicName.ForSource): TopicName.ForSource = {
+    createKafkaTopic(sourceTopicName.name)
+    sourceTopicName
+  }
+
+  protected def createUniqueSinkTopic(): TopicName.ForSink = {
+    val sinkTopicName = createUniqueSinkTopicName()
+    createKafkaTopic(sinkTopicName.name)
+    sinkTopicName
+  }
+
+  protected def createUniqueSourceTopicName(): TopicName.ForSource =
+    TopicName.ForSource(s"source-${UUID.randomUUID().toString.take(8)}")
+
+  protected def createUniqueSinkTopicName(): TopicName.ForSink =
+    TopicName.ForSink(s"sink-${UUID.randomUUID().toString.take(8)}")
+
+  private def createKafkaTopic(name: String): Unit = {
+    val topic = new NewTopic(name, Collections.emptyMap())
+    KafkaUtils.usingAdminClient(defaultKafkaConfig) {
+      _.createTopics(Collections.singletonList[NewTopic](topic))
+    }
   }
 
 }

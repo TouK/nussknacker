@@ -14,12 +14,18 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{
+  ContextInitializer,
+  ProcessObjectDependencies,
+  Source,
+  SourceFactory,
+  TopicName
+}
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, Params}
-import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
+import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.schemaVersionParamName
@@ -38,8 +44,8 @@ class UniversalKafkaSourceFactory(
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
     protected val implProvider: KafkaSourceImplFactory[Any, Any]
-) extends SourceFactory
-    with KafkaUniversalComponentTransformer[Source]
+) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+    with SourceFactory
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 
@@ -97,7 +103,7 @@ class UniversalKafkaSourceFactory(
 
   // Source specific FinalResults
   protected def prepareSourceFinalResults(
-      preparedTopic: PreparedKafkaTopic,
+      preparedTopic: PreparedKafkaTopic[TopicName.ForSource],
       valueValidationResult: Validated[
         ProcessCompilationError,
         (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)
@@ -155,6 +161,8 @@ class UniversalKafkaSourceFactory(
 
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
+  override protected def topicFrom(value: String): TopicName.ForSource = TopicName.ForSource(value)
+
   override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
@@ -182,7 +190,7 @@ class UniversalKafkaSourceFactory(
       params,
       dependencies,
       finalState.get,
-      List(preparedTopic),
+      NonEmptyList.one(preparedTopic),
       kafkaConfig,
       deserializationSchema,
       recordFormatter,
@@ -192,7 +200,10 @@ class UniversalKafkaSourceFactory(
     )
   }
 
-  private def prepareKafkaTestParametersInfo(runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]], topic: String)(
+  private def prepareKafkaTestParametersInfo(
+      runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]],
+      topic: TopicName.ForSource
+  )(
       implicit nodeId: NodeId
   ): KafkaTestParametersInfo = {
     Validated
@@ -215,11 +226,11 @@ class UniversalKafkaSourceFactory(
   private def prepareTestRecord(
       runtimeSchema: RuntimeSchemaData[ParsedSchema],
       universalSchemaSupport: UniversalSchemaSupport,
-      topic: String
+      topic: TopicName.ForSource
   ): Any => TestRecord = any => {
     val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
     val serializedConsumerRecord =
-      SerializableConsumerRecord[Json, Json](None, json, Some(topic), None, None, None, None, None, None)
+      SerializableConsumerRecord[Json, Json](None, json, Some(topic.name), None, None, None, None, None, None)
     TestRecord(
       SchemaBasedSerializableConsumerRecord[Json, Json](
         None,
