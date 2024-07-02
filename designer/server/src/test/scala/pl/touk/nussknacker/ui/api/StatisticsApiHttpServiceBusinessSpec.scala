@@ -70,7 +70,7 @@ class StatisticsApiHttpServiceBusinessSpec
   private val statisticsByIndex         = statisticsNames.zipWithIndex.map(p => p._2 -> p._1).toMap
   private val quote                     = '"'
   private val random                    = new Random()
-  private val uuidRegex                 = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+  private val uuidRegex                 = "[0-9a-f]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8}"
 
   private val mockedClock = mock[Clock](new Answer[Instant] {
     override def answer(invocation: InvocationOnMock): Instant = Instant.now()
@@ -132,7 +132,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsAverage.name, equalTo("0")),
           (NuVersion.name, equalTo(nuVersion)),
           (CorrelationIdStat.name, matchesRegex(uuidRegex)),
-          (DesignerUptime.name, matchesRegex("\\d+"))
+          (DesignerUptimeInSeconds.name, matchesRegex("\\d+"))
         )
     }
 
@@ -181,7 +181,7 @@ class StatisticsApiHttpServiceBusinessSpec
           (VersionsAverage.name, equalTo("1")),
           (NuVersion.name, equalTo(nuVersion)),
           (CorrelationIdStat.name, matchesRegex(uuidRegex)),
-          (DesignerUptime.name, matchesRegex("\\d+")),
+          (DesignerUptimeInSeconds.name, matchesRegex("\\d+")),
           //  TODO: Should make a proper test for component mapping
           ("c_bltnfltr", equalTo("1"))
         )

@@ -58,7 +58,7 @@ class ScenarioStatisticsTest
 
   private val clock: Clock = Clock.systemUTC()
 
-  private val uuidRegex = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+  private val uuidRegex = "[0-9a-f]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8}"
 
   private val emptyScenarioRelatedStatistics =
     emptyScenarioStatistics ++ emptyComponentStatistics ++ emptyActivityStatistics ++ emptyUptimeStats ++ emptyGeneralStatistics
@@ -99,10 +99,10 @@ class ScenarioStatisticsTest
   // This statistics are added in UsageStatisticsReportsSettingsService
   // Fingerprint and CorrelationId is added after `determineQueryParams`
   private val notScenarioRelatedStatistics = Map(
-    NuSource       -> 0,
-    NuVersion      -> 0,
-    DesignerUptime -> 0,
-    //    NuFingerprint -> 0,
+    NuSource                -> 0,
+    NuVersion               -> 0,
+    DesignerUptimeInSeconds -> 0,
+    //    NuFingerprint     -> 0,
     //    CorrelationIdStat -> 0,
   ).map { case (k, v) => (k.toString, v.toString) }
 
