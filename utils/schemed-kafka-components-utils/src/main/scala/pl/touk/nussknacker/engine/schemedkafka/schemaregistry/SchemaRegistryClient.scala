@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 
 trait SchemaRegistryClient extends Serializable {
 
   def getSchemaById(id: SchemaId): SchemaWithMetadata
 
   protected def getByTopicAndVersion(
-      topic: String,
+      topic: UnspecializedTopicName,
       version: Int,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata]
@@ -20,10 +21,13 @@ trait SchemaRegistryClient extends Serializable {
     * @param isKey
     * @return
     */
-  protected def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
+  protected def getLatestFreshSchema(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata]
 
   def getFreshSchema(
-      topic: String,
+      topic: UnspecializedTopicName,
       version: Option[Int],
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] =
@@ -31,9 +35,9 @@ trait SchemaRegistryClient extends Serializable {
       .map(ver => getByTopicAndVersion(topic, ver, isKey))
       .getOrElse(getLatestFreshSchema(topic, isKey))
 
-  def getAllTopics: Validated[SchemaRegistryError, List[String]]
+  def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]]
 
-  def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
+  def getAllVersions(topic: UnspecializedTopicName, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]]
 
 }
 
@@ -42,6 +46,6 @@ trait SchemaRegistryClient extends Serializable {
 // manage caching when both writing and reading operation will be available
 trait SchemaRegistryClientWithRegistration extends SchemaRegistryClient {
 
-  def registerSchema(topic: String, isKey: Boolean, schema: ParsedSchema): SchemaId
+  def registerSchema(topic: UnspecializedTopicName, isKey: Boolean, schema: ParsedSchema): SchemaId
 
 }

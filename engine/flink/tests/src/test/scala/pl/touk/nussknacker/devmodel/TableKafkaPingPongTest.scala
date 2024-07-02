@@ -46,7 +46,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest1',
+       |  'topic' = '${inputTopicNameTest1.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -59,7 +59,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest2',
+       |  'topic' = '${inputTopicNameTest2.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -72,7 +72,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$outputTopicNameTest2',
+       |  'topic' = '${outputTopicNameTest2.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -85,7 +85,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$inputTopicNameTest3',
+       |  'topic' = '${inputTopicNameTest3.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -98,7 +98,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
        |   someString  STRING
        | ) WITH (
        |  'connector' = 'kafka',
-       |  'topic' = '$outputTopicNameTest3',
+       |  'topic' = '${outputTopicNameTest3.name}',
        |  'properties.bootstrap.servers' = '${kafkaServer.kafkaAddress}',
        |  'properties.group.id' = 'someConsumerGroupId',
        |  'scan.startup.mode' = 'earliest-offset',
@@ -148,7 +148,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
         "kafka",
         KafkaUniversalComponentTransformer.sinkKeyParamName.value   -> "".spel,
         KafkaUniversalComponentTransformer.sinkValueParamName.value -> "#input".spel,
-        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'${topics.output}'".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'${topics.output.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value -> "true".spel,
       )
@@ -156,7 +156,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -191,7 +191,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -222,7 +222,7 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
     run(process) {
       val result = kafkaClient
         .createConsumer()
-        .consumeWithJson[Json](topics.output)
+        .consumeWithJson[Json](topics.output.name)
         .take(1)
         .map(_.message())
 
@@ -235,13 +235,15 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
 
 object TestData {
 
-  val simpleTypesSchema: JsonSchema = new JsonSchema("""{
-                                                       |  "type": "object",
-                                                       |  "properties": {
-                                                       |    "someInt" : { "type": "integer" },
-                                                       |    "someString" : { "type": "string" }
-                                                       |  }
-                                                       |}
-                                                       |""".stripMargin)
+  val simpleTypesSchema: JsonSchema = new JsonSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "someInt" : { "type": "integer" },
+      |    "someString" : { "type": "string" }
+      |  }
+      |}
+      |""".stripMargin
+  )
 
 }

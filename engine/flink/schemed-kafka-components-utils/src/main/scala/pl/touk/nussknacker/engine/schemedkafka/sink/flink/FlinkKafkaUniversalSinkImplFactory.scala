@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.LazyParameter
-import pl.touk.nussknacker.engine.api.process.Sink
+import pl.touk.nussknacker.engine.api.process.{Sink, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkImplFactory
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 object FlinkKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory with Serializable {
 
   def createSink(
-      preparedTopic: PreparedKafkaTopic,
+      preparedTopic: PreparedKafkaTopic[TopicName.ForSink],
       key: LazyParameter[AnyRef],
       value: LazyParameter[AnyRef],
       kafkaConfig: KafkaConfig,

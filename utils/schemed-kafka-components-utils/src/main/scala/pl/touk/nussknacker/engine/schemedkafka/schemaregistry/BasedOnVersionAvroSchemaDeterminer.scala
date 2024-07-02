@@ -5,11 +5,12 @@ import cats.data.Validated.{Invalid, Valid}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
 class BasedOnVersionAvroSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
-    topic: String,
+    topic: UnspecializedTopicName,
     versionOption: SchemaVersionOption,
     isKey: Boolean
 ) extends AvroSchemaDeterminer {
@@ -22,7 +23,7 @@ class BasedOnVersionAvroSchemaDeterminer(
     schemaRegistryClient
       .getFreshSchema(topic, version, isKey = isKey)
       .leftMap(err =>
-        new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err)
+        new SchemaDeterminerError(s"Fetching schema error for topic: ${topic.name}, version: $versionOption", err)
       )
       .andThen(withMetadata =>
         withMetadata.schema match {
@@ -42,7 +43,7 @@ class BasedOnVersionAvroSchemaDeterminer(
 
 class ParsedSchemaDeterminer(
     schemaRegistryClient: SchemaRegistryClient,
-    topic: String,
+    topic: UnspecializedTopicName,
     versionOption: SchemaVersionOption,
     isKey: Boolean
 ) {
@@ -55,7 +56,7 @@ class ParsedSchemaDeterminer(
     schemaRegistryClient
       .getFreshSchema(topic, version, isKey = isKey)
       .leftMap(err =>
-        new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err)
+        new SchemaDeterminerError(s"Fetching schema error for topic: ${topic.name}, version: $versionOption", err)
       )
       .map(withMetadata =>
         RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id))

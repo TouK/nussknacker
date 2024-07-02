@@ -4,6 +4,7 @@ import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -29,19 +30,19 @@ class NuKafkaRuntimeDockerJsonTest
 
   private def registerSchemas(): Unit = {
     schemaRegistryClient.register(
-      ConfluentUtils.valueSubject(fixture.inputTopic),
+      ConfluentUtils.valueSubject(fixture.inputTopic.toUnspecialized),
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
     schemaRegistryClient.register(
-      ConfluentUtils.valueSubject(fixture.outputTopic),
+      ConfluentUtils.valueSubject(fixture.outputTopic.toUnspecialized),
       NuKafkaRuntimeTestSamples.jsonPingSchema
     )
   }
 
   test("json ping-pong should work") {
-    kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
+    kafkaClient.sendMessage(fixture.inputTopic.name, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
     try {
-      val message = kafkaClient.createConsumer().consumeWithJson[String](fixture.outputTopic).head.message()
+      val message = kafkaClient.createConsumer().consumeWithJson[String](fixture.outputTopic.name).head.message()
       message shouldBe NuKafkaRuntimeTestSamples.jsonPingMessage
     } finally {
       consumeFirstError shouldBe empty

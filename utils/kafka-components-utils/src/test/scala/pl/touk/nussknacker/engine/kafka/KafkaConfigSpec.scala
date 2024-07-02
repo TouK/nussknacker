@@ -41,11 +41,11 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
         |  }
         |}""".stripMargin)
     val expectedConfig = KafkaConfig(
-      Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")),
-      None,
-      None,
-      None,
-      TopicsExistenceValidationConfig(enabled = true)
+      kafkaProperties = Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")),
+      kafkaEspProperties = None,
+      consumerGroupNamingStrategy = None,
+      avroKryoGenericRecordSchemaIdSerialization = None,
+      topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = true)
     )
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }

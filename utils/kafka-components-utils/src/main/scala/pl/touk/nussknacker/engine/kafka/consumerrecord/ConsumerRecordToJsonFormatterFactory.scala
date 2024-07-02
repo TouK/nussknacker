@@ -4,6 +4,7 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
@@ -51,7 +52,10 @@ class ConsumerRecordToJsonFormatter[K: Encoder: Decoder, V: Encoder: Decoder](
     * Step 2: Use provided K,V Encoders to create key-value-to-bytes interpreter.
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
-  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(
+      topic: TopicName.ForSource,
+      testRecord: TestRecord
+  ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] =
       deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
     val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)

@@ -12,9 +12,11 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider.KafkaUniversalName
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, KafkaConsumerRecord}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
@@ -83,16 +85,16 @@ class AzureSchemaRegistryKafkaAvroTest
 
   test("round-trip Avro serialization using Azure Schema Registry") {
     val (
-      inputTopic: String,
+      inputTopic: TopicName.ForSource,
       inputSchema: Schema,
       inputSchemaId: SchemaId,
-      outputTopic: String,
+      outputTopic: TopicName.ForSink,
       outputSchema: Schema,
       outputSchemaId: SchemaId,
       scenario: CanonicalProcess
     ) = prepareAvroSetup
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
 
     val inputValue = new GenericRecordBuilder(inputSchema)
       .set("a", "aValue")
@@ -110,17 +112,17 @@ class AzureSchemaRegistryKafkaAvroTest
 
   test("round-trip Avro schema with json payload serialization on Azure") {
     val (
-      inputTopic: String,
+      inputTopic,
       _: Schema,
       _: SchemaId,
-      outputTopic: String,
+      outputTopic,
       _: Schema,
       outputSchemaId: SchemaId,
       scenario: CanonicalProcess
     ) =
       prepareAvroSetup
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
 
     val jsonPayloadTestRunner = TestScenarioRunner
       .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
@@ -138,28 +140,28 @@ class AzureSchemaRegistryKafkaAvroTest
 
   private def prepareAvroSetup = {
     val scenarioName = "avro"
-    val inputTopic   = s"$scenarioName-input"
-    val outputTopic  = s"$scenarioName-output"
+    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
+    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
 
     val aFieldOnly   = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
-    val inputSchema  = createRecordSchema(inputTopic, aFieldOnly)
-    val outputSchema = createRecordSchema(outputTopic, aFieldOnly)
+    val inputSchema  = createRecordSchema(inputTopic.toUnspecialized, aFieldOnly)
+    val outputSchema = createRecordSchema(outputTopic.toUnspecialized, aFieldOnly)
 
-    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic, inputSchema)
-    val outputSchemaId = testRunner.registerAvroSchema(outputTopic, outputSchema)
+    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchema)
+    val outputSchemaId = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
 
     val scenario = ScenarioBuilder
       .streamingLite(scenarioName)
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'".spel,
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'".spel,
+        topicParamName.value         -> s"'${outputTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         sinkKeyParamName.value       -> "".spel,
         sinkRawEditorParamName.value -> "true".spel,
@@ -170,29 +172,29 @@ class AzureSchemaRegistryKafkaAvroTest
 
   test("round-trip Avro serialization with primitive types on Azure") {
     val scenarioName = "primitive"
-    val inputTopic   = s"$scenarioName-input"
-    val outputTopic  = s"$scenarioName-output"
+    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
+    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
 
     val inputSchema  = SchemaBuilder.builder().intType()
     val outputSchema = SchemaBuilder.builder().longType()
 
-    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic, inputSchema)
-    val outputSchemaId = testRunner.registerAvroSchema(outputTopic, outputSchema)
+    val inputSchemaId  = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchema)
+    val outputSchemaId = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
 
     val scenario = ScenarioBuilder
       .streamingLite(scenarioName)
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'".spel,
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'".spel,
+        topicParamName.value         -> s"'${outputTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         sinkKeyParamName.value       -> "".spel,
         sinkRawEditorParamName.value -> "true".spel,
@@ -211,10 +213,10 @@ class AzureSchemaRegistryKafkaAvroTest
 
   test("schema evolution in Avro source using Azure Schema Registry") {
     val scenarioName = "avro-schemaevolution"
-    val inputTopic   = s"$scenarioName-input"
-    val outputTopic  = s"$scenarioName-output"
+    val inputTopic   = TopicName.ForSource(s"$scenarioName-input")
+    val outputTopic  = TopicName.ForSink(s"$scenarioName-output")
 
-    registerTopic(List(inputTopic, outputTopic))
+    registerTopic(List(inputTopic, outputTopic).map(_.toUnspecialized))
 
     val aFieldOnly    = (assembler: SchemaBuilder.FieldAssembler[Schema]) => assembler.requiredString("a")
     val bDefaultValue = "bDefault"
@@ -229,28 +231,28 @@ class AzureSchemaRegistryKafkaAvroTest
       assembler
         .requiredString("a")
         .requiredString("b")
-    val inputSchemaV1 = createRecordSchema(inputTopic, aFieldOnly)
-    val inputSchemaV2 = createRecordSchema(inputTopic, abFields)
-    val outputSchema  = createRecordSchema(outputTopic, abOutputFields)
+    val inputSchemaV1 = createRecordSchema(inputTopic.toUnspecialized, aFieldOnly)
+    val inputSchemaV2 = createRecordSchema(inputTopic.toUnspecialized, abFields)
+    val outputSchema  = createRecordSchema(outputTopic.toUnspecialized, abOutputFields)
 
-    val inputSchemaV1Id = testRunner.registerAvroSchema(inputTopic, inputSchemaV1)
+    val inputSchemaV1Id = testRunner.registerAvroSchema(inputTopic.toUnspecialized, inputSchemaV1)
     // TODO: maybe we should return this version in testRunner.registerAvroSchema as well?
     val inputSchemaV2Props = schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(inputSchemaV2))
-    val outputSchemaId     = testRunner.registerAvroSchema(outputTopic, outputSchema)
+    val outputSchemaId     = testRunner.registerAvroSchema(outputTopic.toUnspecialized, outputSchema)
 
     val scenario = ScenarioBuilder
       .streamingLite(scenarioName)
       .source(
         "source",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$inputTopic'".spel,
+        topicParamName.value         -> s"'${inputTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${inputSchemaV2Props.getVersion}'".spel
       )
       .filter("filter-b-default", s"#input.b == '$bDefaultValue'".spel)
       .emptySink(
         "sink",
         KafkaUniversalName,
-        topicParamName.value         -> s"'$outputTopic'".spel,
+        topicParamName.value         -> s"'${outputTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         sinkKeyParamName.value       -> "".spel,
         sinkRawEditorParamName.value -> "true".spel,
@@ -282,7 +284,7 @@ class AzureSchemaRegistryKafkaAvroTest
   }
 
   private def createRecordSchema(
-      topicName: String,
+      topicName: UnspecializedTopicName,
       assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]
   ) = {
     val fields = SchemaBuilder
@@ -292,21 +294,21 @@ class AzureSchemaRegistryKafkaAvroTest
     assemblyFields(fields).endRecord()
   }
 
-  private def registerTopic(topicNames: List[String], retries: Int = 3): Unit = {
+  private def registerTopic(topicNames: List[UnspecializedTopicName], retries: Int = 3): Unit = {
     import scala.jdk.CollectionConverters._
-    logger.info(s"Register topics ${topicNames.mkString(",")}, retries = $retries")
+    logger.info(s"Register topics ${topicNames.map(_.name).mkString(",")}, retries = $retries")
     KafkaUtils.usingAdminClient(kafkaConfig) { admin =>
-      val existingTopics     = admin.listTopics().names().get().asScala.toList
+      val existingTopics     = admin.listTopics().names().get().asScala.toList.map(UnspecializedTopicName.apply)
       val (toSkip, toCreate) = topicNames.partition(existingTopics.contains)
-      logger.info(s"Skip existing topics: ${toSkip.mkString(",")}")
+      logger.info(s"Skip existing topics: ${toSkip.map(_.name).mkString(",")}")
       if (toCreate.nonEmpty) {
-        val topicsToCreate = toCreate.map(name => new NewTopic(name, Collections.emptyMap())).asJavaCollection
+        val topicsToCreate = toCreate.map(topic => new NewTopic(topic.name, Collections.emptyMap())).asJavaCollection
         try {
-          logger.info(s"Create topics: ${topicNames.mkString(",")}")
+          logger.info(s"Create topics: ${topicNames.map(_.name).mkString(",")}")
           admin.createTopics(topicsToCreate).all().get(5, TimeUnit.SECONDS)
         } catch {
           case NonFatal(e) =>
-            logger.error(s"Other exception for ${topicNames.mkString(",")}", e)
+            logger.error(s"Other exception for ${topicNames.map(_.name).mkString(",")}", e)
             if (retries > 0) {
               Thread.sleep(1000)
               registerTopic(toCreate, retries - 1)

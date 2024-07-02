@@ -11,11 +11,12 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaRecordUtils, serialization}
+import pl.touk.nussknacker.engine.api.process.TopicName
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaRecordUtils, UnspecializedTopicName, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.AbstractConfluentKafkaAvroSerializer
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.nio.charset.StandardCharsets
@@ -28,14 +29,14 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
 
   def pushMessage(
       obj: Any,
-      topicToSerialize: String,
-      topicToSend: Option[String] = None,
+      topicToSerialize: TopicName.ForSource,
+      topicToSend: Option[TopicName.ForSource] = None,
       timestamp: java.lang.Long = null,
       headers: Headers = KafkaRecordUtils.emptyHeaders
   ): RecordMetadata = {
-    val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
+    val serializedObj = valueSerializer.serialize(topicToSerialize.name, obj)
     kafkaClient
-      .sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp, headers)
+      .sendRawMessage(topicToSend.getOrElse(topicToSerialize).name, null, serializedObj, None, timestamp, headers)
       .futureValue
   }
 
@@ -68,51 +69,53 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
 
   def consumeAndVerifyMessages(
       kafkaDeserializer: serialization.KafkaDeserializationSchema[_],
-      topic: String,
+      topic: TopicName.ForSink,
       expected: List[Any]
   ): Assertion = {
     val result =
-      consumeMessages(kafkaDeserializer, topic, expected.length).map(_.asInstanceOf[ConsumerRecord[Any, Any]].value())
+      consumeMessages(kafkaDeserializer, topic, expected.length).map(
+        _.asInstanceOf[ConsumerRecord[Any, Any]].value()
+      )
     result shouldBe expected
   }
 
   protected def consumeMessages(
       kafkaDeserializer: serialization.KafkaDeserializationSchema[_],
-      topic: String,
+      topic: TopicName.ForSink,
       count: Int
   ): List[Any] =
     kafkaClient
       .createConsumer()
-      .consumeWithConsumerRecord(topic)
+      .consumeWithConsumerRecord(topic.name)
       .take(count)
       .map { record =>
         kafkaDeserializer.deserialize(record)
       }
       .toList
 
-  def consumeAndVerifyMessage(topic: String, expected: Any): Assertion =
+  def consumeAndVerifyMessage(topic: TopicName.ForSink, expected: Any): Assertion =
     consumeAndVerifyMessages(topic, List(expected))
 
   protected def consumeAndVerifyMessages(
-      topic: String,
+      topic: TopicName.ForSink,
       expected: List[Any]
   ): Assertion = {
     val result = consumeMessages(topic, expected.length)
     result shouldBe expected
   }
 
-  private def consumeMessages(topic: String, count: Int): List[Any] =
+  private def consumeMessages(topic: TopicName.ForSink, count: Int): List[Any] =
     kafkaClient
       .createConsumer()
-      .consumeWithConsumerRecord(topic)
+      .consumeWithConsumerRecord(topic.name)
       .take(count)
       .map { record =>
         deserialize(topic, record.value())
       }
       .toList
 
-  protected def deserialize(objectTopic: String, obj: Array[Byte]): Any =
-    prepareValueDeserializer.deserialize(objectTopic, obj)
+  protected def deserialize(objectTopic: TopicName.ForSink, obj: Array[Byte]): Any =
+    prepareValueDeserializer.deserialize(objectTopic.name, obj)
 
   /**
    * Default Confluent Avro serialization components
@@ -137,37 +140,37 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
-      registerSchema(topicConfig.input, schema, topicConfig.isKey)
-      registerSchema(topicConfig.output, schema, topicConfig.isKey)
+      registerSchema(topicConfig.input.toUnspecialized, schema, topicConfig.isKey)
+      registerSchema(topicConfig.output.toUnspecialized, schema, topicConfig.isKey)
     })
 
     topicConfig
   }
 
-  protected def registerSchema(name: String, schema: Schema, isKey: Boolean): Int = {
+  protected def registerSchema(name: UnspecializedTopicName, schema: Schema, isKey: Boolean): Int = {
     val subject      = ConfluentUtils.topicSubject(name, isKey)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
     schemaRegistryClient.register(subject, parsedSchema)
   }
 
-  protected def registerJsonSchema(name: String, schema: String, isKey: Boolean): Int = {
+  protected def registerJsonSchema(name: UnspecializedTopicName, schema: String, isKey: Boolean): Int = {
     val subject      = ConfluentUtils.topicSubject(name, isKey)
     val parsedSchema = new JsonSchema(schema)
     schemaRegistryClient.register(subject, parsedSchema)
   }
 
-  case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
+  case class TopicConfig(input: TopicName.ForSource, output: TopicName.ForSink, schemas: List[Schema], isKey: Boolean)
 
   object TopicConfig {
     private final val inputPrefix  = "test.avro.input"
     private final val outputPrefix = "test.avro.output"
 
-    def apply(input: String, output: String, schema: Schema, isKey: Boolean): TopicConfig =
+    def apply(input: TopicName.ForSource, output: TopicName.ForSink, schema: Schema, isKey: Boolean): TopicConfig =
       new TopicConfig(input, output, List(schema), isKey = isKey)
 
     def apply(testName: String, schemas: List[Schema]): TopicConfig = {
-      val inputTopic  = s"$inputPrefix.$kafkaTopicNamespace.$testName"
-      val outputTopic = s"$outputPrefix.$kafkaTopicNamespace.$testName"
+      val inputTopic  = TopicName.ForSource(s"$inputPrefix.$kafkaTopicNamespace.$testName")
+      val outputTopic = TopicName.ForSink(s"$outputPrefix.$kafkaTopicNamespace.$testName")
       new TopicConfig(inputTopic, outputTopic, schemas, isKey = false)
     }
 

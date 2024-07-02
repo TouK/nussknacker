@@ -12,7 +12,7 @@ import io.confluent.kafka.schemaregistry.client.{
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.schemaregistry.{ParsedSchema, SchemaProvider}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import pl.touk.nussknacker.engine.kafka.{SchemaRegistryClientKafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
@@ -67,7 +67,10 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     extends ConfluentSchemaRegistryClient
     with SchemaRegistryClientWithRegistration {
 
-  override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  override def getLatestFreshSchema(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject        = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
@@ -75,7 +78,7 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     }
 
   override def getByTopicAndVersion(
-      topic: String,
+      topic: UnspecializedTopicName,
       version: Int,
       isKey: Boolean
   ): Validated[SchemaRegistryError, SchemaWithMetadata] =
@@ -85,12 +88,15 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
       ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
 
-  override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
+  override def getAllTopics: Validated[SchemaRegistryError, List[UnspecializedTopicName]] =
     handleClientError {
-      client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject)
+      client.getAllSubjects.asScala.toList.collect(ConfluentUtils.topicFromSubject).map(UnspecializedTopicName.apply)
     }
 
-  override def getAllVersions(topic: String, isKey: Boolean): Validated[SchemaRegistryError, List[Integer]] =
+  override def getAllVersions(
+      topic: UnspecializedTopicName,
+      isKey: Boolean
+  ): Validated[SchemaRegistryError, List[Integer]] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       client.getAllVersions(subject).asScala.toList
@@ -101,7 +107,7 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     SchemaWithMetadata(schema, id)
   }
 
-  override def registerSchema(topic: String, isKey: Boolean, schema: ParsedSchema): SchemaId = {
+  override def registerSchema(topic: UnspecializedTopicName, isKey: Boolean, schema: ParsedSchema): SchemaId = {
     val subject = ConfluentUtils.topicSubject(topic, isKey)
     SchemaId.fromInt(client.register(subject, schema))
   }

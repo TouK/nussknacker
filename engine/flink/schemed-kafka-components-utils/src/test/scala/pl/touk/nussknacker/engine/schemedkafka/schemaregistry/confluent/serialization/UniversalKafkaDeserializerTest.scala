@@ -7,7 +7,9 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.header.Headers
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor6}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{SchemaRegistryMixin, SimpleKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
@@ -142,7 +144,7 @@ class UniversalKafkaDeserializerTest
       ) =>
         val topicConfig = createAndRegisterTopicConfig(topic, schemas)
 
-        val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
+        val inputSubject = ConfluentUtils.topicSubject(topicConfig.input.toUnspecialized, topicConfig.isKey)
         val inputSchemaId = SchemaId.fromInt(
           schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema))
         )
@@ -164,7 +166,7 @@ class UniversalKafkaDeserializerTest
         } else KafkaRecordUtils.emptyHeaders
         setup.pushMessage(givenObj, topicConfig.input, headers = headers)
 
-        setup.consumeAndVerifyMessages(deserializer, topicConfig.input, List(expectedObj))
+        setup.consumeAndVerifyMessages(deserializer, TopicName.ForSink(topicConfig.input.name), List(expectedObj))
     }
 
   }

@@ -1,7 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.kafka.{SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.kafka.{
+  SchemaRegistryCacheConfig,
+  SchemaRegistryClientKafkaConfig,
+  UnspecializedTopicName
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaId,
   SchemaRegistryClient,
@@ -54,6 +58,6 @@ class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyL
 
   val versionsCache =
     new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, availableSchemasExpirationTime))
-  val topicsCache = new SingleValueCache[List[String]](Option.empty, availableSchemasExpirationTime)
+  val topicsCache = new SingleValueCache[List[UnspecializedTopicName]](Option.empty, availableSchemasExpirationTime)
 
 }

@@ -3,15 +3,8 @@ package pl.touk.nussknacker.engine.lite.kafka
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.{
-  ConsumerConfig,
-  ConsumerRecord,
-  ConsumerRecords,
-  KafkaConsumer,
-  OffsetAndMetadata
-}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{
   AuthorizationException,
   InterruptException,
@@ -20,6 +13,7 @@ import org.apache.kafka.common.errors.{
 }
 import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.api.namespaces.NamingStrategy
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
@@ -66,11 +60,12 @@ class KafkaSingleScenarioTaskRun(
   // TODO: consider more elastic extractor definition (e.g. via configuration, as it is in flink executor)
   protected val extractor: WithExceptionExtractor = new DefaultWithExceptionExtractor
 
-  private val sourceToTopic: Map[String, Map[SourceId, LiteKafkaSource]] = interpreter.sources
+  private val sourceToTopic: Map[TopicName.ForSource, Map[SourceId, LiteKafkaSource]] = interpreter.sources
     .flatMap {
       case (sourceId, kafkaSource: LiteKafkaSource) =>
-        kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource))
-      case (sourceId, other) => throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
+        kafkaSource.topics.map(topic => topic -> (sourceId, kafkaSource)).toList
+      case (sourceId, other) =>
+        throw new IllegalArgumentException(s"Unexpected source: $other for ${sourceId.value}")
     }
     .groupBy(_._1)
     .mapValuesNow(_.values.toMap)
@@ -81,7 +76,7 @@ class KafkaSingleScenarioTaskRun(
 
     producer = prepareProducer
     consumer = prepareConsumer
-    consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
+    consumer.subscribe(sourceToTopic.keys.map(_.name).toSet.asJavaCollection)
 
     registerMetrics()
   }
@@ -140,7 +135,7 @@ class KafkaSingleScenarioTaskRun(
       records: ConsumerRecords[Array[Byte], Array[Byte]]
   ): List[(SourceId, ConsumerRecord[Array[Byte], Array[Byte]])] = {
     sourceToTopic.toList.flatMap { case (topic, sourcesSubscribedOnTopic) =>
-      val forTopic = records.records(topic).asScala.toList
+      val forTopic = records.records(topic.name).asScala.toList
       // TODO: try to handle source metrics in more generic way?
       sourcesSubscribedOnTopic.keys.foreach(sourceId =>
         forTopic.foreach(record => sourceMetrics.markElement(sourceId, record.timestamp()))
@@ -175,23 +170,6 @@ class KafkaSingleScenarioTaskRun(
     val nonTransient = extractor.extractOrThrow(error)
     val schema       = new KafkaJsonExceptionSerializationSchema(metaData, engineConfig.exceptionHandlingConfig)
     schema.serialize(nonTransient, System.currentTimeMillis())
-  }
-
-  // See https://www.baeldung.com/kafka-exactly-once for details
-  private def retrieveMaxOffsetsOffsets(
-      records: ConsumerRecords[Array[Byte], Array[Byte]]
-  ): Map[TopicPartition, OffsetAndMetadata] = {
-    records
-      .iterator()
-      .asScala
-      .map { rec =>
-        val upcomingOffset = rec.offset() + 1
-        (new TopicPartition(rec.topic(), rec.partition()), upcomingOffset)
-      }
-      .toList
-      .groupBy(_._1)
-      .mapValuesNow(_.map(_._2).max)
-      .mapValuesNow(new OffsetAndMetadata(_))
   }
 
   // Errors from this method will be considered as fatal, handled by uncaughtExceptionHandler and probably causing System.exit
