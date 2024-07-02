@@ -1,5 +1,10 @@
 # Changelog
 
+1.17.0 (Not released yet)
+-------------------------
+* [6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
+  Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
+
 1.16.0 (Not released yet)
 -------------------------
 

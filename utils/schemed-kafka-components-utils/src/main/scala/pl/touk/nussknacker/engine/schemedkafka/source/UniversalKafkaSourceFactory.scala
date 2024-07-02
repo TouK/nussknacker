@@ -44,8 +44,8 @@ class UniversalKafkaSourceFactory(
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
     protected val implProvider: KafkaSourceImplFactory[Any, Any]
-) extends SourceFactory
-    with KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+) extends KafkaUniversalComponentTransformer[Source, TopicName.ForSource]
+    with SourceFactory
     with WithExplicitTypesToExtract
     with UnboundedStreamComponent {
 

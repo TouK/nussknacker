@@ -27,8 +27,11 @@ class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with Option
 
   private lazy val config = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
-    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue(
+      KafkaConfigProperties.property("schema.registry.url"),
+      fromAnyRef("schema_registry_should_not_be_used:8081")
+    )
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   private val kafkaConfig = KafkaConfig.parseConfig(config)

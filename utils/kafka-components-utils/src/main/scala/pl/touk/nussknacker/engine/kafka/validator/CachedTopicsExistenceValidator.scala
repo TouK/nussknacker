@@ -7,6 +7,7 @@ import org.apache.kafka.clients.admin.{Admin, DescribeClusterOptions, DescribeCo
 import org.apache.kafka.common.config.ConfigResource
 import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
+import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
@@ -18,7 +19,7 @@ trait WithCachedTopicsExistenceValidator extends TopicsExistenceValidator {
 
   private lazy val validator = new CachedTopicsExistenceValidator(kafkaConfig)
 
-  final override def validateTopics[T <: TopicName](
+  final override def validateTopics[T <: TopicName: TopicValidationType](
       topics: NonEmptyList[T]
   ): Validated[TopicExistenceValidationException[T], NonEmptyList[T]] =
     validator.validateTopics(topics)
@@ -39,13 +40,28 @@ class CachedTopicsExistenceValidator(kafkaConfig: KafkaConfig) extends TopicsExi
     expireAfterWrite = Some(validatorConfig.topicsFetchCacheTtl)
   )
 
-  def validateTopics[T <: TopicName](
+  def validateTopics[T <: TopicName: TopicValidationType](
       topics: NonEmptyList[T]
   ): Validated[TopicExistenceValidationException[T], NonEmptyList[T]] = {
-    if (!kafkaConfig.topicsExistenceValidationConfig.enabled || isAutoCreateEnabled) {
-      Valid(topics)
-    } else {
+    implicitly[TopicValidationType[T]] match {
+      case TopicsExistenceValidator.SourceValidation => validateSourceTopics(topics)
+      case TopicsExistenceValidator.SinkValidation   => validateSinkTopics(topics)
+    }
+  }
+
+  private def validateSourceTopics[T <: TopicName: TopicValidationType](topics: NonEmptyList[T]) = {
+    if (kafkaConfig.topicsExistenceValidationConfig.enabled) {
       doValidate(topics)
+    } else {
+      Valid(topics)
+    }
+  }
+
+  private def validateSinkTopics[T <: TopicName: TopicValidationType](topics: NonEmptyList[T]) = {
+    if (kafkaConfig.topicsExistenceValidationConfig.enabled && !isAutoCreateEnabled) {
+      doValidate(topics)
+    } else {
+      Valid(topics)
     }
   }
 
