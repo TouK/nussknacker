@@ -43,7 +43,7 @@ class SpelExpressionSuggester(
       validationContext: ValidationContext
   )(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
 
-    val futureSuggestions =
+    val futureSuggestionsOption =
       expressionSuggestionsAux(
         expression,
         caretPosition2d.normalizedCaretPosition(expression.expression),
@@ -52,19 +52,20 @@ class SpelExpressionSuggester(
 
     val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
 
-    val futureSuggestionsAfterTruncatingExpressionByCaretPosition = expressionSuggestionsAux(
+    val futureSuggestionsAfterTruncatingExpressionByCaretPositionOption = expressionSuggestionsAux(
       newExpression,
       caretPosition2d.normalizedCaretPosition(newExpression.expression),
       validationContext
     )
 
-    val allFutureSuggestions = List(futureSuggestions, futureSuggestionsAfterTruncatingExpressionByCaretPosition)
+    val allFutureSuggestionOptions =
+      List(futureSuggestionsOption, futureSuggestionsAfterTruncatingExpressionByCaretPositionOption)
 
-    val firstNonEmptySuggestionFuture = allFutureSuggestions.collectFirst { case some @ Some(_) =>
+    val firstNonEmptySuggestionFutureOption = allFutureSuggestionOptions.collectFirst { case some @ Some(_) =>
       some
     }.flatten
 
-    firstNonEmptySuggestionFuture.getOrElse(successfulNil).map(_.toList.sortBy(_.methodName)).map(_.toList)
+    firstNonEmptySuggestionFutureOption.getOrElse(successfulNil).map(_.toList.sortBy(_.methodName)).map(_.toList)
   }
 
   private def expressionSuggestionsAux(
