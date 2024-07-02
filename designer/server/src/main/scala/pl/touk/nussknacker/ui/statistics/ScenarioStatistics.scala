@@ -299,8 +299,8 @@ case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
 case object UnknownDMCount         extends StatisticKey("s_dm_c")
 case object ActiveScenarioCount    extends StatisticKey("s_a")
 // Not scenario related statistics
-case object NuSource          extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
-case object NuFingerprint     extends StatisticKey("fingerprint")
-case object NuVersion         extends StatisticKey("version")
-case object CorrelationIdStat extends StatisticKey("co_id")
-case object DesignerUptime    extends StatisticKey("d_u")
+case object NuSource                extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
+case object NuFingerprint           extends StatisticKey("fingerprint")
+case object NuVersion               extends StatisticKey("version")
+case object CorrelationIdStat       extends StatisticKey("co_id")
+case object DesignerUptimeInSeconds extends StatisticKey("d_u")

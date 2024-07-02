@@ -127,8 +127,8 @@ class UsageStatisticsReportsSettingsService(
     components: List[ComponentDefinitionWithImplementation],
     designerClock: Clock
 )(implicit ec: ExecutionContext) {
-  private val statisticsUrls       = new StatisticsUrls(urlConfig)
-  private val designerCreationTime = designerClock.instant()
+  private val statisticsUrls    = new StatisticsUrls(urlConfig)
+  private val designerStartTime = designerClock.instant()
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, List[String]]] = {
     if (config.enabled) {
@@ -179,7 +179,11 @@ class UsageStatisticsReportsSettingsService(
     )
 
   private def getDesignerUptimeStatistics: Map[String, String] = {
-    Map(DesignerUptime.name -> (designerClock.instant().getEpochSecond - designerCreationTime.getEpochSecond).toString)
+    Map(
+      DesignerUptimeInSeconds.name -> (designerClock
+        .instant()
+        .getEpochSecond - designerStartTime.getEpochSecond).toString
+    )
   }
 
 }
