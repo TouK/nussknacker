@@ -430,9 +430,7 @@ class K8sDeploymentManagerKafkaTest
     val output = s"pong-$seed"
 
     kafka.createSchema(s"$input-value", schema)
-    kafka.createTopic(input)
     kafka.createSchema(s"$output-value", schema)
-    kafka.createTopic(output)
 
     val manager = prepareManager(modelData, deployConfig)
     val scenario = ScenarioBuilder
