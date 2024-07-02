@@ -1188,7 +1188,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   hintText = None,
                   valueEditor = None,
                   valueCompileTimeValidation = Some(
-                    ParameterValueCompileTimeValidation(validationExpression.spel, Some("some custom failure message"))
+                    ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"))
                   )
                 )
               )
@@ -1243,7 +1243,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
                   hintText = None,
                   valueEditor = None,
                   valueCompileTimeValidation = Some(
-                    ParameterValueCompileTimeValidation(validationExpression.spel, Some("some custom failure message"))
+                    ParameterValueCompileTimeValidation(validationExpression, Some("some custom failure message"))
                   )
                 )
               )
@@ -1866,12 +1866,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             initialValue = None,
             hintText = None,
             valueEditor = None,
-            valueCompileTimeValidation = Some(
-              ParameterValueCompileTimeValidation(
-                validationExpression.spel,
-                None
-              )
-            )
+            valueCompileTimeValidation = Some(ParameterValueCompileTimeValidation(validationExpression, None))
           )
         )
       )
@@ -1907,10 +1902,7 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
             hintText = None,
             valueEditor = None,
             valueCompileTimeValidation = Some(
-              ParameterValueCompileTimeValidation(
-                validationExpression.spel,
-                Some("some failed message")
-              )
+              ParameterValueCompileTimeValidation(validationExpression, Some("some failed message"))
             )
           )
         )
