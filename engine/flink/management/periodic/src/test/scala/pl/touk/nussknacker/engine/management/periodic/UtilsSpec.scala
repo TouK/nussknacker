@@ -24,7 +24,7 @@ class UtilsSpec extends TestKit(ActorSystem("UtilsSpec")) with AnyWordSpecLike w
 
       val actorRef = system.actorOf(Props(new TestActor), actorName)
 
-      Utils.gracefulStopActor(actorRef, system)
+      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
 
       // with normal system.stop(actorRef) or akka.pattern.gracefulStop this throws "actor name is not unique"
       system.actorOf(Props(new TestActor), actorName)
