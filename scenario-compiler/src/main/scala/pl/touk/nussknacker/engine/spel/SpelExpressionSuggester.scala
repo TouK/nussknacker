@@ -58,12 +58,14 @@ class SpelExpressionSuggester(
       validationContext
     )
 
-    lazy val allFutureSuggestionOptions =
-      List(futureSuggestionsOption, futureSuggestionsAfterTruncatingExpressionByCaretPositionOption)
-
-    val firstNonEmptySuggestionFutureOption = allFutureSuggestionOptions.collectFirst { case some @ Some(_) =>
-      some
-    }.flatten
+    val firstNonEmptySuggestionFutureOption = futureSuggestionsOption match {
+      case Some(futureSuggestions) => Some(futureSuggestions)
+      case None =>
+        futureSuggestionsAfterTruncatingExpressionByCaretPositionOption match {
+          case Some(futureSuggestionsTruncated) => Some(futureSuggestionsTruncated)
+          case None                             => None
+        }
+    }
 
     firstNonEmptySuggestionFutureOption.getOrElse(successfulNil).map(_.toList.sortBy(_.methodName)).map(_.toList)
   }
