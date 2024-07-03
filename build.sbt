@@ -733,10 +733,10 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-base"       % flinkV               % Provided,
-        "org.apache.flink" % "flink-streaming-java"       % flinkV               % Provided,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV               % Provided,
-        "org.apache.flink" % "flink-connector-kafka"      % flinkConnectorKafkaV % Provided,
+        "org.apache.flink" % "flink-connector-base"       % flinkV               % Test,
+        "org.apache.flink" % "flink-streaming-java"       % flinkV               % Test,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV               % Test,
+        "org.apache.flink" % "flink-connector-kafka"      % flinkConnectorKafkaV % Test,
         "org.apache.flink" % "flink-json"                 % flinkV               % Test
       )
     }
