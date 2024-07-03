@@ -1,16 +1,10 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
-import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
-import io.circe.parser._
-import org.apache.commons.io.FileUtils
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.configuration._
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{EnvironmentSettings, TableDescriptor, TableEnvironment}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -21,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TestDataGenerator,
   TestWithParametersSupport
 }
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -33,21 +27,15 @@ import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
-import pl.touk.nussknacker.engine.util.ThreadUtils
-
-import java.nio.charset.StandardCharsets
-import java.nio.file.{DirectoryStream, Files, Path}
-import scala.util.{Failure, Success, Try}
 
 class TableSource(
-    tableDefinition: TableDefinition,
+    val tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
     enableFlinkBatchExecutionMode: Boolean,
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
     with FlinkSourceTestSupport[RECORD]
-    with TestDataGenerator
-    with LazyLogging {
+    with TestDataGenerator {
 
   import scala.jdk.CollectionConverters._
 
@@ -99,105 +87,12 @@ class TableSource(
 //  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
 
-  override def generateTestData(size: Int): TestData = {
-    val classLoader = getClass.getClassLoader
+  private lazy val dataGenerator = new FlinkMiniClusterDataGenerator(tableDefinition.toFlinkSchema)
 
-    // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
-    // the necessary classes
-    ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      // TODO: check if this miniCluster env releases memory properly and if not, refactor to reuse one minicluster per all usages
-      val tableEnv = TableEnvironment.create(
-        EnvironmentSettings.newInstance.withConfiguration(miniClusterTestingEnvConfig).build()
-      )
-
-      tableEnv.createTable(
-        dataGenerationInputInternalTableName,
-        TableDescriptor
-          .forConnector("datagen")
-          .option("number-of-rows", size.toString)
-          .schema(tableDefinition.toFlinkSchema)
-          .build()
-      )
-
-      val tempDir    = Files.createTempDirectory("tableSourceDataDump-")
-      val tempDirUrl = tempDir.toUri.toURL
-      logger.debug(s"Created temporary directory for dumping test data at: '$tempDirUrl'")
-
-      val result = Try {
-        tableEnv.createTable(
-          dataGenerationOutputFileInternalTableName,
-          TableDescriptor
-            .forConnector("filesystem")
-            .option("path", tempDirUrl.toString)
-            .format("json")
-            .schema(tableDefinition.toFlinkSchema)
-            .build()
-        )
-
-        val inputTable = tableEnv.from(dataGenerationInputInternalTableName)
-        inputTable.insertInto(dataGenerationOutputFileInternalTableName).execute().await()
-
-        val outputFiles: List[Path] = {
-          val dirStream: DirectoryStream[Path] = Files.newDirectoryStream(tempDir)
-          val outputFiles                      = dirStream.asScala.toList
-          dirStream.close()
-          outputFiles
-        }
-
-        val records = outputFiles
-          .flatMap(f => FileUtils.readLines(f.toFile, StandardCharsets.UTF_8).asScala)
-          .map(parse)
-          .sequence
-          .getOrElse(throw new IllegalStateException("Couldn't parse record from test data dump"))
-
-        TestData(records.map(TestRecord(_)))
-      }
-      tryToDeleteDirectoryWithLogging(tempDir)
-      result.get
-    }
-  }
-
-  private def tryToDeleteDirectoryWithLogging(dirPath: Path): Unit = Try {
-    Files
-      .walk(dirPath)
-      .sorted(java.util.Comparator.reverseOrder())
-      .forEach(path => Files.deleteIfExists(path))
-    logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dirPath.toUri.toURL}'")
-  } match {
-    case Failure(e) =>
-      logger.error(
-        s"Couldn't properly delete temporary test data dumping directory at: '${dirPath.toUri.toURL}'. Exception thrown: $e"
-      )
-    case Success(_) => ()
-  }
-
-  // TODO: how to get path of jar cleaner? Through config?
-  private lazy val classPathUrlsForMiniClusterTestingEnv = List(
-    "components/flink-table/flinkTable.jar"
-  ).map(Path.of(_).toUri.toURL)
-
-  private lazy val miniClusterTestingEnvConfig = {
-    val conf = new Configuration()
-
-    // parent-first - otherwise linkage error (loader constraint violation, a different class with the same name was
-    // previously loaded by 'app') for class 'org.apache.commons.math3.random.RandomDataGenerator'
-    conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
-
-    // without this, on Flink taskmanager level the classloader is basically empty
-    conf.set(
-      PipelineOptions.CLASSPATHS,
-      classPathUrlsForMiniClusterTestingEnv.map(_.toString).asJava
-    )
-    conf.set(CoreOptions.DEFAULT_PARALLELISM, miniClusterTestingEnvParallelism)
-    conf
-  }
-
+  override def generateTestData(size: Int): TestData = dataGenerator.generateTestData(size)
 }
 
 object TableSource {
-  private type RECORD = java.util.Map[String, Any]
-  private val filteringInternalViewName                 = "filteringView"
-  private val dataGenerationInputInternalTableName      = "testDataInputTable"
-  private val dataGenerationOutputFileInternalTableName = "testDataOutputTable"
-  private val miniClusterTestingEnvParallelism          = Int.box(1)
+  type RECORD = java.util.Map[String, Any]
+  private val filteringInternalViewName = "filteringView"
 }
