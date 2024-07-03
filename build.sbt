@@ -1812,13 +1812,10 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-table"                 % flinkV,
         "org.apache.flink" % "flink-table-api-java"        % flinkV,
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
-        "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
-        "org.apache.flink" % "flink-json"                  % flinkV,
       )
     }
   )
