@@ -7,7 +7,6 @@ import org.hamcrest.text.MatchesPattern
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -30,18 +29,9 @@ class BatchDataGenerationSpec
     val flinkDateTimeRegex                = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}"""
     val flinkDatagenStringRegex           = """[a-z\d]{100}"""
     val flinkDecimalWith15Precision2Scale = """\d{13}\.\d{0,2}"""
-    val expectedRegex =
-      s"""|\\{
-         |   "sourceId":"sourceId",
-         |   "record":
-         |     \\{
-         |         "datetime":"$flinkDateTimeRegex",
-         |         "client_id":"$flinkDatagenStringRegex",
-         |         "amount":$flinkDecimalWith15Precision2Scale,
-         |         "date":"$flinkDatagenStringRegex"
-         |     \\}
-         |\\}
-         |""".stripMargin.replace("\n", "").replace(" ", "")
+    val recordRegex =
+      s"""\\{"datetime":"$flinkDateTimeRegex","client_id":"$flinkDatagenStringRegex","amount":$flinkDecimalWith15Precision2Scale\\}"""
+    val expectedRegex = s"""\\{"sourceId":"sourceId","record":$recordRegex\\}"""
 
     given()
       .applicationState(
