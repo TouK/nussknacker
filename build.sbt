@@ -1803,7 +1803,6 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka"))
     componentsUtils    % Provided
   )
 
-// TODO: check if any flink-table / connector / format dependencies' scope can be limited
 lazy val flinkTableApiComponents = (project in flink("components/table"))
   .settings(commonSettings)
   .settings(assemblyNoScala("flinkTable.jar"): _*)
