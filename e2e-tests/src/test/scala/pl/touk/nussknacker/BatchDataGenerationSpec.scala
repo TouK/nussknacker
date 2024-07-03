@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
@@ -19,14 +20,16 @@ class BatchDataGenerationSpec
     with NuRestAssureExtensions
     with NuRestAssureMatchers {
 
-  "Generate file endpoint should generate records with randomized values" in {
-    createBatchScenario(simpleBatchTableScenario.name.value)
+  private val simpleBatchTableScenario = ScenarioBuilder
+    .streaming("SumTransactions")
+    .source("sourceId", "table", "Table" -> "'transactions'".spel)
+    .emptySink("end", "dead-end")
 
+  "Generate file endpoint should generate records with randomized values" in {
 //    TODO local: how to do this cleanly?
     val flinkDateTimeRegex                = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}"""
     val flinkDatagenStringRegex           = """[a-z\d]{100}"""
     val flinkDecimalWith15Precision2Scale = """\d{13}\.\d{0,2}"""
-
     val expectedRegex =
       s"""|\\{
          |   "sourceId":"sourceId",
@@ -41,6 +44,9 @@ class BatchDataGenerationSpec
          |""".stripMargin.replace("\n", "").replace(" ", "")
 
     given()
+      .applicationState(
+        createBatchScenario(simpleBatchTableScenario.name.value)
+      )
       .when()
       .request()
       .preemptiveBasicAuth("admin", "admin")
@@ -68,10 +74,5 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(201)
   }
-
-  private lazy val simpleBatchTableScenario = ScenarioBuilder
-    .streaming("SumTransactions")
-    .source("sourceId", "table", "Table" -> Expression.spel("'transactions'"))
-    .emptySink("end", "dead-end")
 
 }
