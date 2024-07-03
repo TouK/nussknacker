@@ -50,15 +50,15 @@ class SpelExpressionSuggester(
         validationContext
       )
 
-    val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
+    lazy val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
 
-    val futureSuggestionsAfterTruncatingExpressionByCaretPositionOption = expressionSuggestionsAux(
+    lazy val futureSuggestionsAfterTruncatingExpressionByCaretPositionOption = expressionSuggestionsAux(
       newExpression,
       caretPosition2d.normalizedCaretPosition(newExpression.expression),
       validationContext
     )
 
-    val allFutureSuggestionOptions =
+    lazy val allFutureSuggestionOptions =
       List(futureSuggestionsOption, futureSuggestionsAfterTruncatingExpressionByCaretPositionOption)
 
     val firstNonEmptySuggestionFutureOption = allFutureSuggestionOptions.collectFirst { case some @ Some(_) =>
