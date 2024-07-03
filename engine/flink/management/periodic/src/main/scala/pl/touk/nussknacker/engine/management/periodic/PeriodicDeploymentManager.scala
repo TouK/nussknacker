@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.engine.management.periodic.Utils.{gracefulStopActor, runSafely}
+import pl.touk.nussknacker.engine.management.periodic.Utils.{runSafely, stopActorAndWaitUntilItsNameIsFree}
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.service.{
@@ -73,8 +73,8 @@ object PeriodicDeploymentManager {
 
     val toClose = () => {
       runSafely(listener.close())
-      runSafely(gracefulStopActor(deploymentActor, dependencies.actorSystem))
-      runSafely(gracefulStopActor(rescheduleFinishedActor, dependencies.actorSystem))
+      runSafely(stopActorAndWaitUntilItsNameIsFree(deploymentActor, dependencies.actorSystem))
+      runSafely(stopActorAndWaitUntilItsNameIsFree(rescheduleFinishedActor, dependencies.actorSystem))
       runSafely(db.close())
     }
     new PeriodicDeploymentManager(

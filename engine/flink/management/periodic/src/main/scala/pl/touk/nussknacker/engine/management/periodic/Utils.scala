@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import akka.actor.{ActorNotFound, ActorPath, ActorRef, ActorSystem}
-import akka.pattern.{AskTimeoutException, gracefulStop}
 import com.typesafe.scalalogging.LazyLogging
 
-import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{Await, ExecutionContext}
 
 object Utils extends LazyLogging {
 
-  private val GracefulStopTimeout    = 10 seconds
   private val ActorResolutionTimeout = 10 seconds
   private val ActorResolutionPause   = 50 milliseconds
   private val ActorResolutionRetries = 400
@@ -22,12 +18,13 @@ object Utils extends LazyLogging {
     case t: Throwable => logger.error("Error occurred, but skipping it", t)
   }
 
-  def gracefulStopActor(actorRef: ActorRef, actorSystem: ActorSystem): Unit = {
+  def stopActorAndWaitUntilItsNameIsFree(actorRef: ActorRef, actorSystem: ActorSystem): Unit = {
     import actorSystem.dispatcher
-    logger.info(s"Gracefully stopping $actorRef")
+    logger.info(s"Stopping $actorRef")
 
-    val gracefulStopFuture = for {
-      _ <- gracefulStop(actorRef, GracefulStopTimeout)
+    actorSystem.stop(actorRef)
+
+    val freeNameFuture = for {
       _ <- waitUntilActorNameIsFree( // this step is necessary because gracefulStop does not guarantee that the supervisor is notified of the name being freed
         actorRef.path,
         actorSystem
@@ -35,11 +32,11 @@ object Utils extends LazyLogging {
     } yield {}
 
     Await.result(
-      gracefulStopFuture,
-      GracefulStopTimeout + ActorResolutionRetries * (ActorResolutionTimeout + ActorResolutionPause) + (1 second)
+      freeNameFuture,
+      ActorResolutionRetries * (ActorResolutionTimeout + ActorResolutionPause) + (1 second)
     )
 
-    logger.info(s"Gracefully stopped $actorRef")
+    logger.info(s"Stopped $actorRef and ensured it's name is free")
   }
 
   private def waitUntilActorNameIsFree(actorPath: ActorPath, actorSystem: ActorSystem)(implicit e: ExecutionContext) = {
