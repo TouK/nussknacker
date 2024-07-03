@@ -58,16 +58,10 @@ class SpelExpressionSuggester(
       validationContext
     )
 
-    val firstNonEmptySuggestionFutureOption = futureSuggestionsOption match {
-      case Some(futureSuggestions) => Some(futureSuggestions)
-      case None =>
-        futureSuggestionsAfterTruncatingExpressionByCaretPositionOption match {
-          case Some(futureSuggestionsTruncated) => Some(futureSuggestionsTruncated)
-          case None                             => None
-        }
-    }
+    val firstNonEmptySuggestionFuture =
+      futureSuggestionsOption orElse futureSuggestionsAfterTruncatingExpressionByCaretPositionOption getOrElse successfulNil
 
-    firstNonEmptySuggestionFutureOption.getOrElse(successfulNil).map(_.toList.sortBy(_.methodName)).map(_.toList)
+    firstNonEmptySuggestionFuture.map(_.toList.sortBy(_.methodName)).map(_.toList)
   }
 
   private def expressionSuggestionsAux(
