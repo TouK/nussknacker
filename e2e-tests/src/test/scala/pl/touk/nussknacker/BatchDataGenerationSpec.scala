@@ -6,10 +6,11 @@ import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.text.MatchesPattern
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExtensions
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 import pl.touk.nussknacker.engine.spel.SpelExtension._
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, VeryPatientScalaFutures}
+import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 class BatchDataGenerationSpec
     extends AnyFreeSpecLike
@@ -17,21 +18,25 @@ class BatchDataGenerationSpec
     with Matchers
     with VeryPatientScalaFutures
     with NuRestAssureExtensions
-    with NuRestAssureMatchers {
+    with WithE2EInstallationExampleRestAssuredUsersExtensions {
 
   private val simpleBatchTableScenario = ScenarioBuilder
     .streaming("SumTransactions")
     .source("sourceId", "table", "Table" -> "'transactions'".spel)
     .emptySink("end", "dead-end")
 
-  "Generate file endpoint should generate records with randomized values" in {
-//    TODO local: how to do this cleanly?
-    val flinkDateTimeRegex                = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}"""
-    val flinkDatagenStringRegex           = """[a-z\d]{100}"""
-    val flinkDecimalWith15Precision2Scale = """\d{13}\.\d{0,2}"""
-    val recordRegex =
-      s"""\\{"datetime":"$flinkDateTimeRegex","client_id":"$flinkDatagenStringRegex","amount":$flinkDecimalWith15Precision2Scale\\}"""
-    val expectedRegex = s"""\\{"sourceId":"sourceId","record":$recordRegex\\}"""
+  private val designerServiceUrl = "http://localhost:8080"
+
+  "Generate file endpoint should generate records with randomized values for scenario with table source" in {
+    val expectedRecordRegex = {
+      val timestampRegex                    = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}"""
+      val stringRegex                       = """[a-z\d]{100}"""
+      val decimalWith15Precision2ScaleRegex = """\d{13}\.\d{0,2}"""
+      val recordRegex =
+        s"""\\{"datetime":"$timestampRegex","client_id":"$stringRegex","amount":$decimalWith15Precision2ScaleRegex\\}"""
+      s"""\\{"sourceId":"sourceId","record":$recordRegex\\}"""
+    }
+    val numberOfRecordsToGenerate = 1
 
     given()
       .applicationState(
@@ -39,19 +44,21 @@ class BatchDataGenerationSpec
       )
       .when()
       .request()
-      .preemptiveBasicAuth("admin", "admin")
+      .basicAuthAdmin()
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
-      .post(s"http://localhost:8080/api/testInfo/SumTransactions/generate/1")
+      .post(
+        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/$numberOfRecordsToGenerate"
+      )
       .Then()
       .statusCode(200)
-      .body(MatchesPattern.matchesPattern(expectedRegex))
+      .body(MatchesPattern.matchesPattern(expectedRecordRegex))
   }
 
   private def createBatchScenario(scenarioName: String): Unit = {
     given()
       .when()
       .request()
-      .preemptiveBasicAuth("admin", "admin")
+      .basicAuthAdmin()
       .jsonBody(s"""
                    |{
                    |    "name" : "$scenarioName",
@@ -60,7 +67,7 @@ class BatchDataGenerationSpec
                    |    "processingMode" : "Bounded-Stream"
                    |}
                    |""".stripMargin)
-      .post("http://localhost:8080/api/processes")
+      .post(s"$designerServiceUrl/api/processes")
       .Then()
       .statusCode(201)
   }
