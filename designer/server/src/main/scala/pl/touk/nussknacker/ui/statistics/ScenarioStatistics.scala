@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -24,6 +24,8 @@ object ScenarioStatistics {
   private val vowelsRegex = "[aeiouyAEIOUY-]"
 
   private val componentStatisticPrefix = "c_"
+
+  private val nameForCustom = "Custom"
 
   private def fromNussknackerPackage(component: ComponentDefinitionWithImplementation): Boolean =
     component.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")
@@ -83,26 +85,9 @@ object ScenarioStatistics {
         .mapValuesNow(_.toString)
   }
 
-  def getGeneralStatistics(
-      scenariosInputData: List[ScenarioStatisticsInputData],
-      components: List[ComponentDefinitionWithImplementation]
-  ): Map[String, String] = {
-    // Components are available independently from created scenarios
-    val componentsCount =
-      components
-        .groupBy(_.id)
-        .map { case (componentId, list) =>
-          if (fromNussknackerPackage(list.head)) {
-            componentId.toString
-          } else "Custom"
-        }
-        .toSet
-        .size
-
+  def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     if (scenariosInputData.isEmpty) {
-      emptyGeneralStatistics ++
-      Map(ComponentsCount -> componentsCount)
-        .map { case (k, v) => (k.toString, v.toString) }
+      emptyGeneralStatistics
     } else {
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
@@ -121,10 +106,7 @@ object ScenarioStatistics {
       //        Author stats
       val authorsCount = scenariosInputData.map(_.createdBy).toSet.size
       //        Fragment stats
-      val fragmentsUsedCount = scenariosInputData
-        .filterNot(_.isFragment)
-        .map(_.componentsAndFragmentsUsedCount.getOrElse(ComponentId(ComponentType.Fragment, "fragment"), 0))
-        .sorted
+      val fragmentsUsedCount   = scenariosInputData.filterNot(_.isFragment).map(_.fragmentsUsedCount).sorted
       val fragmentsUsedMedian  = calculateMedian(fragmentsUsedCount)
       val fragmentsUsedAverage = calculateAverage(fragmentsUsedCount)
       //          Uptime stats
@@ -143,58 +125,23 @@ object ScenarioStatistics {
           ).map { case (k, v) => (k.toString, v.toString) }
         }
       }
-      // Components usage stat
-      val componentsUsedMap = scenariosInputData
-        .map(_.componentsAndFragmentsUsedCount)
-        .flatMap(_.toList)
-        .filterNot(_._1.`type` == ComponentType.Fragment)
-        .map { case (componentId, usages) =>
-          if (components.exists(component =>
-              component.id == componentId &&
-                fromNussknackerPackage(component)
-            )) {
-            (componentId.toString, usages)
-          } else {
-            ("Custom", usages)
-          }
-        }
-        .groupBy(_._1)
-        .map { case (componentId, listOfUsages) =>
-          val usages = listOfUsages.map { case (_, usage) =>
-            usage
-          }.sum
-          (mapNameToStat(componentId), usages.toString)
-        }
-
-      val componentsCount =
-        components
-          .groupBy(_.id)
-          .map { case (componentId, list) =>
-            if (list.head.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
-              componentId.toString
-            } else "Custom"
-          }
-          .toSet
-          .size
 
       Map(
-        NodesMedian              -> nodesMedian,
-        NodesAverage             -> nodesAverage,
-        NodesMax                 -> nodesMax,
-        NodesMin                 -> nodesMin,
-        CategoriesCount          -> categoriesCount,
-        VersionsMedian           -> versionsMedian,
-        VersionsAverage          -> versionsAverage,
-        VersionsMax              -> versionsMax,
-        VersionsMin              -> versionsMin,
-        AuthorsCount             -> authorsCount,
-        FragmentsUsedMedian      -> fragmentsUsedMedian,
-        FragmentsUsedAverage     -> fragmentsUsedAverage,
-        ComponentsCount -> componentsCount
+        NodesMedian          -> nodesMedian,
+        NodesAverage         -> nodesAverage,
+        NodesMax             -> nodesMax,
+        NodesMin             -> nodesMin,
+        CategoriesCount      -> categoriesCount,
+        VersionsMedian       -> versionsMedian,
+        VersionsAverage      -> versionsAverage,
+        VersionsMax          -> versionsMax,
+        VersionsMin          -> versionsMin,
+        AuthorsCount         -> authorsCount,
+        FragmentsUsedMedian  -> fragmentsUsedMedian,
+        FragmentsUsedAverage -> fragmentsUsedAverage,
       )
         .map { case (k, v) => (k.toString, v.toString) } ++
-        uptimeStatsMap ++
-        componentsUsedMap
+        uptimeStatsMap
     }
   }
 
@@ -220,6 +167,43 @@ object ScenarioStatistics {
         CommentsAverage    -> commentsAverage
       ).map { case (k, v) => (k.toString, v.toString) }
     }
+  }
+
+  def getComponentStatistics(
+      designerWideUsage: Map[DesignerWideComponentId, Long],
+      components: List[ComponentDefinitionWithImplementation]
+  ): Map[String, String] = {
+    val componentsCount =
+      components
+        .groupBy(_.id)
+        .map { case (componentId, list) =>
+          if (fromNussknackerPackage(list.head)) {
+            componentId.toString
+          } else nameForCustom
+        }
+        .size
+
+    val componentUsages = {
+      designerWideUsage
+        .map { case (designerWideId, usages) =>
+          val componentIdOrCustom = components.find(_.designerWideId == designerWideId) match {
+            case Some(componentDefinition) =>
+              if (fromNussknackerPackage(componentDefinition)) {
+                componentDefinition.id.toString
+              } else nameForCustom
+            case None => nameForCustom
+          }
+          (componentIdOrCustom, usages)
+        }
+        .groupBy(_._1)
+        .mapValuesNow(_.values.sum)
+        .map { case (k, v) => (mapNameToStat(k), v.toString) }
+    }
+
+    Map(
+      ComponentsCount -> componentsCount
+    ).map { case (k, v) => (k.toString, v.toString) } ++
+      componentUsages
   }
 
   // We have four dimensions:

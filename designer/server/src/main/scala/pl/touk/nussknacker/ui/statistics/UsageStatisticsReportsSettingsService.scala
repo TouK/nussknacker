@@ -3,16 +3,16 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
-import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
+import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
@@ -35,6 +35,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
+      componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
       componentList: List[ComponentDefinitionWithImplementation],
       designerClock: Clock
@@ -63,7 +64,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
                 scenarioCategory = scenario.processCategory,
                 scenarioVersion = scenario.processVersionId,
                 createdBy = scenario.createdBy,
-                componentsAndFragmentsUsedCount = getComponentsUsedInScenario(scenario.scenarioGraph),
+                fragmentsUsedCount = getFragmentsUsedInScenario(scenario.scenarioGraph),
                 lastDeployedAction = scenario.lastDeployedAction,
                 scenarioId = scenario.processId
               )
@@ -79,6 +80,10 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
     }
 
+    def fetchComponentUsage(): Future[Map[DesignerWideComponentId, Long]] = {
+      componentService.getUsagesPerDesignerWideComponentId
+    }
+
     new UsageStatisticsReportsSettingsService(
       config,
       urlConfig,
@@ -87,36 +92,20 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fetchActivity,
       () => ignoringErrorsFEStatisticsRepository.read(),
       componentList,
+      fetchComponentUsage,
       designerClock
     )
 
   }
 
-  private def getComponentsUsedInScenario(scenarioGraph: Option[ScenarioGraph]): Map[ComponentId, Int] = {
+  private def getFragmentsUsedInScenario(scenarioGraph: Option[ScenarioGraph]): Int = {
     scenarioGraph match {
       case Some(graph) =>
-        graph.nodes
-          .map {
-            case node: node.CustomNodeData        => ComponentId(ComponentType.CustomComponent, node.componentId)
-            case node: node.Source                => ComponentId(ComponentType.Source, node.componentId)
-            case node: node.Sink                  => ComponentId(ComponentType.Sink, node.componentId)
-            case _: node.VariableBuilder          => BuiltInComponentId.RecordVariable
-            case _: node.Variable                 => BuiltInComponentId.Variable
-            case node: node.Enricher              => ComponentId(ComponentType.Service, node.componentId)
-            case node: node.Processor             => ComponentId(ComponentType.Service, node.componentId)
-            case _: FragmentInput                 => ComponentId(ComponentType.Fragment, "fragment")
-            case _: node.FragmentUsageOutput      => ComponentId(ComponentType.Fragment, "fragment")
-            case _: node.Filter                   => BuiltInComponentId.Filter
-            case _: node.Switch                   => BuiltInComponentId.Choice
-            case _: node.Split                    => BuiltInComponentId.Split
-            case _: node.FragmentInputDefinition  => BuiltInComponentId.FragmentInputDefinition
-            case _: node.FragmentOutputDefinition => BuiltInComponentId.FragmentOutputDefinition
-            case node: node.BranchEndData         => ComponentId(ComponentType.Sink, node.id)
-          }
-          .filterNot(comp => comp.`type` == ComponentType.BuiltIn && (comp.name == "input" || comp.name == "output"))
-          .groupBy(identity)
-          .map { case (id, list) => (id, list.size) }
-      case None => Map.empty
+        graph.nodes.map {
+          case _: FragmentInput => 1
+          case _                => 0
+        }.sum
+      case None => 0
     }
   }
 
@@ -132,6 +121,7 @@ class UsageStatisticsReportsSettingsService(
     ],
     fetchFeStatistics: () => Future[Map[String, Long]],
     components: List[ComponentDefinitionWithImplementation],
+    componentUsage: () => Future[Map[DesignerWideComponentId, Long]],
     designerClock: Clock
 )(implicit ec: ExecutionContext) {
   private val statisticsUrls    = new StatisticsUrls(urlConfig)
@@ -158,16 +148,18 @@ class UsageStatisticsReportsSettingsService(
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
       scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
       basicStatistics     = determineBasicStatistics(config)
-      generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData, components)
+      generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
+      componentDesignerWideUsage <- EitherT.liftF(componentUsage())
+      componentStatistics = ScenarioStatistics.getComponentStatistics(componentDesignerWideUsage, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
       activityStatistics ++
-//      componentStatistics ++
+      componentStatistics ++
       designerUptimeStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
@@ -203,7 +195,7 @@ private[statistics] case class ScenarioStatisticsInputData(
     scenarioCategory: String,
     scenarioVersion: VersionId,
     createdBy: String,
-    componentsAndFragmentsUsedCount: Map[ComponentId, Int],
+    fragmentsUsedCount: Int,
     lastDeployedAction: Option[ProcessAction],
     scenarioId: Option[ProcessId]
 )

@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
   emptyUptimeStats
 }
 
-import java.net.URI
 import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -109,7 +108,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
+      fragmentsUsedCount = 0,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -138,7 +137,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
+      fragmentsUsedCount = 0,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -166,7 +165,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
+      fragmentsUsedCount = 0,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -195,7 +194,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
+      fragmentsUsedCount = 0,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -225,7 +224,7 @@ class ScenarioStatisticsTest
       scenarioCategory = "Category1",
       scenarioVersion = VersionId(2),
       createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
+      fragmentsUsedCount = 0,
       lastDeployedAction = None,
       scenarioId = None
     )
@@ -264,6 +263,7 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
+      () => Future.successful(Map.empty),
       clock
     ).prepareStatisticsUrl().futureValue.value
 
@@ -284,6 +284,7 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
+      () => Future.successful(componentUsagesMap),
       clock
     ).determineQueryParams().value.futureValue.value
 
@@ -293,58 +294,6 @@ class ScenarioStatisticsTest
   }
 
   test("should combined statistics for all scenarios") {
-    val nonRunningScenario = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.NotDeployed),
-      nodesCount = 3,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      componentsAndFragmentsUsedCount = Map(ComponentId(ComponentType.Fragment, "fragment") -> 1),
-      lastDeployedAction = None,
-      scenarioId = None
-    )
-    val runningScenario = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.Running),
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
-      lastDeployedAction = None,
-      scenarioId = None
-    )
-    val fragment = ScenarioStatisticsInputData(
-      isFragment = true,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      None,
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      componentsAndFragmentsUsedCount = Map.empty,
-      lastDeployedAction = None,
-      scenarioId = None
-    )
-    val k8sRRScenario = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.RequestResponse,
-      DeploymentManagerType("lite-k8s"),
-      Some(SimpleStateStatus.Running),
-      nodesCount = 4,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(1),
-      createdBy = "user",
-      componentsAndFragmentsUsedCount = Map(ComponentId(ComponentType.Fragment, "fragment") -> 2),
-      lastDeployedAction = None,
-      scenarioId = None
-    )
 
     val params = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
@@ -354,6 +303,7 @@ class ScenarioStatisticsTest
       _ => Future.successful(Right(processActivityList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
+      () => Future.successful(componentUsagesMap),
       clock
     ).determineQueryParams().value.futureValue.value
 
@@ -365,13 +315,13 @@ class ScenarioStatisticsTest
       CommentsTotal          -> 1,
       CommentsAverage        -> 1,
       VersionsMedian         -> 2,
-      VersionsMax            -> 2,
+      VersionsMax            -> 3,
       VersionsMin            -> 1,
-      VersionsAverage        -> 1,
+      VersionsAverage        -> 2,
       UptimeInSecondsAverage -> 0,
       UptimeInSecondsMax     -> 0,
       UptimeInSecondsMin     -> 0,
-      ComponentsCount        -> 3,
+      ComponentsCount        -> 2,
       FragmentsUsedMedian    -> 1,
       FragmentsUsedAverage   -> 1,
       NodesMedian            -> 3,
@@ -401,9 +351,9 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
+      () => Future.successful(Map.empty),
       clock
     ).determineQueryParams().value.futureValue.value
 
@@ -420,10 +370,7 @@ class ScenarioStatisticsTest
     scenarioCategory = "Category1",
     scenarioVersion = VersionId(2),
     createdBy = "user",
-    componentsAndFragmentsUsedCount = Map(
-      ComponentId(ComponentType.Fragment, "fragment")      -> 1,
-      ComponentId(ComponentType.Service, "accountService") -> 3
-    ),
+    fragmentsUsedCount = 1,
     lastDeployedAction = None,
     scenarioId = None
   )
@@ -435,9 +382,9 @@ class ScenarioStatisticsTest
     Some(SimpleStateStatus.Running),
     nodesCount = 2,
     scenarioCategory = "Category1",
-    scenarioVersion = VersionId(2),
+    scenarioVersion = VersionId(3),
     createdBy = "user",
-    componentsAndFragmentsUsedCount = Map(ComponentId(ComponentType.CustomComponent, "custom-component") -> 1),
+    fragmentsUsedCount = 0,
     lastDeployedAction = None,
     scenarioId = None
   )
@@ -449,9 +396,9 @@ class ScenarioStatisticsTest
     None,
     nodesCount = 2,
     scenarioCategory = "Category1",
-    scenarioVersion = VersionId(2),
+    scenarioVersion = VersionId(1),
     createdBy = "user",
-    componentsAndFragmentsUsedCount = Map.empty,
+    fragmentsUsedCount = 0,
     lastDeployedAction = None,
     scenarioId = None
   )
@@ -465,10 +412,7 @@ class ScenarioStatisticsTest
     scenarioCategory = "Category1",
     scenarioVersion = VersionId(2),
     createdBy = "user",
-    componentsAndFragmentsUsedCount = Map(
-      ComponentId(ComponentType.Fragment, "fragment")      -> 2,
-      ComponentId(ComponentType.Service, "accountService") -> 2
-    ),
+    fragmentsUsedCount = 2,
     lastDeployedAction = None,
     scenarioId = None
   )
@@ -521,6 +465,11 @@ class ScenarioStatisticsTest
   private def componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
     ComponentDefinitionWithImplementation.withEmptyConfig("choice", TestService),
+  )
+
+  private def componentUsagesMap: Map[DesignerWideComponentId, Long] = Map(
+    DesignerWideComponentId("service-accountservice") -> 5L,
+    DesignerWideComponentId("someCustomComponent")    -> 1L
   )
 
   object TestService extends Service {
