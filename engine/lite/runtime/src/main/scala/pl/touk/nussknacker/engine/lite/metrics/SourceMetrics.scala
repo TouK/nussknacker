@@ -9,7 +9,7 @@ import javax.annotation.concurrent.ThreadSafe
 @ThreadSafe
 class SourceMetrics(sourceIds: Iterable[SourceId]) {
 
-  private val sourceMetrics = sourceIds.map(sourceId => sourceId -> new OneSourceMetrics(sourceId.value)).toMap
+  private val sourceMetrics = sourceIds.map(sourceId => sourceId -> new OneSourceMetrics(sourceId.value, "")).toMap
 
   def registerOwnMetrics(metricsProvider: MetricsProviderForScenario): Unit = {
     sourceMetrics.values.foreach(_.registerOwnMetrics(metricsProvider))

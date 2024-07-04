@@ -8,15 +8,18 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.process.compiler.MetricsProviderForFlink.createMetricsProvider
 import pl.touk.nussknacker.engine.util.metrics.common.OneSourceMetrics
 
-private[registrar] class SourceMetricsFunction[T](sourceId: String, componentUseCase: ComponentUseCase)
-    extends ProcessFunction[T, T] {
+private[registrar] class SourceMetricsFunction[T](
+    sourceId: String,
+    componentUseCase: ComponentUseCase,
+    scenarioName: String
+) extends ProcessFunction[T, T] {
 
   @transient private var metrics: OneSourceMetrics = _
   private val LOG                                  = LoggerFactory.getLogger(classOf[SourceMetricsFunction[T]])
 
   override def open(parameters: Configuration): Unit = {
     LOG.info(s"-----OPENING SOURCE METRICS with $parameters")
-    metrics = new OneSourceMetrics(sourceId)
+    metrics = new OneSourceMetrics(sourceId, scenarioName)
     val metricsProvider = createMetricsProvider(componentUseCase, getRuntimeContext)
     metrics.registerOwnMetrics(metricsProvider)
   }

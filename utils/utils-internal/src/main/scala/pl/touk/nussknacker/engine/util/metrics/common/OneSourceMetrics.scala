@@ -1,15 +1,19 @@
 package pl.touk.nussknacker.engine.util.metrics.common
 
 import cats.data.NonEmptyList
-import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
+import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import pl.touk.nussknacker.engine.util.metrics._
 
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicLong
 
-private[engine] class OneSourceMetrics(sourceId: String, clock: Clock = Clock.systemDefaultZone()) {
+private[engine] class OneSourceMetrics(
+    sourceId: String,
+    scenarioName: String,
+    clock: Clock = Clock.systemDefaultZone()
+) {
 
-  private val tags            = Map(nodeIdTag -> sourceId)
+  private val tags            = Map(nodeIdTag -> sourceId, scenarioIdTag -> scenarioName)
   private val lastElementTime = new AtomicLong(0)
 
   private var registeredMetricsOpt = Option.empty[OneSourceRegisteredMetrics]
