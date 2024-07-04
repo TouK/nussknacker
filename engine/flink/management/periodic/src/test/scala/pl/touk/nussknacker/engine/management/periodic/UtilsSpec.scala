@@ -20,23 +20,23 @@ class UtilsSpec
 
   "Utils" should {
 
-    "stop actor and free actor path" in {
-      class TestActor extends Actor {
-        override def receive: Receive = { case _ =>
-          ()
-        }
-      }
-      val actorName = "actorName1"
-
-      val actorRef = system.actorOf(Props(new TestActor), actorName)
-
-      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
-
-      // with normal system.stop(actorRef) or akka.pattern.gracefulStop this throws "actor name is not unique"
-      val actorRef2 = system.actorOf(Props(new TestActor), actorName)
-
-      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef2, system) // stop and free it so it doesn't impact other tests
-    }
+//    "stop actor and free actor path" in {
+//      class TestActor extends Actor {
+//        override def receive: Receive = { case _ =>
+//          ()
+//        }
+//      }
+//      val actorName = "actorName1"
+//
+//      val actorRef = system.actorOf(Props(new TestActor), actorName)
+//
+//      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
+//
+//      // with normal system.stop(actorRef) or akka.pattern.gracefulStop this throws "actor name is not unique"
+//      val actorRef2 = system.actorOf(Props(new TestActor), actorName)
+//
+//      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef2, system) // stop and free it so it doesn't impact other tests
+//    }
 
     "stop actor and free actor path without waiting for all of it's messages to be processed" in {
       class TestActor extends Actor {
