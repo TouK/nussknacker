@@ -4,9 +4,11 @@ import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
 import org.hamcrest.core.IsEqual
+import org.hamcrest.text.MatchesPattern
 import pl.touk.nussknacker.test.NuRestAssureMatchers.equalsJson
 
 import java.nio.charset.StandardCharsets
+import scala.util.matching.Regex
 
 trait NuRestAssureExtensions {
 
@@ -109,6 +111,17 @@ trait NuRestAssureExtensions {
       validatableResponse
         .body(
           new IsEqual(body)
+        )
+    }
+
+  }
+
+  implicit class MatchPlainBody[T <: ValidatableResponse](validatableResponse: T) {
+
+    def matchPlainBodyWithRegex(regex: Regex): ValidatableResponse = {
+      validatableResponse
+        .body(
+          new MatchesPattern(regex.pattern)
         )
     }
 

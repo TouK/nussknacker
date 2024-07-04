@@ -29,12 +29,12 @@ class BatchDataGenerationSpec
 
   "Generate file endpoint should generate records with randomized values for scenario with table source" in {
     val expectedRecordRegex = {
-      val timestampRegex                    = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}"""
-      val stringRegex                       = """[a-z\d]{100}"""
-      val decimalWith15Precision2ScaleRegex = """\d{13}\.\d{0,2}"""
+      val timestampRegex                    = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}""".r
+      val stringRegex                       = """[a-z\d]{100}""".r
+      val decimalWith15Precision2ScaleRegex = """\d{0,13}\.\d{0,2}""".r
       val recordRegex =
-        s"""\\{"datetime":"$timestampRegex","client_id":"$stringRegex","amount":$decimalWith15Precision2ScaleRegex\\}"""
-      s"""\\{"sourceId":"sourceId","record":$recordRegex\\}"""
+        s"""\\{"datetime":"$timestampRegex","client_id":"$stringRegex","amount":$decimalWith15Precision2ScaleRegex}""".r
+      s"""\\{"sourceId":"sourceId","record":$recordRegex}""".r
     }
     val numberOfRecordsToGenerate = 1
 
@@ -51,7 +51,7 @@ class BatchDataGenerationSpec
       )
       .Then()
       .statusCode(200)
-      .body(MatchesPattern.matchesPattern(expectedRecordRegex))
+      .matchPlainBodyWithRegex(expectedRecordRegex)
   }
 
   private def createBatchScenario(scenarioName: String): Unit = {
