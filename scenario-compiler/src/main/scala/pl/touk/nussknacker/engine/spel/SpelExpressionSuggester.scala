@@ -18,6 +18,9 @@ import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
+import pl.touk.nussknacker.engine.util.CaretPosition2d
+import cats._
+import cats.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
@@ -34,12 +37,43 @@ class SpelExpressionSuggester(
   private val nuSpelNodeParser = new NuSpelNodeParser(typer)
   private val dictQueryService = uiDictServices.dictQueryService
 
-  def expressionSuggestions(expression: Expression, normalizedCaretPosition: Int, validationContext: ValidationContext)(
+  def expressionSuggestions(
+      expression: Expression,
+      caretPosition2d: CaretPosition2d,
+      validationContext: ValidationContext
+  )(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
+
+    val futureSuggestionsOption =
+      expressionSuggestionsAux(
+        expression,
+        caretPosition2d.normalizedCaretPosition(expression.expression),
+        validationContext
+      )
+
+    lazy val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
+
+    lazy val futureSuggestionsAfterTruncatingExpressionByCaretPositionOption = expressionSuggestionsAux(
+      newExpression,
+      caretPosition2d.normalizedCaretPosition(newExpression.expression),
+      validationContext
+    )
+
+    val firstNonEmptySuggestionFuture =
+      futureSuggestionsOption orElse futureSuggestionsAfterTruncatingExpressionByCaretPositionOption getOrElse successfulNil
+
+    firstNonEmptySuggestionFuture.map(_.toList.sortBy(_.methodName)).map(_.toList)
+  }
+
+  private def expressionSuggestionsAux(
+      expression: Expression,
+      normalizedCaretPosition: Int,
+      validationContext: ValidationContext
+  )(
       implicit ec: ExecutionContext
-  ): Future[List[ExpressionSuggestion]] = {
+  ): Option[Future[Iterable[ExpressionSuggestion]]] = {
     val spelExpression = expression.expression
     if (normalizedCaretPosition == 0) {
-      return successfulNil
+      return Some(successfulNil)
     }
     val previousChar = spelExpression.substring(normalizedCaretPosition - 1, normalizedCaretPosition)
     val shouldInsertDummyVariable =
@@ -246,8 +280,26 @@ class SpelExpressionSuggester(
         case _ => successfulNil
       }
     }
-    suggestions.getOrElse(successfulNil).map(_.toList.sortBy(_.methodName))
 
+    suggestions
+  }
+
+  private def truncateExpressionByCaretPosition2d(
+      expression: Expression,
+      caretPosition2d: CaretPosition2d
+  ): Expression = {
+    val transformedPlainExpression = expression.expression
+      .split("\n")
+      .toList
+      .zipWithIndex
+      .filter(_._2 <= caretPosition2d.row)
+      .map {
+        case (s, caretPosition2d.row) => s.take(caretPosition2d.column)
+        case (s, _)                   => s
+      }
+      .mkString("\n")
+
+    expression.copy(expression = transformedPlainExpression)
   }
 
   private def insertDummyVariable(s: String, index: Int): String = {

@@ -41,12 +41,12 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.engine.util.CaretPosition2d
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.security.AuthCredentials
-import pl.touk.nussknacker.ui.suggester.CaretPosition2d
 import pl.touk.nussknacker.ui.api.TapirCodecs.ScenarioNameCodec._
 import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodesError.{
   MalformedTypingResult,
