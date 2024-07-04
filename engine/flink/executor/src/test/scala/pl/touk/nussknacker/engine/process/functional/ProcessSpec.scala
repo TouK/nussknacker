@@ -320,8 +320,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
         process.metaData
           .copy(additionalFields =
             additionalFields.copy(properties =
-              additionalFields.properties ++ Map(StreamMetaData.useAsyncInterpretationName -> useAsync.toString)
-            )
+              additionalFields.properties ++ Map(StreamMetaData.useAsyncInterpretationName -> useAsync.toString))
           )
       )
 
