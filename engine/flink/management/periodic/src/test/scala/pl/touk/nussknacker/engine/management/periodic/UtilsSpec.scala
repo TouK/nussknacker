@@ -26,7 +26,7 @@ class UtilsSpec
           ()
         }
       }
-      val actorName = "actorName"
+      val actorName = "actorName1"
 
       val actorRef = system.actorOf(Props(new TestActor), actorName)
 
@@ -45,7 +45,7 @@ class UtilsSpec
           Thread.sleep(1000)
         }
       }
-      val actorName = "actorName"
+      val actorName = "actorName2"
 
       val actorRef = system.actorOf(Props(new TestActor), actorName)
 
