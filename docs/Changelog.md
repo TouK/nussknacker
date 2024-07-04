@@ -1,5 +1,9 @@
 # Changelog
 
+1.15.4 (5 July 2025)
+-------------------------
+* [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
+
 1.15.3 (24 June 2024)
 -------------------------
 * [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
