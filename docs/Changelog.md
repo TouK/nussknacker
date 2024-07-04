@@ -22,6 +22,7 @@
   in table name
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
   and arrays are serialized/deserialized more optimal in aggregates
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
 
 1.16.1 (16 July 2024)
 -------------------------
