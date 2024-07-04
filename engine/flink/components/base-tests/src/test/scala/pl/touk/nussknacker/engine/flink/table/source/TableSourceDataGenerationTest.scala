@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.source
 
-import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
