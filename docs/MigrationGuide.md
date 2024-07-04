@@ -8,7 +8,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#6248](https://github.com/TouK/nussknacker/pull/6248) Removed implicit conversion from string to SpeL
   expression (`pl.touk.nussknacker.engine.spel.Implicits`). The conversion should be replaced by
-  `pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion.spel`. 
+  `pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion.spel`.
+* [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
+  setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
+  is only considered in case of Sinks). Create proper topics manually if needed.
 
 ## In version 1.16.0 (Not released yet)
 
@@ -48,6 +51,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
   * `deploymentSynchronisationSupport` field was added for purpose of synchronisation of statuses. If synchronisation mechanism is not used in context of given DM, 
     you should return `NoDeploymentSynchronisationSupport` object. The synchronisation mechanism is used by `/api/deployments/{deploymentId}/status` endpoint. Other endpoints don't use it.
+* [#6249](https://github.com/TouK/nussknacker/pull/6249) `TopicName` trait was introduced and is used in context of specialized topic name (for kafka sources and sinks). Moreover, `UnspecializedTopicName` case class was added and is used in places when the specialization is unknown/not needed. 
 
 ### Configuration changes
 

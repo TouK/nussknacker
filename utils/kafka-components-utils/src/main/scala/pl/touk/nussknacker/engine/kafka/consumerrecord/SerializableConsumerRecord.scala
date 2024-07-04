@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.kafka.consumerrecord
 import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
 import java.util.Optional
@@ -29,7 +30,7 @@ case class SerializableConsumerRecord[K, V](
     */
   @silent("deprecated") // using deprecated constructor for Flink 1.14/15 compatibility
   def toKafkaConsumerRecord(
-      formatterTopic: String,
+      formatterTopic: TopicName.ForSource,
       serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])
   ): ConsumerRecord[Array[Byte], Array[Byte]] = {
     // serialize Key and Value to Array[Byte]
@@ -37,7 +38,7 @@ case class SerializableConsumerRecord[K, V](
     // use defaults and ignore checksum, serializedKeySize and serializedValueSize
 
     new ConsumerRecord(
-      topic.getOrElse(formatterTopic),
+      topic.getOrElse(formatterTopic.name),
       partition.getOrElse(0),
       offset.getOrElse(0L),
       timestamp.getOrElse(ConsumerRecord.NO_TIMESTAMP),

@@ -19,7 +19,7 @@ import java.io.{File => JFile}
 trait DockerBasedInstallationExampleNuEnvironment extends BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
   this: Suite =>
 
-  private lazy val specSetupService = unsafeContainerByServiceName("spec-setup")
+  private val specSetupService = unsafeContainerByServiceName("spec-setup")
 
   def loadFlinkStreamingScenarioFromResource(scenarioName: String, scenarioJsonFile: File): Unit = {
     val escapedScenarioJson = scenarioJsonFile.contentAsString().replaceAll("\"", "\\\\\"")

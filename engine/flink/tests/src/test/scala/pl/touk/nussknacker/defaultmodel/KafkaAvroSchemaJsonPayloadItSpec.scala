@@ -46,7 +46,7 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
       .source(
         "start",
         "kafka",
-        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input}'".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value         -> s"'${topicConfig.input.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(versionOption).spel
       )
       .filter("name-filter", "#input.first == 'Jan'".spel)
@@ -55,7 +55,7 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
         "kafka",
         KafkaUniversalComponentTransformer.sinkKeyParamName.value   -> "".spel,
         KafkaUniversalComponentTransformer.sinkValueParamName.value -> "#input".spel,
-        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'${topicConfig.output}'".spel,
+        KafkaUniversalComponentTransformer.topicParamName.value     -> s"'${topicConfig.output.name}'".spel,
         KafkaUniversalComponentTransformer.schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
         KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> s"true".spel,
         KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${validationMode.name}'".spel
@@ -69,7 +69,7 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
     logger.info(s"Message sent successful: $sendResult")
 
     run(avroSchemedJsonPayloadProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val result = kafkaClient.createConsumer().consumeWithJson[Json](topicConfig.output).take(1).head
+      val result = kafkaClient.createConsumer().consumeWithJson[Json](topicConfig.output.name).take(1).head
 
       result.timestamp shouldBe timeAgo
       result.message() shouldEqual parseJson(givenMatchingJsonSchemedObj)
