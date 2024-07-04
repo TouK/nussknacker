@@ -93,6 +93,6 @@ class TableSource(
 }
 
 object TableSource {
-  type RECORD = java.util.Map[String, Any]
+  private type RECORD = java.util.Map[String, Any]
   private val filteringInternalViewName = "filteringView"
 }
