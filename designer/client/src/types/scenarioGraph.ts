@@ -4,7 +4,6 @@ import { Edge, EdgeType } from "./edge";
 import { NodeType, PropertiesType } from "./node";
 import { ComponentGroup } from "./component";
 import { ScenarioPropertyConfig } from "../components/graph/node-modal/ScenarioProperty";
-import { FixedValuesOption } from "../components/graph/node-modal/fragment-input-definition/item";
 
 export type ScenarioGraphWithName = {
     processName: string;
@@ -23,6 +22,7 @@ export type ProcessAdditionalFields = {
     description: string | null;
     properties: { [key: string]: string };
     metaDataType: string;
+    showDescription?: boolean;
 };
 
 export type CustomAction = {

@@ -32,7 +32,8 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
        |        "useAsyncInterpretation" : "",
        |        "checkpointIntervalInSeconds" : ""
        |      },
-       |      "metaDataType" : "StreamMetaData"
+       |      "metaDataType" : "StreamMetaData",
+       |      "showDescription" : false
        |    }
        |  },
        |  "nodes" : [
