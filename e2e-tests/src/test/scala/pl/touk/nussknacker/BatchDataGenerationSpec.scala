@@ -3,7 +3,6 @@ package pl.touk.nussknacker
 import io.circe.syntax.EncoderOps
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
-import org.hamcrest.text.MatchesPattern
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExtensions
