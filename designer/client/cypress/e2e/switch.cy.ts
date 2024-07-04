@@ -40,7 +40,7 @@ describe("Process", () => {
             cy.get("[data-testid=window]").should("not.exist");
             cy.get("[data-testid=graphPage]").matchImage({
                 screenshotConfig: {
-                    blackout: ["> div > :not(#nk-graph-main)"],
+                    blackout: ["> div > :not(#nk-graph-main) > div"],
                 },
             });
         });

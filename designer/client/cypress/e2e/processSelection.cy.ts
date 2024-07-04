@@ -3,7 +3,7 @@ describe("Process mouse drag", () => {
     const snapshotParams: Cypress.MatchImageOptions = {
         maxDiffThreshold: 0.001,
         screenshotConfig: {
-            blackout: ["> div > div:not(#nk-graph-main)"],
+            blackout: ["> div > div:not(#nk-graph-main) > div"],
         },
     };
 

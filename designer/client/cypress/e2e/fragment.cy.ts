@@ -383,14 +383,15 @@ describe("Fragment", () => {
 
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
         cy.contains("sinks").should("exist").scrollIntoView();
-        cy.getNode("output").as("output");
+        cy.getNode("output").as("output").should("be.visible");
+        cy.wait(500);
         cy.contains("dead-end")
             .first()
             .should("be.visible")
             .drag("@output", {
                 target: {
-                    x: 0,
-                    y: 0,
+                    x: 30,
+                    y: 30,
                 },
                 force: true,
             });
