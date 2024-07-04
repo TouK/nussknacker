@@ -184,7 +184,7 @@ object ScenarioStatistics {
         .size
 
     val componentUsages = {
-      designerWideUsage
+      designerWideUsage.toList
         .map { case (designerWideId, usages) =>
           val componentIdOrCustom = components.find(_.designerWideId == designerWideId) match {
             case Some(componentDefinition) =>
@@ -196,7 +196,7 @@ object ScenarioStatistics {
           (componentIdOrCustom, usages)
         }
         .groupBy(_._1)
-        .mapValuesNow(_.values.sum)
+        .mapValuesNow(list => list.map(_._2).sum)
         .map { case (k, v) => (mapNameToStat(k), v.toString) }
     }
 

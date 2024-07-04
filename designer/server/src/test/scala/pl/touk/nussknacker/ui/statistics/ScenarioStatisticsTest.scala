@@ -289,7 +289,7 @@ class ScenarioStatisticsTest
     ).determineQueryParams().value.futureValue.value
 
     params should contain("c_srvcccntsrvc" -> "5")
-    params should contain("c_cstm" -> "1")
+    params should contain("c_cstm" -> "2")
     params.keySet shouldNot contain("c_bltnchc")
   }
 
@@ -339,7 +339,7 @@ class ScenarioStatisticsTest
       UnknownDMCount         -> 0,
       ActiveScenarioCount    -> 2,
       "c_srvcccntsrvc"       -> 5,
-      "c_cstm"               -> 1,
+      "c_cstm"               -> 2,
     ).map { case (k, v) => (k.toString, v.toString) }
     params should contain allElementsOf expectedStats
   }
@@ -469,7 +469,8 @@ class ScenarioStatisticsTest
 
   private def componentUsagesMap: Map[DesignerWideComponentId, Long] = Map(
     DesignerWideComponentId("service-accountservice") -> 5L,
-    DesignerWideComponentId("someCustomComponent")    -> 1L
+    DesignerWideComponentId("someCustomComponent")    -> 1L,
+    DesignerWideComponentId("anotherCustomComponent") -> 1L,
   )
 
   object TestService extends Service {
