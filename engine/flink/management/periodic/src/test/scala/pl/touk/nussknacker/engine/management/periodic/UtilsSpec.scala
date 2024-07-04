@@ -26,14 +26,16 @@ class UtilsSpec
           ()
         }
       }
-      val actorName = "actorName1"
+      val actorName = "actorName"
 
       val actorRef = system.actorOf(Props(new TestActor), actorName)
 
       Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
 
       // with normal system.stop(actorRef) or akka.pattern.gracefulStop this throws "actor name is not unique"
-      system.actorOf(Props(new TestActor), actorName)
+      val actorRef2 = system.actorOf(Props(new TestActor), actorName)
+
+      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef2, system) // stop and free it so it doesn't impact other tests
     }
 
     "stop actor and free actor path without waiting for all of it's messages to be processed" in {
@@ -43,8 +45,7 @@ class UtilsSpec
           Thread.sleep(1000)
         }
       }
-      val actorName =
-        "actorName2" // has to be different from the previous test, because the actor created at the end of that can still live
+      val actorName = "actorName"
 
       val actorRef = system.actorOf(Props(new TestActor), actorName)
 
@@ -58,7 +59,9 @@ class UtilsSpec
       // with gracefulStop this times out, because the PoisonPill is queued after the many normal messages
       Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
 
-      system.actorOf(Props(new TestActor), actorName)
+      val actorRef2 = system.actorOf(Props(new TestActor), actorName)
+
+      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef2, system) // stop and free it so it doesn't impact other tests
     }
 
     "ignore exceptions inside runSafely block" in {
