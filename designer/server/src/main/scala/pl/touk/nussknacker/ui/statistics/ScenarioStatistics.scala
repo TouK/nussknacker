@@ -27,6 +27,8 @@ object ScenarioStatistics {
 
   private val nameForCustom = "Custom"
 
+  private val nameForFragment = "Fragment"
+
   private def fromNussknackerPackage(component: ComponentDefinitionWithImplementation): Boolean =
     component.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")
 
@@ -191,11 +193,12 @@ object ScenarioStatistics {
               if (fromNussknackerPackage(componentDefinition)) {
                 componentDefinition.id.toString
               } else nameForCustom
-            case None => nameForCustom
+            case None => nameForFragment
           }
           (componentIdOrCustom, usages)
         }
         .groupBy(_._1)
+        .removed(nameForFragment)
         .mapValuesNow(list => list.map(_._2).sum)
         .map { case (k, v) => (mapNameToStat(k), v.toString) }
     }

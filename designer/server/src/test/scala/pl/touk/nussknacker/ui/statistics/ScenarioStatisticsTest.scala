@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.statistics
 
+import custom.component.CustomComponentService
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.EitherValues
@@ -321,7 +322,7 @@ class ScenarioStatisticsTest
       UptimeInSecondsAverage -> 0,
       UptimeInSecondsMax     -> 0,
       UptimeInSecondsMin     -> 0,
-      ComponentsCount        -> 2,
+      ComponentsCount        -> 4,
       FragmentsUsedMedian    -> 1,
       FragmentsUsedAverage   -> 1,
       NodesMedian            -> 3,
@@ -465,12 +466,14 @@ class ScenarioStatisticsTest
   private def componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
     ComponentDefinitionWithImplementation.withEmptyConfig("choice", TestService),
+    ComponentDefinitionWithImplementation.withEmptyConfig("customService", CustomComponentService),
+    ComponentDefinitionWithImplementation.withEmptyConfig("anotherCustomService", CustomComponentService),
   )
 
   private def componentUsagesMap: Map[DesignerWideComponentId, Long] = Map(
-    DesignerWideComponentId("service-accountservice") -> 5L,
-    DesignerWideComponentId("someCustomComponent")    -> 1L,
-    DesignerWideComponentId("anotherCustomComponent") -> 1L,
+    DesignerWideComponentId("service-accountservice")       -> 5L,
+    DesignerWideComponentId("service-customservice")        -> 1L,
+    DesignerWideComponentId("service-anothercustomservice") -> 1L,
   )
 
   object TestService extends Service {
