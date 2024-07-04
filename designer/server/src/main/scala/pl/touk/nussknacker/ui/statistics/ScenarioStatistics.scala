@@ -177,7 +177,7 @@ object ScenarioStatistics {
       components
         .groupBy(_.id)
         .map { case (componentId, list) =>
-          if (fromNussknackerPackage(list.head)) {
+          if (list.forall(fromNussknackerPackage)) {
             componentId.toString
           } else nameForCustom
         }
