@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.statistics
 
+import custom.component.CustomComponentService
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.EitherValues
@@ -8,19 +9,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.mockito.MockitoSugar.mock
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.{
-  ComponentGroupName,
-  ComponentType,
-  DesignerWideComponentId,
-  ProcessingMode
-}
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -35,7 +29,6 @@ import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
   emptyUptimeStats
 }
 
-import java.net.URI
 import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -269,9 +262,9 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
+      () => Future.successful(Map.empty),
       clock
     ).prepareStatisticsUrl().futureValue.value
 
@@ -288,72 +281,20 @@ class ScenarioStatisticsTest
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       StatisticUrlConfig(),
       mockedFingerprintService,
-      () => Future.successful(Right(List.empty)),
+      () => Future.successful(Right(List(nonRunningScenario, k8sRRScenario, runningScenario))),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
+      () => Future.successful(componentUsagesMap),
       clock
     ).determineQueryParams().value.futureValue.value
 
     params should contain("c_srvcccntsrvc" -> "5")
-    params should contain("c_cstm" -> "1")
+    params should contain("c_cstm" -> "2")
     params.keySet shouldNot contain("c_bltnchc")
   }
 
   test("should combined statistics for all scenarios") {
-    val nonRunningScenario = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.NotDeployed),
-      nodesCount = 3,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 1,
-      lastDeployedAction = None,
-      scenarioId = None
-    )
-    val runningScenario = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      Some(SimpleStateStatus.Running),
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None,
-      scenarioId = None
-    )
-    val fragment = ScenarioStatisticsInputData(
-      isFragment = true,
-      ProcessingMode.UnboundedStream,
-      DeploymentManagerType("flinkStreaming"),
-      None,
-      nodesCount = 2,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(2),
-      createdBy = "user",
-      fragmentsUsedCount = 0,
-      lastDeployedAction = None,
-      scenarioId = None
-    )
-    val k8sRRScenario = ScenarioStatisticsInputData(
-      isFragment = false,
-      ProcessingMode.RequestResponse,
-      DeploymentManagerType("lite-k8s"),
-      Some(SimpleStateStatus.Running),
-      nodesCount = 4,
-      scenarioCategory = "Category1",
-      scenarioVersion = VersionId(1),
-      createdBy = "user",
-      fragmentsUsedCount = 2,
-      lastDeployedAction = None,
-      scenarioId = None
-    )
 
     val params = new UsageStatisticsReportsSettingsService(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
@@ -361,9 +302,9 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
       _ => Future.successful(Right(processActivityList)),
-      () => Future.successful(Right(componentList)),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
+      () => Future.successful(componentUsagesMap),
       clock
     ).determineQueryParams().value.futureValue.value
 
@@ -375,13 +316,13 @@ class ScenarioStatisticsTest
       CommentsTotal          -> 1,
       CommentsAverage        -> 1,
       VersionsMedian         -> 2,
-      VersionsMax            -> 2,
+      VersionsMax            -> 3,
       VersionsMin            -> 1,
-      VersionsAverage        -> 1,
+      VersionsAverage        -> 2,
       UptimeInSecondsAverage -> 0,
       UptimeInSecondsMax     -> 0,
       UptimeInSecondsMin     -> 0,
-      ComponentsCount        -> 3,
+      ComponentsCount        -> 4,
       FragmentsUsedMedian    -> 1,
       FragmentsUsedAverage   -> 1,
       NodesMedian            -> 3,
@@ -399,7 +340,7 @@ class ScenarioStatisticsTest
       UnknownDMCount         -> 0,
       ActiveScenarioCount    -> 2,
       "c_srvcccntsrvc"       -> 5,
-      "c_cstm"               -> 1,
+      "c_cstm"               -> 2,
     ).map { case (k, v) => (k.toString, v.toString) }
     params should contain allElementsOf expectedStats
   }
@@ -411,15 +352,71 @@ class ScenarioStatisticsTest
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
       _ => Future.successful(Right(List.empty)),
-      () => Future.successful(Right(List.empty)),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
+      () => Future.successful(Map.empty),
       clock
     ).determineQueryParams().value.futureValue.value
 
     params.keySet shouldBe (allScenarioRelatedStatistics ++ notScenarioRelatedStatistics).keySet
     params.keySet shouldBe (emptyScenarioRelatedStatistics ++ notScenarioRelatedStatistics).keySet
   }
+
+  val nonRunningScenario: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = false,
+    ProcessingMode.UnboundedStream,
+    DeploymentManagerType("flinkStreaming"),
+    Some(SimpleStateStatus.NotDeployed),
+    nodesCount = 3,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(2),
+    createdBy = "user",
+    fragmentsUsedCount = 1,
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
+  val runningScenario: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = false,
+    ProcessingMode.UnboundedStream,
+    DeploymentManagerType("flinkStreaming"),
+    Some(SimpleStateStatus.Running),
+    nodesCount = 2,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(3),
+    createdBy = "user",
+    fragmentsUsedCount = 0,
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
+  val fragment: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = true,
+    ProcessingMode.UnboundedStream,
+    DeploymentManagerType("flinkStreaming"),
+    None,
+    nodesCount = 2,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(1),
+    createdBy = "user",
+    fragmentsUsedCount = 0,
+    lastDeployedAction = None,
+    scenarioId = None
+  )
+
+  val k8sRRScenario: ScenarioStatisticsInputData = ScenarioStatisticsInputData(
+    isFragment = false,
+    ProcessingMode.RequestResponse,
+    DeploymentManagerType("lite-k8s"),
+    Some(SimpleStateStatus.Running),
+    nodesCount = 4,
+    scenarioCategory = "Category1",
+    scenarioVersion = VersionId(2),
+    createdBy = "user",
+    fragmentsUsedCount = 2,
+    lastDeployedAction = None,
+    scenarioId = None
+  )
 
   private def processActivityList = {
     val scenarioActivity: ScenarioActivity = ScenarioActivity(
@@ -466,74 +463,17 @@ class ScenarioStatisticsTest
     )
   }
 
-  private val componentList = List(
-    ComponentListElement(
-      DesignerWideComponentId("streaming-dev-service-accountservice"),
-      "accountService",
-      "/assets/components/Processor.svg",
-      ComponentType.Service,
-      ComponentGroupName("services"),
-      List("Category1"),
-      links = List.empty,
-      usageCount = 3,
-      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
-    ),
-    ComponentListElement(
-      DesignerWideComponentId("request-response-service-accountservice"),
-      "accountService",
-      "/assets/components/Processor.svg",
-      ComponentType.Service,
-      ComponentGroupName("services"),
-      List("Category1"),
-      links = List.empty,
-      usageCount = 2,
-      AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
-    ),
-    ComponentListElement(
-      DesignerWideComponentId("service-builtin-choice"),
-      "choice",
-      "/assets/components/Switch.svg",
-      ComponentType.Service,
-      ComponentGroupName("base"),
-      List(
-        "BatchDev",
-        "Category1",
-        "Category2",
-        "Default",
-        "DevelopmentTests",
-        "Periodic",
-        "RequestResponse",
-        "RequestResponseK8s",
-        "StreamingLite",
-        "StreamingLiteK8s"
-      ),
-      List(
-        ComponentLink(
-          "documentation",
-          "Documentation",
-          new URI("/assets/icons/documentation.svg"),
-          new URI("https://nussknacker.io/documentation/docs/scenarios_authoring/BasicNodes#choice")
-        )
-      ),
-      0,
-      AllowedProcessingModes.All
-    ),
-    ComponentListElement(
-      DesignerWideComponentId("someCustomComponent"),
-      "someCustomComponent",
-      "icon",
-      ComponentType.Service,
-      ComponentGroupName("someCustomGroup"),
-      List("Streaming"),
-      List.empty,
-      1,
-      AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
-    )
-  )
-
-  private val componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
+  private def componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
     ComponentDefinitionWithImplementation.withEmptyConfig("choice", TestService),
+    ComponentDefinitionWithImplementation.withEmptyConfig("customService", CustomComponentService),
+    ComponentDefinitionWithImplementation.withEmptyConfig("anotherCustomService", CustomComponentService),
+  )
+
+  private def componentUsagesMap: Map[DesignerWideComponentId, Long] = Map(
+    DesignerWideComponentId("service-accountservice")       -> 5L,
+    DesignerWideComponentId("service-customservice")        -> 1L,
+    DesignerWideComponentId("service-anothercustomservice") -> 1L,
   )
 
   object TestService extends Service {
