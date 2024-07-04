@@ -198,7 +198,7 @@ object ScenarioStatistics {
           (componentIdOrCustom, usages)
         }
         .groupBy(_._1)
-        .removed(nameForFragment)
+        .-(nameForFragment)
         .mapValuesNow(list => list.map(_._2).sum)
         .map { case (k, v) => (mapNameToStat(k), v.toString) }
     }
