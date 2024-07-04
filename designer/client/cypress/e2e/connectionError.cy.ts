@@ -1,5 +1,5 @@
 const screenshotConfig = {
-    blackout: ["[data-testid=graphPage] > div > div:not(#nk-graph-main)"],
+    blackout: ["[data-testid=graphPage] > div > div:not(#nk-graph-main) > div"],
 };
 
 describe("Connection error", () => {
