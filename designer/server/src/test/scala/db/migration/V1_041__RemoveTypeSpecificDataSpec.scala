@@ -44,7 +44,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
        |      "useAsyncInterpretation" : "",
        |      "checkpointIntervalInSeconds" : "1000"
        |    },
-       |    "metaDataType": "StreamMetaData"
+       |    "metaDataType": "StreamMetaData",
+       |    "showDescription": false
        |  }
        |}
        |""".stripMargin
@@ -78,7 +79,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |      "useAsyncInterpretation" : "",
       |      "checkpointIntervalInSeconds" : "1000"
       |    },
-      |    "metaDataType": "StreamMetaData"
+      |    "metaDataType": "StreamMetaData",
+      |    "showDescription": false
       |  }
       |}
       |""".stripMargin
@@ -118,7 +120,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |      "someProperty1": "",
       |      "someProperty2": "someValue2"
       |    },
-      |    "metaDataType": "StreamMetaData"
+      |    "metaDataType": "StreamMetaData",
+      |    "showDescription": false
       |  }
       |}
       |""".stripMargin
@@ -143,7 +146,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |    "properties": {
       |      "parallelism" : "10"
       |    },
-      |    "metaDataType": "LiteStreamMetaData"
+      |    "metaDataType": "LiteStreamMetaData",
+      |    "showDescription": false
       |  }
       |}
       |""".stripMargin
@@ -168,7 +172,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |    "properties": {
       |      "slug" : "someSlug"
       |    },
-      |    "metaDataType": "RequestResponseMetaData"
+      |    "metaDataType": "RequestResponseMetaData",
+      |    "showDescription": false
       |  }
       |}
       |""".stripMargin
@@ -194,7 +199,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |      "docsUrl" : "someUrl",
       |      "componentGroup" : ""
       |    },
-      |    "metaDataType": "FragmentSpecificData"
+      |    "metaDataType": "FragmentSpecificData",
+      |    "showDescription": false
       |  }
       |}
       |""".stripMargin

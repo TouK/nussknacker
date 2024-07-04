@@ -1181,6 +1181,7 @@ paths:
                         properties:
                           parallelism: ''
                         metaDataType: LiteStreamMetaData
+                        showDescription: false
                     nodes:
                     - id: source
                       ref:
@@ -1481,6 +1482,7 @@ paths:
                     additionalFields:
                       properties: {}
                       metaDataType: ''
+                      showDescription: false
                   variableTypes:
                     existButString:
                       display: String
@@ -1505,6 +1507,7 @@ paths:
                     additionalFields:
                       properties: {}
                       metaDataType: ''
+                      showDescription: false
                   variableTypes:
                     existButString:
                       display: String
@@ -1946,6 +1949,7 @@ paths:
                       environment: test
                       useAsyncInterpretation: ''
                     metaDataType: StreamMetaData
+                    showDescription: false
         required: true
       responses:
         '200':
@@ -2052,6 +2056,7 @@ paths:
                       environment: test
                       useAsyncInterpretation: ''
                     metaDataType: StreamMetaData
+                    showDescription: false
                   name: test
               Example1:
                 summary: Validate wrong 'number of threads' property
@@ -2065,6 +2070,7 @@ paths:
                       environment: test
                       useAsyncInterpretation: ''
                     metaDataType: StreamMetaData
+                    showDescription: false
                   name: test
         required: true
       responses:
@@ -4321,6 +4327,7 @@ components:
       required:
       - properties
       - metaDataType
+      - showDescription
       properties:
         description:
           type:
@@ -4330,6 +4337,8 @@ components:
           $ref: '#/components/schemas/Map_String'
         metaDataType:
           type: string
+        showDescription:
+          type: boolean
     ProcessProperties:
       title: ProcessProperties
       type: object
