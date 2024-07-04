@@ -478,6 +478,7 @@ class AkkaHttpBasedRouteProvider(
         processingTypeDataProvider.mapValues(_.deploymentData.deploymentManagerType),
         fingerprintService,
         processActivityRepository,
+        componentService,
         feStatisticsRepository,
         processingTypeDataProvider
           .mapValues { processingTypeData =>
