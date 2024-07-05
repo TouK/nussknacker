@@ -49,6 +49,7 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
      WHERE ${config.envTag} = '$env' AND ${config.scenarioTag} = '$processName'
      AND time > ${dateFrom.getEpochSecond}s AND time < ${dateTo.getEpochSecond}s
      GROUP BY ${config.nodeIdTag}, ${config.additionalGroupByTags.mkString(",")}) group by ${config.nodeIdTag}"""
+    logger.info(s"----FETCHING METRICS USING QUERY $query")
     InfluxGenerator.retrieveOnlyResultFromActionValueQuery(config, influxClient.query, query)
   }
 
@@ -67,6 +68,7 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
          | AND time >= ${from}s and time < ${to}s GROUP BY ${config.additionalGroupByTags.mkString(
           ","
         )}, ${config.nodeIdTag}) where diff < 0 """.stripMargin
+    logger.info(s"----FETCHING METRICS USING QUERY $queryString")
     influxClient.query(queryString).map { series =>
       series.headOption.map(readRestartsFromSourceCounts).getOrElse(List())
     }
