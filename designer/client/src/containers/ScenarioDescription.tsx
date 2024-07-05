@@ -4,15 +4,20 @@ import { alpha, Grow, IconButton, Paper } from "@mui/material";
 import { Close, Description } from "@mui/icons-material";
 import { MarkdownStyled } from "../components/graph/node-modal/MarkdownStyled";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const ScenarioDescription = () => {
     const [expanded, setExpanded] = useState(false);
     const description = useSelector(getScenarioDescription);
     const toggle = () => setExpanded((v) => !v);
+    const { t } = useTranslation();
+    const title = t("graph.description.toggle", "toggle description view");
+
     return (
         <>
             <Grow in={description && !expanded} unmountOnExit>
                 <IconButton
+                    title={title}
                     onClick={toggle}
                     sx={{
                         borderRadius: 0,
