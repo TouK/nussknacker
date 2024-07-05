@@ -256,7 +256,14 @@ class MigrationService(
   )(implicit loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = if (useLegacyCreateScenarioApi) {
     processService
       .createProcess(
-        CreateScenarioCommand(processName, Some(parameters.category), None, None, isFragment, forwardedUsername)
+        CreateScenarioCommand(
+          name = processName,
+          category = Some(parameters.category),
+          processingMode = Some(parameters.processingMode),
+          engineSetupName = Some(parameters.engineSetupName),
+          isFragment = isFragment,
+          forwardedUserName = forwardedUsername
+        )
       )
       .map(_.toEither)
       .map {
