@@ -28,7 +28,7 @@ describe("Process view", () => {
         cy.get("[data-testid=search-panel]").should("be.not.visible");
         cy.get("#nk-graph-main").click();
         cy.realPress(["Meta", "F"]);
-        cy.get("[data-testid=search-panel] input").should("be.visible").should("be.focused");
+        cy.get("[data-testid=search-panel] input").should("be.visible").wait(100).should("be.focused");
         cy.realType("en");
         cy.get("[data-testid=search-panel]").contains(/sms/i).click();
         cy.getNode("enricher")
