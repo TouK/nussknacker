@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 
 import java.time.Instant
 
@@ -144,30 +143,6 @@ object ScenarioStatistics {
       )
         .map { case (k, v) => (k.toString, v.toString) } ++
         uptimeStatsMap
-    }
-  }
-
-  def getActivityStatistics(
-      listOfActivities: List[DbProcessActivityRepository.ProcessActivity]
-  ): Map[String, String] = {
-    if (listOfActivities.isEmpty) {
-      emptyActivityStatistics
-    } else {
-      //        Attachment stats
-      val sortedAttachmentCountList = listOfActivities.map(_.attachments.length)
-      val attachmentAverage         = calculateAverage(sortedAttachmentCountList)
-      val attachmentsTotal          = sortedAttachmentCountList.sum
-      //        Comment stats
-      val comments        = listOfActivities.map(_.comments.length)
-      val commentsTotal   = comments.sum
-      val commentsAverage = calculateAverage(comments)
-
-      Map(
-        AttachmentsAverage -> attachmentAverage,
-        AttachmentsTotal   -> attachmentsTotal,
-        CommentsTotal      -> commentsTotal,
-        CommentsAverage    -> commentsAverage
-      ).map { case (k, v) => (k.toString, v.toString) }
     }
   }
 

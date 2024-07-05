@@ -261,7 +261,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
-      _ => Future.successful(Right(List.empty)),
+      _ => Future.successful(Map.empty),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
       () => Future.successful(Map.empty),
@@ -282,7 +282,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, k8sRRScenario, runningScenario))),
-      _ => Future.successful(Right(List.empty)),
+      _ => Future.successful(Map.empty),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
       () => Future.successful(componentUsagesMap),
@@ -301,7 +301,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
-      _ => Future.successful(Right(processActivityList)),
+      _ => Future.successful(processActivityMap),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
       () => Future.successful(componentUsagesMap),
@@ -351,7 +351,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
-      _ => Future.successful(Right(List.empty)),
+      _ => Future.successful(Map.empty),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
       () => Future.successful(Map.empty),
@@ -418,50 +418,12 @@ class ScenarioStatisticsTest
     scenarioId = None
   )
 
-  private def processActivityList = {
-    val scenarioActivity: ScenarioActivity = ScenarioActivity(
-      comments = List(
-        Comment(
-          id = 1L,
-          processVersionId = 1L,
-          content = "some comment",
-          user = "test",
-          createDate = Instant.parse("2024-01-17T14:21:17Z")
-        )
-      ),
-      attachments = List(
-        Attachment(
-          id = 1L,
-          processVersionId = 1L,
-          fileName = "some_file.txt",
-          user = "test",
-          createDate = Instant.parse("2024-01-17T14:21:17Z")
-        )
-      )
-    )
-    List(
-      ProcessActivity(
-        scenarioActivity.comments.map(comment =>
-          DbProcessActivityRepository.Comment(
-            comment.id,
-            VersionId(comment.processVersionId),
-            comment.content,
-            comment.user,
-            comment.createDate
-          )
-        ),
-        scenarioActivity.attachments.map(attachment =>
-          DbProcessActivityRepository.Attachment(
-            attachment.id,
-            VersionId(attachment.processVersionId),
-            attachment.fileName,
-            attachment.user,
-            attachment.createDate
-          )
-        )
-      )
-    )
-  }
+  private def processActivityMap = Map(
+    CommentsTotal      -> 1,
+    CommentsAverage    -> 1,
+    AttachmentsTotal   -> 1,
+    AttachmentsAverage -> 1
+  ).map { case (k, v) => (k.toString, v.toString) }
 
   private def componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),
