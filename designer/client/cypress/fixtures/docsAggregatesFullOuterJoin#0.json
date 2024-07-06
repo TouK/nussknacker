@@ -176,7 +176,7 @@
                     }
                 ],
                 "additionalFields": {
-                    "description": "We will get results like:\n{\"key\": \"135\", \"received_transactions\": 2500, \"sent_transactions\": 1000}",
+                    "description": "We will get results like:\n`{\"key\": \"135\", \"received_transactions\": 2500, \"sent_transactions\": 1000}`",
                     "layoutData": {
                         "x": 180,
                         "y": 180
