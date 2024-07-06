@@ -27,23 +27,24 @@ describe("Description", () => {
             .dblclick();
         cy.get("[data-testid=window]").should("be.visible").as("window");
 
-        cy.contains("Description:")
-            .next()
-            .find("textarea")
-            .should("be.visible")
-            .click("center")
-            .type("# description header{enter}")
-            .type("{enter}")
-            .type("description paragraph");
+        cy.contains("Description:").next().find(".ace_editor").should("be.visible").click("center").type(`# description header{enter}
+
+*Everything* is going according to **plan**.`);
 
         cy.get("@window")
             .contains(/^apply$/i)
             .click();
 
+        cy.get(`[title="toggle description view"]`).should("be.visible");
+        cy.contains(/^save\*$/i).click();
+        cy.contains(/^ok$/i).click();
+
+        cy.reload();
+
         cy.get(`[title="toggle description view"]`).should("be.visible").click().should("not.exist");
 
         cy.contains("description header").should("be.visible");
-        cy.contains("description paragraph").should("be.visible").parent().parent().as("description");
+        cy.contains("Everything is going according to plan").should("be.visible").parent().parent().as("description");
 
         cy.viewport(1200, 600);
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
