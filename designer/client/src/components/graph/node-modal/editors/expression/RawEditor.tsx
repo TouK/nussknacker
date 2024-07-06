@@ -1,12 +1,9 @@
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
-import { ExpressionSuggest } from "./ExpressionSuggest";
+import { ExpressionSuggest, ExpressionSuggestProps } from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
-import { nodeInputCss } from "../../../../NodeInput";
-import { cx } from "@emotion/css";
 import { FieldError } from "../Validators";
-import { nodeInput } from "../../NodeDetailsContent/NodeTableStyled";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -42,12 +39,10 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
 
-    const inputProps = useMemo(
+    const inputProps = useMemo<ExpressionSuggestProps["inputProps"]>(
         () => ({
             rows: rows,
             cols: cols,
-            className: cx(nodeInput),
-            style: nodeInputCss,
             value: value,
             language: language,
             onValueChange: onValueChange,
@@ -59,17 +54,15 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
     );
 
     return (
-        <div className={className} style={{ width: "100%" }}>
-            <ExpressionSuggest
-                inputProps={inputProps}
-                variableTypes={variableTypes}
-                fieldErrors={fieldErrors}
-                isMarked={isMarked}
-                showValidation={showValidation}
-                validationLabelInfo={validationLabelInfo}
-                editorMode={editorMode}
-            />
-        </div>
+        <ExpressionSuggest
+            className={className}
+            inputProps={inputProps}
+            variableTypes={variableTypes}
+            fieldErrors={fieldErrors}
+            isMarked={isMarked}
+            showValidation={showValidation}
+            validationLabelInfo={validationLabelInfo}
+        />
     );
 };
 

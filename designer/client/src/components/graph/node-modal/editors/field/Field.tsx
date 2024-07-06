@@ -5,15 +5,17 @@ import LabeledInput from "./LabeledInput";
 import LabeledTextarea from "./LabeledTextarea";
 import UnknownField from "./UnknownField";
 import { FieldError } from "../Validators";
+import { MarkdownFormControl } from "./MarkdownFormControl";
 
 export enum FieldType {
     input = "input",
     unlabeledInput = "unlabeled-input",
     checkbox = "checkbox",
     plainTextarea = "plain-textarea",
+    markdown = "markdown",
 }
 
-interface FieldProps {
+export interface FieldProps {
     isMarked: boolean;
     readOnly: boolean;
     showValidation: boolean;
@@ -46,6 +48,12 @@ export default function Field({ type, children, ...props }: PropsWithChildren<Fi
                 <LabeledTextarea {...props} value={props.value?.toString() || ""} onChange={({ target }) => props.onChange(target.value)}>
                     {children}
                 </LabeledTextarea>
+            );
+        case FieldType.markdown:
+            return (
+                <MarkdownFormControl {...props} value={props.value?.toString() || ""} onChange={(value) => props.onChange(value)}>
+                    {children}
+                </MarkdownFormControl>
             );
         default:
             return <UnknownField />;
