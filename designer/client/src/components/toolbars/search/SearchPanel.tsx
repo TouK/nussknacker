@@ -46,7 +46,7 @@ export function SearchPanel(props: ToolbarPanelProps): ReactElement {
             >
                 <SearchIcon isEmpty={isEmpty(filter)} />
             </SearchInputWithIcon>
-            <SearchResults filterValues={[filter.toLowerCase().trim()].filter(Boolean)} />
+            <SearchResults filterValues={[filter.toLowerCase()].filter(Boolean)} />
         </ToolbarWrapper>
     );
 }
