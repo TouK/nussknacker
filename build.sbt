@@ -519,13 +519,13 @@ lazy val distribution: Project = sbt
         else filterDevConfigArtifacts((Universal / mappings).value)
 
       universalMappingsWithDevConfigFilter ++
-        managerArtifacts.value ++
-        componentArtifacts.value ++
+        (managerArtifacts).value ++
+        (componentArtifacts).value ++
         (if (addDevArtifacts)
            Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar")
          else Nil) ++
         (if (addDevArtifacts) (devArtifacts).value: @sbtUnchecked
-         else modelArtifacts.value: @sbtUnchecked) ++
+         else (modelArtifacts).value: @sbtUnchecked) ++
         (flinkExecutor / additionalBundledArtifacts).value
     },
     Universal / packageZipTarball / mappings := {
@@ -730,9 +730,11 @@ lazy val flinkTests = (project in flink("tests"))
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-connector-base"       % flinkV % Provided,
-        "org.apache.flink" % "flink-streaming-java"       % flinkV % Provided,
-        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % Provided
+        "org.apache.flink" % "flink-connector-base"       % flinkV               % Test,
+        "org.apache.flink" % "flink-streaming-java"       % flinkV               % Test,
+        "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV               % Test,
+        "org.apache.flink" % "flink-connector-kafka"      % flinkConnectorKafkaV % Test,
+        "org.apache.flink" % "flink-json"                 % flinkV               % Test
       )
     }
   )
@@ -1809,13 +1811,11 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     name := "nussknacker-flink-table-components",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-table"                 % flinkV,
         "org.apache.flink" % "flink-table-api-java"        % flinkV,
         "org.apache.flink" % "flink-table-api-java-bridge" % flinkV,
         "org.apache.flink" % "flink-table-planner-loader"  % flinkV,
         "org.apache.flink" % "flink-table-runtime"         % flinkV,
         "org.apache.flink" % "flink-clients"               % flinkV,
-        "org.apache.flink" % "flink-connector-kafka"       % flinkConnectorKafkaV,
         "org.apache.flink" % "flink-connector-files"       % flinkV, // needed for testing data generation
         "org.apache.flink" % "flink-json"                  % flinkV, // needed for testing data generation
       )

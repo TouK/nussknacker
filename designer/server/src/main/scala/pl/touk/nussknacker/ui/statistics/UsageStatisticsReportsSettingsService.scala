@@ -3,14 +3,13 @@ package pl.touk.nussknacker.ui.statistics
 import cats.data.EitherT
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
 import pl.touk.nussknacker.ui.definition.component.ComponentService
@@ -36,7 +35,6 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
-      // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
       componentList: List[ComponentDefinitionWithImplementation],
@@ -82,9 +80,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
     }
 
-    def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
-      componentService.getComponentsList
-        .map(Right(_))
+    def fetchComponentUsage(): Future[Map[DesignerWideComponentId, Long]] = {
+      componentService.getUsagesPerDesignerWideComponentId
     }
 
     new UsageStatisticsReportsSettingsService(
@@ -93,9 +90,9 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
-      fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
       componentList,
+      fetchComponentUsage,
       designerClock
     )
 
@@ -122,9 +119,9 @@ class UsageStatisticsReportsSettingsService(
     fetchActivity: List[ScenarioStatisticsInputData] => Future[
       Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
     ],
-    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
     fetchFeStatistics: () => Future[Map[String, Long]],
     components: List[ComponentDefinitionWithImplementation],
+    componentUsage: () => Future[Map[DesignerWideComponentId, Long]],
     designerClock: Clock
 )(implicit ec: ExecutionContext) {
   private val statisticsUrls    = new StatisticsUrls(urlConfig)
@@ -154,8 +151,8 @@ class UsageStatisticsReportsSettingsService(
       generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
       activity <- new EitherT(fetchActivity(scenariosInputData))
       activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
-      componentList <- new EitherT(fetchComponentList())
-      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
+      componentDesignerWideUsage <- EitherT.liftF(componentUsage())
+      componentStatistics = ScenarioStatistics.getComponentStatistics(componentDesignerWideUsage, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
     } yield basicStatistics ++
