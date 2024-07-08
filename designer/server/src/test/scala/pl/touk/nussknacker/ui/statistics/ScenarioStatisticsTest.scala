@@ -16,11 +16,8 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.description.ScenarioActivityApiEndpoints.Dtos.{Attachment, Comment, ScenarioActivity}
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
   emptyActivityStatistics,
   emptyComponentStatistics,
@@ -29,7 +26,7 @@ import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.{
   emptyUptimeStats
 }
 
-import java.time.{Clock, Instant}
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
