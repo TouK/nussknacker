@@ -7,8 +7,9 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const ScenarioDescription = () => {
-    const [expanded, setExpanded] = useState(false);
-    const description = useSelector(getScenarioDescription);
+    const [description, showDescription] = useSelector(getScenarioDescription);
+    const [expanded, setExpanded] = useState(showDescription);
+
     const toggle = () => setExpanded((v) => !v);
     const { t } = useTranslation();
     const title = t("graph.description.toggle", "toggle description view");
