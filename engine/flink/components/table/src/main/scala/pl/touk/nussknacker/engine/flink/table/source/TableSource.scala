@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
 class TableSource(
-    val tableDefinition: TableDefinition,
+    tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
     enableFlinkBatchExecutionMode: Boolean,
 ) extends StandardFlinkSource[RECORD]

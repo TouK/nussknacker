@@ -35,7 +35,6 @@ class BatchDataGenerationSpec
         s"""\\{"datetime":"$timestampRegex","client_id":"$stringRegex","amount":$decimalWith15Precision2ScaleRegex}""".r
       s"""\\{"sourceId":"sourceId","record":$recordRegex}""".r
     }
-    val numberOfRecordsToGenerate = 1
 
     given()
       .applicationState(
@@ -46,7 +45,7 @@ class BatchDataGenerationSpec
       .basicAuthAdmin()
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
       .post(
-        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/$numberOfRecordsToGenerate"
+        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/1"
       )
       .Then()
       .statusCode(200)

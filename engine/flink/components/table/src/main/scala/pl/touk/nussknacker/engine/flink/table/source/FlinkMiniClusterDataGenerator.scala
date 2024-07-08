@@ -10,11 +10,10 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterDataGenerator._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import java.net.URL
 import java.nio.charset.StandardCharsets
-import java.nio.file.{DirectoryStream, Files, Path}
+import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLogging {
 
@@ -25,9 +24,8 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       val env = TableEnvironment.create(miniClusterTestingEnvConfig)
       createGeneratorTable(env, amountOfRecordsToGenerate)
-      val (tempDirForOutputTable, tempDirUrl) = createTempDirectoryForTestResults()
-      createOutputFileTable(env, tempDirUrl)
-      val generatedRowsTry = Try {
+      val tempDirForOutputTable = createOutputFileTable(env)
+      val generatedRows = Try {
         insertDataAndAwait(
           env = env,
           inputTableName = dataGenerationInputInternalTableName,
@@ -35,35 +33,29 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
         )
         readRecordsFromFilesUnderPath(tempDirForOutputTable)
       }
-      tryToDeleteDirectoryWithLogging(tempDirForOutputTable)
-      val rows = generatedRowsTry.get
+      delete(tempDirForOutputTable)
+      val rows = generatedRows.get
       TestData(rows.map(TestRecord(_)))
     }
 
   private def readRecordsFromFilesUnderPath(path: Path) = {
-    val filesUnderPath: List[Path] = {
-      val dirStream: DirectoryStream[Path] = Files.newDirectoryStream(path)
-      val outputFiles                      = dirStream.asScala.toList
-      dirStream.close()
-      outputFiles
-    }
-    filesUnderPath
+    val filesUnderPath = Using(Files.newDirectoryStream(path)) { dirStream =>
+      dirStream.asScala.toList
+    }.get
+    val parsedRecords = filesUnderPath
       .flatMap(f => FileUtils.readLines(f.toFile, StandardCharsets.UTF_8).asScala)
       .map(parse)
       .sequence
-      .getOrElse(throw new IllegalStateException("Couldn't parse record from test data dump"))
+    parsedRecords match {
+      case Left(ex) =>
+        throw new IllegalStateException("Couldn't parse record from test data dump", ex)
+      case Right(records) => records
+    }
   }
 
   private def insertDataAndAwait(env: TableEnvironment, inputTableName: String, outputTableName: String): Unit = {
     val inputTable = env.from(inputTableName)
     inputTable.insertInto(outputTableName).execute().await()
-  }
-
-  private def createTempDirectoryForTestResults(): (Path, URL) = {
-    val tempDir    = Files.createTempDirectory(tempTestDataOutputTablePrefix)
-    val tempDirUrl = tempDir.toUri.toURL
-    logger.debug(s"Created temporary directory for dumping test data at: '$tempDirUrl'")
-    tempDir -> tempDirUrl
   }
 
   private def createGeneratorTable(env: TableEnvironment, amountOfRecordsToGenerate: Int): Unit = env.createTable(
@@ -75,17 +67,22 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
       .build()
   )
 
-  private def createOutputFileTable(env: TableEnvironment, tempDirUrl: URL): Unit = env.createTable(
-    dataGenerationOutputFileInternalTableName,
-    TableDescriptor
-      .forConnector("filesystem")
-      .option("path", tempDirUrl.toString)
-      .format("json")
-      .schema(flinkTableSchema)
-      .build()
-  )
+  private def createOutputFileTable(env: TableEnvironment): Path = {
+    val tempDir = Files.createTempDirectory(tempTestDataOutputTablePrefix)
+    logger.debug(s"Created temporary directory for dumping test data at: '${tempDir.toUri.toURL}'")
+    env.createTable(
+      dataGenerationOutputFileInternalTableName,
+      TableDescriptor
+        .forConnector("filesystem")
+        .option("path", tempDir.toUri.toURL.toString)
+        .format("json")
+        .schema(flinkTableSchema)
+        .build()
+    )
+    tempDir
+  }
 
-  private def tryToDeleteDirectoryWithLogging(dirPath: Path): Unit = Try {
+  private def delete(dirPath: Path): Unit = Try {
     Files
       .walk(dirPath)
       .sorted(java.util.Comparator.reverseOrder())
@@ -94,7 +91,8 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
   } match {
     case Failure(e) =>
       logger.error(
-        s"Couldn't properly delete temporary test data dumping directory at: '${dirPath.toUri.toURL}'. Exception thrown: $e"
+        s"Couldn't properly delete temporary test data dumping directory at: '${dirPath.toUri.toURL}'",
+        e
       )
     case Success(_) => ()
   }
