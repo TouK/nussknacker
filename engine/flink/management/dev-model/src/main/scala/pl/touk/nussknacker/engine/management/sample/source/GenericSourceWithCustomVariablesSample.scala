@@ -97,8 +97,10 @@ object GenericSourceWithCustomVariablesSample
         elementsValue.map(el => TestRecord(Json.fromString(el)))
       )
 
-      override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-        CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+      override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+        testRecords.map { testRecord =>
+          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
     }
