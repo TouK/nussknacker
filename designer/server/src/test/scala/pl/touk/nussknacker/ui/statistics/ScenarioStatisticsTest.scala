@@ -258,7 +258,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
-      _ => Future.successful(Map.empty),
+      () => Future.successful(Map.empty),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
       () => Future.successful(Map.empty),
@@ -279,7 +279,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, k8sRRScenario, runningScenario))),
-      _ => Future.successful(Map.empty),
+      () => Future.successful(Map.empty),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
       () => Future.successful(componentUsagesMap),
@@ -298,7 +298,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List(nonRunningScenario, runningScenario, fragment, k8sRRScenario))),
-      _ => Future.successful(processActivityMap),
+      () => Future.successful(processActivityMap),
       () => Future.successful(Map.empty[String, Long]),
       componentWithImplementation,
       () => Future.successful(componentUsagesMap),
@@ -307,10 +307,10 @@ class ScenarioStatisticsTest
 
     val expectedStats = Map(
       AuthorsCount           -> 1,
-      AttachmentsTotal       -> 1,
-      AttachmentsAverage     -> 1,
+      AttachmentsTotal       -> 8,
+      AttachmentsAverage     -> 2,
       CategoriesCount        -> 1,
-      CommentsTotal          -> 1,
+      CommentsTotal          -> 4,
       CommentsAverage        -> 1,
       VersionsMedian         -> 2,
       VersionsMax            -> 3,
@@ -348,7 +348,7 @@ class ScenarioStatisticsTest
       StatisticUrlConfig(),
       mockedFingerprintService,
       () => Future.successful(Right(List.empty)),
-      _ => Future.successful(Map.empty),
+      () => Future.successful(Map.empty),
       () => Future.successful(Map.empty[String, Long]),
       List.empty,
       () => Future.successful(Map.empty),
@@ -416,11 +416,9 @@ class ScenarioStatisticsTest
   )
 
   private def processActivityMap = Map(
-    CommentsTotal      -> 1,
-    CommentsAverage    -> 1,
-    AttachmentsTotal   -> 1,
-    AttachmentsAverage -> 1
-  ).map { case (k, v) => (k.toString, v.toString) }
+    CommentsTotal    -> 4,
+    AttachmentsTotal -> 8,
+  ).map { case (k, v) => (k.toString, v) }
 
   private def componentWithImplementation: List[ComponentDefinitionWithImplementation] = List(
     ComponentDefinitionWithImplementation.withEmptyConfig("accountService", TestService),

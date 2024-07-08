@@ -17,7 +17,6 @@ import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, Pro
 import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.statistics.ScenarioStatistics.emptyActivityStatistics
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
 import java.time.Clock
@@ -72,8 +71,8 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
           )
         }
     }
-    def fetchActivity(scenariosCount: Int): Future[Map[String, String]] = {
-      scenarioActivityRepository.getActivityStats(scenariosCount)
+    def fetchActivity(): Future[Map[String, Int]] = {
+      scenarioActivityRepository.getActivityStats
     }
 
     def fetchComponentUsage(): Future[Map[DesignerWideComponentId, Long]] = {
@@ -112,7 +111,7 @@ class UsageStatisticsReportsSettingsService(
     urlConfig: StatisticUrlConfig,
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
-    fetchActivity: Int => Future[Map[String, String]],
+    fetchActivity: () => Future[Map[String, Int]],
     fetchFeStatistics: () => Future[Map[String, Long]],
     components: List[ComponentDefinitionWithImplementation],
     componentUsage: () => Future[Map[DesignerWideComponentId, Long]],
@@ -143,7 +142,11 @@ class UsageStatisticsReportsSettingsService(
       scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
       basicStatistics     = determineBasicStatistics(config)
       generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
-      activityStatistics         <- EitherT.liftF(fetchActivity(scenariosInputData.length))
+      attachmentsAndCommentsTotal <- EitherT.liftF(fetchActivity())
+      activityStatistics = ScenarioStatistics.getActivityStatistics(
+        attachmentsAndCommentsTotal,
+        scenariosInputData.length
+      )
       componentDesignerWideUsage <- EitherT.liftF(componentUsage())
       componentStatistics = ScenarioStatistics.getComponentStatistics(componentDesignerWideUsage, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
@@ -151,7 +154,6 @@ class UsageStatisticsReportsSettingsService(
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
-      emptyActivityStatistics ++
       activityStatistics ++
       componentStatistics ++
       designerUptimeStatistics ++

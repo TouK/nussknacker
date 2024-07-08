@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
-import pl.touk.nussknacker.ui.statistics.{AttachmentsAverage, AttachmentsTotal, CommentsAverage, CommentsTotal}
+import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -33,7 +33,7 @@ trait ProcessActivityRepository {
       implicit ec: ExecutionContext
   ): Future[Option[AttachmentEntityData]]
 
-  def getActivityStats(scenariosCount: Int)(implicit ec: ExecutionContext): Future[Map[String, String]]
+  def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]]
 
 }
 
@@ -77,18 +77,14 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef, comment
     run(findProcessActivityAction)
   }
 
-  override def getActivityStats(scenariosCount: Int)(implicit ec: ExecutionContext): Future[Map[String, String]] = {
+  override def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val findScenarioProcessActivityStats = for {
-      commentsTotal <- commentsTable.length.result
-      commentsAverage = averageOrZero(commentsTotal, scenariosCount)
       attachmentsTotal <- attachmentsTable.length.result
-      attachmentsAverage = averageOrZero(attachmentsTotal, scenariosCount)
+      commentsTotal    <- commentsTable.length.result
     } yield Map(
-      CommentsTotal      -> commentsTotal,
-      CommentsAverage    -> commentsAverage,
-      AttachmentsTotal   -> attachmentsTotal,
-      AttachmentsAverage -> attachmentsAverage,
-    ).map { case (k, v) => (k.toString, v.toString) }
+      AttachmentsTotal -> attachmentsTotal,
+      CommentsTotal    -> commentsTotal,
+    ).map { case (k, v) => (k.toString, v) }
 
     run(findScenarioProcessActivityStats)
   }
@@ -123,14 +119,6 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef, comment
       .result
       .headOption
     run(findAttachmentAction)
-  }
-
-  private def averageOrZero(dividend: Int, divisor: Int): Int = {
-    if (divisor == 0) {
-      0
-    } else {
-      dividend / divisor
-    }
   }
 
 }

@@ -184,6 +184,23 @@ object ScenarioStatistics {
       componentUsages
   }
 
+  def getActivityStatistics(attachmentsAndCommentsTotal: Map[String, Int], scenarioCount: Int): Map[String, String] = {
+    if (attachmentsAndCommentsTotal.isEmpty) {
+      emptyActivityStatistics
+    } else {
+      val attachmentsTotal   = attachmentsAndCommentsTotal.getOrElse(AttachmentsTotal.toString, 0)
+      val attachmentsAverage = averageOrZero(attachmentsTotal, scenarioCount)
+      val commentsTotal      = attachmentsAndCommentsTotal.getOrElse(CommentsTotal.toString, 0)
+      val commentsAverage    = averageOrZero(commentsTotal, scenarioCount)
+      Map(
+        AttachmentsTotal   -> attachmentsTotal,
+        AttachmentsAverage -> attachmentsAverage,
+        CommentsTotal      -> commentsTotal,
+        CommentsAverage    -> commentsAverage
+      ).map { case (k, v) => (k.toString, v.toString) }
+    }
+  }
+
   // We have four dimensions:
   // - scenario / fragment
   // - processing mode: streaming, r-r, batch
@@ -217,6 +234,14 @@ object ScenarioStatistics {
     else {
       val result = implicitly[Numeric[T]].toInt(list.sum) / list.length
       implicitly[Numeric[T]].fromInt(result)
+    }
+  }
+
+  private def averageOrZero(dividend: Int, divisor: Int): Int = {
+    if (divisor == 0) {
+      0
+    } else {
+      dividend / divisor
     }
   }
 
