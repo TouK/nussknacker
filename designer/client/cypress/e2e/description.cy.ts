@@ -27,7 +27,7 @@ describe("Description", () => {
             .dblclick();
         cy.get("[data-testid=window]").should("be.visible").as("window");
 
-        cy.contains("Description:").next().find(".ace_editor").should("be.visible").click("center").type(`# description header{enter}
+        cy.contains("Description").next().find(".ace_editor").should("be.visible").click("center").type(`# description header{enter}
 
 *Everything* is going according to **plan**.`);
 

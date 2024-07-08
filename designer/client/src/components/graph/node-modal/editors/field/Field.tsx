@@ -25,6 +25,7 @@ export interface FieldProps {
     type: FieldType;
     value: string | boolean;
     onChange: (value: string | boolean) => void;
+    description?: string;
 }
 
 export default function Field({ type, children, ...props }: PropsWithChildren<FieldProps>): JSX.Element {
