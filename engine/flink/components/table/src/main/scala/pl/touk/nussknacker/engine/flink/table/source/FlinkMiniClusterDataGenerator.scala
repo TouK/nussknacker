@@ -55,6 +55,8 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
 
   private def insertDataAndAwait(env: TableEnvironment, inputTableName: String, outputTableName: String): Unit = {
     val inputTable = env.from(inputTableName)
+    // TODO: Avoid blocking the thread. Refactor `generateTestData` to return future and use a separate blocking thread
+    //  pool here
     inputTable.insertInto(outputTableName).execute().await()
   }
 
