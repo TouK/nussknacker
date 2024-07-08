@@ -36,30 +36,31 @@ class TestDataPreparer(
     ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet)
 
   def prepareRecordForTest[T](source: Source, record: ScenarioTestRecord): T = {
-    implicit val implicitNodeId: NodeId = record.sourceId
-    (source, record) match {
-      case (s: SourceTestSupport[T @unchecked], jsonRecord: ScenarioTestJsonRecord) =>
-        s.testRecordParser.parse(jsonRecord.record)
-      case (s: TestWithParametersSupport[T @unchecked], parametersRecord: ScenarioTestParametersRecord) =>
-        val parameterTypingResults = s.testParametersDefinition.collect { param =>
-          parametersRecord.parameterExpressions.get(param.name) match {
-            case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
-            case None if !param.isOptional => UnknownProperty(param.name).invalidNel
-          }
-        }
-        parameterTypingResults.sequence match {
-          case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
-          case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
-        }
-      case (other, _: ScenarioTestJsonRecord) =>
-        throw new IllegalArgumentException(
-          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
-        )
-      case (other, _: ScenarioTestParametersRecord) =>
-        throw new IllegalArgumentException(
-          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters"
-        )
-    }
+    ???
+//    implicit val implicitNodeId: NodeId = record.sourceId
+//    (source, record) match {
+//      case (s: SourceTestSupport[T @unchecked], jsonRecord: ScenarioTestJsonRecord) =>
+//        s.testRecordParser.parse(jsonRecord.record)
+//      case (s: TestWithParametersSupport[T @unchecked], parametersRecord: ScenarioTestParametersRecord) =>
+//        val parameterTypingResults = s.testParametersDefinition.collect { param =>
+//          parametersRecord.parameterExpressions.get(param.name) match {
+//            case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
+//            case None if !param.isOptional => UnknownProperty(param.name).invalidNel
+//          }
+//        }
+//        parameterTypingResults.sequence match {
+//          case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
+//          case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
+//        }
+//      case (other, _: ScenarioTestJsonRecord) =>
+//        throw new IllegalArgumentException(
+//          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
+//        )
+//      case (other, _: ScenarioTestParametersRecord) =>
+//        throw new IllegalArgumentException(
+//          s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters"
+//        )
+//    }
   }
 
   private def evaluateExpression(expression: Expression, parameter: Parameter)(
