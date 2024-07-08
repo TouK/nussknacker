@@ -101,11 +101,12 @@ class FlinkKafkaSource[T](
   }
 
   // Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
-  override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) => {
-    // TODO: we assume parsing for all topics is the same
-    val topic = topics.head
-    deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
-  }
+  override def testRecordParser: TestRecordParser[T] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord =>
+      // TODO: we assume parsing for all topics is the same
+      val topic = topics.head
+      deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
+    }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 

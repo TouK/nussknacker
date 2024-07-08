@@ -177,8 +177,10 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       with TestWithParametersSupport[Int] {
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
 
-    override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
-      CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+    override def testRecordParser: TestRecordParser[Int] = (testRecords: List[TestRecord]) =>
+      testRecords.map { testRecord =>
+        CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+      }
 
     override def testParametersDefinition: List[Parameter] = List(Parameter(ParameterName("input"), Typed[Int]))
 
@@ -190,8 +192,12 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
       extends CollectionSource[Int](List.empty, None, Typed.fromDetailedType[Int])
       with FlinkSourceTestSupport[Int] {
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
-    override def testRecordParser: TestRecordParser[Int] = (testRecord: TestRecord) =>
-      CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+
+    override def testRecordParser: TestRecordParser[Int] = (testRecords: List[TestRecord]) =>
+      testRecords.map { testRecord =>
+        CirceUtil.decodeJsonUnsafe[Int](testRecord.json)
+      }
+
   }
 
 }
