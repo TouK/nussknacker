@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapt
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ApiAdapter
 
+// FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
 class MigrationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
