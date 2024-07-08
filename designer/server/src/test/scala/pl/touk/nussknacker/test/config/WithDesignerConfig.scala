@@ -12,6 +12,7 @@ trait WithDesignerConfig {
   def designerConfig: Config
 }
 
+// Caution! This trait will remove your custom configuration from deploymentConfig.
 trait WithMockableDeploymentManager extends WithDesignerConfig with BeforeAndAfterEach {
   this: Suite with NuItTest =>
 
