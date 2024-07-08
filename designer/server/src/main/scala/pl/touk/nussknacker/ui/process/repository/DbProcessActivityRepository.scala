@@ -9,6 +9,7 @@ import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -31,6 +32,8 @@ trait ProcessActivityRepository {
   def findAttachment(attachmentId: Long, scenarioId: ProcessId)(
       implicit ec: ExecutionContext
   ): Future[Option[AttachmentEntityData]]
+
+  def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]]
 
 }
 
@@ -72,6 +75,18 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef, comment
     } yield ProcessActivity(comments, attachments)
 
     run(findProcessActivityAction)
+  }
+
+  override def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    val findScenarioProcessActivityStats = for {
+      attachmentsTotal <- attachmentsTable.length.result
+      commentsTotal    <- commentsTable.length.result
+    } yield Map(
+      AttachmentsTotal -> attachmentsTotal,
+      CommentsTotal    -> commentsTotal,
+    ).map { case (k, v) => (k.toString, v) }
+
+    run(findScenarioProcessActivityStats)
   }
 
   override def addAttachment(
