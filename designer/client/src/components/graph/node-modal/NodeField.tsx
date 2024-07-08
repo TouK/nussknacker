@@ -5,11 +5,12 @@ import React from "react";
 import { useDiffMark } from "./PathsToMark";
 import { NodeType, NodeValidationError, UINodeType } from "../../../types";
 import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
+import { cx } from "@emotion/css";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
     defaultValue?: V;
-    fieldLabel: string;
+    fieldLabel?: string;
     fieldName: N;
     fieldType: FieldType;
     isEditMode?: boolean;
@@ -19,6 +20,7 @@ type NodeFieldProps<N extends string, V> = {
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
     errors: NodeValidationError[];
+    description?: string;
 };
 
 export function NodeField<N extends string, V>({
@@ -34,19 +36,20 @@ export function NodeField<N extends string, V>({
     setProperty,
     showValidation,
     errors,
+    description,
 }: NodeFieldProps<N, V>): JSX.Element {
     const readOnly = !isEditMode || readonly;
     const value = get(node, fieldName, null) ?? defaultValue;
     const fieldErrors = getValidationErrorsForField(errors, fieldName);
 
-    const className = !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`;
+    const className = cx({ [nodeInput]: true, [nodeInputWithError]: showValidation && !isEmpty(fieldErrors) });
     const onChange = (newValue) => setProperty(fieldName, newValue, defaultValue);
     const [isMarked] = useDiffMark();
 
     return (
         <Field
             type={fieldType}
-            isMarked={isMarked(`${fieldName}`)}
+            isMarked={isMarked(fieldName)}
             readOnly={readOnly}
             showValidation={showValidation}
             autoFocus={autoFocus}
@@ -54,6 +57,7 @@ export function NodeField<N extends string, V>({
             fieldErrors={fieldErrors}
             value={value}
             onChange={onChange}
+            description={description}
         >
             {renderFieldLabel(fieldLabel)}
         </Field>
