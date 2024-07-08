@@ -7,6 +7,8 @@ import { IdField } from "./IdField";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
 import { FieldLabel } from "./FieldLabel";
+import { FieldType } from "./editors/field/Field";
+import { NodeField } from "./NodeField";
 
 interface Props {
     isEditMode?: boolean;
@@ -66,6 +68,17 @@ export function Properties({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 errors={errors}
+            />
+            <NodeField
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                node={node}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                errors={errors}
+                fieldType={FieldType.checkbox}
+                fieldName={"additionalFields.showDescription"}
+                description={"Show description every time"}
             />
         </>
     );

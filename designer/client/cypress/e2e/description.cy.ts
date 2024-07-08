@@ -31,25 +31,26 @@ describe("Description", () => {
 
 *Everything* is going according to **plan**.`);
 
+        cy.contains("Show description every time").click();
+
         cy.get("@window")
             .contains(/^apply$/i)
             .click();
 
-        cy.get(`[title="toggle description view"]`).should("be.visible");
+        cy.get(`[title="toggle description view"]`).should("be.visible").click().should("not.exist");
+
         cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
+        cy.contains("description header").should("be.visible");
         cy.reload();
 
-        cy.get(`[title="toggle description view"]`).should("be.visible").click().should("not.exist");
-
-        cy.contains("description header").should("be.visible");
         cy.contains("Everything is going according to plan").should("be.visible").parent().parent().as("description");
 
-        cy.viewport(1200, 600);
+        cy.viewport(1200, 800);
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
 
-        cy.viewport(1450, 600);
+        cy.viewport(1450, 800);
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
 
         cy.get("[title='toggle right panel']").click();
