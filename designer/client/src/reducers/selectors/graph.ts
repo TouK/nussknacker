@@ -74,6 +74,6 @@ export const getShowRunProcessDetails = createSelector(
 export const getVersions = createSelector(getScenario, (details) => details?.history || []);
 export const hasOneVersion = createSelector(getVersions, (h) => h.length <= 1);
 export const getAdditionalFields = createSelector(getScenarioGraph, (p) => p.properties?.additionalFields);
-export const getScenarioDescription = createSelector(getAdditionalFields, (f) => f?.description);
+export const getScenarioDescription = createSelector(getAdditionalFields, (f): [string, boolean] => [f?.description, f?.showDescription]);
 
 export const getLayout = createSelector(getGraph, (state) => state.layout || []);
