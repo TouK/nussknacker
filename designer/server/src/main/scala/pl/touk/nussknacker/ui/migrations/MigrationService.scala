@@ -242,10 +242,8 @@ class MigrationService(
         CreateScenarioCommand(
           name = processName,
           category = Some(parameters.category),
-          None,
-          None,
-//          processingMode = Some(parameters.processingMode),
-//          engineSetupName = Some(parameters.engineSetupName),
+          processingMode = Some(parameters.processingMode),
+          engineSetupName = Some(parameters.engineSetupName),
           isFragment = isFragment,
           forwardedUserName = forwardedUsername
         )
