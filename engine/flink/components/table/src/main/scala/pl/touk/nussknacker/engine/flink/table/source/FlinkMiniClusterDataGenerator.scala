@@ -91,33 +91,12 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
 
   private def cleanup(dir: Path, tableNames: List[String]): Unit = {
     delete(dir)
-    tableNames.foreach(deleteTable)
-  }
-
-  private def delete(dir: Path): Unit = Try {
-    Files
-      .walk(dir)
-      .sorted(java.util.Comparator.reverseOrder())
-      .forEach(path => Files.deleteIfExists(path))
-    logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dir.toUri.toURL}'")
-  } match {
-    case Failure(e) =>
-      logger.error(
-        s"Couldn't properly delete temporary test data dumping directory at: '${dir.toUri.toURL}'",
-        e
-      )
-    case Success(_) => ()
-  }
-
-  private def deleteTable(tableName: String): Unit = {
-    if (!env.dropTemporaryTable(tableName)) {
-      logger.error(s"Couldn't properly delete temporary temporary table: '$tableName'")
-    }
+    tableNames.foreach(t => deleteTable(env, t))
   }
 
 }
 
-object FlinkMiniClusterDataGenerator {
+object FlinkMiniClusterDataGenerator extends LazyLogging {
 
   private def tableNameValidRandomValue        = UUID.randomUUID().toString.replaceAll("-", "")
   private def generateTestDataInputTableName   = s"testDataInputTable_$tableNameValidRandomValue"
@@ -144,6 +123,27 @@ object FlinkMiniClusterDataGenerator {
     )
     conf.set(CoreOptions.DEFAULT_PARALLELISM, miniClusterTestingEnvParallelism)
     EnvironmentSettings.newInstance().withConfiguration(conf).build()
+  }
+
+  def delete(dir: Path): Unit = Try {
+    Files
+      .walk(dir)
+      .sorted(java.util.Comparator.reverseOrder())
+      .forEach(path => Files.deleteIfExists(path))
+    logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dir.toUri.toURL}'")
+  } match {
+    case Failure(e) =>
+      logger.error(
+        s"Couldn't properly delete temporary test data dumping directory at: '${dir.toUri.toURL}'",
+        e
+      )
+    case Success(_) => ()
+  }
+
+  def deleteTable(env: TableEnvironment, tableName: String): Unit = {
+    if (!env.dropTemporaryTable(tableName)) {
+      logger.error(s"Couldn't properly delete temporary temporary table: '$tableName'")
+    }
   }
 
 }

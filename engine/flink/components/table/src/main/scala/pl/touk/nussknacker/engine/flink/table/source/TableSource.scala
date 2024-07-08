@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TestDataGenerator,
   TestWithParametersSupport
 }
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -84,8 +84,10 @@ class TableSource(
 
   override def typeInformation: TypeInformation[RECORD] = TypeInformation.of(classOf[RECORD])
 
-//  TODO: add implementation during task with test from file
-  override def testRecordParser: TestRecordParser[RECORD] = ???
+  private lazy val recordParser = new FlinkMiniClusterRecordParser(tableDefinition.toFlinkSchema)
+
+  override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
+    recordParser.parse(testRecords)
 
   private lazy val dataGenerator = new FlinkMiniClusterDataGenerator(tableDefinition.toFlinkSchema)
 
@@ -93,6 +95,6 @@ class TableSource(
 }
 
 object TableSource {
-  private type RECORD = java.util.Map[String, Any]
+  type RECORD = java.util.Map[String, Any]
   private val filteringInternalViewName = "filteringView"
 }
