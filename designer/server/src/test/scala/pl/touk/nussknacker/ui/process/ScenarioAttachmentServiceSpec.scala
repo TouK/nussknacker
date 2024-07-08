@@ -63,4 +63,5 @@ private object TestProcessActivityRepository extends ProcessActivityRepository {
   ): Future[Option[AttachmentEntityData]] =
     ???
 
+  override def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]] = ???
 }
