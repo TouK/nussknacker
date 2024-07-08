@@ -21,6 +21,7 @@
 * [#6245](https://github.com/TouK/nussknacker/pull/6245) Parameter validations defined in AdditionalUIConfigProvider now properly impact dynamic components.
 * [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 * [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
+* [#6337](https://github.com/TouK/nussknacker/pull/6337) Fixes memory leak in test mechanism introduced in 1.13 version ([#4901](https://github.com/TouK/nussknacker/pull/4901))
 
 1.15.4 (5 July 2025)
 -------------------------
