@@ -3,6 +3,8 @@ import ExpressionField from "./editors/expression/ExpressionField";
 import { findParamDefinitionByName } from "./FieldLabel";
 import React, { ComponentType, PropsWithChildren, useMemo } from "react";
 import { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
+import { findParamDefinitionByName } from "./ParamLabel";
+import ProcessUtils from "../../../common/ProcessUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
 
 export type FieldWrapperProps = PropsWithChildren<Omit<ParameterExpressionFieldProps, "FieldWrapper">>;
