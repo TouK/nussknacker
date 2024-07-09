@@ -8,7 +8,6 @@ import { LoadingButtonTypes } from "../../../windowManager/LoadingButton";
 import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeDetailsStyled";
 import { NodeDocs } from "../../graph/node-modal/nodeDetails/SubHeader";
 import { MarkdownForm } from "./MarkdownForm";
-import { isEmpty, omitBy } from "lodash";
 import { ActionValues, GenericActionFormContext } from "./GenericActionFormContext";
 import { Box } from "@mui/material";
 import { useGenericActionValidation } from "./useGenericActionValidation";
@@ -43,12 +42,6 @@ export interface GenericActionData {
     action: GenericAction;
 }
 
-function omitEmpty(value: ActionValues) {
-    return omitBy(value, ({ expression }) => {
-        return isEmpty(expression);
-    });
-}
-
 function GenericActionDialog(props: WindowContentProps<WindowKind, GenericActionData>): ReactElement {
     const { t } = useTranslation();
     const { data, close } = props;
@@ -62,8 +55,7 @@ function GenericActionDialog(props: WindowContentProps<WindowKind, GenericAction
     const { errors, isValid } = useGenericActionValidation(action, value);
 
     const confirm = useCallback(async () => {
-        const values = omitEmpty(value);
-        onConfirmAction(values);
+        onConfirmAction(value);
         close();
     }, [close, onConfirmAction, value]);
 

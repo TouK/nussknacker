@@ -10,32 +10,32 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.base.it.{NuItTest, WithAccessControlCheckingConfigScenarioHelper}
+import pl.touk.nussknacker.test.base.it.{NuItTest, WithCategoryUsedMoreThanOnceConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.TestCategory.Category1
-import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.config.WithCategoryUsedMoreThanOnceDesignerConfig
 import pl.touk.nussknacker.test.processes.WithScenarioActivitySpecAsserts
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
   RestAssuredVerboseLoggingIfValidationFails,
-  VeryPatientScalaFutures
+  StandardPatientScalaFutures
 }
 import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrationApiAdapters}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.ApiAdapter
 
+// FIXME: For migrating between different API version should be written end to end test (e2e-tests directory)
 class MigrationApiHttpServiceBusinessSpec
     extends AnyFreeSpecLike
     with NuItTest
-    with WithAccessControlCheckingDesignerConfig
+    with WithCategoryUsedMoreThanOnceDesignerConfig
     with WithScenarioActivitySpecAsserts
-    with WithAccessControlCheckingConfigScenarioHelper
-    with WithMockableDeploymentManager
+    with WithCategoryUsedMoreThanOnceConfigScenarioHelper
     with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLoggingIfValidationFails
     with Eventually
-    with VeryPatientScalaFutures {
+    with StandardPatientScalaFutures {
 
   val adapters: Map[Int, ApiAdapter[MigrateScenarioData]] = MigrationApiAdapters.adapters
 
@@ -82,7 +82,7 @@ class MigrationApiHttpServiceBusinessSpec
     "migrate scenario and add update comment when scenario exists on target environment" in {
       given()
         .applicationState(
-          createSavedScenario(exampleScenario, Category1)
+          createSavedScenario(exampleScenario)
         )
         .when()
         .basicAuthAllPermUser()
@@ -94,7 +94,7 @@ class MigrationApiHttpServiceBusinessSpec
           eventually {
             verifyCommentExists(exampleProcessName.value, "Scenario migrated from DEV by remoteUser", "allpermuser")
             verifyScenarioAfterMigration(
-              exampleProcessName.value,
+              scenarioName = exampleProcessName.value,
               processVersionId = 2,
               isFragment = false,
               modifiedBy = "remoteUser",
@@ -122,7 +122,7 @@ class MigrationApiHttpServiceBusinessSpec
     "fail when scenario is archived on target environment" in {
       given()
         .applicationState(
-          createArchivedExampleScenario(exampleProcessName, Category1)
+          createArchivedExampleScenario(exampleProcessName)
         )
         .when()
         .basicAuthAllPermUser()
@@ -137,7 +137,7 @@ class MigrationApiHttpServiceBusinessSpec
     "migrate fragment and add update comment when fragment exists in target environment" in {
       given()
         .applicationState(
-          createSavedFragment(validFragment, Category1)
+          createSavedFragment(validFragment)
         )
         .when()
         .basicAuthAllPermUser()
