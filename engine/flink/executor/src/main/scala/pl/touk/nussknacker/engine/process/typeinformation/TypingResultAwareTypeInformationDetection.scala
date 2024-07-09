@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -54,7 +54,20 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     extends TypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
-    Typed.typedClass[BigDecimal] -> TypeInformation.of(classOf[BigDecimal])
+    Typed.typedClass[String]                  -> Types.STRING,
+    Typed.typedClass[Boolean]                 -> Types.BOOLEAN,
+    Typed.typedClass[Byte]                    -> Types.BYTE,
+    Typed.typedClass[Short]                   -> Types.SHORT,
+    Typed.typedClass[Integer]                 -> Types.INT,
+    Typed.typedClass[Long]                    -> Types.LONG,
+    Typed.typedClass[Float]                   -> Types.FLOAT,
+    Typed.typedClass[Double]                  -> Types.DOUBLE,
+    Typed.typedClass[Character]               -> Types.CHAR,
+    Typed.typedClass[java.math.BigDecimal]    -> Types.BIG_DEC,
+    Typed.typedClass[java.math.BigInteger]    -> Types.BIG_INT,
+    Typed.typedClass[java.time.LocalDate]     -> Types.LOCAL_DATE,
+    Typed.typedClass[java.time.LocalTime]     -> Types.LOCAL_TIME,
+    Typed.typedClass[java.time.LocalDateTime] -> Types.LOCAL_DATE_TIME,
   )
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.sink
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
+import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -21,13 +22,14 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
+class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures with LoneElement {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private lazy val outputDirectory1 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-1")
   private lazy val outputDirectory2 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-2")
+  private lazy val outputDirectory3 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-3")
   private lazy val inputDirectory =
     new File("engine/flink/components/base-tests/src/test/resources/tables/primitives").toPath.toAbsolutePath
 
@@ -39,7 +41,6 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       |    `tinyInt`             TINYINT,
       |    `smallInt`            SMALLINT,
       |    `int`                 INT,
-      |    `bigint`              BIGINT,
       |    `float`               FLOAT,
       |    `double`              DOUBLE,
       |    `decimal`             DECIMAL,
@@ -65,6 +66,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       |      'format' = 'csv'
       |) LIKE input;
       |
+      |CREATE TABLE `one` (
+      |    `one`                 STRING
+      |) WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$outputDirectory3',
+      |      'format' = 'csv'
+      |);
       |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -114,7 +122,17 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
 
   test("should do spel-to-file for all primitive types") {
     val primitiveTypesRecordCsvFirstLine =
-      """str,true,123,123,123,123,123.0,123.0,1,2020-12-31,10:15:00,"2020-12-31 10:15:00","2020-12-31 10:15:00Z""""
+      "str," +
+        "true," +
+        "123," +
+        "123," +
+        "123," +
+        "123.12," +
+        "123.12," +
+        "1," +
+        "2020-12-31,10:15:00," +
+        "\"2020-12-31 10:15:00\"," +
+        "\"2020-12-31 10:15:00Z\""
 
     val primitiveTypesExpression = Expression.spel(s"""
         |{
@@ -123,7 +141,6 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
         |  tinyInt: $spelByte,
         |  smallInt: $spelShort,
         |  int: $spelInt,
-        |  bigint: $spelBigint,
         |  decimal: $spelDecimal,
         |  float:  $spelFloat,
         |  double: $spelDouble,
@@ -144,8 +161,28 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     )
     result.isValid shouldBe true
 
-    val outputFileContentLines = getLinesOfSingleFileInDirectoryEventually(outputDirectory2)
-    outputFileContentLines contains primitiveTypesRecordCsvFirstLine
+    getLinesOfSingleFileInDirectoryEventually(outputDirectory2).loneElement shouldBe primitiveTypesRecordCsvFirstLine
+  }
+
+  test("should skip redundant fields") {
+    val valueExpression = Expression.spel(s"""
+         |{
+         |  two: $spelStr,
+         |  one: $spelStr
+         |}
+         |""".stripMargin)
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .emptySink("end", "table", "Table" -> "'one'".spel, "Value" -> valueExpression)
+
+    val result = runner.runWithoutData(
+      scenario = scenario
+    )
+    result.isValid shouldBe true
+
+    getLinesOfSingleFileInDirectoryEventually(outputDirectory3).loneElement shouldBe "str"
   }
 
   private def getLinesOfSingleFileInDirectoryEventually(directory: Path) = {
