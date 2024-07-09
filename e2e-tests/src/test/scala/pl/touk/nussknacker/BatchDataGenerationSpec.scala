@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.config.WithE2EInstallationExampleRestAssuredUsersExtensions
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter.toScenarioGraph
 
 class BatchDataGenerationSpec
@@ -17,6 +17,7 @@ class BatchDataGenerationSpec
     with Matchers
     with VeryPatientScalaFutures
     with NuRestAssureExtensions
+    with NuRestAssureMatchers
     with WithE2EInstallationExampleRestAssuredUsersExtensions {
 
   private val simpleBatchTableScenario = ScenarioBuilder
@@ -27,14 +28,15 @@ class BatchDataGenerationSpec
   private val designerServiceUrl = "http://localhost:8080"
 
   "Generate file endpoint should generate records with randomized values for scenario with table source" in {
-    val expectedRecordRegex = {
-      val timestampRegex                    = """\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}""".r
-      val stringRegex                       = """[a-z\d]{100}""".r
-      val decimalWith15Precision2ScaleRegex = """\d{0,13}\.\d{0,2}""".r
-      val recordRegex =
-        s"""\\{"datetime":"$timestampRegex","client_id":"$stringRegex","amount":$decimalWith15Precision2ScaleRegex}""".r
-      s"""\\{"sourceId":"sourceId","record":$recordRegex}""".r
-    }
+    val expectedRecordRegex =
+      s"""{
+         |   "sourceId": "sourceId",
+         |   "record": {
+         |      "datetime": "${regexes.localDateRegex}",
+         |      "client_id": "[a-z\\\\d]{100}",
+         |      "amount": "${regexes.decimalRegex}"
+         |   }
+         |}""".stripMargin
 
     given()
       .applicationState(
@@ -45,11 +47,13 @@ class BatchDataGenerationSpec
       .basicAuthAdmin()
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
       .post(
-        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/1"
+        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/10"
       )
       .Then()
       .statusCode(200)
-      .matchPlainBodyWithRegex(expectedRecordRegex)
+      .body(
+        matchAllNdJsonWithRegexValues(expectedRecordRegex)
+      )
   }
 
   private def createBatchScenario(scenarioName: String): Unit = {
