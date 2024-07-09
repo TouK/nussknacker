@@ -23,7 +23,7 @@ import cats._
 import cats.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 class SpelExpressionSuggester(
     expressionConfig: ExpressionConfigDefinition,
@@ -58,17 +58,49 @@ class SpelExpressionSuggester(
       validationContext
     )
 
-    lazy val newExpressionForSpELVariable: Expression =
+    lazy val newExpressionForSpELVariable: Option[Expression] =
       truncateExpressionToCorrespondingSpELVariable(expression, caretPosition2d)
 
-    lazy val futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption = expressionSuggestionsAux(
-      newExpressionForSpELVariable,
-      newExpressionForSpELVariable.expression.length,
-      validationContext
-    )
+    lazy val futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption =
+      newExpressionForSpELVariable.flatMap(e =>
+        expressionSuggestionsAux(
+          e,
+          e.expression.length,
+          validationContext
+        )
+      )
 
-    val firstNonEmptySuggestionFuture =
-      futureSuggestionsOption orElse futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption orElse futureSuggestionsAfterTruncatingExpressionByCaretPositionOption getOrElse successfulNil
+    def processOptions[A](options: LazyList[Option[Future[Iterable[A]]]]): Future[Iterable[A]] = {
+      def processOption(optFuture: Option[Future[Iterable[A]]]): Future[Iterable[A]] = {
+        optFuture match {
+          case Some(future) =>
+            future.flatMap {
+              case iterable if iterable.isEmpty => Future.failed(new Exception("Empty iterable"))
+              case nonEmptyIterable             => Future.successful(nonEmptyIterable)
+            }
+          case None => Future.failed(new Exception("None should be skipped"))
+        }
+      }
+
+      def processOptionsRecursively(opts: LazyList[Option[Future[Iterable[A]]]]): Future[Iterable[A]] = {
+        opts match {
+          case LazyList() => Future.successful(Iterable.empty)
+          case head #:: tail =>
+            processOption(head).recoverWith { case _: Exception =>
+              processOptionsRecursively(tail)
+            }
+        }
+      }
+
+      processOptionsRecursively(options)
+    }
+
+    val l = LazyList(
+      futureSuggestionsOption,
+      futureSuggestionsAfterTruncatingExpressionByCaretPositionOption,
+      futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption
+    )
+    val firstNonEmptySuggestionFuture = processOptions[ExpressionSuggestion](l)
 
     firstNonEmptySuggestionFuture.map(_.toList.sortBy(_.methodName)).map(_.toList)
   }
@@ -296,8 +328,8 @@ class SpelExpressionSuggester(
   private def truncateExpressionToCorrespondingSpELVariable(
       expression: Expression,
       caretPosition2d: CaretPosition2d
-  ): Expression = {
-    val transformedPlainExpression = "#" ++ expression.expression
+  ): Option[Expression] = {
+    val transformedPlainExpression = expression.expression
       .split("\n")
       .toList
       .zipWithIndex
@@ -307,11 +339,21 @@ class SpelExpressionSuggester(
         case (s, _)                   => s
       }
       .mkString("\n")
-      .reverse
-      .takeWhile(_ != '#')
-      .reverse
 
-    expression.copy(expression = transformedPlainExpression)
+    if (transformedPlainExpression.isEmpty || transformedPlainExpression.last == ' ') {
+      None
+    } else {
+      val fff = transformedPlainExpression.split(" ").last
+      if (fff.contains('#') && fff.last != ' ') {
+        val ff = fff.reverse
+          .takeWhile(_ != '#')
+          .reverse
+
+        Some(expression.copy(expression = "#" ++ ff))
+      } else {
+        None
+      }
+    }
   }
 
   private def truncateExpressionByCaretPosition2d(
