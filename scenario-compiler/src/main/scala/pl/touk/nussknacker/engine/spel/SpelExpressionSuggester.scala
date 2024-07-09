@@ -58,8 +58,17 @@ class SpelExpressionSuggester(
       validationContext
     )
 
+    lazy val newExpressionForSpELVariable: Expression =
+      truncateExpressionToCorrespondingSpELVariable(expression, caretPosition2d)
+
+    lazy val futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption = expressionSuggestionsAux(
+      newExpressionForSpELVariable,
+      newExpressionForSpELVariable.expression.length,
+      validationContext
+    )
+
     val firstNonEmptySuggestionFuture =
-      futureSuggestionsOption orElse futureSuggestionsAfterTruncatingExpressionByCaretPositionOption getOrElse successfulNil
+      futureSuggestionsOption orElse futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption orElse futureSuggestionsAfterTruncatingExpressionByCaretPositionOption getOrElse successfulNil
 
     firstNonEmptySuggestionFuture.map(_.toList.sortBy(_.methodName)).map(_.toList)
   }
@@ -282,6 +291,27 @@ class SpelExpressionSuggester(
     }
 
     suggestions
+  }
+
+  private def truncateExpressionToCorrespondingSpELVariable(
+      expression: Expression,
+      caretPosition2d: CaretPosition2d
+  ): Expression = {
+    val transformedPlainExpression = "#" ++ expression.expression
+      .split("\n")
+      .toList
+      .zipWithIndex
+      .filter(_._2 <= caretPosition2d.row)
+      .map {
+        case (s, caretPosition2d.row) => s.take(caretPosition2d.column)
+        case (s, _)                   => s
+      }
+      .mkString("\n")
+      .reverse
+      .takeWhile(_ != '#')
+      .reverse
+
+    expression.copy(expression = transformedPlainExpression)
   }
 
   private def truncateExpressionByCaretPosition2d(
