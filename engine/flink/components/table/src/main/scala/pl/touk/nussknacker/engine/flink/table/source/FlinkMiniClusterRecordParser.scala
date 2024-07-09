@@ -6,11 +6,11 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor}
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterDataGenerator.{delete, deleteTable}
 import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterRecordParser.{
   generateTestDataInputTableName,
   miniClusterTestingEnvConfig
 }
+import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterUtils.{delete, deleteTable}
 import pl.touk.nussknacker.engine.flink.table.source.TableSource.RECORD
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.rowToMap
 import pl.touk.nussknacker.engine.util.ThreadUtils

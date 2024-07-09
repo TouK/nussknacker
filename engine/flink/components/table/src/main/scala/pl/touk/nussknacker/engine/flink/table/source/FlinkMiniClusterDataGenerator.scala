@@ -8,9 +8,10 @@ import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptio
 import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor, TableEnvironment}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterDataGenerator._
+import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterUtils.{delete, deleteTable}
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import java.util.UUID
 
+import java.util.UUID
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
@@ -96,7 +97,7 @@ class FlinkMiniClusterDataGenerator(flinkTableSchema: Schema) extends LazyLoggin
 
 }
 
-object FlinkMiniClusterDataGenerator extends LazyLogging {
+object FlinkMiniClusterDataGenerator {
 
   private def tableNameValidRandomValue        = UUID.randomUUID().toString.replaceAll("-", "")
   private def generateTestDataInputTableName   = s"testDataInputTable_$tableNameValidRandomValue"
@@ -124,6 +125,10 @@ object FlinkMiniClusterDataGenerator extends LazyLogging {
     conf.set(CoreOptions.DEFAULT_PARALLELISM, miniClusterTestingEnvParallelism)
     EnvironmentSettings.newInstance().withConfiguration(conf).build()
   }
+
+}
+
+object FlinkMiniClusterUtils extends LazyLogging {
 
   def delete(dir: Path): Unit = Try {
     Files
