@@ -17,7 +17,7 @@ describe("CommentContent#newContent", () => {
             </NuThemeProvider>,
         );
         expect(container).toContainHTML(
-            '<div><div class="css-10wuv5k"><span class="MuiTypography-root MuiTypography-caption css-1w8legj-MuiTypography-root">This is a <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-123" target="_blank">BUG-123</a></span></div></div>',
+            '<div><div class="css-11j7oje"><span class="MuiTypography-root MuiTypography-caption css-1w8legj-MuiTypography-root">This is a <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-123" target="_blank">BUG-123</a></span></div></div>',
         );
     });
 
@@ -29,7 +29,7 @@ describe("CommentContent#newContent", () => {
             </NuThemeProvider>,
         );
         expect(container).toContainHTML(
-            '<div><div class="css-10wuv5k"><span class="MuiTypography-root MuiTypography-caption css-1w8legj-MuiTypography-root">This is a <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-123" target="_blank">BUG-123</a>, and this is another: <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-124" target="_blank">BUG-124</a></span></div></div>',
+            '<div><div class="css-11j7oje"><span class="MuiTypography-root MuiTypography-caption css-1w8legj-MuiTypography-root">This is a <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-123" target="_blank">BUG-123</a>, and this is another: <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-124" target="_blank">BUG-124</a></span></div></div>',
         );
     });
 
