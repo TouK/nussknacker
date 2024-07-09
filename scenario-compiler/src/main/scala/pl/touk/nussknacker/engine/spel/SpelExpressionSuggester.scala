@@ -95,12 +95,12 @@ class SpelExpressionSuggester(
       processOptionsRecursively(options)
     }
 
-    val l = LazyList(
+    val lazyListOfFutureSuggestions = LazyList(
       futureSuggestionsOption,
       futureSuggestionsAfterTruncatingExpressionByCaretPositionOption,
       futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption
     )
-    val firstNonEmptySuggestionFuture = processOptions[ExpressionSuggestion](l)
+    val firstNonEmptySuggestionFuture = processOptions[ExpressionSuggestion](lazyListOfFutureSuggestions)
 
     firstNonEmptySuggestionFuture.map(_.toList.sortBy(_.methodName)).map(_.toList)
   }
@@ -329,27 +329,18 @@ class SpelExpressionSuggester(
       expression: Expression,
       caretPosition2d: CaretPosition2d
   ): Option[Expression] = {
-    val transformedPlainExpression = expression.expression
-      .split("\n")
-      .toList
-      .zipWithIndex
-      .filter(_._2 <= caretPosition2d.row)
-      .map {
-        case (s, caretPosition2d.row) => s.take(caretPosition2d.column)
-        case (s, _)                   => s
-      }
-      .mkString("\n")
+    val truncatedPlainExpression = truncatePlainExpression(expression, caretPosition2d)
 
-    if (transformedPlainExpression.isEmpty || transformedPlainExpression.last == ' ') {
+    if (truncatedPlainExpression.isEmpty || truncatedPlainExpression.last == ' ') {
       None
     } else {
-      val fff = transformedPlainExpression.split(" ").last
-      if (fff.contains('#') && fff.last != ' ') {
-        val ff = fff.reverse
+      val lastWordOfTruncatedExpression = truncatedPlainExpression.split(" ").last
+      if (lastWordOfTruncatedExpression.contains('#')) {
+        val spELVariableAlignedToCaret = lastWordOfTruncatedExpression.reverse
           .takeWhile(_ != '#')
           .reverse
 
-        Some(expression.copy(expression = "#" ++ ff))
+        Some(expression.copy(expression = "#" ++ spELVariableAlignedToCaret))
       } else {
         None
       }
@@ -360,6 +351,12 @@ class SpelExpressionSuggester(
       expression: Expression,
       caretPosition2d: CaretPosition2d
   ): Expression = {
+    val transformedPlainExpression: String = truncatePlainExpression(expression, caretPosition2d)
+
+    expression.copy(expression = transformedPlainExpression)
+  }
+
+  private def truncatePlainExpression(expression: Expression, caretPosition2d: CaretPosition2d) = {
     val transformedPlainExpression = expression.expression
       .split("\n")
       .toList
@@ -370,8 +367,7 @@ class SpelExpressionSuggester(
         case (s, _)                   => s
       }
       .mkString("\n")
-
-    expression.copy(expression = transformedPlainExpression)
+    transformedPlainExpression
   }
 
   private def insertDummyVariable(s: String, index: Int): String = {

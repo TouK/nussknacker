@@ -594,19 +594,17 @@ class ExpressionSuggesterSpec
     )
   }
 
-  test("Xyz") {
+  test("should suggest completions of the previous token even if the whole expression is not proper SpEL expression") {
     spelSuggestionsFor(
-      "#AN (#hell)",
+      "#AN #hell",
       0,
       "#AN".length
     ) shouldBe List(
       suggestion("#ANOTHER", Typed[A]),
     )
-  }
 
-  test("should suggest completions of the previous token even if the whole expression is not proper SpEL expression") {
     spelSuggestionsFor(
-      "#AN #hell",
+      "#AN (#hell)",
       0,
       "#AN".length
     ) shouldBe List(
