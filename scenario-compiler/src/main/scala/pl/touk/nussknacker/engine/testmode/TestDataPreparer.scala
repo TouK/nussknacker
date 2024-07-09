@@ -36,40 +36,41 @@ class TestDataPreparer(
   private lazy val expressionCompiler: ExpressionCompiler =
     ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet)
 
-  def prepareRecordForTest[T, R <: ScenarioTestRecord: TypeTag](source: Source, records: List[R]): List[T] = {
-    typeOf[R] match {
-      case r if r =:= typeOf[List[ScenarioTestJsonRecord]] =>
-        val jsonRecords = records.asInstanceOf[List[ScenarioTestJsonRecord]].map(_.record)
-        source match {
-          case s: SourceTestSupport[T @unchecked] => s.testRecordParser.parse(jsonRecords)
-          case other =>
-            throw new IllegalArgumentException(
-              s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
-            )
-        }
-      case r if r =:= typeOf[List[ScenarioTestParametersRecord]] =>
-        val parametersRecords = records.asInstanceOf[List[ScenarioTestParametersRecord]]
-        source match {
-          case s: TestWithParametersSupport[T @unchecked] =>
-            parametersRecords.map { record =>
-              implicit val implicitNodeId: NodeId = record.sourceId
-              val parameterTypingResults = s.testParametersDefinition.collect { param =>
-                record.parameterExpressions.get(param.name) match {
-                  case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
-                  case None if !param.isOptional => UnknownProperty(param.name).invalidNel
-                }
-              }
-              parameterTypingResults.sequence match {
-                case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
-                case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
+  // TODO local: refactor List[ScenarioTestRecord] to ADT?
+  def prepareRecordForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {
+    if (records.forall(a => a.isInstanceOf[ScenarioTestJsonRecord])) {
+      val jsonRecords = records.asInstanceOf[List[ScenarioTestJsonRecord]].map(_.record)
+      source match {
+        case s: SourceTestSupport[T @unchecked] => s.testRecordParser.parse(jsonRecords)
+        case other =>
+          throw new IllegalArgumentException(
+            s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser"
+          )
+      }
+    } else if (records.forall(a => a.isInstanceOf[ScenarioTestParametersRecord])) {
+      val parametersRecords = records.asInstanceOf[List[ScenarioTestParametersRecord]]
+      source match {
+        case s: TestWithParametersSupport[T @unchecked] =>
+          parametersRecords.map { record =>
+            implicit val implicitNodeId: NodeId = record.sourceId
+            val parameterTypingResults = s.testParametersDefinition.collect { param =>
+              record.parameterExpressions.get(param.name) match {
+                case Some(expression)          => evaluateExpression(expression, param).map(e => param.name -> e)
+                case None if !param.isOptional => UnknownProperty(param.name).invalidNel
               }
             }
-          case other =>
-            throw new IllegalArgumentException(
-              s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters"
-            )
-        }
-      case _ => throw new IllegalStateException("TODO error message") // TODO local
+            parameterTypingResults.sequence match {
+              case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
+              case Invalid(errors)        => throw new IllegalArgumentException(errors.toList.mkString(", "))
+            }
+          }
+        case other =>
+          throw new IllegalArgumentException(
+            s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters"
+          )
+      }
+    } else {
+      throw new IllegalStateException("TODO error message") // TODO local
     }
   }
 
