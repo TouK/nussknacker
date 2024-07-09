@@ -21,7 +21,7 @@ const SidePanelsContext = createContext<Record<PanelSide, SideState>>(null);
 function useSideState(configId: string, side: PanelSide) {
     const dispatch = useDispatch();
     const state = useSelector(panelsState);
-    const [fullSize, setFullSize] = useState(false);
+    const [fullSize, setFullSize] = useState(true);
 
     return useMemo(
         () => ({
