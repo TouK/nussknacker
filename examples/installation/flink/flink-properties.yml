@@ -1,4 +1,4 @@
-taskmanager.numberOfTaskSlots: 4
+taskmanager.numberOfTaskSlots: 8
 
 state.backend: filesystem
 state.checkpoints.dir: file:///opt/flink/data/checkpoints

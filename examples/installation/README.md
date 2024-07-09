@@ -7,7 +7,7 @@
 ## Running:
 
 ```bash
-./run.sh
+./start.sh
 ```
 
 ## Accessing:
@@ -19,5 +19,5 @@
 ## Cleaning up:
 
 ```bash
-./clean.sh
+./stop-and-clean.sh
 ```
