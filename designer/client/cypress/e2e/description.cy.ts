@@ -47,10 +47,10 @@ describe("Description", () => {
 
         cy.contains("Everything is going according to plan").should("be.visible").parent().parent().as("description");
 
-        cy.viewport(1200, 600);
+        cy.viewport(1200, 800);
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
 
-        cy.viewport(1450, 600);
+        cy.viewport(1450, 800);
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
 
         cy.get("[title='toggle right panel']").click();
