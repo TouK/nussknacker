@@ -16,6 +16,8 @@ describe("Fragment", () => {
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
+        cy.intercept("POST", "/api/nodes/*/validation").as("fragmentInputValidation");
+
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
@@ -241,7 +243,7 @@ describe("Fragment", () => {
                 request.alias = "suggestions";
             }
         });
-        cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get('[title="Value"]').siblings().eq(0).should("be.visible").type("{selectall}#fragmentResult.");
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation")
             .its("response.statusCode")
