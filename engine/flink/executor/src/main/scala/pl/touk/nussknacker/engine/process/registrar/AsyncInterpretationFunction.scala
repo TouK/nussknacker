@@ -39,7 +39,7 @@ private[registrar] class AsyncInterpretationFunction(
     super.open(parameters)
 
     getRuntimeContext.registerUserCodeClassLoaderReleaseHookIfAbsent(
-      "closeAsyncExecutionContext",
+      "closeAsyncExecutionContext#" ++ node.id,
       () => {
         logger.info("User class loader release hook called - closing async execution context")
         serviceExecutionContextPreparer.close()
