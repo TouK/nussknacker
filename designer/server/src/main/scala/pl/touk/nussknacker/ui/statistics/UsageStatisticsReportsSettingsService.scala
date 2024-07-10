@@ -140,7 +140,7 @@ class UsageStatisticsReportsSettingsService(
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
       fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-      correlationId = CorrelationId.apply()
+      correlationId = RequestId()
       combinedStatistics = basicStatistics ++
         scenariosStatistics ++
         generalStatistics ++

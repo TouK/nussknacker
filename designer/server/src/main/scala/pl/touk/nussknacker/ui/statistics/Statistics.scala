@@ -14,13 +14,13 @@ sealed trait Statistics {
 
 object Statistics extends LazyLogging {
 
-  final class NonEmpty(fingerprint: Fingerprint, correlationId: CorrelationId, rawStatistics: Map[String, String])
+  final class NonEmpty(fingerprint: Fingerprint, requestId: RequestId, rawStatistics: Map[String, String])
       extends Statistics
       with LazyLogging {
 
     private lazy val queryParamsForEveryURL = List(
-      encodeQueryParam(NuFingerprint.name     -> fingerprint.value),
-      encodeQueryParam(CorrelationIdStat.name -> correlationId.value)
+      encodeQueryParam(NuFingerprint.name -> fingerprint.value),
+      encodeQueryParam(RequestIdStat.name -> requestId.value)
     )
 
     override def prepareURLs(cfg: StatisticUrlConfig): Either[StatisticError, List[URL]] =

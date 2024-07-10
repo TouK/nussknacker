@@ -91,7 +91,7 @@ class UsageStatisticsReportsSettingsServiceTest
     NuVersion,
     DesignerUptimeInSeconds,
     NuFingerprint,
-    CorrelationIdStat,
+    RequestIdStat,
   ).map(_.name)
 
   test("should determine query params with version and source") {
@@ -113,7 +113,7 @@ class UsageStatisticsReportsSettingsServiceTest
     urls.length shouldEqual 1
     val urlString = urls.head.toString
     urlString should include(s"fingerprint=$sampleFingerprint")
-    urlString should include regex s"$CorrelationIdStat=$uuidRegex"
+    urlString should include regex s"$RequestIdStat=$uuidRegex"
     urlString should include("source=sources")
     urlString should include(s"version=${BuildInfo.version}")
   }
@@ -288,7 +288,7 @@ class UsageStatisticsReportsSettingsServiceTest
       NuSource,
       NuFingerprint,
       NuVersion,
-      CorrelationIdStat,
+      RequestIdStat,
       DesignerUptimeInSeconds,
     )
       .map(_.name)
