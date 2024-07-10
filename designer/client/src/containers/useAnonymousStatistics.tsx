@@ -1,13 +1,61 @@
 import { useSelector } from "react-redux";
 import { getFeatureSettings } from "../reducers/selectors/settings";
-import { useCallback } from "react";
-import { useInterval } from "./Interval";
+import { useCallback, useEffect, useState } from "react";
 import httpService from "../http/HttpService";
+import { useLocalstorageState } from "rooks";
+import moment from "moment";
 
-const STATISTIC_FETCH_TIME_IN_MINUTES = 60;
+const getCacheExpirationDate = (createdAt: number | null, statisticCacheTime: number) =>
+    moment(createdAt).add(statisticCacheTime, "minute");
+const isCacheExpired = (statisticsCache: { createdAt?: number }, statisticCacheTime: number) => {
+    const cacheExpirationDate = getCacheExpirationDate(statisticsCache?.createdAt, statisticCacheTime);
+    const currentDate = moment();
 
-export function useAnonymousStatistics(statisticFetchTime = STATISTIC_FETCH_TIME_IN_MINUTES) {
+    if (!statisticsCache) {
+        return true;
+    }
+
+    return cacheExpirationDate.isSameOrBefore(currentDate);
+};
+
+export const STATISTICS_CACHE = "NU_STATISTICS_CACHE";
+const STATISTIC_CACHE_TIME_IN_MINUTES = 60;
+
+const useStatisticsCache = (statisticCacheTime: number) => {
+    const [statisticsCache, setStatisticsCache] = useLocalstorageState<{ createdAt?: number }>(STATISTICS_CACHE, null);
+
+    const [statisticsReadyToRefetch, setStatisticsReadyToRefetch] = useState(() => {
+        return isCacheExpired(statisticsCache, statisticCacheTime);
+    });
+
+    useEffect(() => {
+        if (statisticsReadyToRefetch) {
+            setStatisticsCache({ createdAt: moment().valueOf() });
+            setStatisticsReadyToRefetch(false);
+        }
+    }, [setStatisticsCache, statisticsReadyToRefetch]);
+
+    useEffect(() => {
+        const remainingTimeToCacheExpired = moment(getCacheExpirationDate(statisticsCache?.createdAt, statisticCacheTime)).diff(
+            moment(),
+            "milliseconds",
+        );
+
+        const timer = setInterval(() => {
+            if (isCacheExpired(statisticsCache, statisticCacheTime)) {
+                setStatisticsReadyToRefetch(true);
+            }
+        }, remainingTimeToCacheExpired);
+
+        return () => clearInterval(timer);
+    }, [statisticCacheTime, statisticsCache]);
+
+    return { statisticsReadyToRefetch };
+};
+
+export function useAnonymousStatistics(statisticCacheTime = STATISTIC_CACHE_TIME_IN_MINUTES) {
     const featuresSettings = useSelector(getFeatureSettings);
+    const { statisticsReadyToRefetch } = useStatisticsCache(statisticCacheTime);
 
     const handleUsageStatistics = useCallback(() => {
         const appendStatisticElement = (url: string) => {
@@ -36,9 +84,9 @@ export function useAnonymousStatistics(statisticFetchTime = STATISTIC_FETCH_TIME
         });
     }, []);
 
-    useInterval(handleUsageStatistics, {
-        ignoreFirst: false,
-        refreshTime: 60 * 1000 * statisticFetchTime,
-        disabled: !featuresSettings.usageStatisticsReports.enabled,
-    });
+    useEffect(() => {
+        if (statisticsReadyToRefetch && featuresSettings.usageStatisticsReports.enabled) {
+            handleUsageStatistics();
+        }
+    }, [featuresSettings.usageStatisticsReports.enabled, handleUsageStatistics, statisticsReadyToRefetch]);
 }

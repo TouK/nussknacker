@@ -1,5 +1,4 @@
-import { renderHook } from "@testing-library/react-hooks";
-import { waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { useSelector } from "react-redux";
 import { describe, expect, jest } from "@jest/globals";
 import { useAnonymousStatistics } from "../src/containers/useAnonymousStatistics";
@@ -8,6 +7,11 @@ import { AxiosResponse } from "axios";
 
 jest.mock("react-redux");
 jest.mock("../src/http/HttpService");
+jest.mock("rooks", () => ({
+    useLocalstorageState: () => {
+        return [{ createdAt: Date.now() }, () => {}];
+    },
+}));
 
 const mockFetchStatisticUrls = httpService.fetchStatisticUsage as jest.MockedFunction<typeof httpService.fetchStatisticUsage>;
 const mockUserSelector = useSelector as jest.MockedFunction<typeof useSelector>;
@@ -18,14 +22,14 @@ describe("useAnonymousStatistics", () => {
         mockFetchStatisticUrls.mockClear();
     });
 
-    it("fetches statistics URLs and appends them to the document body", async () => {
+    it("should fetch the statistics URLs and append them to the document body", async () => {
         const mockUrls = ["http://localhost/url1", "http://localhost/url2"];
         const mockResponse = { data: { urls: mockUrls } } as AxiosResponse;
-        mockFetchStatisticUrls.mockResolvedValueOnce(mockResponse);
+        mockFetchStatisticUrls.mockResolvedValue(mockResponse);
 
-        mockUserSelector.mockReturnValueOnce({ usageStatisticsReports: { enabled: true } });
+        mockUserSelector.mockReturnValue({ usageStatisticsReports: { enabled: true } });
 
-        renderHook(() => useAnonymousStatistics());
+        renderHook(() => useAnonymousStatistics(0));
 
         expect(httpService.fetchStatisticUsage).toHaveBeenCalledTimes(1);
         expect(httpService.fetchStatisticUsage).toHaveBeenCalledWith();
@@ -47,12 +51,34 @@ describe("useAnonymousStatistics", () => {
         });
     });
 
-    it("does not fetch statistics URLs when feature is disabled", async () => {
+    it("should not fetch the statistics URLs when the feature is disabled", async () => {
         mockUserSelector.mockReturnValueOnce({ usageStatisticsReports: { enabled: false } });
 
         renderHook(() => useAnonymousStatistics(1));
 
         // Ensure that fetchStatisticUrls is not called
         expect(httpService.fetchStatisticUsage).not.toHaveBeenCalled();
+    });
+
+    it("should fetch the statistics URLs when the cache becomes expired", async () => {
+        const mockUrls = ["http://localhost/url1", "http://localhost/url2"];
+        const mockResponse = { data: { urls: mockUrls } } as AxiosResponse;
+        mockFetchStatisticUrls.mockResolvedValue(mockResponse);
+
+        mockUserSelector.mockReturnValue({ usageStatisticsReports: { enabled: true } });
+
+        renderHook(() => useAnonymousStatistics(0.01));
+
+        await waitFor(() => {
+            expect(httpService.fetchStatisticUsage).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it("should not fetch the statistics URLs when the cache is still valid", async () => {
+        mockUserSelector.mockReturnValue({ usageStatisticsReports: { enabled: true } });
+
+        renderHook(() => useAnonymousStatistics(1));
+
+        expect(httpService.fetchStatisticUsage).toHaveBeenCalledTimes(0);
     });
 });
