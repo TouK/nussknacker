@@ -28,6 +28,7 @@ import pl.touk.nussknacker.test.config.{
   WithAccessControlCheckingDesignerConfig,
   WithDesignerConfig
 }
+import pl.touk.nussknacker.test.utils.QueryParamsHelper
 import pl.touk.nussknacker.test.{
   NuRestAssureExtensions,
   NuRestAssureMatchers,
@@ -80,8 +81,8 @@ class StatisticsApiHttpServiceBusinessSpec
 
   override def designerConfig: Config = super.designerConfig
     .withValue("questDbSettings.instanceId", fromAnyRef(questDbRelativePathString))
-    .withValue("questDbSettings.flushTaskDelay", fromAnyRef("2 seconds"))
-    .withValue("questDbSettings.retentionTaskDelay", fromAnyRef("2 seconds"))
+    .withValue("questDbSettings.tasksExecutionDelay", fromAnyRef("2 seconds"))
+    .withValue("questDbSettings.retentionDelay", fromAnyRef("2 seconds"))
 
   private val exampleScenario = ScenarioBuilder
     .streaming(UUID.randomUUID().toString)
@@ -318,7 +319,7 @@ class StatisticsApiHttpServiceBusinessSpec
       with LazyLogging {
 
     override def matches(actual: Any): Boolean = {
-      val actualQueryParams = extractQueryParams(queryParamsPath)
+      val actualQueryParams = QueryParamsHelper.extractFromURLString(queryParamsPath)
       queryParamsMatchers.forall { case (expectedKey, expectedValue) =>
         actualQueryParams.get(expectedKey) match {
           case Some(actualValue) if expectedValue.matches(actualValue) => true
@@ -333,18 +334,6 @@ class StatisticsApiHttpServiceBusinessSpec
     }
 
     override def describeTo(description: Description): Unit = description.appendValue(queryParamsMatchers)
-
-    private def extractQueryParams(queryParamsPath: String): Map[String, String] =
-      queryParamsPath
-        .split("&")
-        .map(_.split("=").toList match {
-          case (key: String) :: (value: String) :: _ => (key, value)
-          case value =>
-            throw new IllegalArgumentException(s"Cannot parse query param with value: $value")
-        })
-        .toList
-        .toMap
-
   }
 
   private class GreaterThanOrEqualToLongMatcher(expected: Long) extends BaseMatcher[String] {

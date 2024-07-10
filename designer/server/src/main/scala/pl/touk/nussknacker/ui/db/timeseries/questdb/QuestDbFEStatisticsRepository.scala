@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.db.timeseries.questdb.QuestDbFEStatisticsRepositor
   selectQuery,
   tableName
 }
+import pl.touk.nussknacker.ui.statistics.RawFEStatistics
 
 import java.time.Clock
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
@@ -31,10 +32,6 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Futu
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-// TODO list:
-// 4. Limiting db file space on disk?
-// 6. API should have better types (missing domain layer for FE statistics names and domain objects for statistics).
-// 7. Changing table definition and recreate
 private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[CairoEngine], private val clock: Clock)(
     private implicit val ec: ExecutionContextExecutorService
 ) extends FEStatisticsRepository[Future]
@@ -53,15 +50,16 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
     engine.get().getWalWriter(engine.get().getTableTokenIfExists(tableName))
   )
 
-  private val flushDataTask      = new AtomicReference(createFlushDataTask())
   private val taskRecovery       = new TaskRecovery(engine, recover, tableName)
+  private val flushDataTask      = new AtomicReference(createFlushDataTask())
+  private val purgeWalTask       = new AtomicReference(createPurgeWalTask())
   private lazy val retentionTask = new AtomicReference(createRetentionTask())
 
   private val shouldCleanUpData    = new AtomicBoolean(false)
   private val aggregatedStatistics = new ConcurrentHashMap[String, java.lang.Long]()
 
-  override def write(statistics: Map[String, Long]): Future[Unit] = Future {
-    statistics.foreach { case (key, newValue) =>
+  override def write(rawFEStatistics: RawFEStatistics): Future[Unit] = Future {
+    rawFEStatistics.raw.foreach { case (key, newValue) =>
       aggregatedStatistics.compute(
         key,
         (_, oldValue) => {
@@ -75,8 +73,8 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
     }
   }
 
-  override def read(): Future[Map[String, Long]] = Future {
-    recordCursorPool
+  override def read(): Future[RawFEStatistics] = Future {
+    val result = recordCursorPool
       .get()
       .fetch(sqlContextPool.get()) { record =>
         val name  = record.getStrA(0).toString
@@ -84,6 +82,7 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
         name -> count
       }
       .toMap
+    RawFEStatistics(result)
   }
 
   private def currentTimeMicros(): Long =
@@ -94,7 +93,7 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
     walTableWriterPool.clear()
     sqlContextPool.clear()
     flushDataTask.get().close()
-    retentionTask.get().close()
+    purgeWalTask.get().close()
   }
 
   private def createTableIfNotExist(): Unit = {
@@ -107,17 +106,17 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
       recreateCairoEngine(engine)
       createTableIfNotExist()
       flushDataTask.set(createFlushDataTask())
+      purgeWalTask.set(createPurgeWalTask())
       retentionTask.set(createRetentionTask())
     }
   }
 
-  private def flushDataToDisk(): Unit = {
+  private def executeTasks(): Unit = {
     val statistics          = statisticsSnapshot()
     val currentTimeInMicros = currentTimeMicros()
     taskRecovery.runWithRecover(() => flushDataTask.get().runUnsafe(statistics, currentTimeInMicros))
-    if (shouldCleanUpData.get()) {
-      cleanUpOldData()
-    }
+    taskRecovery.runWithRecover(() => purgeWalTask.get().runUnsafe())
+    runRetentionTask()
   }
 
   private def statisticsSnapshot(): Map[String, Long] = {
@@ -129,15 +128,18 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
       .toMap
   }
 
-  private def cleanUpOldData(): Unit = {
-    shouldCleanUpData.set(false)
-    taskRecovery.runWithRecover(() => retentionTask.get().runUnsafe())
+  private def runRetentionTask(): Unit = {
+    if (shouldCleanUpData.get()) {
+      shouldCleanUpData.set(false)
+      taskRecovery.runWithRecover(() => retentionTask.get().runUnsafe())
+    }
   }
 
   private def scheduleRetention(): Unit =
     shouldCleanUpData.set(true)
 
   private def createFlushDataTask() = new FlushDataTask(engine.get(), walTableWriterPool)
+  private def createPurgeWalTask()  = new PurgeWalTask(engine.get())
   private def createRetentionTask() = new RetentionTask(engine.get(), tableName, sqlContextPool, clock)
 }
 
@@ -183,8 +185,8 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
       executorService <- createExecutorService(config.poolConfig)
       cairoEngine     <- createCairoEngine(config)
       repository      <- createRepository(executorService, cairoEngine, clock)
-      _ <- scheduleTask(system, config.flushTaskDelay, config.flushTaskDelay, () => repository.flushDataToDisk())
-      _ <- scheduleTask(system, Duration.Zero, config.retentionTaskDelay, () => repository.scheduleRetention())
+      _ <- scheduleTask(system, config.tasksExecutionDelay, config.tasksExecutionDelay, () => repository.executeTasks())
+      _ <- scheduleTask(system, Duration.Zero, config.retentionDelay, () => repository.scheduleRetention())
     } yield repository
 
   private def createExecutorService(
@@ -246,7 +248,7 @@ object QuestDbFEStatisticsRepository extends LazyLogging {
   )(release =
     repository =>
       IO {
-        repository.flushDataToDisk()
+        repository.executeTasks()
         repository.close()
       }
   )
