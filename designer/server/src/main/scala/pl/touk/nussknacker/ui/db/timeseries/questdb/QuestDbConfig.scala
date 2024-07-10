@@ -16,8 +16,8 @@ object QuestDbConfig {
       // If there are many instances we should change diagrams on grafana.
       instanceId: String,
       directory: Option[String],
-      flushTaskDelay: FiniteDuration,
-      retentionTaskDelay: FiniteDuration,
+      tasksExecutionDelay: FiniteDuration,
+      retentionDelay: FiniteDuration,
       poolConfig: QuestDbPoolConfig
   ) extends QuestDbConfig
 
@@ -36,9 +36,9 @@ object QuestDbConfig {
       Enabled(
         instanceId = parseOptionalConfig[String](config, "questDbSettings.instanceId").getOrElse("designer-statistics"),
         directory = parseOptionalConfig[String](config, "questDbSettings.directory"),
-        flushTaskDelay = parseOptionalConfig[FiniteDuration](config, "questDbSettings.flushTaskDelay")
+        tasksExecutionDelay = parseOptionalConfig[FiniteDuration](config, "questDbSettings.tasksExecutionDelay")
           .getOrElse(30 seconds),
-        retentionTaskDelay = parseOptionalConfig[FiniteDuration](config, "questDbSettings.retentionTaskDelay")
+        retentionDelay = parseOptionalConfig[FiniteDuration](config, "questDbSettings.retentionDelay")
           .getOrElse(24 hours),
         poolConfig = parseOptionalConfig[QuestDbPoolConfig](config, "questDbSettings.poolConfig").getOrElse(
           QuestDbPoolConfig(

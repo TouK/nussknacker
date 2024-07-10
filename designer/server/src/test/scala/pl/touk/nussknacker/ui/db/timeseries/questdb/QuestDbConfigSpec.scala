@@ -15,8 +15,8 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
         |    enabled: true,
         |    instanceId: "test",
         |    directory: "dir"
-        |    flushTaskDelay: 10 seconds
-        |    retentionTaskDelay: 60 seconds
+        |    tasksExecutionDelay: 10 seconds
+        |    retentionDelay: 60 seconds
         |    poolConfig: {
         |      corePoolSize: 1
         |      maxPoolSize: 3
@@ -30,8 +30,8 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
     QuestDbConfig(config) shouldBe QuestDbConfig.Enabled(
       instanceId = "test",
       directory = Some("dir"),
-      flushTaskDelay = 10 seconds,
-      retentionTaskDelay = 60 seconds,
+      tasksExecutionDelay = 10 seconds,
+      retentionDelay = 60 seconds,
       poolConfig = QuestDbConfig.QuestDbPoolConfig(
         corePoolSize = 1,
         maxPoolSize = 3,
@@ -45,8 +45,8 @@ class QuestDbConfigSpec extends AnyFunSuite with Matchers {
     QuestDbConfig(ConfigFactory.empty()) shouldBe QuestDbConfig.Enabled(
       instanceId = "designer-statistics",
       directory = None,
-      flushTaskDelay = 30 seconds,
-      retentionTaskDelay = 24 hours,
+      tasksExecutionDelay = 30 seconds,
+      retentionDelay = 24 hours,
       poolConfig = QuestDbConfig.QuestDbPoolConfig(
         corePoolSize = 2,
         maxPoolSize = 4,

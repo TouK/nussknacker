@@ -301,5 +301,5 @@ case object ActiveScenarioCount    extends StatisticKey("s_a")
 case object NuSource                extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
 case object NuFingerprint           extends StatisticKey("fingerprint")
 case object NuVersion               extends StatisticKey("version")
-case object CorrelationIdStat       extends StatisticKey("co_id")
+case object RequestIdStat           extends StatisticKey("req_id")
 case object DesignerUptimeInSeconds extends StatisticKey("d_u")
