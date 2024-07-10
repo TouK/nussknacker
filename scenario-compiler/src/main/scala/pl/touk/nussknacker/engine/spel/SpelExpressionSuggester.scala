@@ -50,14 +50,6 @@ class SpelExpressionSuggester(
         validationContext
       )
 
-    lazy val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
-
-    lazy val futureSuggestionsAfterTruncatingExpressionByCaretPositionOption = expressionSuggestionsAux(
-      newExpression,
-      caretPosition2d.normalizedCaretPosition(newExpression.expression),
-      validationContext
-    )
-
     lazy val newExpressionForSpELVariable: Option[Expression] =
       truncateExpressionToCorrespondingSpELVariable(expression, caretPosition2d)
 
@@ -97,7 +89,6 @@ class SpelExpressionSuggester(
 
     val lazyListOfFutureSuggestions = LazyList(
       futureSuggestionsOption,
-      futureSuggestionsAfterTruncatingExpressionByCaretPositionOption,
       futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption
     )
     val firstNonEmptySuggestionFuture = processOptions[ExpressionSuggestion](lazyListOfFutureSuggestions)
@@ -345,15 +336,6 @@ class SpelExpressionSuggester(
         None
       }
     }
-  }
-
-  private def truncateExpressionByCaretPosition2d(
-      expression: Expression,
-      caretPosition2d: CaretPosition2d
-  ): Expression = {
-    val transformedPlainExpression: String = truncatePlainExpression(expression, caretPosition2d)
-
-    expression.copy(expression = transformedPlainExpression)
   }
 
   private def truncatePlainExpression(expression: Expression, caretPosition2d: CaretPosition2d) = {

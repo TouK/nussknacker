@@ -625,15 +625,17 @@ class ExpressionSuggesterSpec
     spelSuggestionsFor(
       """
         |{
-        |  foo: #input.foo,
-        |  bar: #input. #input.bar
+        |  foo: #inpu,
+        |  bar: #input. (#input.fooSt)
         |}
         |""".stripMargin,
-      2,
+      3,
       "  bar: #input.".length
     ) shouldBe List(
+      suggestion("barB", Typed[B]),
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
     )
   }
 
