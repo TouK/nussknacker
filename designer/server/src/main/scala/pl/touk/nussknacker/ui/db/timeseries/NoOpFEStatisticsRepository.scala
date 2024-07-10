@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.db.timeseries
 
+import pl.touk.nussknacker.ui.statistics.RawFEStatistics
+
 import scala.concurrent.Future
 
 object NoOpFEStatisticsRepository extends FEStatisticsRepository[Future] {
 
-  override def read(): Future[Map[String, Long]] = Future.successful(Map.empty)
+  override def read(): Future[RawFEStatistics] = Future.successful(RawFEStatistics.empty)
 
-  override def write(statistics: Map[String, Long]): Future[Unit] = Future.successful(())
+  override def write(statistics: RawFEStatistics): Future[Unit] = Future.successful(())
 }
