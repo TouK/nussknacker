@@ -50,12 +50,12 @@ const useStatisticsLock = (statisticLockReleaseTime: number) => {
         return () => clearInterval(timer);
     }, [statisticLockReleaseTime, statisticsLock]);
 
-    return { statisticsReadyToRefetch };
+    return statisticsReadyToRefetch;
 };
 
 export function useAnonymousStatistics(statisticLockReleaseTime = STATISTIC_LOCK_RELEASE_IN_MINUTES) {
     const featuresSettings = useSelector(getFeatureSettings);
-    const { statisticsReadyToRefetch } = useStatisticsLock(statisticLockReleaseTime);
+    const statisticsReadyToRefetch = useStatisticsLock(statisticLockReleaseTime);
 
     const handleUsageStatistics = useCallback(() => {
         const appendStatisticElement = (url: string) => {
