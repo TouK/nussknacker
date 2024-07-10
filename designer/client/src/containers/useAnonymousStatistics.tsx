@@ -5,57 +5,57 @@ import httpService from "../http/HttpService";
 import { useLocalstorageState } from "rooks";
 import moment from "moment";
 
-const getCacheExpirationDate = (createdAt: number | null, statisticCacheTime: number) =>
-    moment(createdAt).add(statisticCacheTime, "minute");
-const isCacheExpired = (statisticsCache: { createdAt?: number }, statisticCacheTime: number) => {
-    const cacheExpirationDate = getCacheExpirationDate(statisticsCache?.createdAt, statisticCacheTime);
+const getLockReleaseDate = (createdAt: number | null, statisticLockReleaseTime: number) =>
+    moment(createdAt).add(statisticLockReleaseTime, "minute");
+const isLockReleased = (statisticsLock: { createdAt?: number }, statisticLockReleaseTime: number) => {
+    const lockReleaseDate = getLockReleaseDate(statisticsLock?.createdAt, statisticLockReleaseTime);
     const currentDate = moment();
 
-    if (!statisticsCache) {
+    if (!statisticsLock) {
         return true;
     }
 
-    return cacheExpirationDate.isSameOrBefore(currentDate);
+    return lockReleaseDate.isSameOrBefore(currentDate);
 };
 
-export const STATISTICS_CACHE = "NU_STATISTICS_CACHE";
-const STATISTIC_CACHE_TIME_IN_MINUTES = 60;
+export const STATISTICS_LOCK = "NU_STATISTICS_LOCK";
+const STATISTIC_LOCK_RELEASE_IN_MINUTES = 60;
 
-const useStatisticsCache = (statisticCacheTime: number) => {
-    const [statisticsCache, setStatisticsCache] = useLocalstorageState<{ createdAt?: number }>(STATISTICS_CACHE, null);
+const useStatisticsLock = (statisticLockReleaseTime: number) => {
+    const [statisticsLock, setStatisticsLock] = useLocalstorageState<{ createdAt?: number }>(STATISTICS_LOCK, null);
 
     const [statisticsReadyToRefetch, setStatisticsReadyToRefetch] = useState(() => {
-        return isCacheExpired(statisticsCache, statisticCacheTime);
+        return isLockReleased(statisticsLock, statisticLockReleaseTime);
     });
 
     useEffect(() => {
         if (statisticsReadyToRefetch) {
-            setStatisticsCache({ createdAt: moment().valueOf() });
+            setStatisticsLock({ createdAt: moment().valueOf() });
             setStatisticsReadyToRefetch(false);
         }
-    }, [setStatisticsCache, statisticsReadyToRefetch]);
+    }, [setStatisticsLock, statisticsReadyToRefetch]);
 
     useEffect(() => {
-        const remainingTimeToCacheExpired = moment(getCacheExpirationDate(statisticsCache?.createdAt, statisticCacheTime)).diff(
+        const remainingLogReleaseTime = moment(getLockReleaseDate(statisticsLock?.createdAt, statisticLockReleaseTime)).diff(
             moment(),
             "milliseconds",
         );
 
         const timer = setInterval(() => {
-            if (isCacheExpired(statisticsCache, statisticCacheTime)) {
+            if (isLockReleased(statisticsLock, statisticLockReleaseTime)) {
                 setStatisticsReadyToRefetch(true);
             }
-        }, remainingTimeToCacheExpired);
+        }, remainingLogReleaseTime);
 
         return () => clearInterval(timer);
-    }, [statisticCacheTime, statisticsCache]);
+    }, [statisticLockReleaseTime, statisticsLock]);
 
     return { statisticsReadyToRefetch };
 };
 
-export function useAnonymousStatistics(statisticCacheTime = STATISTIC_CACHE_TIME_IN_MINUTES) {
+export function useAnonymousStatistics(statisticLockReleaseTime = STATISTIC_LOCK_RELEASE_IN_MINUTES) {
     const featuresSettings = useSelector(getFeatureSettings);
-    const { statisticsReadyToRefetch } = useStatisticsCache(statisticCacheTime);
+    const { statisticsReadyToRefetch } = useStatisticsLock(statisticLockReleaseTime);
 
     const handleUsageStatistics = useCallback(() => {
         const appendStatisticElement = (url: string) => {
