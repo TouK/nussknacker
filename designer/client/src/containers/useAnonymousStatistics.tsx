@@ -19,13 +19,13 @@ const isLockReleased = (statisticsLock: { createdAt?: number }, statisticLockRel
 };
 
 export const STATISTICS_LOCK = "NU_STATISTICS_LOCK";
-const STATISTIC_LOCK_RELEASE_IN_MINUTES = 60;
+const STATISTICS_LOCK_RELEASE_IN_MINUTES = 60;
 
-const useStatisticsLock = (statisticLockReleaseTime: number) => {
+const useStatisticsLock = (statisticsLockReleaseTime: number) => {
     const [statisticsLock, setStatisticsLock] = useLocalstorageState<{ createdAt?: number }>(STATISTICS_LOCK, null);
 
     const [statisticsReadyToRefetch, setStatisticsReadyToRefetch] = useState(() => {
-        return isLockReleased(statisticsLock, statisticLockReleaseTime);
+        return isLockReleased(statisticsLock, statisticsLockReleaseTime);
     });
 
     useEffect(() => {
@@ -36,26 +36,26 @@ const useStatisticsLock = (statisticLockReleaseTime: number) => {
     }, [setStatisticsLock, statisticsReadyToRefetch]);
 
     useEffect(() => {
-        const remainingLogReleaseTime = moment(getLockReleaseDate(statisticsLock?.createdAt, statisticLockReleaseTime)).diff(
+        const remainingLogReleaseTime = moment(getLockReleaseDate(statisticsLock?.createdAt, statisticsLockReleaseTime)).diff(
             moment(),
             "milliseconds",
         );
 
         const timer = setInterval(() => {
-            if (isLockReleased(statisticsLock, statisticLockReleaseTime)) {
+            if (isLockReleased(statisticsLock, statisticsLockReleaseTime)) {
                 setStatisticsReadyToRefetch(true);
             }
         }, remainingLogReleaseTime);
 
         return () => clearInterval(timer);
-    }, [statisticLockReleaseTime, statisticsLock]);
+    }, [statisticsLockReleaseTime, statisticsLock]);
 
     return statisticsReadyToRefetch;
 };
 
-export function useAnonymousStatistics(statisticLockReleaseTime = STATISTIC_LOCK_RELEASE_IN_MINUTES) {
+export function useAnonymousStatistics(statisticsLockReleaseTime = STATISTICS_LOCK_RELEASE_IN_MINUTES) {
     const featuresSettings = useSelector(getFeatureSettings);
-    const statisticsReadyToRefetch = useStatisticsLock(statisticLockReleaseTime);
+    const statisticsReadyToRefetch = useStatisticsLock(statisticsLockReleaseTime);
 
     const handleUsageStatistics = useCallback(() => {
         const appendStatisticElement = (url: string) => {
