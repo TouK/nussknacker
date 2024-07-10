@@ -415,6 +415,8 @@ private[spel] class Typer(
           elementType <- extractIterativeType(iterateType)
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil =>
+              // Limitation: projection on an iterative type makes it loses it's known value,
+              // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
               valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
             case other =>
               invalid(IllegalSelectionTypeError(other))
@@ -502,19 +504,20 @@ private[spel] class Typer(
 
     if (isSingleElementSelection)
       childElementType
-    else
-      // Limitation: if parentType is a collection or map then it has to lose known value, as properly determining it would require evaluating the expression
+    else {
+      // Limitation: selection from an iterative type makes it loses it's known value,
+      // as properly determining it would require evaluating the selection expression for each element (likely working on the AST)
       parentType match {
         case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
           tc.withoutValue
         case tc: SingleTypingResult if tc.objType.klass.isArray =>
           tc.withoutValue
         case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-          // for simple selections, like `[(#this.key=='someKey')]` we could perhaps handle it without evaluating much,
-          // just working on the AST (like isSingleElementSelection) and the fields in TypedObjectTypingResult
           Typed.record(Map.empty)
-        case _ => parentType
+        case _ =>
+          parentType
       }
+    }
   }
 
   private def checkEqualityLikeOperation(
