@@ -1,12 +1,9 @@
 # Changelog
 
-1.15.5 (10 July 2025)
--------------------------
-* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
-
-1.15.4 (5 July 2025)
+1.15.4 (10 July 2025)
 -------------------------
 * [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
+* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
 
 1.15.3 (24 June 2024)
 -------------------------
