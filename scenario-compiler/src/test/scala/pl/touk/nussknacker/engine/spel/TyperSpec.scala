@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.CollectionConverters._
 
 class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
