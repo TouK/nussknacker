@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
 import scala.collection.compat.immutable.LazyList
+import scala.jdk.CollectionConverters._
 
 import cats._
 import cats.implicits._
@@ -79,9 +80,9 @@ class SpelExpressionSuggester(
       def processOptionsRecursively(opts: LazyList[Option[Future[Iterable[A]]]]): Future[Iterable[A]] = {
         opts match {
           case LazyList() => Future.successful(Iterable.empty)
-          case head #:: tail =>
-            processOption(head).recoverWith { case _: Exception =>
-              processOptionsRecursively(tail)
+          case ll =>
+            processOption(ll.head).recoverWith { case _: Exception =>
+              processOptionsRecursively(ll.tail)
             }
         }
       }
