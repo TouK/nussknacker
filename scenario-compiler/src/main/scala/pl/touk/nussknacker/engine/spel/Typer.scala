@@ -433,9 +433,9 @@ private[spel] class Typer(
 
       case e: Selection =>
         for {
-          iterateType   <- current.stackHead.map(valid).getOrElse(invalid(IllegalSelectionError))
-          elementType   <- extractIterativeType(iterateType)
-          selectionType <- resolveSelectionTypingResult(e, iterateType, elementType)
+          iterateType <- current.stackHead.map(valid).getOrElse(invalid(IllegalSelectionError))
+          elementType <- extractIterativeType(iterateType)
+          selectionType = resolveSelectionTypingResult(e, iterateType, elementType)
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil if result.canBeSubclassOf(Typed[Boolean]) =>
               valid(selectionType)
