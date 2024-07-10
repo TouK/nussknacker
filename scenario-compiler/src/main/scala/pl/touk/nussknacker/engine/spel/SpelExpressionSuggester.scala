@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+import scala.collection.compat.immutable.LazyList
+
 import cats._
 import cats.implicits._
 
