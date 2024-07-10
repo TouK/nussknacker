@@ -325,18 +325,14 @@ class SpelExpressionSuggester(
   ): Option[Expression] = {
     val truncatedPlainExpression = truncatePlainExpression(expression, caretPosition2d)
 
-    if (truncatedPlainExpression.isEmpty || truncatedPlainExpression.last == ' ') {
+    if (truncatedPlainExpression.isEmpty || !truncatedPlainExpression.contains(
+        '#'
+      ) || truncatedPlainExpression.last == ' ') {
       None
     } else {
-      val lastWordOfTruncatedExpression = truncatedPlainExpression.split(" ").last
-      if (lastWordOfTruncatedExpression.contains('#')) {
-        val spELVariableAlignedToCaret = lastWordOfTruncatedExpression.reverse
-          .takeWhile(_ != '#')
-          .reverse
-
-        Some(expression.copy(expression = "#" ++ spELVariableAlignedToCaret))
-      } else {
-        None
+      truncatedPlainExpression.split('#').toList.reverse match {
+        case ::(alignedSpELVariableName, _) => Some(expression.copy(expression = "#" ++ alignedSpELVariableName))
+        case Nil                            => None
       }
     }
   }
@@ -352,6 +348,7 @@ class SpelExpressionSuggester(
         case (s, _)                   => s
       }
       .mkString("\n")
+
     transformedPlainExpression
   }
 

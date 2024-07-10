@@ -637,12 +637,26 @@ class ExpressionSuggesterSpec
       suggestion("fooString", Typed[String]),
       suggestion("toString", Typed[String]),
     )
+
+    spelSuggestionsFor(
+      """
+        |{
+        |  foo: #inpu,
+        |  bar: #listVar.listField[ 0 ].f (#input.fooSt)
+        |}
+        |""".stripMargin,
+      3,
+      "  bar: #listVar.listField[ 0 ].f".length
+    ) shouldBe List(
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+    )
   }
 
   test("should not throw exception for invalid spel expression") {
     spelSuggestionsFor("# - 2a") shouldBe Nil
     spelSuggestionsFor("foo") shouldBe Nil
-    spelSuggestionsFor("##") should not be Nil
+    spelSuggestionsFor("##") shouldBe Nil
     spelSuggestionsFor("#bar.'abc") shouldBe Nil
   }
 
