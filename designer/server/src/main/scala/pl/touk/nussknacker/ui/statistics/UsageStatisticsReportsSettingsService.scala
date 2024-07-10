@@ -140,7 +140,7 @@ class UsageStatisticsReportsSettingsService(
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
       fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-      correlationId = RequestId()
+      requestId = RequestId()
       combinedStatistics = basicStatistics ++
         scenariosStatistics ++
         generalStatistics ++
@@ -150,7 +150,7 @@ class UsageStatisticsReportsSettingsService(
         feStatistics.raw.map { case (k, v) =>
           k -> v.toString
         }
-    } yield new Statistics.NonEmpty(fingerprint, correlationId, combinedStatistics)
+    } yield new Statistics.NonEmpty(fingerprint, requestId, combinedStatistics)
   }
 
   private def determineBasicStatistics(
