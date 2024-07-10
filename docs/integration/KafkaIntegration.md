@@ -26,11 +26,15 @@ This section provides important details of Nussknacker's integration with Kafka 
 
 Schema defines the format of data. Nussknacker expects that messages in topics are described by the schema.
 Nussknacker uses information contained in schemas for code completion and validation of messages.
-Schema of message can be described in [Avro Schema format](https://avro.apache.org/docs/#schemas) or [JSON Schema format](https://json-schema.org) (Confluent Schema Registry only)
+Schema of message can be described in [Avro Schema format](https://avro.apache.org/docs/#schemas) or 
+[JSON Schema format](https://json-schema.org) (Confluent Schema Registry only)
 
 Schemas are managed by Schema Registry - *Confluent Schema Registry* and *Azure Schema Registry* are supported.
 
-To preview schemas or add a new version, you can use tools available on your cloud platform or tools like [AKHQ](https://akhq.io). The Nussknacker Quickstart (Streaming Processing Mode) comes with bundled AKHQ, so you can add and modify schemas without the need to install additional tools. The link to AKHQ is available in the Designer in Scenarios tab under Data label. 
+To preview schemas or add a new version, you can use tools available on your cloud platform or tools like [AKHQ](https://akhq.io). 
+The [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart/tree/main) comes with bundled AKHQ,
+so you can add and modify schemas without the need to install additional tools. The link to AKHQ is available in 
+the Designer in Scenarios tab under Data label. 
 
 #### Association between schema with topic
 
