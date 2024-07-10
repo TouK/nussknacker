@@ -24,12 +24,6 @@ const background: dia.MarkupNodeJSON = {
         height: RECT_HEIGHT,
         rx: BORDER_RADIUS,
     },
-    children: [
-        {
-            selector: "title",
-            tagName: "title",
-        },
-    ],
 };
 
 const iconBackground: dia.MarkupNodeJSON = {
@@ -73,6 +67,20 @@ const content = (theme: Theme): dia.MarkupNodeJSON => ({
         fill: getBorderColor(theme),
         "pointer-events": "none",
         ...theme.typography.caption,
+    },
+});
+
+const help = (theme: Theme): dia.MarkupNodeJSON => ({
+    selector: "help",
+    tagName: "text",
+    attributes: {
+        x: RECT_WIDTH - CONTENT_PADDING,
+        y: RECT_HEIGHT / 2,
+        fill: getBorderColor(theme),
+        // "pointer-events": "none",
+        ...theme.typography.caption,
+        "text-anchor": "end",
+        cursor: "help",
     },
 });
 
@@ -129,6 +137,9 @@ const defaults = (theme: Theme) =>
                 content: {
                     textVerticalAnchor: "middle",
                 },
+                help: {
+                    textVerticalAnchor: "middle",
+                },
                 border: {
                     stroke: getBorderColor(theme),
                 },
@@ -173,7 +184,7 @@ const protoProps = (theme: Theme, node: NodeType) => {
         portMarkup: [portMarkup(theme, node)],
         portLabelMarkup: null,
 
-        markup: [background, iconBackground, border, icon, content(theme), testResults],
+        markup: [background, iconBackground, border, icon, content(theme), help(theme), testResults],
     };
 };
 
