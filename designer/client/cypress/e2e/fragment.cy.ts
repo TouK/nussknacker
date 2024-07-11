@@ -16,8 +16,6 @@ describe("Fragment", () => {
     });
 
     it("should allow adding input parameters and display used fragment graph in modal", () => {
-        cy.intercept("POST", "/api/nodes/*/validation").as("fragmentInputValidation");
-
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
@@ -177,7 +175,7 @@ describe("Fragment", () => {
             .should("be.visible")
             .drag("#nk-graph-main", {
                 target: {
-                    x: 800,
+                    x: 840,
                     y: 600,
                 },
                 force: true,
