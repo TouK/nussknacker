@@ -594,6 +594,14 @@ class ExpressionSuggesterSpec
     )
   }
 
+  test("should not suggest completions when it infers that expression is enclosed in quotes") {
+    spelSuggestionsFor(
+      "{'ala', 'ma', '#'}",
+      0,
+      "{'ala', 'ma', '#".length
+    ) shouldBe Nil
+  }
+
   test("should suggest completions of the previous token even if the whole expression is not proper SpEL expression") {
     spelSuggestionsFor(
       "#AN #hell",

@@ -327,7 +327,7 @@ class SpelExpressionSuggester(
 
     if (truncatedPlainExpression.isEmpty || !truncatedPlainExpression.contains(
         '#'
-      ) || truncatedPlainExpression.last == ' ') {
+      ) || truncatedPlainExpression.last == ' ' || truncatedPlainExpression.count(_ == '\'') % 2 == 1) {
       None
     } else {
       truncatedPlainExpression.split('#').toList.reverse match {
