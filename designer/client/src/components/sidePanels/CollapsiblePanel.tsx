@@ -2,6 +2,7 @@ import { styled } from "@mui/material";
 import React, { forwardRef, PropsWithChildren, useState } from "react";
 import { PANEL_WIDTH, SCROLL_THUMB_SIZE, SIDEBAR_WIDTH } from "../../stylesheets/variables";
 import { PanelSide } from "../../actions/nk";
+import { useGraphViewportAdjustment } from "./graphViewportAdjustment";
 
 type CollapsiblePanelProps = PropsWithChildren<{
     isExpanded?: boolean;
@@ -37,13 +38,21 @@ const CollapsiblePanelContent = styled("div")<CollapsiblePanelProps>(({ side, th
 
 export const CollapsiblePanel = forwardRef<HTMLDivElement, CollapsiblePanelProps>(function CollapsiblePanel(
     { children, className, scrollVisible, ...props },
-    ref,
+    forwardedRef,
 ) {
     const [visible, setVisible] = useState(props.isExpanded);
+    const width = props.isExpanded ? (scrollVisible ? PANEL_WIDTH : SIDEBAR_WIDTH) : 0;
+
+    const [ref] = useGraphViewportAdjustment({
+        side: props.side !== PanelSide.Left ? "right" : "left",
+        width,
+        forwardedRef,
+    });
+
     return (
         <CollapsiblePanelRoot
             style={{
-                width: props.isExpanded ? (scrollVisible ? PANEL_WIDTH : SIDEBAR_WIDTH) : 0,
+                width,
                 visibility: visible || props.isExpanded ? "visible" : "hidden",
             }}
             ref={ref}
