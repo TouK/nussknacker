@@ -28,16 +28,6 @@ class BatchDataGenerationSpec
   private val designerServiceUrl = "http://localhost:8080"
 
   "Generate file endpoint should generate records with randomized values for scenario with table source" in {
-    val expectedRecordRegex =
-      s"""{
-         |   "sourceId": "sourceId",
-         |   "record": {
-         |      "datetime": "${regexes.localDateRegex}",
-         |      "client_id": "[a-z\\\\d]{100}",
-         |      "amount": "${regexes.decimalRegex}"
-         |   }
-         |}""".stripMargin
-
     given()
       .applicationState(
         createBatchScenario(simpleBatchTableScenario.name.value)
@@ -52,7 +42,16 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(200)
       .body(
-        matchAllNdJsonWithRegexValues(expectedRecordRegex)
+        matchAllNdJsonWithRegexValues(s"""
+             |{
+             |   "sourceId": "sourceId",
+             |   "record": {
+             |      "datetime": "${regexes.localDateRegex}",
+             |      "client_id": "[a-z\\\\d]{100}",
+             |      "amount": "${regexes.decimalRegex}"
+             |   }
+             |}
+             |""".stripMargin)
       )
   }
 
