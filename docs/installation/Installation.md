@@ -17,7 +17,7 @@ Nussknacker built with Scala 2.12 works with Flink out of the box.
 ## Docker based installation
 
 Nussknacker is available at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/). You can check an example usage
-with docker-compose at [Nussknacker Quickstart repository](https://github.com/TouK/nussknacker-quickstart) in `docker` directory.
+with docker-compose at [Nussknacker Quickstart repository](https://github.com/TouK/nussknacker-quickstart).
 
 Please note, that while you can install Designer with plain Docker (e.g. with `docker-compose`) with Lite engine configured, you still
 need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
@@ -57,7 +57,7 @@ We provide [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker) w
 Please note that Kafka (and Flink if chosen) are installed in basic configuration - for serious production deployments you probably
 want to customize those to meet your needs.
 
-You can check example usage at [Nussknacker Quickstart repository](https://github.com/TouK/nussknacker-quickstart) in `k8s-helm` directory.
+You can check example usage at [Nussknacker Quickstart repository](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart) in `k8s-helm` directory.
 
 ## Configuration with environment variables
 
@@ -142,7 +142,7 @@ We assume that `java` (recommended version is JDK 11) is on path.
 Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
 running on `localhost` with their default ports configured. See [environment variables](#environment-variables) section
 for the details. Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy
-like [NGINX](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/nginx) is used to access both Designer and
+like [NGINX](https://github.com/TouK/nussknacker-installation-example/tree/master/nginx) is used to access both Designer and
 Grafana. For other setups you should change this value to absolute Grafana URL.
 
 `WORKING_DIR` environment variable is used as base place where Nussknacker stores its data such as:
@@ -249,18 +249,15 @@ Typical Nussknacker deployment includes Nussknacker Designer and a few additiona
 
 Some of them need to be configured properly to be fully integrated with Nussknacker.
 
-The [quickstart](https://github.com/TouK/nussknacker-quickstart) contains `docker-compose` based sample installation of
-all needed applications (and a few more that are needed for the demo).
+The [installation example](https://github.com/TouK/nussknacker-installation-example/) contains `docker-compose` based 
+sample installation of all needed applications.
 
 If you want to install them from the scratch or use already installed at your organisation pay attention to:
 
-- Metrics setup (please see quickstart for reference):
+- Metrics setup (please see installation example for reference):
   - Configuration of metric reporter in Flink setup
   - Telegraf's configuration - some metric tags and names need to be cleaned
   - Importing scenario dashboard to Grafana configuration
 - Flink savepoint configuration. To be able to use scenario verification
   (see `shouldVerifyBeforeDeploy` property in [scenario deployment configuration](../installation_configuration_guide/ScenarioDeploymentConfiguration.md))
-  you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart
-  setup)
-
-
+  you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS)
