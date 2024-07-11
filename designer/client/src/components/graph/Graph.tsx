@@ -289,9 +289,11 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom.fitContent(area, this.viewport, withCurrentZoomValue ? this.zoom : autoZoomThreshold);
     };
 
-    forceLayout = debounce(() => {
+    forceLayout = debounce((readOnly?: boolean) => {
         const cellsToLayout = getCellsToLayout(this.graph, this.props.selectionState);
-        this.directedLayout(cellsToLayout);
+        if (!readOnly) {
+            this.directedLayout(cellsToLayout);
+        }
         this.fit(cellsToLayout);
     }, 250);
 

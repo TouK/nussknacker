@@ -19,7 +19,10 @@ function LayoutButton(props: ToolbarButtonProps) {
             name={t("panels.actions.edit-layout.button", "layout")}
             icon={<Icon />}
             disabled={disabled}
-            onClick={() => dispatch(layout(() => graphGetter?.()?.forceLayout()))}
+            onClick={(e) => {
+                const altMode = "altKey" in e && e.altKey === true;
+                dispatch(layout(() => graphGetter?.()?.forceLayout(altMode)));
+            }}
             type={type}
         />
     );
