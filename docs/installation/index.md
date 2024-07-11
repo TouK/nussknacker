@@ -5,38 +5,35 @@ title: Installation
 # Installation
 
 Nussknacker relies on several open source components like Kafka, Grafana (or optionally, Flink), which need to be installed together with
-Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components;
-please refer to their respective documentations for details on their optimal configuration.
+Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components.
 
-### Flink
-Nussknacker (both binary package and docker image) is published in two versions - built with Scala 2.12 and 2.13.
-As for now, Flink does not support Scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue),
-so to use Nussknacker built with Scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
-Nussknacker built with Scala 2.12 works with Flink out of the box.
-
-???
-
-## Configuration of additional applications
-
-Typical Nussknacker deployment includes Nussknacker Designer and a few additional applications:
+### Nussknacker and its dependencies
 
 ![Nussknacker components](./img/components.png "Nussknacker components")
 
-Some of them need to be configured properly to be fully integrated with Nussknacker.
+As you see on the diagram above, Nussknacker interacts and depends on the following services:
+* [Postgres](https://www.postgresql.org/) - a database for the Nusskacker Designer
+* [Flink](https://flink.apache.org/) - a powerful steaming processing framework
+* [Kafka](https://kafka.apache.org/) - a broker for steaming data
+* [Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html) - a schema registry for the data in Kafka's topics
+* [AKHQ](https://akhq.io/) - a UI for Kafka & Schema Registry
+* [Grafana](https://grafana.com/) & [InfluxDB](https://www.influxdata.com/) & [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) - for a sake of scenarios monitoring 
+* [Nginx](https://nginx.org/en/) - a gateway for Designer and other UIs 
 
-The [quickstart](https://github.com/TouK/nussknacker-quickstart) contains `docker-compose` based sample installation of
-all needed applications (and a few more that are needed for the demo).
+Please refer to services documentation to install and configure them properly.
+You can also check our repository with the Nu stack [installation example](https://github.com/TouK/nussknacker-installation-example/). 
 
-If you want to install them from the scratch or use already installed at your organisation pay attention to:
+:::note
 
-- Metrics setup (please see quickstart for reference):
-  - Configuration of metric reporter in Flink setup
-  - Telegraf's configuration - some metric tags and names need to be cleaned
-  - Importing scenario dashboard to Grafana configuration
-- Flink savepoint configuration. To be able to use scenario verification
-  (see `shouldVerifyBeforeDeploy` property in [scenario deployment configuration](../configuration/ScenarioDeploymentConfiguration.md))
-  you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart
-  setup)
+Nussknacker (both binary package and docker image) is published in two versions - built with Scala 2.12 and 2.13.
+As for now, Flink does not support Scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue),
+so to use Nussknacker built with Scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
+Nussknacker built with Scala 2.12 works with Flink out of the box, so if you don't create your custom Nussknacker components
+using Scala 2.13, just pick the packages with Scala 2.12
+
+:::
+
+### Nussknacker installation methods
 
 ```mdx-code-block
 import DocCardList from '@theme/DocCardList';
