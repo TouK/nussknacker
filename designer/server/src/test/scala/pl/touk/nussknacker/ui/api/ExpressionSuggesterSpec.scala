@@ -600,6 +600,18 @@ class ExpressionSuggesterSpec
       0,
       "{'ala', 'ma', '#".length
     ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"'\", '\"', '#}",
+      0,
+      "{\"'\", '\"', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{'\"', \"'\", \"#}",
+      0,
+      "{'\"', \"'\", \"#".length
+    ) shouldBe Nil
   }
 
   test("should suggest completions of the previous token even if the whole expression is not proper SpEL expression") {

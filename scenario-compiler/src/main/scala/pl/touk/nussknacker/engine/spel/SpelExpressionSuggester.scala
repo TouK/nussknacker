@@ -321,6 +321,11 @@ class SpelExpressionSuggester(
     suggestions
   }
 
+  private def expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(plainExpression: String): Boolean =
+    plainExpression.count(
+      _ == '\''
+    ) % 2 == 1 || plainExpression.count(_ == '\"') % 2 == 1
+
   private def truncateExpressionToCorrespondingSpELVariable(
       expression: Expression,
       caretPosition2d: CaretPosition2d
@@ -330,7 +335,7 @@ class SpelExpressionSuggester(
     truncatedPlainExpression match {
       case expr
           if expr.isEmpty || !expr
-            .contains('#') || expr.last == ' ' || truncatedPlainExpression.count(_ == '\'') % 2 == 1 =>
+            .contains('#') || expr.last == ' ' || expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(expr) =>
         None
       case expr =>
         expr.split('#').toList.reverse.headOption match {
