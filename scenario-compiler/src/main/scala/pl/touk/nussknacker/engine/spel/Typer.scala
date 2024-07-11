@@ -225,6 +225,7 @@ private[spel] class Typer(
         // TODO: how to handle other cases?
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
+        case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
         case _ =>
           val w = validNodeResult(Unknown)
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
@@ -293,7 +294,7 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype)
+          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
           val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
 
           val typedClass = Typed.genericTypeClass[java.util.List[_]](List(elementType))

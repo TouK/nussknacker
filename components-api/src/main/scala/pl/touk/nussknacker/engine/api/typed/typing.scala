@@ -257,6 +257,12 @@ object typing {
       cl
     }
 
+    def typedList[T](elementType: TypingResult, elements: List[T]): TypedObjectWithValue =
+      TypedObjectWithValue(
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)),
+        elements.asJava
+      )
+
     private def toRuntime[T: ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     // parameters - None if you are not in generic aware context, Some - otherwise

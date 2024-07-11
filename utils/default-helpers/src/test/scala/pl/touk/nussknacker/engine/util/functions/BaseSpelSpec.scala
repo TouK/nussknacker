@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
+import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -66,6 +66,18 @@ trait BaseSpelSpec {
     )
     val evaluationCtx = Context("fooId").withVariables(localVariables)
     parser.parse(expr, validationCtx, Unknown).value.expression.evaluate[AnyRef](evaluationCtx, globalVariables)
+  }
+
+  protected def dupa(
+      expr: String,
+      localVariables: Map[String, Any] = Map.empty,
+      types: Map[String, TypingResult] = Map.empty
+  ): ValidatedNel[ExpressionParseError, TypingResult] = {
+    val validationCtx = ValidationContext(
+      localVariables.mapValuesNow(Typed.fromInstance) ++ types,
+      globalVariables.mapValuesNow(Typed.fromInstance)
+    )
+    parser.parse(expr, validationCtx, Unknown).map(_.returnType)
   }
 
   protected def evaluateType(
