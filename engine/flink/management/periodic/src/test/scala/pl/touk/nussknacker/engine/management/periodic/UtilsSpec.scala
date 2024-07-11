@@ -6,6 +6,10 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import pl.touk.nussknacker.engine.management.periodic.Utils.createActorWithRetry
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 class UtilsSpec
     extends TestKit(ActorSystem("UtilsSpec"))
@@ -18,36 +22,52 @@ class UtilsSpec
     TestKit.shutdownActorSystem(system)
   }
 
+  class TestActor extends Actor {
+    override def receive: Receive = { case _ => () }
+  }
+
   "Utils" should {
 
-    "stop actor and free actor path" in {
-      class TestActor extends Actor {
-        override def receive: Receive = { case _ =>
-          ()
-        }
-      }
-      val actorName = "actorName"
+    "create an actor if it's name is free" in {
+      import system.dispatcher
 
-      val actorRef = system.actorOf(Props(new TestActor), actorName)
+      val actorName = "actorName1" // unique name in each test so that they don't interfere with each other
 
-      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
-
-      // with normal system.stop(actorRef) or akka.pattern.gracefulStop this throws "actor name is not unique"
-      val actorRef2 = system.actorOf(Props(new TestActor), actorName)
-
-      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef2, system) // stop and free it so it doesn't impact other tests
+      createActorWithRetry(actorName, Props(new TestActor), system)
     }
 
-    "stop actor and free actor path without waiting for all of it's messages to be processed" in {
-      class TestActor extends Actor {
+    "create an actor if it's name isn't free but is freed before retrying gives up - idle actor" in {
+      import system.dispatcher
+
+      val actorName = "actorName2" // unique name in each test so that they don't interfere with each other
+
+      val actorRef = createActorWithRetry(actorName, Props(new TestActor), system)
+
+      val futureA = Future {
+        createActorWithRetry(actorName, Props(new TestActor), system)
+      }
+
+      val futureB = Future {
+        Thread.sleep(1000)
+        system.stop(actorRef)
+      }
+
+      Await.result(Future.sequence(Seq(futureA, futureB)), Duration.Inf)
+    }
+
+    "create an actor if it's name isn't free but is freed before retrying gives up - busy actor" in {
+      class BusyTestActor extends Actor {
         override def receive: Receive = { case msg =>
           logger.info(s"Sleeping on the job '$msg' ...")
           Thread.sleep(1000)
         }
       }
-      val actorName = "actorName"
 
-      val actorRef = system.actorOf(Props(new TestActor), actorName)
+      import system.dispatcher
+
+      val actorName = "actorName3" // unique name in each test so that they don't interfere with each other
+
+      val actorRef = createActorWithRetry(actorName, Props(new BusyTestActor), system)
 
       var messageCounter = 0
       while (messageCounter < 1000) {
@@ -55,13 +75,31 @@ class UtilsSpec
         messageCounter += 1
       }
 
-      Thread.sleep(1000)
-      // with gracefulStop this times out, because the PoisonPill is queued after the many normal messages
-      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef, system)
+      val futureA = Future {
+        createActorWithRetry(actorName, Props(new BusyTestActor), system)
+      }
 
-      val actorRef2 = system.actorOf(Props(new TestActor), actorName)
+      val futureB = Future {
+        Thread.sleep(1000)
 
-      Utils.stopActorAndWaitUntilItsNameIsFree(actorRef2, system) // stop and free it so it doesn't impact other tests
+        // if this was gracefulStop, it would take too long to stop the actor, as it would continue processing it's messages
+        system.stop(actorRef)
+      }
+
+      Await.result(Future.sequence(Seq(futureA, futureB)), Duration.Inf)
+    }
+
+    "fail to create an actor if it's name isn't freed" in {
+      import system.dispatcher
+
+      val actorName = "actorName4" // unique name in each test so that they don't interfere with each other
+
+      createActorWithRetry(actorName, Props(new TestActor), system)
+
+      (the[IllegalStateException] thrownBy {
+        createActorWithRetry(actorName, Props(new TestActor), system)
+      }).getMessage shouldEqual s"Failed to create actor '$actorName' within allowed retries: akka.actor.InvalidActorNameException: actor name [$actorName] is not unique!"
+
     }
 
     "ignore exceptions inside runSafely block" in {
