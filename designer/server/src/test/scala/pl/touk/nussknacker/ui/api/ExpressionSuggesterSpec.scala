@@ -614,15 +614,39 @@ class ExpressionSuggesterSpec
     ) shouldBe Nil
 
     spelSuggestionsFor(
-      "{'\"', \"'\", \"#}",
+      "{'\"', '\'', \"#}",
       0,
-      "{'\"', \"'\", \"#".length
+      "{'\"', '\'', \"#".length
     ) shouldBe Nil
 
     spelSuggestionsFor(
-      "{'\"', \"'\", '#}",
+      "{'\"', '\'', '#}",
       0,
-      "{'\"', \"'\", '#".length
+      "{'\"', '\'', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", \"\'\", '#}",
+      0,
+      "{\"\"\", \"\'\", '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", \"\'\", \"#}",
+      0,
+      "{\"\"\", \"\'\", \"#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", '\'', '#}",
+      0,
+      "{\"\"\", '\'', '#".length
+    ) shouldBe Nil
+
+    spelSuggestionsFor(
+      "{\"\"\", '\'', \"#}",
+      0,
+      "{\"\"\", '\'', \"#".length
     ) shouldBe Nil
   }
 
