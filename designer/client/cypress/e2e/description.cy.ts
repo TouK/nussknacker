@@ -46,6 +46,7 @@ describe("Description", () => {
         cy.reload();
 
         cy.contains("Everything is going according to plan").should("be.visible").parent().parent().as("description");
+        cy.layoutScenario();
 
         cy.viewport(1200, 800);
         cy.get("@description").matchImage({ screenshotConfig: { padding: [20, 100] } });
