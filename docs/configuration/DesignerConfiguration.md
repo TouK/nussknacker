@@ -52,9 +52,11 @@ The table below presents most important options, or the ones that have Nussknack
 
 ### Metric dashboard
 
-Each scenario can have a link to Grafana dashboard. In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/grafana) we
-provide a sample `nussknacker-scenario` dashboard.
-You can modify/configure your own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
+Each scenario can have a link to Grafana dashboard. 
+In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana/dashboards) 
+we provide a sample `nussknacker-scenario` dashboard. You can modify/configure your own, the only assumption that 
+we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display 
+metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by
 `metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
@@ -130,9 +132,9 @@ Each user has id and set of permissions for every scenario category. The followi
 * Write - user can modify/add new scenarios in category
 * Deploy - user can deploy or cancel scenarios in given category
 
-You can set `isAdmin` flag to a certain role in the [users configuration file](/docs/installation_configuration_guide/DesignerConfiguration.md#Users-file-format).
+You can set `isAdmin` flag to a certain role in the [users configuration file](#users-file-format).
 Users who have this role will be considered an Admin user by the system and will have all the permissions to every
-scenario category as well as all the [global permissions](/docs/installation_configuration_guide/DesignerConfiguration.md#Global-permissions).
+scenario category as well as all the [global permissions](#global-permissions).
 
 You can set a role assigned to an anonymous user with the `anonymousUserRole` setting in the `authentication` section in the configuration.
 When no value is provided (default), no anonymous access will be granted.
@@ -758,7 +760,7 @@ You can configure `secondaryEnvironment` to allow for
 ## Scenario type, categories
 
 Every scenario has to belong to a group called `category`. Category defines the business area around which you can organize 
-[users permissions](/installation_configuration_guide/DesignerConfiguration/#users-roles-and-permissions).
+[users permissions](/configuration/DesignerConfiguration/#users-roles-and-permissions).
 
 For example, in one Nussknacker installation you can have scenarios detecting frauds, and those implementing marketing campaigns. Then, the configuration will look like:
 

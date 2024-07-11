@@ -93,7 +93,7 @@ There are a few notable exceptions:
 | `{}`                   | an empty list                  | List[Unknown]        |
 | `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{:}`                  | an empty record                | Record{}             |
-| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)}] |
+| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)} |
 | `#input`               | variable                       |                      |
 | `'AA' + 'BB'`          | "AABB"                         | String               |
                                     

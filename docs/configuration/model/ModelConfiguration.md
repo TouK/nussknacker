@@ -30,7 +30,7 @@ Note that as classPath elements you can use:
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../installation/Installation.md#basic-environment-variables).
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../configuration/Common.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming
@@ -155,7 +155,9 @@ Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$compon
 
 ### Component group mapping
 
-You can override default grouping of basic components in toolbox panels with `componentsGroupMapping` setting. Component names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.)                |
+You can override default grouping of basic components in toolbox panels with `componentsGroupMapping` setting. Component
+names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.). If you use this configuration, you
+must place it repeatedly in all configured processing types.
 
 ## Scenario properties
 
