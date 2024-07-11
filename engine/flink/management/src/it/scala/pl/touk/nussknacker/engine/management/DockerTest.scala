@@ -32,6 +32,10 @@ trait DockerTest
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withValue("category", fromAnyRef("Category1"))
+    .withValue(
+      "modelConfig.kafka.topicsExistenceValidationConfig.enabled",
+      ConfigValueFactory.fromAnyRef("false")
+    )
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithUnresolvedVersion(config))
 

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -7,14 +8,21 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
+import pl.touk.nussknacker.test.{
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails,
+  VeryPatientScalaFutures
+}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 class DeploymentApiHttpServiceBusinessSpec
@@ -25,7 +33,7 @@ class DeploymentApiHttpServiceBusinessSpec
     with WithBatchConfigScenarioHelper
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with LazyLogging
     with VeryPatientScalaFutures
     with Matchers
@@ -77,7 +85,7 @@ class DeploymentApiHttpServiceBusinessSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatus.Finished.name)
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")
@@ -105,6 +113,91 @@ class DeploymentApiHttpServiceBusinessSpec
             // TODO: idempotence (return 2xx when previous body is the same as requested)
             .statusCode(409)
         }
+      }
+
+      "when invoked twice with different deployment id, run concurrently" - {
+        "return conflict status code" in {
+          `given`()
+            .applicationState {
+              createSavedScenario(scenario)
+            }
+
+          def requestDeployment(id: DeploymentId): Future[Int] =
+            Future {
+              `given`()
+                .when()
+                .basicAuthAdmin()
+                .jsonBody(correctDeploymentRequest)
+                .put(s"$nuDesignerHttpAddress/api/deployments/$id")
+                .statusCode()
+            }
+
+          List(
+            requestDeployment(DeploymentId.generate),
+            requestDeployment(DeploymentId.generate)
+          ).sequence.futureValue.toSet shouldBe Set(202, 409)
+        }
+      }
+
+      "when invoked twice with different deployment id, run one by one should" - {
+        "return status of correct deployment" in {
+          val firstDeploymentId  = DeploymentId.generate
+          val secondDeploymentId = DeploymentId.generate
+          `given`()
+            .applicationState {
+              createSavedScenario(scenario)
+              runDeployment(firstDeploymentId)
+              waitForDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/$secondDeploymentId")
+            .Then()
+            .statusCode(202)
+            .verifyApplicationState {
+              checkDeploymentStatusNameMatches(
+                secondDeploymentId,
+                DeploymentStatus.DuringDeploy.name,
+                DeploymentStatus.Running.name,
+                DeploymentStatus.Finished.name
+              )
+              checkDeploymentStatusNameMatches(firstDeploymentId, DeploymentStatus.Finished.name)
+            }
+        }
+      }
+
+      "when invoked for fragment should" - {
+        "return bad request status code" in {
+          given()
+            .applicationState {
+              createSavedFragment(fragment)
+            }
+            .when()
+            .basicAuthAdmin()
+            .jsonBody(correctDeploymentRequest)
+            .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
+            .Then()
+            .statusCode(400)
+            .equalsPlainBody("Deployment of fragment is not allowed")
+        }
+      }
+    }
+
+    "when invoked for archived scenario should" - {
+      "return bad request status code" in {
+        given()
+          .applicationState {
+            val scenarioId = createSavedScenario(scenario)
+            archiveScenario(ProcessIdWithName(scenarioId, ProcessName(scenarioName)))
+          }
+          .when()
+          .basicAuthAdmin()
+          .jsonBody(correctDeploymentRequest)
+          .put(s"$nuDesignerHttpAddress/api/deployments/${DeploymentId.generate}")
+          .Then()
+          .statusCode(400)
+          .equalsPlainBody("Deployment of archived scenario is not allowed")
       }
     }
 

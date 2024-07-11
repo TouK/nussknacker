@@ -11,10 +11,11 @@ module.exports = {
     },
     moduleFileExtensions: ["js", "json", "jsx", "ts", "tsx", "svg"],
     moduleNameMapper: {
-        "\\.(css|less|scss|sss|styl)$": "<rootDir>/node_modules/jest-css-modules",
+        "\\.(css|less|scss|sss)$": "<rootDir>/node_modules/jest-css-modules",
         "\\.(svg)$": "<rootDir>/__mocks__/svgComponentMock",
         uuid: require.resolve("uuid"),
         "@fontsource/roboto-mono": "<rootDir>/node_modules/jest-css-modules",
+        "color-alpha": "<rootDir>/__mocks__/color-alpha.ts",
     },
     testMatch: ["**/*test.[tj]s?(x)"],
     snapshotSerializers: ["@emotion/jest/serializer"],

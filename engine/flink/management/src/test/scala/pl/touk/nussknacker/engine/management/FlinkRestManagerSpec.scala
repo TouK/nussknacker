@@ -11,8 +11,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.DeploymentManagerDependencies
 import pl.touk.nussknacker.engine.api.component.NodesDeploymentData
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.cache.ScenarioStateCachingConfig
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
+import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -33,9 +33,9 @@ import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
@@ -161,7 +161,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           defaultVersion,
           defaultDeploymentData,
           canonicalProcess,
-          None
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
         )
       )
       .futureValue shouldBe None
@@ -177,7 +179,9 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         defaultVersion,
         defaultDeploymentData,
         canonicalProcess,
-        None
+        DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+          StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+        )
       )
     )
     expectException(result, "Exception when sending request: POST http://test.pl/jars/file/run")
@@ -193,11 +197,29 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val message =
       "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
     expectException(
-      manager.processCommand(DMValidateScenarioCommand(defaultVersion, defaultDeploymentData, canonicalProcess)),
+      manager.processCommand(
+        DMValidateScenarioCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      ),
       message
     )
     expectException(
-      manager.processCommand(DMRunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None)),
+      manager.processCommand(
+        DMRunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      ),
       message
     )
   }
@@ -206,7 +228,16 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
     createManager(statuses, acceptDeploy = true)
-      .processCommand(DMRunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None))
+      .processCommand(
+        DMRunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -214,7 +245,16 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true)
-      .processCommand(DMRunDeploymentCommand(defaultVersion, defaultDeploymentData, canonicalProcess, None))
+      .processCommand(
+        DMRunDeploymentCommand(
+          defaultVersion,
+          defaultDeploymentData,
+          canonicalProcess,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 

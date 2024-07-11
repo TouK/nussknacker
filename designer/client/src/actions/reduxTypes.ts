@@ -19,7 +19,6 @@ import { NodeDetailsActions } from "./nk/nodeDetails";
 import { NotificationActions } from "./nk/notifications";
 import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
 import { LoadProcessVersionsAction } from "./nk/loadProcessVersions";
-import { GenericActionActions } from "./nk/genericAction";
 
 type TypedAction =
     | HandleHTTPErrorAction
@@ -35,7 +34,6 @@ type TypedAction =
     | DisplayTestResultsDetailsAction
     | DisplayProcessCountsAction
     | LoadProcessVersionsAction
-    | GenericActionActions
     | ScenarioActions;
 
 interface UntypedAction extends AnyAction {

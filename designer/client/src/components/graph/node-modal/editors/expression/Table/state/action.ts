@@ -1,5 +1,6 @@
 import { TableData } from "./tableState";
 import { TaggedUnion } from "type-fest";
+import { SupportedType } from "../TableEditor";
 
 export const ActionTypes = {
     expand: "expand",
@@ -12,6 +13,7 @@ export const ActionTypes = {
     columnResize: "column-resize",
     renameColumn: "rename-column",
     changeColumnType: "change-column-type",
+    moveColumn: "move-column",
 } as const;
 
 type Actions = {
@@ -21,7 +23,7 @@ type Actions = {
     [ActionTypes.expand]: {
         rows: number;
         columns: number;
-        dataType?: string;
+        dataType?: SupportedType;
     };
     [ActionTypes.editData]: {
         dataChanges: {
@@ -34,7 +36,7 @@ type Actions = {
         column: number;
         row: number;
         input: readonly (readonly string[])[];
-        dataType?: string;
+        dataType?: SupportedType;
         extraRowsCount?: number;
     };
     [ActionTypes.deleteRows]: {
@@ -56,7 +58,11 @@ type Actions = {
     };
     [ActionTypes.changeColumnType]: {
         column: number;
-        dataType: string;
+        dataType: SupportedType;
+    };
+    [ActionTypes.moveColumn]: {
+        startIndex: number;
+        endIndex: number;
     };
 };
 

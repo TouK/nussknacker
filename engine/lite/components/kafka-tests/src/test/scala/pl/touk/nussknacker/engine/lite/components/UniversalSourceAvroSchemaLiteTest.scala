@@ -6,7 +6,9 @@ import io.circe.parser.parse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -18,10 +20,10 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val inputTopic  = "input"
-  private val outputTopic = "output"
+  private val inputTopic  = TopicName.ForSource("input")
+  private val outputTopic = TopicName.ForSink("output")
 
   private val schema = AvroUtils.parseSchema(s"""{
        |  "type": "record",
@@ -40,19 +42,19 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     .source(
       "my-source",
       KafkaUniversalName,
-      topicParamName.value         -> s"'$inputTopic'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${inputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
     .emptySink(
       "my-sink",
       KafkaUniversalName,
-      topicParamName.value         -> s"'$outputTopic'",
-      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      sinkKeyParamName.value       -> "",
-      sinkRawEditorParamName.value -> "false",
-      "first"                      -> s"#input.first",
-      "last"                       -> "#input.last",
-      "age"                        -> "#input.age"
+      topicParamName.value         -> s"'${outputTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+      sinkKeyParamName.value       -> "".spel,
+      sinkRawEditorParamName.value -> "false".spel,
+      "first"                      -> s"#input.first".spel,
+      "last"                       -> "#input.last".spel,
+      "age"                        -> "#input.age".spel
     )
 
   test("should read data with json payload on avro schema based topic") {
@@ -61,8 +63,8 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
       .load()
       .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
     val runner = TestScenarioRunner.kafkaLiteBased(config).build()
-    runner.registerAvroSchema(inputTopic, schema)
-    runner.registerAvroSchema(outputTopic, schema)
+    runner.registerAvroSchema(inputTopic.toUnspecialized, schema)
+    runner.registerAvroSchema(outputTopic.toUnspecialized, schema)
 
     // When
     val jsonRecord =
@@ -72,7 +74,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
         |  "age": 21
         |}""".stripMargin.getBytes()
 
-    val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], jsonRecord)
+    val input = new ConsumerRecord(inputTopic.name, 1, 1, null.asInstanceOf[Array[Byte]], jsonRecord)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
     val result                                               = runner.runWithRawData(scenario, list).validValue

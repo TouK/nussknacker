@@ -41,7 +41,7 @@ import pl.touk.nussknacker.ui.process.processingtype.{
   ScenarioParametersService
 }
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.net.URI
 
@@ -514,13 +514,13 @@ class DefaultComponentServiceSpec
 
   private lazy val admin = TestFactory.adminUser()
 
-  private val marketingUser = LoggedUser(
+  private val marketingUser = RealLoggedUser(
     id = "1",
     username = "marketingUser",
     categoryPermissions = Map(CategoryMarketing -> Set(Permission.Read))
   )
 
-  private val fraudUser = LoggedUser(
+  private val fraudUser = RealLoggedUser(
     id = "1",
     username = "fraudUser",
     categoryPermissions = Map(CategoryFraud -> Set(Permission.Read))

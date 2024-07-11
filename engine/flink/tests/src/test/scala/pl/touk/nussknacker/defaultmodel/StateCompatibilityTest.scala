@@ -9,6 +9,7 @@ import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -16,7 +17,6 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -47,7 +47,7 @@ object StateCompatibilityTest {
 class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
 
@@ -66,25 +66,33 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     }
   }
 
-  private def stateCompatibilityProcess(inTopic: String, outTopic: String) = ScenarioBuilder
+  private def stateCompatibilityProcess(inTopic: TopicName.ForSource, outTopic: TopicName.ForSink) = ScenarioBuilder
     .streaming("stateCompatibilityTest")
     .parallelism(1)
     .source(
       "start",
       "kafka",
-      KafkaUniversalComponentTransformer.topicParamName.value         -> s"'$inTopic'",
-      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(ExistingSchemaVersion(1))
+      KafkaUniversalComponentTransformer.topicParamName.value -> s"'${inTopic.name}'".spel,
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(
+        ExistingSchemaVersion(1)
+      ).spel
     )
-    .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
+    .customNode(
+      "previousValue",
+      "previousValue",
+      "previousValue",
+      "groupBy" -> "'constant'".spel,
+      "value"   -> "#input".spel
+    )
     .emptySink(
       "sink",
       "kafka",
-      KafkaUniversalComponentTransformer.topicParamName.value              -> s"'$outTopic'",
-      KafkaUniversalComponentTransformer.schemaVersionParamName.value      -> "'latest'",
-      KafkaUniversalComponentTransformer.sinkKeyParamName.value            -> "",
-      KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> s"true",
-      KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'",
-      KafkaUniversalComponentTransformer.sinkValueParamName.value -> "{ input: #input, previousInput: #previousValue }"
+      KafkaUniversalComponentTransformer.topicParamName.value              -> s"'${outTopic.name}'".spel,
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value      -> "'latest'".spel,
+      KafkaUniversalComponentTransformer.sinkKeyParamName.value            -> "".spel,
+      KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> s"true".spel,
+      KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel,
+      KafkaUniversalComponentTransformer.sinkValueParamName.value -> "{ input: #input, previousInput: #previousValue }".spel
     )
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")
@@ -168,8 +176,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFuture
     env.stopJob(process1.name.value, jobExecutionResult)
   }
 
-  private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
-    val outputEvent = kafkaClient.createConsumer().consumeWithJson[OutputEvent](outTopic).take(1).head.message()
+  private def verifyOutputEvent(outTopic: TopicName.ForSink, input: InputEvent, previousInput: InputEvent): Unit = {
+    val outputEvent = kafkaClient.createConsumer().consumeWithJson[OutputEvent](outTopic.name).take(1).head.message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

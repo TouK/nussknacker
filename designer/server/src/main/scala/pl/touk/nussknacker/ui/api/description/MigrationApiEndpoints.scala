@@ -31,7 +31,7 @@ import pl.touk.nussknacker.ui.migrations.MigrationService.MigrationError.{
   InvalidScenario
 }
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.RealLoggedUser
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
@@ -128,7 +128,7 @@ class MigrationApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
           .example(
             Example.of(
               summary = Some("Migration performed by user without sufficient permissions"),
-              value = InsufficientPermission(LoggedUser.apply("Peter", "Griffin"))
+              value = InsufficientPermission(RealLoggedUser("Peter", "Griffin"))
             )
           )
       ),

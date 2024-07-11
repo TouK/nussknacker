@@ -68,6 +68,7 @@ object TestFlinkProcessCompilerDataFactory {
               case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked] =>
                 sourcePreparer.prepareStubbedSource(sourceWithTestSupport, typingResult, nodeId)
               case _ =>
+//              TODO: Why not throw exception here? Maybe we need to remodel FlinkSourceWithParameters interface?
                 EmptySource[Object](typingResult)(TypeInformation.of(classOf[Object]))
             }
           }

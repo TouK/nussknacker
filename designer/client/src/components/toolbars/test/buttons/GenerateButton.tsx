@@ -3,15 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/generate.svg";
 import { getTestCapabilities, isLatestProcessVersion } from "../../../../reducers/selectors/graph";
-import { useWindows } from "../../../../windowManager";
-import { WindowKind } from "../../../../windowManager/WindowKind";
+import { useWindows, WindowKind } from "../../../../windowManager";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;
 
 function GenerateButton(props: Props) {
-    const { disabled } = props;
+    const { disabled, type } = props;
     const { t } = useTranslation();
     const testCapabilities = useSelector(getTestCapabilities);
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
@@ -25,6 +24,7 @@ function GenerateButton(props: Props) {
             title={t("panels.actions.test-generate.button.title", "generate test data file")}
             icon={<Icon />}
             disabled={!available}
+            type={type}
             onClick={() =>
                 open({
                     kind: WindowKind.generateTestData,

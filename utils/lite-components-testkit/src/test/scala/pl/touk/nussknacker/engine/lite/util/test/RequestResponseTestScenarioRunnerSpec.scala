@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentI
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.functions.DateUtils
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 
@@ -31,7 +31,12 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
       .requestResponse("test")
       .additionalFields(properties = RequestResponseTestScenarioRunner.sampleSchemas)
       .source("input", "request")
-      .emptySink("output", "response", "Raw editor" -> "true", "Value" -> "{field1: #input.field1 + '-suffix'}")
+      .emptySink(
+        "output",
+        "response",
+        "Raw editor" -> "true".spel,
+        "Value"      -> "{field1: #input.field1 + '-suffix'}".spel
+      )
 
     val runResults = runner.runWithRequests(scenario) { invoker =>
       invoker(HttpRequest(HttpMethods.POST, entity = Map("field1" -> "value").asJson.spaces2)) shouldBe Right(
@@ -48,8 +53,8 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
       .requestResponse("test")
       .additionalFields(properties = RequestResponseTestScenarioRunner.sampleSchemas)
       .source("input", "request")
-      .enricher("fail", "output", failingComponent, "value" -> "#input.field1")
-      .emptySink("output", "response", "value" -> "#output")
+      .enricher("fail", "output", failingComponent, "value" -> "#input.field1".spel)
+      .emptySink("output", "response", "value" -> "#output".spel)
 
     val runResults = runner.runWithRequests(scenario) { invoker =>
       val firstError = invoker(
@@ -73,8 +78,8 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
         .requestResponse("test")
         .additionalFields(properties = Map("inputSchema" -> stringFieldSchema, "outputSchema" -> trueFieldSchema))
         .source("input", "request")
-        .enricher("service", "output", TestService.ServiceId, "param" -> "#input.field1")
-        .emptySink("output", "response", "Raw editor" -> "true", "Value" -> "{field1: #output}")
+        .enricher("service", "output", TestService.ServiceId, "param" -> "#input.field1".spel)
+        .emptySink("output", "response", "Raw editor" -> "true".spel, "Value" -> "{field1: #output}".spel)
 
     val runResults =
       TestScenarioRunner
@@ -98,8 +103,8 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
         .requestResponse("test")
         .additionalFields(properties = Map("inputSchema" -> stringFieldSchema, "outputSchema" -> trueFieldSchema))
         .source("input", "request")
-        .enricher("service", "output", TestService.ServiceId, "param" -> "#input.field1")
-        .emptySink("output", "response", "Raw editor" -> "true", "Value" -> "{field1: #output}")
+        .enricher("service", "output", TestService.ServiceId, "param" -> "#input.field1".spel)
+        .emptySink("output", "response", "Raw editor" -> "true".spel, "Value" -> "{field1: #output}".spel)
 
     val runResults =
       TestScenarioRunner
@@ -126,7 +131,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
         .requestResponse("test")
         .additionalFields(properties = Map("inputSchema" -> stringFieldSchema, "outputSchema" -> trueFieldSchema))
         .source("input", "request")
-        .emptySink("output", "response", "Raw editor" -> "true", "Value" -> "{field1: #DATE.now.toString}")
+        .emptySink("output", "response", "Raw editor" -> "true".spel, "Value" -> "{field1: #DATE.now.toString}".spel)
 
     val runResults =
       TestScenarioRunner

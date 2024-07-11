@@ -32,6 +32,11 @@ trait ComponentService {
       implicit user: LoggedUser
   ): Future[XError[List[ComponentUsagesInScenario]]]
 
+  def getUsagesPerDesignerWideComponentId(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[DesignerWideComponentId, Long]]
+
 }
 
 object DefaultComponentService {
@@ -139,6 +144,11 @@ class DefaultComponentService(
         )
       }
   }
+
+  override def getUsagesPerDesignerWideComponentId(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[DesignerWideComponentId, Long]] = getUserAccessibleComponentUsages
 
   private def getUserAccessibleComponentUsages(
       implicit loggedUser: LoggedUser,

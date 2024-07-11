@@ -287,6 +287,14 @@ export const globalStyles = (theme: Theme) => ({
     ".notification-dismiss": {
         display: "none",
     },
+
+    ".gdg-style": {
+        // Without it, date picker is not visible.
+        // There is no option to overwrite this property via glide-data-grid customEditors provideEditor styleOverwrites
+        "&:has(.rdtPicker)": {
+            transform: "none !important",
+        },
+    },
     ...aceEditorStyles(theme),
     ...DTPickerStyles(theme),
 });

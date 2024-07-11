@@ -5,7 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.newdeployment
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
@@ -118,8 +120,11 @@ abstract class FlinkDeploymentManager(
   private def validate(command: DMValidateScenarioCommand): Future[Unit] = {
     import command._
     for {
-      oldJob <- oldJobsToStop(processVersion)
-      _      <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.externalDeploymentId))
+      oldJobs <- command.updateStrategy match {
+        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) => oldJobsToStop(processVersion)
+        case DeploymentUpdateStrategy.DontReplaceDeployment                    => Future.successful(List.empty)
+      }
+      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJobs.flatMap(_.externalDeploymentId))
     } yield ()
   }
 
@@ -127,22 +132,42 @@ abstract class FlinkDeploymentManager(
     import command._
     val processName = processVersion.processName
 
-    val stoppingResult = for {
-      oldJobs <- oldJobsToStop(processVersion)
-      deploymentIds = oldJobs.sortBy(_.startTime)(Ordering[Option[Long]].reverse).flatMap(_.externalDeploymentId)
-      savepoints <- Future.sequence(deploymentIds.map(stopSavingSavepoint(processVersion, _, canonicalProcess)))
-    } yield {
-      logger.info(s"Deploying $processName. ${Option(savepoints)
-          .filter(_.nonEmpty)
-          .map(_.mkString("Saving savepoints finished: ", ", ", "."))
-          .getOrElse("There was no job to stop.")}")
-      savepoints
+    val stoppingResult = command.updateStrategy match {
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+        for {
+          oldJobs <- oldJobsToStop(processVersion)
+          externalDeploymentIds = oldJobs
+            .sortBy(_.startTime)(Ordering[Option[Long]].reverse)
+            .flatMap(_.externalDeploymentId)
+          savepoints <- Future.sequence(
+            externalDeploymentIds.map(stopSavingSavepoint(processVersion, _, canonicalProcess))
+          )
+        } yield {
+          logger.info(s"Deploying $processName. ${Option(savepoints)
+              .filter(_.nonEmpty)
+              .map(_.mkString("Saving savepoints finished: ", ", ", "."))
+              .getOrElse("There was no job to stop.")}")
+          savepoints
+        }
+      case DeploymentUpdateStrategy.DontReplaceDeployment =>
+        Future.successful(List.empty)
     }
-
     for {
       savepointList <- stoppingResult
       // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, List.empty)
+      savepointPath = command.updateStrategy match {
+        case DeploymentUpdateStrategy.DontReplaceDeployment => None
+        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            ) =>
+          // TODO: Better handle situation with more than one jobs stopped
+          savepointList.headOption
+        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath)
+            ) =>
+          Some(savepointPath)
+      }
       runResult <- runProgram(
         processName,
         mainClassName,
@@ -152,8 +177,8 @@ abstract class FlinkDeploymentManager(
           deploymentData,
           canonicalProcess
         ),
-        // TODO: We should define which job should be replaced by the new one instead of stopping all and picking the newest one to start from
-        savepointPath.orElse(savepointList.headOption)
+        savepointPath,
+        command.deploymentData.deploymentId.toNewDeploymentIdOpt
       )
       _ <- runResult.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
     } yield runResult
@@ -232,7 +257,9 @@ abstract class FlinkDeploymentManager(
       processName: ProcessName,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      // TODO: make it mandatory - see TODO in newdeployment.DeploymentService
+      deploymentId: Option[newdeployment.DeploymentId]
   ): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager

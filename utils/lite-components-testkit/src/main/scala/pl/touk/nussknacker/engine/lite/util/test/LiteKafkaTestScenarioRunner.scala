@@ -13,9 +13,9 @@ import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
 import pl.touk.nussknacker.engine.lite.util.test.confluent.{AzureKafkaAvroElementSerde, ConfluentKafkaAvroElementSerde}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -49,6 +49,8 @@ object LiteKafkaTestScenarioRunner {
           .empty()
           .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
           .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
+          .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
+          .withValue("kafka.topicsExistenceValidationConfig.enabled", fromAnyRef(false))
       )
       val schemaRegistryClient = new MockSchemaRegistryClient
       LiteKafkaTestScenarioRunnerBuilder(
@@ -169,10 +171,10 @@ class LiteKafkaTestScenarioRunner(
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
 
-  def registerJsonSchema(topic: String, schema: EveritSchema): SchemaId =
+  def registerJsonSchema(topic: UnspecializedTopicName, schema: EveritSchema): SchemaId =
     schemaRegistryClient.registerSchema(topic, isKey = false, ConfluentUtils.convertToJsonSchema(schema))
 
-  def registerAvroSchema(topic: String, schema: Schema): SchemaId =
+  def registerAvroSchema(topic: UnspecializedTopicName, schema: Schema): SchemaId =
     schemaRegistryClient.registerSchema(topic, isKey = false, ConfluentUtils.convertToAvroSchema(schema))
 
   private def serializeStringInput(input: StringInput): SerializedInput = {
@@ -257,22 +259,22 @@ object KafkaConsumerRecord {
   private val DefaultPartition = 1
   private val DefaultOffset    = 1
 
-  def apply[K, V](topic: String, value: V): ConsumerRecord[K, V] =
-    new ConsumerRecord(topic, DefaultPartition, DefaultOffset, null.asInstanceOf[K], value)
+  def apply[K, V](topic: TopicName.ForSource, value: V): ConsumerRecord[K, V] =
+    new ConsumerRecord(topic.name, DefaultPartition, DefaultOffset, null.asInstanceOf[K], value)
 
-  def apply[K, V](topic: String, key: K, value: V): ConsumerRecord[K, V] =
-    new ConsumerRecord(topic, DefaultPartition, DefaultOffset, key, value)
+  def apply[K, V](topic: TopicName.ForSource, key: K, value: V): ConsumerRecord[K, V] =
+    new ConsumerRecord(topic.name, DefaultPartition, DefaultOffset, key, value)
 }
 
 case class KafkaAvroElement(data: Any, schemaId: SchemaId)
 
 object KafkaAvroConsumerRecord {
 
-  def apply(topic: String, value: Any, schemaId: SchemaId): ConsumerRecord[Any, KafkaAvroElement] =
+  def apply(topic: TopicName.ForSource, value: Any, schemaId: SchemaId): ConsumerRecord[Any, KafkaAvroElement] =
     KafkaConsumerRecord(topic, KafkaAvroElement(value, schemaId))
 
   def apply(
-      topic: String,
+      topic: TopicName.ForSource,
       key: Any,
       keySchemaId: SchemaId,
       value: Any,
@@ -280,7 +282,12 @@ object KafkaAvroConsumerRecord {
   ): ConsumerRecord[KafkaAvroElement, KafkaAvroElement] =
     KafkaConsumerRecord(topic, KafkaAvroElement(key, keySchemaId), KafkaAvroElement(value, valueSchemaId))
 
-  def apply(topic: String, key: String, value: Any, valueSchemaId: SchemaId): ConsumerRecord[Any, KafkaAvroElement] =
+  def apply(
+      topic: TopicName.ForSource,
+      key: String,
+      value: Any,
+      valueSchemaId: SchemaId
+  ): ConsumerRecord[Any, KafkaAvroElement] =
     KafkaConsumerRecord(topic, key, KafkaAvroElement(value, valueSchemaId))
 
 }

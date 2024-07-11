@@ -11,17 +11,19 @@ import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
   DMRunDeploymentCommand,
   DMValidateScenarioCommand,
-  DataFreshnessPolicy
+  DataFreshnessPolicy,
+  DeploymentUpdateStrategy
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -169,7 +171,9 @@ class K8sDeploymentManagerReqRespTest
               secondVersionInfo,
               DeploymentData.empty,
               preparePingPongScenario(givenScenarioName, secondVersion),
-              None
+              DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+                StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+              )
             )
           )
           .futureValue
@@ -193,7 +197,14 @@ class K8sDeploymentManagerReqRespTest
       // ends without errors, we only change version
       f.manager
         .processCommand(
-          DMValidateScenarioCommand(f.version.copy(versionId = VersionId(2)), DeploymentData.empty, f.scenario)
+          DMValidateScenarioCommand(
+            f.version.copy(versionId = VersionId(2)),
+            DeploymentData.empty,
+            f.scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
         )
         .futureValue
 
@@ -208,7 +219,16 @@ class K8sDeploymentManagerReqRespTest
 
       val failure =
         f.manager
-          .processCommand(DMValidateScenarioCommand(newVersion, DeploymentData.empty, scenario))
+          .processCommand(
+            DMValidateScenarioCommand(
+              newVersion,
+              DeploymentData.empty,
+              scenario,
+              DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+                StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+              )
+            )
+          )
           .failed
           .futureValue
       failure.getMessage shouldBe s"Slug is not unique, scenario $givenScenarioName is using it"
@@ -225,7 +245,18 @@ class K8sDeploymentManagerReqRespTest
       val otherSlug   = "otherSlug"
       val changedSlug = preparePingPongScenario(givenScenarioName, 1, Some(otherSlug))
       val newVersion  = f.version.copy(versionId = VersionId(Random.nextInt(1000)))
-      f.manager.processCommand(DMRunDeploymentCommand(newVersion, DeploymentData.empty, changedSlug, None)).futureValue
+      f.manager
+        .processCommand(
+          DMRunDeploymentCommand(
+            newVersion,
+            DeploymentData.empty,
+            changedSlug,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
       f.waitForRunning(newVersion)
       val servicesForScenario = k8s
         .listSelected[ListResource[Service]](LabelSelector(requirementForName(newVersion.processName)))
@@ -329,14 +360,14 @@ class K8sDeploymentManagerReqRespTest
         )
       )
       .source("source", "request")
-      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"")
+      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"".spel)
       .emptySink(
         "sink",
         "response",
-        "Raw editor" -> "false",
-        "pong"       -> "#input.ping",
-        "instanceId" -> "#instanceId",
-        "version"    -> version.toString
+        "Raw editor" -> "false".spel,
+        "pong"       -> "#input.ping".spel,
+        "instanceId" -> "#instanceId".spel,
+        "version"    -> version.toString.spel
       )
   }
 

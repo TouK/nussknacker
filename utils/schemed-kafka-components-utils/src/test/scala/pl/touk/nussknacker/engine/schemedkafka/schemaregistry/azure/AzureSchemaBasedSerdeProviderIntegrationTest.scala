@@ -7,6 +7,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{
@@ -49,7 +50,7 @@ class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with Opti
     val valueSchemaData = Some(RuntimeSchemaData(schema, None).toParsedSchemaData)
     val pr = serdeProvider.serializationSchemaFactory
       // TODO: we should check if schema name matches our topic-schema name matching convention in the serializer
-      .create("notImportantTopicNme", valueSchemaData, kafkaConfig)
+      .create(TopicName.ForSink("notImportantTopicNme"), valueSchemaData, kafkaConfig)
       .serialize(new KeyedValue[AnyRef, AnyRef](key, record), timestamp = 0L)
 
     val contentTypeHeader      = Option(pr.headers().lastHeader("content-type")).value

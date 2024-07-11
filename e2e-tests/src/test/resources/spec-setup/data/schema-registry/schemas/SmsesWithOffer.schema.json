@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "title": "OfferAssignment",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "required": [
+    "assignedOffer",
+    "name"
+  ],
+  "properties": {
+    "assignedOffer": {
+      "type": "string",
+      "description": "The assigned offer for the person"
+    },
+    "name": {
+      "type": "string",
+      "description": "The person's full name"
+    }
+  }
+}

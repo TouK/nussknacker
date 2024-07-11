@@ -9,7 +9,7 @@ import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const capabilities = useSelector(getCapabilities);
     const saveDisabled = useSelector(isSaveDisabled);
 
@@ -37,6 +37,7 @@ function SaveButton(props: ToolbarButtonProps): JSX.Element {
             icon={<Icon />}
             disabled={!available}
             onClick={onClick}
+            type={type}
         />
     );
 }

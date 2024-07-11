@@ -5,7 +5,6 @@ export const nodeInputCss = css({
     width: "100%",
     padding: "0 10px",
     border: "none",
-
     '&[type="checkbox"]': {
         height: "20px",
     },

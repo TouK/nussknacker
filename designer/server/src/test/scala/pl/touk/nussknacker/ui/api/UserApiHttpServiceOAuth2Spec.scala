@@ -13,8 +13,6 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
 import pl.touk.nussknacker.test.mock.WithWireMockServer
 
-import java.time.Clock
-
 class UserApiHttpServiceOAuth2Spec
     extends AnyFreeSpecLike
     // Warning: WithWireMockServer must be mixed in before NuItTest to avoid NPE during wireMockServerBaseUrl determining in designerConfig method
@@ -23,10 +21,8 @@ class UserApiHttpServiceOAuth2Spec
     with WithSimplifiedDesignerConfig
     with NuRestAssureMatchers
     with NuRestAssureExtensions
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with PatientScalaFutures {
-
-  private implicit val clock: Clock = Clock.systemUTC()
 
   private lazy val configuredSymmetricKey = "fooKey"
 
@@ -75,7 +71,7 @@ class UserApiHttpServiceOAuth2Spec
               JwtClaim()
                 .about("jwtUserId")
                 .to(configuredAudience)
-                .expiresIn(180),
+                .expiresIn(180)(clock),
               configuredSymmetricKey,
               JwtAlgorithm.HS256
             )

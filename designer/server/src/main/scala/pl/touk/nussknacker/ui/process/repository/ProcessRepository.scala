@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import akka.http.scaladsl.model.HttpHeader
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -28,9 +29,7 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
-  @JsonCodec final case class RemoteUserName(name: String) extends AnyVal {
-    def display: String = s"Remote[$name]"
-  }
+  @JsonCodec final case class RemoteUserName(name: String) extends AnyVal
 
   object RemoteUserName {
     val headerName = "Remote-User-Name".toLowerCase
@@ -42,8 +41,12 @@ object ProcessRepository {
 
   }
 
-  def create(dbRef: DbRef, migrations: ProcessingTypeDataProvider[ProcessMigrations, _]): DBProcessRepository =
-    new DBProcessRepository(dbRef, migrations.mapValues(_.version))
+  def create(
+      dbRef: DbRef,
+      commentRepository: CommentRepository,
+      migrations: ProcessingTypeDataProvider[ProcessMigrations, _]
+  ): DBProcessRepository =
+    new DBProcessRepository(dbRef, commentRepository, migrations.mapValues(_.version))
 
   final case class CreateProcessAction(
       processName: ProcessName,
@@ -83,11 +86,13 @@ trait ProcessRepository[F[_]] {
 
 }
 
-class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTypeDataProvider[Int, _])
-    extends ProcessRepository[DB]
+class DBProcessRepository(
+    protected val dbRef: DbRef,
+    commentRepository: CommentRepository,
+    modelVersion: ProcessingTypeDataProvider[Int, _]
+) extends ProcessRepository[DB]
     with NuTables
     with LazyLogging
-    with CommentActions
     with ProcessDBQueryRepository[DB] {
 
   import profile.api._
@@ -102,7 +107,7 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
       action: CreateProcessAction
   )(implicit loggedUser: LoggedUser): DB[Option[ProcessCreated]] = {
     // TODO: we should use loggedUser.id
-    val userName = action.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
+    val userName = action.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L),
       name = action.processName,
@@ -112,7 +117,9 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
       isFragment = action.isFragment,
       isArchived = false,
       createdAt = Timestamp.from(now),
-      createdBy = userName
+      createdBy = userName,
+      impersonatedByIdentity = loggedUser.impersonatingUserId,
+      impersonatedByUsername = loggedUser.impersonatingUserName
     )
 
     val insertNew =
@@ -143,10 +150,12 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
   def updateProcess(
       updateProcessAction: UpdateProcessAction
   )(implicit loggedUser: LoggedUser): DB[ProcessUpdated] = {
-    val userName = updateProcessAction.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
+    val userName = updateProcessAction.forwardedUserName.map(_.name).getOrElse(loggedUser.username)
 
-    def addNewCommentToVersion(processId: ProcessId, versionId: VersionId) = {
-      newCommentAction(processId, versionId, updateProcessAction.comment)
+    def addNewCommentToVersion(scenarioId: ProcessId, scenarioGraphVersionId: VersionId) = {
+      updateProcessAction.comment
+        .map(commentRepository.saveComment(scenarioId, scenarioGraphVersionId, loggedUser, _))
+        .sequence
     }
 
     updateProcessInternal(
@@ -259,10 +268,11 @@ class DBProcessRepository(protected val dbRef: DbRef, modelVersion: ProcessingTy
       .headOption
       .flatMap {
         case Some(version) =>
-          newCommentAction(
+          commentRepository.saveComment(
             process.id,
             version.id,
-            Some(UpdateProcessComment(s"Rename: [${process.name}] -> [$newName]"))
+            loggedUser,
+            UpdateProcessComment(s"Rename: [${process.name}] -> [$newName]")
           )
         case None => DBIO.successful(())
       }

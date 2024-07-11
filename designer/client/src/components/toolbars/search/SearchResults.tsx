@@ -6,7 +6,7 @@ import { FoundNode } from "./FoundNode";
 import React, { useCallback, useEffect, useState } from "react";
 import { useFilteredNodes } from "./utils";
 import { useGraph } from "../../graph/GraphContext";
-import { nodeFound, nodeFoundHover } from "../../graph/focusableStyled";
+import { nodeFound, nodeFoundHover } from "../../graph/graphStyledWrapper";
 import { resetSelection } from "../../../actions/nk";
 import { useWindows } from "../../../windowManager";
 

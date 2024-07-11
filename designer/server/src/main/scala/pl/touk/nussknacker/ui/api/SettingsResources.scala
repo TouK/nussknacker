@@ -5,7 +5,7 @@ import cats.data.Validated
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.{FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
 import java.net.URL
@@ -14,7 +14,6 @@ import scala.concurrent.ExecutionContext
 class SettingsResources(
     config: FeatureTogglesConfig,
     authenticationMethod: String,
-    analyticsConfig: Option[AnalyticsConfig],
     usageStatisticsReportsConfig: UsageStatisticsReportsConfig
 )(implicit ec: ExecutionContext)
     extends Directives
@@ -44,9 +43,7 @@ class SettingsResources(
             authenticationMethod
           )
 
-          val analyticsSettings =
-            analyticsConfig.map(a => AnalyticsSettings(a.engine.toString, a.url.toString, a.siteId))
-          UISettings(toggleOptions, authenticationSettings, analyticsSettings)
+          UISettings(toggleOptions, authenticationSettings)
         }
       }
     }
@@ -110,7 +107,8 @@ object TopTabType extends Enumeration {
     requiredPermission: Option[String],
     // Deprecated: use accessTokenInQuery.enabled setting instead
     addAccessTokenInQueryParam: Option[Boolean],
-    accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings())
+    accessTokenInQuery: Option[AccessTokenInQueryTabSettings] = Some(AccessTokenInQueryTabSettings()),
+    spacerBefore: Option[Boolean] = Some(false)
 )
 
 @JsonCodec final case class AccessTokenInQueryTabSettings(
@@ -135,14 +133,11 @@ object TopTabType extends Enumeration {
     usageStatisticsReports: UsageStatisticsReportsSettings,
 )
 
-@JsonCodec final case class AnalyticsSettings(engine: String, url: String, siteId: String)
-
 @JsonCodec final case class AuthenticationSettings(provider: String)
 
 @JsonCodec final case class UISettings(
     features: ToggleFeaturesOptions,
-    authentication: AuthenticationSettings,
-    analytics: Option[AnalyticsSettings]
+    authentication: AuthenticationSettings
 )
 
 @JsonCodec final case class UsageStatisticsReportsSettings(enabled: Boolean)

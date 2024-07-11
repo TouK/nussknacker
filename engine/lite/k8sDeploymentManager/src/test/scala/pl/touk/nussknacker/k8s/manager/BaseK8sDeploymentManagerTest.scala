@@ -8,10 +8,12 @@ import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
   DMCancelScenarioCommand,
   DMRunDeploymentCommand,
   DataFreshnessPolicy,
+  DeploymentUpdateStrategy,
   ProcessingTypeActionServiceStub,
   ProcessingTypeDeployedScenariosProviderStub
 }
@@ -125,7 +127,18 @@ class BaseK8sDeploymentManagerTest
       with LazyLogging {
 
     def withRunningScenario(action: => Unit): Unit = {
-      manager.processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, scenario, None)).futureValue
+      manager
+        .processCommand(
+          DMRunDeploymentCommand(
+            version,
+            DeploymentData.empty,
+            scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
       try {
         waitForRunning(version)
         action

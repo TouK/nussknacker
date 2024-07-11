@@ -35,6 +35,7 @@ final case class OAuth2Configuration(
     accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
     defaultTokenExpirationDuration: FiniteDuration = FiniteDuration(1, HOURS),
     anonymousUserRole: Option[String] = None,
+    isAdminImpersonationPossible: Boolean = false,
     tokenCookie: Option[TokenCookieConfig] = None,
     overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
     usernameClaim: Option[UsernameClaim] = None,

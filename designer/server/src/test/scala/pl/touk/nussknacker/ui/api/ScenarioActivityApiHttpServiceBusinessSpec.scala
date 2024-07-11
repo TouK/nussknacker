@@ -4,7 +4,11 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails
+}
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithSimplifiedConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{
   WithBusinessCaseRestAssuredUsersExtensions,
@@ -25,7 +29,7 @@ class ScenarioActivityApiHttpServiceBusinessSpec
     with NuRestAssureExtensions
     with WithScenarioActivitySpecAsserts
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging {
+    with RestAssuredVerboseLoggingIfValidationFails {
 
   private val exampleScenarioName = UUID.randomUUID().toString
   private val commentContent      = "test message"

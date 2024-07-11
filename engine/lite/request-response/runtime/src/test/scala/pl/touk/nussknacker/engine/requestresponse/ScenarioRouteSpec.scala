@@ -23,14 +23,13 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
 }
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.concurrent.Future
 
 class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matchers {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   private val inputSchema  = """{"type" : "object", "properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
   private val outputSchema = """{"type" : "object", "properties": {"place": {"type": "string"}}}"""
@@ -42,7 +41,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
       properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema)
     )
     .source("start", "request")
-    .emptySink("end", "response", SinkRawEditorParamName.value -> "false", "place" -> "#input.city")
+    .emptySink("end", "response", SinkRawEditorParamName.value -> "false".spel, "place" -> "#input.city".spel)
 
   private val modelData =
     LocalModelData(ConfigFactory.load(), RequestResponseComponentProvider.Components)

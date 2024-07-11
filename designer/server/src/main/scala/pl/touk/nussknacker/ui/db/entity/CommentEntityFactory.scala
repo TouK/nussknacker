@@ -1,16 +1,11 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
-import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
-import pl.touk.nussknacker.ui.listener.Comment
 
 import java.sql.Timestamp
 import java.time.Instant
-import scala.concurrent.ExecutionContext
 
 trait CommentEntityFactory extends BaseEntityFactory {
 
@@ -32,9 +27,16 @@ trait CommentEntityFactory extends BaseEntityFactory {
 
     def user: Rep[String] = column[String]("user", NotNull)
 
-    override def * = (id, processId, processVersionId, content, user, createDate) <> (
-      CommentEntityData.apply _ tupled, CommentEntityData.unapply
-    )
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
+
+    override def * =
+      (id, processId, processVersionId, content, user, impersonatedByIdentity, impersonatedByUsername, createDate) <> (
+        CommentEntityData.apply _ tupled, CommentEntityData.unapply
+      )
 
   }
 
@@ -46,41 +48,9 @@ final case class CommentEntityData(
     processVersionId: VersionId,
     content: String,
     user: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String],
     createDate: Timestamp
 ) {
   val createDateTime: Instant = createDate.toInstant
-}
-
-trait CommentActions {
-  protected val profile: JdbcProfile
-  import profile.api._
-
-  val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
-
-  def nextIdAction[T <: JdbcProfile](implicit jdbcProfile: T): DBIO[Long] = {
-    Sequence[Long]("process_comments_id_sequence").next.result
-  }
-
-  def newCommentAction(processId: ProcessId, processVersionId: => VersionId, comment: Option[Comment])(
-      implicit ec: ExecutionContext,
-      loggedUser: LoggedUser
-  ): DB[Option[CommentEntityData]] = {
-    comment match {
-      case Some(c) if c.value.nonEmpty =>
-        for {
-          newId <- nextIdAction
-          entityData = CommentEntityData(
-            id = newId,
-            processId = processId,
-            processVersionId = processVersionId,
-            content = c.value,
-            user = loggedUser.username,
-            createDate = Timestamp.from(Instant.now())
-          )
-          _ <- commentsTable += entityData
-        } yield Some(entityData)
-      case _ => DBIO.successful(None)
-    }
-  }
-
 }

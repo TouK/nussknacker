@@ -19,7 +19,7 @@ Nussknacker configuration is divided into several configuration areas, each area
 
 * [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
-  * [Model](../about/GLOSSARY#model) configuration.
+  * [Model](./model/ModelConfiguration.md) configuration.
   * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
   * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 

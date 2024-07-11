@@ -185,11 +185,13 @@ We use `react-i18next` package for internalizations. This mechanism has priority
 File `translations/$lng/main.json` is generated in `prebuild` phase based on defaults. During development (`start` scripts) is removed to avoid confusions.
 
 # Theme customization
+
 We utilize the [Mui theme](https://mui.com/material-ui/customization/default-theme) for style customization. There are two themes:
-- Designer [client theme](./src/containers/theme/nuTheme.tsx)
-- Designer [components theme](../submodules/packages/components/src/common/defaultTheme.tsx)
-  The components theme inherits the client theme
+
+-   Designer [client theme](./src/containers/theme/nuTheme.tsx)
+-   Designer [components theme](../submodules/packages/components/src/common/defaultTheme.tsx)
+    The components theme inherits the client theme
 
 ## Theme colors customization
-All Colors are stored in the [modePalette](./src/containers/theme/darkModePalette.ts), Currently, only dark mode palette support is available.
 
+All Colors are stored in the [modePalette](./src/containers/theme/darkModePalette.ts), Currently, only dark mode palette support is available.

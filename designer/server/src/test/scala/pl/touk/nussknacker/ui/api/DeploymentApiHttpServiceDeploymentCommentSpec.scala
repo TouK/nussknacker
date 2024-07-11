@@ -8,11 +8,15 @@ import org.apache.commons.io.FileUtils
 import org.scalatest.LoneElement
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.DeploymentStatus
+import pl.touk.nussknacker.engine.newdeployment.DeploymentId
 import pl.touk.nussknacker.test.base.it.{NuItTest, WithBatchConfigScenarioHelper}
 import pl.touk.nussknacker.test.config.{WithBatchDesignerConfig, WithBusinessCaseRestAssuredUsersExtensions}
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, RestAssuredVerboseLogging, VeryPatientScalaFutures}
-import pl.touk.nussknacker.ui.process.newdeployment.DeploymentId
+import pl.touk.nussknacker.test.{
+  NuRestAssureMatchers,
+  RestAssuredVerboseLoggingIfValidationFails,
+  VeryPatientScalaFutures
+}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -26,7 +30,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
     with WithBatchConfigScenarioHelper
     with WithBusinessCaseRestAssuredUsersExtensions
     with NuRestAssureMatchers
-    with RestAssuredVerboseLogging
+    with RestAssuredVerboseLoggingIfValidationFails
     with LazyLogging
     with VeryPatientScalaFutures
     with Matchers
@@ -125,7 +129,7 @@ class DeploymentApiHttpServiceDeploymentCommentSpec
             .Then()
             .statusCode(202)
             .verifyApplicationState {
-              waitForDeploymentStatusMatches(requestedDeploymentId, SimpleStateStatus.Finished)
+              waitForDeploymentStatusNameMatches(requestedDeploymentId, DeploymentStatus.Finished.name)
             }
             .verifyExternalState {
               val resultFile = getLoneFileFromLoneOutputTransactionsSummaryPartitionWithGivenName("date=2024-01-01")

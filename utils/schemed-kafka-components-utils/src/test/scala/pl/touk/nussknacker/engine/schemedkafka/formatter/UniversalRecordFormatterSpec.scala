@@ -10,7 +10,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaRecordUtils, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
@@ -27,8 +27,11 @@ class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with Option
 
   private lazy val config = ConfigFactory
     .empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
-    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("kafka_should_not_be_used:9092"))
+    .withValue(
+      KafkaConfigProperties.property("schema.registry.url"),
+      fromAnyRef("schema_registry_should_not_be_used:8081")
+    )
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   private val kafkaConfig = KafkaConfig.parseConfig(config)
@@ -66,7 +69,7 @@ class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with Option
   }
 
   test("json record formatting should work with specified schema id") {
-    val topic = "topic-with-json-schema"
+    val topic = UnspecializedTopicName("topic-with-json-schema")
     val jsonSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
@@ -82,7 +85,7 @@ class UniversalRecordFormatterSpec extends AnyFunSuite with Matchers with Option
     )
     val valueJsonBytes = obj("foo" -> fromString("bar")).noSpaces.getBytes(StandardCharsets.UTF_8)
     val record = new ConsumerRecord[Array[Byte], Array[Byte]](
-      topic,
+      topic.name,
       -1,
       -1L,
       -1L,

@@ -109,7 +109,7 @@ describe("Process", () => {
     describe("with data", () => {
         const screenshotOptions: Cypress.MatchImageOptions = {
             screenshotConfig: {
-                blackout: ["> :not(#nk-graph-main) > div"],
+                blackout: ["> div > :not(#nk-graph-main)"],
             },
         };
 
@@ -399,7 +399,7 @@ describe("Process", () => {
         cy.layoutScenario();
 
         cy.contains("button", "ad hoc").should("be.enabled").click();
-        cy.get("[data-testid=window]").should("be.visible").find(".ace_editor").type("10");
+        cy.get("[data-testid=window]").should("be.visible").find("input").type("10"); //There should be only one input field
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
             .should("be.enabled")

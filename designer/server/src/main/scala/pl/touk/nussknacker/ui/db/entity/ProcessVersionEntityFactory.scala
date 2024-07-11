@@ -171,7 +171,10 @@ final case class ProcessVersionEntityData(
     user: String,
     modelVersion: Option[Int],
     componentsUsages: Option[ScenarioComponentsUsages],
-)
+) {
+  def jsonUnsafe: CanonicalProcess =
+    json.getOrElse(throw new IllegalStateException("Accessing scenario graph json which is not fetched"))
+}
 
 // TODO: Remove this codec and just serialize Map[ComponentId, List[NodeId]]
 @JsonCodec

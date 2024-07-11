@@ -1,7 +1,7 @@
 import * as React from "react";
-import { render } from "react-dom";
 import "./settings/i18n";
 import { Root } from "./root";
+import { createRoot } from "react-dom/client";
 
 function init() {
     let appRoot = document.getElementById("appRoot");
@@ -9,7 +9,9 @@ function init() {
         appRoot = document.createElement("div");
         document.body.appendChild(appRoot);
     }
-    render(<Root />, appRoot);
+
+    const root = createRoot(appRoot);
+    root.render(<Root />);
 }
 
 init();

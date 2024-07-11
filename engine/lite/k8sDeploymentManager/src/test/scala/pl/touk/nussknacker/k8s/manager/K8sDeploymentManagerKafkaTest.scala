@@ -7,18 +7,20 @@ import org.scalatest.Inspectors.forAll
 import org.scalatest.OptionValues
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment.{
   DMCancelScenarioCommand,
   DMRunDeploymentCommand,
   DMValidateScenarioCommand,
-  DataFreshnessPolicy
+  DataFreshnessPolicy,
+  DeploymentUpdateStrategy
 }
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
@@ -69,20 +71,31 @@ class K8sDeploymentManagerKafkaTest
     def deployScenario(version: Int) = {
       val scenario = ScenarioBuilder
         .streamingLite("foo scenario \u2620")
-        .source("source", "kafka", "Topic" -> s"'$input'", "Schema version" -> "'latest'")
+        .source("source", "kafka", "Topic" -> s"'$input'".spel, "Schema version" -> "'latest'".spel)
         .emptySink(
           "sink",
           "kafka",
-          "Topic"                 -> s"'$output'",
-          "Schema version"        -> "'latest'",
-          "Key"                   -> "",
-          "Raw editor"            -> "true",
-          "Value validation mode" -> "'strict'",
-          "Value"                 -> s"{ original: #input, version: $version }"
+          "Topic"                 -> s"'$output'".spel,
+          "Schema version"        -> "'latest'".spel,
+          "Key"                   -> "".spel,
+          "Raw editor"            -> "true".spel,
+          "Value validation mode" -> "'strict'".spel,
+          "Value"                 -> s"{ original: #input, version: $version }".spel
         )
 
       val pversion = ProcessVersion(VersionId(version), scenario.name, ProcessId(1234), "testUser", Some(22))
-      manager.processCommand(DMRunDeploymentCommand(pversion, DeploymentData.empty, scenario, None)).futureValue
+      manager
+        .processCommand(
+          DMRunDeploymentCommand(
+            pversion,
+            DeploymentData.empty,
+            scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
       pversion
     }
 
@@ -178,7 +191,18 @@ class K8sDeploymentManagerKafkaTest
 
     def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
       val version = ProcessVersion(VersionId(11), f.scenario.name, ProcessId(1234), "testUser", Some(22))
-      manager.processCommand(DMRunDeploymentCommand(version, DeploymentData.empty, f.scenario, None)).futureValue
+      manager
+        .processCommand(
+          DMRunDeploymentCommand(
+            version,
+            DeploymentData.empty,
+            f.scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
 
       action(version)
       cancelAndAssertCleanup(manager, version)
@@ -280,7 +304,16 @@ class K8sDeploymentManagerKafkaTest
     ) // two pods takes test setup
 
     f.manager
-      .processCommand(DMValidateScenarioCommand(f.version, DeploymentData.empty, f.scenario))
+      .processCommand(
+        DMValidateScenarioCommand(
+          f.version,
+          DeploymentData.empty,
+          f.scenario,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
       .failed
       .futureValue shouldEqual
       ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
@@ -402,16 +435,16 @@ class K8sDeploymentManagerKafkaTest
     val manager = prepareManager(modelData, deployConfig)
     val scenario = ScenarioBuilder
       .streamingLite("foo scenario \u2620")
-      .source("source", "kafka", "Topic" -> s"'$input'", "Schema version" -> "'latest'")
+      .source("source", "kafka", "Topic" -> s"'$input'".spel, "Schema version" -> "'latest'".spel)
       .emptySink(
         "sink",
         "kafka",
-        "Topic"                 -> s"'$output'",
-        "Schema version"        -> "'latest'",
-        "Key"                   -> "",
-        "Raw editor"            -> "true",
-        "Value validation mode" -> "'strict'",
-        "Value"                 -> "#input"
+        "Topic"                 -> s"'$output'".spel,
+        "Schema version"        -> "'latest'".spel,
+        "Key"                   -> "".spel,
+        "Raw editor"            -> "true".spel,
+        "Value validation mode" -> "'strict'".spel,
+        "Value"                 -> "#input".spel
       )
     logger.info(s"Running kafka test on ${scenario.name} $input - $output")
     val version = ProcessVersion(VersionId(11), scenario.name, ProcessId(1234), "testUser", Some(22))

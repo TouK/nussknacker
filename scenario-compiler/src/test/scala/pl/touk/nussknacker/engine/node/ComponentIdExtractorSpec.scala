@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class ComponentIdExtractorSpec
@@ -24,10 +24,10 @@ class ComponentIdExtractorSpec
   it should "create ComponentId for NodeData" in {
     val testingData = Table(
       ("nodeData", "expected"),
-      (Filter("", ""), Some(BuiltInComponentId.Filter)),
+      (Filter("", "".spel), Some(BuiltInComponentId.Filter)),
       (Switch(""), Some(BuiltInComponentId.Choice)),
       (VariableBuilder("", "", Nil), Some(BuiltInComponentId.RecordVariable)),
-      (Variable("", "", ""), Some(BuiltInComponentId.Variable)),
+      (Variable("", "", "".spel), Some(BuiltInComponentId.Variable)),
       (Split(""), Some(BuiltInComponentId.Split)),
       (FragmentInputDefinition("", Nil), Some(BuiltInComponentId.FragmentInputDefinition)),
       (FragmentOutputDefinition("", ""), Some(BuiltInComponentId.FragmentOutputDefinition)),

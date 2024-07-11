@@ -1,7 +1,12 @@
 package pl.touk.nussknacker.engine.definition.component.parameter
 
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
-import pl.touk.nussknacker.engine.api.definition.{Parameter, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{
+  MandatoryParameterValidator,
+  Parameter,
+  ParameterEditor,
+  ParameterValidator
+}
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.definition.component.parameter.defaults.{
   DefaultValueDeterminerChain,
@@ -31,8 +36,10 @@ object StandardParameterEnrichment {
     val parameterData = ParameterData(original.typ, Nil)
     val finalEditor   = original.editor.orElse(EditorExtractor.extract(parameterData, parameterConfig))
     val finalValidators =
-      (original.validators ++ extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
-    val isOptional = original.isOptional
+      (original.validators ++
+        parameterConfig.validators.toList.flatten ++
+        extractAdditionalValidator(parameterData, parameterConfig, finalEditor)).distinct
+    val isOptional = !finalValidators.contains(MandatoryParameterValidator)
     val finalDefaultValue = original.defaultValue.orElse(
       DefaultValueDeterminerChain.determineParameterDefaultValue(
         DefaultValueDeterminerParameters(parameterData, isOptional, parameterConfig, finalEditor)

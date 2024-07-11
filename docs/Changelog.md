@@ -1,6 +1,34 @@
 # Changelog
 
-1.15.4 (10 July 2025)
+1.17.0 (Not released yet)
+-------------------------
+* [6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
+  Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
+
+1.16.0 (Not released yet)
+-------------------------
+
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
+* [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) [#6172](https://github.com/TouK/nussknacker/pull/6172) [#6221](https://github.com/TouK/nussknacker/pull/6221) Batch processing mode related improvements:
+    * Deployments API returns correct status of deployment instead of returning always the last deployment's status
+    * Deployments API returns more information about status of a deployment: problem description and status modification time
+    * Status of a deployment is cached on the Designer side - in case of retention of finished job on Flink, status is still returned as FINISHED
+    * Overlapping deployment metrics/counts workaround: Ensure that only one deployment is performed for each scenario at a time
+    * Blocking of deployment of a fragment
+    * Blocking of deployment of an archived scenario
+* [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
+* [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
+* [#6185](https://github.com/TouK/nussknacker/pull/6185) Improvement: Make UniversalKafkaSinkFactory available at BoundedStream
+* [#6208](https://github.com/TouK/nussknacker/pull/6208) Fix issue with node window positioning after closing a full-screen window node.
+* [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
+* [#6245](https://github.com/TouK/nussknacker/pull/6245) Parameter validations defined in AdditionalUIConfigProvider now properly impact dynamic components.
+* [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
+* [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
+* [#6337](https://github.com/TouK/nussknacker/pull/6337) Fixes memory leak in test mechanism introduced in 1.13 version ([#4901](https://github.com/TouK/nussknacker/pull/4901))
+
+1.15.4 (10 July 2024)
 -------------------------
 * [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
 * [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
@@ -112,6 +140,10 @@
 * [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
 * [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
 * [#5558](https://github.com/TouK/nussknacker/pull/5558) Added: an info about `Processing mode` to the scenario and divided `Status` toolbar to `Scenario actions` and `Scenario details`
+
+1.13.3 (28 June 2024) This fix was introduced in 1.16.0 version and has only been backported to this version.
+------------------------
+* [#6285](https://github.com/TouK/nussknacker/pull/6285) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 
 1.13.2 (7 Mar 2024)
 ------------------------

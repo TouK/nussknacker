@@ -11,9 +11,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
-import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
@@ -24,7 +23,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -41,19 +40,25 @@ class DBFetchingProcessRepositorySpec
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
+  private val commentRepository = new CommentRepository(testDbRef)
+
   private val writingRepo =
-    new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider("Streaming" -> 0)) {
+    new DBProcessRepository(testDbRef, commentRepository, mapProcessingTypeDataProvider("Streaming" -> 0)) {
       override protected def now: Instant = currentTime
     }
 
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    new DbProcessActionRepository(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    new DbProcessActionRepository(
+      testDbRef,
+      commentRepository,
+      ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
+    )
 
   private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
-  private val activities = DbProcessActivityRepository(testDbRef)
+  private val activities = DbProcessActivityRepository(testDbRef, commentRepository)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 
@@ -70,7 +75,7 @@ class DBFetchingProcessRepositorySpec
       )
     }
 
-    val c1Reader = LoggedUser(
+    val c1Reader = RealLoggedUser(
       id = "1",
       username = "user",
       categoryPermissions = Map("Category1" -> Set(Permission.Read))

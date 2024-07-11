@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactoryWithRegistration
 }
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaAvroTestProcessConfigCreator}
-import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.jdk.CollectionConverters._
@@ -128,10 +128,10 @@ object SinkValueEditorWithAvroPayloadIntegrationTest {
     """.stripMargin
 
     val toSampleParams: List[(String, expression.Expression)] = List(
-      "id"        -> "'record1'",
-      "amount"    -> "20.0",
-      "arr"       -> "{1L}",
-      "nested.id" -> "'nested_record1'"
+      "id"        -> "'record1'".spel,
+      "amount"    -> "20.0".spel,
+      "arr"       -> "{1L}".spel,
+      "nested.id" -> "'nested_record1'".spel
     )
 
     override def exampleData: Map[String, Any] = Map(

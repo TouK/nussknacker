@@ -17,6 +17,7 @@ import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { Stats } from "./stats";
 import { ScenarioAvatar } from "./scenarioAvatar";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 
 const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowType }): JSX.Element {
     return (
@@ -43,7 +44,14 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                 sx={{ opacity }}
                 secondaryAction={
                     !row.isFragment && (
-                        <IconButton color={"inherit"} component={ExternalLink} href={metricsHref(row.name)}>
+                        <IconButton
+                            color={"inherit"}
+                            component={ExternalLink}
+                            href={metricsHref(row.name)}
+                            {...getEventTrackingProps({
+                                selector: EventTrackingSelector.ActionMetrics,
+                            })}
+                        >
                             <AssessmentIcon />
                         </IconButton>
                     )
@@ -132,9 +140,9 @@ export function ItemsList(props: {
     return (
         <div ref={ref}>
             <WindowScroller scrollElement={scrollParent}>
-                {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop }) => (
+                {({ height = 0, width = 0, isScrolling, onChildScroll, scrollTop, registerChild }) => (
                     <>
-                        <Paper sx={{ flex: 1 }}>
+                        <Paper ref={registerChild} sx={{ flex: 1 }}>
                             <ScenarioAndFragmentsList
                                 height={height}
                                 width={width}

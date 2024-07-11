@@ -1,4 +1,5 @@
 import { TableData } from "./tableState";
+import { SupportedType } from "../TableEditor";
 
 type MatrixElement<M> = M extends Matrix<infer T> ? T : never;
 type Matrix<I> = readonly (readonly I[])[];
@@ -39,7 +40,7 @@ function expandArray<T>(array: T[], length: number, fill?: (i: number) => T): T[
     return [...array, ...newValues];
 }
 
-export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType?: string): TableData {
+export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType?: SupportedType): TableData {
     if (rowsNum <= 0 && colsNum <= 0) {
         return state;
     }
@@ -64,4 +65,17 @@ export function expandTable(state: TableData, rowsNum = 0, colsNum = 0, dataType
 
 export function normalizeValue(value: string) {
     return value.trim() || null;
+}
+
+export function reorderArray<T>(array: T[], startIndex: number, endIndex: number): T[] {
+    if (startIndex < 0 || startIndex >= array.length || endIndex < 0 || endIndex >= array.length) {
+        throw new Error("Invalid start or end index");
+    }
+
+    // Copy the array to avoid mutating the original array
+    const result = Array.from<T>(array);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+
+    return result;
 }

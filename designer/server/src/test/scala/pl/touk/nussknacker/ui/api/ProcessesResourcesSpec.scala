@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCode, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.data.OptionT
 import cats.instances.all._
+import com.typesafe.config.{Config, ConfigValueFactory}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.LoneElement._
 import org.scalatest._
@@ -20,6 +21,7 @@ import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -31,6 +33,7 @@ import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.T
 }
 import pl.touk.nussknacker.test.config.WithAccessControlCheckingDesignerConfig.{TestCategory, TestProcessingType}
 import pl.touk.nussknacker.test.config.{WithAccessControlCheckingDesignerConfig, WithMockableDeploymentManager}
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.test.utils.scalas.AkkaHttpExtensions.toRequestEntity
 import pl.touk.nussknacker.ui.config.scenariotoolbar.CategoriesScenarioToolbarsConfigParser
 import pl.touk.nussknacker.ui.config.scenariotoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
@@ -45,10 +48,9 @@ import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.{ScenarioQuery, ScenarioToolbarSettings, ToolbarButton, ToolbarPanel}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.SecurityError.ImpersonationMissingPermissionError
+import pl.touk.nussknacker.ui.security.api.{AuthManager, LoggedUser}
 import pl.touk.nussknacker.ui.server.RouteInterceptor
-import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 
 import scala.concurrent.Future
 
@@ -85,6 +87,12 @@ class ProcessesResourcesSpec
   private val fragmentName             = ProcessName("fragment")
   private val archivedFragmentName     = ProcessName("archived-fragment")
 
+  override def designerConfig: Config = super.designerConfig
+    .withValue(
+      "scenarioTypes.streaming1.modelConfig.kafka.topicsExistenceValidationConfig.enabled",
+      ConfigValueFactory.fromAnyRef("false")
+    )
+
   test("should return list of process with state") {
     createDeployedExampleScenario(processName, category = Category1)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
@@ -113,7 +121,7 @@ class ProcessesResourcesSpec
 
   test("return single process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -180,7 +188,7 @@ class ProcessesResourcesSpec
 
   test("not allow to archive still running process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -241,7 +249,7 @@ class ProcessesResourcesSpec
 
   test("should not allow to rename deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -267,7 +275,7 @@ class ProcessesResourcesSpec
    */
   ignore("should not allow to rename process with running state") {
     createEmptyScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -499,7 +507,7 @@ class ProcessesResourcesSpec
     createDeployedCanceledExampleScenario(secondProcessor, category = Category1)
     createDeployedExampleScenario(thirdProcessor, category = Category1)
 
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(
         secondProcessor.value -> SimpleStateStatus.Canceled,
         thirdProcessor.value  -> SimpleStateStatus.Running
@@ -555,8 +563,8 @@ class ProcessesResourcesSpec
   test("save correct process json with ok status") {
     val validProcess = ScenarioBuilder
       .streaming("valid")
-      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'")
-      .emptySink("end", "kafka-string", "Topic" -> s"'output'", "Value" -> "#input")
+      .source("startProcess", "real-kafka", "Topic" -> s"'sometopic'".spel)
+      .emptySink("end", "kafka-string", "Topic" -> s"'output'".spel, "Value" -> "#input".spel)
     saveCanonicalProcess(validProcess, category = Category1) {
       status shouldEqual StatusCodes.OK
       val fetchedScenario = fetchScenario(validProcess.name)
@@ -572,6 +580,7 @@ class ProcessesResourcesSpec
     createProcessRequest(processName, category = Category1, isFragment = false) { code =>
       code shouldBe StatusCodes.Created
 
+      forScenarioReturned(processName)(_ => ())
       doUpdateProcess(command, processName) {
         forScenarioReturned(processName) { process =>
           process.history.map(_.size) shouldBe Some(1)
@@ -592,7 +601,7 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-    updateCanonicalProcess(process, comment) {
+    updateCanonicalProcess(process, Some(comment)) {
       forScenarioReturned(processName) { process =>
         process.history.map(_.size) shouldBe Some(2)
       }
@@ -729,6 +738,62 @@ class ProcessesResourcesSpec
     Post(s"/api/processes", command.toJsonRequestEntity()) ~> withReaderUser() ~> applicationRoute ~> check {
       status shouldEqual StatusCodes.Unauthorized
     }
+  }
+
+  test("authorize impersonated user with write permissions to create scenario") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~>
+      withAllPermUser() ~>
+      impersonateWriterUser() ~>
+      applicationRoute ~>
+      check {
+        status shouldEqual StatusCodes.Created
+      }
+  }
+
+  test("not authorize user trying to impersonate without appropriate permission") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~>
+      withWriterUser() ~>
+      impersonateAllPermUser() ~>
+      applicationRoute ~>
+      check {
+        status shouldEqual StatusCodes.Forbidden
+        responseAs[String] shouldEqual ImpersonationMissingPermissionError.errorMessage
+      }
+  }
+
+  test("not authorize impersonated user with read permissions to create scenario") {
+    val command = CreateScenarioCommand(
+      processName,
+      Some(Category1.stringify),
+      processingMode = None,
+      engineSetupName = None,
+      isFragment = false,
+      forwardedUserName = None
+    )
+    Post(s"/api/processes", command.toJsonRequestEntity()) ~>
+      withAllPermUser() ~>
+      impersonateReaderUser() ~>
+      applicationRoute ~>
+      check {
+        status shouldEqual StatusCodes.Unauthorized
+        responseAs[String] shouldEqual "User doesn't have access to the given category"
+      }
   }
 
   test("archive process") {
@@ -955,7 +1020,7 @@ class ProcessesResourcesSpec
 
   test("should return status for single deployed process") {
     createDeployedExampleScenario(processName, category = Category1)
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -1035,7 +1100,7 @@ class ProcessesResourcesSpec
   }
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
-    MockableDeploymentManager.configure(
+    MockableDeploymentManager.configureScenarioStatuses(
       Map(processName.value -> SimpleStateStatus.Running)
     )
 
@@ -1151,6 +1216,15 @@ class ProcessesResourcesSpec
 
   private def addBasicAuth(name: String, secret: String) = addCredentials(BasicHttpCredentials(name, secret))
 
+  private def impersonateAllPermUser() = addImpersonationHeader("allpermuser")
+
+  private def impersonateReaderUser() = addImpersonationHeader("reader")
+
+  private def impersonateWriterUser() = addImpersonationHeader("writer")
+
+  private def addImpersonationHeader(userIdentity: String) =
+    addHeader(RawHeader(AuthManager.impersonateHeaderName, userIdentity))
+
   private def parseResponseToListJsonProcess(response: String): List[ProcessJson] = {
     parser.decode[List[Json]](response).value.map(j => ProcessJson(j))
   }
@@ -1216,11 +1290,15 @@ class ProcessesResourcesSpec
       status shouldEqual StatusCodes.OK
     }
 
-  private def updateCanonicalProcess(process: CanonicalProcess, comment: String = "")(
+  private def updateCanonicalProcess(process: CanonicalProcess, comment: Option[String] = None)(
       testCode: => Assertion
   ): Assertion =
     doUpdateProcess(
-      UpdateScenarioCommand(CanonicalProcessConverter.toScenarioGraph(process), UpdateProcessComment(comment), None),
+      UpdateScenarioCommand(
+        CanonicalProcessConverter.toScenarioGraph(process),
+        comment.map(UpdateProcessComment(_)),
+        None
+      ),
       process.name
     )(
       testCode
@@ -1271,18 +1349,12 @@ class ProcessesResourcesSpec
     Post("/api/processes", command.toJsonRequestEntity()) ~> withAllPermUser() ~> applicationRoute ~> check {
       callback(status)
     }
-
-//    Post(
-//      s"/api/processes/$processName/${category.stringify}?isFragment=$isFragment"
-//    ) ~> withAllPermUser() ~> applicationRoute ~> check {
-//      callback(status)
-//    }
   }
 
   private def updateProcess(process: ScenarioGraph, name: ProcessName = ProcessTestData.sampleProcessName)(
       testCode: => Assertion
   ): Assertion =
-    doUpdateProcess(UpdateScenarioCommand(process, UpdateProcessComment(""), None), name)(testCode)
+    doUpdateProcess(UpdateScenarioCommand(process, comment = None, forwardedUserName = None), name)(testCode)
 
   private lazy val futureFetchingScenarioRepository: FetchingProcessRepository[Future] =
     TestFactory.newFutureFetchingScenarioRepository(testDbRef)

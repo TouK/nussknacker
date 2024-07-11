@@ -114,13 +114,20 @@ trait NuRestAssureExtensions {
 
   }
 
-  implicit class ExtractLong[T <: ValidatableResponse](validatableResponse: T) {
+  implicit class ExtractUsingJsonPath[T <: ValidatableResponse](validatableResponse: T) {
 
     def extractLong(jsonPath: String): Long = {
       validatableResponse
         .extract()
         .jsonPath()
         .getLong(jsonPath)
+    }
+
+    def extractString(jsonPath: String): String = {
+      validatableResponse
+        .extract()
+        .jsonPath()
+        .getString(jsonPath)
     }
 
   }

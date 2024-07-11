@@ -9,13 +9,15 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue.nullFixedValue
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, UnspecializedTopicName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName._
+import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidator.TopicValidationType
 
 object KafkaUniversalComponentTransformer {
   final val schemaVersionParamName      = ParameterName("Schema version")
@@ -30,9 +32,10 @@ object KafkaUniversalComponentTransformer {
 
 }
 
-trait KafkaUniversalComponentTransformer[T]
+abstract class KafkaUniversalComponentTransformer[T, TN <: TopicName: TopicValidationType]
     extends SingleInputDynamicComponent[T]
-    with WithCachedTopicsExistenceValidator { self: Component =>
+    with WithCachedTopicsExistenceValidator {
+  self: Component =>
 
   type WithError[V] = Writer[List[ProcessCompilationError], V]
 
@@ -62,9 +65,9 @@ trait KafkaUniversalComponentTransformer[T]
     val topics = topicSelectionStrategy.getTopics(schemaRegistryClient)
 
     (topics match {
-      case Valid(topics) => Writer[List[ProcessCompilationError], List[String]](Nil, topics)
+      case Valid(topics) => Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](Nil, topics)
       case Invalid(e) =>
-        Writer[List[ProcessCompilationError], List[String]](
+        Writer[List[ProcessCompilationError], List[UnspecializedTopicName]](
           List(CustomNodeError(e.getMessage, Some(topicParamName))),
           Nil
         )
@@ -73,7 +76,7 @@ trait KafkaUniversalComponentTransformer[T]
     }
   }
 
-  private def getTopicParam(topics: List[String]) = {
+  private def getTopicParam(topics: List[UnspecializedTopicName]) = {
     ParameterDeclaration
       .mandatory[String](topicParamName)
       .withCreator(
@@ -83,7 +86,7 @@ trait KafkaUniversalComponentTransformer[T]
               // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
               // TODO: add addNullOption feature flag to FixedValuesParameterEditor
               nullFixedValue +: topics
-                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic))
+                .flatMap(topic => modelDependencies.namingStrategy.decodeName(topic.name))
                 .sorted
                 .map(v => FixedExpressionValue(s"'$v'", v))
             )
@@ -93,9 +96,9 @@ trait KafkaUniversalComponentTransformer[T]
   }
 
   protected def getVersionParam(
-      preparedTopic: PreparedKafkaTopic
+      preparedTopic: PreparedKafkaTopic[TN],
   )(implicit nodeId: NodeId): WithError[ParameterCreatorWithNoDependency with ParameterExtractor[String]] = {
-    val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared, isKey = false)
+    val versions = schemaRegistryClient.getAllVersions(preparedTopic.prepared.toUnspecialized, isKey = false)
     (versions match {
       case Valid(versions) => Writer[List[ProcessCompilationError], List[Integer]](Nil, versions)
       case Invalid(e) =>
@@ -121,42 +124,59 @@ trait KafkaUniversalComponentTransformer[T]
       )
   }
 
-  protected def extractPreparedTopic(params: Params): PreparedKafkaTopic =
+  protected def extractPreparedTopic(params: Params): PreparedKafkaTopic[TN] =
     prepareTopic(params.extractUnsafe(topicParamName))
 
-  protected def prepareTopic(topic: String): PreparedKafkaTopic =
-    KafkaComponentsUtils.prepareKafkaTopic(topic, modelDependencies)
+  protected def prepareTopic(topicString: String): PreparedKafkaTopic[TN] =
+    KafkaComponentsUtils.prepareKafkaTopic(topicFrom(topicString), modelDependencies)
+
+  protected def topicFrom(value: String): TN
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)
 
   protected def prepareValueSchemaDeterminer(
-      preparedTopic: PreparedKafkaTopic,
+      preparedTopic: PreparedKafkaTopic[TN],
       version: SchemaVersionOption
   ): AvroSchemaDeterminer = {
-    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
+    new BasedOnVersionAvroSchemaDeterminer(
+      schemaRegistryClient,
+      preparedTopic.prepared.toUnspecialized,
+      version,
+      isKey = false
+    )
   }
 
   // TODO: add schema versioning for key schemas
-  protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): AvroSchemaDeterminer = {
+  protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(
       schemaRegistryClient,
-      preparedTopic.prepared,
+      preparedTopic.prepared.toUnspecialized,
       LatestSchemaVersion,
       isKey = true
     )
   }
 
   protected def prepareUniversalValueSchemaDeterminer(
-      preparedTopic: PreparedKafkaTopic,
+      preparedTopic: PreparedKafkaTopic[TN],
       version: SchemaVersionOption
   ): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
+    new ParsedSchemaDeterminer(
+      schemaRegistryClient,
+      preparedTopic.prepared.toUnspecialized,
+      version,
+      isKey = false
+    )
   }
 
   // TODO: add schema versioning for key schemas
-  protected def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
+  protected def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic[TN]): ParsedSchemaDeterminer = {
+    new ParsedSchemaDeterminer(
+      schemaRegistryClient,
+      preparedTopic.prepared.toUnspecialized,
+      LatestSchemaVersion,
+      isKey = true
+    )
   }
 
   protected def topicParamStep(implicit nodeId: NodeId): ContextTransformationDefinition = {
