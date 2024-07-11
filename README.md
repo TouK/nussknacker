@@ -15,7 +15,7 @@
 <h3 align="center">
   <a href="https://demo.nussknacker.io"><b>Demo</b></a> &bull;
   <a href="https://nussknacker.io/documentation"><b>Documentation</b></a> &bull;
-  <a href="https://nussknacker.io/documentation/quickstart/lite-streaming/"><b>Quickstart</b></a> &bull;
+  <a href="https://nussknacker.io/documentation/quickstart/docker/"><b>Quickstart</b></a> &bull;
   <a href="https://nussknacker.io/documentation/docs/installation/"><b>Installation</b></a> &bull;
   <a href="https://cloud.nussknacker.io"><b>Nu Cloud</b></a>  
 
@@ -86,8 +86,8 @@ After it started go to http://localhost:8080 and login using credentials: admin/
 REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
 Be aware that some things (e.g. metrics) will not work, and this engine is not intended for production use.
 
-If you want to follow step-by-step via more complex tutorials, based on production ready engines, read one of quickstart guides for: [Streaming mode on Lite engine](https://nussknacker.io/documentation/quickstart/lite-streaming)
-or [Streaming mode on Flink engine](https://nussknacker.io/documentation/quickstart/flink) or [Request-response mode on Lite engine](https://nussknacker.io/documentation/quickstart/lite-request-response).
+If you want to follow step-by-step via more complex tutorials, based on production ready engines, read
+the [quickstart guide](https://nussknacker.io/documentation/quickstart/docker).
 
 ## Contact
 
@@ -110,7 +110,7 @@ with detailed instructions how to run Nussknacker with some of the older version
 
 ## Related projects
 
-- [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) - Repository with quick setup (docker-compose or helm) presenting typical usage of Nussknacker    
+- [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) - Repository with quick setup (docker-compose) presenting typical usage of Nussknacker    
 - [nussknacker-sample-components](https://github.com/touk/nussknacker-sample-components) - Start here if you intend to create own Nussknacker components
 - [nussknacker-sample-helpers](https://github.com/touk/nussknacker-sample-helpers) - Sample project showing how to add custom helpers (user defined functions)
 - [nussknacker-helm](https://github.com/TouK/nussknacker-helm) - Helm chart of the project                     

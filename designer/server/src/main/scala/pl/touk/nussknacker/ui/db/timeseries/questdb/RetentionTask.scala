@@ -22,15 +22,9 @@ private[questdb] class RetentionTask(
     private val clock: Clock
 ) extends LazyLogging {
 
-  private val walPurgeJob = {
-    val job = new WalPurgeJob(engine)
-    engine.setWalPurgeJobRunLock(job.getRunLock)
-    job
-  }
-
   private val selectAllPartitionsQuery = buildSelectAllPartitionsQuery(tableName)
 
-  def runUnsafe(): Unit = Try {
+  def runUnsafe(): Unit = {
     logger.info("Cleaning up old data")
     // TODO: remove it if automatic retention will be available: https://github.com/questdb/questdb/issues/4369
     val sqlContext    = sqlContextPool.get()
@@ -41,11 +35,7 @@ private[questdb] class RetentionTask(
       engine.ddl(query, sqlContext)
       logger.info("Dropping old partitions succeed")
     }
-    walPurgeJob.run(2)
   }
-
-  def close(): Unit =
-    walPurgeJob.close()
 
   private def getPartitions(sqlContext: SqlExecutionContext): List[(String, Long)] =
     engine.select(selectAllPartitionsQuery, sqlContext).fetch(sqlContext) { record =>

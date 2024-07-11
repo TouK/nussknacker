@@ -1,6 +1,6 @@
 # Changelog
 
-1.16.0 (Not released yet)
+1.16.0 (11 July 2024)
 -------------------------
 
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
@@ -22,10 +22,12 @@
 * [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
 * [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
 * [#6337](https://github.com/TouK/nussknacker/pull/6337) Fixes memory leak in test mechanism introduced in 1.13 version ([#4901](https://github.com/TouK/nussknacker/pull/4901))
+* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
 
-1.15.4 (5 July 2025)
+1.15.4 (5 July 2024)
 -------------------------
 * [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
+* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
 
 1.15.3 (24 June 2024)
 -------------------------
