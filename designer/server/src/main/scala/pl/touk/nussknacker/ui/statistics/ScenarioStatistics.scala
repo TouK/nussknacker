@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits.toFoldableOps
-import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentType, ProcessingMode}
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.restmodel.component
 import pl.touk.nussknacker.ui.process.processingtype.DeploymentManagerType
-import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository
 
 import java.time.Instant
 
@@ -26,16 +24,71 @@ object ScenarioStatistics {
 
   private val componentStatisticPrefix = "c_"
 
+  private val nameForCustom = "Custom"
+
+  private val nameForFragment = "Fragment"
+
+  private def fromNussknackerPackage(component: ComponentDefinitionWithImplementation): Boolean =
+    component.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")
+
+  private[statistics] val emptyScenarioStatistics: Map[String, String] = Map(
+    ScenarioCount        -> 0,
+    FragmentCount        -> 0,
+    UnboundedStreamCount -> 0,
+    BoundedStreamCount   -> 0,
+    RequestResponseCount -> 0,
+    FlinkDMCount         -> 0,
+    LiteK8sDMCount       -> 0,
+    LiteEmbeddedDMCount  -> 0,
+    UnknownDMCount       -> 0,
+    ActiveScenarioCount  -> 0
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyActivityStatistics: Map[String, String] = Map(
+    AttachmentsAverage -> 0,
+    AttachmentsTotal   -> 0,
+    CommentsTotal      -> 0,
+    CommentsAverage    -> 0
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyComponentStatistics: Map[String, String] =
+    Map(ComponentsCount.toString -> "0")
+
+  private[statistics] val emptyUptimeStats: Map[String, String] = Map(
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
+
+  private[statistics] val emptyGeneralStatistics: Map[String, String] = Map(
+    NodesMedian            -> 0,
+    NodesAverage           -> 0,
+    NodesMax               -> 0,
+    NodesMin               -> 0,
+    CategoriesCount        -> 0,
+    VersionsMedian         -> 0,
+    VersionsAverage        -> 0,
+    VersionsMax            -> 0,
+    VersionsMin            -> 0,
+    AuthorsCount           -> 0,
+    FragmentsUsedMedian    -> 0,
+    FragmentsUsedAverage   -> 0,
+    UptimeInSecondsAverage -> 0,
+    UptimeInSecondsMax     -> 0,
+    UptimeInSecondsMin     -> 0,
+  ).map { case (k, v) => (k.toString, v.toString) }
+
   def getScenarioStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
-    scenariosInputData
-      .map(ScenarioStatistics.determineStatisticsForScenario)
-      .combineAll
-      .mapValuesNow(_.toString)
+    emptyScenarioStatistics ++
+      scenariosInputData
+        .map(ScenarioStatistics.determineStatisticsForScenario)
+        .combineAll
+        .mapValuesNow(_.toString)
   }
 
   def getGeneralStatistics(scenariosInputData: List[ScenarioStatisticsInputData]): Map[String, String] = {
     if (scenariosInputData.isEmpty) {
-      Map.empty
+      emptyGeneralStatistics
     } else {
       //        Nodes stats
       val sortedNodes  = scenariosInputData.map(_.nodesCount).sorted
@@ -64,21 +117,17 @@ object ScenarioStatistics {
       }.sorted
       val uptimeStatsMap = {
         if (sortedUptimes.isEmpty) {
-          Map(
-            UptimeInSecondsAverage -> 0,
-            UptimeInSecondsMax     -> 0,
-            UptimeInSecondsMin     -> 0,
-          )
+          emptyUptimeStats
         } else {
           Map(
             UptimeInSecondsAverage -> calculateAverage(sortedUptimes),
             UptimeInSecondsMax     -> getMax(sortedUptimes),
             UptimeInSecondsMin     -> getMin(sortedUptimes)
-          )
+          ).map { case (k, v) => (k.toString, v.toString) }
         }
       }
 
-      (Map(
+      Map(
         NodesMedian          -> nodesMedian,
         NodesAverage         -> nodesAverage,
         NodesMax             -> nodesMax,
@@ -90,79 +139,65 @@ object ScenarioStatistics {
         VersionsMin          -> versionsMin,
         AuthorsCount         -> authorsCount,
         FragmentsUsedMedian  -> fragmentsUsedMedian,
-        FragmentsUsedAverage -> fragmentsUsedAverage
-      ) ++ uptimeStatsMap)
-        .map { case (k, v) => (k.toString, v.toString) }
+        FragmentsUsedAverage -> fragmentsUsedAverage,
+      )
+        .map { case (k, v) => (k.toString, v.toString) } ++
+        uptimeStatsMap
     }
   }
 
-  def getActivityStatistics(
-      listOfActivities: List[DbProcessActivityRepository.ProcessActivity]
+  def getComponentStatistics(
+      designerWideUsage: Map[DesignerWideComponentId, Long],
+      components: List[ComponentDefinitionWithImplementation]
   ): Map[String, String] = {
-    if (listOfActivities.isEmpty) {
-      Map.empty
-    } else {
-      //        Attachment stats
-      val sortedAttachmentCountList = listOfActivities.map(_.attachments.length)
-      val attachmentAverage         = calculateAverage(sortedAttachmentCountList)
-      val attachmentsTotal          = sortedAttachmentCountList.sum
-      //        Comment stats
-      val comments        = listOfActivities.map(_.comments.length)
-      val commentsTotal   = comments.sum
-      val commentsAverage = calculateAverage(comments)
+    val componentsCount =
+      components
+        .groupBy(_.id)
+        .map { case (componentId, list) =>
+          if (list.forall(fromNussknackerPackage)) {
+            componentId.toString
+          } else nameForCustom
+        }
+        .size
 
+    val componentUsages = {
+      designerWideUsage.toList
+        .map { case (designerWideId, usages) =>
+          val componentIdOrCustom = components.find(_.designerWideId == designerWideId) match {
+            case Some(componentDefinition) =>
+              if (fromNussknackerPackage(componentDefinition)) {
+                componentDefinition.id.toString
+              } else nameForCustom
+            case None => nameForFragment
+          }
+          (componentIdOrCustom, usages)
+        }
+        .groupBy(_._1)
+        .-(nameForFragment)
+        .mapValuesNow(list => list.map(_._2).sum)
+        .map { case (k, v) => (mapNameToStat(k), v.toString) }
+    }
+
+    Map(
+      ComponentsCount -> componentsCount
+    ).map { case (k, v) => (k.toString, v.toString) } ++
+      componentUsages
+  }
+
+  def getActivityStatistics(attachmentsAndCommentsTotal: Map[String, Int], scenarioCount: Int): Map[String, String] = {
+    if (attachmentsAndCommentsTotal.isEmpty) {
+      emptyActivityStatistics
+    } else {
+      val attachmentsTotal   = attachmentsAndCommentsTotal.getOrElse(AttachmentsTotal.toString, 0)
+      val attachmentsAverage = averageOrZero(attachmentsTotal, scenarioCount)
+      val commentsTotal      = attachmentsAndCommentsTotal.getOrElse(CommentsTotal.toString, 0)
+      val commentsAverage    = averageOrZero(commentsTotal, scenarioCount)
       Map(
-        AttachmentsAverage -> attachmentAverage,
         AttachmentsTotal   -> attachmentsTotal,
+        AttachmentsAverage -> attachmentsAverage,
         CommentsTotal      -> commentsTotal,
         CommentsAverage    -> commentsAverage
       ).map { case (k, v) => (k.toString, v.toString) }
-    }
-  }
-
-  // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
-  def getComponentStatistic(
-      componentList: List[component.ComponentListElement],
-      components: List[ComponentDefinitionWithImplementation]
-  ): Map[String, String] = {
-    if (componentList.isEmpty) {
-      Map.empty
-    } else {
-
-      // Get number of available components to check how many custom components created
-      val withoutFragments = componentList.filterNot(comp => comp.componentType == ComponentType.Fragment)
-      val componentsWithUsageByComponentId: Map[String, Long] =
-        withoutFragments
-          .map { comp =>
-            components.find(compo => compo.id.equals(comp.componentId)) match {
-              case Some(comps) =>
-                if (comps.component.getClass.getPackageName.startsWith("pl.touk.nussknacker")) {
-                  (comp.componentId.toString, comp.usageCount)
-                } else {
-                  ("Custom", comp.usageCount)
-                }
-              case None =>
-                ("Custom", comp.usageCount)
-            }
-          }
-          .groupBy(_._1)
-          .mapValuesNow(_.map(_._2).sum)
-
-      val componentsWithUsageByComponentIdCount = componentsWithUsageByComponentId.size
-
-      // Get usage statistics for each component
-      val componentUsed = componentsWithUsageByComponentId.filter(_._2 > 0)
-      val componentUsedMap: Map[String, Long] = componentUsed
-        .map { case (name, usages) =>
-          (mapNameToStat(name), usages)
-        }
-
-      (
-        componentUsedMap ++
-          Map(
-            ComponentsCount.toString -> componentsWithUsageByComponentIdCount
-          )
-      ).mapValuesNow(_.toString)
     }
   }
 
@@ -202,17 +237,25 @@ object ScenarioStatistics {
     }
   }
 
-  private def getMax[T: Numeric](orderedList: List[T]): T = {
-    if (orderedList.isEmpty) implicitly[Numeric[T]].zero
-    else orderedList.head
+  private def averageOrZero(dividend: Int, divisor: Int): Int = {
+    if (divisor == 0) {
+      0
+    } else {
+      dividend / divisor
+    }
   }
 
-  private def getMin[T: Numeric](orderedList: List[T]): T = {
+  private def getMax[T: Numeric](orderedList: List[T]): T = {
     if (orderedList.isEmpty) implicitly[Numeric[T]].zero
     else orderedList.last
   }
 
-  def mapNameToStat(componentId: String): String = {
+  private def getMin[T: Numeric](orderedList: List[T]): T = {
+    if (orderedList.isEmpty) implicitly[Numeric[T]].zero
+    else orderedList.head
+  }
+
+  private def mapNameToStat(componentId: String): String = {
     val shortenedName = componentId.replaceAll(vowelsRegex, "").toLowerCase
 
     componentStatisticPrefix + shortenedName
@@ -254,6 +297,9 @@ case object LiteK8sDMCount         extends StatisticKey("s_dm_l")
 case object LiteEmbeddedDMCount    extends StatisticKey("s_dm_e")
 case object UnknownDMCount         extends StatisticKey("s_dm_c")
 case object ActiveScenarioCount    extends StatisticKey("s_a")
-case object NuSource               extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
-case object NuFingerprint          extends StatisticKey("fingerprint")
-case object NuVersion              extends StatisticKey("version")
+// Not scenario related statistics
+case object NuSource                extends StatisticKey("source") // f.e docker, helmchart, docker-quickstart, binaries
+case object NuFingerprint           extends StatisticKey("fingerprint")
+case object NuVersion               extends StatisticKey("version")
+case object CorrelationIdStat       extends StatisticKey("co_id")
+case object DesignerUptimeInSeconds extends StatisticKey("d_u")

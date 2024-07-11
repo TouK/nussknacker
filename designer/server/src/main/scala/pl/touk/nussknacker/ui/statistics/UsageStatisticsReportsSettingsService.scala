@@ -1,26 +1,25 @@
 package pl.touk.nussknacker.ui.statistics
 
 import cats.data.EitherT
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
+import pl.touk.nussknacker.engine.api.component.{DesignerWideComponentId, ProcessingMode}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StateStatus}
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.graph.node.FragmentInput
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.restmodel.component.ComponentListElement
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.db.timeseries.{FEStatisticsRepository, ReadFEStatisticsRepository}
 import pl.touk.nussknacker.ui.definition.component.ComponentService
 import pl.touk.nussknacker.ui.process.ProcessService.GetScenarioWithDetailsOptions
 import pl.touk.nussknacker.ui.process.processingtype.{DeploymentManagerType, ProcessingTypeDataProvider}
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}
+import pl.touk.nussknacker.ui.process.repository.ProcessActivityRepository
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsService.nuFingerprintFileName
 
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object UsageStatisticsReportsSettingsService extends LazyLogging {
@@ -35,10 +34,10 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
       fingerprintService: FingerprintService,
       scenarioActivityRepository: ProcessActivityRepository,
-      // TODO: Should not depend on DTO, need to extract usageCount and check if all available components are present using processingTypeDataProvider
       componentService: ComponentService,
       statisticsRepository: FEStatisticsRepository[Future],
-      componentList: List[ComponentDefinitionWithImplementation]
+      componentList: List[ComponentDefinitionWithImplementation],
+      designerClock: Clock
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
@@ -72,17 +71,12 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
           )
         }
     }
-    def fetchActivity(
-        scenarioInputData: List[ScenarioStatisticsInputData]
-    ): Future[Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]] = {
-      val scenarioIds = scenarioInputData.flatMap(_.scenarioId)
-
-      scenarioIds.map(scenarioId => scenarioActivityRepository.findActivity(scenarioId)).sequence.map(Right(_))
+    def fetchActivity(): Future[Map[String, Int]] = {
+      scenarioActivityRepository.getActivityStats
     }
 
-    def fetchComponentList(): Future[Either[StatisticError, List[ComponentListElement]]] = {
-      componentService.getComponentsList
-        .map(Right(_))
+    def fetchComponentUsage(): Future[Map[DesignerWideComponentId, Long]] = {
+      componentService.getUsagesPerDesignerWideComponentId
     }
 
     new UsageStatisticsReportsSettingsService(
@@ -91,9 +85,10 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
-      fetchComponentList,
       () => ignoringErrorsFEStatisticsRepository.read(),
-      componentList
+      componentList,
+      fetchComponentUsage,
+      designerClock
     )
 
   }
@@ -116,21 +111,24 @@ class UsageStatisticsReportsSettingsService(
     urlConfig: StatisticUrlConfig,
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
-    fetchActivity: List[ScenarioStatisticsInputData] => Future[
-      Either[StatisticError, List[DbProcessActivityRepository.ProcessActivity]]
-    ],
-    fetchComponentList: () => Future[Either[StatisticError, List[ComponentListElement]]],
+    fetchActivity: () => Future[Map[String, Int]],
     fetchFeStatistics: () => Future[Map[String, Long]],
-    components: List[ComponentDefinitionWithImplementation]
+    components: List[ComponentDefinitionWithImplementation],
+    componentUsage: () => Future[Map[DesignerWideComponentId, Long]],
+    designerClock: Clock
 )(implicit ec: ExecutionContext) {
-  private val statisticsUrls = new StatisticsUrls(urlConfig)
+  private val statisticsUrls    = new StatisticsUrls(urlConfig)
+  private val designerStartTime = designerClock.instant()
 
   def prepareStatisticsUrl(): Future[Either[StatisticError, List[String]]] = {
     if (config.enabled) {
       val maybeUrls = for {
         queryParams <- determineQueryParams()
         fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-        urls        <- EitherT.pure[Future, StatisticError](statisticsUrls.prepare(fingerprint, queryParams))
+        correlationId = CorrelationId.apply()
+        urls <- EitherT.pure[Future, StatisticError](
+          statisticsUrls.prepare(fingerprint, correlationId, queryParams)
+        )
       } yield urls
       maybeUrls.value
     } else {
@@ -144,16 +142,21 @@ class UsageStatisticsReportsSettingsService(
       scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
       basicStatistics     = determineBasicStatistics(config)
       generalStatistics   = ScenarioStatistics.getGeneralStatistics(scenariosInputData)
-      activity <- new EitherT(fetchActivity(scenariosInputData))
-      activityStatistics = ScenarioStatistics.getActivityStatistics(activity)
-      componentList <- new EitherT(fetchComponentList())
-      componentStatistics = ScenarioStatistics.getComponentStatistic(componentList, components)
+      attachmentsAndCommentsTotal <- EitherT.liftF(fetchActivity())
+      activityStatistics = ScenarioStatistics.getActivityStatistics(
+        attachmentsAndCommentsTotal,
+        scenariosInputData.length
+      )
+      componentDesignerWideUsage <- EitherT.liftF(componentUsage())
+      componentStatistics = ScenarioStatistics.getComponentStatistics(componentDesignerWideUsage, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
+      designerUptimeStatistics = getDesignerUptimeStatistics
     } yield basicStatistics ++
       scenariosStatistics ++
       generalStatistics ++
       activityStatistics ++
       componentStatistics ++
+      designerUptimeStatistics ++
       feStatistics.map { case (k, v) =>
         k -> v.toString
       }
@@ -167,6 +170,14 @@ class UsageStatisticsReportsSettingsService(
       NuSource.name  -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       NuVersion.name -> BuildInfo.version
     )
+
+  private def getDesignerUptimeStatistics: Map[String, String] = {
+    Map(
+      DesignerUptimeInSeconds.name -> (designerClock
+        .instant()
+        .getEpochSecond - designerStartTime.getEpochSecond).toString
+    )
+  }
 
 }
 

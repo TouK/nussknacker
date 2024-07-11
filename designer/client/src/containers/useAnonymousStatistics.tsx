@@ -1,13 +1,61 @@
 import { useSelector } from "react-redux";
 import { getFeatureSettings } from "../reducers/selectors/settings";
-import { useCallback } from "react";
-import { useInterval } from "./Interval";
+import { useCallback, useEffect, useState } from "react";
 import httpService from "../http/HttpService";
+import { useLocalstorageState } from "rooks";
+import moment from "moment";
 
-const STATISTIC_FETCH_TIME_IN_MINUTES = 60;
+const getLockReleaseDate = (createdAt: number | null, statisticLockReleaseTime: number) =>
+    moment(createdAt).add(statisticLockReleaseTime, "minute");
+const isLockReleased = (statisticsLock: { createdAt?: number }, statisticLockReleaseTime: number) => {
+    const lockReleaseDate = getLockReleaseDate(statisticsLock?.createdAt, statisticLockReleaseTime);
+    const currentDate = moment();
 
-export function useAnonymousStatistics(statisticFetchTime = STATISTIC_FETCH_TIME_IN_MINUTES) {
+    if (!statisticsLock) {
+        return true;
+    }
+
+    return lockReleaseDate.isSameOrBefore(currentDate);
+};
+
+export const STATISTICS_LOCK = "NU_STATISTICS_LOCK";
+const STATISTICS_LOCK_RELEASE_IN_MINUTES = 60;
+
+const useStatisticsLock = (statisticsLockReleaseTime: number) => {
+    const [statisticsLock, setStatisticsLock] = useLocalstorageState<{ createdAt?: number }>(STATISTICS_LOCK, null);
+
+    const [statisticsReadyToRefetch, setStatisticsReadyToRefetch] = useState(() => {
+        return isLockReleased(statisticsLock, statisticsLockReleaseTime);
+    });
+
+    useEffect(() => {
+        if (statisticsReadyToRefetch) {
+            setStatisticsLock({ createdAt: moment().valueOf() });
+            setStatisticsReadyToRefetch(false);
+        }
+    }, [setStatisticsLock, statisticsReadyToRefetch]);
+
+    useEffect(() => {
+        const remainingLogReleaseTime = moment(getLockReleaseDate(statisticsLock?.createdAt, statisticsLockReleaseTime)).diff(
+            moment(),
+            "milliseconds",
+        );
+
+        const timer = setInterval(() => {
+            if (isLockReleased(statisticsLock, statisticsLockReleaseTime)) {
+                setStatisticsReadyToRefetch(true);
+            }
+        }, remainingLogReleaseTime);
+
+        return () => clearInterval(timer);
+    }, [statisticsLockReleaseTime, statisticsLock]);
+
+    return statisticsReadyToRefetch;
+};
+
+export function useAnonymousStatistics(statisticsLockReleaseTime = STATISTICS_LOCK_RELEASE_IN_MINUTES) {
     const featuresSettings = useSelector(getFeatureSettings);
+    const statisticsReadyToRefetch = useStatisticsLock(statisticsLockReleaseTime);
 
     const handleUsageStatistics = useCallback(() => {
         const appendStatisticElement = (url: string) => {
@@ -36,9 +84,9 @@ export function useAnonymousStatistics(statisticFetchTime = STATISTIC_FETCH_TIME
         });
     }, []);
 
-    useInterval(handleUsageStatistics, {
-        ignoreFirst: false,
-        refreshTime: 60 * 1000 * statisticFetchTime,
-        disabled: !featuresSettings.usageStatisticsReports.enabled,
-    });
+    useEffect(() => {
+        if (statisticsReadyToRefetch && featuresSettings.usageStatisticsReports.enabled) {
+            handleUsageStatistics();
+        }
+    }, [featuresSettings.usageStatisticsReports.enabled, handleUsageStatistics, statisticsReadyToRefetch]);
 }
