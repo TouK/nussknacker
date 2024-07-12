@@ -28,9 +28,10 @@
 * [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
 * [#6337](https://github.com/TouK/nussknacker/pull/6337) Fixes memory leak in test mechanism introduced in 1.13 version ([#4901](https://github.com/TouK/nussknacker/pull/4901))
 
-1.15.4 (5 July 2025)
+1.15.4 (10 July 2024)
 -------------------------
 * [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
+* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
 
 1.15.3 (24 June 2024)
 -------------------------
