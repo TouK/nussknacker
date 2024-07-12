@@ -4,6 +4,8 @@
 -------------------------
 * [6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
   Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
+* [6384](https://github.com/TouK/nussknacker/pull/6384) Value of [Realm](https://datatracker.ietf.org/doc/html/rfc2617#section-1.2) 
+  can be customized using env `AUTHENTICATION_REALM` (its default value "nussknacker" remains un changed)
 
 1.16.0 (11 July 2024)
 -------------------------
