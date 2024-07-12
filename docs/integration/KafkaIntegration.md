@@ -150,7 +150,7 @@ Nussknacker needs to know what was the schema used during writing to make messag
 Because of that Nussknacker needs to extract *Schema ID* from the message.
 
 Additionally, in sources and sinks, you can choose which schema version should be used during reading/writing. Thanks to schema evolution mechanism, message in the original format will be evolved to desired format.
-This desired schema will be used in [code completion and validation](/docs/integration/DataTypingAndSchemasHandling.md).
+This desired schema will be used in [code completion and validation](../integration/DataTypingAndSchemasHandling.md).
 
 At runtime Nussknacker determines the schema version of a message value and key in the following way:
 1. It checks in `key.schemaId`, `value.schemaId` and Azure-specific `content-type` headers;
@@ -171,7 +171,7 @@ Below you can find a quick comparison of how given schema registry types are han
 ## Configuration details
 
 ### Common part
-The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](/docs/installation_configuration_guide/#configuration-areas)
+The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](../configuration/#configuration-areas)
 
 Both streaming Engines (Lite and Flink) share some common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
 
@@ -224,7 +224,7 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 }
 ```
 
-Following properties can be configured (please look at correct engine page : [Lite](/docs/installation_configuration_guide/model/Lite#exception-handling) or [Flink](/docs/installation_configuration_guide/model/Flink#configuring-exception-handling), 
+Following properties can be configured (please look at correct engine page : [Lite](../configuration/model/Lite#exception-handling) or [Flink](../configuration/model/Flink#configuring-exception-handling), 
 to see where they should be set):
 
 | Name                   | Default value | Description                                                                                                                                                                                                                                                                                                                |
