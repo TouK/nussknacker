@@ -15,11 +15,7 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
       config: Config,
       classLoader: ClassLoader
   )(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2AuthenticationResources = {
-    new OidcAuthenticationResources(
-      name,
-      realm,
-      OidcAuthenticationConfiguration.createWithDiscovery(config)
-    )
+    new OidcAuthenticationResources(name, OidcAuthenticationConfiguration.createWithDiscovery(config))
   }
 
 }

@@ -19,13 +19,15 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
 
   private val anonymousUserRole = "Anonymous"
 
-  private val config = ConfigFactory.parseString(s"""
-        authentication: {
-          method: "BasicAuth"
-          anonymousUserRole: "${anonymousUserRole}"
-          usersFile: "classpath:basic-users.conf"
-        }
-      """.stripMargin)
+  private val config = ConfigFactory.parseString(
+    s"""
+       |authentication: {
+       |  method: "BasicAuth"
+       |  anonymousUserRole: "${anonymousUserRole}"
+       |  usersFile: "classpath:basic-users.conf"
+       |}
+       |""".stripMargin
+  )
 
   private val authenticationResources = AuthenticationResources(config, classLoader, testingBackend)
   assert(authenticationResources.isInstanceOf[BasicAuthenticationResources])
