@@ -5,6 +5,13 @@ Released versions are available at [GitHub](https://github.com/TouK/nussknacker/
 Please note, that while you can install Designer from `.tgz` with Lite engine configured, you still
 need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
 
+
+:::note
+While you can install Designer from `.tgz` and you want to use the Lite engine on production, you will need 
+a configured Kubernetes cluster to have a production setup. Using [Helm Installation](HelmChart.md) is recommended 
+in this case.
+:::
+
 ## Prerequisites
 
 We assume that `java` (recommended version is JDK 11) is on PATH.
@@ -48,7 +55,7 @@ We provide following scripts:
 ## Logging
 
 We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. By default, the logs are
-placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
+placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollover configuration.  
 Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
 please consult their documentation.
 

@@ -4,8 +4,9 @@ title: Installation
 
 # Installation
 
-Nussknacker relies on several open source components like Kafka, Grafana (or optionally, Flink), which need to be installed together with
-Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components.
+Nussknacker relies on several open source components like Kafka, Grafana (or optionally, Flink), which need to be
+installed together with Nussknacker. This document focuses on the installation of Nussknacker. The configuration part 
+is covered [further](../configuration/index.md) in our documentation.
 
 ### Nussknacker and its dependencies
 
@@ -17,10 +18,10 @@ As you see on the diagram above, Nussknacker interacts and depends on the follow
 * [Kafka](https://kafka.apache.org/) - a broker for steaming data
 * [Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html) - a schema registry for the data in Kafka's topics
 * [AKHQ](https://akhq.io/) - a UI for Kafka & Schema Registry
-* [Grafana](https://grafana.com/) & [InfluxDB](https://www.influxdata.com/) & [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) - for a sake of scenarios monitoring 
+* [Grafana](https://grafana.com/) & [InfluxDB](https://www.influxdata.com/) & [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) - for the purpose of scenarios monitoring 
 * [Nginx](https://nginx.org/en/) - a gateway for Designer and other UIs 
 
-Please refer to services documentation to install and configure them properly.
+Please refer to services' documentation to install and configure them properly.
 You can also check our repository with the Nu stack [installation example](https://github.com/TouK/nussknacker-installation-example/). 
 
 :::note
@@ -32,6 +33,8 @@ Nussknacker built with Scala 2.12 works with Flink out of the box, so if you don
 using Scala 2.13, just pick the packages with Scala 2.12.
 
 :::
+
+### 
 
 ### Nussknacker installation methods
 

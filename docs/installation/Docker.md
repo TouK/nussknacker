@@ -1,11 +1,14 @@
 # Docker based installation
 
 Nussknacker is available at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/).
-You can check an example installation
+You can look at the example installation
 with docker-compose at [installation example repository](https://github.com/TouK/nussknacker-installation-example/). 
 
-Please note, in the example above the Lite engine is run inside the Designer. It's not a production setup and for production 
-you will need a configured Kubernetes cluster to actually run scenarios on the Lite engine - we recommend using Helm installation for that mode.
+:::note
+The example above provides only a non-production ready way to run scenarios on Lite engine. For Lite engine production
+setup, you will need a configured Kubernetes cluster. Using [Helm Installation](HelmChart.md) is recommended
+in this case.
+:::
 
 You may want to see out [Quickstart in Docker](/quickstart/docker) first too.
 
