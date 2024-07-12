@@ -78,7 +78,7 @@ Nussknacker is typically used as a component of a larger system, but it can be u
 
 ## Quickstart
 
-To run Nussknacker on your host as quick as possible, just run:
+To run Nussknacker on your host as quickly as possible, just copy and paste the following code into your terminal:
 ```bash
 curl -o- https://raw.githubusercontent.com/TouK/nussknacker-quickstart/main/download-and-start.sh | bash
 ```
