@@ -52,7 +52,7 @@ In order to achieve End-to-end Exactly-once event processing, you need to check 
     - Unaligned checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/checkpointing_under_backpressure/#unaligned-checkpoints).
     Additionally you have to ensure that checkpointing mode is set to `EXACTLY_ONCE` [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#execution-checkpointing-mode).
   - Ensure task failure recovery is configured.
-    [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
+    [Configuring restart strategies](../configuration/model/Flink.md#configuring-restart-strategies).
     The main purpose of Exactly-once is to don't miss any events and don't have duplicated events during failures. 
     If the task failure recovery is not configured, after failure task will not be running and has failed state. 
     As a result, there is no opportunity to use Exactly-once mechanism.
@@ -73,7 +73,7 @@ In order to achieve End-to-end Exactly-once event processing, you need to check 
     Default value for the interval is 10 minutes which is not acceptable for Exactly-once.
     Therefore, it needs to be configured to appropriate value.
     - Interval can be configured globally for all scenarios via: 
-      [Flink model configuration](../installation_configuration_guide/model/Flink.md#flink-specific-model-configuration).
+      [Flink model configuration](../configuration/model/Flink.md#flink-specific-model-configuration).
     - You can override global interval in a scenario by setting `Checkpoint interval in seconds` in a scenario 
       properties on UI.
   - Configure Flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum
