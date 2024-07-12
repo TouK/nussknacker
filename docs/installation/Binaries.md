@@ -7,7 +7,7 @@ need configured Kubernetes cluster to actually run scenarios in this mode - we r
 
 ## Prerequisites
 
-We assume that `java` (recommended version is JDK 11) is on path.
+We assume that `java` (recommended version is JDK 11) is on PATH.
 
 Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
 running on `localhost` with their default ports configured. See [environment variables](../configuration/Common.md#environment-variables) section
