@@ -5,7 +5,7 @@ You can check an example installation
 with docker-compose at [installation example repository](https://github.com/TouK/nussknacker-installation-example/). 
 
 Please note, in the example above the Lite engine is run inside the Designer. It's not a production setup and for production 
-you will need configured Kubernetes cluster to actually run scenarios on the Lite engine - we recommend using Helm installation for that mode.
+you will need a configured Kubernetes cluster to actually run scenarios on the Lite engine - we recommend using Helm installation for that mode.
 
 You may want to see out [Quickstart in Docker](/quickstart/docker) first too.
 
