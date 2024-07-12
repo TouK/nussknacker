@@ -29,7 +29,7 @@ Nussknacker (both binary package and docker image) is published in two versions 
 As for now, Flink does not support Scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue),
 so to use Nussknacker built with Scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
 Nussknacker built with Scala 2.12 works with Flink out of the box, so if you don't create your custom Nussknacker components
-using Scala 2.13, just pick the packages with Scala 2.12
+using Scala 2.13, just pick the packages with Scala 2.12.
 
 :::
 
