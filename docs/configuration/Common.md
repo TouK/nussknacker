@@ -1,72 +1,86 @@
 ---
+title: Basics
 sidebar_position: 1
 ---
+# Configuration
 
-# Installation
+## Minimal configuration file
 
-Nussknacker relies on several open source components like Kafka, Grafana (or optionally, Flink), which need to be installed together with
-Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components;
-please refer to their respective documentations for details on their optimal configuration.
+The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
+additional configuration files. Check [Conventions section](#conventions) for more details how to amend and override the minimal configuration file. 
+This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file. 
 
-### Flink
-Nussknacker (both binary package and docker image) is published in two versions - built with Scala 2.12 and 2.13.
-As for now, Flink does not support Scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue),
-so to use Nussknacker built with Scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
-Nussknacker built with Scala 2.12 works with Flink out of the box.
+The location and name of the configuration files is defined by the `CONFIG_FILE` environment variable. Consult [Basic environment variables](../configuration/Common.md#basic-environment-variables) for information on how this variable is resolved. 
 
-## Docker based installation
+Details of K8s based configuration can be found in  [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker). 
+## Configuration areas
 
-Nussknacker is available at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/). You can check an example usage
-with docker-compose at [Nussknacker Quickstart repository](https://github.com/TouK/nussknacker-quickstart).
+Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-Please note, that while you can install Designer with plain Docker (e.g. with `docker-compose`) with Lite engine configured, you still
-need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
+* [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
+* Scenario Types configuration, comprising of:
+  * [Model](./model/ModelConfiguration.md) configuration.
+  * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
+  * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
-If you want to check locally Streaming processing mode with plain Docker and embedded engine just run:
-```bash
-docker run -it --network host -e KAFKA_ADDRESS=localhost:3032 -e SCHEMA_REGISTRY_URL=http://localhost:3082 touk/nussknacker:latest
-```
-Note: `--network host `only works on linux and is used to connect to existing kafka/schema registry. In case of other OS you have to use different methods to make it accessible from Nussknacker container (e.g start Kafka/SR and Nussknacker in a single docker network)
-If you want to see Nussknacker in action without Kafka, using embedded Request-Response processing mode (scenario logic is exposed with REST API), run:
-```bash
-docker run -it -p 8080:8080 -p 8181:8181 touk/nussknacker:latest
-```
-After it started go to [http://localhost:8080](http://localhost:8080) and login using credentials: admin/admin.
-REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
+[Model](../about/GLOSSARY#model) configuration defines which components and which [Processing Mode](../about/ProcessingModes) will be available for the user. 
+[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](../about/engine).
+[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](../about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
 
-More information you can find at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/)
+The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
-### Base Image
+![Configuration areas](img/configuration_areas.png "configuration areas")
 
-As a base image we use `eclipse-temurin:11-jre-jammy`. See [Eclipse Temurin Docker Hub](https://hub.docker.com/_/eclipse-temurin) for more
-details.
+### Configuration file
 
-### Container configuration
+Let's see how those concepts look in fragment of the configuration file:
 
-For basic usage, most things can be configured using environment variables. In other cases, can be mounted volume with
-own configuration file. See [configuration](#configuration-with-environment-variables) section for more details. NUSSKNACKER_DIR is pointing to /opt/nussknacker.
+<pre>
+{/* Somehow, everything which is in the "pre" block is treated as jsx by Docusaurus*/}
+{/* so, we need to escape "{" */}
+{/* and add leading spaces in a special way. If not jsx parser will remove them */}
+{/* Finally, do not worry - this is a valid jsx comment - you will not see it on Nu page*/}
 
-## Kubernetes - Helm chart
+<b># Designer configuration </b> <br/>
+environment: "local"  <br/> 
+... <br/>
+ <br/>
+# Each scenario type is configured here  <br/>
+scenarioTypes {"{"}  <br/>
+{" "} "scenario-type-1": {"{"}<br/>
+{" "}   # Configuration of scenario deployment (Flink used as example here)  <br/>
+{" "}   <b>deploymentConfig:</b> {"{"} <br/>
+{" "}     type: "flinkStreaming" <br/>
+{" "}     restUrl: "http://localhost:8081" <br/> 
+{" "}   } <br/>
+{" "}   # Configuration of model <br/>
+{" "}   <b>modelConfig</b>: {"{"} <br/>
+{" "}     classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
+{" "}     restartStrategy.default.strategy: disable <br/>
+{" "}     components {"{"} <br/>
+{" "}       ... <br/>
+{" "}     } <br/>
+{" "}   } <br/>
+{" "}   <b>category</b>: "Default" <br/>
+{" "} } <br/>
+} <br/>
+</pre>
 
-We provide [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker) with basic Nussknacker setup, including:
+It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
 
-- Kafka - required only in streaming processing mode
-- Grafana + InfluxDB
-- One of the available engines: Flink or Lite.
+* To use different set of components depending on the category
+* To deploy scenarios on different [Engines](../about/engines)
 
-Please note that Kafka (and Flink if chosen) are installed in basic configuration - for serious production deployments you probably
-want to customize those to meet your needs.
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.                   
 
-You can check example usage at [Nussknacker Quickstart repository](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart) in `k8s-helm` directory.
+## Environment variables
 
-## Configuration with environment variables
-
-All configuration options are described in [Configuration](../installation_configuration_guide/DesignerConfiguration.md).
+All configuration options are described in [Configuration](./DesignerConfiguration.md).
 
 Some of them can be configured using already predefined environment variables, which is mostly useful in the Docker setup.
 The table below shows all the predefined environment variables used in the Nussknacker image. `$NUSSKNACKER_DIR` is a placeholder pointing to the Nussknacker installation directory.
 
-Because we use [HOCON](../installation_configuration_guide/Common.md#conventions), you can set (or override) any configuration value used by Nussknacker even if the already predefined environment variable does not exist. This is achieved by setting the JVM property `-Dconfig.override_with_env_vars=true` and setting environment variables following conventions described [here](https://github.com/lightbend/config?tab=readme-ov-file#optional-system-or-env-variable-overrides).
+Because we use [HOCON](#conventions), you can set (or override) any configuration value used by Nussknacker even if the already predefined environment variable does not exist. This is achieved by setting the JVM property `-Dconfig.override_with_env_vars=true` and setting environment variables following conventions described [here](https://github.com/lightbend/config?tab=readme-ov-file#optional-system-or-env-variable-overrides).
 
 ### Basic environment variables
 
@@ -83,7 +97,7 @@ Because we use [HOCON](../installation_configuration_guide/Common.md#conventions
 | HTTP_INTERFACE                | string          | 0.0.0.0                                                                                                                                       | Network address Nussknacker binds to                                                                                                                                                                                                                      |
 | HTTP_PORT                     | string          | 8080                                                                                                                                          | HTTP port used by Nussknacker                                                                                                                                                                                                                             |
 | HTTP_PUBLIC_PATH              | string          |                                                                                                                                               | Public HTTP path prefix the Designer UI is served at, e.g. using external proxy like [nginx](#configuring-the-designer-with-nginx-http-public-path)                                                                                                       |
-| DB_URL                        | string          | jdbc:hsqldb:file:${STORAGE_DIR}/db;sql.syntax_ora=true                                                                                        | [See also](../installation_configuration_guide/DesignerConfiguration.md#database-configuration) for more information                                                                                                                                      |
+| DB_URL                        | string          | jdbc:hsqldb:file:${STORAGE_DIR}/db;sql.syntax_ora=true                                                                                        | [See also](../configuration/DesignerConfiguration.md#database-configuration) for more information                                                                                                                           |
 | DB_DRIVER                     | string          | org.hsqldb.jdbc.JDBCDriver                                                                                                                    | Database driver class name                                                                                                                                                                                                                                |
 | DB_USER                       | string          | SA                                                                                                                                            | User used for connection to database                                                                                                                                                                                                                      |
 | DB_PASSWORD                   | string          |                                                                                                                                               | Password used for connection to database                                                                                                                                                                                                                  |
@@ -129,136 +143,16 @@ Because we use [HOCON](../installation_configuration_guide/Common.md#conventions
 | OAUTH2_AUDIENCE                                 | string  |                   |
 | OAUTH2_USERNAME_CLAIM                           | string  |                   |
 
-## Binary package installation
 
-Released versions are available at [GitHub](https://github.com/TouK/nussknacker/releases).
+## Conventions
 
-Please note, that while you can install Designer from `.tgz` with Lite engine configured, you still
-need configured Kubernetes cluster to actually run scenarios in this mode - we recommend using Helm installation for that mode.
+* We use HOCON (see the [introduction](https://github.com/lightbend/config#using-hocon-the-json-superset) or the [full specification](https://github.com/lightbend/config/blob/master/HOCON.md) for details) as our main configuration format. [Lightbend config library](https://github.com/lightbend/config/tree/master) is used for parsing configuration files - you can check the [documentation](https://github.com/lightbend/config#standard-behavior) for details on conventions of file names and merging of configuration files.
+* `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HOCON fallback mechanism). This mechanism is used to extend or override default configuration contained in the [minimal configuration file](#minimal-configuration-file)  - see docker demo for example:
+  * [setting multiple configuration files](https://github.com/TouK/nussknacker-installation-example/blob/master/docker-compose.yml#L29)
+  * [file with configuration override](https://github.com/TouK/nussknacker-installation-example/blob/master/designer/application-customizations.conf)
+* If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
-### Prerequisites
+It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.md) for the details. 
 
-We assume that `java` (recommended version is JDK 11) is on path.
-
-Please note that default environment variable configuration assumes that Flink, InfluxDB, Kafka and Schema registry are
-running on `localhost` with their default ports configured. See [environment variables](#environment-variables) section
-for the details. Also, `GRAFANA_URL` is set to `/grafana`, which assumes that reverse proxy
-like [NGINX](https://github.com/TouK/nussknacker-installation-example/tree/master/nginx) is used to access both Designer and
-Grafana. For other setups you should change this value to absolute Grafana URL.
-
-`WORKING_DIR` environment variable is used as base place where Nussknacker stores its data such as:
-
-- logs
-- embedded database files
-- scenario attachments
-
-### Startup script
-
-We provide following scripts:
-
-- `run.sh` - to run in foreground, it's also suitable to use it for systemd service
-- `run-daemonized.sh` - to run in background, we are using `nussknacker-designer.pid` to store PID of running process
-
-### File structure
-
-| Location                                 | Usage in configuration                                  | Description                                                                                                                                  |
-|------------------------------------------|---------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| $NUSSKNACKER_DIR/storage                 | Configured by STORAGE_DIR property                      | Location of HSQLDB database                                                                                                                  |
-| $NUSSKNACKER_DIR/logs                    |                                                         | Location of logs                                                                                                                             |
-| $NUSSKNACKER_DIR/conf/application.conf   | Configured by CONFIG_FILE property                      | Location of Nussknacker configuration. Can be overwritten or used next to other custom configuration. See Configuration document for details |
-| $NUSSKNACKER_DIR/conf/logback.xml        | Configured by LOGBACK_FILE property in standalone setup | Location of logging configuration. Can be overwritten to specify other logger logging levels                                                 |
-| $NUSSKNACKER_DIR/conf/docker-logback.xml | Configured by LOGBACK_FILE property in docker setup     | Location of logging configuration. Can be overwritten to specify other logger logging levels                                                 |
-| $NUSSKNACKER_DIR/conf/users.conf         | Configured by AUTHENTICATION_USERS_FILE property        | Location of Nussknacker Component Providers                                                                                                  |
-| $NUSSKNACKER_DIR/model/defaultModel.jar  | Used in MODEL_CLASS_PATH property                       | JAR with generic model (base components library)                                                                                             |
-| $NUSSKNACKER_DIR/model/flinkExecutor.jar | Used in MODEL_CLASS_PATH property                       | JAR with Flink executor, used by scenarios running on Flink                                                                                  |
-| $NUSSKNACKER_DIR/components              | Can be used in MODEL_CLASS_PATH property                | Directory with Nussknacker Component Provider JARS                                                                                           |
-| $NUSSKNACKER_DIR/lib                     |                                                         | Directory with Nussknacker base libraries                                                                                                    |
-| $NUSSKNACKER_DIR/managers                |                                                         | Directory with Nussknacker Deployment Managers                                                                                               |
-
-
-### Logging
-
-We use [Logback](http://logback.qos.ch/manual/configuration.html) for logging configuration. By default, the logs are
-placed in `${NUSSKNACKER_DIR}/logs`, with sensible rollback configuration.  
-Please remember that these are logs of Nussknacker Designer, to see/configure logs of other components (e.g. Flink)
-please consult their documentation.
-
-### Systemd service
-
-You can set up Nussknacker as a systemd service using our example unit file.
-
-1. Download distribution as described in [Binary package installation](Installation.md#Binary package installation)
-2. Unzip it to `/opt/nussknacker`
-3. `sudo touch /lib/systemd/system/nussknacker.service`
-4. edit `/lib/systemd/system/nussknacker.service` file and add write content
-   of [Systemd unit file](Installation.md#systemd-unit-file)
-5. `sudo systemctl daemon-reload`
-6. `sudo systemctl enable nussknacker.service`
-7. `sudo systemctl start nussknacker.service`
-
-You can check Nussknacker logs with `sudo journalctl -u nussknacker.service` command.
-
-#### Sample systemd-unit-file
-
-```unit file (systemd)
-[Unit]
-Description=Nussknacker
-
-StartLimitBurst=5
-StartLimitIntervalSec=600
-
-[Service]
-SyslogIdentifier=%N
-
-WorkingDirectory=/opt/nussknacker
-ExecStart=/opt/nussknacker/bin/run.sh
-RuntimeDirectory=%N
-RuntimeDirectoryPreserve=restart
-
-SuccessExitStatus=143
-Restart=always
-RestartSec=60
-
-[Install]
-WantedBy=default.target
-```
-
-### Configuring the Designer with Nginx-http-public-path
-
-Sample nginx proxy configuration serving Nussknacker Designer UI under specified `my-custom-path` path. It assumes Nussknacker itself is available under `http://designer:8080`
-Don't forget to specify `HTTP_PUBLIC_PATH=/my-custom-path` environment variable in Nussknacker Designer.
-
-```
-http {
-  server {
-    location / {
-      proxy_pass http://designer:8080;
-    }
-    location /my-custom-path/ {
-      rewrite           ^/my-custom-path/?(.*) /$1;
-    }
-  }
-}
-```
-
-
-## Configuration of additional applications
-
-Typical Nussknacker deployment includes Nussknacker Designer and a few additional applications:
-
-![Nussknacker components](./img/components.png "Nussknacker components")
-
-Some of them need to be configured properly to be fully integrated with Nussknacker.
-
-The [installation example](https://github.com/TouK/nussknacker-installation-example/) contains `docker-compose` based 
-sample installation of all needed applications.
-
-If you want to install them from the scratch or use already installed at your organisation pay attention to:
-
-- Metrics setup (please see installation example for reference):
-  - Configuration of metric reporter in Flink setup
-  - Telegraf's configuration - some metric tags and names need to be cleaned
-  - Importing scenario dashboard to Grafana configuration
-- Flink savepoint configuration. To be able to use scenario verification
-  (see `shouldVerifyBeforeDeploy` property in [scenario deployment configuration](../installation_configuration_guide/ScenarioDeploymentConfiguration.md))
-  you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS)
+## What is next?
+Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration key - see the [configuration file](#configuration-file). The details of enrichers configuration are in the [Integration chapter](../integration/) of the documentation. 

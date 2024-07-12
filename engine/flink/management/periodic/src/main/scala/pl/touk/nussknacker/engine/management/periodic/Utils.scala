@@ -1,20 +1,16 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import akka.actor.{ActorNotFound, ActorPath, ActorRef, ActorSystem}
-import akka.pattern.{AskTimeoutException, gracefulStop}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import com.typesafe.scalalogging.LazyLogging
 
-import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object Utils extends LazyLogging {
 
-  private val GracefulStopTimeout    = 5 seconds
-  private val ActorResolutionTimeout = 5 seconds
-  private val ActorResolutionPause   = 50 milliseconds
-  private val ActorResolutionRetries = 50
+  private val ActorCreationPause   = 50 milliseconds
+  private val ActorCreationRetries = 50
 
   def runSafely(action: => Unit): Unit = try {
     action
@@ -22,44 +18,23 @@ object Utils extends LazyLogging {
     case t: Throwable => logger.error("Error occurred, but skipping it", t)
   }
 
-  def gracefulStopActor(actorRef: ActorRef, actorSystem: ActorSystem): Unit = {
-    import actorSystem.dispatcher
-    logger.info(s"Gracefully stopping $actorRef")
-
-    val gracefulStopFuture = for {
-      _ <- gracefulStop(actorRef, GracefulStopTimeout)
-      _ <- waitUntilActorNameIsFree( // this step is necessary because gracefulStop does not guarantee that the supervisor is notified of the name being freed
-        actorRef.path,
-        actorSystem
-      )
-    } yield {}
-
-    Await.result(
-      gracefulStopFuture,
-      GracefulStopTimeout + ActorResolutionRetries * (ActorResolutionTimeout + ActorResolutionPause) + (1 second)
-    )
-
-    logger.info(s"Gracefully stopped $actorRef")
-  }
-
-  private def waitUntilActorNameIsFree(actorPath: ActorPath, actorSystem: ActorSystem)(implicit e: ExecutionContext) = {
-    retry
-      .Pause(ActorResolutionRetries, ActorResolutionPause)
+  def createActorWithRetry(actorName: String, props: Props, actorSystem: ActorSystem)(
+      implicit ec: ExecutionContext
+  ): ActorRef = {
+    val actorRefFuture = retry
+      .Pause(ActorCreationRetries, ActorCreationPause)
       .apply { () =>
-        val actorResolutionFuture =
-          actorSystem
-            .actorSelection(actorPath)
-            .resolveOne(ActorResolutionTimeout)
-            .map(_ => Left(s"Actor path $actorPath is still taken"))
-
-        actorResolutionFuture.recover { case _: ActorNotFound =>
-          Right(s"Actor path $actorPath is free")
+        Future {
+          Try(actorSystem.actorOf(props, actorName))
         }
       }
       .map {
-        case Left(_)  => throw new IllegalStateException(s"Failed to free actor path $actorPath within allowed retries")
-        case Right(_) => ()
+        case Failure(ex) =>
+          throw new IllegalStateException(s"Failed to create actor '$actorName' within allowed retries: $ex")
+        case Success(a) => a
       }
+
+    Await.result(actorRefFuture, ActorCreationRetries * ActorCreationPause + (1 second))
   }
 
 }

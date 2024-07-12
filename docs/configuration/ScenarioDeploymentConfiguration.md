@@ -273,7 +273,7 @@ ingress {
 
 ### Configuring Prometheus metrics
 
-Just like in [Designer installation](../installation/Installation.md#basic-environment-variables), you can
+Just like in [Designer installation](../configuration/Common.md#basic-environment-variables), you can
 attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods.
 Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics
 will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration
