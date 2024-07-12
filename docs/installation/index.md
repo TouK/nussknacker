@@ -12,7 +12,7 @@ Nussknacker. This document focuses on the configuration of Nussknacker and its i
 ![Nussknacker components](./img/components.png "Nussknacker components")
 
 As you see on the diagram above, Nussknacker interacts and depends on the following services:
-* [Postgres](https://www.postgresql.org/) - a database for the Nusskacker Designer
+* [Postgres](https://www.postgresql.org/) - a database for the Nussknacker Designer
 * [Flink](https://flink.apache.org/) - a powerful steaming processing framework
 * [Kafka](https://kafka.apache.org/) - a broker for steaming data
 * [Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html) - a schema registry for the data in Kafka's topics
