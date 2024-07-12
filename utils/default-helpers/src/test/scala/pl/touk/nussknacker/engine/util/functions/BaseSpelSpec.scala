@@ -68,18 +68,6 @@ trait BaseSpelSpec {
     parser.parse(expr, validationCtx, Unknown).value.expression.evaluate[AnyRef](evaluationCtx, globalVariables)
   }
 
-  protected def dupa(
-      expr: String,
-      localVariables: Map[String, Any] = Map.empty,
-      types: Map[String, TypingResult] = Map.empty
-  ): ValidatedNel[ExpressionParseError, TypingResult] = {
-    val validationCtx = ValidationContext(
-      localVariables.mapValuesNow(Typed.fromInstance) ++ types,
-      globalVariables.mapValuesNow(Typed.fromInstance)
-    )
-    parser.parse(expr, validationCtx, Unknown).map(_.returnType)
-  }
-
   protected def evaluateType(
       expr: String,
       localVariables: Map[String, Any] = Map.empty,
