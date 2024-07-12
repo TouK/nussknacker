@@ -52,9 +52,11 @@ The table below presents most important options, or the ones that have Nussknack
 
 ### Metric dashboard
 
-Each scenario can have a link to Grafana dashboard. In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/grafana) we
-provide a sample `nussknacker-scenario` dashboard.
-You can modify/configure your own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
+Each scenario can have a link to Grafana dashboard. 
+In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana/dashboards) 
+we provide a sample `nussknacker-scenario` dashboard. You can modify/configure your own, the only assumption that 
+we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display 
+metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by
 `metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
