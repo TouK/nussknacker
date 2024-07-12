@@ -24,7 +24,8 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
        |authentication: {
        |  method: "BasicAuth"
        |  anonymousUserRole: "${anonymousUserRole}"
-       |  usersFile: "classpath:basic-users.conf"
+       |  usersFile: "classpath:basic-users.conf",
+       |  realm: "nussknacker-test"
        |}
        |""".stripMargin
   )
@@ -76,6 +77,13 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
   it("should deny an authenticated but unauthorized user to a restricted resource") {
     Get("/config").addCredentials(HttpCredentials.createBasicHttpCredentials("user", "user")) ~> testRoute ~> check {
       status shouldEqual StatusCodes.Forbidden
+    }
+  }
+
+  it("should use custom realm") {
+    Get("/public") ~> testRoute ~> check {
+      status shouldEqual StatusCodes.Unauthorized
+      header("WWW-Authenticate").map(_.value()) shouldEqual Some("Basic realm=\"nussknacker-test\",charset=UTF-8")
     }
   }
 
