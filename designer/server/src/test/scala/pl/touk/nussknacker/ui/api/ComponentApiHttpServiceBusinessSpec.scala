@@ -38,15 +38,20 @@ class ComponentApiHttpServiceBusinessSpec
 
   "The endpoint for getting components when" - {
     "return component list for current user" in {
-      val componentIdListForTestUser: List[String] =
+      def getComponentListIds(withUsages: Boolean) = {
         given()
           .when()
           .basicAuthAllPermUser()
-          .get(s"$nuDesignerHttpAddress/api/components")
+          .get(s"$nuDesignerHttpAddress/api/components?withUsages=true")
           .Then()
           .statusCode(200)
           .extractToStringsList("id")
+      }
 
+      val componentIdListForTestUser         = getComponentListIds(withUsages = true)
+      val componentIdListForTestUserNoUsages = getComponentListIds(withUsages = false)
+
+      componentIdListForTestUser.sorted shouldBe componentIdListForTestUserNoUsages.sorted
       componentIdListForTestUser.sorted should contain theSameElementsAs expectedComponentIdsForAllPermUser
     }
   }

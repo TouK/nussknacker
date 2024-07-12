@@ -20,8 +20,9 @@ class ComponentApiHttpService(
   expose {
     componentApiEndpoints.componentsListEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogic { implicit loggedUser => _ =>
-        componentService.getComponentsList
+      .serverLogic { implicit loggedUser => withUsages =>
+        componentService
+          .getComponentsList(withUsages.getOrElse(true))
           .map { componentList => success(componentList) }
       }
   }

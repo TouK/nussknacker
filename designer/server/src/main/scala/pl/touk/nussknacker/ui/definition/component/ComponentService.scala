@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
-  def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]]
+  def getComponentsList(withUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]]
 
   def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
@@ -70,19 +70,26 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
-    for {
-      components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
+  override def getComponentsList(withUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
+    val componentsFuture = processingTypeDataProvider.all.toList.flatTraverse {
+      case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType)
+    }
+
+    componentsFuture.flatMap { components =>
+      val mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
+
+      if (withUsages) {
+        getUserAccessibleComponentUsages.map { userAccessibleComponentUsages =>
+          val enrichedWithUsagesComponents = mergedComponents.map { c =>
+            c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
+          }
+          enrichedWithUsagesComponents.sortBy(ComponentListElement.sortMethod)
+        }
+      } else {
+        Future.successful(mergedComponents)
       }
-      // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
-      mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
-      userAccessibleComponentUsages <- getUserAccessibleComponentUsages
-      enrichedWithUsagesComponents = mergedComponents.map(c =>
-        c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
-      )
-      sortedComponents = enrichedWithUsagesComponents.sortBy(ComponentListElement.sortMethod)
-    } yield sortedComponents
+    }
   }
 
   override def getComponentUsages(
