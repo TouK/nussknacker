@@ -166,7 +166,7 @@ const snapshotOptions = {
 function takeGraphScreenshot() {
     cy.get('[joint-selector="layers"]').matchImage({
         ...snapshotOptions,
-        screenshotConfig: { padding: 16 },
+        screenshotConfig: { padding: 20 },
     });
 }
 
