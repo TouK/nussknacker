@@ -5,8 +5,9 @@ import { addAttachment } from "../../actions/nk";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessName, getProcessVersionId } from "../../reducers/selectors/graph";
 import ButtonUpload from "../../assets/img/icons/buttonUpload.svg";
-import { NodeInput } from "../withFocus";
-import { AddAttachmentsWrapper, AttachmentButton, AttachmentButtonText, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
+import { NodeInput } from "../FormElements";
+import { AddAttachmentsWrapper, AttachmentButton, AttachmentDropZone, AttachmentsContainer } from "./StyledAttach";
+import { Typography } from "@mui/material";
 
 export function AddAttachment() {
     const { t } = useTranslation();
@@ -28,9 +29,7 @@ export function AddAttachment() {
                             <AttachmentButton>
                                 <ButtonUpload />
                             </AttachmentButton>
-                            <AttachmentButtonText>
-                                <span>{t("attachments.buttonText", "drop or choose a file")}</span>
-                            </AttachmentButtonText>
+                            <Typography variant={"caption"}>{t("attachments.buttonText", "drop or choose a file")}</Typography>
                         </AttachmentDropZone>
                         <NodeInput {...getInputProps()} />
                     </AttachmentsContainer>

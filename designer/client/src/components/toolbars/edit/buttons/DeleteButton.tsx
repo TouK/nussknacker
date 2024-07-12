@@ -8,7 +8,7 @@ import { ToolbarButtonProps } from "../../types";
 function DeleteButton(props: ToolbarButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { delete: remove } = useSelectionActions();
-    const { disabled } = props;
+    const { disabled, type } = props;
     const available = !disabled && remove;
 
     return (
@@ -18,6 +18,7 @@ function DeleteButton(props: ToolbarButtonProps): JSX.Element {
             icon={<Icon />}
             disabled={!available}
             onClick={available ? (e) => remove(e.nativeEvent) : null}
+            type={type}
         />
     );
 }

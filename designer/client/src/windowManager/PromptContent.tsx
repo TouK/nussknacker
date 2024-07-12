@@ -1,7 +1,7 @@
 import { css } from "@emotion/css";
 import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
-import { LaddaButton } from "./LaddaButton";
+import { LoadingButton } from "./LoadingButton";
 import { isTouchDevice } from "../helpers/detectDevice";
 import { useTheme } from "@mui/material";
 
@@ -21,7 +21,7 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
 
     const components = useMemo(
         () => ({
-            FooterButton: LaddaButton,
+            FooterButton: LoadingButton,
             ...props.components,
             Header: HeaderPlaceholder,
         }),

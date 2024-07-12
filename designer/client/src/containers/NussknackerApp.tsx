@@ -7,12 +7,16 @@ import { getLoggedUser } from "../reducers/selectors/settings";
 import { isEmpty } from "lodash";
 import { Outlet } from "react-router-dom";
 import { Notifications } from "./Notifications";
-import { UsageReportingImage } from "./UsageReportingImage";
+import { useAnonymousStatistics } from "./useAnonymousStatistics";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
+import { useRegisterTrackingEvents } from "./event-tracking";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
+
+    useAnonymousStatistics();
+    useRegisterTrackingEvents();
 
     if (isEmpty(loggedUser)) {
         return null;
@@ -46,7 +50,6 @@ export function NussknackerApp() {
                 <Notifications />
             </ConnectionErrorProvider>
             <VersionInfo />
-            <UsageReportingImage />
         </>
     );
 }

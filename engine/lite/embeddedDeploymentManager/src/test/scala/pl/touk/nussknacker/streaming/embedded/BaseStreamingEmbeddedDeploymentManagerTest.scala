@@ -7,16 +7,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{
-  DeployedScenarioData,
-  DeploymentManager,
-  ProcessingTypeDeploymentServiceStub
-}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, TopicName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -38,20 +36,33 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
   sealed case class FixtureParam(
       deploymentManager: DeploymentManager,
       modelData: ModelData,
-      inputTopic: String,
-      outputTopic: String
+      inputTopic: TopicName.ForSource,
+      outputTopic: TopicName.ForSink
   ) {
 
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = scenario.name)
-      deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+      deploymentManager
+        .processCommand(
+          DMRunDeploymentCommand(
+            version,
+            DeploymentData.empty,
+            scenario,
+            DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+              StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+            )
+          )
+        )
+        .futureValue
     }
 
   }
 
-  protected def generateInputTopicName = s"input-${UUID.randomUUID().toString}"
+  protected def generateInputTopicName: TopicName.ForSource =
+    TopicName.ForSource(s"input-${UUID.randomUUID().toString}")
 
-  protected def generateOutputTopicName = s"output-${UUID.randomUUID().toString}"
+  protected def generateOutputTopicName: TopicName.ForSink =
+    TopicName.ForSink(s"output-${UUID.randomUUID().toString}")
 
   private val defaultJsonSchema =
     """
@@ -74,17 +85,16 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
   protected def wrapInFailingLoader[T] = ThreadUtils.withThisAsContextClassLoader[T](new FailingContextClassloader) _
 
   protected def prepareFixture(
-      inputTopic: String = generateInputTopicName,
-      outputTopic: String = generateOutputTopicName,
+      inputTopic: TopicName.ForSource = generateInputTopicName,
+      outputTopic: TopicName.ForSink = generateOutputTopicName,
       initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty,
       jsonSchema: String = defaultJsonSchema
   ): FixtureParam = {
+    registerJsonSchema(inputTopic.toUnspecialized, jsonSchema, isKey = false)
+    registerJsonSchema(outputTopic.toUnspecialized, jsonSchema, isKey = false)
 
-    registerJsonSchema(inputTopic, jsonSchema, isKey = false)
-    registerJsonSchema(outputTopic, jsonSchema, isKey = false)
-
-    kafkaClient.createTopic(inputTopic, partitions = 1)
-    kafkaClient.createTopic(outputTopic, partitions = 1)
+    kafkaClient.createTopic(inputTopic.name, partitions = 1)
+    kafkaClient.createTopic(outputTopic.name, partitions = 1)
 
     val configToUse = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
@@ -109,7 +119,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest
       .create(kafkaComponentProviderConfig, ProcessObjectDependencies.withConfig(config))
 
     val modelData         = LocalModelData(configToUse, kafkaComponents)
-    val deploymentService = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
+    val deploymentService = new ProcessingTypeDeployedScenariosProviderStub(initiallyDeployedScenarios)
     wrapInFailingLoader {
       val strategy = new StreamingDeploymentStrategy {
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit =

@@ -5,6 +5,7 @@ import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
 import { FormControl, FormLabel } from "@mui/material";
+import { nodeValue } from "./NodeDetailsContent/NodeTableStyled";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -39,7 +40,7 @@ export default function BranchParameters({
                 return (
                     <FormControl key={paramName}>
                         <FormLabel title={paramName}>{paramName}:</FormLabel>
-                        <div className="node-value">
+                        <div className={nodeValue}>
                             <div className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {
                                     const branchId = branchParameter.branchId;

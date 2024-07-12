@@ -7,9 +7,9 @@ import slick.lifted.MappedTo
 import java.time.{Clock, LocalDateTime}
 
 // TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
-case class PeriodicProcessDeployment(
+case class PeriodicProcessDeployment[ProcessRep](
     id: PeriodicProcessDeploymentId,
-    periodicProcess: PeriodicProcess,
+    periodicProcess: PeriodicProcess[ProcessRep],
     createdAt: LocalDateTime,
     runAt: LocalDateTime,
     scheduleName: ScheduleName,
@@ -27,7 +27,7 @@ case class PeriodicProcessDeployment(
     }
 
   def display: String =
-    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=${periodicProcess.id}"
+    s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=$id"
 
 }
 

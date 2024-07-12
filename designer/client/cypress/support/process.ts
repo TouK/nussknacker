@@ -5,12 +5,12 @@ declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Cypress {
         interface Chainable {
-            createTestProcess: typeof createProcess;
+            createTestProcess: typeof createTestProcess;
             deleteTestProcess: typeof deleteTestProcess;
             getTestProcesses: typeof getTestProcesses;
             deleteAllTestProcesses: typeof deleteAllTestProcesses;
             createTestProcessName: typeof createTestProcessName;
-            createTestFragment: typeof createProcess;
+            createTestFragment: typeof createTestFragment;
             importTestProcess: typeof importTestProcess;
             visitNewProcess: typeof visitNewProcess;
             visitNewFragment: typeof visitNewFragment;
@@ -21,26 +21,43 @@ declare global {
             layoutScenario: typeof layoutScenario;
             deployScenario: typeof deployScenario;
             cancelScenario: typeof cancelScenario;
+            createKafkaTopic: typeof createKafkaTopic;
+            removeKafkaTopic: typeof removeKafkaTopic;
+            createSchema: typeof createSchema;
+            removeSchema: typeof removeSchema;
         }
     }
 }
 
 const processIndexes = {};
+
 function createTestProcessName(name?: string) {
     processIndexes[name] = ++processIndexes[name] || 1;
     const index = padStart(processIndexes[name].toString(), 3, "0");
     return cy.wrap(`${Cypress.env("processNamePrefix")}-${index}-${name}-test-process`);
 }
 
-function createProcess(name?: string, fixture?: string, category = "Category1", isFragment?: boolean) {
+function createProcess(
+    name?: string,
+    fixture?: string,
+    category = "Category1",
+    isFragment = false,
+    processingMode?: string,
+    engineSetupName?: string,
+) {
     return cy.createTestProcessName(name).then((processName) => {
-        let url = `/api/processes/${processName}/${category}`;
-        if (isFragment) {
-            url += "?isFragment=true";
-        }
+        const url = `/api/processes`;
+
         cy.request({
             method: "POST",
             url,
+            body: {
+                name: processName,
+                category,
+                isFragment,
+                processingMode: processingMode,
+                engineSetupName,
+            },
         })
             .its("status")
             .should("equal", 201);
@@ -48,13 +65,17 @@ function createProcess(name?: string, fixture?: string, category = "Category1", 
     });
 }
 
-const createTestProcess = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category);
+const createTestProcess = (name?: string, fixture?: string, category = "Category1", processingMode?: string, engineSetupName?: string) =>
+    createProcess(name, fixture, category, false, processingMode, engineSetupName);
 
-const createTestFragment = (name?: string, fixture?: string, category = "Category1") => createProcess(name, fixture, category, true);
+const createTestFragment = (name?: string, fixture?: string, category = "Category1", processingMode?: string, engineSetupName?: string) =>
+    createProcess(name, fixture, category, true, processingMode, engineSetupName);
 
 function visitProcess(processName: string) {
     cy.visit(`/visualization/${processName}`);
     cy.wait("@fetch").its("response.statusCode").should("eq", 200);
+    // lazy loaded panel moves other toolbars/button just before click
+    cy.contains(/we are happy/i).should("exist");
     return cy.wrap(processName);
 }
 
@@ -165,6 +186,48 @@ function deleteAllTestProcesses({ filter, force }: { filter?: string; force?: bo
     });
 }
 
+function createKafkaTopic(topic: string) {
+    const redpandaContainerName = Cypress.env("REDPANDA_CONTAINER") || "cypress_e2e_redpanda";
+    return cy.exec(`docker exec ${redpandaContainerName} rpk topic create ${topic}`);
+}
+
+function removeKafkaTopic(topic: string) {
+    const redpandaContainerName = Cypress.env("REDPANDA_CONTAINER") || "cypress_e2e_redpanda";
+    return cy.exec(`docker exec ${redpandaContainerName} rpk topic delete ${topic}`);
+}
+
+function createSchema(subject: string, schemaFileName: string) {
+    const schemaRegistryUrl = Cypress.env("SCHEMA_REGISTRY_ADDRESS") || "http://localhost:3082";
+    return cy.fixture(schemaFileName).then((schemaContent) => {
+        cy.request({
+            method: "POST",
+            url: `${schemaRegistryUrl}/subjects/${subject}/versions`,
+            body: { schema: JSON.stringify(schemaContent) },
+            headers: {
+                "Content-Type": "application/vnd.schemaregistry.v1+json",
+            },
+        }).then((response) => {
+            expect(response.status).to.eq(200); // Check for a successful response
+            cy.log("Schema ID:", response.body.id);
+        });
+    });
+}
+
+function removeSchema(subject: string) {
+    const schemaRegistryUrl = Cypress.env("SCHEMA_REGISTRY_ADDRESS") || "http://localhost:3082";
+    cy.request({
+        method: "DELETE",
+        url: `${schemaRegistryUrl}/subjects/${subject}?permanent=true`,
+        headers: {
+            "Content-Type": "application/vnd.schemaregistry.v1+json",
+        },
+        failOnStatusCode: false,
+    }).then((response) => {
+        expect(response.status).to.be.oneOf([200, 204, 404]); // Successful deletion should return 200 or 204
+        cy.log("Force deleted all versions of schema subject:", subject);
+    });
+}
+
 function getNode(name: string, end?: boolean) {
     return cy.get(`[model-id${end ? "$=" : "="}"${name}"]`, { timeout: 30000 });
 }
@@ -189,9 +252,13 @@ function dragNode(
     return cy.getNode(name);
 }
 
-function layoutScenario(waitTime = 400) {
+function layoutScenario(waitTime = 600) {
+    // prevents random clicks on metrics
+    // lazy loaded panel moves layout button just before click
+    cy.contains(/we are happy/i).should("exist");
     cy.contains(/^layout$/).click();
-    cy.wait(waitTime); //wait for graph view (zoom, pan) to settle
+    //wait for graph view (zoom, pan) to settle
+    cy.wait(waitTime);
 }
 
 function deployScenario(comment = "issues/123", withScreenshot?: boolean) {
@@ -232,5 +299,8 @@ Cypress.Commands.add("dragNode", dragNode);
 Cypress.Commands.add("layoutScenario", layoutScenario);
 Cypress.Commands.add("deployScenario", deployScenario);
 Cypress.Commands.add("cancelScenario", cancelScenario);
-
+Cypress.Commands.add("createKafkaTopic", createKafkaTopic);
+Cypress.Commands.add("removeKafkaTopic", removeKafkaTopic);
+Cypress.Commands.add("createSchema", createSchema);
+Cypress.Commands.add("removeSchema", removeSchema);
 export default {};

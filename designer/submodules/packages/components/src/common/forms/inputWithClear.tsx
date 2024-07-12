@@ -15,8 +15,9 @@ export function InputWithClear({ value, onChange, ...props }: InputWithClearProp
             onChange={(e) => onChange(e.target.value)}
             endAdornment={
                 value && (
-                    <InputAdornment position="end">
+                    <InputAdornment sx={(theme) => ({ color: theme.palette.text.secondary })} position="end">
                         <IconButton
+                            color="inherit"
                             aria-label="clear"
                             onClick={() => onChange(null)}
                             onMouseDown={(event) => event.preventDefault()}

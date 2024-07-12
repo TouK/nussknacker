@@ -2,26 +2,31 @@ package pl.touk.nussknacker.sql.service
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 import pl.touk.nussknacker.sql.db.query.{QueryArgument, QueryArguments, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.{DbMetaDataProvider, SchemaDefinition, TableDefinition}
 import pl.touk.nussknacker.sql.service.DatabaseLookupEnricher.TableParamName
-import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{CacheTTLParam, CacheTTLParamName, TransformationState}
+import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher.{
+  TransformationState,
+  cacheTTLParamDeclaration,
+  cacheTTLParamName
+}
 
 import scala.util.control.NonFatal
 
 object DatabaseLookupEnricher {
 
-  final val TableParamName: String = "Table"
+  final val TableParamName: ParameterName = ParameterName("Table")
 
-  final val KeyColumnParamName: String = "Key column"
+  final val KeyColumnParamName: ParameterName = ParameterName("Key column")
 
-  final val KeyValueParamName: String = "Key value"
+  final val KeyValueParamName: ParameterName = ParameterName("Key value")
 
   private def keyColumnParam(tableDef: TableDefinition): Parameter = {
     val columnNameValues = tableDef.columnDefs.map(column => FixedExpressionValue(s"'${column.name}'", column.name))
@@ -45,7 +50,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
     extends DatabaseQueryEnricher(dBPoolConfig, dbMetaDataProvider)
     with LazyLogging {
 
-  protected def tableParam(): Parameter = {
+  private def tableParam(): Parameter = {
     val schemaMetaData =
       try {
         dbMetaDataProvider.getSchemaDefinition()
@@ -62,21 +67,27 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   import DatabaseLookupEnricher._
 
-  override protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
-    (argsCount: Int, params: Map[String, Any]) =>
-      QueryArguments(QueryArgument(index = 1, value = params(KeyValueParamName)) :: Nil)
+  override protected val queryArgumentsExtractor: (Int, Params, Context) => QueryArguments =
+    (_: Int, params: Params, context: Context) => {
+      QueryArguments(
+        QueryArgument(
+          index = 1,
+          value = params.extractOrEvaluateLazyParam(KeyValueParamName, context)
+        ) :: Nil
+      )
+    }
 
   override protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
-    NextParameters(parameters = tableParam() :: CacheTTLParam :: Nil)
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
+    NextParameters(parameters = tableParam() :: cacheTTLParamDeclaration.createParameter() :: Nil)
   }
 
-  protected def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  private def tableParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
-          (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (CacheTTLParamName, _) :: Nil,
+          (TableParamName, DefinedEagerParameter(tableName: String, _)) :: (`cacheTTLParamName`, _) :: Nil,
           None
         ) =>
       if (tableName.isEmpty) {
@@ -110,11 +121,11 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
       }
   }
 
-  protected def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
+  private def keyColumnParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
-          (TableParamName, _) :: (CacheTTLParamName, _) :: (
+          (TableParamName, _) :: (`cacheTTLParamName`, _) :: (
             KeyColumnParamName,
             DefinedEagerParameter(keyColumn: String, _)
           ) :: Nil,
@@ -130,7 +141,7 @@ class DatabaseLookupEnricher(dBPoolConfig: DBPoolConfig, dbMetaDataProvider: DbM
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     initialStep(context, dependencies) orElse
       tableParamStep(context, dependencies) orElse
       keyColumnParamStep(context, dependencies) orElse

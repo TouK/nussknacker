@@ -10,7 +10,7 @@ import { CapabilitiesToolbarButton } from "../../../toolbarComponents/Capabiliti
 import { ToolbarButtonProps } from "../../types";
 import { displayCurrentProcessVersion, loadProcessToolbarsConfiguration } from "../../../../actions/nk";
 
-function UnArchiveButton({ disabled }: ToolbarButtonProps) {
+function UnArchiveButton({ disabled, type }: ToolbarButtonProps) {
     const processName = useSelector(getProcessName);
     const archived = useSelector(isArchived);
     const available = !disabled || !archived;
@@ -42,6 +42,7 @@ function UnArchiveButton({ disabled }: ToolbarButtonProps) {
             icon={<Icon />}
             disabled={!available}
             onClick={onClick}
+            type={type}
         />
     );
 }

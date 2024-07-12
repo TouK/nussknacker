@@ -2,7 +2,146 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.14.x (Not released yet)
+## In version 1.17.0 (Not released yet)
+
+### Code API changes
+
+* [#6248](https://github.com/TouK/nussknacker/pull/6248) Removed implicit conversion from string to SpeL
+  expression (`pl.touk.nussknacker.engine.spel.Implicits`). The conversion should be replaced by
+  `pl.touk.nussknacker.engine.spel.SpelExtension.SpelExpresion.spel`.
+* [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
+  setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
+  is only considered in case of Sinks). Create proper topics manually if needed.
+
+## In version 1.16.0
+
+### Code API changes
+
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates. 
+  `processes` and `process_versions` tables won't store username with this part anymore in `createdBy` and `modifiedBy` columns.
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism:
+    * `OverrideUsername` permission was renamed as `Impersonate` and is now used as a global permission.
+    * `AuthManager` is now responsible for authentication and authorization. `AuthenticationResources` handles only plugin specific
+      authentication now. This leads to following changes
+      in `AuthenticationResources` API:
+        * `authenticate()` returns `AuthenticationDirective[AuthenticatedUser]` and not `Directive1[AuthenticatedUser]`
+        * `authenticate(authCredentials)` receives `PassedAuthCredentials` parameter type instead of `AuthCredentials`
+          as anonymous access is no longer part of `AuthenticationResources` logic
+        * `authenticationMethod()` returns `EndpointInput[Option[PassedAuthCredentials]]` instead of `EndpointInput[AuthCredentials]`.
+          The `Option[PassedAuthCredentials]` should hold the value that will be passed to the mentioned `authenticate(authCredentials)`.
+        * `AuthenticationResources` extends `AnonymousAccessSupport` trait:
+          * `AnonymousAccessSupport` has one method `getAnonymousRole()` which returns anonymous role name. If you do not want to have
+            an anonymous access mechanism for your authentication method you can extend your `AuthenticationResources`
+            implementation with `NoAnonymousAccessSupport` trait.
+        * `AuthenticationResources` has a field `impersonationSupport` of type `ImpersonationSupport`:
+          * `ImpersonationSupport` is a trait stating whether authentication method supports impersonation.
+            If you don't want impersonation support you can assign `NoImpersonationSupport` object to it.
+            If you wish to have it - assign `ImpersonationSupported` abstract class to it and
+            implement `getImpersonatedUserData(impersonatedUserIdentity)` method which returns required
+            user's data for the impersonation by user's `identity`.
+    * `AnonymousAccess` extending `AuthCredentials` was renamed to `NoCredentialsProvided`.
+      It does not represent anonymous access to the designer anymore but simply represents passing no credentials.
+    * `AuthenticationConfiguration` has one additional Boolean property `isAdminImpersonationPossible` which defines whether admin users can be impersonated by users with the `Impersonate` permission.
+      The property is set to `false` by default for `BasicAuthenticationConfiguration`, `OAuth2Configuration` and `DummyAuthenticationConfiguration`.
+* [#6087](https://github.com/TouK/nussknacker/pull/6087) [#6155](https://github.com/TouK/nussknacker/pull/6155) `DeploymentManager` API changes:
+  * `DMRunDeploymentCommand.savepointPath` was replaced by `updateStrategy: DeploymentUpdateStrategy`
+    * In places where `savepointPath = None` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+    * In places where `savepointPath = Some(path)` was passed, the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromCustomSavepoint(path))` should be passed
+  * `DMValidateScenarioCommand.updateStrategy` was added
+    * In every place should the `DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint)` should be passed
+  * `deploymentSynchronisationSupport` field was added for purpose of synchronisation of statuses. If synchronisation mechanism is not used in context of given DM, 
+    you should return `NoDeploymentSynchronisationSupport` object. The synchronisation mechanism is used by `/api/deployments/{deploymentId}/status` endpoint. Other endpoints don't use it.
+* [#6249](https://github.com/TouK/nussknacker/pull/6249) `TopicName` trait was introduced and is used in context of specialized topic name (for kafka sources and sinks). Moreover, `UnspecializedTopicName` case class was added and is used in places when the specialization is unknown/not needed. 
+
+### Configuration changes
+
+* [#6082](https://github.com/TouK/nussknacker/pull/6082) Default Influx database was changed from `esp` to `nussknacker_metrics`
+
+### Other changes
+
+## In version 1.15.0
+
+### Code API changes
+
+* [#5609](https://github.com/TouK/nussknacker/pull/5609) [#5795](https://github.com/TouK/nussknacker/pull/5795) [#5837](https://github.com/TouK/nussknacker/pull/5837) [#5798](https://github.com/TouK/nussknacker/pull/5798) Refactoring around DeploymentManager's actions:
+  * Custom Actions
+    * `CustomAction`, `CustomActionParameter` and `CustomActionResult` moved from `extension-api` to `deployment-manager-api` module
+    * `CustomActionResult.req` was removed
+    * `CustomAction` was renamed to `CustomActionDefinition`
+    * `CustomActionRequest` (from the `extension-api`) was renamed to `CustomActionCommand`
+    * `CustomActionRequest` has additional comment parameter (like deploy and cancel actions)
+  * Other "action" methods - all methods operating on a scenario (or its deployment) were replaced by case classes and
+    one method handling them all: `processCommand(command)`:
+    * `validate` - `DMValidateScenarioCommand`
+    * `deploy` - `DMRunDeploymentCommand`
+    * `cancel` with `deploymentId` argument - `DMCancelDeploymentCommand`
+    * `cancel` without `deploymentId` argument - `DMCancelScenarioCommand`
+    * `stop` with `deploymentId` argument - `DMStopDeploymentCommand`
+    * `stop` without `deploymentId` argument - `DMStopScenarioCommand`
+    * `savepoint` - `DMMakeScenarioSavepointCommand`
+    * `test` - `DMTestScenarioCommand`
+  * "Action type" was renamed to "action name". Loosened the restriction on the name of the action:
+    * `ProcessActionType` (enum with fixed values) is replaced with `ScenarioActionName`,  
+    * in `ProcessAction` attribute `actionType` renamed to `actionName`
+    * in table `process_actions` column `action_type` is renamed to `action_name`
+  * `DeploymentManagerDependencies.deploymentService` was splitted into `deployedScenariosProvider` and `actionService`
+  * Events renamed: 
+    * `OnDeployActionSuccess` renamed to `OnActionSuccess`
+    * `OnDeployActionFailed` renamed to `OnActionFailed`
+* [#5762](https://github.com/TouK/nussknacker/pull/5762) for the Flink-based TestRunner scenario builder you should replace the last component that was `testResultService` with `testResultSink` 
+* [#5783](https://github.com/TouK/nussknacker/pull/5783) Return type of `allowedProcessingMode` method in `Component` trait has been changed to `AllowedProcessingModes` type which is one of:
+  * `AllowedProcessingModes.All` in case of all processing modes allowed
+  * `AllowedProcessingModes.SetOf(nonEmptySetOfAllowedProcessingModes)` in case only set of processing modes is allowed
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Refactored API around `FlinkSource`
+  * Added `StandardFlinkSource` with more granular additional traits replacing the need for `FlinkIntermediateRawSource`
+  * Removed `BasicFlinkSource` and `FlinkIntermediateRawSource`. Sources extending these traits should now extend 
+    `StandardFlinkSource`. For reference on how to migrate, see changes in `FlinkKafkaSource` or `CollectionSource`
+  * Renamed `FlinkSource`'s `sourceStream` method to `contextStream`
+  * Removed `EmptySourceFunction`
+* [#5757](https://github.com/TouK/nussknacker/pull/5757) Added support for bounded sources and Flink runtime mode in 
+  Flink tests
+  * `CollectionSource` now takes Flink's `Boundedness` with default `Unbounded` and `RuntimeExecutionMode` with default 
+    `None` as a parameters. It's encouraged to set the `Boundedness` to bounded if applicable
+  * `Boundedness` and `RuntimeExecutionMode` is also possible to set in `FlinkTestScenarioRunner` in new overloading 
+    `runWithData` method
+
+### Configuration changes
+
+* [#5744](https://github.com/TouK/nussknacker/pull/5744) Extracted unbounded stream specific components into separate
+  module:
+    * Components `periodic`, `union-memo`, `previousValue`, aggregates, joins and `delay` from `base` were moved into
+      `base-unbounded` module. They are now built as `flinkBaseUnbounded.jar` under
+      `work/components/flink/flinkBaseUnbounded.jar`.
+    * Configuration of tumbling windows aggregate offset is changed at the ComponentProvider level:
+      `components.base.aggregateWindowsConfig.tumblingWindowsOffset` should now be set
+      as `components.baseUnbounded.aggregateWindowsConfig.tumblingWindowsOffset`
+    * If you previously specified base component jar explicitly in `modelConfig.classPath`
+      as `components/flink/flinkBase.jar` and want to retain the unbounded specific components you need to add
+      `components/flink/flinkBaseUnbounded.jar` explicitly.
+    * [#5887](https://github.com/TouK/nussknacker/pull/5887) When using a custom DesignerConfig, ensure that long text elements like 'generate file' are positioned in the last row to prevent excessive spacing between elements.
+
+### Other changes
+
+* [#5574](https://github.com/TouK/nussknacker/pull/5574) Removed the support for the pluggable expression languages: `ExpressionConfig.languages` removed
+* [#5724](https://github.com/TouK/nussknacker/pull/5724) Improvements: Run Designer locally
+  * Introduce `JAVA_DEBUG_PORT` to run the Designer locally with remote debugging capability
+  * Removed `SCALA_VERSION`, please use `NUSSKNACKER_SCALA_VERSION` instead of it
+* [#5824](https://github.com/TouK/nussknacker/pull/5824) Decision Table parameters rename: 
+  * "Basic Decision Table" -> "Decision Table"
+  * "Expression" -> "Match condition"
+* [#5881](https://github.com/TouK/nussknacker/pull/5881) `nussknacker-interpreter` module was renamed to `nussknacker-scenario-compiler`
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Added configurable idle timeout to Flink Kafka source with the
+  default value of 3 minutes. You can configure this timeout in Kafka component config at `idleTimeout.duration` 
+  or disable it at `idleTimeout.enabled`. You can learn about idleness
+  in [Flink general docs](https://nightlies.apache.org/flink/flink-docs-release-1.19/docs/dev/datastream/event-time/generating_watermarks/#dealing-with-idle-sources)
+  and [Kafka connector-specific docs](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#idleness)
+* [#5875](https://github.com/TouK/nussknacker/pull/5875) Removed `useNamingStrategyForConsumerGroupId` feature flag
+  allowing for disabling namespaced Kafka consumer groups
+* [#5848](https://github.com/TouK/nussknacker/pull/5848): Introduced a new method for handling colors, aimed at simplifying customization. Now, all colors are centrally stored in a single location. Refer to [README.md](https://github.com/TouK/nussknacker/blob/staging/designer/client/README.md#theme-colors-customization) for details on theme colors customization.
+* [#5914](https://github.com/TouK/nussknacker/pull/5914) Removed dev-specific configuration files `dev-application.conf` 
+  and `dev-tables-definition.sql` from public distribution artifacts
+
+## In version 1.14.0
 
 ### Code API changes
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
@@ -24,11 +163,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `DisplayableProcess.id` of type `String` was replaced by `name` field of type `ProcessName`, `processName` field is removed
   * deprecated `AsyncExecutionContextPreparer.prepareExecutionContext` was removed
   * `AsyncExecutionContextPreparer.prepare` now takes `ProcessName` instead of `String`
-* [#5288](https://github.com/TouK/nussknacker/pull/5288) RemoteEnvironment / ModelMigration changes:
+* [#5288](https://github.com/TouK/nussknacker/pull/5288) [#5474](https://github.com/TouK/nussknacker/pull/5474) RemoteEnvironment / ModelMigration changes:
   * `ProcessMigration.failOnNewValidationError` was removed - it wasn't used anywhere anymore
   * `RemoteEnvironment.testMigration` result types changes
     * `shouldFailOnNewErrors` field was removed - it wasn't used anywhere anymore
     * `converted` field was replaced by the `processName` field which was the only information that was used
+  * `RemoteEnvironment.migrate` takes `ScenarioParameters` instead of `category`
 * [#5361](https://github.com/TouK/nussknacker/pull/5361) `Parameter` has new, optional `labelOpt` field which allows
   to specify label presented to the user without changing identifier used in scenario graph json (`Parameteter.name`)
 * [#5356](https://github.com/TouK/nussknacker/pull/5356) Changes in AdditionalUIConfigProvider.getAllForProcessingType now require model reload to take effect.
@@ -47,6 +187,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ComponentId` was renamed to `DesignerWideComponentId`
   * new `ComponentId` is serialized in json to string in format `$componentType-$componentName` instead of separate fields (`name` and `type`)
   * `NodeComponentInfo.componentInfo` was renamed to `componentId`
+* [#5438](https://github.com/TouK/nussknacker/pull/5438) Removed sealed trait `CustomActionError`, now `CustomActionResult` is always used
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) [#5457](https://github.com/TouK/nussknacker/pull/5457) Typed related changes
   * `CommonSupertypeFinder` shouldn't be created directly anymore - `CommonSupertypeFinder.*` predefined variables should be used instead,
     in most cases just (`CommonSupertypeFinder.Default`)
@@ -59,11 +200,72 @@ To see the biggest differences please consult the [changelog](Changelog.md).
       If you have a list of types and you are not sure how to translate it to `TypingResult` you can try to use `Typed.fromIterableOrUnknownIfEmpty`
       but it is not recommended - see docs next to it.
     * `TypedUnion`is not a case class anymore, but is still serializable - If it was used in a Flink state, state will be probably not compatible
+  * [#5517](https://github.com/TouK/nussknacker/pull/5517) Legacy `OnFinished` listener-api event was removed
+  * [#5474](https://github.com/TouK/nussknacker/pull/5474) `Component` class now need to specify `allowedProcessingModes`. 
+    Most of the implementations (`CustomStreamTransformer`, `Service`, `SinkFactory`) has default wildcard (`None`).
+    For `SourceFactory` you need to specify which `ProcessingMode` this source support. You have predefined traits:
+    `UnboundedStreamComponent`, `BoundedStreamComponent`, `RequestResponseComponent`, `AllProcessingModesComponent`
+    that can be mixed into the component
+  * [#5474](https://github.com/TouK/nussknacker/pull/5474) Changes around new scenario metadata (aka "parameters"):
+    * `ScenarioWithDetails`: added `processingMode` and `engineSetupName` fields
+  * [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5521](https://github.com/TouK/nussknacker/pull/5521), [#5519](https://github.com/TouK/nussknacker/pull/5519) `DeploymentManager` API related changes:
+    * In the `DeploymentManager`:
+      * `DeploymentManager.getProcessState(ProcessIdWithName, Option[ProcessAction])`
+        become final. You should implement `resolve` method instead. It does the same, only `List[StatusDetails]` are already determined.
+      * Method `DeploymentManager.getProcessStates` signature was changed and now requires an implicit `freshnessPolicy: DataFreshnessPolicy`
+      * Trait `AlwaysFreshProcessState` and method `getFreshProcessStates` were removed, instead of it please use `getProcessStates` with `DataFreshnessPolicy.Fresh` policy
+      * Managers `FlinkStreamingRestManager` and `FlinkRestManager` require new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+    * In the `DeploymentManagerProvider`:
+      * New methods were added: `defaultEngineSetupName` and `engineSetupIdentity`. They have default implementations, you should consider to replace them by your own
+      * New, overloaded `createDeploymentManager` was added. In the new one most of the parameters were bundled into `DeploymentManagerDependencies` class
+        which allows to easier pass these dependencies to delegates. Also, this method returns `ValidateNel[String, DeploymentManager]`.
+        You can return errors that will be visible to users e.g. invalid configuration etc. The old one is deleted.
+      * Method `createDeploymentManager` signature was changed and now requires new parameter: `scenarioStateCacheTTL: Option[FiniteDuration]`
+  * [#5526](https://github.com/TouK/nussknacker/pull/5526) Refactored namespaces:
+    * Removed `ObjectNaming` SPI
+    * Removed logging when using naming strategy
+    * Replaced `ObjectNaming` with single `NamingStrategy` which prepares a name with a prefix from `namespace` key from
+      `ModelConfig` or returns the original name if the value is not configured
+  * [#5535](https://github.com/TouK/nussknacker/pull/5535) `ProcessingTypeConfig.classpath` contains now raw, `String` entries instead of `URL`.
+    The `String` to `URL` converting logic is now inside `ModelClassLoader.apply`
+* [#5505](https://github.com/TouK/nussknacker/pull/5505) anonymous access functionality for Tapir-based API 
+  * `AuthenticationResources` & `AnonymousAccess` traits were changed to be able to introduce anonymous access feature
+  * `AuthCredentials` class was changed too 
+* [#5373](https://github.com/TouK/nussknacker/pull/5373)[#5694](https://github.com/TouK/nussknacker/pull/5694) changes related to `Component`s and `LazyParameter`s:
+  * `LazyParameter` can be evaluated on request thanks to its `evaluate` method 
+  * `Params` data class was introduced as a replacement for runtime parameters values defined as `Map[String, Any]`. `Params` data class, in its extraction methods, assumes that a parameter with the given name exists in the underlying Map.
+  * `TypedExpression` was removed from `BaseDefinedParameter` hierarchy in favour of `TypingResult` 
+  * `TypedExpression` doesn't depend on `ExpressionTypingInfo` anymore 
+  * `ServiceInvoker` refactoring (parameters map was removed, a context is passed to its method)
+  * `ProcessListener` interface changed slightly
+  * `ParameterWithExtractor` util was replaced with `ParameterDeclaration`.
+  * classes renaming:
+    * `LazyParameterInterpreter` to `LazyParameterInterpreter`
+    * `GenericNodeTransformation` to `DynamicComponent`
+    * `SingleInputGenericNodeTransformation` to `SingleInputDynamicComponent`
+    * `JoinGenericNodeTransformation` to `JoinDynamicComponent`
+    * `JavaGenericTransformation` to `JavaDynamicComponent`
+    * `JavaGenericSingleTransformation` to `JavaSingleInputDynamicComponent`
+    * `JavaGenericJoinTransformation` to `JavaJoinDynamicComponent`
+    * `JavaSourceFactoryGenericTransformation` to `JavaSourceFactoryDynamicComponent`
+    * `GenericContextTransformationWrapper` to `DynamicComponentWrapper`
+    * `SingleGenericContextTransformationWrapper` to `SingleInputDynamicComponentWrapper`
+    * `SourceFactoryGenericContextTransformationWrapper` to `SourceFactoryDynamicComponentWrapper`
+    * `JoinGenericContextTransformationWrapper` to `JoinDynamicComponentWrapper`
+  * type `NodeTransformationDefinition` (inside `DynamicComponent`) renamed to `ContextTransformationDefinition`
+* [#5641](https://github.com/TouK/nussknacker/pull/5641) `PeriodicProcessDeployment`/`DeploymentWithJarData`/`PeriodicProcess` now takes type parameter `CanonicalProcess` or `Unit` to point out whether it contains scenario json.
+* [#5656](https://github.com/TouK/nussknacker/pull/5656) `pl.touk.nussknacker.engine.api.expression.Expression#language` method returns `Language` trait instead of `String`
+* [#5707](https://github.com/TouK/nussknacker/pull/5707) `ParameterName` data class was introduced. It replaces `String` in whole places where it's used as a parameter name
+* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+    * Classes `ResultsCollectingListener`, `TestResults`, `ExpressionInvocationResult`, `ExternalInvocationResult` depend on `T`
+    * Classes `TestResults.nodeResults` uses `ResultContext` instead of `Context`
+    * Classes `TestResults.exceptions` uses `ExceptionResult` instead of `NuExceptionInfo`
+    * Added `variableEncoder` to `ResultsCollectingListenerHolder.registerRun`
 
 ### REST API changes
 * [#5280](https://github.com/TouK/nussknacker/pull/5280)[#5368](https://github.com/TouK/nussknacker/pull/5368) Changes in the definition API:
-  * `/processDefinitionData/componentIds` endpoint is removed
-  * `/processDefinitionData/*` response changes:
+  * `/api/processDefinitionData/componentIds` endpoint is removed
+  * `/api/processDefinitionData/*` response changes:
     * `services`, `sourceFactories`, `sinkFactories`, `customStreamTransformers` and `fragmentInputs` maps fields were replaced by
       one `components` map with key in format `$componentType-$componentName` and moved into top level of response
     * `typesInformation` field was renamed into `classes`, moved into top level of response 
@@ -72,29 +274,33 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `nodeId` field inside `edgesForNodes` was renamed into `componentId` in the flat `$componentType-$componentName` format
     * `defaultAsyncInterpretation` field was removed
 * [#5285](https://github.com/TouK/nussknacker/pull/5285) Changes around scenario id/name fields:
-  * `/process(Details)/**` endpoints:
+  * `/api/process(Details)/**` endpoints:
     * `id` fields was removed (it had the same value as `name`)
     * `processId` fields return always `null`
     * `.json.id` fields was renamed to `.json.name`
-  * `components/*/usages` endpoint:
+  * `/api/components/*/usages` endpoint:
     * `id` fields was removed (it had the same value as `name`)
     * `processId` fields was removed
-  * `processes/**/activity/attachments` - `processId` fields was removed
-  * `processes/**/activity/comments` - `processId` fields was removed
+  * `/api/processes/**/activity/attachments` - `processId` fields was removed
+  * `/api/processes/**/activity/comments` - `processId` fields was removed
   * GET `processes/$name/$version/activity/attachments` - `$version` segment is removed now
 * [#5393](https://github.com/TouK/nussknacker/pull/5393) Changes around metadata removal from the REST API requests and responses:
-  * `/processValidation` was changed to `/processValidation/$scenarioName` and changed request type
-  * `/testInfo/*` was changed to `/testInfo/$scenarioName/*` and changed request type
-  * `/processManagement/generateAndTest/$samples` was changed to `/processManagement/generateAndTest/$scenarioName/$samples`
-  * `/processesExport/*` was changed to `/processesExport/$scenarioName/*` and changed response type
-  * `/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
-  * GET `/processes/*` and `/processesDetails/*` changed response type
-  * PUT `/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
-  * `/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
+  * `/api/processValidation` was changed to `/api/processValidation/$scenarioName` and changed request type
+  * `/api/testInfo/*` was changed to `/api/testInfo/$scenarioName/*` and changed request format regarding code API changes
+  * `/api/processManagement/generateAndTest/$samples` was changed to `/api/processManagement/generateAndTest/$scenarioName/$samples`
+  * `/api/processesExport/*` was changed to `/api/processesExport/$scenarioName/*` and changed response format regarding code API changes
+  * `/api/processes/import/$scenarioName` was changed response into `{"scenarioGraph": {...}, "validationResult": {...}`
+  * GET `/api/processes/*` and `/api/processesDetails/*` changed response format regarding code API changes
+  * PUT `/api/processes/$scenarioName` was changed request field from `process` to `scenarioGraph`
+  * `/api/adminProcessManagement/testWithParameters/$scenarioName` was changed request field from `displayableProcess` to `scenarioGraph`
 * [#5424](https://github.com/TouK/nussknacker/pull/5424) Naming cleanup around `ComponentId`/`ComponentInfo`
-  * Endpoints returning test results (`/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
+  * Endpoints returning test results (`/api/processManagement/test*`) return `nodeId` instead of `nodeComponentInfo` now
   * `/processDefinitionData/*` response: field `type` was replaced by `componentId` inside the  path `.componentGroups[].components[]`
-* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/processes/category/*` endpoint was removed
+* [#5462](https://github.com/TouK/nussknacker/pull/5462) `/api/processes/category/*` endpoint was removed
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) POST `/api/processes/$scenarioName/$category?isFragment=$isFragment` resource become deprecated.
+  It will be replaced by POST `/processes` with fields: `name`, `isFragment`, `forwardedUserName`, `category`, `processingMode`, `engineSetupName`.
+  Three last fields are optional. Please switch to the new API because in version 1.5, old API will be removed.
+* POST `/api/nodes/$scenarioName/validation` response for object in `validationErrors` array can have `details` of the error
 
 ### Configuration changes
 * [#5297](https://github.com/TouK/nussknacker/pull/5297) `componentsUiConfig` key handling change:
@@ -103,6 +309,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   In the new format, you should specify `category` field inside each scenario type.
 * [#5419](https://github.com/TouK/nussknacker/pull/5419) Support for system properties was removed from model configuration
   (they aren't resolved and added to merged configuration)
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) You have to ensure that in every scenarioType model's `classPath`, in every
+  jar are only components with not colliding processing modes. Also at least one component has defined processing mode other 
+  than wildcard.
+  On the other hand starting from this version, you can use the same category for many scenarioTypes. You only have to ensure that they 
+  have components with other processing modes or other deployment configuration.
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) The `processToolbarConfig` toolbar with `type: "process-info-panel"` no longer accepts the `buttons` property. It only display scenario information now. However, a new toolbar with `type: "process-actions-panel"` has been introduced, which does accept the `buttons` property and renders actions similar to the old `type: "process-info-panel"`.
+
+### Helm chart changes
+* [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Helm chart now has two preconfigured scenario types (`streaming` and `request-response`) instead of one (`default`).
+  Because of that, scenario created using previous version of helm chart will have invalid configuration in the database.
+  To fix that, you have to manually connect to the database and execute sql statement:
+  ```sql
+    UPDATE processes SET processing_type = 'given-scenario-type' where processing_type = 'default';
+  ```
 
 ### Other changes
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Cats Effect 3 bump
@@ -110,6 +330,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#5432](https://github.com/TouK/nussknacker/pull/5432) Kafka client, Confluent Schema Registry Client and Avro bump
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) JDK downgraded from 17 to 11 in lite runner image for scala 2.13 
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Removed `strictTypeChecking` option and `SupertypeClassResolutionStrategy.Union` used behind it
+* [#5517](https://github.com/TouK/nussknacker/pull/5517) Removed legacy mechanism marking scenario finished based on the fact that the last action was deploy and job was finished. 
+  The new mechanism leverage deployment id which was introduced in [#4462](https://github.com/TouK/nussknacker/pull/4462) in 1.11 version.
+* [#5474](https://github.com/TouK/nussknacker/pull/5474) The mechanism allowing migration between two environments uses by default the new,
+  scenario creating API. In case when the secondary environment is in the version < 1.14, you should switch `secondaryEnvironment.useLegacyCreateScenarioApi` flag to on.
+* [#5526](https://github.com/TouK/nussknacker/pull/5526) Added namespacing of Kafka consumer group id in both engines.
+  If you have namespaces configured, the consumer group id will be prefixed with `namespace` key from model config -
+  in that case a consumer group migration may be necessary for example to retain consumer offsets. For gradual
+  migration, this behaviour can be disabled by setting `useNamingStrategyInConsumerGroups = false` in `KafkaConfig`.
+  Note that the `useNamingStrategyInConsumerGroups` flag is intended to be removed in the future.
 
 ## In version 1.13.1 (Not released yet)
 

@@ -1,28 +1,35 @@
-import React, { PropsWithChildren } from "react";
 import { styled } from "@mui/material";
+import { PropsOf } from "@emotion/react";
 import Icon from "../../../../assets/img/documentation.svg";
-import { variables } from "../../../../stylesheets/variables";
+import React from "react";
+import { Subtype } from "./Subtype";
+import { EventTrackingSelector, getEventTrackingProps } from "../../../../containers/event-tracking";
 
-const DocsLinkStyled = styled("a")`
-    color: #ffffff !important;
-    height: ${variables.modalHeaderHeight}px;
-    display: inline-block;
-    text-decoration: none !important;
-    svg {
-        width: 14px;
-        height: 14px;
-        margin: 0 3px;
-    }
-`;
+const LinkStyled = styled("a")({
+    display: "flex",
+    "&, &:hover": {
+        color: "inherit",
+        textDecoration: "inherit",
+    },
+});
 
-export const Docs = (props: PropsWithChildren<{ docsUrl: string; style?: React.CSSProperties }>) => {
-    const { children, docsUrl, style } = props;
-    return (
-        <DocsLinkStyled target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
-            <div style={style}>
-                {children && <span>{children}</span>}
-                <Icon />
-            </div>
-        </DocsLinkStyled>
-    );
+const DocsIcon = styled(Icon)({
+    width: 14,
+    height: 14,
+});
+
+type DocsProps = PropsOf<typeof Subtype> & {
+    href: string;
 };
+
+export const Docs = ({ href, ...props }: DocsProps) => (
+    <LinkStyled
+        target="_blank"
+        href={href}
+        title="Documentation"
+        rel="noreferrer"
+        {...getEventTrackingProps({ selector: EventTrackingSelector.NodeDocumentation })}
+    >
+        <Subtype endIcon={<DocsIcon />} {...props} />
+    </LinkStyled>
+);

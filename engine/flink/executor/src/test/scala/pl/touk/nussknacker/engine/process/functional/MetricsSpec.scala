@@ -8,11 +8,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
-import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util.Date
@@ -44,7 +45,7 @@ class MetricsSpec
     val process = ScenarioBuilder
       .streaming(scenarioName.value)
       .source("id", "input")
-      .processor("proc2", "logService", "all" -> "#input.value2")
+      .processor("proc2", "logService", "all" -> "#input.value2".spel)
       .emptySink("out", "monitor")
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -64,7 +65,7 @@ class MetricsSpec
     val process = ScenarioBuilder
       .streaming(scenarioName.value)
       .source("id", "input")
-      .processor("proc2", "logService", "all" -> "1 / #input.value1")
+      .processor("proc2", "logService", "all" -> "1 / #input.value1".spel)
       .emptySink("out", "monitor")
     val data = List(
       SimpleRecord("1", 0, "a", new Date(0))
@@ -84,12 +85,12 @@ class MetricsSpec
     val process = ScenarioBuilder
       .streaming(scenarioName.value)
       .source("source1", "input")
-      .filter("filter1", "#input.value1 == 10")
+      .filter("filter1", "#input.value1 == 10".spel)
       .split(
         "split1",
         GraphBuilder.emptySink("out2", "monitor"),
         GraphBuilder
-          .processor("proc2", "logService", "all" -> "#input.value2")
+          .processor("proc2", "logService", "all" -> "#input.value2".spel)
           .emptySink("out", "monitor")
       )
 
@@ -117,12 +118,12 @@ class MetricsSpec
     val process = ScenarioBuilder
       .streaming(scenarioName.value)
       .source("source", "input")
-      .filter("filter", "#input.value1 > 10")
+      .filter("filter", "#input.value1 > 10".spel)
       .split(
         "split",
         GraphBuilder.emptySink("sink", "monitor"),
-        GraphBuilder.processorEnd("processor", "logService", "all"                         -> "#input.value2"),
-        GraphBuilder.endingCustomNode("custom node", None, "optionalEndingCustom", "param" -> "#input.id")
+        GraphBuilder.processorEnd("processor", "logService", "all"                         -> "#input.value2".spel),
+        GraphBuilder.endingCustomNode("custom node", None, "optionalEndingCustom", "param" -> "#input.id".spel)
       )
 
     processInvoker.invokeWithSampleData(process, data)
@@ -148,12 +149,12 @@ class MetricsSpec
     val process = ScenarioBuilder
       .streaming(scenarioName.value)
       .source("source", "input")
-      .filter("filter1", "#input.value1 > 10")
+      .filter("filter1", "#input.value1 > 10".spel)
       .switch(
         "switch2",
-        "#input.value1",
+        "#input.value1".spel,
         "output",
-        Case("#input.value1 > 12", GraphBuilder.emptySink("out", "monitor"))
+        Case("#input.value1 > 12".spel, GraphBuilder.emptySink("out", "monitor"))
       )
 
     processInvoker.invokeWithSampleData(process, data)
@@ -169,7 +170,7 @@ class MetricsSpec
       .streaming(scenarioName.value)
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
-      .emptySink("out", "sinkForStrings", SingleValueParamName -> "#outputValue")
+      .emptySink("out", "sinkForStrings", SingleValueParamName -> "#outputValue".spel)
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -187,8 +188,8 @@ class MetricsSpec
           .source("id", "input")
           .split(
             "split",
-            GraphBuilder.filter("left", "false").branchEnd("end1", "join1"),
-            GraphBuilder.filter("right", "false").branchEnd("end2", "join1")
+            GraphBuilder.filter("left", "false".spel).branchEnd("end1", "join1"),
+            GraphBuilder.filter("right", "false".spel).branchEnd("end2", "join1")
           ),
         GraphBuilder
           .join(
@@ -196,19 +197,22 @@ class MetricsSpec
             "joinBranchExpression",
             Some("any"),
             List(
-              "end1" -> List("value" -> "''"),
-              "end2" -> List("value" -> "''")
+              "end1" -> List("value" -> "''".spel),
+              "end2" -> List("value" -> "''".spel)
             )
           )
-          .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
+          .customNodeNoOutput("custom", "customFilter", "input" -> "''".spel, "stringVal" -> "''".spel)
           .processor("proc1", "lifecycleService")
           .switch(
             "switch1",
-            "false",
+            "false".spel,
             "any2",
-            GraphBuilder.emptySink("outE1", "sinkForStrings", SingleValueParamName -> "''"),
-            Case("true", GraphBuilder.processorEnd("procE1", "lifecycleService")),
-            Case("false", GraphBuilder.endingCustomNode("customE1", None, "optionalEndingCustom", "param" -> "''"))
+            GraphBuilder.emptySink("outE1", "sinkForStrings", SingleValueParamName -> "''".spel),
+            Case("true".spel, GraphBuilder.processorEnd("procE1", "lifecycleService")),
+            Case(
+              "false".spel,
+              GraphBuilder.endingCustomNode("customE1", None, "optionalEndingCustom", "param" -> "''".spel)
+            )
           )
       )
     val allNodes = scenario.collectAllNodes
@@ -235,7 +239,7 @@ class MetricsSpec
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics(reporterName)
+    TestReporterUtil.configWithTestMetrics(reporterName, FlinkTestConfiguration.configuration())
   }
 
 }

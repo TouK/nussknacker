@@ -17,13 +17,17 @@ Details of K8s based configuration can be found in  [Nussknacker Helm chart docu
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-* [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
+* [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
-  * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration, 
-  * [Model](/about/GLOSSARY#model) configuration.
-  * [Category](/installation_configuration_guide/DesignerConfiguration/#scenario-type-categories) configuration
+  * [Model](./model/ModelConfiguration.md) configuration.
+  * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
+  * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
-The Scenario Type is a convenient umbrella term for a particular Deployment Manager configuration and the associated model configuration. Diagram below presents main relationships between configuration areas.
+[Model](../about/GLOSSARY#model) configuration defines which components and which [Processing Mode](../about/ProcessingModes) will be available for the user. 
+[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](../about/engine).
+[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](../about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
+
+The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
 ![Configuration areas](img/configuration_areas.png "configuration areas")
 
@@ -44,28 +48,28 @@ environment: "local"  <br/>
 # Each scenario type is configured here  <br/>
 scenarioTypes {"{"}  <br/>
 {" "} "scenario-type-1": {"{"}<br/>
-{" "}   # Configuration of DeploymentManager (Flink used as example here)  <br/>
+{" "}   # Configuration of scenario deployment (Flink used as example here)  <br/>
 {" "}   <b>deploymentConfig:</b> {"{"} <br/>
-{" "}       type: "flinkStreaming" <br/>
-{" "}       restUrl: "http://localhost:8081" <br/> 
-{" "}       } <br/>
+{" "}     type: "flinkStreaming" <br/>
+{" "}     restUrl: "http://localhost:8081" <br/> 
+{" "}   } <br/>
 {" "}   # Configuration of model <br/>
 {" "}   <b>modelConfig</b>: {"{"} <br/>
-{" "}       classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
-{" "}       restartStrategy.default.strategy: disable <br/>
-{" "}       components {"{"} <br/>
+{" "}     classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
+{" "}     restartStrategy.default.strategy: disable <br/>
+{" "}     components {"{"} <br/>
 {" "}       ... <br/>
-{" "}       } <br/>
-{" "}    } <br/>
-{" "}    category: "Default" <br/>
-{" "}  } <br/>
+{" "}     } <br/>
+{" "}   } <br/>
+{" "}   <b>category</b>: "Default" <br/>
+{" "} } <br/>
 } <br/>
 </pre>
 
-It is worth noting that one Nussknacker Designer instance may be used to work with multiple Scenario Types which:
+It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
 
-* can be deployed with various Deployment Managers to e.g. different Flink clusters
-* use different components and Model configurations 
+* To use different set of components depending on the category
+* To deploy scenarios on different [Engines](../about/engines)
 
 See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.                   
 
@@ -77,8 +81,8 @@ Environment variables are described in the [Installation guide](../installation/
 
 * We use HOCON (see the [introduction](https://github.com/lightbend/config#using-hocon-the-json-superset) or the [full specification](https://github.com/lightbend/config/blob/master/HOCON.md) for details) as our main configuration format. [Lightbend config library](https://github.com/lightbend/config/tree/master) is used for parsing configuration files - you can check the [documentation](https://github.com/lightbend/config#standard-behavior) for details on conventions of file names and merging of configuration files.
 * `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HOCON fallback mechanism). This mechanism is used to extend or override default configuration contained in the [minimal configuration file](#minimal-configuration-file)  - see docker demo for example:
-  * [setting multiple configuration files](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/common/docker-compose.yml#L13)
-  * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/nussknacker/nussknacker.conf)
+  * [setting multiple configuration files](https://github.com/TouK/nussknacker-installation-example/blob/master/docker-compose.yml#L29)
+  * [file with configuration override](https://github.com/TouK/nussknacker-installation-example/blob/master/designer/application-customizations.conf)
 * If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
 It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.md) for the details. 

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{AsyncExecutionContextPreparer, Co
 import pl.touk.nussknacker.engine.api.{JobData, MetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
-import pl.touk.nussknacker.engine.compile.nodecompilation.LazyInterpreterDependencies
+import pl.touk.nussknacker.engine.compile.nodecompilation.EvaluableLazyParameterCreatorDeps
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -39,7 +39,7 @@ class FlinkProcessCompilerData(
   def open(runtimeContext: RuntimeContext, nodesToUse: List[_ <: NodeData]): Unit = {
     val lifecycle = compilerData.lifecycle(nodesToUse)
     lifecycle.foreach {
-      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+      _.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase))
     }
   }
 
@@ -60,7 +60,11 @@ class FlinkProcessCompilerData(
 
   def interpreter: Interpreter = compilerData.interpreter
 
-  def lazyInterpreterDeps: LazyInterpreterDependencies = compilerData.lazyInterpreterDeps
+  def lazyParameterDeps: EvaluableLazyParameterCreatorDeps = new EvaluableLazyParameterCreatorDeps(
+    compilerData.expressionCompiler,
+    compilerData.expressionEvaluator,
+    metaData
+  )
 
   def compileProcess(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, CompiledProcessParts] =
     compilerData.compile(process)
@@ -70,7 +74,9 @@ class FlinkProcessCompilerData(
   def restartStrategy: RestartStrategies.RestartStrategyConfiguration = exceptionHandler.restartStrategy
 
   def prepareExceptionHandler(runtimeContext: RuntimeContext): FlinkExceptionHandler = {
-    exceptionHandler.open(FlinkEngineRuntimeContextImpl(jobData, runtimeContext))
+    exceptionHandler.open(
+      FlinkEngineRuntimeContextImpl(jobData, runtimeContext, componentUseCase)
+    )
     exceptionHandler
   }
 

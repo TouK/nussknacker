@@ -2,6 +2,10 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      release_version:
+        description: "Released Nussknacker version"
+        required: true
+        type: string
       backport_release:
         description: "Backport release - 'latest' tag won't be updated on docker"
         required: true
@@ -12,22 +16,20 @@ on:
         required: true
         default: true
         type: boolean
-      release_version:
-        description: "Fill it if backport or RC. Otherwise with-defaults will be used"
-        required: false
-        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SBT_RELEASE_NEXT_VERSION: ${{ (inputs.release_version && format('{0} {1} with-defaults', 'release-version', inputs.release_version)) || 'with-defaults' }}
-      NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
+      NUSSKNACKER_VERSION: ${{ inputs.release_version }}
+      NEXT_VERSION_RELEASE: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
+      SBT_RELEASE_NEXT_VERSION: ${{ format('{0} {1} with-defaults', 'release-version', inputs.release_version) }}
+      NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN: ${{ secrets.NU_INSTALLATION_EXAMPLE_PAT }}
     steps:
       - name: "Output variables"
         run: |
           echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
-          echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+          echo Docker update latest is ${{ env.NEXT_VERSION_RELEASE }}
           echo SBT release next version is ${{ env.SBT_RELEASE_NEXT_VERSION }}
 
       - name: "Validate release branch name"
@@ -99,27 +101,37 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
       - name: "Build"
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           # dockerUpBranchLatest is set to false because branch latest tags are used by cypress tests and
-          dockerUpLatest: ${{ env.NU_DOCKER_UPDATE_LATEST }}
+          dockerUpLatest: ${{ env.NEXT_VERSION_RELEASE }}
           # we don't update release-xxx-latest tag, because the image built during the release doesn't contain developer's extensions which are required by cypress tests
           dockerUpBranchLatest: false
         run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
 
       - name: "Push to master"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == 'true' }}
+        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
         run: git push origin HEAD:master -f
 
+      - name: Push installation example to GH nussknacker-installation-example repository
+        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
+        run: |
+          ./.github/workflows/scripts/publishNuInstallationExample.sh
+
       - name: "Read nussknacker short description from file"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == 'true' }}
+        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
         id: short_nu
         run: echo "::set-output name=short::$(cat dockerhub/nussknacker/short.txt)"
 
       - name: "Dockerhub publish readme nussknacker"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == 'true' }}
+        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
         uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
@@ -129,12 +141,12 @@ jobs:
           readme-filepath: "dockerhub/nussknacker/README.md"
 
       - name: "Read nussknacker-lite-runtime-app short description from file"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == 'true' }}
+        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
         id: short_nu_lite
         run: echo "::set-output name=short::$(cat dockerhub/nussknacker-lite-runtime-app/short.txt)"
 
       - name: "Dockerhub publish readme nussknacker-lite-runtime-app"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == 'true' }}
+        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
         uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}

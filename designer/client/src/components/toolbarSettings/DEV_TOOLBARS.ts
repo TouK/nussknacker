@@ -1,7 +1,7 @@
 import { ToolbarConfig } from "./types";
 
 const isProd = process.env.NODE_ENV === "production";
-const isVisualTesting = window["Cypress"];
+export const isVisualTesting = window["Cypress"];
 
 const isDev = !isProd && !isVisualTesting;
 

@@ -8,6 +8,7 @@ import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.nodecompilation.{DynamicNodeValidator, TransformationResult}
@@ -15,8 +16,8 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParamet
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  TopicParamName
+  schemaVersionParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
@@ -26,7 +27,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{
   SchemaRegistryClientFactory,
   SchemaVersionOption
 }
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
@@ -47,7 +48,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -60,7 +61,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(1),
       "",
       givenObj
@@ -73,7 +74,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      PaymentDateTopic,
+      PaymentDateTopic.name,
       ExistingSchemaVersion(1),
       "",
       givenObj
@@ -86,7 +87,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(2),
       null,
       givenObj
@@ -99,7 +100,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      RecordTopic,
+      RecordTopic.name,
       LatestSchemaVersion,
       null,
       givenObj
@@ -131,7 +132,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      RecordTopic,
+      RecordTopic.name,
       ExistingSchemaVersion(3),
       null,
       givenObj
@@ -156,7 +157,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      IntTopicNoKey,
+      IntTopicNoKey.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -169,7 +170,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      IntTopicWithKey,
+      IntTopicWithKey.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -179,13 +180,13 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read last generated simple object with expected key schema and valid key") {
     val givenObj = 123123
 
-    val serializedKey   = keySerializer.serialize(IntTopicWithKey, -1)
-    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenObj)
-    kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
+    val serializedKey   = keySerializer.serialize(IntTopicWithKey.name, -1)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey.name, givenObj)
+    kafkaClient.sendRawMessage(IntTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      IntTopicWithKey,
+      IntTopicWithKey.name,
       ExistingSchemaVersion(1),
       new String(serializedKey, StandardCharsets.UTF_8),
       givenObj
@@ -199,7 +200,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = true,
-      InvalidDefaultsTopic,
+      InvalidDefaultsTopic.name,
       ExistingSchemaVersion(1),
       null,
       givenObj
@@ -211,11 +212,11 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val arrayOfInts  = List(123).asJava
     val arrayOfLongs = List(123L).asJava
     val wrappedObj   = new NonRecordContainer(ArrayOfIntsSchema, arrayOfInts)
-    pushMessageWithKey(null, wrappedObj, topic, useStringForKey = true)
+    pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      topic,
+      topic.name,
       ExistingSchemaVersion(2),
       null,
       arrayOfLongs
@@ -229,11 +230,11 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val recordV2         = FullNameV2.createRecord("Jan", null, "Kowalski")
     val arrayOfRecordsV2 = List(recordV2).asJava
     val wrappedObj       = new NonRecordContainer(ArrayOfRecordsV1Schema, arrayOfRecordsV1)
-    pushMessageWithKey(null, wrappedObj, topic, useStringForKey = true)
+    pushMessageWithKey(null, wrappedObj, topic.name, useStringForKey = true)
 
     readLastMessageAndVerify(
       universalSourceFactory(useStringForKey = true),
-      topic,
+      topic.name,
       ExistingSchemaVersion(2),
       null,
       arrayOfRecordsV2
@@ -244,14 +245,14 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenKey   = 123
     val givenValue = 456
 
-    val serializedKey   = keySerializer.serialize(IntTopicWithKey, givenKey)
-    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenValue)
-    kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
+    val serializedKey   = keySerializer.serialize(IntTopicWithKey.name, givenKey)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey.name, givenValue)
+    kafkaClient.sendRawMessage(IntTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = false,
-      IntTopicWithKey,
+      IntTopicWithKey.name,
       ExistingSchemaVersion(1),
       givenKey,
       givenValue
@@ -262,14 +263,14 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenKey   = FullNameV1.record
     val givenValue = PaymentV1.record
 
-    val serializedKey   = keySerializer.serialize(RecordTopicWithKey, givenKey)
-    val serializedValue = valueSerializer.serialize(RecordTopicWithKey, givenValue)
-    kafkaClient.sendRawMessage(RecordTopicWithKey, serializedKey, serializedValue, Some(0))
+    val serializedKey   = keySerializer.serialize(RecordTopicWithKey.name, givenKey)
+    val serializedValue = valueSerializer.serialize(RecordTopicWithKey.name, givenValue)
+    kafkaClient.sendRawMessage(RecordTopicWithKey.name, serializedKey, serializedValue, Some(0))
 
     roundTripKeyValueObject(
       universalSourceFactory,
       useStringForKey = false,
-      RecordTopicWithKey,
+      RecordTopicWithKey.name,
       ExistingSchemaVersion(1),
       givenKey,
       givenValue
@@ -278,15 +279,18 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should validate specific version") {
     val result =
-      validate(TopicParamName -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'", SchemaVersionParamName -> "'1'")
+      validate(
+        topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+        schemaVersionParamName.value -> "'1'".spel
+      )
 
     result.errors shouldBe Nil
   }
 
   test("Should validate latest version") {
     val result = validate(
-      TopicParamName         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
 
     result.errors shouldBe Nil
@@ -294,11 +298,14 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should return sane error on invalid topic") {
     val result =
-      validate(TopicParamName -> "'terefere'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
+      validate(
+        topicParamName.value         -> "'terefere'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
+      )
 
     result.errors shouldBe
       InvalidPropertyFixedValue(
-        TopicParamName,
+        topicParamName,
         None,
         "'terefere'",
         List(
@@ -324,16 +331,16 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should return sane error on invalid version") {
     val result = validate(
-      TopicParamName         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> "'12345'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+      schemaVersionParamName.value -> "'12345'".spel
     )
 
     result.errors shouldBe InvalidPropertyFixedValue(
-      SchemaVersionParamName,
-      None,
-      "'12345'",
-      List("'latest'", "'1'", "'2'"),
-      "id"
+      paramName = schemaVersionParamName,
+      label = None,
+      value = "'12345'",
+      values = List("'latest'", "'1'", "'2'"),
+      nodeId = "id"
     ) :: Nil
     result.outputContext shouldBe ValidationContext(
       Map(
@@ -345,8 +352,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   test("Should properly detect input type") {
     val result = validate(
-      TopicParamName         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      topicParamName.value         -> s"'${KafkaAvroSourceMockSchemaRegistry.RecordTopic.name}'".spel,
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
     )
 
     result.errors shouldBe Nil
@@ -371,7 +378,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
-    val paramsList              = params.toList.map(p => NodeParameter(p._1, p._2))
+    val paramsList              = params.toList.map(p => NodeParameter(ParameterName(p._1), p._2))
     validator
       .validateNode(
         universalSourceFactory(useStringForKey = true),

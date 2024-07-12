@@ -9,6 +9,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2AuthenticationProvider extends AuthenticationProvider with LazyLogging {
 
+  override val name: String = OAuth2Configuration.name
+
   override def createAuthenticationResources(
       config: Config,
       classLoader: ClassLoader
@@ -18,7 +20,6 @@ class OAuth2AuthenticationProvider extends AuthenticationProvider with LazyLoggi
     new OAuth2AuthenticationResources(name, realm, service, configuration)
   }
 
-  def name: String = OAuth2Configuration.name
 }
 
 object OAuth2AuthenticationProvider {

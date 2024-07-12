@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.engine.api.component
 
+import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
+import pl.touk.nussknacker.engine.api.component.Component._
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -13,7 +15,60 @@ import pl.touk.nussknacker.engine.version.BuildInfo
   * Components are also in most cases only a factories for the "Executors" which process data streams so
   * in fact they need to be serializable.
   */
-trait Component extends Serializable
+trait Component extends Serializable {
+  // Returns allowed processing modes. In some case we can determine this set based on implementing classes
+  // like in Service case, but in other cases, Component class is only a factory that returns some other class
+  // and we don't know if this class allow given processing mode or not so the developer have to specify this
+  // by his/her own
+  def allowedProcessingModes: AllowedProcessingModes
+}
+
+object Component {
+  sealed trait AllowedProcessingModes
+
+  object AllowedProcessingModes {
+    case object All                                                             extends AllowedProcessingModes
+    final case class SetOf(allowedProcessingModes: NonEmptySet[ProcessingMode]) extends AllowedProcessingModes
+
+    object SetOf {
+
+      def apply(processingMode: ProcessingMode, processingModes: ProcessingMode*): SetOf = {
+        new SetOf(NonEmptySet.of(processingMode, processingModes: _*))
+      }
+
+    }
+
+  }
+
+  implicit class ToProcessingModes(val allowedProcessingModes: AllowedProcessingModes) extends AnyVal {
+
+    def toProcessingModes: Set[ProcessingMode] = allowedProcessingModes match {
+      case AllowedProcessingModes.All                              => ProcessingMode.values.toSet
+      case AllowedProcessingModes.SetOf(allowedProcessingModesSet) => allowedProcessingModesSet.toSortedSet
+    }
+
+  }
+
+}
+
+trait UnboundedStreamComponent { self: Component =>
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream)
+}
+
+trait BoundedStreamComponent { self: Component =>
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(ProcessingMode.BoundedStream)
+}
+
+trait RequestResponseComponent { self: Component =>
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
+}
+
+trait AllProcessingModesComponent { self: Component =>
+  override def allowedProcessingModes: AllowedProcessingModes = AllowedProcessingModes.All
+}
 
 object ComponentProviderConfig {
 
@@ -86,5 +141,10 @@ case class ComponentDefinition(
     name: String,
     component: Component,
     icon: Option[String] = None,
-    docsUrl: Option[String] = None
-)
+    docsUrl: Option[String] = None,
+    designerWideId: Option[DesignerWideComponentId] = None
+) {
+
+  def withDesignerWideId(id: String): ComponentDefinition = copy(designerWideId = Some(DesignerWideComponentId(id)))
+
+}

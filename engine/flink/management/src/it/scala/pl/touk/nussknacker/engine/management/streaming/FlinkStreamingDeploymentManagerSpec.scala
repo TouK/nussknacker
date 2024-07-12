@@ -1,10 +1,19 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ModelData, ModelDependencies}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
+import pl.touk.nussknacker.engine.api.deployment.{
+  DMCancelScenarioCommand,
+  DMMakeScenarioSavepointCommand,
+  DMRunDeploymentCommand,
+  DMStopScenarioCommand,
+  DeploymentUpdateStrategy
+}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -13,7 +22,7 @@ import java.net.URI
 import java.nio.file.{Files, Paths}
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
+class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
@@ -44,14 +53,26 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val process     = SampleProcess.prepareProcess(processName)
     val version     = ProcessVersion(VersionId(15), processName, processId, "user1", Some(13))
 
-    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, process, None)
+    val deployedResponse =
+      deploymentManager.processCommand(
+        DMRunDeploymentCommand(
+          version,
+          defaultDeploymentData,
+          process,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+            StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+          )
+        )
+      )
 
     deployedResponse.futureValue
   }
 
   // this is for the case where e.g. we manually cancel flink job, or it fail and didn't restart...
   test("cancel of not existing job should not fail") {
-    deploymentManager.cancel(ProcessName("not existing job"), user = userToAct).futureValue shouldBe (())
+    deploymentManager
+      .processCommand(DMCancelScenarioCommand(ProcessName("not existing job"), user = userToAct))
+      .futureValue shouldBe (())
   }
 
   test("be able verify&redeploy kafka scenario") {
@@ -113,9 +134,11 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       val savepointDir = Files.createTempDirectory("customSavepoint")
       val savepointPathFuture = deploymentManager
-        .savepoint(
-          processEmittingOneElementAfterStart.name,
-          savepointDir = Some(savepointDir.toUri.toString)
+        .processCommand(
+          DMMakeScenarioSavepointCommand(
+            processEmittingOneElementAfterStart.name,
+            savepointDir = Some(savepointDir.toUri.toString)
+          )
         )
         .map(_.path)
       val savepointPath = new URI(savepointPathFuture.futureValue)
@@ -125,7 +148,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
         empty(processName),
-        Some(savepointPath.toString)
+        StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.toString)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
@@ -147,7 +170,9 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
       val savepointPath =
-        deploymentManager.stop(processName, savepointDir = None, user = userToAct).map(_.path)
+        deploymentManager
+          .processCommand(DMStopScenarioCommand(processName, savepointDir = None, user = userToAct))
+          .map(_.path)
       eventually {
         val status = deploymentManager.getProcessStates(processName).futureValue
         status.value.map(_.status) shouldBe List(SimpleStateStatus.Canceled)
@@ -156,7 +181,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       deployProcessAndWaitIfRunning(
         processEmittingOneElementAfterStart,
         empty(processName),
-        Some(savepointPath.futureValue)
+        StateRestoringStrategy.RestoreStateFromCustomSavepoint(savepointPath.futureValue)
       )
 
       val messages = messagesFromTopic(outTopic, 2)
@@ -181,7 +206,19 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processName)
       val exception =
-        deploymentManager.deploy(empty(process.name), defaultDeploymentData, statefullProcess, None).failed.futureValue
+        deploymentManager
+          .processCommand(
+            DMRunDeploymentCommand(
+              empty(process.name),
+              defaultDeploymentData,
+              statefullProcess,
+              DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+                StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+              )
+            )
+          )
+          .failed
+          .futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
       cancelProcess(processName)
@@ -203,7 +240,19 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       val statefulProcess = StatefulSampleProcess.processWithAggregator(processName, "#AGG.approxCardinality")
       val exception =
-        deploymentManager.deploy(empty(process.name), defaultDeploymentData, statefulProcess, None).failed.futureValue
+        deploymentManager
+          .processCommand(
+            DMRunDeploymentCommand(
+              empty(process.name),
+              defaultDeploymentData,
+              statefulProcess,
+              DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(
+                StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
+              )
+            )
+          )
+          .failed
+          .futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
       cancelProcess(processName)
@@ -215,8 +264,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   test("extract scenario definition") {
     val modelData = ModelData(
       processingTypeConfig = processingTypeConfig,
-      additionalConfigsFromProvider = Map.empty,
-      determineDesignerWideId = id => DesignerWideComponentId(id.toString)
+      ModelDependencies(
+        additionalConfigsFromProvider = Map.empty,
+        determineDesignerWideId = id => DesignerWideComponentId(id.toString),
+        workingDirectoryOpt = None,
+        _ => true
+      )
     )
     val definition = modelData.modelDefinition
     definition.components.map(_.id) should contain(ComponentId(ComponentType.Service, "accountService"))

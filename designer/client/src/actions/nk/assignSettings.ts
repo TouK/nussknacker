@@ -10,7 +10,6 @@ export type MetricsType = {
 
 export type UsageStatisticsReports = {
     enabled: boolean;
-    url: string;
 };
 
 export type SurveySettings = {
@@ -32,7 +31,7 @@ export type FeaturesSettings = {
     environmentAlert: EnvironmentTagSettings;
     commentSettings: { substitutionPattern: string; substitutionLink: string };
     deploymentCommentSettings?: { exampleComment: string };
-    intervalTimeSettings: { processes: number; healthCheck: number };
+    intervalTimeSettings: { processes: number; healthCheck: number }; // TODO: verify usage
     tabs: DynamicTabData[];
     testDataSettings?: TestDataSettings;
     redirectAfterArchive: boolean;

@@ -16,9 +16,9 @@ describe("CommentContent#newContent", () => {
                 <CommentContent content={content} commentSettings={commentSettings} />
             </NuThemeProvider>,
         );
-        //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
-        // @ts-ignore
-        expect(container).toContainHTML('This is a <a href="http://bugs/BUG-123" target="_blank">BUG-123</a>');
+        expect(container).toContainHTML(
+            '<div><div class="css-11j7oje"><span class="MuiTypography-root MuiTypography-caption css-1w8legj-MuiTypography-root">This is a <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-123" target="_blank">BUG-123</a></span></div></div>',
+        );
     });
 
     it("replaces multiple matched expressions with links", () => {
@@ -28,10 +28,8 @@ describe("CommentContent#newContent", () => {
                 <CommentContent content={multiContent} commentSettings={commentSettings} />
             </NuThemeProvider>,
         );
-        //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
-        // @ts-ignore
         expect(container).toContainHTML(
-            'This is a <a href="http://bugs/BUG-123" target="_blank">BUG-123</a>, and this is another: <a href="http://bugs/BUG-124" target="_blank">BUG-124</a>',
+            '<div><div class="css-11j7oje"><span class="MuiTypography-root MuiTypography-caption css-1w8legj-MuiTypography-root">This is a <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-123" target="_blank">BUG-123</a>, and this is another: <a class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways css-1xhj5go-MuiTypography-root-MuiLink-root" href="http://bugs/BUG-124" target="_blank">BUG-124</a></span></div></div>',
         );
     });
 
@@ -42,8 +40,6 @@ describe("CommentContent#newContent", () => {
                 <CommentContent content={content} commentSettings={commentSettings} />
             </NuThemeProvider>,
         );
-        //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
-        // @ts-ignore
         expect(container).toContainHTML("This is a BUG-123");
     });
 
@@ -54,8 +50,6 @@ describe("CommentContent#newContent", () => {
                 <CommentContent content={content} commentSettings={commentSettings} />
             </NuThemeProvider>,
         );
-        //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
-        // @ts-ignore
         expect(container).toContainHTML("This is a BUG-123");
     });
 });

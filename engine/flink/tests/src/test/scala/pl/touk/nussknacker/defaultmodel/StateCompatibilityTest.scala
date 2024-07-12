@@ -6,10 +6,10 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.scalatest.concurrent.Eventually
-import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
+import pl.touk.nussknacker.defaultmodel.SampleSchemas.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -17,9 +17,9 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
-import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
+import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -39,15 +39,15 @@ object StateCompatibilityTest {
   * Verifies whether a scenario can be run from savepoint created earlier, e.g. by older Nussknacker or older process config creator.
   *
   * Important:
-  * A compliance with previos-snapshot strongly depends on serialVersionUID (all snapshot classes implement Serializable).
+  * A compliance with previous-snapshot strongly depends on serialVersionUID (all snapshot classes implement Serializable).
   * and this serialVersionUID should be explicitly provided in all savepoint-able classes.
   * @see description in [[pl.touk.nussknacker.engine.process.util.Serializers]]
   * @see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html
   */
-class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with LazyLogging {
+class StateCompatibilityTest extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   import scala.jdk.CollectionConverters._
 
@@ -66,25 +66,33 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     }
   }
 
-  private def stateCompatibilityProcess(inTopic: String, outTopic: String) = ScenarioBuilder
+  private def stateCompatibilityProcess(inTopic: TopicName.ForSource, outTopic: TopicName.ForSink) = ScenarioBuilder
     .streaming("stateCompatibilityTest")
     .parallelism(1)
     .source(
       "start",
       "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName         -> s"'$inTopic'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(ExistingSchemaVersion(1))
+      KafkaUniversalComponentTransformer.topicParamName.value -> s"'${inTopic.name}'".spel,
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value -> versionOptionParam(
+        ExistingSchemaVersion(1)
+      ).spel
     )
-    .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
+    .customNode(
+      "previousValue",
+      "previousValue",
+      "previousValue",
+      "groupBy" -> "'constant'".spel,
+      "value"   -> "#input".spel
+    )
     .emptySink(
       "sink",
       "kafka",
-      KafkaUniversalComponentTransformer.TopicParamName                  -> s"'$outTopic'",
-      KafkaUniversalComponentTransformer.SchemaVersionParamName          -> "'latest'",
-      KafkaUniversalComponentTransformer.SinkKeyParamName                -> "",
-      KafkaUniversalComponentTransformer.SinkRawEditorParamName          -> s"true",
-      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax.name}'",
-      KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }"
+      KafkaUniversalComponentTransformer.topicParamName.value              -> s"'${outTopic.name}'".spel,
+      KafkaUniversalComponentTransformer.schemaVersionParamName.value      -> "'latest'".spel,
+      KafkaUniversalComponentTransformer.sinkKeyParamName.value            -> "".spel,
+      KafkaUniversalComponentTransformer.sinkRawEditorParamName.value      -> s"true".spel,
+      KafkaUniversalComponentTransformer.sinkValidationModeParamName.value -> s"'${ValidationMode.lax.name}'".spel,
+      KafkaUniversalComponentTransformer.sinkValueParamName.value -> "{ input: #input, previousInput: #previousValue }".spel
     )
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")
@@ -157,18 +165,19 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState)
     )
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(givenMatchingAvroObj, inputTopicConfig.input).futureValue
 
     val jobExecutionResult = env.execute(streamGraph)
     env.waitForStart(jobExecutionResult.getJobID, process1.name.value)()
-    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
+    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input).futureValue
 
+    env.assertJobNotFailing(jobExecutionResult.getJobID)
     verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
     env.stopJob(process1.name.value, jobExecutionResult)
   }
 
-  private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
-    val outputEvent = kafkaClient.createConsumer().consumeWithJson[OutputEvent](outTopic).take(1).head.message()
+  private def verifyOutputEvent(outTopic: TopicName.ForSink, input: InputEvent, previousInput: InputEvent): Unit = {
+    val outputEvent = kafkaClient.createConsumer().consumeWithJson[OutputEvent](outTopic.name).take(1).head.message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

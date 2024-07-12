@@ -8,7 +8,8 @@ export const Page = styled("div")({
     flexDirection: "column",
 });
 
-export const GraphPage = styled(Page)({
-    backgroundColor: "#b3b3b3",
+export const GraphPage = styled(Page)(({ theme }) => ({
+    backgroundColor: theme.palette.background.default,
     zIndex: 1,
-});
+    display: "grid",
+}));

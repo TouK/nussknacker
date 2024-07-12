@@ -4,7 +4,7 @@ import { SqlEditor } from "./SqlEditor";
 import { StringEditor } from "./StringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionObj } from "./types";
-import React, { ForwardRefExoticComponent } from "react";
+import React, { ForwardRefExoticComponent, LegacyRef } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
 import { DurationEditor } from "./Duration/DurationEditor";
@@ -17,21 +17,23 @@ import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { Formatter } from "./Formatter";
 import { VariableTypes } from "../../../../../types";
 import { FieldError } from "../Validators";
+import { TableEditor } from "./Table/TableEditor";
+import { DictParameterEditor } from "./DictParameterEditor";
 
 export type EditorProps = {
-    onValueChange?: (value: string) => void;
+    onValueChange: (value: string) => void;
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
     fieldErrors: FieldError[];
     formatter?: Formatter;
     expressionInfo?: string;
-    expressionObj?: ExpressionObj;
+    expressionObj: ExpressionObj;
     readOnly?: boolean;
     showSwitch?: boolean;
-    showValidation: boolean;
+    showValidation?: boolean;
     variableTypes?: VariableTypes;
-    ref?: React.Ref<unknown>;
+    ref?: LegacyRef<unknown>;
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> =
@@ -69,6 +71,8 @@ export enum EditorType {
     JSON_PARAMETER_EDITOR = "JsonParameterEditor",
     SQL_PARAMETER_EDITOR = "SqlParameterEditor",
     SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
+    DICT_PARAMETER_EDITOR = "DictParameterEditor",
+    TABLE_EDITOR = "TabularTypedDataEditor",
 }
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
@@ -87,4 +91,6 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.TIME]: TimeEditor,
     [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
+    [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
+    [EditorType.TABLE_EDITOR]: TableEditor,
 };

@@ -3,11 +3,11 @@ package pl.touk.nussknacker.restmodel
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.definition.ParameterEditor
-import pl.touk.nussknacker.engine.api.deployment.CustomAction
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.deployment.CustomActionDefinition
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{Parameter => NodeParameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -120,6 +120,8 @@ package object definition {
   )
 
   @JsonCodec final case class UiScenarioPropertyConfig(
+      // This attribute is deprecated on BE and FE as it's not used anywhere.
+      // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],
       editor: ParameterEditor,
       label: Option[String]
@@ -132,8 +134,8 @@ package object definition {
 
   object UICustomAction {
 
-    def apply(action: CustomAction): UICustomAction = UICustomAction(
-      name = action.name,
+    def apply(action: CustomActionDefinition): UICustomAction = UICustomAction(
+      name = action.actionName,
       allowedStateStatusNames = action.allowedStateStatusNames,
       icon = action.icon,
       parameters = action.parameters.map(p => UICustomActionParameter(p.name, p.editor))
@@ -142,7 +144,7 @@ package object definition {
   }
 
   @JsonCodec final case class UICustomAction(
-      name: String,
+      name: ScenarioActionName,
       allowedStateStatusNames: List[String],
       icon: Option[URI],
       parameters: List[UICustomActionParameter]

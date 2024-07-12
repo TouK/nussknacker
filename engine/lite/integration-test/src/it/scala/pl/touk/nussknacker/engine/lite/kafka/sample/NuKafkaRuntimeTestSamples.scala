@@ -3,39 +3,40 @@ package pl.touk.nussknacker.engine.lite.kafka.sample
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkKeyParamName,
-  SinkRawEditorParamName,
-  SinkValidationModeParameterName,
-  SinkValueParamName,
-  TopicParamName
+  schemaVersionParamName,
+  sinkKeyParamName,
+  sinkRawEditorParamName,
+  sinkValidationModeParamName,
+  sinkValueParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 object NuKafkaRuntimeTestSamples {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  val pingPongScenarioName = ProcessName("universal-ping-pong")
+  val pingPongScenarioName: ProcessName = ProcessName("universal-ping-pong")
 
-  def pingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
-    .streamingLite(pingPongScenarioName.value)
-    .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-    .emptySink(
-      "sink",
-      "kafka",
-      TopicParamName                  -> s"'$outputTopic'",
-      SchemaVersionParamName          -> "'latest'",
-      SinkRawEditorParamName          -> s"true",
-      SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
-      SinkKeyParamName                -> "",
-      SinkValueParamName              -> "#input"
-    )
+  def pingPongScenario(inputTopic: TopicName.ForSource, outputTopic: TopicName.ForSink): CanonicalProcess =
+    ScenarioBuilder
+      .streamingLite(pingPongScenarioName.value)
+      .source("source", "kafka", "Topic" -> s"'${inputTopic.name}'".spel, "Schema version" -> "'latest'".spel)
+      .emptySink(
+        "sink",
+        "kafka",
+        topicParamName.value              -> s"'${outputTopic.name}'".spel,
+        schemaVersionParamName.value      -> "'latest'".spel,
+        sinkRawEditorParamName.value      -> s"true".spel,
+        sinkValidationModeParamName.value -> s"'${ValidationMode.strict.name}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> "#input".spel
+      )
 
   val jsonPingMessage: String =
     """{"foo":"ping"}""".stripMargin

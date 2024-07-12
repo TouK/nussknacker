@@ -2,23 +2,30 @@ package pl.touk.nussknacker.ui.process.repository
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ScenarioActionName
+import pl.touk.nussknacker.engine.management.periodic.InstantBatchCustomAction
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment._
 
-class DeploymentComment private (value: String) {
+// TODO: it does not refer to "deployment" only, rename to ValidatedComment
+class DeploymentComment private (value: Comment) {
 
-  def toComment(actionType: ProcessActionType): Comment = {
+  def toComment(actionName: ScenarioActionName): Comment = {
     // TODO: remove this prefixes after adding custom icons
-    val prefix = actionType match {
-      case ProcessActionType.Deploy => PrefixDeployedDeploymentComment
-      case ProcessActionType.Cancel => PrefixCanceledDeploymentComment
-      case _                        => throw new AssertionError(s"Not supported deployment action type: $actionType")
+    // ... or after changing how the history of user activities is displayed (so far they are displayed as
+    // comments and versions panels). Prefix seems to be a workaround to indicate that it is related somehow to
+    // some action the user requested, and is used as visualization decoration. Comment should be saved "as is",
+    // without modifications.
+    val prefix = actionName match {
+      case ScenarioActionName.Deploy     => PrefixDeployedDeploymentComment
+      case ScenarioActionName.Cancel     => PrefixCanceledDeploymentComment
+      case InstantBatchCustomAction.name => PrefixRunNowDeploymentComment
+      case _                             => NoPrefix
     }
     new Comment {
-      override def value: String = prefix + DeploymentComment.this.value
+      override def value: String = prefix + DeploymentComment.this.value.value
     }
   }
 
@@ -28,20 +35,22 @@ object DeploymentComment {
 
   private val PrefixDeployedDeploymentComment = "Deployment: "
   private val PrefixCanceledDeploymentComment = "Stop: "
+  private val PrefixRunNowDeploymentComment   = "Run now: "
+  private val NoPrefix                        = ""
 
   def createDeploymentComment(
-      comment: Option[String],
+      comment: Option[Comment],
       deploymentCommentSettings: Option[DeploymentCommentSettings]
   ): Validated[CommentValidationError, Option[DeploymentComment]] = {
 
-    (comment.filterNot(_.isEmpty), deploymentCommentSettings) match {
+    (comment.filterNot(_.value.isEmpty), deploymentCommentSettings) match {
       case (None, Some(_)) =>
         Invalid(CommentValidationError("Comment is required."))
       case (None, None) =>
         Valid(None)
       case (Some(comment), Some(deploymentCommentSettings)) =>
         Validated.cond(
-          comment.matches(deploymentCommentSettings.validationPattern),
+          comment.value.matches(deploymentCommentSettings.validationPattern),
           Some(new DeploymentComment(comment)),
           CommentValidationError(comment, deploymentCommentSettings)
         )
@@ -50,22 +59,22 @@ object DeploymentComment {
     }
   }
 
-  def unsafe(comment: String): DeploymentComment = new DeploymentComment(comment)
+  def unsafe(comment: Comment): DeploymentComment = new DeploymentComment(comment)
 
 }
 
-final case class CommentValidationError(message: String) extends Exception(message)
+final case class CommentValidationError(message: String) extends BadRequestError(message)
 
 object CommentValidationError {
 
-  def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {
+  def apply(comment: Comment, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {
     val suffix = deploymentCommentSettings.exampleComment match {
       case Some(exampleComment) =>
         s"Example comment: $exampleComment."
       case None =>
         s"Validation pattern: ${deploymentCommentSettings.validationPattern}"
     }
-    new CommentValidationError(s"Bad comment format '$comment'. " + suffix)
+    new CommentValidationError(s"Bad comment format '${comment.value}'. " + suffix)
   }
 
 }

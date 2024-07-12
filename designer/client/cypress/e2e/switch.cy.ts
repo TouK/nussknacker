@@ -16,8 +16,8 @@ describe("Process", () => {
         it("should allow editing choice edge expression", () => {
             cy.layoutScenario();
             cy.contains(/^base$/)
-                .should("be.visible")
-                .click();
+                .should("exist")
+                .scrollIntoView();
             cy.contains(/^choice$/)
                 .should("be.visible")
                 .drag("#nk-graph-main", {
@@ -40,7 +40,7 @@ describe("Process", () => {
             cy.get("[data-testid=window]").should("not.exist");
             cy.get("[data-testid=graphPage]").matchImage({
                 screenshotConfig: {
-                    blackout: ["> :not(#nk-graph-main) > div"],
+                    blackout: ["> div > :not(#nk-graph-main)"],
                 },
             });
         });

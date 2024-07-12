@@ -3,12 +3,13 @@ package pl.touk.nussknacker.ui.process.repository
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
-import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
+import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentEntityData}
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
+import pl.touk.nussknacker.ui.process.ScenarioAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{ImpersonatedUser, LoggedUser, RealLoggedUser}
+import pl.touk.nussknacker.ui.statistics.{AttachmentsTotal, CommentsTotal}
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -21,22 +22,27 @@ trait ProcessActivityRepository {
       loggedUser: LoggedUser
   ): Future[Unit]
 
-  def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit]
+  def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]]
   def findActivity(processId: ProcessId)(implicit ec: ExecutionContext): Future[ProcessActivity]
 
   def addAttachment(
       attachmentToAdd: AttachmentToAdd
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit]
 
-  def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
+  def findAttachment(attachmentId: Long, scenarioId: ProcessId)(
+      implicit ec: ExecutionContext
+  ): Future[Option[AttachmentEntityData]]
+
+  def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]]
+
 }
 
-final case class DbProcessActivityRepository(protected val dbRef: DbRef)
-    extends ProcessActivityRepository
+final case class DbProcessActivityRepository(protected val dbRef: DbRef, commentRepository: CommentRepository)(
+    protected implicit val ec: ExecutionContext
+) extends ProcessActivityRepository
     with LazyLogging
     with BasicRepository
-    with NuTables
-    with CommentActions {
+    with NuTables {
 
   import profile.api._
 
@@ -44,18 +50,18 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Unit] = {
-    run(newCommentAction(processId, processVersionId, Option(comment))).map(_ => ())
+    run(commentRepository.saveComment(processId, processVersionId, loggedUser, comment)).map(_ => ())
   }
 
-  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {
+  override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Either[Exception, Unit]] = {
     val commentToDelete = commentsTable.filter(_.id === commentId)
     val deleteAction    = commentToDelete.delete
-    run(deleteAction).flatMap { deletedRowsCount =>
+    run(deleteAction).map { deletedRowsCount =>
       logger.info(s"Tried to delete comment with id: $commentId. Deleted rows count: $deletedRowsCount")
       if (deletedRowsCount == 0) {
-        Future.failed(new RuntimeException(s"Unable to delete comment with id: $commentId"))
+        Left(new RuntimeException(s"Unable to delete comment with id: $commentId"))
       } else {
-        Future.successful(())
+        Right(())
       }
     }
   }
@@ -71,17 +77,31 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
     run(findProcessActivityAction)
   }
 
+  override def getActivityStats(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    val findScenarioProcessActivityStats = for {
+      attachmentsTotal <- attachmentsTable.length.result
+      commentsTotal    <- commentsTable.length.result
+    } yield Map(
+      AttachmentsTotal -> attachmentsTotal,
+      CommentsTotal    -> commentsTotal,
+    ).map { case (k, v) => (k.toString, v) }
+
+    run(findScenarioProcessActivityStats)
+  }
+
   override def addAttachment(
       attachmentToAdd: AttachmentToAdd
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
     val addAttachmentAction = for {
       _ <- attachmentsTable += AttachmentEntityData(
         id = -1L,
-        processId = attachmentToAdd.processId,
-        processVersionId = attachmentToAdd.processVersionId,
+        processId = attachmentToAdd.scenarioId,
+        processVersionId = attachmentToAdd.scenarioVersionId,
         fileName = attachmentToAdd.fileName,
         data = attachmentToAdd.data,
         user = loggedUser.username,
+        impersonatedByIdentity = loggedUser.impersonatingUserId,
+        impersonatedByUsername = loggedUser.impersonatingUserName,
         createDate = Timestamp.from(Instant.now())
       )
     } yield ()
@@ -90,9 +110,14 @@ final case class DbProcessActivityRepository(protected val dbRef: DbRef)
   }
 
   override def findAttachment(
-      attachmentId: Long
+      attachmentId: Long,
+      scenarioId: ProcessId
   )(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]] = {
-    val findAttachmentAction = attachmentsTable.filter(_.id === attachmentId).result.headOption
+    val findAttachmentAction = attachmentsTable
+      .filter(_.id === attachmentId)
+      .filter(_.processId === scenarioId)
+      .result
+      .headOption
     run(findAttachmentAction)
   }
 

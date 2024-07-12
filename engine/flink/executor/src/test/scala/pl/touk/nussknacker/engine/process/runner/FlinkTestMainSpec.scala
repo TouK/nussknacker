@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import io.circe.Json
+import io.circe.{Json, JsonObject}
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.api.Context
+import org.scalatest.{BeforeAndAfterEach, Inside, OptionValues}
+import pl.touk.nussknacker.engine.api.{CirceUtil, DisplayJsonWithEncoder}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -20,19 +20,17 @@ import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.{ModelData, spel}
+import pl.touk.nussknacker.engine.ModelData
 
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with BeforeAndAfterEach {
+class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with BeforeAndAfterEach with OptionValues {
 
-  import spel.Implicits._
-
-  import scala.jdk.CollectionConverters._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
+  import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
   private val scenarioName      = "proc1"
   private val sourceNodeId      = "id"
@@ -59,11 +57,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .filter("filter1", "#input.value1 > 1")
-          .buildSimpleVariable("v1", "variable1", "'ala'")
-          .processor("eager1", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.id")
-          .processor("proc2", "logService", "all" -> "#input.id")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.value1")
+          .filter("filter1", "#input.value1 > 1".spel)
+          .buildSimpleVariable("v1", "variable1", "'ala'".spel)
+          .processor("eager1", "collectingEager", "static" -> "'s'".spel, "dynamic" -> "#input.id".spel)
+          .processor("proc2", "logService", "all" -> "#input.id".spel)
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1".spel)
 
       val input  = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
       val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -90,26 +88,28 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       val invocationResults = results.invocationResults
 
       invocationResults("proc2") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "all", "0"))
+        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "all", variable("0")))
 
       invocationResults("out") shouldBe
-        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", 11))
+        List(ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable(11)))
 
       results.externalInvocationResults("proc2") shouldBe List(
         ExternalInvocationResult(
           s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
           "logService",
-          "0-collectedDuringServiceInvocation"
+          variable("0-collectedDuringServiceInvocation")
         )
       )
+
       results.externalInvocationResults("out") shouldBe List(
-        ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "valueMonitor", 11)
+        ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "valueMonitor", variable(11))
       )
+
       results.externalInvocationResults("eager1") shouldBe List(
         ExternalInvocationResult(
           s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
           "collectingEager",
-          "static-s-dynamic-0"
+          variable("static-s-dynamic-0")
         )
       )
 
@@ -149,8 +149,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous")
+          .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id".spel, "stringVal" -> "'s'".spel)
+          .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous".spel)
 
       val input  = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
       val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -178,20 +178,28 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       invocationResults("cid") shouldBe
         List(
           // we record only LazyParameter execution results
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "groupBy", "0"),
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "groupBy", "0")
+          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "groupBy", variable("0")),
+          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "groupBy", variable("0"))
         )
 
       invocationResults("out") shouldBe
         List(
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", "1 0"),
-          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", "11 1")
+          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "Value", variable("1 0")),
+          ExpressionInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "Value", variable("11 1"))
         )
 
       results.externalInvocationResults("out") shouldBe
         List(
-          ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0", "valueMonitor", "1 0"),
-          ExternalInvocationResult(s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1", "valueMonitor", "11 1")
+          ExternalInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
+            "valueMonitor",
+            variable("1 0")
+          ),
+          ExternalInvocationResult(
+            s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
+            "valueMonitor",
+            variable("11 1")
+          )
         )
     }
 
@@ -221,8 +229,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
-          .filter("filter", "1 / #input.value1 >= 0")
+          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
+          .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
 
       val results = runFlinkTest(
@@ -246,13 +254,29 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       results.exceptions should have length 2
 
       val exceptionFromExpression = results.exceptions.head
-      exceptionFromExpression.nodeComponentInfo.map(_.nodeId) shouldBe Some("filter")
-      exceptionFromExpression.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "1"
+      exceptionFromExpression.nodeId shouldBe Some("filter")
+      exceptionFromExpression.context
+        .variables("input")
+        .asInstanceOf[Json]
+        .hcursor
+        .downField("pretty")
+        .focus
+        .value
+        .toString()
+        .startsWith("SimpleJsonRecord(1") // it's not nice..
       exceptionFromExpression.throwable.getMessage shouldBe "Expression [1 / #input.value1 >= 0] evaluation failed, message: / by zero"
 
       val exceptionFromService = results.exceptions.last
-      exceptionFromService.nodeComponentInfo.map(_.nodeId) shouldBe Some("failing")
-      exceptionFromService.context.variables("input").asInstanceOf[SimpleRecord].id shouldBe "2"
+      exceptionFromService.nodeId shouldBe Some("failing")
+      exceptionFromService.context
+        .variables("input")
+        .asInstanceOf[Json]
+        .hcursor
+        .downField("pretty")
+        .focus
+        .value
+        .toString()
+        .startsWith("SimpleJsonRecord(2") // it's not nice..
       exceptionFromService.throwable.getMessage shouldBe "Thrown as expected"
     }
 
@@ -261,8 +285,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2")
-          .filter("filter", "1 / #input.value1 >= 0")
+          .processor("failing", "throwingService", "throw" -> "#input.value1 == 2".spel)
+          .filter("filter", "1 / #input.value1 >= 0".spel)
           .emptySink("out", "monitor")
 
       val exceptionConsumerId = UUID.randomUUID().toString
@@ -294,7 +318,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2")
+          .processor("failing", "throwingTransientService", "throw" -> "#input.value1 == 2".spel)
           .emptySink("out", "monitor")
 
       val run = Future {
@@ -309,7 +333,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "jsonInput")
-          .emptySink("out", "valueMonitor", "Value" -> "#input")
+          .emptySink("out", "valueMonitor", "Value" -> "#input".spel)
       val testData = ScenarioTestData(
         List(
           ScenarioTestJsonRecord(
@@ -335,17 +359,17 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
             "valueMonitor",
-            SimpleJsonRecord("1", "11")
+            variable(SimpleJsonRecord("1", "11"))
           ),
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1",
             "valueMonitor",
-            SimpleJsonRecord("2", "22")
+            variable(SimpleJsonRecord("2", "22"))
           ),
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2",
             "valueMonitor",
-            SimpleJsonRecord("3", "33")
+            variable(SimpleJsonRecord("3", "33"))
           )
         )
     }
@@ -353,8 +377,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
     "handle custom variables in source" in {
       val process = ScenarioBuilder
         .streaming(scenarioName)
-        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
-        .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo")
+        .source(sourceNodeId, "genericSourceWithCustomVariables", "elements" -> "{'abc'}".spel)
+        .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo".spel)
       val testData = ScenarioTestData(List(ScenarioTestJsonRecord(sourceNodeId, Json.fromString("abc"))))
 
       val results = runFlinkTest(process, testData, useIOMonadInInterpreter)
@@ -365,7 +389,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
           ExternalInvocationResult(
             s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0",
             "valueMonitor",
-            "transformed:abc|3"
+            variable("transformed:abc|3")
           )
         )
     }
@@ -375,13 +399,13 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]")
+          .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]".spel)
 
       val results =
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))), useIOMonadInInterpreter)
 
       results.exceptions should have length 1
-      results.exceptions.head.nodeComponentInfo.map(_.nodeId) shouldBe Some("out")
+      results.exceptions.head.nodeId shouldBe Some("out")
       results.exceptions.head.throwable.getMessage should include("message: / by zero")
 
       SimpleProcessConfigCreator.sinkForIntsResultsHolder.results should have length 0
@@ -392,7 +416,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         ScenarioBuilder
           .streaming(scenarioName)
           .source(sourceNodeId, "input")
-          .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
+          .customNode("cid", "count", "transformWithTime", "seconds" -> "10".spel)
           .emptySink("out", "monitor")
 
       def recordWithSeconds(duration: FiniteDuration) =
@@ -414,7 +438,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
 
       val nodeResults = results.nodeResults
 
-      nodeResults("out").map(_.variables) shouldBe List(Map("count" -> 4), Map("count" -> 1))
+      nodeResults("out").map(_.variables) shouldBe List(Map("count" -> variable(4)), Map("count" -> variable(1)))
 
     }
 
@@ -422,8 +446,12 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       val process =
         ScenarioBuilder
           .streaming(scenarioName)
-          .source(sourceNodeId, "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
-          .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2")
+          .source(
+            sourceNodeId,
+            "typedJsonInput",
+            "type" -> """{"field1": "String", "field2": "java.lang.String"}""".spel
+          )
+          .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2".spel)
 
       val results = runFlinkTest(
         process,
@@ -436,7 +464,7 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         useIOMonadInInterpreter
       )
 
-      results.invocationResults("out").map(_.value) shouldBe List("abcdef")
+      results.invocationResults("out").map(_.value) shouldBe List(variable("abcdef"))
     }
 
     "using dependent services" in {
@@ -450,31 +478,30 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
           "dependent",
           "parsed",
           "returningDependentTypeService",
-          "definition" -> "{'field1', 'field2'}",
-          "toFill"     -> "#input.value1.toString()",
-          "count"      -> countToPass.toString
+          "definition" -> "{'field1', 'field2'}".spel,
+          "toFill"     -> "#input.value1.toString()".spel,
+          "count"      -> countToPass.toString.spel
         )
-        .emptySink("out", "valueMonitor", "Value" -> "#parsed.size + ' ' + #parsed[0].field2")
+        .emptySink("out", "valueMonitor", "Value" -> "#parsed.size + ' ' + #parsed[0].field2".spel)
 
       val results =
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(value1 = valueToReturn))), useIOMonadInInterpreter)
 
-      results.invocationResults("out").map(_.value) shouldBe List(s"$countToPass $valueToReturn")
+      results.invocationResults("out").map(_.value) shouldBe List(variable(s"$countToPass $valueToReturn"))
     }
 
     "switch value should be equal to variable value" in {
-      import spel.Implicits._
       val process = ScenarioBuilder
         .streaming(scenarioName)
         .parallelism(1)
         .source(sourceNodeId, "input")
         .switch(
           "switch",
-          "#input.id == 'ala'",
+          "#input.id == 'ala'".spel,
           "output",
           Case(
-            "#output == false",
-            GraphBuilder.emptySink("out", "valueMonitor", "Value" -> "'any'")
+            "#output == false".spel,
+            GraphBuilder.emptySink("out", "valueMonitor", "Value" -> "'any'".spel)
           )
         )
 
@@ -485,8 +512,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
 
       val invocationResults = results.invocationResults
 
-      invocationResults("switch").filter(_.name == "expression").head.value shouldBe true
-      invocationResults("switch").filter(_.name == "expression").last.value shouldBe false
+      invocationResults("switch").filter(_.name == "expression").head.value shouldBe variable(true)
+      invocationResults("switch").filter(_.name == "expression").last.value shouldBe variable(false)
       // first record was filtered out
       invocationResults("out").head.contextId shouldBe s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-1"
     }
@@ -499,8 +526,8 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
             .source(sourceNodeId, "input")
             .split(
               "split",
-              GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
-              GraphBuilder.filter("right", "#input.id != 'b'").branchEnd("end2", "join1")
+              GraphBuilder.filter("left", "#input.id != 'a'".spel).branchEnd("end1", "join1"),
+              GraphBuilder.filter("right", "#input.id != 'b'".spel).branchEnd("end2", "join1")
             ),
           GraphBuilder
             .join(
@@ -508,11 +535,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
               "joinBranchExpression",
               Some("input33"),
               List(
-                "end1" -> List("value" -> "#input"),
-                "end2" -> List("value" -> "#input")
+                "end1" -> List("value" -> "#input".spel),
+                "end2" -> List("value" -> "#input".spel)
               )
             )
-            .processorEnd("proc2", "logService", "all" -> "#input33.id")
+            .processorEnd("proc2", "logService", "all" -> "#input33.id".spel)
         )
 
       val recA = createTestRecord(id = "a")
@@ -527,12 +554,13 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-0-end2",
         s"$scenarioName-$sourceNodeId-$firstSubtaskIndex-2-end2"
       )
-      results.externalInvocationResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List(
-        "a",
+
+      results.externalInvocationResults("proc2").map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List(
         "b",
+        "a",
         "c",
         "c"
-      ).map(_ + "-collectedDuringServiceInvocation")
+      ).map(_ + "-collectedDuringServiceInvocation").map(variable)
     }
 
     "should test multiple source scenario" in {
@@ -541,11 +569,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         .sources(
           GraphBuilder
             .source("source1", "input")
-            .filter("filter1", "#input.id != 'a'")
+            .filter("filter1", "#input.id != 'a'".spel)
             .branchEnd("end1", "join"),
           GraphBuilder
             .source("source2", "input")
-            .filter("filter2", "#input.id != 'b'")
+            .filter("filter2", "#input.id != 'b'".spel)
             .branchEnd("end2", "join"),
           GraphBuilder
             .join(
@@ -553,11 +581,11 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
               "joinBranchExpression",
               Some("joinInput"),
               List(
-                "end1" -> List("value" -> "#input"),
-                "end2" -> List("value" -> "#input")
+                "end1" -> List("value" -> "#input".spel),
+                "end2" -> List("value" -> "#input".spel)
               )
             )
-            .processorEnd("proc2", "logService", "all" -> "#joinInput.id")
+            .processorEnd("proc2", "logService", "all" -> "#joinInput.id".spel)
         )
       val scenarioTestData = ScenarioTestData(
         List(
@@ -599,15 +627,16 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       )
 
       results.invocationResults("proc2") should contain only (
-        ExpressionInvocationResult(s"$scenarioName-source1-$firstSubtaskIndex-1-end1", "all", "d"),
-        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-0-end2", "all", "a"),
-        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-2-end2", "all", "c")
+        ExpressionInvocationResult(s"$scenarioName-source1-$firstSubtaskIndex-1-end1", "all", variable("d")),
+        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-0-end2", "all", variable("a")),
+        ExpressionInvocationResult(s"$scenarioName-source2-$firstSubtaskIndex-2-end2", "all", variable("c"))
       )
 
       results
         .externalInvocationResults("proc2")
-        .map(_.value.asInstanceOf[String])
-        .sorted should contain theSameElementsAs List("a", "c", "d").map(_ + "-collectedDuringServiceInvocation")
+        .map(_.value.asInstanceOf[Json]) should contain theSameElementsAs List("a", "c", "d")
+        .map(_ + "-collectedDuringServiceInvocation")
+        .map(variable)
     }
 
     "should have correct run mode" in {
@@ -616,13 +645,13 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
         .source("start", "input")
         .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUseCaseService")
         .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUseCase")
-        .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}")
+        .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}".spel)
 
       val results =
         runFlinkTest(process, ScenarioTestData(List(createTestRecord(sourceId = "start"))), useIOMonadInInterpreter)
 
       results.invocationResults("out").map(_.value) shouldBe List(
-        List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava
+        variable(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime))
       )
     }
   }
@@ -639,29 +668,45 @@ class FlinkTestMainSpec extends AnyWordSpec with Matchers with Inside with Befor
       scenarioTestData: ScenarioTestData,
       useIOMonadInInterpreter: Boolean,
       enrichDefaultConfig: Config => Config = identity
-  ): TestResults = {
+  ): TestResults[_] = {
     val config = enrichDefaultConfig(ConfigFactory.load("application.conf"))
       .withValue("globalParameters.useIOMonadInInterpreter", ConfigValueFactory.fromAnyRef(useIOMonadInInterpreter))
 
     // We need to set context loader to avoid forking in sbt
-    val modelData = ModelData(config, ModelClassLoader.empty, None)
+    val modelData = ModelData.duringFlinkExecution(config)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration())
     }
   }
 
-  private def nodeResult(count: Int, vars: (String, Any)*): Context =
+  private def nodeResult(count: Int, vars: (String, Any)*): ResultContext[_] =
     nodeResult(count, sourceNodeId, vars: _*)
 
-  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): Context =
-    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*))
+  private def nodeResult(count: Int, sourceId: String, vars: (String, Any)*): ResultContext[Json] =
+    ResultContext(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count", Map(vars: _*).mapValuesNow(variable))
 
   private def nodeResult(
       count: Int,
       sourceId: String,
       branchId: String,
       vars: (String, Any)*
-  ): Context =
-    Context(s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId", Map(vars: _*))
+  ): ResultContext[Json] =
+    ResultContext(
+      s"$scenarioName-$sourceId-$firstSubtaskIndex-$count-$branchId",
+      Map(vars: _*).mapValuesNow(variable)
+    )
+
+  private def variable(value: Any): Json = {
+    def toJson(v: Any): Json = v match {
+      case int: Int                               => Json.fromInt(int)
+      case str: String                            => Json.fromString(str)
+      case boolean: Boolean                       => Json.fromBoolean(boolean)
+      case list: List[_]                          => Json.fromValues(list.map(toJson))
+      case displayable: DisplayJsonWithEncoder[_] => displayable.asJson
+      case any                                    => Json.fromString(any.toString)
+    }
+
+    Json.obj("pretty" -> toJson(value))
+  }
 
 }

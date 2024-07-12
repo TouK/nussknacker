@@ -3,7 +3,8 @@ import { getValidationErrorsForField } from "./editors/Validators";
 import { get, isEmpty } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
-import { NodeType, NodeValidationError } from "../../../types";
+import { NodeType, NodeValidationError, UINodeType } from "../../../types";
+import { nodeInput, nodeInputWithError } from "./NodeDetailsContent/NodeTableStyled";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
@@ -12,9 +13,9 @@ type NodeFieldProps<N extends string, V> = {
     fieldName: N;
     fieldType: FieldType;
     isEditMode?: boolean;
-    node: NodeType;
+    node: UINodeType;
     readonly?: boolean;
-    renderFieldLabel: (paramName: string) => JSX.Element;
+    renderFieldLabel: (paramName: string) => React.ReactNode;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
     errors: NodeValidationError[];
@@ -38,7 +39,7 @@ export function NodeField<N extends string, V>({
     const value = get(node, fieldName, null) ?? defaultValue;
     const fieldErrors = getValidationErrorsForField(errors, fieldName);
 
-    const className = !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error";
+    const className = !showValidation || isEmpty(fieldErrors) ? nodeInput : `${nodeInput} ${nodeInputWithError}`;
     const onChange = (newValue) => setProperty(fieldName, newValue, defaultValue);
     const [isMarked] = useDiffMark();
 

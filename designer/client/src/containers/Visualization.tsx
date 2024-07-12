@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getScenario, getGraph, getScenarioGraph } from "../reducers/selectors/graph";
+import { getGraph, getScenario, getScenarioGraph } from "../reducers/selectors/graph";
 import { isEmpty } from "lodash";
 import { getProcessDefinitionData } from "../reducers/selectors/settings";
 import { getCapabilities } from "../reducers/selectors/other";
@@ -26,6 +26,8 @@ import { useDecodedParams } from "../common/routerUtils";
 import { RootState } from "../reducers";
 import { useModalDetailsIfNeeded } from "./hooks/useModalDetailsIfNeeded";
 import { Scenario } from "../components/Process/types";
+import { useInterval } from "./Interval";
+import { useWindowManager } from "@touk/window-manager";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -45,22 +47,15 @@ function useUnmountCleanup() {
     }, [cleanup]);
 }
 
-function useProcessState(time = 10000) {
+function useProcessState(refreshTime = 10000) {
     const dispatch = useDispatch();
     const scenario = useSelector(getScenario);
     const { isFragment, isArchived, name } = scenario || {};
 
     const fetch = useCallback(() => dispatch(loadProcessState(name)), [dispatch, name]);
+    const disabled = !name || isFragment || isArchived;
 
-    useEffect(() => {
-        let processStateIntervalId;
-        if (name && !isFragment && !isArchived) {
-            processStateIntervalId = setInterval(fetch, time);
-        }
-        return () => {
-            clearInterval(processStateIntervalId);
-        };
-    }, [fetch, name, isArchived, isFragment, time]);
+    useInterval(fetch, { refreshTime, disabled });
 }
 
 function useCountsIfNeeded() {
@@ -134,13 +129,15 @@ function Visualization() {
     useUnmountCleanup();
     useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave);
 
+    const { windows } = useWindowManager();
+
     return (
         <ErrorHandler>
             <DndProvider options={HTML5toTouch}>
                 <GraphPage data-testid="graphPage">
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
-                            <BindKeyboardShortcuts />
+                            <BindKeyboardShortcuts disabled={windows.length > 0} />
                             <Toolbars isReady={dataResolved} />
                         </SelectionContextProvider>
                     </GraphProvider>

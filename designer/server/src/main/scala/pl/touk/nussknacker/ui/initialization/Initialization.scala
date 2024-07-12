@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.db.{DbRef, NuTables}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
@@ -28,9 +28,10 @@ object Initialization {
       migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
       db: DbRef,
       fetchingRepository: DBFetchingProcessRepository[DB],
+      commentRepository: CommentRepository,
       environment: String
   )(implicit ec: ExecutionContext): Unit = {
-    val processRepository = new DBProcessRepository(db, migrations.mapValues(_.version))
+    val processRepository = new DBProcessRepository(db, commentRepository, migrations.mapValues(_.version))
 
     val operations: List[InitialOperation] = List(
       new EnvironmentInsert(environment, db),
@@ -104,7 +105,7 @@ class AutomaticMigration(
   )(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     DBIOAction
       .sequenceOption(for {
-        migrator        <- migrators.forType(processDetails.processingType)
+        migrator        <- migrators.forProcessingType(processDetails.processingType)
         migrationResult <- migrator.migrateProcess(processDetails, skipEmptyMigrations = true)
         updateAction = migrationResult.toUpdateAction(processDetails.processId)
       } yield {

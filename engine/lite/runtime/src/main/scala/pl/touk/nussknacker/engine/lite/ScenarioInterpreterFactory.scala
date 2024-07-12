@@ -20,10 +20,6 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.compile.nodecompilation.{
-  CompilerLazyParameterInterpreter,
-  LazyInterpreterDependencies
-}
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
@@ -39,6 +35,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.metrics.common.{
   EndCountingListener,
   ExceptionCountingListener,
@@ -74,13 +71,14 @@ object ScenarioInterpreterFactory {
     modelData.withThisAsContextClassLoader {
 
       val creator           = modelData.configCreator
-      val modelDependencies = ProcessObjectDependencies(modelData.modelConfig, modelData.objectNaming)
+      val modelDependencies = ProcessObjectDependencies.withConfig(modelData.modelConfig)
 
       val allNodes = process.collectAllNodes
       val countingListeners = List(
+        LoggingListener,
         new NodeCountingListener(allNodes.map(_.id)),
         new ExceptionCountingListener,
-        new EndCountingListener(allNodes)
+        new EndCountingListener(allNodes),
       )
       val listeners = creator.listeners(modelDependencies) ++ additionalListeners ++ countingListeners
 
@@ -171,14 +169,6 @@ object ScenarioInterpreterFactory {
 
     private type PartInterpreterType = DataBatch => InterpreterOutputType
 
-    private val lazyParameterInterpreter: CompilerLazyParameterInterpreter = new CompilerLazyParameterInterpreter {
-      override def deps: LazyInterpreterDependencies = processCompilerData.lazyInterpreterDeps
-
-      override def metaData: MetaData = compiledProcess.metaData
-
-      override def close(): Unit = {}
-    }
-
     def compile: CompilationResult[ScenarioInterpreterType] = {
       val emptyPartInvocation: ScenarioInterpreterType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map { case (source, input) =>
@@ -255,7 +245,7 @@ object ScenarioInterpreterFactory {
       processCompilerData.subPartCompiler.compile(node, validationContext)(compiledProcess.metaData).result
 
     private def customComponentContext(nodeId: String) =
-      CustomComponentContext[F](nodeId, lazyParameterInterpreter, capabilityTransformer)
+      CustomComponentContext[F](nodeId, capabilityTransformer)
 
     private def compiledPartInvoker(processPart: ProcessPart): CompilationResult[PartInterpreterType] =
       processPart match {

@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   OutputVariableNameValue,
   TypedNodeDependencyValue
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
@@ -16,7 +17,7 @@ import scala.reflect.runtime.universe._
 sealed trait NodeDependency
 
 /**
- * This trait reduce boilerplate defining `GenericNodeTransformation` and reduce risk that definition of node dependencies
+ * This trait reduce boilerplate defining `DynamicComponent` and reduce risk that definition of node dependencies
  * will desynchronize with implementation code using values
  */
 trait ValueExtractor { self: NodeDependency =>
@@ -59,13 +60,13 @@ case object OutputVariableNameDependency extends NodeDependency with ValueExtrac
 
 object Parameter {
 
-  def apply[T: TypeTag: NotNothing](name: String): Parameter = Parameter(name, Typed.fromDetailedType[T])
+  def apply[T: TypeTag: NotNothing](name: ParameterName): Parameter = Parameter(name, Typed.fromDetailedType[T])
 
   // we want to have mandatory parameters by default because it can protect us from NPE in some cases)
-  def apply(name: String, typ: TypingResult): Parameter =
+  def apply(name: ParameterName, typ: TypingResult): Parameter =
     Parameter(name, typ, validators = List(MandatoryParameterValidator))
 
-  def apply(name: String, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
+  def apply(name: ParameterName, typ: TypingResult, validators: List[ParameterValidator]): Parameter =
     Parameter(
       name,
       typ,
@@ -82,12 +83,12 @@ object Parameter {
       labelOpt = None
     )
 
-  def optional[T: TypeTag: NotNothing](name: String): Parameter =
+  def optional[T: TypeTag: NotNothing](name: ParameterName): Parameter =
     Parameter.optional(name, Typed.fromDetailedType[T])
 
   // Represents optional parameter annotated with @Nullable, if you want to emulate scala Option or java Optional,
   // you should redefine scalaOptionParameter and javaOptionalParameter
-  def optional(name: String, typ: TypingResult): Parameter =
+  def optional(name: ParameterName, typ: TypingResult): Parameter =
     Parameter(
       name,
       typ,
@@ -108,7 +109,7 @@ object Parameter {
 
 object NotBlankParameter {
 
-  def apply(name: String, typ: TypingResult): Parameter =
+  def apply(name: ParameterName, typ: TypingResult): Parameter =
     Parameter(name, typ, validators = List(NotBlankParameterValidator))
 
 }
@@ -120,7 +121,7 @@ object NotBlankParameter {
 // component's context, so it could be removed from the API
 // TODO: extract Parameter class in the domain model (see ComponentDefinitionWithImplementation and belongings)
 case class Parameter(
-    name: String,
+    name: ParameterName,
     typ: TypingResult,
     editor: Option[ParameterEditor],
     validators: List[ParameterValidator],
@@ -136,7 +137,7 @@ case class Parameter(
 ) extends NodeDependency {
 
   def copy(
-      name: String,
+      name: ParameterName,
       typ: TypingResult,
       editor: Option[ParameterEditor],
       validators: List[ParameterValidator],
@@ -166,7 +167,7 @@ case class Parameter(
   }
 
   def copy(
-      name: String = this.name,
+      name: ParameterName = this.name,
       typ: TypingResult = this.typ,
       editor: Option[ParameterEditor] = this.editor,
       validators: List[ParameterValidator] = this.validators,
@@ -198,7 +199,7 @@ case class Parameter(
   }
 
   def apply(
-      name: String,
+      name: ParameterName,
       typ: TypingResult,
       editor: Option[ParameterEditor],
       validators: List[ParameterValidator],
@@ -230,7 +231,7 @@ case class Parameter(
   }
 
   def apply(
-      name: String,
+      name: ParameterName,
       typ: TypingResult,
       editor: Option[ParameterEditor],
       validators: List[ParameterValidator],
@@ -268,7 +269,7 @@ case class Parameter(
       _.isInstanceOf[AdditionalVariableProvidedInRuntime]
     )) {
     throw new IllegalArgumentException(
-      s"${classOf[AdditionalVariableProvidedInRuntime].getClass.getSimpleName} should be used only with LazyParameters"
+      s"${classOf[AdditionalVariableProvidedInRuntime].getSimpleName} should be used only with LazyParameters"
     )
   }
 
@@ -281,7 +282,7 @@ case class Parameter(
 
   // We should have some convention for building the default label based on Parameter's name - e.g.
   // names could be kebab-case and we can convert them to the Human Readable Format
-  def label: String = labelOpt getOrElse name
+  def label: String = labelOpt getOrElse name.value
 
 }
 

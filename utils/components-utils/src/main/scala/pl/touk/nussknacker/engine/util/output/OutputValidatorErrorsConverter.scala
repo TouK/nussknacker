@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.util.output
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-class OutputValidatorErrorsConverter(schemaParamName: String) {
+class OutputValidatorErrorsConverter(schemaParamName: ParameterName) {
 
   import OutputValidatorErrorsMessageFormatter._
 

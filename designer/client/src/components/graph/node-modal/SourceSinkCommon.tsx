@@ -1,10 +1,10 @@
 /* eslint-disable i18next/no-literal-string */
 import React, { PropsWithChildren } from "react";
-import { ParameterExpressionField } from "./ParameterExpressionField";
 import { IdField } from "./IdField";
 import { DescriptionField } from "./DescriptionField";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
+import { ParametersList } from "./parametersList";
 
 interface SourceSinkCommonProps {
     errors: NodeValidationError[];
@@ -40,23 +40,19 @@ export const SourceSinkCommon = ({
                 setProperty={setProperty}
                 errors={errors}
             />
-            {node.ref.parameters?.map((param, index) => (
-                <div className="node-block" key={node.id + param.name + index}>
-                    <ParameterExpressionField
-                        isEditMode={isEditMode}
-                        showValidation={showValidation}
-                        showSwitch={showSwitch}
-                        node={node}
-                        findAvailableVariables={findAvailableVariables}
-                        parameterDefinitions={parameterDefinitions}
-                        errors={errors}
-                        renderFieldLabel={renderFieldLabel}
-                        setProperty={setProperty}
-                        parameter={param}
-                        listFieldPath={`ref.parameters[${index}]`}
-                    />
-                </div>
-            ))}
+            <ParametersList
+                parameters={node.ref.parameters}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                showSwitch={showSwitch}
+                node={node}
+                findAvailableVariables={findAvailableVariables}
+                parameterDefinitions={parameterDefinitions}
+                errors={errors}
+                renderFieldLabel={renderFieldLabel}
+                setProperty={setProperty}
+                getListFieldPath={(index: number) => `ref.parameters[${index}]`}
+            />
             {children}
             <DescriptionField
                 isEditMode={isEditMode}

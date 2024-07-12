@@ -2,13 +2,13 @@ import { get } from "lodash";
 import EditableEditor from "./editors/EditableEditor";
 import React, { useCallback } from "react";
 import { ExpressionLang } from "./editors/expression/types";
-import { getValidationErrorsForField, PossibleValue } from "./editors/Validators";
+import { getValidationErrorsForField } from "./editors/Validators";
 import { NodeValidationError, PropertiesType } from "../../../types";
 
 export interface ScenarioPropertyConfig {
     editor: any;
     label: string;
-    values: Array<PossibleValue>;
+    defaultValue: string | null;
 }
 
 interface Props {
@@ -17,7 +17,11 @@ interface Props {
     propertyName: string;
     propertyConfig: ScenarioPropertyConfig;
     editedNode: PropertiesType;
-    onChange: <K extends keyof PropertiesType>(property: K, newValue: PropertiesType[K], defaultValue?: PropertiesType[K]) => void;
+    onChange: <K extends keyof PropertiesType["additionalFields"]["properties"]>(
+        property: K,
+        newValue: PropertiesType["additionalFields"]["properties"][K],
+        defaultValue?: PropertiesType["additionalFields"]["properties"][K],
+    ) => void;
     renderFieldLabel: (paramName: string) => JSX.Element;
     readOnly: boolean;
     errors: NodeValidationError[];

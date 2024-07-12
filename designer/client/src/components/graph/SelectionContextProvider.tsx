@@ -1,4 +1,14 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+    createContext,
+    PropsWithChildren,
+    ReactElement,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useDebouncedCallback } from "use-debounce";
@@ -9,6 +19,7 @@ import {
     deleteSelection,
     nodesWithEdgesAdded,
     pasteSelection,
+    resetSelection,
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
@@ -22,6 +33,7 @@ import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import NodeUtils from "./NodeUtils";
 import { min } from "lodash";
+import { useInterval } from "../../containers/Interval";
 
 const hasTextSelection = () => !!window.getSelection().toString();
 
@@ -36,6 +48,7 @@ interface UserActions {
     undo: UserAction;
     redo: UserAction;
     selectAll: UserAction;
+    deselectAll: UserAction;
 }
 
 function useClipboardParse() {
@@ -69,14 +82,10 @@ function useClipboardPermission(): boolean | string {
     }, []);
 
     // if possible monitor clipboard for new content
-    useEffect(() => {
-        if (state === "granted") {
-            const interval = setInterval(checkClipboard, 500);
-            return () => {
-                clearInterval(interval);
-            };
-        }
-    }, [checkClipboard, state]);
+    useInterval(checkClipboard, {
+        refreshTime: 500,
+        disabled: state !== "granted",
+    });
 
     useEffect(() => {
         // parse clipboard content on change only
@@ -120,7 +129,7 @@ export default function SelectionContextProvider(
     props: PropsWithChildren<{
         pastePosition: () => { x: number; y: number };
     }>,
-): JSX.Element {
+): ReactElement {
     const dispatch = useDispatch();
     const { t } = useTranslation();
 
@@ -223,9 +232,8 @@ export default function SelectionContextProvider(
             delete: canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
             undo: () => dispatch(UndoActionCreators.undo()),
             redo: () => dispatch(UndoActionCreators.redo()),
-            selectAll: () => {
-                dispatch(selectAll());
-            },
+            selectAll: () => dispatch(selectAll()),
+            deselectAll: () => dispatch(resetSelection()),
         }),
         [copy, cut, paste, selectionState, hasSelection, canAccessClipboard, canModifySelected, capabilities.editFrontend, dispatch],
     );

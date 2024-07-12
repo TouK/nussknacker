@@ -1,13 +1,102 @@
 # Changelog
 
-1.14.0 (Not released yet)
+1.17.0 (Not released yet)
 -------------------------
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) Libraries bump:
-  * Flink: 1.16.2 -> 1.16.3
+* [6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
+  Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
+
+1.16.0 (11 July 2024)
+-------------------------
+
+* [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
+* [#6053](https://github.com/TouK/nussknacker/pull/6053) Added impersonation mechanism support in Nu API for BasicAuth security module.
+* [#6008](https://github.com/TouK/nussknacker/pull/6008) Add embedded QuestDB as database for FE statistics.
+* [#5982](https://github.com/TouK/nussknacker/pull/5982) [#6155](https://github.com/TouK/nussknacker/pull/6155) [#6172](https://github.com/TouK/nussknacker/pull/6172) [#6221](https://github.com/TouK/nussknacker/pull/6221) Batch processing mode related improvements:
+    * Deployments API returns correct status of deployment instead of returning always the last deployment's status
+    * Deployments API returns more information about status of a deployment: problem description and status modification time
+    * Status of a deployment is cached on the Designer side - in case of retention of finished job on Flink, status is still returned as FINISHED
+    * Overlapping deployment metrics/counts workaround: Ensure that only one deployment is performed for each scenario at a time
+    * Blocking of deployment of a fragment
+    * Blocking of deployment of an archived scenario
+* [#6121](https://github.com/TouK/nussknacker/pull/6121) Add functionality to reorder columns within the table editor.
+* [#6136](https://github.com/TouK/nussknacker/pull/6136) Add possibility to configure kafka exactly-once delivery for flink.
+* [#6185](https://github.com/TouK/nussknacker/pull/6185) Improvement: Make UniversalKafkaSinkFactory available at BoundedStream
+* [#6208](https://github.com/TouK/nussknacker/pull/6208) Fix issue with node window positioning after closing a full-screen window node.
+* [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
+* [#6245](https://github.com/TouK/nussknacker/pull/6245) Parameter validations defined in AdditionalUIConfigProvider now properly impact dynamic components.
+* [#6264](https://github.com/TouK/nussknacker/pull/6264) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
+* [#6270](https://github.com/TouK/nussknacker/pull/6270) Resolved an issue with comparing remote versions
+* [#6337](https://github.com/TouK/nussknacker/pull/6337) Fixes memory leak in test mechanism introduced in 1.13 version ([#4901](https://github.com/TouK/nussknacker/pull/4901))
+* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
+
+1.15.4 (10 July 2024)
+-------------------------
+* [#6319](https://github.com/TouK/nussknacker/pull/6319) Fix migration between environments.
+* [#6322](https://github.com/TouK/nussknacker/pull/6322) Fix search nodes: usage of ctrl-f was limited to nodes search only.
+
+1.15.3 (24 June 2024)
+-------------------------
+* [#6191](https://github.com/TouK/nussknacker/pull/6191) Fixes caching of Flink's jobs config. Was cached empty config in some cases.
+* [#6225](https://github.com/TouK/nussknacker/pull/6225) Resolved an issue with fragment input parameters where the initial value was defined and the input mode changed from any value to a fixed list.
+* [#6230](https://github.com/TouK/nussknacker/pull/6230) Avoid potential race condition by preventing the marking of freshly deployed jobs as finished when synchronizing deployment states.
+* [#6204](https://github.com/TouK/nussknacker/pull/6204) [#6055](https://github.com/TouK/nussknacker/pull/6055) Fixup to lifecycle of ExecutionContext used in Asynchronous IO Mode which could lead to RejectedExecutionException after scenario restart on Flink.
+
+1.15.2 (7 June 2024)
+-------------------------
+* [#6134](https://github.com/TouK/nussknacker/pull/6134) Fixes in determining `lastStateActionData` and `lastDeployedActionData` for Scenario.
+  * Deployed version of scenario is now shown properly even if other actions followed deploy.
+  * Scenario state is now not impacted by actions that don't actually change it.
+
+1.15.1 (5 June 2024)
+-------------------------
+* [#6126](https://github.com/TouK/nussknacker/pull/6126) Fix statistics configuration.
+* [#6127](https://github.com/TouK/nussknacker/pull/6127) Ad-hoc tests available in scenarios without `flink-dropwizard-metrics-deps` in classPath
+
+1.15.0 (17 May 2024)
+-------------------------
+* [#5620](https://github.com/TouK/nussknacker/pull/5620) Nodes Api OpenApi-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#5760](https://github.com/TouK/nussknacker/pull/5760) [#5599](https://github.com/TouK/nussknacker/pull/5599) [#3922](https://github.com/TouK/nussknacker/pull/5901) Libraries bump:
+  * Cats 2.9.0 -> 2.10.0
+  * Cats Effect: 3.5.2 -> 3.5.4
+  * Flink: 1.17.2 -> 1.18.1
+  * Kafka client: 3.6.1 -> 3.6.2
+  * Netty 4.1.93 -> 4.1.109
+  * openapi-circe-yaml: 0.6.0 -> 0.7.4
+  * Tapir: 1.7.4 -> 1.9.11
+* [#5438](https://github.com/TouK/nussknacker/pull/5438) [#5495](https://github.com/TouK/nussknacker/pull/5495) Improvement in DeploymentManager API:
+    * Alignment in the api of primary (deploy/cancel) actions and the experimental api of custom actions.
+* [#5798](https://github.com/TouK/nussknacker/pull/5798) Improvements in DeploymentService:
+    * Custom actions are handled in the same way as deploy and cancel: action and comment are registered in NU database
+* [#5783](https://github.com/TouK/nussknacker/pull/5783) Added information about component's allowed processing modes to Component API
+* [#5831](https://github.com/TouK/nussknacker/pull/5831) Fragment input parameters presets support
+* [#5780](https://github.com/TouK/nussknacker/pull/5780) Fixed Scala case classes serialization when a class has additional fields in its body
+* [#5848](https://github.com/TouK/nussknacker/pull/5848) Change colors across an entire user interface
+* [#5853](https://github.com/TouK/nussknacker/pull/5853) Add processing mode information and filtering to the components table
+* [#5843](https://github.com/TouK/nussknacker/pull/5843) Added new endpoint to provide statistics URL
+* [#5873](https://github.com/TouK/nussknacker/pull/5873) Handle list of the anonymous statistic URLs, and send them in the interval
+* [#5889](https://github.com/TouK/nussknacker/pull/5889) Decision Table component parameters validation improvement
+* [#5898](https://github.com/TouK/nussknacker/pull/5898) Fixed Nu runtime memory leak
+* [#5887](https://github.com/TouK/nussknacker/pull/5887) Fix toolbar icon styles when multiline text
+* [#5779](https://github.com/TouK/nussknacker/pull/5779) Add API versioning for migration between environments
+* [#6016](https://github.com/TouK/nussknacker/pull/6016) Add RANDOM helper
+* [#5595](https://github.com/TouK/nussknacker/pull/5618) [#5618](https://github.com/TouK/nussknacker/pull/5595) [#5627](https://github.com/TouK/nussknacker/pull/5627) 
+  [#5734](https://github.com/TouK/nussknacker/pull/5734) [#5653](https://github.com/TouK/nussknacker/pull/5653) [#5744](https://github.com/TouK/nussknacker/pull/5744) 
+  [#5757](https://github.com/TouK/nussknacker/pull/5757) [#5777](https://github.com/TouK/nussknacker/pull/5777) [#5825](https://github.com/TouK/nussknacker/pull/5825)
+  [#5896](https://github.com/TouK/nussknacker/pull/5896) Experimental Batch processing mode support
+* [#6031](https://github.com/TouK/nussknacker/pull/6031) Fixed duplicated components on the Components tab
+* [#6010](https://github.com/TouK/nussknacker/pull/6010) Fix ad hoc tests with schemas containing nested fields
+* [#6044](https://github.com/TouK/nussknacker/pull/6044) Fixed json refs handling: If first parsed record was an empty record, every subsequent record was treated as an empty record 
+* [#5813](https://github.com/TouK/nussknacker/pull/5813) Fixed "More than one processing type ..." error during scenario creation when user has limited access to categories.
+
+1.14.0 (21 Mar 2024)
+-------------------------
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) [#5257](https://github.com/TouK/nussknacker/pull/5257) [#5432](https://github.com/TouK/nussknacker/pull/5432) [#5552](https://github.com/TouK/nussknacker/pull/5552) [#5645](https://github.com/TouK/nussknacker/pull/5645) Libraries bump:
+  * Flink: 1.16.2 -> 1.17.2
   * Cats Effect: 2.5.5 -> 3.5.2
   * Kafka client: 3.3.2 -> 3.6.1
   * Confluent Schema Registry client: 7.3.2 -> 7.5.1
   * Avro: 1.11.1 -> 1.11.3
+  * Skuber: 3.0.6 -> 3.2
 * [#5253](https://github.com/TouK/nussknacker/pull/5253) Removed the option to configure fragments via config. Due to the recent expansion of FragmentParameter, the option has become largely redundant. Removed to decrease unnecessary complexity.
 * [#5271](https://github.com/TouK/nussknacker/pull/5271) Changed `AdditionalUIConfigProvider.getAllForProcessingType` API to be more in line with FragmentParameter
 * [#5278](https://github.com/TouK/nussknacker/pull/5278) Recreate assembled model JAR for Flink if it got removed (e.g. by systemd-tmpfiles)
@@ -34,10 +123,36 @@
 * [#5465](https://github.com/TouK/nussknacker/pull/5465) Fix: Wasn't possible to compare a Record with a Map.
 * [#5457](https://github.com/TouK/nussknacker/pull/5457) Fix: Array types wasn't serialized correctly which caused deserialization error during node validation.
 * [#5475](https://github.com/TouK/nussknacker/pull/5475) SpEL expressions checking improvement: The equals operator used with two Lists with different element types is reported as an error
+* [#5389](https://github.com/TouK/nussknacker/pull/5389) Scenario activity API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#5509](https://github.com/TouK/nussknacker/pull/5509) Security improvement: 
+  * Added authorization check for listing activities and downloading attachments in scenario activity API
+  * Fixed the ability to download an unrelated attachment from a given scenario
+* [#5522](https://github.com/TouK/nussknacker/pull/5522), [#5519](https://github.com/TouK/nussknacker/pull/5519) Scenario status caching more often
+* [#5505](https://github.com/TouK/nussknacker/pull/5505) [#5710](https://github.com/TouK/nussknacker/pull/5710) Fix: anonymous user handling regression
+* [#5371](https://github.com/TouK/nussknacker/pull/5371) Added new parameter editor type: DictParameterEditor.
+* [#5373](https://github.com/TouK/nussknacker/pull/5373) API changes related to components development
+* [#5566](https://github.com/TouK/nussknacker/pull/5566) [#5550](https://github.com/TouK/nussknacker/pull/5537) 
+  [#5515](https://github.com/TouK/nussknacker/pull/5515) [#5474](https://github.com/TouK/nussknacker/pull/5474) Processing mode and engine available in the GUI.
+  ⚠️ for the helm chart deployment, you need to manually migrate scenarios in db to one of possible processing types: either `streaming` or `request-response`. See [MigrationGuide](MigrationGuide.md) for details 
+* [#5566](https://github.com/TouK/nussknacker/pull/5566) `DEFAULT_SCENARIO_TYPE` environment variable is not supported anymore 
+* [#5272](https://github.com/TouK/nussknacker/pull/5272) [#5145](https://github.com/TouK/nussknacker/pull/5145) Added: Decision Table component
+* [#5641](https://github.com/TouK/nussknacker/pull/5641) Fix: fetching/parsing batch periodic json only when needed (stop parsing during status check)
+* [#5656](https://github.com/TouK/nussknacker/pull/5656) Added: Decision Table component - detailed validation
+* [#5657](https://github.com/TouK/nussknacker/pull/5657) Improved heuristic for eventhub to Azure's schema name mapping.
+* [#5754](https://github.com/TouK/nussknacker/pull/5754) Fix for broken encoding mechanism in tests from file with Avro format, revert [0d9b600][https://github.com/TouK/nussknacker/commit/0d9b600]
+* [#5558](https://github.com/TouK/nussknacker/pull/5558) Added: an info about `Processing mode` to the scenario and divided `Status` toolbar to `Scenario actions` and `Scenario details`
 
-1.13.1 (Not released yet)
+1.13.3 (28 June 2024) This fix was introduced in 1.16.0 version and has only been backported to this version.
+------------------------
+* [#6285](https://github.com/TouK/nussknacker/pull/6285) Fix for DatabaseLookupEnricher mixing fields values when it is connected to ignite db
+
+1.13.2 (7 Mar 2024)
 ------------------------
 * [#5447](https://github.com/TouK/nussknacker/pull/5447) Fixed `java.lang.reflect.InaccessibleObjectException: Unable to make public java.lang.Object` exception by downgrade of JRE from 17 to 11 in lite runner image for scala 2.13
+ 
+1.13.1 (7 Mar 2024)
+-------------------------
+[this version was skipped, please use 1.13.2 instead]
 
 1.13.0 (12 Jan 2024)
 -------------------------

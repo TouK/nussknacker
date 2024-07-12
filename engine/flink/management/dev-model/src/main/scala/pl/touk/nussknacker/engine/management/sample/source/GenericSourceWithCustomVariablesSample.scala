@@ -3,19 +3,26 @@ package pl.touk.nussknacker.engine.management.sample.source
 import cats.data.ValidatedNel
 import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId}
-import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
+import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDeclaration}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, Params}
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
-object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+import scala.jdk.CollectionConverters._
+
+object GenericSourceWithCustomVariablesSample
+    extends SourceFactory
+    with SingleInputDynamicComponent[Source]
+    with UnboundedStreamComponent {
 
   private class CustomFlinkContextInitializer extends BasicContextInitializer[String](Typed[String]) {
 
@@ -57,33 +64,38 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
   override type State = Nothing
 
   // There is only one parameter in this source
-  private val elementsParamName = "elements"
+  private val elementsParamName = ParameterName("elements")
+  private val elementsParamDeclaration =
+    ParameterDeclaration.mandatory[java.util.List[String]](elementsParamName).withCreator()
 
   private val customContextInitializer: ContextInitializer[String] = new CustomFlinkContextInitializer
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
-    case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
+  ): GenericSourceWithCustomVariablesSample.ContextTransformationDefinition = {
+    case TransformationStep(Nil, _) =>
+      NextParameters(elementsParamDeclaration.createParameter() :: Nil)
     case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[State]
   ): Source = {
-    import scala.jdk.CollectionConverters._
-    val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
+    val elementsValue = elementsParamDeclaration.extractValueUnsafe(params).asScala.toList
 
-    new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))
-      with TestDataGenerator
-      with FlinkSourceTestSupport[String] {
+    new CollectionSource(
+      list = elementsValue,
+      timestampAssigner = None,
+      returnType = Typed[ProcessingType],
+    )(TypeInformation.of(classOf[ProcessingType])) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] {
+      override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
-      override val contextInitializer: ContextInitializer[String] = customContextInitializer
-
-      override def generateTestData(size: Int): TestData = TestData(elements.map(el => TestRecord(Json.fromString(el))))
+      override def generateTestData(size: Int): TestData = TestData(
+        elementsValue.map(el => TestRecord(Json.fromString(el)))
+      )
 
       override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
         CirceUtil.decodeJsonUnsafe[String](testRecord.json)

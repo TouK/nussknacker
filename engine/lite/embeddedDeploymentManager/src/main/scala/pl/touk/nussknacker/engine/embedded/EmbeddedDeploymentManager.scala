@@ -1,35 +1,38 @@
 package pl.touk.nussknacker.engine.embedded
 
-import akka.actor.ActorSystem
+import cats.data.Validated.valid
+import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
-import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelData}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, DeploymentManagerDependencies, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.newdeployment
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, engineConfig: Config)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any],
-      deploymentService: ProcessingTypeDeploymentService
-  ): DeploymentManager = {
+  override def createDeploymentManager(
+      modelData: BaseModelData,
+      dependencies: DeploymentManagerDependencies,
+      engineConfig: Config,
+      scenarioStateCacheTTL: Option[FiniteDuration]
+  ): ValidatedNel[String, DeploymentManager] = {
+    import dependencies._
     val strategy = forMode(engineConfig)(
       new StreamingDeploymentStrategy,
       RequestResponseDeploymentStrategy(engineConfig)
@@ -39,7 +42,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
     strategy.open(modelData.asInvokableModelData, contextPreparer)
-    new EmbeddedDeploymentManager(modelData.asInvokableModelData, deploymentService, strategy)
+    valid(new EmbeddedDeploymentManager(modelData.asInvokableModelData, deployedScenariosProvider, strategy))
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =
@@ -62,7 +65,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
  */
 class EmbeddedDeploymentManager(
     override protected val modelData: ModelData,
-    processingTypeDeploymentService: ProcessingTypeDeploymentService,
+    deployedScenariosProvider: ProcessingTypeDeployedScenariosProvider,
     deploymentStrategy: DeploymentStrategy
 )(implicit ec: ExecutionContext)
     extends LiteDeploymentManager
@@ -73,7 +76,7 @@ class EmbeddedDeploymentManager(
 
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
     val deployedScenarios =
-      Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
+      Await.result(deployedScenariosProvider.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios
       .map(data =>
         deployScenario(
@@ -86,26 +89,36 @@ class EmbeddedDeploymentManager(
       .toMap
   }
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = Future.successful(())
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
+    command match {
+      case DMValidateScenarioCommand(_, _, _, updateStrategy) =>
+        Future {
+          ensureReplaceDeploymentUpdateStrategy(updateStrategy)
+        }
+      case DMRunDeploymentCommand(processVersion, deploymentData, canonicalProcess, updateStrategy) =>
+        Future {
+          ensureReplaceDeploymentUpdateStrategy(updateStrategy)
+          deployScenarioClosingOldIfNeeded(
+            processVersion,
+            deploymentData,
+            canonicalProcess,
+            throwInterpreterRunExceptionsImmediately = true
+          )
+        }
+      case command: DMCancelDeploymentCommand => cancelDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case command: DMTestScenarioCommand     => testScenario(command)
+      case _: DMStopDeploymentCommand | _: DMStopScenarioCommand | _: DMMakeScenarioSavepointCommand |
+          _: DMCustomActionCommand =>
+        notImplemented
+    }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
-    Future.successful(
-      deployScenarioClosingOldIfNeeded(
-        processVersion,
-        deploymentData,
-        canonicalProcess,
-        throwInterpreterRunExceptionsImmediately = true
-      )
-    )
+  private def ensureReplaceDeploymentUpdateStrategy(updateStrategy: DeploymentUpdateStrategy): Unit = {
+    updateStrategy match {
+      case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+      case DeploymentUpdateStrategy.DontReplaceDeployment =>
+        throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+    }
   }
 
   private def deployScenarioClosingOldIfNeeded(
@@ -149,26 +162,30 @@ class EmbeddedDeploymentManager(
     deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
   }
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    deployments.get(name) match {
-      case None                 => Future.failed(new IllegalArgumentException(s"Cannot find scenario $name"))
-      case Some(deploymentData) => stopDeployment(name, deploymentData)
+  private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
+    import command._
+    deployments.get(scenarioName) match {
+      case None                 => Future.failed(new IllegalArgumentException(s"Cannot find scenario $scenarioName"))
+      case Some(deploymentData) => stopDeployment(scenarioName, deploymentData)
     }
   }
 
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+  private def cancelDeployment(command: DMCancelDeploymentCommand): Future[Unit] = {
+    import command._
     for {
       deploymentData <- deployments
-        .get(name)
+        .get(scenarioName)
         .map(Future.successful)
-        .getOrElse(Future.failed(new IllegalArgumentException(s"Cannot find scenario $name")))
+        .getOrElse(Future.failed(new IllegalArgumentException(s"Cannot find scenario $scenarioName")))
       deploymentDataForDeploymentId <- Option(deploymentData)
         .filter(_.deploymentId == deploymentId)
         .map(Future.successful)
         .getOrElse(
-          Future.failed(new IllegalArgumentException(s"Cannot find deployment $deploymentId for scenario $name"))
+          Future.failed(
+            new IllegalArgumentException(s"Cannot find deployment $deploymentId for scenario $scenarioName")
+          )
         )
-      stoppingResult <- stopDeployment(name, deploymentDataForDeploymentId)
+      stoppingResult <- stopDeployment(scenarioName, deploymentDataForDeploymentId)
     } yield stoppingResult
   }
 
@@ -182,22 +199,48 @@ class EmbeddedDeploymentManager(
     }
   }
 
-  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     Future.successful(
-      deployments
-        .get(name)
-        .map { interpreterData =>
-          StatusDetails(
-            status = interpreterData.scenarioDeployment
-              .fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
-            deploymentId = Some(interpreterData.deploymentId),
-            externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
-            version = Some(interpreterData.processVersion)
-          )
-        }
-        .toList
+      WithDataFreshnessStatus.fresh(
+        deployments
+          .get(name)
+          .map { interpreterData =>
+            StatusDetails(
+              status = interpreterData.scenarioDeployment
+                .fold(
+                  _ => ProblemStateStatus(s"Scenario compilation errors"),
+                  deployment => SimpleStateStatus.fromDeploymentStatus(deployment.status())
+                ),
+              deploymentId = Some(interpreterData.deploymentId),
+              externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
+              version = Some(interpreterData.processVersion)
+            )
+          }
+          .toList
+      )
     )
   }
+
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport =
+    new DeploymentSynchronisationSupported {
+
+      override def getDeploymentStatusesToUpdate(
+          deploymentIdsToCheck: Set[newdeployment.DeploymentId]
+      ): Future[Map[newdeployment.DeploymentId, DeploymentStatus]] =
+        Future.successful(
+          (
+            for {
+              (_, interpreterData) <- deployments.toList
+              newDeployment        <- interpreterData.deploymentId.toNewDeploymentIdOpt
+              status = interpreterData.scenarioDeployment
+                .fold(_ => ProblemDeploymentStatus(s"Scenario compilation errors"), deployment => deployment.status())
+            } yield newDeployment -> status
+          ).toMap
+        )
+
+    }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 

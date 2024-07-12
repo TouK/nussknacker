@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.util.test
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExceptionResult
 import pl.touk.nussknacker.engine.testmode.{
   ResultsCollectingListener,
   ResultsCollectingListenerHolder,
@@ -31,15 +31,13 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult        = ValidatedNel[ProcessCompilationError, RunResult]
+  type RunnerResultUnit    = ValidatedNel[ProcessCompilationError, RunUnitResult]
   type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
-  // Maybe we should replace ids with more meaningful: test-data, rest-result?
+  // TODO: Maybe we should replace ids with more meaningful: test-data, test-result?
   val testDataSource = "source"
   val noopSource     = "noopSource"
-  // Maybe we should unify those two test result nodes?
-  val testResultSink    = "sink"
-  val testResultService = "invocationCollector"
+  val testResultSink = "sink"
 
   def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
 }
@@ -68,10 +66,10 @@ object TestScenarioCollectorHandler {
 
   def createHandler(componentUseCase: ComponentUseCase): TestScenarioCollectorHandler = {
 
-    val resultsCollectingListener = ResultsCollectingListenerHolder.registerRun
+    val resultsCollectingListener = ResultsCollectingListenerHolder.registerListener
 
     val resultCollector = if (ComponentUseCase.TestRuntime == componentUseCase) {
-      new TestServiceInvocationCollector(resultsCollectingListener.runId)
+      new TestServiceInvocationCollector(resultsCollectingListener)
     } else {
       ProductionServiceInvocationCollector
     }
@@ -81,7 +79,7 @@ object TestScenarioCollectorHandler {
 
   final class TestScenarioCollectorHandler(
       val resultCollector: ResultCollector,
-      val resultsCollectingListener: ResultsCollectingListener
+      val resultsCollectingListener: ResultsCollectingListener[Any]
   ) extends AutoCloseable {
     def close(): Unit = resultsCollectingListener.close()
   }
@@ -104,14 +102,14 @@ object RunResult {
 }
 
 sealed trait RunResult {
-  def errors: List[NuExceptionInfo[_]]
+  def errors: List[ExceptionResult[_]]
 }
 
-case class RunListResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) extends RunResult {
+case class RunListResult[T](errors: List[ExceptionResult[_]], successes: List[T]) extends RunResult {
 
   def mapSuccesses[U](f: T => U): RunListResult[U] =
     copy(successes = successes.map(f))
 
 }
 
-case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult
+case class RunUnitResult(errors: List[ExceptionResult[_]]) extends RunResult

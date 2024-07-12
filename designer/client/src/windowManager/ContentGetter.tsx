@@ -1,5 +1,4 @@
 import { WindowContentProps } from "@touk/window-manager";
-import { DebugButtons } from "@touk/window-manager/cjs/debug";
 import React from "react";
 import { Debug } from "../containers/Debug";
 import { WindowContent } from "./WindowContent";
@@ -7,6 +6,7 @@ import { WindowKind } from "./WindowKind";
 import loadable from "@loadable/component";
 import LoaderSpinner from "../components/spinner/Spinner";
 import FrameDialog from "../components/FrameDialog";
+import { NuThemeProvider } from "../containers/theme/nuThemeProvider";
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), { fallback: <LoaderSpinner show /> });
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -19,7 +19,7 @@ const CompareVersionsDialog = loadable(() => import("../components/modals/Compar
 const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
-const GenericActionDialog = loadable(() => import("../components/modals/GenericActionDialog"), {
+const GenericActionDialog = loadable(() => import("../components/modals/GenericAction/GenericActionDialog"), {
     fallback: <LoaderSpinner show />,
 });
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
@@ -41,7 +41,11 @@ const GenerateDataAndTestDialog = loadable(() => import("../components/modals/Ge
     fallback: <LoaderSpinner show />,
 });
 
-export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
+const ScenarioDetailsDialog = loadable(() => import("../components/modals/MoreScenarioDetailsDialog"), {
+    fallback: <LoaderSpinner show />,
+});
+
+const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
         case WindowKind.addFragment:
             return <AddProcessDialog {...props} isFragment />;
@@ -73,12 +77,16 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
             return <NodeDetails {...props} readOnly />;
         case WindowKind.survey:
             return <FrameDialog {...props} />;
+        case WindowKind.scenarioDetails: {
+            return <ScenarioDetailsDialog {...props} />;
+        }
         default:
             return (
                 <WindowContent {...props}>
                     <Debug data={props.data} />
-                    <DebugButtons currentId={props.data.id} />
                 </WindowContent>
             );
     }
 };
+
+export const ContentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => <NuThemeProvider>{contentGetter(props)}</NuThemeProvider>;

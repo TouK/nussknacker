@@ -52,18 +52,18 @@ When writing documentation please follow these instructions:
     ```
     [main configuration file](./Common#configuration-areas) 
     ```
-* all links to `https://nussknacker.io/documentation/`, but other than `Documentation` section in that page, e.g. to `About` or `Quickstart` sections: 
+* all links to `https://nussknacker.io/documentation/`, but other than `Documentation` section in that page, e.g. to `Quickstart` sections: 
   * should **not** point to `md` or `mdx` files
   * should **not** be relative
     
   example of correct link:
     ```
-    [Components](/about/GLOSSARY#component)
+    [Components](/quickstart/GLOSSARY#component)
     ```
   example of incorrect links:
     ```
-    [Components](/about/GLOSSARY.md#component)
-    [Components](../about/GLOSSARY#component)
+    [Components](/quickstart/GLOSSARY.md#component)
+    [Components](../quickstart/GLOSSARY#component)
     ```
 ### Automatic Screenshots Updates in Documentation
 
@@ -126,9 +126,11 @@ Building:
 
 Run `./runServer.sh` in `designer`Documentation
 
+Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`, e.g. `NUSSKNACKER_SCALA_VERSION=2.12 ./buildServer.sh`
+
 #### Running using integration environment
 
-- Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
+- Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart)
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
 
 #### Running Designer with model classes on the same classes as designer
@@ -144,7 +146,7 @@ and add dependency to `designer` module like in flink-streaming case.
 #### Setting up Kubernetes environment
 
 To run streaming Lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
-[nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) setup
+[nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart) setup
 - run integration environment, as described above
 - `K3D_FIX_DNS=1 PROJECT_ROOT=$(pwd) k3d cluster create --network nussknacker_network --config=.k3d/single-cluster.yml` 
   This will create K8s cluster, which has access to Docker network used by integration environment. [K3D_FIX_DNS](https://github.com/rancher/k3d/issues/209).
@@ -209,7 +211,22 @@ For other clusters you can select other image tag using `dockerTagName` system e
 Azure integration tests are not run by default using `sbt test`. You need to run tests in `ExternalDepsTests` scope e.g. `sbt schemedKafkaComponentsUtils/ExternalDepsTests/test`.
 To run them you should have configured one of authentication options described here:
 https://github.com/Azure/azure-sdk-for-java/wiki/Azure-Identity-Examples#authenticating-with-defaultazurecredential e.g. Intellij plugin, Azure CLI or environment variables.
-Tests connect to schema registry registered in Event Hubs Namespace from AZURE_EVENT_HUBS_NAMESPACE environment variable (by default nu-cloud).
+To run the tests set up environment variables:
+- AZURE_EVENT_HUBS_NAMESPACE, that is Event Hubs Namespace where schema registry is registered (by default nu-cloud).
+- AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME and AZURE_EVENT_HUBS_SHARED_ACCESS_KEY, to configure Kafka admin client that uses "sasl.jaas.config" to authenticate
+(see properties configuration in https://nussknacker.io/documentation/cloud/azure/#setting-up-nussknacker-cloud)
+
+### Using logs in tests
+
+We have a dedicated module with test extensions (`testUtils`) which contains `logback-test.xml` with things like:
+- Some loggers that are too verbose on INFO level, have decreased level (e.g. in kafka, zk)
+- Some loggers that are too silent on INFO level, have increased level (e.g. in flink)
+- Some loggers use environment variables to determine level e.g. NUSSKNACKER_LOG_LEVEL. You can leverage configurations
+  templates in Idea to globally set level to the desired level for all tests runned from Idea.
+
+Default levels are prepared for work with CI - they are not too verbose to not hit the limit of logs, but for local use
+it is convenient to increase levels by environment variables.
+Please don't add a custom `logback-test.xml` to any module. Instead, reuse the existing configuration from `testUtils`.
 
 ### Code conventions
 

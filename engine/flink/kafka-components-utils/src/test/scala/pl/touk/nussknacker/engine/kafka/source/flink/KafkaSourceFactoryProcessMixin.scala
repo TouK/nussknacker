@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.ResultsHolders
 import pl.touk.nussknacker.engine.process.runner.UnitTestsFlinkRunner
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.NuScalaTestAssertions
 
@@ -28,8 +28,11 @@ trait KafkaSourceFactoryProcessMixin
 
   protected def resultHolders: () => ResultsHolders
 
-  protected lazy val modelData =
-    LocalModelData(config, List.empty, configCreator = new KafkaSourceFactoryProcessConfigCreator(resultHolders))
+  protected lazy val modelData: LocalModelData = LocalModelData(
+    inputConfig = config,
+    components = List.empty,
+    configCreator = new KafkaSourceFactoryProcessConfigCreator(resultHolders)
+  )
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()
@@ -97,20 +100,20 @@ trait KafkaSourceFactoryProcessMixin
 
     val process = ScenarioBuilder
       .streaming(s"proc-$topic")
-      .source("procSource", sourceType.toString, TopicParamName -> topicParamValue(topic))
+      .source("procSource", sourceType.toString, TopicParamName.value -> topicParamValue(topic).spel)
 
     val processWithVariables = checkAllVariables
       .foldRight(process.asInstanceOf[GraphBuilder[CanonicalProcess]])((variable, builder) =>
         variable match {
-          case (id, expression) => builder.buildSimpleVariable(s"id$id", s"name$id", expression)
+          case (id, expression) => builder.buildSimpleVariable(s"id$id", s"name$id", expression.spel)
         }
       )
 
     processWithVariables
       .split(
         "split",
-        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", SinkValueParamName -> "#input"),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName    -> "#inputMeta")
+        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", SinkValueParamName.value -> "#input".spel),
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName.value    -> "#inputMeta".spel)
       )
 
   }

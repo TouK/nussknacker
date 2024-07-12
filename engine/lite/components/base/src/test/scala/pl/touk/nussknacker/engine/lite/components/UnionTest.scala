@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -54,10 +54,10 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
       .streamingLite("test")
       .sources(
         GraphBuilder
-          .source("left-source", "typed-source", "value" -> leftValueExpression)
+          .source("left-source", "typed-source", "value" -> leftValueExpression.spel)
           .branchEnd("left-source", "union"),
         GraphBuilder
-          .source("right-source", "typed-source", "value" -> rightValueExpression)
+          .source("right-source", "typed-source", "value" -> rightValueExpression.spel)
           .branchEnd("right-source", "union"),
         GraphBuilder
           .join(
@@ -66,10 +66,10 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
             Some("unified"),
             List(
               "left-source" -> List(
-                "Output expression" -> "#input"
+                "Output expression" -> "#input".spel
               ),
               "right-source" -> List(
-                "Output expression" -> "#input"
+                "Output expression" -> "#input".spel
               )
             )
           )
@@ -87,7 +87,7 @@ class UnionTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
 
 }
 
-object TypedSourceFactory extends SourceFactory {
+object TypedSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: LazyParameter[AnyRef]): Source =

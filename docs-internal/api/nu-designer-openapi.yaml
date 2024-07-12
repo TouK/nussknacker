@@ -10,6 +10,13 @@ paths:
       summary: Show component usage
       operationId: getApiComponentsIdUsages
       parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       - name: id
         in: path
         required: true
@@ -46,7 +53,7 @@ paths:
                       user: admin
                       createdAt: '2023-11-29T08:54:22.520866Z'
                       performedAt: '2023-11-29T08:54:22.520866Z'
-                      actionType: DEPLOY
+                      actionName: DEPLOY
                       state: FINISHED
                       buildInfo: {}
                 Example1:
@@ -63,6 +70,12 @@ paths:
                     modifiedBy: admin
                     createdAt: '2023-11-14T11:09:28.078800Z'
                     createdBy: admin
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -85,13 +98,26 @@ paths:
                   value: The supplied authentication is not authorized to access this
                     resource
         '404':
-          description: ''
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
           content:
             text/plain:
               schema:
                 type: string
               example: Component {id} not exist.
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
       - httpAuth: []
   /api/components:
     get:
@@ -99,6 +125,14 @@ paths:
       - Components
       summary: Listing components
       operationId: getApiComponents
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -125,6 +159,14 @@ paths:
                       icon: /assets/icons/documentation.svg
                       url: https://nussknacker.io/documentation/docs/scenarios_authoring/RRDataSourcesAndSinks/#collect
                     usageCount: 2
+                    allowedProcessingModes:
+                    - Request-Response
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -146,7 +188,111 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
+      - httpAuth: []
+  /api/processManagement/customAction/{scenarioName}/validation:
+    post:
+      tags:
+      - CustomAction
+      summary: Endpoint to validate input in custom action fields
+      operationId: postApiProcessmanagementCustomactionScenarionameValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomActionRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomActionValidationDto'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
       - httpAuth: []
   /api/app/healthCheck:
     get:
@@ -198,6 +344,14 @@ paths:
       - App
       summary: Deployed processes health check service
       operationId: getApiAppHealthcheckProcessDeployment
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -210,6 +364,12 @@ paths:
                   summary: All deployed processes are healthy
                   value:
                     status: OK
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -231,6 +391,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -246,7 +417,19 @@ paths:
                     processes:
                     - process1
                     - process2
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
       - httpAuth: []
   /api/app/healthCheck/process/validation:
     get:
@@ -254,6 +437,14 @@ paths:
       - App
       summary: Deployed processes validation service
       operationId: getApiAppHealthcheckProcessValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -266,6 +457,12 @@ paths:
                   summary: There are no validation errors among the processes
                   value:
                     status: OK
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -287,6 +484,17 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
         '500':
           description: ''
           content:
@@ -302,7 +510,19 @@ paths:
                     processes:
                     - process2
                     - process3
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
       - httpAuth: []
   /api/app/processingtype/reload:
     post:
@@ -310,9 +530,23 @@ paths:
       - App
       summary: Processing type data reload service
       operationId: postApiAppProcessingtypeReload
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '204':
           description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -334,7 +568,30 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
       - httpAuth: []
   /api/app/config:
     get:
@@ -342,6 +599,14 @@ paths:
       - App
       summary: Server configuration viewer service
       operationId: getApiAppConfig
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -362,6 +627,12 @@ paths:
                         - model/devModel.jar
                         - model/flinkExecutor.jar
                         - components/flink
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -383,7 +654,30 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
       - httpAuth: []
   /api/app/config/categoriesWithProcessingType:
     get:
@@ -391,6 +685,14 @@ paths:
       - App
       summary: Configured categories with their processing types service
       operationId: getApiAppConfigCategorieswithprocessingtype
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -404,6 +706,12 @@ paths:
                   value:
                     Category1: streaming
                     Category2: streaming2
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -425,7 +733,1413 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
+      - httpAuth: []
+  /api/deployments/{deploymentId}/status:
+    get:
+      tags:
+      - Deployments
+      summary: Get status of a deployment
+      operationId: getApiDeploymentsDeploymentidStatus
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: deploymentId
+        in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDeploymentStatusResponse'
+              examples:
+                RUNNING status:
+                  value:
+                    name: RUNNING
+                    modifiedAt: '2024-01-01T00:00:00Z'
+                PROBLEM status:
+                  value:
+                    name: PROBLEM
+                    problemDescription: There are some problems with deployment.
+                    modifiedAt: '2024-01-01T00:00:00Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter deploymentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No deployment {deploymentId} found
+                  value: Deployment a9a1e269-0b71-4582-a948-603482d27298 not found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/deployments/{deploymentId}:
+    put:
+      tags:
+      - Deployments
+      summary: Run the deployment of a scenario
+      operationId: putApiDeploymentsDeploymentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: deploymentId
+        in: path
+        description: Identifier in the UUID format that will be used for the verification
+          of deployment's status
+        required: true
+        schema:
+          type: string
+          format: uuid
+        example: a9a1e269-0b71-4582-a948-603482d27298
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunDeploymentRequest'
+            example:
+              scenarioName: scenario1
+              nodesDeploymentData:
+                sourceNodeId1: field1 = 'value'
+        required: true
+      responses:
+        '202':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example0:
+                  summary: Scenario {scenarioName} not found
+                  value: Scenario 'example scenario' not found
+                Example1:
+                  summary: Comment is required
+                  value: Comment is required.
+                Example2:
+                  summary: Scenario validation error
+                  value: |-
+                    Scenario is invalid.
+                    Node errors:
+                      filter: Failed to parse expression: Bad expression
+                    Global errors: Empty scenario
+                    Properties errors: Configured property parallelism is missing
+                Example3:
+                  summary: Deploy validation error
+                  value: Not enough free slots on Flink cluster
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '409':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Deployment with id {deploymentId} already exists
+                  value: Deployment with id a9a1e269-0b71-4582-a948-603482d27298 already
+                    exists
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts/{dictId}/entry:
+    get:
+      tags:
+      - Dictionary
+      summary: Get list of dictionary entries matching the label pattern
+      operationId: getApiProcessdefinitiondataProcessingtypeDictsDictidEntry
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dictId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: label
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictEntry'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter label'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processDefinitionData/{processingType}/dicts:
+    post:
+      tags:
+      - Dictionary
+      summary: Get list of available dictionaries with value type compatible with
+        expected type
+      operationId: postApiProcessdefinitiondataProcessingtypeDicts
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DictListRequestDto'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DictDto'
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/migrate:
+    post:
+      tags:
+      - Migrations
+      summary: Migration between environments service
+      operationId: postApiMigrate
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrateScenarioRequestDto'
+            examples:
+              Example:
+                summary: Migrate given scenario to current Nu instance
+                value:
+                  version: 1
+                  sourceEnvironmentId: testEnv
+                  remoteUserName: testUser
+                  processingMode: Unbounded-Stream
+                  engineSetupName: Flink
+                  processCategory: Category1
+                  scenarioGraph:
+                    properties:
+                      additionalFields:
+                        properties:
+                          parallelism: ''
+                        metaDataType: LiteStreamMetaData
+                    nodes:
+                    - id: source
+                      ref:
+                        typ: csv-source-lite
+                        parameters: []
+                      type: Source
+                    - id: sink
+                      ref:
+                        typ: dead-end-lite
+                        parameters: []
+                      type: Sink
+                    edges:
+                    - from: source
+                      to: sink
+                  processName: test
+                  isFragment: false
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Migration performed by user without sufficient permissions
+                  value: The supplied user [Griffin] is not authorized to access this
+                    resource
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/migration/scenario/description/version:
+    get:
+      tags:
+      - Migrations
+      summary: current version of the scenario description version being used
+      operationId: getApiMigrationScenarioDescriptionVersion
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiVersion'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/nodes/{scenarioName}/additionalInfo:
+    post:
+      tags:
+      - Nodes
+      summary: Additional info for provided node
+      operationId: postApiNodesScenarionameAdditionalinfo
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeData'
+            examples:
+              Example:
+                summary: Basic node request
+                value:
+                  id: enricher
+                  service:
+                    id: paramService
+                    parameters:
+                    - name: id
+                      expression:
+                        language: spel
+                        expression: '''a'''
+                  output: out
+                  type: Enricher
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/AdditionalInfo'
+                - type: 'null'
+              examples:
+                Example:
+                  summary: Additional info for node
+                  value:
+                    content: |2
+
+                      Samples:
+
+                      | id  | value |
+                      | --- | ----- |
+                      | a   | generated |
+                      | b   | not existent |
+
+                      Results for a can be found [here](http://touk.pl?id=a)
+                    type: MarkdownAdditionalInfo
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/nodes/{scenarioName}/validation:
+    post:
+      tags:
+      - Nodes
+      summary: Validate provided Node
+      operationId: postApiNodesScenarionameValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeValidationRequestDto'
+            examples:
+              Example0:
+                summary: Validate correct Filter node
+                value:
+                  nodeData:
+                    id: id
+                    expression:
+                      language: spel
+                      expression: '#longValue > 1'
+                    type: Filter
+                  processProperties:
+                    additionalFields:
+                      properties: {}
+                      metaDataType: ''
+                  variableTypes:
+                    existButString:
+                      display: String
+                      type: TypedClass
+                      refClazzName: java.lang.String
+                      params: []
+                    longValue:
+                      display: Long
+                      type: TypedClass
+                      refClazzName: java.lang.Long
+                      params: []
+              Example1:
+                summary: Validate incorrect Filter node - wrong expression type
+                value:
+                  nodeData:
+                    id: id
+                    expression:
+                      language: spel
+                      expression: '#existButString'
+                    type: Filter
+                  processProperties:
+                    additionalFields:
+                      properties: {}
+                      metaDataType: ''
+                  variableTypes:
+                    existButString:
+                      display: String
+                      type: TypedClass
+                      refClazzName: java.lang.String
+                      params: []
+                    longValue:
+                      display: Long
+                      type: TypedClass
+                      refClazzName: java.lang.Long
+                      params: []
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeValidationResultDto'
+              examples:
+                Example0:
+                  summary: Node validation without errors
+                  value:
+                    expressionType:
+                      display: Boolean
+                      type: TypedClass
+                      refClazzName: java.lang.Boolean
+                      params: []
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Wrong parameter type
+                  value:
+                    expressionType:
+                      display: Unknown
+                      type: Unknown
+                      refClazzName: java.lang.Object
+                      params: []
+                    validationErrors:
+                    - typ: ExpressionParserCompilationError
+                      message: 'Failed to parse expression: Bad expression type, expected:
+                        Boolean, found: String'
+                      description: There is problem with expression in field Some($expression)
+                        - it could not be parsed.
+                      fieldName: $expression
+                      errorType: SaveAllowed
+                    validationPerformed: true
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/parameters/{processingType}/suggestions:
+    post:
+      tags:
+      - Nodes
+      summary: Suggest possible variables
+      operationId: postApiParametersProcessingtypeSuggestions
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpressionSuggestionRequestDto'
+            examples:
+              Example:
+                summary: Get suggestions for given expression
+                value:
+                  expression:
+                    language: spel
+                    expression: '#inpu'
+                  caretPosition2d:
+                    row: 0
+                    column: 5
+                  variableTypes:
+                    input:
+                      display: 'Record{amount: Long(5)}'
+                      type: TypedObjectTypingResult
+                      fields:
+                        amount:
+                          value: 5
+                          display: Long(5)
+                          type: TypedObjectWithValue
+                          refClazzName: java.lang.Long
+                          params: []
+                      refClazzName: java.util.Map
+                      params:
+                      - display: String
+                        type: TypedClass
+                        refClazzName: java.lang.String
+                        params: []
+                      - value: 5
+                        display: Long(5)
+                        type: TypedObjectWithValue
+                        refClazzName: java.lang.Long
+                        params: []
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpressionSuggestionDto'
+              examples:
+                Example0:
+                  summary: Found a suggestion for currently given expression
+                  value:
+                  - methodName: input
+                    refClazz:
+                      display: 'Record{amount: Long(5)}'
+                      type: TypedObjectTypingResult
+                      fields:
+                        amount:
+                          value: 5
+                          display: Long(5)
+                          type: TypedObjectWithValue
+                          refClazzName: java.lang.Long
+                          params: []
+                      refClazzName: java.util.Map
+                      params:
+                      - display: String
+                        type: TypedClass
+                        refClazzName: java.lang.String
+                        params: []
+                      - value: 5
+                        display: Long(5)
+                        type: TypedObjectWithValue
+                        refClazzName: java.lang.Long
+                        params: []
+                    fromClass: false
+                    parameters: []
+                Example1:
+                  summary: No suggestions found for given expression
+                  value: []
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'ProcessingType type: {processingType} not found'
+                  value: 'ProcessingType type: ''processingType'' not found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/parameters/{processingType}/validate:
+    post:
+      tags:
+      - Nodes
+      summary: Validate given parameters
+      operationId: postApiParametersProcessingtypeValidate
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: processingType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParametersValidationRequestDto'
+            examples:
+              Example:
+                summary: Parameters validation
+                value:
+                  parameters:
+                  - name: condition
+                    typ:
+                      display: Boolean
+                      type: TypedClass
+                      refClazzName: java.lang.Boolean
+                      params: []
+                    expression:
+                      language: spel
+                      expression: '#input.amount > 2'
+                  variableTypes:
+                    input:
+                      display: 'Record{amount: Long(5)}'
+                      type: TypedObjectTypingResult
+                      fields:
+                        amount:
+                          value: 5
+                          display: Long(5)
+                          type: TypedObjectWithValue
+                          refClazzName: java.lang.Long
+                          params: []
+                      refClazzName: java.util.Map
+                      params:
+                      - display: String
+                        type: TypedClass
+                        refClazzName: java.lang.String
+                        params: []
+                      - value: 5
+                        display: Long(5)
+                        type: TypedObjectWithValue
+                        refClazzName: java.lang.Long
+                        params: []
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametersValidationResultDto'
+              examples:
+                Example0:
+                  summary: Validate correct parameters
+                  value:
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Validate incorrect parameters
+                  value:
+                    validationErrors:
+                    - typ: ExpressionParserCompilationError
+                      message: 'Failed to parse expression: Bad expression type, expected:
+                        Boolean, found: Long(5)'
+                      description: There is problem with expression in field Some(condition)
+                        - it could not be parsed.
+                      fieldName: condition
+                      errorType: SaveAllowed
+                    validationPerformed: true
+        '400':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Malformed TypingResult sent in request
+                  value: |-
+                    The request content was malformed:
+                    Couldn't decode value 'WrongType'. Allowed values: 'TypedUnion,TypedDict,TypedObjectTypingResult,TypedTaggedValue,TypedClass,TypedObjectWithValue,TypedNull,Unknown
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'ProcessingType type: {processingType} not found'
+                  value: 'ProcessingType type: ''processingType'' not found'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/properties/{scenarioName}/additionalInfo:
+    post:
+      tags:
+      - Nodes
+      summary: Additional info for provided properties
+      operationId: postApiPropertiesScenarionameAdditionalinfo
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessProperties'
+            examples:
+              Example:
+                summary: Proper process properties
+                value:
+                  additionalFields:
+                    properties:
+                      parallelism: ''
+                      checkpointIntervalInSeconds: ''
+                      numberOfThreads: '2'
+                      spillStateToDisk: 'true'
+                      environment: test
+                      useAsyncInterpretation: ''
+                    metaDataType: StreamMetaData
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/AdditionalInfo'
+                - type: 'null'
+              examples:
+                Example:
+                  summary: Some additional info for parameters
+                  value:
+                    content: 2 threads will be used on environment '{scenarioName}'
+                    type: MarkdownAdditionalInfo
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/properties/{scenarioName}/validation:
+    post:
+      tags:
+      - Nodes
+      summary: Validate node properties
+      operationId: postApiPropertiesScenarionameValidation
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertiesValidationRequestDto'
+            examples:
+              Example0:
+                summary: Validate proper properties
+                value:
+                  additionalFields:
+                    properties:
+                      parallelism: ''
+                      checkpointIntervalInSeconds: ''
+                      numberOfThreads: '2'
+                      spillStateToDisk: 'true'
+                      environment: test
+                      useAsyncInterpretation: ''
+                    metaDataType: StreamMetaData
+                  name: test
+              Example1:
+                summary: Validate wrong 'number of threads' property
+                value:
+                  additionalFields:
+                    properties:
+                      parallelism: ''
+                      checkpointIntervalInSeconds: ''
+                      numberOfThreads: a
+                      spillStateToDisk: 'true'
+                      environment: test
+                      useAsyncInterpretation: ''
+                    metaDataType: StreamMetaData
+                  name: test
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeValidationResultDto'
+              examples:
+                Example0:
+                  summary: Validation for proper node
+                  value:
+                    validationErrors: []
+                    validationPerformed: true
+                Example1:
+                  summary: Validation for properties with errors
+                  value:
+                    validationErrors:
+                    - typ: InvalidPropertyFixedValue
+                      message: Property numberOfThreads (Number of threads) has invalid
+                        value
+                      description: 'Expected one of 1, 2, got: a.'
+                      fieldName: numberOfThreads
+                      errorType: SaveAllowed
+                    - typ: UnknownProperty
+                      message: Unknown property parallelism
+                      description: Property parallelism is not known
+                      fieldName: parallelism
+                      errorType: SaveAllowed
+                    validationPerformed: true
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
       - httpAuth: []
   /api/notifications:
     get:
@@ -433,6 +2147,14 @@ paths:
       - Notifications
       summary: Endpoint to display notifications
       operationId: getApiNotifications
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -453,6 +2175,12 @@ paths:
                     - versions
                     - activity
                     - state
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -474,7 +2202,557 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/{versionId}/activity/comments:
+    post:
+      tags:
+      - Scenario
+      summary: Add scenario comment service
+      operationId: postApiProcessesScenarionameVersionidActivityComments
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter versionId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity/comments/{commentId}:
+    delete:
+      tags:
+      - Scenario
+      summary: Delete process comment service
+      operationId: deleteApiProcessesScenarionameActivityCommentsCommentid
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: path parameter commentId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: 'Unable to delete comment with id: {commentId}'
+                  value: 'Unable to delete comment with id: 1'
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/processes/{scenarioName}/activity:
+    get:
+      tags:
+      - Scenario
+      summary: Scenario activity service
+      operationId: getApiProcessesScenarionameActivity
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - name: scenarioName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioActivity'
+              examples:
+                Example:
+                  summary: Display scenario activity
+                  value:
+                    comments:
+                    - id: 1
+                      processVersionId: 1
+                      content: some comment
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+                    attachments:
+                    - id: 1
+                      processVersionId: 1
+                      fileName: some_file.txt
+                      user: test
+                      createDate: '2024-01-17T14:21:17Z'
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No scenario {scenarioName} found
+                  value: No scenario 'example scenario' found
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/scenarioParametersCombinations:
+    get:
+      tags:
+      - App
+      summary: Service providing available combinations of scenario's parameters
+      operationId: getApiScenarioparameterscombinations
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioParametersCombinationWithEngineErrors'
+              examples:
+                Example:
+                  summary: List of available parameters combinations
+                  value:
+                    combinations:
+                    - processingMode: Unbounded-Stream
+                      category: Marketing
+                      engineSetupName: Flink
+                    - processingMode: Request-Response
+                      category: Fraud
+                      engineSetupName: Lite K8s
+                    - processingMode: Unbounded-Stream
+                      category: Fraud
+                      engineSetupName: Flink Fraud Detection
+                    engineSetupErrors:
+                      Flink:
+                      - Invalid Flink configuration
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/statistic:
+    post:
+      tags:
+      - Statistics
+      summary: Register statistics service
+      operationId: postApiStatistic
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterStatisticsRequestDto'
+        required: true
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
+      - httpAuth: []
+  /api/statistic/usage:
+    get:
+      tags:
+      - Statistics
+      summary: Statistics URL service
+      operationId: getApiStatisticUsage
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticUrlResponseDto'
+              examples:
+                Example:
+                  summary: List of statistics URLs
+                  value:
+                    urls:
+                    - https://stats.nussknacker.io/?a_n=1&a_t=0&a_v=0&c=3&c_n=82&c_t=0&c_v=0&f_m=0&f_v=0&fingerprint=development&n_m=2&n_ma=0&n_mi=2&n_v=1&s_a=0&s_dm_c=1&s_dm_e=1&s_dm_f=2&s_dm_l=0&s_f=1&s_pm_b=0&s_pm_rr=1&s_pm_s=3&s_s=3&source=sources&u_ma=0&u_mi=0&u_v=0&v_m=2&v_ma=1&v_mi=3&v_v=2&version=1.15.0-SNAPSHOT
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authentication failed
+                  value: The supplied authentication is invalid
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Authorization failed
+                  value: The supplied authentication is not authorized to access this
+                    resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '500':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Statistics generation failed.
+                  value: Statistics generation failed.
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
+      security:
+      - {}
       - httpAuth: []
   /api/user:
     get:
@@ -482,6 +2760,14 @@ paths:
       - User
       summary: Logged user info service
       operationId: getApiUser
+      parameters:
+      - name: Nu-Impersonate-User-Identity
+        in: header
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
       responses:
         '200':
           description: ''
@@ -513,6 +2799,12 @@ paths:
                     - Category2
                     categoryPermissions: {}
                     globalPermissions: []
+        '400':
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           description: ''
           content:
@@ -534,18 +2826,104 @@ paths:
                   summary: Authorization failed
                   value: The supplied authentication is not authorized to access this
                     resource
+        '404':
+          description: Identity provided in the Nu-Impersonate-User-Identity header
+            did not match any user
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: No impersonated user's data found for provided identity
+                  value: No impersonated user data found for provided identity
+        '501':
+          description: Impersonation is not supported for defined authentication mechanism
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Example:
+                  summary: Cannot authenticate impersonated user as impersonation
+                    is not supported by the authentication mechanism
+                  value: Provided authentication method does not support impersonation
       security:
+      - {}
       - httpAuth: []
 components:
   schemas:
+    AdditionalInfo:
+      title: AdditionalInfo
+      oneOf:
+      - $ref: '#/components/schemas/MarkdownAdditionalInfo'
+    ApiVersion:
+      title: ApiVersion
+      type: object
+      required:
+      - version
+      properties:
+        version:
+          type: integer
+          format: int32
+    Attachment:
+      title: Attachment
+      type: object
+      required:
+      - id
+      - processVersionId
+      - fileName
+      - user
+      - createDate
+      properties:
+        id:
+          type: integer
+          format: int64
+        processVersionId:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+        user:
+          type: string
+        createDate:
+          type: string
+          format: date-time
+    BoolParameterEditor:
+      title: BoolParameterEditor
+      type: object
+    BranchEndDefinition:
+      title: BranchEndDefinition
+      type: object
+      required:
+      - id
+      - joinId
+      properties:
+        id:
+          type: string
+        joinId:
+          type: string
+    BranchParameters:
+      title: BranchParameters
+      type: object
+      required:
+      - branchId
+      properties:
+        branchId:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
     BuildInfoDto:
+      title: BuildInfoDto
+      type: object
       required:
       - name
       - gitCommit
       - buildTime
       - version
       - processingType
-      type: object
       properties:
         name:
           type: string
@@ -558,21 +2936,79 @@ components:
         processingType:
           $ref: '#/components/schemas/Map_Map_String_String'
         globalBuildInfo:
-          $ref: '#/components/schemas/Map_String'
-    ComponentGroupName:
-      required:
-      - value
+          anyOf:
+          - $ref: '#/components/schemas/Map_String'
+          - type: 'null'
+    CaretPosition2d:
+      title: CaretPosition2d
       type: object
+      required:
+      - row
+      - column
       properties:
-        value:
+        row:
+          type: integer
+          format: int32
+        column:
+          type: integer
+          format: int32
+    CellError:
+      title: CellError
+      type: object
+      required:
+      - columnName
+      - rowIndex
+      - errorMessage
+      properties:
+        columnName:
           type: string
+        rowIndex:
+          type: integer
+          format: int32
+        errorMessage:
+          type: string
+    ColumnDefinition:
+      title: ColumnDefinition
+      type: object
+      required:
+      - name
+      - aType
+      properties:
+        name:
+          type: string
+        aType:
+          type: string
+    Comment:
+      title: Comment
+      type: object
+      required:
+      - id
+      - processVersionId
+      - content
+      - user
+      - createDate
+      properties:
+        id:
+          type: integer
+          format: int64
+        processVersionId:
+          type: integer
+          format: int64
+        content:
+          type: string
+        user:
+          type: string
+        createDate:
+          type: string
+          format: date-time
     ComponentLink:
+      title: ComponentLink
+      type: object
       required:
       - id
       - title
       - icon
       - url
-      type: object
       properties:
         id:
           type: string
@@ -583,6 +3019,8 @@ components:
         url:
           type: string
     ComponentListElement:
+      title: ComponentListElement
+      type: object
       required:
       - id
       - name
@@ -590,7 +3028,7 @@ components:
       - componentType
       - componentGroupName
       - usageCount
-      type: object
+      - allowedProcessingModes
       properties:
         id:
           type: string
@@ -601,7 +3039,7 @@ components:
         componentType:
           $ref: '#/components/schemas/ComponentType'
         componentGroupName:
-          $ref: '#/components/schemas/ComponentGroupName'
+          type: string
         categories:
           type: array
           items:
@@ -613,7 +3051,12 @@ components:
         usageCount:
           type: integer
           format: int64
+        allowedProcessingModes:
+          type: array
+          items:
+            type: string
     ComponentType:
+      title: ComponentType
       type: string
       enum:
       - source
@@ -623,6 +3066,8 @@ components:
       - fragment
       - builtin
     ComponentUsagesInScenario:
+      title: ComponentUsagesInScenario
+      type: object
       required:
       - name
       - isFragment
@@ -632,10 +3077,9 @@ components:
       - modifiedBy
       - createdAt
       - createdBy
-      type: object
       properties:
         name:
-          $ref: '#/components/schemas/ProcessName'
+          type: string
         nodesUsagesData:
           type: array
           items:
@@ -658,20 +3102,117 @@ components:
         createdBy:
           type: string
         lastAction:
-          $ref: '#/components/schemas/ProcessAction'
+          anyOf:
+          - $ref: '#/components/schemas/ProcessAction'
+          - type: 'null'
+    CronParameterEditor:
+      title: CronParameterEditor
+      type: object
+    CustomActionRequest:
+      title: CustomActionRequest
+      type: object
+      required:
+      - actionName
+      - params
+      properties:
+        actionName:
+          type: string
+        comment:
+          type:
+          - string
+          - 'null'
+        params:
+          $ref: '#/components/schemas/Map_String'
+    CustomActionValidationDto:
+      title: CustomActionValidationDto
+      type: object
+      required:
+      - validationPerformed
+      properties:
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
     DataToRefresh:
+      title: DataToRefresh
       type: string
       enum:
       - versions
       - activity
       - state
+    DateParameterEditor:
+      title: DateParameterEditor
+      type: object
+    DateTimeParameterEditor:
+      title: DateTimeParameterEditor
+      type: object
+    Dict:
+      title: Dict
+      type: object
+      required:
+      - id
+      - valueType
+      properties:
+        id:
+          type: string
+        valueType:
+          $ref: '#/components/schemas/SingleTypingResult'
+    DictDto:
+      title: DictDto
+      type: object
+      required:
+      - id
+      - label
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+    DictEntry:
+      title: DictEntry
+      type: object
+      required:
+      - key
+      - label
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+    DictListRequestDto:
+      title: DictListRequestDto
+      type: object
+      required:
+      - expectedType
+      properties:
+        expectedType:
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
+    DictParameterEditor:
+      title: DictParameterEditor
+      type: object
+      required:
+      - dictId
+      properties:
+        dictId:
+          type: string
     DisplayableUser:
+      title: DisplayableUser
+      type: object
       required:
       - id
       - username
       - isAdmin
       - categoryPermissions
-      type: object
       properties:
         id:
           type: string
@@ -689,20 +3230,244 @@ components:
           type: array
           items:
             type: string
+    DualParameterEditor:
+      title: DualParameterEditor
+      type: object
+      required:
+      - simpleEditor
+      - defaultMode
+      properties:
+        simpleEditor:
+          $ref: '#/components/schemas/SimpleParameterEditor'
+        defaultMode:
+          type: string
+    DurationParameterEditor:
+      title: DurationParameterEditor
+      type: object
+      properties:
+        timeRangeComponents:
+          type: array
+          items:
+            type: object
+            required:
+            - name
+            - duration
+            properties:
+              name:
+                type: string
+              duration:
+                type: string
+    Edge:
+      title: Edge
+      type: object
+      required:
+      - from
+      - to
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        edgeType:
+          anyOf:
+          - $ref: '#/components/schemas/EdgeType'
+          - type: 'null'
+    EdgeType:
+      title: EdgeType
+      oneOf:
+      - $ref: '#/components/schemas/FilterFalse'
+      - $ref: '#/components/schemas/FilterTrue'
+      - $ref: '#/components/schemas/FragmentOutput'
+      - $ref: '#/components/schemas/NextSwitch'
+      - $ref: '#/components/schemas/SwitchDefault'
+    ErrorDetails:
+      title: ErrorDetails
+      oneOf:
+      - $ref: '#/components/schemas/TabularDataDefinitionParserErrorDetails'
+    Expression:
+      title: Expression
+      type: object
+      required:
+      - language
+      - expression
+      properties:
+        language:
+          type: string
+        expression:
+          type: string
+    ExpressionSuggestionDto:
+      title: ExpressionSuggestionDto
+      type: object
+      required:
+      - methodName
+      - refClazz
+      - fromClass
+      properties:
+        methodName:
+          type: string
+        refClazz:
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
+        fromClass:
+          type: boolean
+        description:
+          type:
+          - string
+          - 'null'
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterDto'
+    ExpressionSuggestionRequestDto:
+      title: ExpressionSuggestionRequestDto
+      type: object
+      required:
+      - expression
+      - caretPosition2d
+      - variableTypes
+      properties:
+        expression:
+          $ref: '#/components/schemas/Expression'
+        caretPosition2d:
+          $ref: '#/components/schemas/CaretPosition2d'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+    Field:
+      title: Field
+      type: object
+      required:
+      - name
+      - expression
+      properties:
+        name:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+    FilterFalse:
+      title: FilterFalse
+      type: object
+    FilterTrue:
+      title: FilterTrue
+      type: object
+    FixedExpressionValue:
+      title: FixedExpressionValue
+      type: object
+      required:
+      - expression
+      - label
+      properties:
+        expression:
+          type: string
+        label:
+          type: string
+    FixedValuesParameterEditor:
+      title: FixedValuesParameterEditor
+      type: object
+      properties:
+        possibleValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
+    FragmentClazzRef:
+      title: FragmentClazzRef
+      type: object
+      required:
+      - refClazzName
+      properties:
+        refClazzName:
+          type: string
+    FragmentOutput:
+      title: FragmentOutput
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+    FragmentParameter:
+      title: FragmentParameter
+      type: object
+      required:
+      - name
+      - typ
+      - required
+      properties:
+        name:
+          type: string
+        typ:
+          $ref: '#/components/schemas/FragmentClazzRef'
+        required:
+          type: boolean
+        initialValue:
+          anyOf:
+          - $ref: '#/components/schemas/FixedExpressionValue'
+          - type: 'null'
+        hintText:
+          type:
+          - string
+          - 'null'
+        valueEditor:
+          anyOf:
+          - $ref: '#/components/schemas/ParameterValueInput'
+          - type: 'null'
+        valueCompileTimeValidation:
+          anyOf:
+          - $ref: '#/components/schemas/ParameterValueCompileTimeValidation'
+          - type: 'null'
+    FragmentRef:
+      title: FragmentRef
+      type: object
+      required:
+      - id
+      - outputVariableNames
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        outputVariableNames:
+          $ref: '#/components/schemas/Map_String'
     FragmentUsageData:
+      title: FragmentUsageData
+      type: object
       required:
       - fragmentNodeId
       - nodeId
-      type: object
       properties:
         fragmentNodeId:
           type: string
         nodeId:
           type: string
+    GetDeploymentStatusResponse:
+      title: GetDeploymentStatusResponse
+      type: object
+      required:
+      - name
+      - modifiedAt
+      properties:
+        name:
+          type: string
+        problemDescription:
+          type:
+          - string
+          - 'null'
+        modifiedAt:
+          type: string
+          format: date-time
     HealthCheckProcessErrorResponseDto:
+      title: HealthCheckProcessErrorResponseDto
+      type: object
       required:
       - status
-      type: object
       properties:
         status:
           $ref: '#/components/schemas/Status1'
@@ -714,12 +3479,14 @@ components:
           type:
           - array
           - 'null'
+          uniqueItems: true
           items:
             type: string
     HealthCheckProcessSuccessResponseDto:
+      title: HealthCheckProcessSuccessResponseDto
+      type: object
       required:
       - status
-      type: object
       properties:
         status:
           $ref: '#/components/schemas/Status'
@@ -731,31 +3498,626 @@ components:
           type:
           - array
           - 'null'
+          uniqueItems: true
           items:
             type: string
+    JsonParameterEditor:
+      title: JsonParameterEditor
+      type: object
+    LayoutData:
+      title: LayoutData
+      type: object
+      required:
+      - x
+      - y
+      properties:
+        x:
+          type: integer
+          format: int64
+        y:
+          type: integer
+          format: int64
+    List_Field:
+      title: List_Field
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/Field'
+    List_FragmentParameter:
+      title: List_FragmentParameter
+      oneOf:
+      - $ref: '#/components/schemas/Nil'
+      - type: array
+        items:
+          $ref: '#/components/schemas/FragmentParameter'
+    Map_EngineSetupName_List_String:
+      title: Map_EngineSetupName_List_String
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
     Map_List_String:
+      title: Map_List_String
       type: object
       additionalProperties:
         type: array
         items:
           type: string
     Map_Map_String_String:
+      title: Map_Map_String_String
       type: object
       additionalProperties:
         $ref: '#/components/schemas/Map_String'
-    Map_String:
+    Map_Map_String_TypingResultInJson:
+      title: Map_Map_String_TypingResultInJson
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_TypingResultInJson'
+    Map_NodeId_NodeDeploymentData:
+      title: Map_NodeId_NodeDeploymentData
       type: object
       additionalProperties:
         type: string
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    Map_TypingResult:
+      title: Map_TypingResult
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/TypingResult'
+    Map_TypingResultInJson:
+      title: Map_TypingResultInJson
+      type: object
+      additionalProperties:
+        oneOf:
+        - $ref: '#/components/schemas/TypedClass'
+        - $ref: '#/components/schemas/TypedDict'
+        - $ref: '#/components/schemas/TypedNull'
+        - $ref: '#/components/schemas/TypedObjectTypingResult'
+        - $ref: '#/components/schemas/TypedObjectWithValue'
+        - $ref: '#/components/schemas/TypedTaggedValue'
+        - $ref: '#/components/schemas/TypedUnion'
+        - $ref: '#/components/schemas/Unknown'
+    MarkdownAdditionalInfo:
+      title: MarkdownAdditionalInfo
+      type: object
+      required:
+      - content
+      properties:
+        content:
+          type: string
+    MigrateScenarioRequestDto:
+      title: MigrateScenarioRequestDto
+      oneOf:
+      - $ref: '#/components/schemas/MigrateScenarioRequestDtoV1'
+      discriminator:
+        propertyName: version
+        mapping:
+          '1': MigrateScenarioRequestDtoV1
+    MigrateScenarioRequestDtoV1:
+      title: MigrateScenarioRequestDtoV1
+      type: object
+      required:
+      - version
+      - sourceEnvironmentId
+      - remoteUserName
+      - processingMode
+      - engineSetupName
+      - processCategory
+      - scenarioGraph
+      - processName
+      - isFragment
+      properties:
+        version:
+          type: integer
+          format: int32
+        sourceEnvironmentId:
+          type: string
+        remoteUserName:
+          type: string
+        processingMode:
+          type: string
+        engineSetupName:
+          type: string
+        processCategory:
+          type: string
+        scenarioGraph:
+          type: object
+        processName:
+          type: string
+        isFragment:
+          type: boolean
+    NextSwitch:
+      title: NextSwitch
+      type: object
+      required:
+      - condition
+      properties:
+        condition:
+          $ref: '#/components/schemas/Expression'
+    Nil:
+      title: Nil
+      type: object
+    NodeData:
+      title: NodeData
+      oneOf:
+      - $ref: '#/components/schemas/Variable'
+      - $ref: '#/components/schemas/VariableBuilder'
+      - title: BranchEndData
+        type: object
+        required:
+        - definition
+        - type
+        properties:
+          definition:
+            $ref: '#/components/schemas/BranchEndDefinition'
+          type:
+            $ref: '#/components/schemas/NodeTypes'
+      - title: CustomNode
+        type: object
+        required:
+        - id
+        - nodeType
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          nodeType:
+            type: string
+          outputVar:
+            type:
+            - string
+            - 'null'
+          parameters:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          type:
+            $ref: '#/components/schemas/NodeTypes1'
+      - title: Enricher
+        type: object
+        required:
+        - id
+        - output
+        - service
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          output:
+            type: string
+          service:
+            $ref: '#/components/schemas/ServiceRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes2'
+      - title: Filter
+        type: object
+        required:
+        - expression
+        - id
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          expression:
+            $ref: '#/components/schemas/Expression'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          type:
+            $ref: '#/components/schemas/NodeTypes3'
+      - title: FragmentInput
+        type: object
+        required:
+        - id
+        - ref
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          fragmentParams:
+            type:
+            - array
+            - 'null'
+            items:
+              $ref: '#/components/schemas/FragmentParameter'
+          ref:
+            $ref: '#/components/schemas/FragmentRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes4'
+      - title: FragmentInputDefinition
+        type: object
+        required:
+        - id
+        - parameters
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          id:
+            type: string
+          parameters:
+            $ref: '#/components/schemas/List_FragmentParameter'
+          type:
+            $ref: '#/components/schemas/NodeTypes5'
+      - title: FragmentOutputDefinition
+        type: object
+        required:
+        - id
+        - fields
+        - outputName
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          id:
+            type: string
+          fields:
+            $ref: '#/components/schemas/List_Field'
+          outputName:
+            type: string
+          type:
+            $ref: '#/components/schemas/NodeTypes6'
+      - title: Join
+        type: object
+        required:
+        - id
+        - nodeType
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParameters:
+            type: array
+            items:
+              $ref: '#/components/schemas/BranchParameters'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          nodeType:
+            type: string
+          outputVar:
+            type:
+            - string
+            - 'null'
+          parameters:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          type:
+            $ref: '#/components/schemas/NodeTypes7'
+      - title: Processor
+        type: object
+        required:
+        - id
+        - service
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          service:
+            $ref: '#/components/schemas/ServiceRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes8'
+      - title: Sink
+        type: object
+        required:
+        - id
+        - ref
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          id:
+            type: string
+          isDisabled:
+            type:
+            - boolean
+            - 'null'
+          ref:
+            $ref: '#/components/schemas/SinkRef'
+          type:
+            $ref: '#/components/schemas/NodeTypes9'
+      - title: Source
+        type: object
+        required:
+        - id
+        - type
+        - ref
+        properties:
+          id:
+            type: string
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          type:
+            $ref: '#/components/schemas/NodeTypes10'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          ref:
+            $ref: '#/components/schemas/SourceRef'
+      - title: Split
+        type: object
+        required:
+        - id
+        - type
+        properties:
+          id:
+            type: string
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          type:
+            $ref: '#/components/schemas/NodeTypes11'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+      - title: Switch
+        type: object
+        required:
+        - id
+        - type
+        properties:
+          additionalFields:
+            anyOf:
+            - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+            - type: 'null'
+          branchParametersTemplate:
+            type: array
+            items:
+              $ref: '#/components/schemas/Parameter'
+          expression:
+            anyOf:
+            - $ref: '#/components/schemas/Expression'
+            - type: 'null'
+          exprVal:
+            type:
+            - string
+            - 'null'
+          id:
+            type: string
+          type:
+            $ref: '#/components/schemas/NodeTypes12'
+    NodeTypes:
+      title: NodeTypes
+      type: string
+      enum:
+      - BranchEndData
+    NodeTypes1:
+      title: NodeTypes
+      type: string
+      enum:
+      - CustomNode
+    NodeTypes10:
+      title: NodeTypes
+      type: string
+      enum:
+      - Source
+    NodeTypes11:
+      title: NodeTypes
+      type: string
+      enum:
+      - Split
+    NodeTypes12:
+      title: NodeTypes
+      type: string
+      enum:
+      - Switch
+    NodeTypes13:
+      title: NodeTypes
+      type: string
+      enum:
+      - Variable
+    NodeTypes14:
+      title: NodeTypes
+      type: string
+      enum:
+      - VariableBuilder
+    NodeTypes2:
+      title: NodeTypes
+      type: string
+      enum:
+      - Enricher
+    NodeTypes3:
+      title: NodeTypes
+      type: string
+      enum:
+      - Filter
+    NodeTypes4:
+      title: NodeTypes
+      type: string
+      enum:
+      - FragmentInput
+    NodeTypes5:
+      title: NodeTypes
+      type: string
+      enum:
+      - FragmentInputDefinition
+    NodeTypes6:
+      title: NodeTypes
+      type: string
+      enum:
+      - FragmentOutputDefinition
+    NodeTypes7:
+      title: NodeTypes
+      type: string
+      enum:
+      - Join
+    NodeTypes8:
+      title: NodeTypes
+      type: string
+      enum:
+      - Processor
+    NodeTypes9:
+      title: NodeTypes
+      type: string
+      enum:
+      - Sink
     NodeUsageData:
+      title: NodeUsageData
       oneOf:
       - $ref: '#/components/schemas/FragmentUsageData'
       - $ref: '#/components/schemas/ScenarioUsageData'
+    NodeValidationError:
+      title: NodeValidationError
+      type: object
+      required:
+      - typ
+      - message
+      - description
+      - errorType
+      properties:
+        typ:
+          type: string
+        message:
+          type: string
+        description:
+          type: string
+        fieldName:
+          type:
+          - string
+          - 'null'
+        errorType:
+          $ref: '#/components/schemas/NodeValidationErrorType'
+        details:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetails'
+          - type: 'null'
+    NodeValidationErrorType:
+      title: NodeValidationErrorType
+      type: string
+      enum:
+      - RenderNotAllowed
+      - SaveNotAllowed
+      - SaveAllowed
+    NodeValidationRequestDto:
+      title: NodeValidationRequestDto
+      type: object
+      required:
+      - nodeData
+      - processProperties
+      - variableTypes
+      properties:
+        nodeData:
+          $ref: '#/components/schemas/NodeData'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+        branchVariableTypes:
+          anyOf:
+          - $ref: '#/components/schemas/Map_Map_String_TypingResultInJson'
+          - type: 'null'
+        outgoingEdges:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/Edge'
+    NodeValidationResultDto:
+      title: NodeValidationResultDto
+      type: object
+      required:
+      - validationPerformed
+      properties:
+        parameters:
+          type:
+          - array
+          - 'null'
+          items:
+            $ref: '#/components/schemas/UIParameter'
+        expressionType:
+          anyOf:
+          - oneOf:
+            - $ref: '#/components/schemas/TypedClass'
+            - $ref: '#/components/schemas/TypedDict'
+            - $ref: '#/components/schemas/TypedNull'
+            - $ref: '#/components/schemas/TypedObjectTypingResult'
+            - $ref: '#/components/schemas/TypedObjectWithValue'
+            - $ref: '#/components/schemas/TypedTaggedValue'
+            - $ref: '#/components/schemas/TypedUnion'
+            - $ref: '#/components/schemas/Unknown'
+          - type: 'null'
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
     Notification:
+      title: Notification
+      type: object
       required:
       - id
       - message
-      type: object
       properties:
         id:
           type: string
@@ -766,18 +4128,130 @@ components:
         message:
           type: string
         type:
-          $ref: '#/components/schemas/NotificationType'
+          anyOf:
+          - $ref: '#/components/schemas/NotificationType'
+          - type: 'null'
         toRefresh:
           type: array
           items:
             $ref: '#/components/schemas/DataToRefresh'
     NotificationType:
+      title: NotificationType
       type: string
       enum:
       - info
       - success
       - error
+    Parameter:
+      title: Parameter
+      type: object
+      required:
+      - name
+      - expression
+      properties:
+        name:
+          type: string
+        expression:
+          $ref: '#/components/schemas/Expression'
+    ParameterDto:
+      title: ParameterDto
+      type: object
+      required:
+      - name
+      - refClazz
+      properties:
+        name:
+          type: string
+        refClazz:
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
+    ParameterEditor:
+      title: ParameterEditor
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
+      - $ref: '#/components/schemas/DualParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/RawParameterEditor'
+      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
+      - $ref: '#/components/schemas/SqlParameterEditor'
+      - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TabularTypedDataEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
+    ParameterValueCompileTimeValidation:
+      title: ParameterValueCompileTimeValidation
+      type: object
+      required:
+      - validationExpression
+      properties:
+        validationExpression:
+          $ref: '#/components/schemas/Expression'
+        validationFailedMessage:
+          type:
+          - string
+          - 'null'
+    ParameterValueInput:
+      title: ParameterValueInput
+      oneOf:
+      - $ref: '#/components/schemas/ValueInputWithDictEditor'
+      - $ref: '#/components/schemas/ValueInputWithFixedValuesProvided'
+    ParametersValidationRequestDto:
+      title: ParametersValidationRequestDto
+      type: object
+      required:
+      - variableTypes
+      properties:
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/UIValueParameterDto'
+        variableTypes:
+          $ref: '#/components/schemas/Map_TypingResultInJson'
+    ParametersValidationResultDto:
+      title: ParametersValidationResultDto
+      type: object
+      required:
+      - validationPerformed
+      properties:
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeValidationError'
+        validationPerformed:
+          type: boolean
+    PeriodParameterEditor:
+      title: PeriodParameterEditor
+      type: object
+      properties:
+        timeRangeComponents:
+          type: array
+          items:
+            type: object
+            required:
+            - name
+            - duration
+            properties:
+              name:
+                type: string
+              duration:
+                type: string
     ProcessAction:
+      title: ProcessAction
+      type: object
       required:
       - id
       - processId
@@ -785,17 +4259,19 @@ components:
       - user
       - createdAt
       - performedAt
-      - actionType
+      - actionName
       - state
       - buildInfo
-      type: object
       properties:
         id:
-          $ref: '#/components/schemas/ProcessActionId'
+          type: string
+          format: uuid
         processId:
-          $ref: '#/components/schemas/ProcessId'
+          type: integer
+          format: int64
         processVersionId:
-          $ref: '#/components/schemas/VersionId'
+          type: integer
+          format: int64
         user:
           type: string
         createdAt:
@@ -804,8 +4280,8 @@ components:
         performedAt:
           type: string
           format: date-time
-        actionType:
-          $ref: '#/components/schemas/ProcessActionType'
+        actionName:
+          type: string
         state:
           $ref: '#/components/schemas/ProcessActionState'
         failureMessage:
@@ -823,68 +4299,644 @@ components:
           - 'null'
         buildInfo:
           $ref: '#/components/schemas/Map_String'
-    ProcessActionId:
-      required:
-      - value
-      type: object
-      properties:
-        value:
-          type: string
-          format: uuid
     ProcessActionState:
+      title: ProcessActionState
       type: string
       enum:
       - IN_PROGRESS
       - FINISHED
       - FAILED
       - EXECUTION_FINISHED
-    ProcessActionType:
-      type: string
-      enum:
-      - DEPLOY
-      - CANCEL
-      - ARCHIVE
-      - UNARCHIVE
-      - PAUSE
-      - RENAME
-    ProcessId:
-      required:
-      - value
+    ProcessAdditionalFields:
+      title: ProcessAdditionalFields
       type: object
-      properties:
-        value:
-          type: integer
-          format: int64
-    ProcessName:
       required:
-      - value
-      type: object
+      - properties
+      - metaDataType
       properties:
-        value:
+        description:
+          type:
+          - string
+          - 'null'
+        properties:
+          $ref: '#/components/schemas/Map_String'
+        metaDataType:
           type: string
+    ProcessProperties:
+      title: ProcessProperties
+      type: object
+      required:
+      - additionalFields
+      properties:
+        additionalFields:
+          $ref: '#/components/schemas/ProcessAdditionalFields'
+    PropertiesValidationRequestDto:
+      title: PropertiesValidationRequestDto
+      type: object
+      required:
+      - additionalFields
+      - name
+      properties:
+        additionalFields:
+          $ref: '#/components/schemas/ProcessAdditionalFields'
+        name:
+          type: string
+    RawParameterEditor:
+      title: RawParameterEditor
+      type: object
+    RegisterStatisticsRequestDto:
+      title: RegisterStatisticsRequestDto
+      type: object
+      properties:
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatisticDto'
+    RunDeploymentRequest:
+      title: RunDeploymentRequest
+      type: object
+      required:
+      - scenarioName
+      - nodesDeploymentData
+      properties:
+        scenarioName:
+          type: string
+        nodesDeploymentData:
+          $ref: '#/components/schemas/Map_NodeId_NodeDeploymentData'
+        comment:
+          type:
+          - string
+          - 'null'
+    ScenarioActivity:
+      title: ScenarioActivity
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+    ScenarioParameters:
+      title: ScenarioParameters
+      type: object
+      required:
+      - processingMode
+      - category
+      - engineSetupName
+      properties:
+        processingMode:
+          type: string
+        category:
+          type: string
+        engineSetupName:
+          type: string
+    ScenarioParametersCombinationWithEngineErrors:
+      title: ScenarioParametersCombinationWithEngineErrors
+      type: object
+      required:
+      - engineSetupErrors
+      properties:
+        combinations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenarioParameters'
+        engineSetupErrors:
+          $ref: '#/components/schemas/Map_EngineSetupName_List_String'
     ScenarioUsageData:
+      title: ScenarioUsageData
+      type: object
       required:
       - nodeId
-      type: object
       properties:
         nodeId:
           type: string
+    ServiceRef:
+      title: ServiceRef
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    SimpleParameterEditor:
+      title: SimpleParameterEditor
+      oneOf:
+      - $ref: '#/components/schemas/BoolParameterEditor'
+      - $ref: '#/components/schemas/CronParameterEditor'
+      - $ref: '#/components/schemas/DateParameterEditor'
+      - $ref: '#/components/schemas/DateTimeParameterEditor'
+      - $ref: '#/components/schemas/DictParameterEditor'
+      - $ref: '#/components/schemas/DurationParameterEditor'
+      - $ref: '#/components/schemas/FixedValuesParameterEditor'
+      - $ref: '#/components/schemas/JsonParameterEditor'
+      - $ref: '#/components/schemas/PeriodParameterEditor'
+      - $ref: '#/components/schemas/SpelTemplateParameterEditor'
+      - $ref: '#/components/schemas/SqlParameterEditor'
+      - $ref: '#/components/schemas/StringParameterEditor'
+      - $ref: '#/components/schemas/TabularTypedDataEditor'
+      - $ref: '#/components/schemas/TextareaParameterEditor'
+      - $ref: '#/components/schemas/TimeParameterEditor'
+    SingleTypingResult:
+      title: SingleTypingResult
+      oneOf:
+      - $ref: '#/components/schemas/TypedClass'
+      - $ref: '#/components/schemas/TypedDict'
+      - $ref: '#/components/schemas/TypedObjectTypingResult'
+      - $ref: '#/components/schemas/TypedObjectWithValue'
+      - $ref: '#/components/schemas/TypedTaggedValue'
+    SinkRef:
+      title: SinkRef
+      type: object
+      required:
+      - typ
+      properties:
+        typ:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    SourceRef:
+      title: SourceRef
+      type: object
+      required:
+      - typ
+      properties:
+        typ:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+    SpelTemplateParameterEditor:
+      title: SpelTemplateParameterEditor
+      type: object
+    SqlParameterEditor:
+      title: SqlParameterEditor
+      type: object
+    StatisticDto:
+      title: StatisticDto
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          $ref: '#/components/schemas/StatisticName'
+    StatisticName:
+      title: StatisticName
+      type: string
+      enum:
+      - SEARCH_SCENARIOS_BY_NAME
+      - FILTER_SCENARIOS_BY_STATUS
+      - FILTER_SCENARIOS_BY_PROCESSING_MODE
+      - FILTER_SCENARIOS_BY_CATEGORY
+      - FILTER_SCENARIOS_BY_AUTHOR
+      - FILTER_SCENARIOS_BY_OTHER
+      - SORT_SCENARIOS_BY_SORT_OPTION
+      - SEARCH_COMPONENTS_BY_NAME
+      - FILTER_COMPONENTS_BY_GROUP
+      - FILTER_COMPONENTS_BY_PROCESSING_MODE
+      - FILTER_COMPONENTS_BY_CATEGORY
+      - FILTER_COMPONENTS_BY_MULTIPLE_CATEGORIES
+      - FILTER_COMPONENTS_BY_USAGES
+      - CLICK_COMPONENT_USAGES
+      - SEARCH_COMPONENT_USAGES_BY_NAME
+      - FILTER_COMPONENT_USAGES_BY_STATUS
+      - FILTER_COMPONENT_USAGES_BY_CATEGORY
+      - FILTER_COMPONENT_USAGES_BY_AUTHOR
+      - FILTER_COMPONENT_USAGES_BY_OTHER
+      - CLICK_SCENARIO_FROM_COMPONENT_USAGES
+      - CLICK_GLOBAL_METRICS_TAB
+      - CLICK_ACTION_DEPLOY
+      - CLICK_ACTION_METRICS
+      - CLICK_VIEW_ZOOM_IN
+      - CLICK_VIEW_ZOOM_OUT
+      - CLICK_VIEW_RESET
+      - CLICK_EDIT_UNDO
+      - CLICK_EDIT_REDO
+      - CLICK_EDIT_COPY
+      - CLICK_EDIT_PASTE
+      - CLICK_EDIT_DELETE
+      - CLICK_EDIT_LAYOUT
+      - CLICK_SCENARIO_PROPERTIES
+      - CLICK_SCENARIO_COMPARE
+      - CLICK_SCENARIO_MIGRATE
+      - CLICK_SCENARIO_IMPORT
+      - CLICK_SCENARIO_JSON
+      - CLICK_SCENARIO_PDF
+      - CLICK_SCENARIO_ARCHIVE
+      - CLICK_TEST_GENERATED
+      - CLICK_TEST_ADHOC
+      - CLICK_TEST_FROM_FILE
+      - CLICK_TEST_GENERATE_FILE
+      - CLICK_TEST_HIDE
+      - CLICK_MORE_SCENARIO_DETAILS
+      - CLICK_EXPAND_PANEL
+      - CLICK_COLLAPSE_PANEL
+      - MOVE_TOOLBAR_PANEL
+      - SEARCH_NODES_IN_SCENARIO
+      - SEARCH_COMPONENTS_IN_SCENARIO
+      - CLICK_OLDER_VERSION
+      - CLICK_NEWER_VERSION
+      - CLICK_NODE_DOCUMENTATION
+      - CLICK_COMPONENTS_TAB
+      - CLICK_SCENARIO_SAVE
+      - CLICK_TEST_COUNTS
+      - CLICK_SCENARIO_CANCEL
+      - CLICK_SCENARIO_ARCHIVE_TOGGLE
+      - CLICK_SCENARIO_UNARCHIVE
+      - CLICK_SCENARIO_CUSTOM_ACTION
+      - CLICK_SCENARIO_CUSTOM_LINK
+      - DOUBLE_CLICK_RANGE_SELECT_NODES
+      - KEYBOARD_AND_CLICK_RANGE_SELECT_NODES
+      - KEYBOARD_COPY_NODE
+      - KEYBOARD_PASTE_NODE
+      - KEYBOARD_CUT_NODE
+      - KEYBOARD_SELECT_ALL_NODES
+      - KEYBOARD_REDO_SCENARIO_CHANGES
+      - KEYBOARD_UNDO_SCENARIO_CHANGES
+      - KEYBOARD_DELETE_NODES
+      - KEYBOARD_DESELECT_ALL_NODES
+      - KEYBOARD_FOCUS_SEARCH_NODE_FIELD
+    StatisticUrlResponseDto:
+      title: StatisticUrlResponseDto
+      type: object
+      properties:
+        urls:
+          type: array
+          items:
+            type: string
     Status:
+      title: Status
       type: string
       enum:
       - OK
     Status1:
+      title: Status
       type: string
       enum:
       - ERROR
-    VersionId:
-      required:
-      - value
+    StringParameterEditor:
+      title: StringParameterEditor
+      type: object
+    SwitchDefault:
+      title: SwitchDefault
+      type: object
+    TabularDataDefinitionParserErrorDetails:
+      title: TabularDataDefinitionParserErrorDetails
       type: object
       properties:
+        cellErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/CellError'
+        columnDefinitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnDefinition'
+    TabularTypedDataEditor:
+      title: TabularTypedDataEditor
+      type: object
+    TextareaParameterEditor:
+      title: TextareaParameterEditor
+      type: object
+    TimeParameterEditor:
+      title: TimeParameterEditor
+      type: object
+    TypedClass:
+      title: TypedClass
+      type: object
+      required:
+      - type
+      - refClazzName
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types1'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedDict:
+      title: TypedDict
+      type: object
+      required:
+      - type
+      - dict
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types2'
+        dict:
+          $ref: '#/components/schemas/Dict'
+    TypedNull:
+      title: TypedNull
+      type: object
+      required:
+      - type
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types6'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedObjectTypingResult:
+      title: TypedObjectTypingResult
+      type: object
+      required:
+      - type
+      - fields
+      - refClazzName
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types3'
+        fields:
+          $ref: '#/components/schemas/Map_TypingResult'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedObjectWithValue:
+      title: TypedObjectWithValue
+      type: object
+      required:
+      - value
+      - type
+      - refClazzName
+      properties:
+        value: {}
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types4'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    TypedTaggedValue:
+      title: TypedTaggedValue
+      type: object
+      required:
+      - tag
+      - type
+      properties:
+        tag:
+          type: string
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types5'
+    TypedUnion:
+      title: TypedUnion
+      type: object
+      required:
+      - type
+      - union
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types7'
+        union:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    Types:
+      title: Types
+      type: string
+      enum:
+      - Unknown
+    Types1:
+      title: Types
+      type: string
+      enum:
+      - TypedClass
+    Types2:
+      title: Types
+      type: string
+      enum:
+      - TypedDict
+    Types3:
+      title: Types
+      type: string
+      enum:
+      - TypedObjectTypingResult
+    Types4:
+      title: Types
+      type: string
+      enum:
+      - TypedObjectWithValue
+    Types5:
+      title: Types
+      type: string
+      enum:
+      - TypedTaggedValue
+    Types6:
+      title: Types
+      type: string
+      enum:
+      - TypedNull
+    Types7:
+      title: Types
+      type: string
+      enum:
+      - TypedUnion
+    TypingResult:
+      title: TypingResult
+      oneOf:
+      - $ref: '#/components/schemas/TypedClass'
+      - $ref: '#/components/schemas/TypedDict'
+      - $ref: '#/components/schemas/TypedNull'
+      - $ref: '#/components/schemas/TypedObjectTypingResult'
+      - $ref: '#/components/schemas/TypedObjectWithValue'
+      - $ref: '#/components/schemas/TypedTaggedValue'
+      - $ref: '#/components/schemas/TypedUnion'
+      - $ref: '#/components/schemas/Unknown'
+    UIParameter:
+      title: UIParameter
+      type: object
+      required:
+      - name
+      - typ
+      - editor
+      - defaultValue
+      - additionalVariables
+      - branchParam
+      - label
+      properties:
+        name:
+          type: string
+        typ:
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
+        editor:
+          $ref: '#/components/schemas/ParameterEditor'
+        defaultValue:
+          $ref: '#/components/schemas/Expression'
+        additionalVariables:
+          $ref: '#/components/schemas/Map_TypingResult'
+        variablesToHide:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        branchParam:
+          type: boolean
+        hintText:
+          type:
+          - string
+          - 'null'
+        label:
+          type: string
+    UIValueParameterDto:
+      title: UIValueParameterDto
+      type: object
+      required:
+      - name
+      - typ
+      - expression
+      properties:
+        name:
+          type: string
+        typ:
+          oneOf:
+          - $ref: '#/components/schemas/TypedClass'
+          - $ref: '#/components/schemas/TypedDict'
+          - $ref: '#/components/schemas/TypedNull'
+          - $ref: '#/components/schemas/TypedObjectTypingResult'
+          - $ref: '#/components/schemas/TypedObjectWithValue'
+          - $ref: '#/components/schemas/TypedTaggedValue'
+          - $ref: '#/components/schemas/TypedUnion'
+          - $ref: '#/components/schemas/Unknown'
+        expression:
+          $ref: '#/components/schemas/Expression'
+    Unknown:
+      title: Unknown
+      type: object
+      required:
+      - type
+      properties:
+        display:
+          type: string
+        type:
+          $ref: '#/components/schemas/Types'
+        refClazzName:
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypingResult'
+    UserDefinedAdditionalNodeFields:
+      title: UserDefinedAdditionalNodeFields
+      type: object
+      properties:
+        description:
+          type:
+          - string
+          - 'null'
+        layoutData:
+          anyOf:
+          - $ref: '#/components/schemas/LayoutData'
+          - type: 'null'
+    ValueInputWithDictEditor:
+      title: ValueInputWithDictEditor
+      type: object
+      required:
+      - dictId
+      - allowOtherValue
+      properties:
+        dictId:
+          type: string
+        allowOtherValue:
+          type: boolean
+    ValueInputWithFixedValuesProvided:
+      title: ValueInputWithFixedValuesProvided
+      type: object
+      required:
+      - allowOtherValue
+      properties:
+        fixedValuesList:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedExpressionValue'
+        allowOtherValue:
+          type: boolean
+    Variable:
+      title: Variable
+      type: object
+      required:
+      - id
+      - type
+      - varName
+      - value
+      properties:
+        id:
+          type: string
+        additionalFields:
+          anyOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
+        type:
+          $ref: '#/components/schemas/NodeTypes13'
+        varName:
+          type: string
         value:
-          type: integer
-          format: int64
+          $ref: '#/components/schemas/Expression'
+    VariableBuilder:
+      title: VariableBuilder
+      type: object
+      required:
+      - id
+      - type
+      - varName
+      properties:
+        additionalFields:
+          anyOf:
+          - $ref: '#/components/schemas/UserDefinedAdditionalNodeFields'
+          - type: 'null'
+        branchParametersTemplate:
+          type: array
+          items:
+            $ref: '#/components/schemas/Parameter'
+        id:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        type:
+          $ref: '#/components/schemas/NodeTypes14'
+        varName:
+          type: string
   securitySchemes:
     httpAuth:
       type: http

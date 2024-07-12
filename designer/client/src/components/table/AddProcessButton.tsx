@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWindows } from "../../windowManager";
-import { WindowKind } from "../../windowManager/WindowKind";
+import { useWindows, WindowKind } from "../../windowManager";
 
 export function useAddProcessButtonProps(isFragment?: boolean): { action: () => void; title: string } {
     const { t } = useTranslation();
@@ -20,7 +19,7 @@ export function useAddProcessButtonProps(isFragment?: boolean): { action: () => 
                 isModal: true,
                 shouldCloseOnEsc: true,
                 kind: isFragment ? WindowKind.addFragment : WindowKind.addProcess,
-                width: 600,
+                width: 820,
                 title,
             }),
         [isFragment, open, title],

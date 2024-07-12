@@ -7,11 +7,10 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.NuResourcesTest
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
-import pl.touk.nussknacker.ui.config.AnalyticsConfig
+import pl.touk.nussknacker.test.base.it.NuResourcesTest
+import pl.touk.nussknacker.test.utils.domain.TestFactory.withoutPermissions
+import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
 
 class SettingsResourcesSpec
     extends AnyFunSpec
@@ -25,13 +24,13 @@ class SettingsResourcesSpec
 
   private val authenticationConfig: BasicAuthenticationConfiguration =
     BasicAuthenticationConfiguration.create(testConfig)
-  private val analyticsConfig: Option[AnalyticsConfig] = AnalyticsConfig(testConfig)
+  private val usageStatisticsReportsConfig: UsageStatisticsReportsConfig =
+    UsageStatisticsReportsConfig(true, None, None)
 
   private val settingsRoute = new SettingsResources(
     featureTogglesConfig,
     authenticationConfig.name,
-    analyticsConfig,
-    UsageStatisticsReportsSettings(enabled = false, "http://just.test")
+    usageStatisticsReportsConfig
   )
 
   // Values are exists at test/resources/application.conf
@@ -46,6 +45,7 @@ class SettingsResourcesSpec
 
       data.intervalTimeSettings.processes shouldBe intervalTimeProcesses
       data.intervalTimeSettings.healthCheck shouldBe intervalTimeHealthCheck
+      data.usageStatisticsReports.enabled shouldBe true
     }
   }
 

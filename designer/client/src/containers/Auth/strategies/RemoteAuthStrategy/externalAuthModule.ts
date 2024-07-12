@@ -1,5 +1,5 @@
 import { ComponentType, PropsWithChildren } from "react";
-import { Module } from "../../../ExternalLib/types";
+import { Module } from "@touk/federated-component";
 
 interface RedirectState {
     targetPath: string;

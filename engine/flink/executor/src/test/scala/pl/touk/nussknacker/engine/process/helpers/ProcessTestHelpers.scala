@@ -20,17 +20,18 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
   object processInvoker {
 
-    def invokeWithSampleData(process: CanonicalProcess, data: List[SimpleRecord]): Unit =
-      invokeWithSampleData(process, data, config)
-
     def invokeWithSampleData(
         process: CanonicalProcess,
         data: List[SimpleRecord],
-        config: Config
+        config: Config = config
     ): Unit = {
-      val components = ProcessTestHelpers.prepareComponents(data)
-      val env        = flinkMiniCluster.createExecutionEnvironment()
-      val modelData  = LocalModelData(config, components, configCreator = ProcessTestHelpersConfigCreator)
+      val defaultComponents = ProcessTestHelpers.prepareComponents(data)
+      val env               = flinkMiniCluster.createExecutionEnvironment()
+      val modelData = LocalModelData(
+        config,
+        defaultComponents,
+        configCreator = ProcessTestHelpersConfigCreator
+      )
       UnitTestsFlinkRunner.registerInEnvironmentWithModel(env, modelData)(process)
 
       ProcessTestHelpers.logServiceResultsHolder.clear()
@@ -96,7 +97,7 @@ object ProcessTestHelpers extends Serializable {
 
 object ProcessTestHelpersConfigCreator extends EmptyProcessConfigCreator {
   override def listeners(modelDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-    List(CountingNodesListener)
+    List(CountingNodesListener, new LifecycleCheckingListener)
 
   override def expressionConfig(modelDependencies: ProcessObjectDependencies): ExpressionConfig = {
     val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])

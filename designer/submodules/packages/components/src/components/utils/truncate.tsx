@@ -1,9 +1,9 @@
-import React, { useCallback } from "react";
-import TruncatedList from "react-truncate-list";
+import React from "react";
+import { TruncatedList, TruncatedListProps } from "react-truncate-list";
 import "react-truncate-list/dist/styles.css";
 
-export function Truncate(...params: Parameters<typeof TruncatedList>): JSX.Element {
-    const [props] = params;
-    const renderTruncator = useCallback(({ hiddenItemsCount }) => <div>{hiddenItemsCount} more...</div>, []);
+const defaultRenderTruncator = ({ hiddenItemsCount }) => <div>{hiddenItemsCount} more...</div>;
+
+export function Truncate({ renderTruncator = defaultRenderTruncator, ...props }: TruncatedListProps): JSX.Element {
     return <TruncatedList renderTruncator={renderTruncator} {...props} />;
 }

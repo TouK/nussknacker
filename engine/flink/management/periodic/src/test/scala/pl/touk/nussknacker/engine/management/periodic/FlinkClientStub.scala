@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.api.deployment.SavepointResult
+import org.apache.flink.configuration.Configuration
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, SavepointResult, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, flinkRestModel}
 
@@ -9,7 +10,11 @@ import scala.concurrent.Future
 
 class FlinkClientStub extends FlinkClient {
 
-  override def findJobsByName(jobName: String): Future[List[flinkRestModel.JobOverview]] = ???
+  override def getJobsOverviews()(
+      implicit freshnessPolicy: DataFreshnessPolicy
+  ): Future[WithDataFreshnessStatus[List[flinkRestModel.JobOverview]]] = ???
+
+  override def getJobDetails(jobId: String): Future[Option[flinkRestModel.JobDetails]] = ???
 
   override def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = ???
 
@@ -26,8 +31,14 @@ class FlinkClientStub extends FlinkClient {
       jarFile: File,
       mainClass: String,
       args: List[String],
-      savepointPath: Option[String]
+      savepointPath: Option[String],
+      jobId: Option[String]
   ): Future[Option[ExternalDeploymentId]] = ???
 
   override def deleteJarIfExists(jarFileName: String): Future[Unit] = Future.successful(())
+
+  override def getClusterOverview: Future[flinkRestModel.ClusterOverview] = ???
+
+  override def getJobManagerConfig: Future[Configuration] = ???
+
 }

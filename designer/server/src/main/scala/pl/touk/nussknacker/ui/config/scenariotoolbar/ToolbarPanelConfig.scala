@@ -21,7 +21,7 @@ object ToolbarPanelTypeConfig extends Enumeration {
   type ToolbarPanelType = Value
 
   private lazy val toolbarsWithButtons: List[ToolbarPanelType] = List(
-    ProcessInfoPanel,
+    ProcessActionsPanel,
     ButtonsPanel
   )
 
@@ -29,13 +29,15 @@ object ToolbarPanelTypeConfig extends Enumeration {
     ButtonsPanel
   )
 
-  val TipsPanel: Value        = Value("tips-panel")
-  val CreatorPanel: Value     = Value("creator-panel")
-  val VersionsPanel: Value    = Value("versions-panel")
-  val CommentsPanel: Value    = Value("comments-panel")
-  val AttachmentsPanel: Value = Value("attachments-panel")
-  val ProcessInfoPanel: Value = Value("process-info-panel")
-  val ButtonsPanel: Value     = Value("buttons-panel")
+  val SearchPanel: Value         = Value("search-panel")
+  val TipsPanel: Value           = Value("tips-panel")
+  val CreatorPanel: Value        = Value("creator-panel")
+  val VersionsPanel: Value       = Value("versions-panel")
+  val CommentsPanel: Value       = Value("comments-panel")
+  val AttachmentsPanel: Value    = Value("attachments-panel")
+  val ProcessInfoPanel: Value    = Value("process-info-panel")
+  val ProcessActionsPanel: Value = Value("process-actions-panel")
+  val ButtonsPanel: Value        = Value("buttons-panel")
 
   // Some of panels require buttons not empty list param, this method verify that..
   def requiresButtonsParam(`type`: ToolbarPanelType): Boolean =

@@ -13,9 +13,13 @@ import { useUserQuery } from "../scenarios/useScenariosQuery";
 import { ActiveFilters } from "../scenarios/filters/activeFilters";
 import { OptionsStack } from "../scenarios/filters/optionsStack";
 import { FilterListItem } from "../scenarios/filters/filterListItem";
+import { ProcessingModeStack } from "../scenarios/filters/processingModeStack";
+import { processingModeItems } from "../scenarios/list/processingMode";
+import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
 
 function CountFilterItem({ count }: { count: number }) {
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+
     return (
         <FilterListItem
             checked={getFilter("USAGES", true).includes(count)}
@@ -50,6 +54,7 @@ function CountFilterItem({ count }: { count: number }) {
                     </>
                 )
             }
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByUsages })}
         />
     );
 }
@@ -86,8 +91,13 @@ export function UsagesOptionsStack(): JSX.Element {
 export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolean; filterableValues }) {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ComponentsFiltersModel>();
+
     return (
-        <QuickFilter<ComponentsFiltersModel> isLoading={isLoading} filter="NAME">
+        <QuickFilter<ComponentsFiltersModel>
+            isLoading={isLoading}
+            filter="NAME"
+            {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByName })}
+        >
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.GROUP", "Group")} count={getFilter("GROUP", true).length}>
                     <SimpleOptionsStack
@@ -95,6 +105,18 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         options={filterableValues["componentGroupName"]}
                         value={getFilter("GROUP", true)}
                         onChange={setFilter("GROUP")}
+                        {...getEventTrackingProps({ selector: EventTrackingSelector.ComponentsByGroup })}
+                    />
+                </FilterMenu>
+                <FilterMenu label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")} count={getFilter("PROCESSING_MODE", true).length}>
+                    <ProcessingModeStack
+                        label={t("table.filter.PROCESSING_MODE", "PROCESSING MODE")}
+                        options={filterableValues.processingModes}
+                        value={getFilter("PROCESSING_MODE", true)}
+                        onChange={setFilter("PROCESSING_MODE")}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentsByProcessingMode,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
@@ -103,6 +125,9 @@ export function FiltersPart({ isLoading, filterableValues }: { isLoading: boolea
                         options={filterableValues["categories"]}
                         value={getFilter("CATEGORY", true)}
                         onChange={setFilter("CATEGORY")}
+                        {...getEventTrackingProps({
+                            selector: EventTrackingSelector.ComponentsByCategory,
+                        })}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.USAGE", "Usages")} count={getFilter("USAGES", true).length}>
@@ -118,7 +143,7 @@ export function Components(): JSX.Element {
     const { data: userData } = useUserQuery();
     const { t } = useTranslation();
 
-    const filterableKeys = useMemo(() => ["categories", "componentGroupName"], []);
+    const filterableKeys = useMemo(() => ["categories", "componentGroupName", "processingModes"], []);
     const filterableValues = useMemo(() => {
         const entries = filterableKeys.map((k) => [
             k,
@@ -126,7 +151,11 @@ export function Components(): JSX.Element {
                 .sort()
                 .map((v) => ({ name: v })),
         ]);
-        return Object.fromEntries([...entries, ["categories", (userData?.categories || []).map((name) => ({ name }))]]);
+        return Object.fromEntries([
+            ...entries,
+            ["processingModes", processingModeItems],
+            ["categories", (userData?.categories || []).map((name) => ({ name }))],
+        ]);
     }, [data, filterableKeys, userData?.categories]);
 
     const getLabel = useCallback(
@@ -139,6 +168,8 @@ export function Components(): JSX.Element {
                         val: value === 0 ? `${value}` : value <= 0 ? `< ${-value}` : `≥ ${value}`,
                         interpolation: { escapeValue: false },
                     });
+                case "PROCESSING_MODE":
+                    return processingModeItems.find((processingModeItem) => processingModeItem.name === value).displayableName;
             }
 
             if (value?.toString().length) {

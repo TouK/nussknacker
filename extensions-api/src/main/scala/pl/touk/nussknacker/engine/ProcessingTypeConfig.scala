@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.readers.ValueReader
-
-import java.io.File
-import java.net.URL
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 
 case class ProcessingTypeConfig(
-    engineType: String,
-    classPath: List[URL],
+    deploymentManagerType: String,
+    engineSetupName: Option[EngineSetupName],
+    classPath: List[String],
     deploymentConfig: Config,
     modelConfig: ConfigWithUnresolvedVersion,
     category: String
@@ -16,20 +14,14 @@ case class ProcessingTypeConfig(
 
 object ProcessingTypeConfig {
 
-  import net.ceedubs.ficus.Ficus.{stringValueReader, toFicusConfig}
-  import net.ceedubs.ficus.readers.CollectionReaders._
-  import net.ceedubs.ficus.readers.OptionReader._
-  import net.ceedubs.ficus.readers.URIReaders._
-
-  private implicit val urlValueReader: ValueReader[URL] =
-    javaURIReader.map { uri =>
-      (if (uri.isAbsolute) uri else new File(uri.getSchemeSpecificPart).toURI).toURL
-    }
+  import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   def read(config: ConfigWithUnresolvedVersion): ProcessingTypeConfig = {
     ProcessingTypeConfig(
       config.resolved.getString("deploymentConfig.type"),
-      config.resolved.as[List[URL]]("modelConfig.classPath"),
+      config.resolved.getAs[EngineSetupName]("deploymentConfig.engineSetupName"),
+      config.resolved.as[List[String]]("modelConfig.classPath"),
       config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig"),
       config.resolved.as[String]("category")

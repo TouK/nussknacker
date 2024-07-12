@@ -33,8 +33,26 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
+
     def * : ProvenShape[ProcessEntityData] =
-      (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
+      (
+        id,
+        name,
+        description,
+        processCategory,
+        processingType,
+        isFragment,
+        isArchived,
+        createdAt,
+        createdBy,
+        impersonatedByIdentity,
+        impersonatedByUsername
+      ) <> (
         ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
       )
 
@@ -42,6 +60,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
 }
 
+// TODO: Rename to ScenarioMetadata
 final case class ProcessEntityData(
     id: ProcessId,
     name: ProcessName,
@@ -51,5 +70,7 @@ final case class ProcessEntityData(
     isFragment: Boolean,
     isArchived: Boolean,
     createdAt: Timestamp,
-    createdBy: String
+    createdBy: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String]
 )

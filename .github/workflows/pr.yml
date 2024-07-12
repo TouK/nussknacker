@@ -101,7 +101,7 @@ jobs:
       - name: Build
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
-        run: CROSS_BUILD=false ./ciRunSbt.sh Compile/compile Test/compile
+        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
       - name: Tar artifacts
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         shell: bash
@@ -169,10 +169,11 @@ jobs:
     needs: [ build, setup ]
     strategy:
       matrix:
-        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
+        # Due to the different behaviour of Nussknacker's OpenAPI generation on different versions of scala we
+        # have to run these tests always for every scala version. See NuDesignerApiAvailableToExposeYamlSpec
+        scalaVersion: [2.12, 2.13]
     env:
-      SCALA_VERSION: ${{ matrix.scalaVersion }}
-      TESTS_WITH_COVERAGE: ${{ github.ref == 'refs/heads/staging' && matrix.scalaVersion == '2.13' }}
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
@@ -199,13 +200,8 @@ jobs:
             ~/.sbt
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
-      - name: Backend tests with coverage
+      - name: Backend tests
         shell: bash
-        if: ${{ env.TESTS_WITH_COVERAGE == 'true' }}
-        run: ./ciRunSbt.sh coverage test coverageReport
-      - name: Backend tests without coverage
-        shell: bash
-        if: ${{ env.TESTS_WITH_COVERAGE != 'true' }}
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
@@ -213,46 +209,7 @@ jobs:
         with:
           name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
-      - name: Upload Coverage data to Coveralls
-        shell: bash
-        if: ${{ env.TESTS_WITH_COVERAGE == 'true' }}
-        run: ./ciRunSbt.sh coverageAggregate coveralls
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  crossCompile:
-    name: CrossCompile
-    runs-on: ubuntu-latest
-    needs: [ build, setup ]
-    if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-    steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v3
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.11.0.17
-      - name: Cache ivy packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - uses: actions/download-artifact@v3
-        with:
-          name: build-target
-      - name: Untar artifacts
-        shell: bash
-        run:  tar xfz target.tgz
-      - name: Compile
-        shell: bash
-        run: CROSS_BUILD=true ./ciRunSbt.sh Compile/compile Test/compile
   integrationTests:
     name: IntegrationTests
     needs: [ build, setup ]
@@ -260,7 +217,7 @@ jobs:
       matrix:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
-      SCALA_VERSION: ${{ matrix.scalaVersion }}
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
@@ -308,7 +265,7 @@ jobs:
       matrix:
         scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     env:
-      SCALA_VERSION: ${{ matrix.scalaVersion }}
+      NUSSKNACKER_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
@@ -336,29 +293,30 @@ jobs:
         shell: bash
         run:  tar xfz target.tgz
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-#      - uses: AbsaOSS/k3d-action@v2.4.0
-#        env:
-#          PROJECT_ROOT: ${{ github.workspace }}
-#        with:
-#          cluster-name: "k3s-default"
-#          k3d-version: "v5.4.9" # default version - change with caution, there was some problem with 500 exit codes for after upgrade
-#          args: >-
-#            --config=.k3d/single-cluster.yml
-#            --trace
+      - uses: AbsaOSS/k3d-action@v2.4.0
+        env:
+          PROJECT_ROOT: ${{ github.workspace }}
+        with:
+          cluster-name: "k3s-default"
+          k3d-version: "v5.6.0"
+          args: >-
+            --config=.k3d/single-cluster.yml
+            --trace
       - name: Slow tests
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY_NAME }}
+          AZURE_EVENT_HUBS_SHARED_ACCESS_KEY: ${{ secrets.AZURE_EVENT_HUBS_SHARED_ACCESS_KEY }}
         shell: bash
-#        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
-        run: ./ciRunSbt.sh designer/Slow/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
-#      - name: docker logs
-#        if: success() || failure()
-#        run: |
-#          docker logs k3d-k3s-default-server-0
-#          docker logs k3d-k3s-default-agent-0
-#          docker logs k3d-k3s-default-serverlb
+        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+      - name: docker logs
+        if: success() || failure()
+        run: |
+          docker logs k3d-k3s-default-server-0
+          docker logs k3d-k3s-default-agent-0
+          docker logs k3d-k3s-default-serverlb
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v3
@@ -482,11 +440,6 @@ jobs:
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" dist/Docker/publishLocal
-      - name: Test docker
-        if: ${{env.shouldBuildImage == 'true' }}
-        shell: bash
-        working-directory: e2e-tests
-        run: ./setupAndRun.sh
       - name: FE tests e2e on build docker image
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
@@ -566,7 +519,7 @@ jobs:
   #TODO: extract to different workflow?
   publish:
     runs-on: ubuntu-latest
-    needs: [build, build-fe, setup, tests, crossCompile, integrationTests, slowTests, frontendTests, cypressTests]
+    needs: [build, build-fe, setup, tests, integrationTests, slowTests, frontendTests, cypressTests]
     #TODO: should we publish everything on all those branches?
     if: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     env:
@@ -628,13 +581,20 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/local/lib/android 
       - name: Publish with scaladocs
         if: ${{ github.ref == 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
+        env:
+          # Workaround to preveent "no space left on device" during publishDocker failed to create temp dir: mkdir /tmp/containerd-mountXYZ
+          TMPDIR: ${{ github.workspace }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish

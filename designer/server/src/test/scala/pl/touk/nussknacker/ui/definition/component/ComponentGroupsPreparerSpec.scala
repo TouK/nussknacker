@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.component.bultin.BuiltInComponentsDefinitionsPreparer
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
@@ -17,18 +18,18 @@ import pl.touk.nussknacker.engine.definition.component.{
 import pl.touk.nussknacker.engine.definition.fragment.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.model.ModelDefinition
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.restmodel.definition.UIComponentGroup
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.ui.definition.{AlignedComponentsDefinitionProvider, component}
 
 class ComponentGroupsPreparerSpec
     extends AnyFunSuite
     with Matchers
-    with TestPermissions
     with OptionValues
     with ValidatedValuesDetailedMessage {
 
@@ -107,8 +108,8 @@ class ComponentGroupsPreparerSpec
   }
 
   test("return default value defined in parameter") {
-    val defaultValueExpression = Expression("fooLang", "'fooDefault'")
-    val parameter              = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
+    val defaultValueExpression = Expression(Language.Spel, "'fooDefault'")
+    val parameter = Parameter[String](ParameterName("fooParameter")).copy(defaultValue = Some(defaultValueExpression))
     val definition = withStaticDefinition(
       ModelDefinitionBuilder.empty
         .withCustom(
@@ -147,7 +148,7 @@ class ComponentGroupsPreparerSpec
   test("hide sources for fragments") {
     val model =
       getAlignedComponentsWithStaticDefinition(
-        ModelDefinitionBuilder.empty.withSource("source").build,
+        ModelDefinitionBuilder.empty.withUnboundedStreamSource("source").build,
         Map.empty,
         forFragment = true
       )
@@ -189,9 +190,10 @@ class ComponentGroupsPreparerSpec
       new FragmentComponentDefinitionExtractor(
         getClass.getClassLoader,
         Some(_),
-        DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+        DesignerWideComponentId.default("Streaming", _)
       ),
       modelDefinition,
+      ProcessingMode.UnboundedStream
     )
 
     withStaticDefinition(

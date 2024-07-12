@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import cats.data.NonEmptyList
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
+import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, UnboundedStreamComponent}
+import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, TopicName}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.Output
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
@@ -24,7 +25,7 @@ object TestComponentProvider {
     ComponentDefinition("sink", KafkaSink),
   )
 
-  object KafkaSource extends SourceFactory {
+  object KafkaSource extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke(returnType = classOf[String])
     def invoke(@ParamName(`TopicParamName`) topicName: String)(implicit nodeIdPassed: NodeId): LiteKafkaSource =
@@ -32,7 +33,7 @@ object TestComponentProvider {
 
         override val nodeId: NodeId = nodeIdPassed
 
-        override def topics: List[String] = topicName :: Nil
+        override val topics: NonEmptyList[TopicName.ForSource] = NonEmptyList.one(TopicName.ForSource(topicName))
 
         override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
           val value = new String(record.value())
@@ -53,11 +54,12 @@ object TestComponentProvider {
     def invoke(
         @ParamName(`TopicParamName`) topicName: String,
         @ParamName(SinkValueParamName) value: LazyParameter[String]
-    ): LazyParamSink[Output] =
-      (evaluateLazyParameter: LazyParameterInterpreter) => {
-        implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
-        value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
+    ): LazyParamSink[Output] = {
+      new LazyParamSink[Output] {
+        override def prepareResponse: LazyParameter[Output] =
+          value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
       }
+    }
 
   }
 

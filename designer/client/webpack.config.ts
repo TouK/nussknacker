@@ -149,7 +149,7 @@ const config: Configuration = {
             //see ./config.ts
             base: isProd ? "__publicPath__/static/" : "/",
             filename: "main.html",
-            favicon: "src/assets/img/favicon.svg",
+            favicon: "src/assets/img/nussknacker-logo-icon.svg",
             meta: {
                 viewport: "user-scalable = no",
             },
@@ -206,7 +206,8 @@ const config: Configuration = {
                 use: ["babel-loader"],
             },
             {
-                test: /\.(css|styl|less)?$/,
+                test: /\.(css|less)?$/,
+                sideEffects: true,
                 use: [
                     "style-loader",
                     {
@@ -224,12 +225,6 @@ const config: Configuration = {
             },
             {
                 test: /\.css?$/,
-                enforce: "pre",
-                exclude: /node_modules/,
-                use: cssPreLoaders,
-            },
-            {
-                test: /\.styl$/,
                 enforce: "pre",
                 exclude: /node_modules/,
                 use: cssPreLoaders,

@@ -9,53 +9,54 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.security.AuthCredentials
+import pl.touk.nussknacker.security.AuthCredentials.PassedAuthCredentials
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
-import sttp.model.headers.WWWAuthenticateChallenge
+import sttp.model.HeaderNames
+import sttp.model.headers.{AuthenticationScheme, WWWAuthenticateChallenge}
+import sttp.tapir.EndpointInput.AuthType
 import sttp.tapir._
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2AuthenticationResources(
     override val name: String,
     realm: String,
     service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
-    configuration: OAuth2Configuration
-)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
+    override val configuration: OAuth2Configuration
+)(implicit executionContext: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
     extends AuthenticationResources
     with Directives
     with LazyLogging
-    with AnonymousAccess {
+    with AnonymousAccessSupport {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
+  override type CONFIG = OAuth2Configuration
+
   private val authenticator = OAuth2Authenticator(service)
 
-  override def authenticationMethod(): EndpointInput[AuthCredentials] =
-    auth.oauth2
-      .authorizationCode(
-        authorizationUrl = configuration.authorizeUrl.map(_.toString),
-        // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
-        // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
-        tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
-        challenge = WWWAuthenticateChallenge.bearer(realm)
-      )
-      .map(Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value))
-
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
-    authenticator.authenticate(authCredentials.value)
-  }
-
-  override def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
+  override def authenticate(): AuthenticationDirective[AuthenticatedUser] =
     SecurityDirectives.authenticateOAuth2Async(
       authenticator = authenticator,
       realm = realm
     )
+
+  override def authenticate(authCredentials: PassedAuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(authCredentials.value)
   }
 
-  override val frontendStrategySettings: FrontendStrategySettings =
+  override def authenticationMethod(): EndpointInput[Option[PassedAuthCredentials]] =
+    optionalOauth2AuthorizationCode(
+      authorizationUrl = configuration.authorizeUrl.map(_.toString),
+      // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
+      // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
+      tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
+    ).map(_.map(PassedAuthCredentials))(_.map(_.value))
+
+  override protected val frontendStrategySettings: FrontendStrategySettings =
     configuration.overrideFrontendAuthenticationStrategy.getOrElse(
       FrontendStrategySettings.OAuth2(
         configuration.authorizeUrl.map(_.toString),
@@ -66,9 +67,7 @@ class OAuth2AuthenticationResources(
       )
     )
 
-  val anonymousUserRole: Option[String] = configuration.anonymousUserRole
-
-  override lazy val additionalRoute: Route =
+  override protected lazy val additionalRoute: Route =
     pathEnd {
       parameters(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
         get {
@@ -100,7 +99,7 @@ class OAuth2AuthenticationResources(
       case Some(uri) if uri.endsWith("/docs/oauth2-redirect.html") =>
         Some(uri)
       case _ =>
-        Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten.exactlyOne
+        List(redirectUriFromRequest, redirectUriFromConfiguration).flatten.exactlyOne
     }
   }
 
@@ -131,11 +130,9 @@ class OAuth2AuthenticationResources(
           )
         )
       }
-      .recover {
-        case OAuth2ErrorHandler(ex) => {
-          logger.debug("Retrieving access token error:", ex)
-          toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
-        }
+      .recover { case OAuth2ErrorHandler(ex) =>
+        logger.debug("Retrieving access token error:", ex)
+        toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
       }
   }
 
@@ -146,6 +143,38 @@ class OAuth2AuthenticationResources(
     )
   }
 
+  // The code below is copied from sttp.tapir.Tapir.auth.oauth2.authorizationCode with the only change that
+  // the authorization header is optional
+  private def optionalOauth2AuthorizationCode(
+      authorizationUrl: Option[String],
+      tokenUrl: Option[String]
+  ): EndpointInput.Auth[Option[String], AuthType.OAuth2] = {
+    EndpointInput.Auth[Option[String], AuthType.OAuth2](
+      header[Option[String]](HeaderNames.Authorization)
+        .map(optionalMapping(stringPrefixWithSpace(AuthenticationScheme.Bearer.name))),
+      WWWAuthenticateChallenge.bearer(realm),
+      EndpointInput.AuthType.OAuth2(authorizationUrl, tokenUrl, ListMap.empty, None),
+      EndpointInput.AuthInfo.Empty
+    )
+  }
+
+  private def optionalMapping[T](originalMapping: Mapping[T, T]) = {
+    Mapping
+      .fromDecode[Option[T], Option[T]] {
+        case Some(value) => originalMapping.decode(value).map(Some(_))
+        case None        => DecodeResult.Value(None)
+      } {
+        _.map(originalMapping.encode)
+      }
+  }
+
+  private def stringPrefixWithSpace(prefix: String): Mapping[String, String] = {
+    Mapping.stringPrefixCaseInsensitive(prefix + " ")
+  }
+
+  override def impersonationSupport: ImpersonationSupport = NoImpersonationSupport
+
+  override def getAnonymousRole: Option[String] = configuration.anonymousUserRole
 }
 
 final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)

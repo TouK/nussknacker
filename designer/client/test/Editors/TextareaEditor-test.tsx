@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { TextareaEditor } from "../../src/components/graph/node-modal/editors/expression/TextareaEditor";
 import { mockFieldErrors, mockFormatter } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 describe(TextareaEditor.name, () => {
     it("should display validation error when the field is required", () => {
@@ -20,7 +21,7 @@ describe(TextareaEditor.name, () => {
             </NuThemeProvider>,
         );
 
-        expect(screen.getByRole("textbox")).toHaveClass("node-input-with-error");
+        expect(screen.getByRole("textbox")).toHaveClass(nodeInputWithError);
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });
 });

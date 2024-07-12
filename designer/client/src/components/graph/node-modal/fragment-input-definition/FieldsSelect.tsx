@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { FixedValuesPresets, NodeValidationError, Parameter, VariableTypes } from "../../../../types";
+import { NodeValidationError, Parameter, VariableTypes } from "../../../../types";
 import { DndItems } from "../../../common/dndItems/DndItems";
 import { NodeRowFieldsProvider } from "../node-row-fields-provider";
 import { Item, onChangeType, FragmentInputParameter } from "./item";
@@ -20,25 +20,11 @@ interface FieldsSelectProps {
     readOnly?: boolean;
     showValidation?: boolean;
     variableTypes: VariableTypes;
-    fixedValuesPresets: FixedValuesPresets;
     errors: NodeValidationError[];
 }
 
 export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
-    const {
-        fields,
-        label,
-        namespace,
-        options,
-        onChange,
-        variableTypes,
-        removeField,
-        addField,
-        readOnly,
-        showValidation,
-        fixedValuesPresets,
-        errors,
-    } = props;
+    const { fields, label, namespace, options, onChange, variableTypes, removeField, addField, readOnly, showValidation, errors } = props;
 
     const ItemElement = useCallback(
         ({ index, item, errors }: { index: number; item: FragmentInputParameter; errors: NodeValidationError[] }) => {
@@ -52,12 +38,11 @@ export function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                     readOnly={readOnly}
                     variableTypes={variableTypes}
                     showValidation={showValidation}
-                    fixedValuesPresets={fixedValuesPresets}
                     errors={errors}
                 />
             );
         },
-        [namespace, onChange, options, readOnly, variableTypes, showValidation, fixedValuesPresets],
+        [namespace, onChange, options, readOnly, variableTypes, showValidation],
     );
 
     const changeOrder = useCallback((value) => onChange(namespace, value), [namespace, onChange]);

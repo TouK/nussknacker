@@ -9,7 +9,7 @@ The parts describing scenario management and tuning should be accessible also fo
 
 To better understand the documentation below one needs to grasp some concepts of metrics, etc. We won’t go into much detail here, only give references to worthy resources.
 
-Some of them are external, but it also helps to read about important Nussknacker concepts in [glossary](/about/GLOSSARY) and [scenario authoring](../scenarios_authoring/Intro.md).
+Some of them are external, but it also helps to read about important Nussknacker concepts in [glossary](../about/GLOSSARY) and [scenario authoring](../scenarios_authoring/Intro.md).
 
 ### Integration with Apache Kafka
 
@@ -80,19 +80,19 @@ Below we describe endpoints that return general information about the Nussknacke
   * 200 - if all scenarios are valid
   * 500 - list of not-valid scenarios
 * `/api/app/config GET` (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some environmental variables will not be returned)
-* `/api/app/processingtype/reload POST` (requires admin permissions) - reload configuration of models. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
+* `/api/app/processingtype/reload POST` (requires admin permissions) - reload [Model](../installation_configuration_guide/model/ModelConfiguration.md) configuration. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
 
 #### Deployment REST API
 
 Endpoints under “admin”
 
-* `/api/processManagement/deploy/{processName} POST` - deploy scenario with given name passed as a `processName`
-* `/api/processManagement/cancel/{processName} POST` - cancel scenario with given name passed as a `processName`. Savepoint won't be saved
-* `/api/adminProcessManagement/snapshot/{processName}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string
+* `/api/processManagement/deploy/{scenarioName} POST` - deploy scenario with given name passed as a `scenarioName`
+* `/api/processManagement/cancel/{scenarioName} POST` - cancel scenario with given name passed as a `scenarioName`. Savepoint won't be saved
+* `/api/adminProcessManagement/snapshot/{scenarioName}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string
   e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
-* `/api/adminProcessManagement/stop/{processName}?savepointDir={path} POST` - stop scenario and make a savepoint.  Returns path where savepoint was saved as a plain string
+* `/api/adminProcessManagement/stop/{scenarioName}?savepointDir={path} POST` - stop scenario and make a savepoint.  Returns path where savepoint was saved as a plain string
   e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
-* `/api/adminProcessManagement/deploy/{processName}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`
+* `/api/adminProcessManagement/deploy/{scenarioName}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`
 
 ## Scenarios - monitoring and troubleshooting
 
@@ -100,7 +100,7 @@ Each scenario has its own performance characteristics and considerations. This s
 
 ### Nussknacker metrics
 
-One of the crucial aspects of running production streaming jobs is monitoring. In this section we'll explain how the Nussknacker scenario running on the execution engine gives rise to certain metrics, how to process them and display them in Grafana.
+One of the crucial aspects of running production workloads is monitoring. In this section we'll explain how the Nussknacker scenario running on the execution engine gives rise to certain metrics, how to process them and display them in Grafana.
 
 #### Metric types
 
@@ -143,9 +143,19 @@ Nussknacker comes with a Grafana dashboard; you can use it or extend/modify acco
 
 The two most important things that should be monitored after deployment of a scenario are:
 
+* Error rates - are there any problems with execution?
 * Performance - is scenario processing events fast enough?
-* Error rates - are there any problems with execution
 
+#### Error rates 
+
+When you see errors in monitoring, like on screen below:
+
+
+
+![Scenario errors](img/scenario_errors.png "typical errors")
+
+
+it means that there were failures during scenario execution - most often they are caused by errors during SpeL expression evaluation, which couldn't be detected during scenario authoring.
 
 #### Checking source lag
 
@@ -159,29 +169,21 @@ Please note that:
 * Kafka lag is reported with some delay (offsets are not committed immediately). It’s normal to have temporary spikes.
 * Large differences between slots in lag may point to data skew or e.g. problematic data for some keys
 
-### Handling typical scenario errors
+### Logs
 
-When you see errors in monitoring, like on screen below:
-
-
-
-![Scenario errors](img/scenario_errors.png "typical errors")
-
-
-it means that there were failures during scenario execution - most often they are caused by errors during SpeL expression evaluation, which couldn't be detected during validation.
-
-The most common problems are:
+If errors occur, their details can be found in one or more logs:
+* engine log which contains **stdout** of the engine process
+* in the streaming processing mode a [dedicated Kafka topic](../integration/KafkaIntegration.md#exception-handling) can be configured where additional error details will be written. 
+* if Flink engine is used, [additional logging mechanisms can be configured](../installation_configuration_guide/model/Flink.md#configuring-exception-handling) - the logs will be viewable via Flink console. 
 
 
 
-* NullPointerException - please see SpEL documentation [link Safe Navigation] to see how to check if some value is null
-* Conversion errors - e.g. #NUMBER.toNumber - this usually indicates problem with the source data
+None of these logs is viewable via Nussknacker Designer - please consult your IT operations personnel on how to access the above mentioned logs.   
 
-To see the exact error you can look at (depending on the configuration of the Exception handler):
-
+#### Log examples
 
 
-* Check logs of your execution engine e.g. in ELK (be sure to check all of them)
+* Engine log
 
 
 ```
@@ -189,9 +191,7 @@ To see the exact error you can look at (depending on the configuration of the Ex
 ```
 
 
-
 * Contents of configured errors' topic on Kafka:
-
 
 ```
 {
@@ -206,6 +206,17 @@ To see the exact error you can look at (depending on the configuration of the Ex
   "additionalData": {}
 }
 ```
+NOTE: processName means scenario name in the above configuration. 
+
+
+### Handling typical scenario errors
+
+The most common problems are:
+* NullPointerException - please see SpEL documentation [link Safe Navigation] to see how to check if some value is null
+* Conversion errors - e.g. #NUMBER.toNumber - this usually indicates problem with the source data
+* Avro serialization - see next section for more details
+
+
 #### Avro serialization problem
 Common problem is when your Avro data encoding not correspond with the one Nussknacker expects. You will find then `Unknown magic byte!` error indicating that data you produced to the topic are not serialized properly.
 ```

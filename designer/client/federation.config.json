@@ -4,6 +4,8 @@
         "./config": "./src/config",
         "./HttpService": "./src/http/HttpService",
         "./Auth": "./src/containers/Auth/AuthInitializer",
-        "./Icon": "./src/components/UrlIcon"
+        "./Icon": "./src/components/UrlIcon",
+        "./themeHelpers": "./src/containers/theme/helpers",
+        "./eventTracking": "./src/containers/event-tracking/index"
     }
 }

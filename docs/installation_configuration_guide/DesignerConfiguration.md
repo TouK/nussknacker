@@ -52,9 +52,11 @@ The table below presents most important options, or the ones that have Nussknack
 
 ### Metric dashboard
 
-Each scenario can have a link to Grafana dashboard. In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/grafana) we
-provide a sample `nussknacker-scenario` dashboard.
-You can modify/configure your own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
+Each scenario can have a link to Grafana dashboard. 
+In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/grafana/dashboards) 
+we provide a sample `nussknacker-scenario` dashboard. You can modify/configure your own, the only assumption that 
+we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display 
+metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by
 `metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
@@ -104,7 +106,7 @@ with the settings presented below:
 
 Nussknacker Designer can be configured to replace certain values in comments to links that can point e.g. to external issue tracker like
 GitHub issues or Jira. For example, `MARKETING-555` will change to link `https://jira.organization.com/jira/browse/MARKETING-555`.
-See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L329) for example configuration.
 
 
 | Parameter name                              | Importance | Type     | Default value | Description                                                                                                                                                                          |
@@ -130,6 +132,10 @@ Each user has id and set of permissions for every scenario category. The followi
 * Write - user can modify/add new scenarios in category
 * Deploy - user can deploy or cancel scenarios in given category
 
+You can set `isAdmin` flag to a certain role in the [users configuration file](/docs/installation_configuration_guide/DesignerConfiguration.md#Users-file-format).
+Users who have this role will be considered an Admin user by the system and will have all the permissions to every
+scenario category as well as all the [global permissions](/docs/installation_configuration_guide/DesignerConfiguration.md#Global-permissions).
+
 You can set a role assigned to an anonymous user with the `anonymousUserRole` setting in the `authentication` section in the configuration.
 When no value is provided (default), no anonymous access will be granted.
 
@@ -141,18 +147,29 @@ have one.
 
 Currently supported permissions:
 
-* AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components
-  functionality).
+* Impersonate - Enables technical user to impersonate a business user and act on their behalf with their permissions.
+
+### Impersonation
+
+Nussknacker supports an impersonation mechanism on the API level, allowing system's technical users to perform actions on behalf of
+business users. A technical user has to have the `Impersonate` global permission configured in order to be able to
+impersonate.
+
+Currently only BasicAuth security mechanism supports this feature.
+
+You can configure whether Admin users can be impersonated by such technical users with `isAdminImpersonationPossible`
+setting in the `authentication` section. By default, it's set to `false`.
 
 ### Common configuration parameters
 
 The table below contains parameters common to all the supported authentication methods.
 
-| Parameter name                   | Importance | Type        | Default value | Description                                                                                                                                                        |
-|----------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| authentication.method            | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`                                                                                                                                    |
-| authentication.usersFile         | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions                                                                          |
-| authentication.anonymousUserRole | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
+| Parameter name                              | Importance | Type        | Default value | Description                                                                                                                                                        |
+|---------------------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| authentication.method                       | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`                                                                                                                                    |
+| authentication.usersFile                    | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions                                                                          |
+| authentication.anonymousUserRole            | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
+| authentication.isAdminImpersonationPossible | required   | boolean     | false         | `true` or `false`. Flag describing whether users with `Impersonate` global permission can impersonate Admin users.                                                 |
 
 #### Users' file format:
 
@@ -184,8 +201,7 @@ users: [
 rules: [
   {
     role: "Admin"
-    isAdmin: true,
-    categories: ["RequestResponseCategory1"]
+    isAdmin: true
   },
   {
     role: "UserWithAdminTab"
@@ -505,7 +521,7 @@ processToolbarConfig {
     ]
     topRight: [
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", disabled: { fragment: false, archived: true, type: "oneof" } }
           { type: "custom-link", title: "Metrics for $processName", url: "/metrics/$processId" }
@@ -571,6 +587,7 @@ Example usage:
 processToolbarConfig {
   defaultConfig {
     topLeft: [
+      { type: "search-panel" }
       { type: "tips-panel" }
       { type: "creator-panel", hidden: { archived: true } }
       { type: "versions-panel" }
@@ -578,8 +595,9 @@ processToolbarConfig {
       { type: "attachments-panel" }
     ]
     topRight: [
+      { type: "process-info-panel" }
       {
-        type: "process-info-panel"
+        type: "process-actions-panel"
         buttons: [
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
           { type: "process-deploy", disabled: { fragment: true, archived: true, type: "oneof" } }
@@ -770,7 +788,7 @@ scenarioTypes {
 ```
 
 Scenario type configuration consists of parts:
-- `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
+- `deploymentConfig` - [scenario deployment configuration](./ScenarioDeploymentConfiguration.md)
 - `modelConfig` - [model configuration](./model/ModelConfiguration.md)
 - `category` - category handled by given scenario type
 
@@ -779,7 +797,7 @@ In Nussknacker distribution there are preconfigured scenario types:
 - `streaming-lite-embedded` - using embedded Lite Deployment Manager in Streaming processing mode providing only stateless streaming components
 - `request-response-embedded` - use embedded Request-Response Deployment Manager, scenario logic is exposed as REST API, on additional HTTP port at Designer
 
-And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
+Each of these scenario types has `Default` category assigned.
 
 See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33)
 from development config for more complex examples.

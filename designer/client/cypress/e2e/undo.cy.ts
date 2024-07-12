@@ -3,7 +3,7 @@ describe("Undo/Redo", () => {
     const screenshotOptions: Cypress.MatchImageOptions = {
         maxDiffThreshold: 0.005,
         screenshotConfig: {
-            blackout: ["> :not(#nk-graph-main) > div"],
+            blackout: ["> div > :not(#nk-graph-main)"],
         },
     };
 
@@ -18,8 +18,8 @@ describe("Undo/Redo", () => {
     beforeEach(() => {
         cy.visitNewProcess(seed, "testProcess");
         cy.contains(/^custom$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         cy.layoutScenario();
         cy.get("[data-testid=graphPage]", { timeout: 20000 }).as("graph");
         cy.contains(/^undo$/i)

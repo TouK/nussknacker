@@ -11,7 +11,7 @@ import { Scenario } from "../components/Process/types";
 export function useWindows(parent?: WindowId) {
     const { open: _open, closeAll } = useWindowManager(parent);
     const [settings] = useUserSettings();
-    const forceDisableModals = useMemo(() => settings["wm.forceDisableModals"], [settings]);
+    const forceDisableModals = useMemo(() => settings["debug.forceDisableModals"], [settings]);
 
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
@@ -29,6 +29,7 @@ export function useWindows(parent?: WindowId) {
                 isResizable: true,
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, scenario },
+                shouldCloseOnEsc: false,
             }),
         [open],
     );

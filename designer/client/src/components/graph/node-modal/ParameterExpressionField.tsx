@@ -1,7 +1,7 @@
 import { useTestResults } from "./TestResultsWrapper";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { findParamDefinitionByName } from "./FieldLabel";
-import React from "react";
+import React, { useMemo } from "react";
 import { NodeType, NodeValidationError, Parameter, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { getValidationErrorsForField } from "./editors/Validators";
@@ -37,6 +37,15 @@ export function ParameterExpressionField(props: ParameterExpressionField): JSX.E
 
     const expressionProperty = "expression";
     const testResultsState = useTestResults();
+    const variableTypes = useMemo(
+        () =>
+            findAvailableVariables(
+                node.id,
+                parameterDefinitions?.find((p) => p.name === parameter.name),
+            ),
+        [findAvailableVariables, node.id, parameter.name, parameterDefinitions],
+    );
+
     return (
         <ExpressionField
             fieldName={parameter.name}
@@ -50,10 +59,7 @@ export function ParameterExpressionField(props: ParameterExpressionField): JSX.E
             setNodeDataAt={setProperty}
             testResultsToShow={testResultsState.testResultsToShow}
             renderFieldLabel={renderFieldLabel}
-            variableTypes={findAvailableVariables(
-                node.id,
-                parameterDefinitions?.find((p) => p.name === parameter.name),
-            )}
+            variableTypes={variableTypes}
             fieldErrors={getValidationErrorsForField(errors, parameter.name)}
         />
     );

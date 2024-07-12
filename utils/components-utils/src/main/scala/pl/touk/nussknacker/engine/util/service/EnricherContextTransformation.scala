@@ -12,20 +12,20 @@ import pl.touk.nussknacker.engine.api.NodeId
  */
 object EnricherContextTransformation {
 
-  def apply(outputVariableName: String, returnType: TypingResult, implementation: ServiceInvoker)(
+  def apply(outputVariableName: String, returnType: TypingResult, serviceInvoker: ServiceInvoker)(
       implicit nodeId: NodeId
   ): ContextTransformation = {
-    apply(outputVariableName, Valid(returnType), implementation)
+    apply(outputVariableName, Valid(returnType), serviceInvoker)
   }
 
   def apply(
       outputVariableName: String,
       returnType: Validated[NonEmptyList[ProcessCompilationError], TypingResult],
-      implementation: ServiceInvoker
+      invoker: ServiceInvoker
   )(implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy(vc => returnType.andThen(rt => vc.withVariable(OutputVar.enricher(outputVariableName), rt)))
-      .implementedBy(implementation)
+      .implementedBy(invoker)
   }
 
 }

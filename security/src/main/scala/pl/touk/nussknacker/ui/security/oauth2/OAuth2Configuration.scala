@@ -35,13 +35,14 @@ final case class OAuth2Configuration(
     accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
     defaultTokenExpirationDuration: FiniteDuration = FiniteDuration(1, HOURS),
     anonymousUserRole: Option[String] = None,
+    isAdminImpersonationPossible: Boolean = false,
     tokenCookie: Option[TokenCookieConfig] = None,
     overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
     usernameClaim: Option[UsernameClaim] = None,
 ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
-  override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(Nil)
+  override lazy val users: List[ConfigUser] = usersOpt.getOrElse(Nil)
 
   def getUserRoles(identity: String): Set[String] =
     findUserById(identity)

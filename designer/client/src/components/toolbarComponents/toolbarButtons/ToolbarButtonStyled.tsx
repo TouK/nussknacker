@@ -1,20 +1,16 @@
 import { styled } from "@mui/material";
-import { variables } from "../../../stylesheets/variables";
-import { ButtonsVariant } from "./index";
+import { PANEL_BUTTON_SIZE } from "../../../stylesheets/variables";
 
 export const Icon = styled("div")({
-    flex: 1,
-    lineHeight: 0,
-    display: "flex",
-    flexDirection: "column",
-    width: parseFloat(variables.buttonSize) / 2,
+    // TODO: flatten nested usages
+    "&, &>*": {
+        flex: 1,
+        lineHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        width: PANEL_BUTTON_SIZE / 2,
+    },
 });
-
-export const Label = styled("div")<{
-    variant: ButtonsVariant;
-}>(({ variant }) => ({
-    display: variant === ButtonsVariant.small ? "none" : "unset",
-}));
 
 export const ToolbarButtonWrapper = styled("div")(() => ({
     display: "flex",

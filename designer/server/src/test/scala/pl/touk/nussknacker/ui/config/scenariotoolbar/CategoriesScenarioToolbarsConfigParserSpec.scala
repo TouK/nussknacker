@@ -21,8 +21,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |    ]
       |    topRight: [
       |      {
-      |        type: "process-info-panel"
-      |        title: "Process Info"
+      |        type: "process-actions-panel"
+      |        title: "Process Actions"
       |        buttons: [
       |          { type: "process-save", icon: "/assets/buttons/save.svg", name: "save", disabled: { archived: true } }
       |          { type: "process-deploy" }
@@ -36,8 +36,8 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       |      uuid: 58f1acff-d864-4d66-9f86-0fa7319f7043
       |      topRight: [
       |        {
-      |          type: "process-info-panel"
-      |          title: "Process Info Right"
+      |          type: "process-actions-panel"
+      |          title: "Process Actions Right"
       |          buttonsVariant: "small"
       |          buttons: [
       |            { type: "process-save" }
@@ -60,9 +60,9 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       Nil,
       List(
         ToolbarPanelConfig(
-          ProcessInfoPanel,
+          ProcessActionsPanel,
           None,
-          Some("Process Info"),
+          Some("Process Actions"),
           None,
           Some(
             List(
@@ -75,7 +75,15 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
                 None,
                 Some(ToolbarCondition(None, Some(true), None))
               ),
-              ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
+              ToolbarButtonConfig(
+                ToolbarButtonConfigType.ProcessDeploy,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None
+              ),
               ToolbarButtonConfig(
                 ToolbarButtonConfigType.CustomLink,
                 Some("metrics"),
@@ -99,9 +107,9 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
       Nil,
       List(
         ToolbarPanelConfig(
-          ProcessInfoPanel,
+          ProcessActionsPanel,
           None,
-          Some("Process Info Right"),
+          Some("Process Actions Right"),
           Some(Small),
           Some(
             List(
@@ -129,28 +137,28 @@ class CategoriesScenarioToolbarsConfigParserSpec extends AnyFlatSpec with Matche
     val configMap = ConfigFactory
       .parseString("""
         |"MissingUrlError" {
-        |  type: "process-info-panel"
-        |  title: "Process Info"
+        |  type: "process-actions-panel"
+        |  title: "Process Actions"
         |  buttons: [
         |   { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg" }
         |  ]
         |},
         |"MissingNameError" {
-        |  type: "process-info-panel"
-        |  title: "Process Info"
+        |  type: "process-actions-panel"
+        |  title: "Process Actions"
         |  buttons: [
         |   { type: "custom-link", url: "/metrics", icon: "/assets/buttons/metrics.svg" }
         |  ]
         |},
         |"RedundantUrlError" {
-        |  type: "process-info-panel"
-        |  title: "Process Info"
+        |  type: "process-actions-panel"
+        |  title: "Process Actions"
         |  buttons: [
         |    { type: "process-save", title: "metrics", icon: "/assets/buttons/save.svg", url: "no-url" }
         |  ]
         |},
         |"MissingButtonsError" {
-        |  id: "button1" 
+        |  id: "button1"
         |  type: "buttons-panel"
         |  title: "Buttons Info"
         |},

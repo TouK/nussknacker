@@ -8,7 +8,9 @@ import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
 import { FieldError, PossibleValue } from "./Validators";
 import { cx } from "@emotion/css";
-import { FormControl } from "@mui/material";
+import { FormControl, FormLabel } from "@mui/material";
+import ErrorBoundary from "../../../common/ErrorBoundary";
+import { nodeValue } from "../NodeDetailsContent/NodeTableStyled";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -19,7 +21,7 @@ interface Props {
     param?: ParamType;
     values?: Array<PossibleValue>;
     isMarked?: boolean;
-    showValidation: boolean;
+    showValidation?: boolean;
     onValueChange: (value: string) => void;
     fieldErrors: FieldError[];
     variableTypes: VariableTypes;
@@ -40,15 +42,17 @@ export const EditableEditor = forwardRef((props: Props, ref) => {
     );
 
     return (
-        <Editor
-            {...props}
-            ref={ref}
-            editorConfig={param?.editor}
-            className={`${valueClassName ? valueClassName : "node-value"}`}
-            fieldErrors={fieldErrors}
-            formatter={formatter}
-            expressionInfo={validationLabelInfo}
-        />
+        <ErrorBoundary>
+            <Editor
+                {...props}
+                ref={ref}
+                editorConfig={param?.editor}
+                className={`${valueClassName ? valueClassName : nodeValue}`}
+                fieldErrors={fieldErrors}
+                formatter={formatter}
+                expressionInfo={validationLabelInfo}
+            />
+        </ErrorBoundary>
     );
 });
 
@@ -66,7 +70,7 @@ function EditableEditorRow({
     return (
         <FormControl className={cx(rowClassName && rowClassName)} style={{ width: "100%", margin: rowClassName && 0 }}>
             <>
-                {fieldLabel && renderFieldLabel?.(fieldLabel)}
+                {fieldLabel ? renderFieldLabel?.(fieldLabel) : <FormLabel />}
                 <EditableEditor {...props} />
             </>
         </FormControl>

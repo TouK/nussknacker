@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
@@ -85,7 +84,15 @@ class FlinkProcessRegistrar(
 
       val compilerDataForProcessPart =
         FlinkProcessRegistrar.enrichWithUsedNodes[FlinkProcessCompilerData](compilerDataForUsedNodesAndClassloader) _
-      register(env, compilerDataForProcessPart, compilerData, process, resultCollector, typeInformationDetection)
+      register(
+        env,
+        compilerDataForProcessPart,
+        compilerData,
+        process,
+        resultCollector,
+        typeInformationDetection,
+        deploymentData
+      )
       streamExecutionEnvPreparer.postRegistration(env, compilerData, deploymentData)
     }
   }
@@ -107,9 +114,9 @@ class FlinkProcessRegistrar(
 
   protected def createInterpreter(
       compilerDataForClassloader: ClassLoader => FlinkProcessCompilerData
-  ): RuntimeContext => FlinkCompilerLazyInterpreterCreator =
+  ): RuntimeContext => ToEvaluateFunctionConverterWithLifecycle =
     (runtimeContext: RuntimeContext) =>
-      new FlinkCompilerLazyInterpreterCreator(
+      new ToEvaluateFunctionConverterWithLifecycle(
         runtimeContext,
         compilerDataForClassloader(runtimeContext.getUserCodeClassLoader)
       )
@@ -120,7 +127,8 @@ class FlinkProcessRegistrar(
       compilerData: FlinkProcessCompilerData,
       process: CanonicalProcess,
       resultCollector: ResultCollector,
-      typeInformationDetection: TypeInformationDetection
+      typeInformationDetection: TypeInformationDetection,
+      deploymentData: DeploymentData
   ): Unit = {
 
     val metaData         = compilerData.metaData
@@ -132,12 +140,14 @@ class FlinkProcessRegistrar(
     ): FlinkCustomNodeContext = {
       val exceptionHandlerPreparer = (runtimeContext: RuntimeContext) =>
         compilerDataForProcessPart(None)(runtimeContext.getUserCodeClassLoader).prepareExceptionHandler(runtimeContext)
-      val jobData = compilerData.jobData
+      val jobData          = compilerData.jobData
+      val componentUseCase = compilerData.componentUseCase
+
       FlinkCustomNodeContext(
         jobData,
         nodeComponentId.nodeId,
         compilerData.processTimeout,
-        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _),
+        convertToEngineRuntimeContext = FlinkEngineRuntimeContextImpl(jobData, _, componentUseCase),
         lazyParameterHelper = new FlinkLazyParameterFunctionHelper(
           nodeComponentId,
           exceptionHandlerPreparer,
@@ -147,7 +157,10 @@ class FlinkProcessRegistrar(
         globalParameters = globalParameters,
         validationContext,
         typeInformationDetection,
-        compilerData.componentUseCase
+        compilerData.componentUseCase,
+        // TODO: we should verify if component supports given node data type. If not, we should throw some error instead
+        //       of silently skip these data
+        deploymentData.nodesData.dataByNodeId.get(NodeId(nodeComponentId.nodeId))
       )
     }
 
@@ -170,8 +183,8 @@ class FlinkProcessRegistrar(
       val contextTypeInformation = typeInformationDetection.forContext(part.validationContext)
 
       val start = source
-        .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id), contextTypeInformation)
+        .contextStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
+        .process(new SourceMetricsFunction(part.id, compilerData.componentUseCase), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 
@@ -366,7 +379,12 @@ class FlinkProcessRegistrar(
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
         stream.flatMap(
-          new SyncInterpretationFunction(compilerDataForProcessPart(Some(part)), node, validationContext, useIOMonad),
+          new SyncInterpretationFunction(
+            compilerDataForProcessPart(Some(part)),
+            node,
+            validationContext,
+            useIOMonad
+          ),
           ti
         )
       }

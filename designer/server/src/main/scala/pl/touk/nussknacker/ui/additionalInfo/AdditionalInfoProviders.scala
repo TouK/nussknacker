@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +39,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
       user: LoggedUser
   ): Future[Option[AdditionalInfo]] = {
     (for {
-      provider <- OptionT.fromOption[Future](nodeProviders.forType(processingType).flatten)
+      provider <- OptionT.fromOption[Future](nodeProviders.forProcessingType(processingType).flatten)
       data     <- OptionT(provider(nodeData))
     } yield data).value
   }
@@ -49,7 +49,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
       user: LoggedUser
   ): Future[Option[AdditionalInfo]] = {
     (for {
-      provider <- OptionT.fromOption[Future](propertiesProviders.forType(processingType).flatten)
+      provider <- OptionT.fromOption[Future](propertiesProviders.forProcessingType(processingType).flatten)
       data     <- OptionT(provider(metaData))
     } yield data).value
   }

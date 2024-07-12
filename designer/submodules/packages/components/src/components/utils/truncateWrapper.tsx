@@ -1,11 +1,10 @@
-import React, { PropsWithChildren, useCallback, useRef } from "react";
-import { Truncate } from "./truncate";
 import { Visibility } from "@mui/icons-material";
 import { Box, Popover, PopoverOrigin, Stack, styled, Typography } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { bindPopover, bindTrigger, PopupState, usePopupState } from "material-ui-popup-state/hooks";
+import React, { PropsWithChildren, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { alpha } from "@mui/material/styles";
+import { Truncate } from "./truncate";
 
 const paperProps = {
     sx: {
@@ -30,7 +29,8 @@ const transformOrigin: PopoverOrigin = {
 const TruncateButton = styled("button")(({ theme }) => ({
     background: "none",
     border: "none",
-    color: theme.palette.common.white,
+    outline: "none",
+    color: theme.palette.text.secondary,
     display: "flex",
     alignItems: "center",
     textTransform: "lowercase",
@@ -38,11 +38,11 @@ const TruncateButton = styled("button")(({ theme }) => ({
     height: "100%",
     padding: 0,
     ":hover": {
-        backgroundColor: alpha(theme.palette.common.white, 0.08),
+        backgroundColor: theme.palette.action.hover,
     },
     ":focus-visible": {
         outline: "none",
-        backgroundColor: alpha(theme.palette.common.white, 0.08),
+        backgroundColor: theme.palette.action.hover,
     },
 }));
 
@@ -57,8 +57,8 @@ const Truncator = ({
 }) => {
     const { t } = useTranslation();
     return (
-        <TruncateButton {...bindTrigger(popupState)}>
-            <Visibility sx={{ fontSize: "18px", color: "rgb(224, 224, 224)" }} />
+        <TruncateButton {...bindTrigger(popupState)} className="truncator">
+            <Visibility sx={{ fontSize: "18px" }} />
             <Typography sx={{ mx: "4px", fontSize: "13px" }}>
                 {itemsCount === hiddenItemsCount
                     ? t("truncator.allHidden", "{{hiddenItemsCount}} items...", { hiddenItemsCount })
@@ -87,10 +87,8 @@ export function TruncateWrapper({ children }: PropsWithChildren<GridRenderCellPa
                 spacing={0.5}
                 component={Truncate}
                 renderTruncator={renderTruncator}
-                itemClassName="item"
-                truncatorClassName="truncator"
                 sx={{
-                    "&& .item:nth-of-type(1)": {
+                    "&& li:nth-of-type(1)": {
                         marginLeft: 0,
                     },
                 }}

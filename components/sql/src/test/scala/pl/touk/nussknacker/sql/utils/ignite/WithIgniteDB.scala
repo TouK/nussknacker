@@ -58,7 +58,7 @@ trait WithIgniteDB extends BeforeAndAfterAll {
     }
   }
 
-  override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     try {
       Ignition.stopAll(true)
     } finally {

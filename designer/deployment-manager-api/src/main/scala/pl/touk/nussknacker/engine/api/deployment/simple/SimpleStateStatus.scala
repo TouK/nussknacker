@@ -1,18 +1,33 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{
+  DeploymentStatus,
+  NoAttributesDeploymentStatus,
+  NoAttributesStateStatus,
+  ProblemDeploymentStatus,
+  ScenarioActionName,
+  StateDefinitionDetails,
+  StateStatus
+}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
 
 object SimpleStateStatus {
 
+  def fromDeploymentStatus(deploymentStatus: DeploymentStatus): StateStatus = {
+    deploymentStatus match {
+      case noAttributes: NoAttributesDeploymentStatus => NoAttributesStateStatus(noAttributes.name.value)
+      // We assume that all deployment status have default allowedActions. Non-default allowedActions have only
+      // statuses that are not deployment statuses but scenario statuses.
+      case problem: ProblemDeploymentStatus => ProblemStateStatus(problem.description)
+    }
+  }
+
   // Represents general problem.
-  final case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions)
+  final case class ProblemStateStatus(description: String, allowedActions: List[ScenarioActionName] = defaultActions)
       extends StateStatus {
     override def name: StatusName = ProblemStateStatus.name
   }
@@ -24,15 +39,15 @@ object SimpleStateStatus {
 
     val icon: URI          = URI.create("/assets/states/error.svg")
     val defaultDescription = "There are some problems with scenario."
-    val defaultActions: List[deployment.ProcessActionType.Value] =
-      List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+    val defaultActions: List[ScenarioActionName] =
+      List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
 
     // Problem factory methods
 
     val Failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
 
     val ArchivedShouldBeCanceled: ProblemStateStatus =
-      ProblemStateStatus("Archived scenario should be canceled.", List(ProcessActionType.Cancel))
+      ProblemStateStatus("Archived scenario should be canceled.", List(ScenarioActionName.Cancel))
 
     val FailedToGet: ProblemStateStatus =
       ProblemStateStatus(s"Failed to get a state of the scenario.")
@@ -63,7 +78,7 @@ object SimpleStateStatus {
       ProblemStateStatus("Scenario state error - no actions found.")
 
     val MultipleJobsRunning: ProblemStateStatus =
-      ProblemStateStatus("More than one deployment is running.", List(ProcessActionType.Cancel))
+      ProblemStateStatus("More than one deployment is running.", List(ScenarioActionName.Cancel))
 
   }
 
@@ -82,17 +97,18 @@ object SimpleStateStatus {
       status
     )
 
-  val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
+  val statusActionsPF: PartialFunction[StateStatus, List[ScenarioActionName]] = {
     case SimpleStateStatus.NotDeployed =>
-      List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
-    case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-    case SimpleStateStatus.Running => List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
+      List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
+    case SimpleStateStatus.DuringDeploy => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
+    case SimpleStateStatus.Running =>
+      List(ScenarioActionName.Cancel, ScenarioActionName.Pause, ScenarioActionName.Deploy)
     case SimpleStateStatus.Canceled =>
-      List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
-    case SimpleStateStatus.Restarting => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
+    case SimpleStateStatus.Restarting => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     case SimpleStateStatus.Finished =>
-      List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
-    case SimpleStateStatus.DuringCancel => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      List(ScenarioActionName.Deploy, ScenarioActionName.Archive, ScenarioActionName.Rename)
+    case SimpleStateStatus.DuringCancel => List(ScenarioActionName.Deploy, ScenarioActionName.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
     case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions

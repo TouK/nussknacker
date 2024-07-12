@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.util.functions
 
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
-object geo extends HideToString {
+object geo extends GeoUtils
+
+trait GeoUtils extends HideToString {
 
   @Documentation(description =
     "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm"

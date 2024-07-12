@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic.flink
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.BaseModelData
+import org.apache.flink.api.common.JobID
+import pl.touk.nussknacker.engine.{BaseModelData, newdeployment}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
@@ -27,7 +28,7 @@ private[periodic] object FlinkJarManager {
       ec: ExecutionContext
   ): JarManager = {
     new FlinkJarManager(
-      flinkClient = new HttpFlinkClient(flinkConfig),
+      flinkClient = HttpFlinkClient.createUnsafe(flinkConfig),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),
       inputConfigDuringExecution = modelData.inputConfigDuringExecution,
       modelJarProvider = new FlinkModelJarProvider(modelData.modelClassLoaderUrls)
@@ -50,12 +51,12 @@ private[periodic] class FlinkJarManager(
   override def prepareDeploymentWithJar(
       processVersion: ProcessVersion,
       canonicalProcess: CanonicalProcess
-  ): Future[DeploymentWithJarData] = {
+  ): Future[DeploymentWithJarData[CanonicalProcess]] = {
     logger.info(s"Prepare deployment for scenario: $processVersion")
     copyJarToLocalDir(processVersion).map { jarFileName =>
       DeploymentWithJarData(
         processVersion = processVersion,
-        canonicalProcess = canonicalProcess,
+        process = canonicalProcess,
         inputConfigDuringExecutionJson = inputConfigDuringExecution.serialized,
         jarFileName = jarFileName
       )
@@ -73,7 +74,7 @@ private[periodic] class FlinkJarManager(
   }
 
   override def deployWithJar(
-      deploymentWithJarData: DeploymentWithJarData,
+      deploymentWithJarData: DeploymentWithJarData[CanonicalProcess],
       deploymentData: DeploymentData
   ): Future[Option[ExternalDeploymentId]] = {
     val processVersion = deploymentWithJarData.processVersion
@@ -85,9 +86,15 @@ private[periodic] class FlinkJarManager(
       deploymentWithJarData.inputConfigDuringExecutionJson,
       processVersion,
       deploymentData,
-      deploymentWithJarData.canonicalProcess
+      deploymentWithJarData.process
     )
-    flinkClient.runProgram(jarFile, FlinkStreamingRestManager.MainClassName, args, None)
+    flinkClient.runProgram(
+      jarFile,
+      FlinkStreamingRestManager.MainClassName,
+      args,
+      None,
+      deploymentData.deploymentId.toNewDeploymentIdOpt.map(toJobId)
+    )
   }
 
   override def deleteJar(jarFileName: String): Future[Unit] = {
@@ -102,6 +109,10 @@ private[periodic] class FlinkJarManager(
     val jarPath = jarsDir.resolve(jarFileName)
     val deleted = Files.deleteIfExists(jarPath)
     logger.info(s"Deleted: ($deleted) jar in: $jarPath")
+  }
+
+  private def toJobId(did: newdeployment.DeploymentId) = {
+    new JobID(did.value.getLeastSignificantBits, did.value.getMostSignificantBits).toHexString
   }
 
 }

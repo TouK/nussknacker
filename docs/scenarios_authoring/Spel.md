@@ -41,7 +41,7 @@ they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.tim
 | BigDecimal | enable computation without rounding errors |
 | UUID       | uuid                                       |
 
-More information about how to declare each type in Avro you can find in [Avro documentation](http://avro.apache.org/docs/current/spec.html#schemas), 
+More information about how to declare each type in Avro is in [Avro documentation](http://avro.apache.org/docs/current/spec.html#schemas), 
 especially about [Avro logical types](http://avro.apache.org/docs/current/spec.html#Logical+Types).
 
 ### Records/objects/maps
@@ -67,88 +67,17 @@ Nussknacker usually infers structure of record from external source (e.g. Avro s
 
 ### Arrays/lists
 
-In Nussknacker (e.g. in code completion) JSON / Avro arrays are refered to as `Lists`; 
+In Nussknacker (e.g. in code completion) JSON / Avro arrays are referred to as `Lists`; 
 also in some context `Collection` can be met (it's Java API for handling lists, sets etc.).
 
-### Handling date/time.
+### Date/Time
 
-#### Date/time data types
+See [Handling data/time](#handling-datetime) for detailed description of how to deal with date and time in Nussknacker.
 
-Formats of date/time are pretty complex - especially in Java. There are basically three ways of storing date:
-- as timestamp - absolute value, number of milliseconds since 1970-01-01T00:00:00 UTC. In Nussknacker this is 
-  usually seen as `Instant` or `Long`. This format is handy for storing/sending values, a bit problematic when
-  it comes to computations like adding a month or extracting date. 
-- as date/time without timezone information (this is usually handy if your system is in one timezone).
-  Converting to timestamp is done using Nussknacker server timezone.
-  In Nussknacker they are usually represented as `LocalDate` and `LocalDateTime`. Suitable for date computations like adding a month or extracting date. 
-- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. You need to know TimeZone ID, if you want you use date/time with stored timezone. A full list of TimeZone IDs can be found [here](https://www.tutorialspoint.com/get-all-the-ids-of-the-time-zone-in-java).
-- as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
-  Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
 
-#### Conversions between date/time types
+## SpEL syntax
 
-Conversions of different types of dates are handled either by
-- `#DATE` helper methods e.g.:
-  - `#DATE.toEpochMilli(#zondeDate)`
-  - `#DATE.toInstant(#long)` - converts long value to `Instant`
-- methods on some types of objects, e.g.
-  - `#instantObj.toEpochMilli` - returns timestamp for `#instantObj` of type `Instant`
-  - `#localDate.atStartOfDay()` - returns `LocalDateTime` at midnight for `#localDate` of type `LocalDate`
-  - `#localDateTime.toLocalDate` - truncates to date for `#localDateTime` of type `LocalDateTime`
-  - `#zonedDate.toInstant` - converts `ZonedDateTime` to `Instant`
-  - `#instant.atZone('Europe/Paris')` - converts `ZonedDateTime` to `Instant`
-  - `#instant.atOffset('+01:00')` - converts `OffsetDateTime` to `Instant`
-- automatically by implicit conversion mechanism e.g.
-  - `#instant.atZone('Europe/Paris')` - `Europe/Paris` String was automatically converted to `ZonedId`
-  - `#instant.atOffset('+01:00')` - `+01:00` String was automatically converted to `ZonedId`
-  - `#time.isAfter('09:00')` - `09:00` String was automatically converted to `LocalTime`
-  - `#date.isBefore('2020-07-01')` - `2020-07-01` String was automatically converted to `LocalDate`
-  - `#dateTime.isAfter('2020-05-01T11:00:00')` - `2020-05-01T11:00:00` String was automatically converted to `LocalDateTime`
-
-#### Date/time utility methods
-
-`DATE` helper contains also some other useful helper methods, mainly for date range checks and computations of periods and durations e.g.:
-- `#DATE.isBetween(#localTime, '09:00', '17:00')` - checks if `LocalTime` is in (inclusive) range `<09:00, 17:00>`
-- `#DATE.isBetween(#dayOfWeek, #DATE.MONDAY, #DATE.FRIDAY)` - checks if `DayOfWeek` is in (inclusive) range `<MONDAY, FRIDAY>`
-- `#DATE.isBetween(#localDate, '2020-06-01', '2020-07-01')` - checks if `LocalDate` is in (inclusive) range `<2020-06-01, 2020-07-01>`
-- `#DATE.isBetween(#localDateTime, '2020-06-01T11:00:00', '2020-07-01T11:00:00')` - checks if `LocalDateTime` is in (inclusive) range `<2020-06-01T11:00:00, 2020-07-01T11:00:00>`
-- `#DATE.periodBetween(#from, #to).getMonths` - computes `Period` between `from` and `to` and return number of full months between those two dates
-- `#DATE.durationBetween(#from, #to).toDays` - computes `Duration` between `from` and `to` and return number of full days between those two dates.
-  Keep in mind that `Duration` is not daylight saving time aware - it computes seconds difference and divide it by number of seconds in given period.
-- In case of days it will be `86400` seconds.
-
-Some useful constants are also available:
-- `#DATE.MONDAY`, `#DATE.TUESDAY`, ...  - day of weeks
-- `#DATE.JANUARY`, `#DATE.FEBRUARY`, ... - months
-- `#DATE.zuluTimeZone` - Zulu timezone which always has time zone offset equals to UTC
-- `#DATE.UTCOffset` - UTC offset
-- `#DATE.defaultTimeZone` - Default time zone for Nussknacker application
-
-#### Parsing of date/time
-
-Also, `#DATE_FORMAT` helper methods can be used to parse or format certain data type from/to the String. It is not recommended to use parsing
-in scenarios because it will obfuscate logic. Better way is to configure properly message schema. But sometimes it is the only way to handle it. Available helpers:
-- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00')` - parse `OffsetDateTime` in ISO-8601 format
-- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00', 'yyyy-MM-dd'T'HH:mm:ssXXX')` - parse `OffsetDateTime` in given `DateTimeFormatter` format
-- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00', #dateTimeFormatter)` - parse `OffsetDateTime` using given `DateTimeFormatter`
-
-Equivalent variants of `parse` methods are available also for other date/time types: `LocalTime`, `LocalDate`, `LocalDateTime`, `Instant` and `ZonedDateTime`.
-
-#### Formatting of date/time
-
-To format date/time can be used `#DATE_FORMAT.format(#dateTime)` method which accept various date/time types and formats it in ISO-8601 format.
-Also `DateTimeFormatter` can be used directly via e.g. `#DATE_FORMAT.formatter('EEEE').format(#date)`. Other formatter factory methods:
-- `#DATE_FORMAT.formatter('EEEE', 'PL')` - creates `DateTimeFormatter` using given pattern (`EEEE`) and locale (`PL`)
-- `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd')` - creates lenient version of `DateTimeFormatter` using given pattern. Lenient parser may use heuristics 
-to interpret inputs that do not precisely match format e.g. format `E` will accept: `mon`, `Mon` and `MONDAY` inputs. 
-On the other hand, formatter created using `#DATE_FORMAT.formatter()` method will accept only `Mon` input.
-- `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
-
-For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).
-
-# SpEL syntax
-
-## Basics
+### Basics
                                   
 Most of the literals are similar to JSON ones, in fact in many cases JSON structure is valid SpEL. 
 There are a few notable exceptions:
@@ -164,26 +93,30 @@ There are a few notable exceptions:
 | `{}`                   | an empty list                  | List[Unknown]        |
 | `{1,2,3,4}`            | a list of integers from 1 to 4 | List[Integer]        |
 | `{:}`                  | an empty record                | Record{}             |
-| `{john:300, alex:400}` | a map (name-value collection)  | Map[String, Integer] |
+| `{john:300, alex:400}` | a record (name-value collection)| Record{alex: Integer(400), john: Integer(300)} |
 | `#input`               | variable                       |                      |
+| `'AA' + 'BB'`          | "AABB"                         | String               |
                                     
-## Arithmetic Operators
+### Arithmetic Operators
 
-| Expression    | Result   | Type     |
-| ------------  | -------- | -------- |
-| `42 + 2`      | 44       | Integer  |
-| `'AA' + 'BB'` | "AABB"   | String   |
+The `+`, `-`, `*` arithmetic operators work as expected. 
 
-## Conditional Operators
+| Operator | Equivalent symbolic operator | Example expression | Result |
+|----------|------------------------------|--------------------|--------|
+| `div`    | `/`                          | `7 div 2`          | 3      |
+| `div`    | `/`                          | `7.0 div 2`        | 2.3333333333 |
+| `mod`    | `%`                          | `23 mod 7`         | 2      |
+
+### Conditional Operators
 
 | Expression                                   | Result    | Type     |
 | ------------                                 | --------  | -------- |
-| `2 == 2`                                     | true      | boolean  |
-| `2 > 1`                                      | true      | boolean  |
-| `true AND false`                             | false     | boolean  |
-| `true && false`                              | false     | boolean  |
-| `true OR false`                              | true      | boolean  |
-| <code>true &#124;&#124; false</code>         | true      | boolean  |
+| `2 == 2`                                     | true      | Boolean  |
+| `2 > 1`                                      | true      | Boolean  |
+| `true AND false`                             | false     | Boolean  |
+| `true && false`                              | false     | Boolean  |
+| `true OR false`                              | true      | Boolean  |
+| <code>true &#124;&#124; false</code>         | true      | Boolean  |
 | `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |
 | `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |
 | `#nonNullVar == null ? 'Unknown' : 'Success'` | "Success" | String   |
@@ -191,7 +124,7 @@ There are a few notable exceptions:
 | `#nullVar?:'Unknown'`                        | "Unknown" | String   |
 | `'john'?:'Unknown'`                          | "john"    | String   |
 
-## Relational operators
+### Relational operators
 
 | Operator | Equivalent symbolic operator | Example expression | Result |
 |----------|------------------------------|--------------------|--------|
@@ -201,11 +134,15 @@ There are a few notable exceptions:
 | `ge`     | `>=`                         | `4 ge 4`           | true   |
 | `eq`     | `==`                         | `3 eq 3`           | true   |
 | `ne`     | `!=`                         | `4 ne 2`           | true   |
-| `div`    | `/`                          | `6 div 2`          | 3      |
-| `mod`    | `%`                          | `23 mod 7`         | 2      |
 | `not`    | `!`                          | `not true`         | false  |
 
-## Method invocations
+### Strings operators
+
+| Expression      | Result      | Type     |
+| --------------  | ----------- | -------- |
+| `'AA' + 'BB'`   | "AABB"      | String   |
+
+### Method invocations
 
 As Nussknacker uses Java types, some objects are more than data containers - there are additional methods 
 that can be invoked on them. Method parameters are passed in parentheses, usually parameter details 
@@ -216,7 +153,7 @@ are shown in code completion hints.
 | `'someValue'.substring(4)` | "Value"    | String  |
 | `'someValue'.length()`     | 9          | Integer |
 
-## Accessing elements of a list or a record
+### Accessing elements of a list or a record
 
 | Expression                                                              | Result                                | Type              |
 |-------------------------------------------------------------------------|---------------------------------------|-------------------|
@@ -235,7 +172,7 @@ they occur before deployment of a scenario during expression validation.
 | `{1,2,3,4}[4]`                | Runtime error: Index out of bounds              |
 | `{jan:300, alex:400}['anna']` | Compilation error: No property 'anna' in record |
 
-## Filtering lists
+### Filtering lists
                           
 Special variable `#this` is used to operate on single element of list.
 Filtering all the elements uses a syntax of `.?`. 
@@ -250,7 +187,7 @@ To obtain the last matching element, the syntax is `.$`.
 | `{1,2,3,4}.^[#this ge 3]`                 | {3}          | Integer       |
 | `{1,2,3,4}.$[#this ge 3]`                 | {4}          | Integer       |
 
-## Transforming lists
+### Transforming lists
 
 Special variable `#this` is used to operate on single element of list.
             
@@ -272,7 +209,7 @@ listOfPersons = {person1, person2}
 
 For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
 
-## Safe navigation
+### Safe navigation
 
 When you access nested structure, you have to take care of null fields, otherwise you'll end up with 
 error. SpEL provides helpful safe navigation operator, it's basically shorthand for conditional operator:
@@ -285,10 +222,10 @@ error. SpEL provides helpful safe navigation operator, it's basically shorthand 
 | `#var?.foo` | {foo: 5}     | 5                              | Integer                         |
 | `#var?.foo` | null         | null                           | Null                            |
 
-## Invoking static methods
+### Invoking static methods
 
 It is possible to invoke Java static methods directly with SpEL. Nussknacker can prevent invocations
-of some of them due to security reasons. Invoking static methods is advanced functionality, which can lead
+of some of them due to security reasons. Invoking static methods is an advanced functionality, which can lead
 to incomprehensible expressions, also code completions will not work with many of them. 
 If you need to invoke the same method in many places, probably the best solution is to create additional helper.
 
@@ -296,18 +233,24 @@ If you need to invoke the same method in many places, probably the best solution
 | ------------           | --------  | -------- |
 | `T(java.lang.Math).PI` | 3.14159.. | Double   |
 
-## Chaining with dot
+### Chaining with dot
 | Expression                                                   | Result    | Type     |
 | ------------                                                 | --------  | -------- |
 | `{1, 2, 3, 4}.?[#this > 1].![#this > 2 ? #this * 2 : #this]` | {2, 6, 8} | Double   |
 
-## Type conversions
+### Type conversions
+
+It is possible to convert from a type to another type and this can be done by implicit and explicit conversion.
+
+#### Implicit conversion
 
 SpEL has many built-in implicit conversions that are available also in Nussknacker. Mostly conversions between various
-numeric types and between `String` and some useful logical value types. Some examples:
+numeric types and between `String` and some useful logical value types. Implicit conversion means that when finding
+the "input value" of type "input type" (see the table below) in the context where "target type" is expected, Nussknacker
+will try to convert the type of the "input value" to the "target type". Some examples:
 
 | Input value                              | Input type | Conversion target type |
-| -----------                              | ---------- | ---------------------- |
+|------------------------------------------|------------|------------------------|
 | `12.34`                                  | Double     | BigDecimal             |
 | `12.34f`                                 | Float      | BigDecimal             |
 | `42`                                     | Integer    | BigDecimal             |
@@ -322,18 +265,29 @@ numeric types and between `String` and some useful logical value types. Some exa
 | `'USD'`                                  | String     | Currency               |
 | `'bf3bb3e0-b359-4e18-95dd-1d89c7dc5135'` | String     | UUID                   |
 
-You can also use explicit conversions that are available in utility classes and build-in java conversion mechanisms:
+Usage example:
 
-| Expression                                                      | Result                    | Type           |
-| ------------                                                    | --------                  | --------       |
-| `#NUMERIC.toNumber('42')`                                       | 42                        | Number         |
-| `#NUMERIC.toNumber('42').toString()`                            | '42'                      | String         |
-| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000             | OffsetDateTime |
-| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00 | LocalDateTime  |
-| `'' + 42`                                                       | '42'                      | String         |
+| Expression                          | Input value       | Input type | Target type |
+|-------------------------------------|-------------------|------------|-------------|
+| `#DATE.now.atZone('Europe/Warsaw')` | `'Europe/Warsaw'` | String     | ZoneId      |
+| `'' + 42`                           | `42`              | Integer    | String      |
 
+More usage examples can be found in [this section](#conversions-between-datetime-types).
 
-## Built-in helpers 
+#### Explicit conversions
+
+Explicit conversions are available in utility classes and build-in java conversion mechanisms:
+
+| Expression                                                      | Result                     | Type            |
+|-----------------------------------------------------------------|----------------------------|-----------------|
+| `#NUMERIC.toNumber('42')`                                       | 42                         | Number          |
+| `#NUMERIC.toNumber('42').toString()`                            | '42'                       | String          |
+| `#DATE_FORMAT.parseOffsetDateTime('2018-10-23T12:12:13+00:00')` | 1540296720000              | OffsetDateTime  |
+| `#DATE_FORMAT.parseLocalDateTime('2018-10-23T12:12:13')`        | 2018-10-23T12:12:13+00:00  | LocalDateTime   |
+
+## Built-in helpers
+
+Nussknacker comes with the following helpers:
 
 | Helper        | Functions                                      |
 |---------------|------------------------------------------------|
@@ -343,4 +297,82 @@ You can also use explicit conversions that are available in utility classes and 
 | `DATE_FORMAT` | Date formatting/parsing operations             |
 | `GEO`         | Simple distance measurements                   |
 | `NUMERIC`     | Number parsing                                 |
+| `RANDOM`      | Random value generators                        |
 | `UTIL`        | Various utilities (e.g. identifier generation) |
+
+
+## Handling date/time.
+
+### Date/time data types
+
+Formats of date/time are pretty complex - especially in Java. There are basically three ways of storing date:
+- as timestamp - absolute value, number of milliseconds since 1970-01-01T00:00:00 UTC. In Nussknacker this is 
+  usually seen as `Instant` or `Long`. This format is handy for storing/sending values, a bit problematic when
+  it comes to computations like adding a month or extracting date. 
+- as date/time without timezone information (this is usually handy if your system is in one timezone).
+  Converting to timestamp is done using Nussknacker server timezone.
+  In Nussknacker they are usually represented as `LocalDate` and `LocalDateTime`. Suitable for date computations like adding a month or extracting date. 
+- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. You need to know TimeZone ID, if you want you use date/time with stored timezone. A full list of TimeZone IDs can be found [here](https://www.tutorialspoint.com/get-all-the-ids-of-the-time-zone-in-java).
+- as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
+  Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
+
+### Conversions between date/time types
+
+Conversions of different types of dates are handled either by
+- `#DATE` helper methods e.g.:
+  - `#DATE.toEpochMilli(#zonedDate)`
+  - `#DATE.toInstant(#long)` - converts long value to `Instant`
+- methods on some types of objects, e.g.
+  - `#instantObj.toEpochMilli` - returns timestamp for `#instantObj` of type `Instant`
+  - `#localDate.atStartOfDay()` - returns `LocalDateTime` at midnight for `#localDate` of type `LocalDate`
+  - `#localDateTime.toLocalDate` - truncates to date for `#localDateTime` of type `LocalDateTime`
+  - `#zonedDate.toInstant` - converts `ZonedDateTime` to `Instant`
+  - `#instant.atZone('Europe/Paris')` - converts `ZonedDateTime` to `Instant`
+  - `#instant.atOffset('+01:00')` - converts `OffsetDateTime` to `Instant`
+- automatically by implicit conversion mechanism e.g.
+  - `#instant.atZone('Europe/Paris')` - `Europe/Paris` String was automatically converted to `ZonedId`
+  - `#instant.atOffset('+01:00')` - `+01:00` String was automatically converted to `ZonedId`
+  - `#time.isAfter('09:00')` - `09:00` String was automatically converted to `LocalTime`
+  - `#date.isBefore('2020-07-01')` - `2020-07-01` String was automatically converted to `LocalDate`
+  - `#dateTime.isAfter('2020-05-01T11:00:00')` - `2020-05-01T11:00:00` String was automatically converted to `LocalDateTime`
+
+### Date/time utility methods
+
+`DATE` helper contains also some other useful helper methods, mainly for date range checks and computations of periods and durations e.g.:
+- `#DATE.isBetween(#localTime, '09:00', '17:00')` - checks if `LocalTime` is in (inclusive) range `<09:00, 17:00>`
+- `#DATE.isBetween(#dayOfWeek, #DATE.MONDAY, #DATE.FRIDAY)` - checks if `DayOfWeek` is in (inclusive) range `<MONDAY, FRIDAY>`
+- `#DATE.isBetween(#localDate, '2020-06-01', '2020-07-01')` - checks if `LocalDate` is in (inclusive) range `<2020-06-01, 2020-07-01>`
+- `#DATE.isBetween(#localDateTime, '2020-06-01T11:00:00', '2020-07-01T11:00:00')` - checks if `LocalDateTime` is in (inclusive) range `<2020-06-01T11:00:00, 2020-07-01T11:00:00>`
+- `#DATE.periodBetween(#from, #to).getMonths` - computes `Period` between `from` and `to` and return number of full months between those two dates
+- `#DATE.durationBetween(#from, #to).toDays` - computes `Duration` between `from` and `to` and return number of full days between those two dates.
+  Keep in mind that `Duration` is not daylight saving time aware - it computes seconds difference and divide it by number of seconds in given period.
+- In case of days it will be `86400` seconds.
+
+Some useful constants are also available:
+- `#DATE.MONDAY`, `#DATE.TUESDAY`, ...  - day of weeks
+- `#DATE.JANUARY`, `#DATE.FEBRUARY`, ... - months
+- `#DATE.zuluTimeZone` - Zulu timezone which always has time zone offset equals to UTC
+- `#DATE.UTCOffset` - UTC offset
+- `#DATE.defaultTimeZone` - Default time zone for Nussknacker application
+
+### Parsing of date/time
+
+Also, `#DATE_FORMAT` helper methods can be used to parse or format certain data type from/to the String. It is not recommended to use parsing
+in scenarios because it will obfuscate logic. Better way is to configure properly message schema. But sometimes it is the only way to handle it. Available helpers:
+- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00')` - parse `OffsetDateTime` in ISO-8601 format
+- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00', 'yyyy-MM-dd'T'HH:mm:ssXXX')` - parse `OffsetDateTime` in given `DateTimeFormatter` format
+- `#DATE_FORMAT.parseOffsetDateTime('2020-01-01T11:12:13+01:00', #dateTimeFormatter)` - parse `OffsetDateTime` using given `DateTimeFormatter`
+
+Equivalent variants of `parse` methods are available also for other date/time types: `LocalTime`, `LocalDate`, `LocalDateTime`, `Instant` and `ZonedDateTime`.
+
+### Formatting of date/time
+
+To format date/time can be used `#DATE_FORMAT.format(#dateTime)` method which accept various date/time types and formats it in ISO-8601 format.
+Also `DateTimeFormatter` can be used directly via e.g. `#DATE_FORMAT.formatter('EEEE').format(#date)`. Other formatter factory methods:
+- `#DATE_FORMAT.formatter('EEEE', 'PL')` - creates `DateTimeFormatter` using given pattern (`EEEE`) and locale (`PL`)
+- `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd')` - creates lenient version of `DateTimeFormatter` using given pattern. Lenient parser may use heuristics 
+to interpret inputs that do not precisely match format e.g. format `E` will accept: `mon`, `Mon` and `MONDAY` inputs. 
+On the other hand, formatter created using `#DATE_FORMAT.formatter()` method will accept only `Mon` input.
+- `#DATE_FORMAT.lenientFormatter('yyyy-MM-dd EEEE', 'PL')` - creates lenient version `DateTimeFormatter` using given pattern and locale
+
+For full list of available format options take a look at [DateTimeFormatter api docs](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html).

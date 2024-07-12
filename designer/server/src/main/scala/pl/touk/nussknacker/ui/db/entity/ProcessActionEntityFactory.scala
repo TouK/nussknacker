@@ -1,15 +1,14 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionType}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ScenarioActionName}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 
 import java.sql.Timestamp
 import java.time.Instant
 
-trait ProcessActionEntityFactory extends BaseEntityFactory {
+trait ProcessActionEntityFactory extends BaseEntityFactory with CommentEntityFactory {
 
   import profile.api._
 
@@ -17,7 +16,6 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
     LTableQuery(new ProcessActionEntity(_))
 
   val processVersionsTable: LTableQuery[ProcessVersionEntityFactory#ProcessVersionEntity]
-  val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
     def id: Rep[ProcessActionId] = column[ProcessActionId]("id", O.PrimaryKey)
@@ -32,9 +30,15 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def user: Rep[String] = column[String]("user")
 
+    def impersonatedByIdentity = column[Option[String]]("impersonated_by_identity")
+
+    // TODO impersonating user's name is added so it's easier to present the name on the fronted.
+    // Once we have a mechanism for fetching username by user's identity impersonated_by_username column could be deleted from database tables.
+    def impersonatedByUsername = column[Option[String]]("impersonated_by_username")
+
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
-    def actionType: Rep[ProcessActionType] = column[ProcessActionType]("action_type")
+    def actionName: Rep[ScenarioActionName] = column[ScenarioActionName]("action_name")
 
     def state: Rep[ProcessActionState] = column[ProcessActionState]("state")
 
@@ -61,9 +65,11 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       processId,
       processVersionId,
       user,
+      impersonatedByIdentity,
+      impersonatedByUsername,
       createdAt,
       performedAt,
-      actionType,
+      actionName,
       state,
       failureMessage,
       commentId,
@@ -81,9 +87,11 @@ final case class ProcessActionEntityData(
     processId: ProcessId,
     processVersionId: Option[VersionId],
     user: String,
+    impersonatedByIdentity: Option[String],
+    impersonatedByUsername: Option[String],
     createdAt: Timestamp,
     performedAt: Option[Timestamp],
-    actionType: ProcessActionType,
+    actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
     commentId: Option[Long],
@@ -92,5 +100,5 @@ final case class ProcessActionEntityData(
 
   lazy val createdAtTime: Instant           = createdAt.toInstant
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
-  lazy val isDeployed: Boolean              = actionType.equals(ProcessActionType.Deploy)
+  lazy val isDeployed: Boolean              = actionName == ScenarioActionName.Deploy
 }

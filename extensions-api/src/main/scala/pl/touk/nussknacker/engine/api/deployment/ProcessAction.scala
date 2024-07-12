@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.semiauto.{deriveUnwrappedDecoder, deriveUnwrappedEncoder}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
@@ -18,7 +18,7 @@ import java.util.UUID
     createdAt: Instant,
     // We use process action only for finished/execution finished actions so performedAt is always defined
     performedAt: Instant,
-    actionType: ProcessActionType,
+    actionName: ScenarioActionName,
     state: ProcessActionState,
     failureMessage: Option[String],
     commentId: Option[Long],
@@ -37,23 +37,6 @@ object ProcessActionId {
 
 }
 
-object ProcessActionType extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.encodeEnumeration(ProcessActionType)
-  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.decodeEnumeration(ProcessActionType)
-
-  type ProcessActionType = Value
-  val Deploy: Value    = Value("DEPLOY")
-  val Cancel: Value    = Value("CANCEL")
-  val Archive: Value   = Value("ARCHIVE")
-  val UnArchive: Value = Value("UNARCHIVE")
-  val Pause: Value     = Value("PAUSE") // TODO: To implement in future..
-  val Rename: Value    = Value("RENAME")
-
-  val DefaultActions: List[ProcessActionType] = Nil
-
-  val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
-}
-
 object ProcessActionState extends Enumeration {
   implicit val typeEncoder: Encoder[ProcessActionState.Value] = Encoder.encodeEnumeration(ProcessActionState)
   implicit val typeDecoder: Decoder[ProcessActionState.Value] = Decoder.decodeEnumeration(ProcessActionState)
@@ -67,4 +50,25 @@ object ProcessActionState extends Enumeration {
   val ExecutionFinished: Value = Value("EXECUTION_FINISHED")
 
   val FinishedStates: Set[ProcessActionState] = Set(Finished, ExecutionFinished)
+}
+
+final case class ScenarioActionName(value: String) extends AnyVal {
+  override def toString: String = value
+}
+
+object ScenarioActionName {
+
+  implicit val encoder: Encoder[ScenarioActionName] = deriveUnwrappedEncoder
+  implicit val decoder: Decoder[ScenarioActionName] = deriveUnwrappedDecoder
+
+  val Deploy: ScenarioActionName    = ScenarioActionName("DEPLOY")
+  val Cancel: ScenarioActionName    = ScenarioActionName("CANCEL")
+  val Archive: ScenarioActionName   = ScenarioActionName("ARCHIVE")
+  val UnArchive: ScenarioActionName = ScenarioActionName("UNARCHIVE")
+  val Pause: ScenarioActionName     = ScenarioActionName("PAUSE") // TODO: To implement in future..
+  val Rename: ScenarioActionName    = ScenarioActionName("RENAME")
+
+  val DefaultActions: List[ScenarioActionName] = Nil
+
+  val StateActions: Set[ScenarioActionName] = Set(Cancel, Deploy, Pause)
 }

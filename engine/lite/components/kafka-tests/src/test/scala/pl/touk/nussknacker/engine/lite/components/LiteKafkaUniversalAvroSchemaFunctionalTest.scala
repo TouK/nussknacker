@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
+import cats.data.{Validated, ValidatedNel}
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -13,9 +13,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, EmptyMandatoryParameter}
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
@@ -26,8 +27,8 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
-import scala.jdk.CollectionConverters._
 import java.nio.ByteBuffer
+import scala.jdk.CollectionConverters._
 
 class LiteKafkaUniversalAvroSchemaFunctionalTest
     extends AnyFunSuite
@@ -43,7 +44,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
   import ValidationMode._
   import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
@@ -1166,8 +1167,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, Any]] = {
     val avroScenario   = createScenario(config)
-    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)
-    runner.registerAvroSchema(config.sinkTopic, config.sinkSchema)
+    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic.toUnspecialized, config.sourceSchema)
+    runner.registerAvroSchema(config.sinkTopic.toUnspecialized, config.sinkSchema)
 
     val input = KafkaAvroConsumerRecord(config.sourceTopic, config.inputData, sourceSchemaId)
     runner.runWithAvroData(avroScenario, List(input))
@@ -1179,22 +1180,22 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        TopicParamName                  -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkValueParamName              -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"${config.sinkDefinition}".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'".spel
       )
 
   case class ScenarioConfig(
-      topic: String,
+      topicPrefix: String,
       inputData: Any,
       sourceSchema: Schema,
       sinkSchema: Schema,
@@ -1202,8 +1203,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
       validationMode: Option[ValidationMode]
   ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic                = s"$topic-input"
-    lazy val sinkTopic                  = s"$topic-output"
+    lazy val sourceTopic                = TopicName.ForSource(s"$topicPrefix-input")
+    lazy val sinkTopic                  = TopicName.ForSink(s"$topicPrefix-output")
   }
 
   // RecordValid -> valid success record with base field

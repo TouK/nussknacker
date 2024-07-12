@@ -2,11 +2,10 @@ import { FeaturesSettings } from "../actions/nk";
 import { Action } from "../actions/reduxTypes";
 import User from "../common/models/User";
 import { DEV_TOOLBARS } from "../components/toolbarSettings/DEV_TOOLBARS";
+import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { ProcessDefinitionData } from "../types";
 import { WithId } from "../types/common";
-import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { ToolbarsSide } from "./toolbars";
-import { WIP_TOOLBARS } from "../components/toolbarSettings/WIP_TOOLBARS";
 
 export enum AuthStrategy {
     BROWSER = "Browser",
@@ -18,7 +17,6 @@ export type SettingsState = {
     loggedUser: Partial<User>;
     featuresSettings: Partial<FeaturesSettings>;
     authenticationSettings: AuthenticationSettings;
-    analyticsSettings: $TodoType;
     processDefinitionData: ProcessDefinitionData;
     processToolbarsConfiguration: WithId<ToolbarsConfig>;
 };
@@ -56,7 +54,6 @@ const initialState: SettingsState = {
     loggedUser: {},
     featuresSettings: {},
     authenticationSettings: {},
-    analyticsSettings: {},
     processDefinitionData: {},
     processToolbarsConfiguration: null,
 };
@@ -76,13 +73,13 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
                 ...state,
                 featuresSettings: action.settings.features,
                 authenticationSettings: action.settings.authentication,
-                analyticsSettings: action.settings.analytics,
             };
         }
         case "PROCESS_DEFINITION_DATA": {
+            const { processDefinitionData } = action;
             return {
                 ...state,
-                processDefinitionData: action.processDefinitionData,
+                processDefinitionData,
             };
         }
         case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
@@ -90,7 +87,7 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
                 ...state,
                 processToolbarsConfiguration: {
                     ...action.data,
-                    [ToolbarsSide.TopRight]: [...WIP_TOOLBARS, ...action.data.topRight],
+                    [ToolbarsSide.TopRight]: [{ id: "survey-panel" }, ...action.data.topRight],
                     [ToolbarsSide.BottomRight]: [...action.data.bottomRight, ...DEV_TOOLBARS],
                 },
             };

@@ -33,6 +33,8 @@ case object SqlParameterEditor extends SimpleParameterEditor
 
 case object SpelTemplateParameterEditor extends SimpleParameterEditor
 
+case object TabularTypedDataEditor extends SimpleParameterEditor
+
 @JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 
 object DurationParameterEditor {
@@ -73,6 +75,11 @@ case object CronParameterEditor extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
+
+// TODO: currently only supports String/Boolean/Long dictionaries (same set of supported types as AdditionalDataValue)
+@JsonCodec case class DictParameterEditor(
+    dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
+) extends SimpleParameterEditor
 
 @JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode)
     extends ParameterEditor

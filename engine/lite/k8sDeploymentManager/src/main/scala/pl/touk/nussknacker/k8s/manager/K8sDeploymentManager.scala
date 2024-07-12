@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
@@ -47,11 +46,13 @@ import scala.util.Using
 class K8sDeploymentManager(
     override protected val modelData: BaseModelData,
     config: K8sDeploymentManagerConfig,
-    rawConfig: Config
-)(implicit ec: ExecutionContext, actorSystem: ActorSystem)
-    extends LiteDeploymentManager
+    rawConfig: Config,
+    dependencies: DeploymentManagerDependencies
+) extends LiteDeploymentManager
     with LazyLogging
     with DeploymentManagerInconsistentStateHandlerMixIn {
+
+  import dependencies._
 
   // lazy initialization to allow starting application even if k8s is not available - e.g. in case if multiple DeploymentManagers configured
   private lazy val k8sClient =
@@ -106,11 +107,19 @@ class K8sDeploymentManager(
     .map(path => Using.resource(Source.fromFile(path))(_.mkString))
     .getOrElse(defaultLogbackConfig)
 
-  override def validate(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess
-  ): Future[Unit] = {
+  override def processCommand[Result](command: DMScenarioCommand[Result]): Future[Result] =
+    command match {
+      case command: DMValidateScenarioCommand => validateScenario(command)
+      case command: DMRunDeploymentCommand    => runDeployment(command)
+      case command: DMCancelScenarioCommand   => cancelScenario(command)
+      case command: DMTestScenarioCommand     => testScenario(command)
+      case _: DMCancelDeploymentCommand | _: DMStopDeploymentCommand | _: DMStopScenarioCommand |
+          _: DMMakeScenarioSavepointCommand | _: DMCustomActionCommand =>
+        notImplemented
+    }
+
+  private def validateScenario(command: DMValidateScenarioCommand): Future[Unit] = {
+    import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     val deploymentStrategy = deploymentPreparer
       .prepare(
@@ -123,9 +132,14 @@ class K8sDeploymentManager(
       .flatMap(_.strategy)
     for {
       resourceQuotas <- k8sClient.list[ResourceQuotaList]()
-      oldDeployment <- k8sClient.getOption[Deployment](
-        objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
-      )
+      oldDeployment <- updateStrategy match {
+        case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) =>
+          k8sClient.getOption[Deployment](
+            objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
+          )
+        case DeploymentUpdateStrategy.DontReplaceDeployment =>
+          throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+      }
       _ <- Future.fromTry(
         K8sPodsResourceQuotaChecker
           .hasReachedQuotaLimit(
@@ -141,15 +155,18 @@ class K8sDeploymentManager(
     } yield ()
   }
 
-  override def deploy(
-      processVersion: ProcessVersion,
-      deploymentData: DeploymentData,
-      canonicalProcess: CanonicalProcess,
-      savepointPath: Option[String]
-  ): Future[Option[ExternalDeploymentId]] = {
+  private def runDeployment(command: DMRunDeploymentCommand): Future[Option[ExternalDeploymentId]] = {
+    import command._
     val scalingOptions = determineScalingOptions(canonicalProcess)
     logger.debug(s"Deploying $processVersion")
     for {
+      _ <- Future {
+        updateStrategy match {
+          case DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(_) => ()
+          case DeploymentUpdateStrategy.DontReplaceDeployment =>
+            throw new IllegalArgumentException(s"Deployment update strategy: $updateStrategy is not supported")
+        }
+      }
       configMap <- k8sUtils.createOrUpdate(
         configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
           Map(
@@ -275,9 +292,10 @@ class K8sDeploymentManager(
     }
   }
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = {
+  private def cancelScenario(command: DMCancelScenarioCommand): Future[Unit] = {
+    import command._
     // TODO: move to requirementForId when cancel changes the API...
-    val selector: LabelSelector = requirementForName(name)
+    val selector: LabelSelector = requirementForName(scenarioName)
     // We wait for deployment removal before removing configmaps,
     // in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
@@ -292,13 +310,15 @@ class K8sDeploymentManager(
       secrets     <- k8sClient.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
       logger.debug(
-        s"Canceled $name, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
+        s"Canceled $scenarioName, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}"
       )
       ()
     }
   }
 
-  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+  override def getProcessStates(
+      name: ProcessName
+  )(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient
@@ -306,7 +326,7 @@ class K8sDeploymentManager(
         .map(_.items)
       pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield {
-      deployments.map(mapper.status(_, pods))
+      WithDataFreshnessStatus.fresh(deployments.map(mapper.status(_, pods)))
     }
   }
 
@@ -359,18 +379,13 @@ class K8sDeploymentManager(
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
-  override protected def executionContext: ExecutionContext = ec
+  override protected def executionContext: ExecutionContext = dependencies.executionContext
 
-  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
-    Future.failed(new UnsupportedOperationException(s"Cancelling of deployment is not supported"))
-
-  override def stop(
-      name: ProcessName,
-      deploymentId: DeploymentId,
-      savepointDir: Option[String],
-      user: User
-  ): Future[SavepointResult] =
-    Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
+  // TODO We don't handle deployment synchronization on k8s DM because with current resources model it wasn't trivial to implement it.
+  //      The design of resources is that each scenario has only one k8s deployment and we don't want to rollout this deployment when
+  //      when nothing important is changed (e.g. deploymentId is changed). We should rethink if we want to handle multiple deployments
+  //      for each scenario in this case and where store the deploymentId
+  override def deploymentSynchronisationSupport: DeploymentSynchronisationSupport = NoDeploymentSynchronisationSupport
 
 }
 

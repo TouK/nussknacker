@@ -25,8 +25,8 @@ describe("Compare versions", () => {
 
         // Add fragment to the scenario
         cy.contains(/^fragments$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         cy.contains("fragment_xxx-test-process")
             .last()
             .should("be.visible")
@@ -64,8 +64,8 @@ describe("Compare versions", () => {
 
         // Open the compare dialog and select values to compare
         cy.contains(/^compare$/i).click();
-        cy.get("[data-testid=window]").get("#otherVersion").select(1);
-        cy.get("[data-testid=window]").get("#differentVersion").select(1);
+        cy.get("[data-testid=window]").get("#otherVersion input").select(1);
+        cy.get("[data-testid=window]").get("#differentVersion input").select(1);
 
         // Check current value for changed fragment parameter
         cy.get("[data-testid=window]")

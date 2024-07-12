@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.context.transformation
 
-import pl.touk.nussknacker.engine.api.expression.TypedExpression
+import cats.data.NonEmptyList
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 sealed trait BaseDefinedParameter {
@@ -11,34 +12,32 @@ sealed trait DefinedSingleParameter extends BaseDefinedParameter
 
 trait ValidDefinedSingleParameter { self: DefinedSingleParameter =>
 
-  def expression: TypedExpression
-
-  final override def returnType: TypingResult = expression.returnType
+  def returnType: TypingResult
 
 }
 
 sealed trait DefinedBranchParameter extends BaseDefinedParameter {
 
-  def expressionByBranchId: Map[String, TypedExpression]
+  def expressionByBranchId: Map[String, TypingResult]
 
   final override def returnType: TypingResult =
-    Typed.fromIterableOrUnknownIfEmpty(expressionByBranchId.values.map(_.returnType))
+    Typed.fromIterableOrUnknownIfEmpty(expressionByBranchId.values)
 
 }
 
-case class DefinedLazyParameter(expression: TypedExpression)
+case class DefinedLazyParameter(returnType: TypingResult)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter
 
-case class DefinedEagerParameter(value: Any, expression: TypedExpression)
+case class DefinedEagerParameter(value: Any, returnType: TypingResult)
     extends DefinedSingleParameter
     with ValidDefinedSingleParameter
 
-case class DefinedLazyBranchParameter(expressionByBranchId: Map[String, TypedExpression]) extends DefinedBranchParameter
-case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypedExpression])
+case class DefinedLazyBranchParameter(expressionByBranchId: Map[String, TypingResult]) extends DefinedBranchParameter
+case class DefinedEagerBranchParameter(value: Map[String, Any], expressionByBranchId: Map[String, TypingResult])
     extends DefinedBranchParameter
 
 //TODO: and for branch parameters??
-case object FailedToDefineParameter extends DefinedSingleParameter {
+case class FailedToDefineParameter(errors: NonEmptyList[ProcessCompilationError]) extends DefinedSingleParameter {
   override val returnType: TypingResult = Unknown
 }

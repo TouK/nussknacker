@@ -8,15 +8,12 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{
-  DataFreshnessPolicy,
-  ProcessActionId,
-  ProcessingTypeDeploymentServiceStub
-}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionId, ProcessingTypeActionServiceStub}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
@@ -50,7 +47,6 @@ class PeriodicProcessServiceTest
     with TableDrivenPropertyChecks {
 
   import org.scalatest.LoneElement._
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -73,9 +69,7 @@ class PeriodicProcessServiceTest
     val events                        = new ArrayBuffer[PeriodicProcessEvent]()
     val additionalData                = Map("testMap" -> "testValue")
 
-    implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(
-      List.empty
-    )
+    val actionService: ProcessingTypeActionServiceStub = new ProcessingTypeActionServiceStub
 
     val periodicProcessService = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
@@ -89,8 +83,12 @@ class PeriodicProcessServiceTest
 
       },
       additionalDeploymentDataProvider = new AdditionalDeploymentDataProvider {
-        override def prepareAdditionalData(runDetails: PeriodicProcessDeployment): Map[String, String] =
+
+        override def prepareAdditionalData(
+            runDetails: PeriodicProcessDeployment[CanonicalProcess]
+        ): Map[String, String] =
           additionalData + ("runId" -> runDetails.id.value.toString)
+
       },
       DeploymentRetryConfig(),
       PeriodicExecutionConfig(),
@@ -121,7 +119,8 @@ class PeriodicProcessServiceTest
         }
 
       },
-      Clock.systemDefaultZone()
+      Clock.systemDefaultZone(),
+      actionService
     )
 
   }
@@ -164,7 +163,12 @@ class PeriodicProcessServiceTest
   // Flink job could disappear from Flink console.
   test("handleFinished - should reschedule scenario if Flink job is missing") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.repository.addActiveProcess(
+      processName,
+      PeriodicProcessDeploymentStatus.Deployed,
+      runAt = LocalDateTime.now().minusMinutes(11),
+      deployedAt = Some(LocalDateTime.now().minusMinutes(10))
+    )
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -181,6 +185,30 @@ class PeriodicProcessServiceTest
     f.events.toList shouldBe List(FinishedEvent(finished, None), ScheduledEvent(scheduled, firstSchedule = false))
   }
 
+  // Flink job could not be available in Flink console if checked too quickly after submit.
+  test("handleFinished - shouldn't reschedule scenario if Flink job is missing but not deployed for long enough") {
+    val f = new Fixture
+    f.repository.addActiveProcess(
+      processName,
+      PeriodicProcessDeploymentStatus.Deployed,
+      runAt = LocalDateTime.now().minusSeconds(11),
+      deployedAt = Some(LocalDateTime.now().minusSeconds(10))
+    )
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
+    f.repository.deploymentEntities should have size 1
+    f.repository.deploymentEntities.map(_.status) shouldBe List(
+      PeriodicProcessDeploymentStatus.Deployed
+    )
+
+    val deployed :: Nil =
+      f.repository.deploymentEntities.map(createPeriodicProcessDeployment(processEntity, _)).toList
+    f.events.toList shouldBe List.empty
+  }
+
   test("handleFinished - should reschedule for finished Flink job") {
     val f               = new Fixture
     val processActionId = randomProcessActionId
@@ -194,7 +222,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe Nil
+    f.actionService.sentActionIds shouldBe Nil
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe true
@@ -225,7 +253,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe Nil
+    f.actionService.sentActionIds shouldBe Nil
 
   }
 
@@ -242,7 +270,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe List(processActionId)
+    f.actionService.sentActionIds shouldBe List(processActionId)
 
     val processEntity = f.repository.processEntities.loneElement
     processEntity.active shouldBe false
@@ -260,7 +288,8 @@ class PeriodicProcessServiceTest
     f.repository.addOnlyDeployment(
       periodicProcessId,
       status = PeriodicProcessDeploymentStatus.Deployed,
-      scheduleName = Some("schedule1")
+      scheduleName = Some("schedule1"),
+      deployedAt = Some(LocalDateTime.now().minusMinutes(10))
     )
     f.repository.addOnlyDeployment(
       periodicProcessId,
@@ -270,7 +299,7 @@ class PeriodicProcessServiceTest
 
     f.periodicProcessService.handleFinished.futureValue
 
-    f.deploymentService.sentActionIds shouldBe Nil
+    f.actionService.sentActionIds shouldBe Nil
 
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.map(

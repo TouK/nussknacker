@@ -1,6 +1,6 @@
 # Overview
 
-Please make sure you know common [Glossary](/documentation/about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 
+Please make sure you know common [Glossary](../about/GLOSSARY) and [SpEL](../scenarios_authoring/Spel.md) (especially the Data types section) before proceeding further. 
 
 This part of the documentation describes various ways of customizing Nussknacker - from adding own Components to adding listeners for various Designer actions. 
 The main way of adding customizations to Nussknacker is [ServiceLoader](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/ServiceLoader.html) 
@@ -21,7 +21,7 @@ We also handle union types (again, similar to [Typescript](https://www.typescrip
       
 ## Components and ComponentProviders
 
-[Components](/about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
+[Components](../about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
 There are following types of components:
 - `SourceFactory`
 - `SinkFactory`
@@ -34,7 +34,7 @@ To read more see [ComponentProvider API](./Components.md)
 The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/designer/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
 interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the Designer classpath.
 If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
-[DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration.md) 
+[Scenario Deployment Configuration page](../installation_configuration_guide/ScenarioDeploymentConfiguration.md) 
 
 ## Other SPIs for Nussknacker customization (documentation will follow soon...)
 
@@ -47,7 +47,6 @@ If you want to implement own `DeploymentManager`, you should implement this inte
   - [SerializersRegistrar](https://github.com/TouK/nussknacker/blob/staging/engine/flink/extensions-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/serialization/SerializersRegistrar.scala)
   - [FlinkCompatibilityProvider](https://github.com/TouK/nussknacker/blob/staging/engine/flink/executor/src/main/scala/pl/touk/nussknacker/engine/process/FlinkCompatibilityProvider.scala)
 - [CustomParameterValidator](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/definition/ParameterValidator.scala)
-- [ObjectNaming](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/namespaces/ObjectNaming.scala)
 - [ToJsonEncoder](https://github.com/TouK/nussknacker/blob/staging/common-api/src/main/scala/pl/touk/nussknacker/engine/util/json/ToJsonEncoder.scala)
 - [WithExceptionExtractor](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/api/exception/WithExceptionExtractor.scala)
 - [ModelConfigLoader](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/modelconfig/ModelConfigLoader.scala)
@@ -87,7 +86,7 @@ that can be used to scenario execution.
 ![Modules architecture](./img/modeles-architecture.png)
 
 Your code should depend only on `nussknacker-xxx-api` or `nussknacker-xxx-components-utils`/`nussknacker-xxx-extensions-utils` packages and not on implementation modules, like
-`nussknacker-interpreter`, `nussknacker-flink-executor`, `nussknacker-lite-runtime` or other `internal` modules. They should only be needed in `test` scope.
+`nussknacker-scenario-compiler`, `nussknacker-flink-executor`, `nussknacker-lite-runtime` or other `internal` modules. They should only be needed in `test` scope.
 
 **If you find you need to depend on those modules, please bear in mind that they contain implementation details and their API should not be considered stable.**
             

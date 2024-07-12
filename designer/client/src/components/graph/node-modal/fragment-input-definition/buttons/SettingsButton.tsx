@@ -1,7 +1,7 @@
 import React from "react";
 import TuneIcon from "@mui/icons-material/Tune";
-import { StyledButtonWithFocus } from "../../../focusableStyled";
 import { useTheme } from "@mui/material";
+import { StyledButton } from "../../../styledButton";
 
 interface SettingsButton {
     isOpen: boolean;
@@ -12,18 +12,18 @@ export default function SettingsButton({ isOpen, toggleIsOpen }: SettingsButton)
     const theme = useTheme();
 
     return (
-        <StyledButtonWithFocus
+        <StyledButton
             style={{
                 justifyContent: "center",
                 alignItems: "center",
                 display: "flex",
                 marginRight: 5,
-                backgroundColor: isOpen && theme.custom.colors.charcoal,
+                backgroundColor: isOpen && theme.palette.action.focus,
             }}
             title={"Options"}
             onClick={toggleIsOpen}
         >
             <TuneIcon />
-        </StyledButtonWithFocus>
+        </StyledButton>
     );
 }

@@ -3,24 +3,25 @@ import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import React, { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { useKey } from "rooks";
+import urljoin from "url-join";
 import { editNode } from "../../../../actions/nk";
 import { visualizationUrl } from "../../../../common/VisualizationUrl";
+import { BASE_PATH } from "../../../../config";
+import { isInputTarget } from "../../../../containers/BindKeyboardShortcuts";
+import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
+import { RootState } from "../../../../reducers";
+import { getScenario } from "../../../../reducers/selectors/graph";
 import { Edge, NodeType } from "../../../../types";
 import { WindowContent, WindowKind } from "../../../../windowManager";
+import { LoadingButtonTypes } from "../../../../windowManager/LoadingButton";
 import ErrorBoundary from "../../../common/ErrorBoundary";
+import { Scenario } from "../../../Process/types";
 import NodeUtils from "../../NodeUtils";
-import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
+import { applyIdFromFakeName } from "../IdField";
+import { getNodeDetailsModalTitle, NodeDetailsModalIcon, NodeDetailsModalSubheader } from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
-import urljoin from "url-join";
-import { BASE_PATH } from "../../../../config";
-import { RootState } from "../../../../reducers";
-import { applyIdFromFakeName } from "../IdField";
-import { useTheme } from "@mui/material";
-import { alpha, tint } from "../../../../containers/theme/helpers";
-import { parseWindowsQueryParams, replaceSearchQuery } from "../../../../containers/hooks/useSearchQuery";
-import { Scenario } from "../../../Process/types";
-import { getScenario } from "../../../../reducers/selectors/graph";
 
 function mergeQuery(changes: Record<string, string[]>) {
     return replaceSearchQuery((current) => ({ ...current, ...changes }));
@@ -46,40 +47,29 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const dispatch = useDispatch();
 
     const performNodeEdit = useCallback(async () => {
-        await dispatch(await editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
-
-        //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like props.close doesn't unmount component.
-        mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
-        props.close();
+        try {
+            //TODO: without removing nodeId query param, the dialog after close, is opening again. It looks like useModalDetailsIfNeeded is fired after edit, because nodeId is still in the query string params, after scenario changes.
+            mergeQuery(parseWindowsQueryParams({}, { nodeId: node.id }));
+            await dispatch(editNode(scenario, node, applyIdFromFakeName(editedNode), outputEdges));
+            props.close();
+        } catch (e) {
+            //TODO: It's a workaround and continuation of above TODO, let's revert query param deletion, if dialog is still open because of server error
+            mergeQuery(parseWindowsQueryParams({ nodeId: node.id }, {}));
+        }
     }, [scenario, node, editedNode, outputEdges, dispatch, props]);
 
     const { t } = useTranslation();
-    const theme = useTheme();
 
     const applyButtonData: WindowButtonProps | null = useMemo(
         () =>
             !readOnly
                 ? {
                       title: t("dialog.button.apply", "apply"),
-                      action: () => performNodeEdit(),
+                      action: performNodeEdit,
                       disabled: !editedNode.id?.length,
-                      classname: css({
-                          //increase (x4) specificity over ladda
-                          "&&&&": {
-                              backgroundColor: theme.custom.colors.accent,
-                              ":hover": {
-                                  backgroundColor: tint(theme.custom.colors.accent, 0.25),
-                              },
-                              "&[disabled], &[data-loading]": {
-                                  "&, &:hover": {
-                                      backgroundColor: alpha(theme.custom.colors.accent, 0.5),
-                                  },
-                              },
-                          },
-                      }),
                   }
                 : null,
-        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.custom.colors.accent],
+        [editedNode.id?.length, performNodeEdit, readOnly, t],
     );
 
     const openFragmentButtonData: WindowButtonProps | null = useMemo(
@@ -90,25 +80,28 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       action: () => {
                           window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)));
                       },
+                      classname: "tertiary-button",
                   }
                 : null,
         [editedNode, t],
     );
 
     const cancelButtonData = useMemo(
-        () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "window-close" }),
+        () => ({ title: t("dialog.button.cancel", "cancel"), action: props.close, classname: LoadingButtonTypes.secondaryButton }),
         [props, t],
     );
+
+    useKey("Escape", (e) => {
+        e.preventDefault();
+        if (!isInputTarget(e.composedPath().shift())) {
+            props.close();
+        }
+    });
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [openFragmentButtonData, cancelButtonData, applyButtonData].filter(Boolean),
         [applyButtonData, cancelButtonData, openFragmentButtonData],
     );
-
-    const components = useMemo(() => {
-        const HeaderTitle = () => <NodeDetailsModalHeader node={node} />;
-        return { HeaderTitle };
-    }, [node]);
 
     useEffect(() => {
         mergeQuery(parseWindowsQueryParams({ nodeId: node.id }));
@@ -125,10 +118,12 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return (
         <WindowContent
             {...props}
+            title={getNodeDetailsModalTitle(node)}
             buttons={buttons}
-            components={components}
+            icon={<NodeDetailsModalIcon node={node} />}
+            subheader={<NodeDetailsModalSubheader node={node} />}
             classnames={{
-                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 } }),
+                content: css({ minHeight: "100%", display: "flex", ">div": { flex: 1 }, position: "relative" }),
             }}
         >
             <ErrorBoundary>

@@ -14,7 +14,7 @@ object GenerateDesignerOpenApiPlugin extends sbt.AutoPlugin {
     generateDesignerOpenApi := {
       (Test / runMain)
         .toTask(
-          " pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile docs-internal/api/nu-designer-openapi.yaml"
+          " pl.touk.nussknacker.test.utils.GenerateDesignerOpenApiYamlFile docs-internal/api/nu-designer-openapi.yaml"
         )
         .value
     }

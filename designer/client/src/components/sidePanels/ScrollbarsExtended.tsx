@@ -1,15 +1,16 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { PropsWithChildren, useState, useEffect } from "react";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import Scrollbars from "react-scrollbars-custom";
-import { styled } from "@mui/material";
-import { Side, PanelSide } from "./SidePanel";
+import { lighten, styled, Theme, useTheme } from "@mui/material";
+import { PanelSide } from "./SidePanel";
+import { blendDarken } from "../../containers/theme/helpers";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
 const CLEAN_STYLE = null;
 const SCROLL_THUMB_SIZE = 8;
 const TOOLBARS_GAP = 3;
 
-const trackStyleProps = (side: Side) => ({
+const trackStyleProps = (side: PanelSide) => ({
     background: CLEAN_STYLE,
     borderRadius: SCROLL_THUMB_SIZE,
     backgroundColor: "transparent",
@@ -21,34 +22,35 @@ const trackStyleProps = (side: Side) => ({
     left: side === PanelSide.Right ? 0 : null,
 });
 
-const thumbYStyleProps = {
+const thumbYStyleProps = (theme: Theme) => ({
     borderRadius: CLEAN_STYLE,
     cursor: CLEAN_STYLE,
-    backgroundColor: "rgba(0,0,0, 0.45)",
-};
+    backgroundColor: lighten(theme.palette.background.paper, 0.4),
+});
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
 
-const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({
+const ScrollbarsWrapper = styled("div")(({ isScrollPossible }: { isScrollPossible: boolean }) => ({ theme }) => ({
     minHeight: "100%",
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: isScrollPossible && "#646464",
+    background: isScrollPossible && blendDarken(theme.palette.common.white, 0.75),
     pointerEvents: isScrollPossible ? "auto" : "inherit",
 }));
 
 interface ScrollbarsExtended {
     onScrollToggle?: (isEnabled: boolean) => void;
-    side: Side;
+    side: PanelSide;
 }
 
 export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWithChildren<ScrollbarsExtended>) {
+    const theme = useTheme();
     const [isScrollPossible, setScrollPossible] = useState<boolean>();
 
     useEffect(() => {
         onScrollToggle?.(isScrollPossible);
-    }, [isScrollPossible]);
+    }, [isScrollPossible, onScrollToggle]);
 
     return (
         <Scrollbars
@@ -58,7 +60,7 @@ export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWith
             }}
             disableTracksWidthCompensation
             trackYProps={{ style: trackStyleProps(side) }}
-            thumbYProps={{ style: thumbYStyleProps }}
+            thumbYProps={{ style: thumbYStyleProps(theme) }}
             contentProps={{ style: scrollerStyleProps }}
             scrollbarWidth={SCROLLBAR_WIDTH}
             scrollerProps={{ style: { marginRight: -SCROLLBAR_WIDTH } }}

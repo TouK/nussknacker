@@ -21,14 +21,81 @@ Pay special attention to the concept of event time and watermarks, see also [doc
 
 ### Integration with Apache Kafka
 
-There is important information in the documentation of Flink Kafka connector (which is used internally by all Nussknacker Kafka sources and sinks): [https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/connectors/datastream/kafka/#kafka-consumers-and-fault-tolerance](https://ci.apache.org/projects/flink/flink-docs-release-1.13/docs/connectors/datastream/kafka/#kafka-consumers-and-fault-tolerance).
+Nussknacker uses [Kafka connector](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/) 
+for integration with kafka. It's especially important to understand Kafka fault tolerance which you can read about in
+[this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/datastream/kafka/#fault-tolerance).
 
 In particular, one must not forget that the Flink connector (when checkpoints are enabled):
-
-
-
-* Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct .
+* Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct.
 * Ignore offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
+
+#### End-to-end Exactly-once event processing
+
+Nussknacker allows you to process events in the Exactly-once Semantics. This feature is provided by Flink.
+An important note is that we guarantee that the message is delivered once and only once via kafka sink in the scenario.
+If a fault occurs between checkpoints and after an operation that performs some side effects, such as enrichment,
+it possible that this action could be repeated.
+To read more about it see: [Flink blog post](https://flink.apache.org/2018/02/28/an-overview-of-end-to-end-exactly-once-processing-in-apache-flink-with-apache-kafka-too/) and 
+[Flink fault tolerance](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/learn-flink/fault_tolerance/#exactly-once-guarantees).
+More information about certain connectors can be found here: [section with fault tolerance for connectors](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/guarantees/).
+Kafka connector specific information is provided at: [this section of Kafka connector documentation](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/connectors/datastream/kafka/#fault-tolerance).
+
+In order to achieve End-to-end Exactly-once event processing, you need to check multiple places of configuration:
+- Flink cluster configuration:
+  - Configure checkpointing.
+    A Prerequisite is to have persistent storage for the state, and you should make sure that this is configured.
+    In Exactly-once events are committed during checkpoint and consequently the output events will be visible within 
+    the time range specified by the checkpoint interval. It's essential to configure proper interval in a range of 
+    1-10 seconds (interval should be configured in nussknacker - `Configure the checkpointing interval` section).
+    Such a short interval has large overhead on Flink, and you should consider configuring:
+    - Incremental checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/dev/datastream/fault-tolerance/checkpointing/#state-backend-incremental).
+    - Unaligned checkpoints: [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/ops/state/checkpointing_under_backpressure/#unaligned-checkpoints).
+    Additionally you have to ensure that checkpointing mode is set to `EXACTLY_ONCE` [Flink docs](https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#execution-checkpointing-mode).
+  - Ensure task failure recovery is configured.
+    [Configuring restart strategies](../installation_configuration_guide/model/Flink.md#configuring-restart-strategies).
+    The main purpose of Exactly-once is to don't miss any events and don't have duplicated events during failures. 
+    If the task failure recovery is not configured, after failure task will not be running and has failed state. 
+    As a result, there is no opportunity to use Exactly-once mechanism.
+- Nussknacker configuration:
+  - Configure the property `components.kafka.config.deliveryGuarantee` to: "EXACTLY_ONCE", e.g.
+    ```
+    kafkaConfig {
+      kafkaProperties {
+        "bootstrap.servers": ${?KAFKA_ADDRESS}
+        "schema.registry.url": ${?SCHEMA_REGISTRY_URL}
+        "auto.offset.reset": ${?KAFKA_AUTO_OFFSET_RESET}
+        "isolation.level": "read_committed"
+      }
+      sinkDeliveryGuarantee: "EXACTLY_ONCE"
+    }
+    ```
+  - Configure the checkpointing interval:
+    Default value for the interval is 10 minutes which is not acceptable for Exactly-once.
+    Therefore, it needs to be configured to appropriate value.
+    - Interval can be configured globally for all scenarios via: 
+      [Flink model configuration](../installation_configuration_guide/model/Flink.md#flink-specific-model-configuration).
+    - You can override global interval in a scenario by setting `Checkpoint interval in seconds` in a scenario 
+      properties on UI.
+  - Configure Flink Kafka producer `transaction.timeout.ms` to be equal to: "maximum checkpoint duration + maximum
+    restart duration" in property `kafkaProperties."transaction.timeout.ms"`
+    ([kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options)) or data loss may happen when
+    Kafka expires an uncommitted transaction.
+  - Ensure Flink Kafka consumer `isolation.level` is set to `read_committed`
+    ([kafkaConfig](../integration/KafkaIntegration.md#available-configuration-options)) if you plan consuming events 
+    from transactional source.
+- Kafka cluster configuration:
+  - Ensure your Kafka version supports transactions.
+  - Ensure that Kafka broker `transaction.max.timeout.ms` 
+    [Kafka docs](https://kafka.apache.org/documentation/#brokerconfigs_transaction.max.timeout.ms) is greater than 
+    producer `transaction.timeout.ms`.
+  - Ensure that your Kafka broker cluster has at least three brokers
+    [Kafka docs](https://kafka.apache.org/documentation/#producerconfigs_transactional.id).
+  - According to: [current presentation](https://www.confluent.io/events/current/2023/3-flink-mistakes-we-made-so-you-wont-have-to/)
+    you should also consider configuring `transactional.id.expiration.ms` due to the fact that every transactionId
+    metadata is stored on kafka on every checkpoint. The metadata weights around 300 bytes so accumulated size could be
+    big. As a result we should configure a policy which will expire transactionId.
+- Application consuming Nussknacker's messages configuration:
+    - Ensure your consumer has `isolation.level` set to: `read_committed`.
 
 ## Nussknacker and Flink cluster
 
@@ -204,6 +271,7 @@ Diagnosing most of the problems below requires access to:
 | Checkpoints are failing                                                                     | Check jobmanager logs and/or Flink console                                                                                                                                                              |
 | Redeploy of scenario times out                                                              | Check jobmanager logs and/or Flink console                                                                                                                                                              |
 | `State is incompatible, please stop process and start again with clean state` during deploy | <ul><li>Check if Nussknacker has access to savepoints</li><li>Analyze if new state was added - if this is the case probably cancel before deploy is needed (to get rid of incompatible state)</li></ul> |
+| Aggregate events are not emitted by aggregate in time windows nodes                         | Idle source (Kafka topic) or idle Kafka partition confuse Flink's watermark mechanism. To avoid this problem ensure that each Kafka source partition continually gets events. Alternatively change [idleTimeout](../integration/KafkaIntegration.md/#configuration-for-flink-engine) configuration to ensure that idle source emits watermarks at acceptable intervals.  |
 
 ### Nussknacker metrics
 

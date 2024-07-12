@@ -1,32 +1,23 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import akka.actor.ActorSystem
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, OptionValues, Suite}
+import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DeploymentUpdateStrategy.StateRestoringStrategy
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingDeploymentManagerProvider}
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client3.SttpBackend
+import pl.touk.nussknacker.engine.management.DockerTest
 
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.Future
-
-trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { self: Suite =>
+trait StreamingDockerTest extends DockerTest with BeforeAndAfterAll with Matchers with OptionValues {
+  self: Suite with LazyLogging =>
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-
-  private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
-  implicit val backend: SttpBackend[Future, Any] =
-    AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
-  implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   protected var kafkaClient: KafkaClient = _
 
@@ -43,14 +34,14 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   }
 
   protected lazy val deploymentManager: DeploymentManager =
-    FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(ConfigWithUnresolvedVersion(config))
+    FlinkStreamingDeploymentManagerProviderHelper.createDeploymentManager(ConfigWithUnresolvedVersion(config))
 
   protected def deployProcessAndWaitIfRunning(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
-      savepointPath: Option[String] = None
+      stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
   ): Assertion = {
-    deployProcess(process, processVersion, savepointPath)
+    deployProcess(process, processVersion, stateRestoringStrategy)
     eventually {
       val jobStatuses = deploymentManager.getProcessStates(process.name).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.name}, $jobStatuses")
@@ -62,23 +53,32 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   protected def deployProcess(
       process: CanonicalProcess,
       processVersion: ProcessVersion,
-      savepointPath: Option[String] = None
+      stateRestoringStrategy: StateRestoringStrategy = StateRestoringStrategy.RestoreStateFromReplacedJobSavepoint
   ): Option[ExternalDeploymentId] = {
-    deploymentManager.deploy(processVersion, DeploymentData.empty, process, savepointPath).futureValue
+    deploymentManager
+      .processCommand(
+        DMRunDeploymentCommand(
+          processVersion,
+          DeploymentData.empty,
+          process,
+          DeploymentUpdateStrategy.ReplaceDeploymentWithSameScenarioName(stateRestoringStrategy)
+        )
+      )
+      .futureValue
   }
 
   protected def cancelProcess(processName: ProcessName): Unit = {
-    deploymentManager.cancel(processName, user = userToAct).futureValue
+    deploymentManager.processCommand(DMCancelScenarioCommand(processName, user = userToAct)).futureValue
     eventually {
       val statuses = deploymentManager
         .getProcessStates(processName)
         .futureValue
         .value
-      val runningOrDurringCancelJobs = statuses
+      val runningOrDuringCancelJobs = statuses
         .filter(state => Set(SimpleStateStatus.Running, SimpleStateStatus.DuringCancel).contains(state.status))
 
       logger.debug(s"waiting for jobs: $processName, $statuses")
-      if (runningOrDurringCancelJobs.nonEmpty) {
+      if (runningOrDuringCancelJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }
     }

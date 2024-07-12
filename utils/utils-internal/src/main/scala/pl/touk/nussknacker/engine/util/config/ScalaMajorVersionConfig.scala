@@ -11,7 +11,6 @@ object ScalaMajorVersionConfig {
   def configWithScalaMajorVersion(config: Config): Config = {
     val withMajor = ConfigFactory.parseMap(Collections.singletonMap("scala.major.version", scalaMajorVersion))
     ConfigFactory.load(config.withFallback(withMajor))
-
   }
 
 }

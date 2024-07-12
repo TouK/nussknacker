@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
-import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
@@ -10,17 +9,17 @@ import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{
-  DelayParameterName,
-  TimestampFieldParamName
+  delayParameter,
+  timestampFieldParamName
 }
 import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{
-  SchemaVersionParamName,
-  SinkValueParamName,
-  TopicParamName
+  schemaVersionParamName,
+  sinkValueParamName,
+  topicParamName
 }
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
@@ -59,8 +58,8 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
     sinkForInputMetaResultsHolder().clear()
   }
 
-  protected def runAndVerify(topic: String, process: CanonicalProcess, givenObj: AnyRef): Unit = {
-    kafkaClient.createTopic(topic, partitions = 1)
+  protected def runAndVerify(topic: TopicName.ForSource, process: CanonicalProcess, givenObj: AnyRef): Unit = {
+    kafkaClient.createTopic(topic.name, partitions = 1)
     pushMessage(givenObj, topic)
     run(process) {
       eventually {
@@ -71,13 +70,13 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
   }
 
   protected def createProcessWithDelayedSource(
-      topic: String,
+      topic: TopicName.ForSource,
       version: SchemaVersionOption,
       timestampField: String,
       delay: String
   ): CanonicalProcess = {
 
-    import spel.Implicits._
+    import pl.touk.nussknacker.engine.spel.SpelExtension._
 
     ScenarioBuilder
       .streaming("kafka-universal-delayed-test")
@@ -85,12 +84,12 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
       .source(
         "start",
         "kafka-universal-delayed",
-        s"$TopicParamName"          -> s"'$topic'",
-        s"$SchemaVersionParamName"  -> asSpelExpression(formatVersionParam(version)),
-        s"$TimestampFieldParamName" -> s"$timestampField",
-        s"$DelayParameterName"      -> s"$delay"
+        topicParamName.value               -> s"'${topic.name}'".spel,
+        schemaVersionParamName.value       -> formatVersionParam(version).spel,
+        timestampFieldParamName.value      -> timestampField.spel,
+        delayParameter.parameterName.value -> delay.spel
       )
-      .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", sinkValueParamName.value -> "T(java.time.Instant).now().toEpochMilli()".spel)
   }
 
 }

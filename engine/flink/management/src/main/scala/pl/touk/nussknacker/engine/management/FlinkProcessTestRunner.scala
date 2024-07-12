@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
+import io.circe.Json
 import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -16,12 +17,13 @@ class FlinkProcessTestRunner(modelData: ModelData)
       "run"
     ) {
 
+  // NU-1455: We encode variable on the engine, because of classLoader's problems
   def test(canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData)(
       implicit ec: ExecutionContext
-  ): Future[TestResults] =
+  ): Future[TestResults[Json]] =
     Future {
       tryToInvoke(modelData, canonicalProcess, scenarioTestData, new Configuration())
-        .asInstanceOf[TestResults]
+        .asInstanceOf[TestResults[Json]]
     }
 
 }

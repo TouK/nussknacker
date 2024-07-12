@@ -17,7 +17,7 @@ export function SearchIcon(props: { isEmpty?: boolean }): JSX.Element {
                 flex,
                 css({
                     ".icon-fill": {
-                        fill: props.isEmpty ? theme.custom.colors.secondaryColor : theme.custom.colors.accent,
+                        fill: props.isEmpty ? theme.palette.text.secondary : theme.palette.primary.main,
                     },
                 }),
             )}
@@ -34,7 +34,7 @@ export function ClearIcon(): JSX.Element {
                 flex,
                 css({
                     path: {
-                        fill: theme.custom.colors.mutedColor,
+                        fill: theme.palette.text.secondary,
                     },
                 }),
             )}

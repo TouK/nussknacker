@@ -4,11 +4,18 @@ import cats.Monad
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{State, StateT, ValidatedNel}
 import com.typesafe.config.ConfigFactory
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentDefinition,
+  ComponentType,
+  NodeComponentInfo,
+  UnboundedStreamComponent
+}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -101,7 +108,7 @@ object sample {
     resultWithInitialState
   }
 
-  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults = {
+  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[_] = {
     implicit val effectUnwrapper: EffectUnwrapper[StateType] = new EffectUnwrapper[StateType] {
       override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
     }
@@ -115,13 +122,12 @@ object sample {
     override def createStateTransformation[F[_]: Monad](
         context: CustomComponentContext[F]
     ): Context => F[Context] = {
-      val interpreter = context.interpreter.syncInterpretationFunction(value)
       val convert = context.capabilityTransformer
         .transform[StateType]
         .getOrElse(throw new IllegalArgumentException("No capability!"))
       (ctx: Context) =>
         convert(State((current: Map[String, Double]) => {
-          val newValue = current.getOrElse(name, 0d) + interpreter(ctx)
+          val newValue = current.getOrElse(name, 0d) + value.evaluate(ctx)
           (current + (name -> newValue), ctx.withVariable(outputVar, newValue))
         }))
     }
@@ -174,7 +180,7 @@ object sample {
 
   }
 
-  object SimpleSourceFactory extends SourceFactory {
+  object SimpleSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
     def create(): Source = new LiteSource[SampleInput] with SourceTestSupport[SampleInput] {
@@ -193,7 +199,7 @@ object sample {
 
   }
 
-  object FailOnNumber1SourceFactory extends SourceFactory {
+  object FailOnNumber1SourceFactory extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): Source = new LiteSource[SampleInput] {
@@ -219,7 +225,7 @@ object sample {
 
   }
 
-  object SimpleSourceWithParameterTestingFactory extends SourceFactory {
+  object SimpleSourceWithParameterTestingFactory extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke(returnType = classOf[SampleInputWithListAndMap])
     def create(): Source = new LiteSource[SampleInputWithListAndMap]
@@ -233,16 +239,22 @@ object sample {
         input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
 
       override def testParametersDefinition: List[Parameter] = List(
-        Parameter("contextId", Typed.apply[String]),
-        Parameter("numbers", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))),
-        Parameter("additionalParams", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)))
+        Parameter(ParameterName("contextId"), Typed.apply[String]),
+        Parameter(
+          ParameterName("numbers"),
+          Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))
+        ),
+        Parameter(
+          ParameterName("additionalParams"),
+          Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown))
+        )
       )
 
-      override def parametersToTestData(params: Map[String, AnyRef]): SampleInputWithListAndMap =
+      override def parametersToTestData(params: Map[ParameterName, AnyRef]): SampleInputWithListAndMap =
         SampleInputWithListAndMap(
-          params("contextId").asInstanceOf[String],
-          params("numbers").asInstanceOf[java.util.List[Long]],
-          params("additionalParams").asInstanceOf[java.util.Map[String, Any]]
+          params(ParameterName("contextId")).asInstanceOf[String],
+          params(ParameterName("numbers")).asInstanceOf[java.util.List[Long]],
+          params(ParameterName("additionalParams")).asInstanceOf[java.util.Map[String, Any]]
         )
 
     }
@@ -252,8 +264,11 @@ object sample {
   object SimpleSinkFactory extends SinkFactory {
 
     @MethodToInvoke
-    def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] =
-      (_: LazyParameterInterpreter) => value
+    def create(@ParamName("value") value: LazyParameter[AnyRef]): LazyParamSink[AnyRef] = {
+      new LazyParamSink[AnyRef] {
+        override def prepareResponse: LazyParameter[AnyRef] = value
+      }
+    }
 
   }
 

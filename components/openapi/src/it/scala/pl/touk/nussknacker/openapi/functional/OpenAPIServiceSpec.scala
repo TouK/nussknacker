@@ -3,10 +3,11 @@ package pl.touk.nussknacker.openapi.functional
 import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClient
-import org.scalatest.{BeforeAndAfterAll, Outcome}
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, Outcome}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -20,8 +21,8 @@ import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.net.URL
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
 
 class OpenAPIServiceSpec
     extends FixtureAnyFunSuite
@@ -32,7 +33,7 @@ class OpenAPIServiceSpec
 
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData                 = MetaData("testProc", StreamMetaData())
-  implicit val contextId: ContextId               = ContextId("testContextId")
+  implicit val context: Context                   = Context("testContextId", Map.empty)
 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 
@@ -67,7 +68,13 @@ class OpenAPIServiceSpec
   }
 
   test("service returns customers") { service =>
-    val valueWithChosenFields = service.invoke(Map("customer_id" -> "10")).futureValue.asInstanceOf[TypedMap].asScala
+    implicit val contextId: ContextId = ContextId("1")
+    val valueWithChosenFields =
+      service
+        .invoke(Map(ParameterName("customer_id") -> "10"))
+        .futureValue
+        .asInstanceOf[TypedMap]
+        .asScala
     valueWithChosenFields shouldEqual Map("name" -> "Robert Wright", "id" -> 10, "category" -> "GOLD")
   }
 

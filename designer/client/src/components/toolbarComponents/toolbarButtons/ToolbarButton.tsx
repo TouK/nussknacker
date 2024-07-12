@@ -1,25 +1,22 @@
+import { css, cx } from "@emotion/css";
+import { Typography, useTheme } from "@mui/material";
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { NodeInput } from "../../withFocus";
+import { PANEL_BUTTON_SIZE, PANEL_BUTTON_SMALL_SIZE } from "../../../stylesheets/variables";
+import { NodeInput } from "../../FormElements";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
-import { css, cx } from "@emotion/css";
-import { variables } from "../../../stylesheets/variables";
-import { Icon, Label } from "./ToolbarButtonStyled";
-import { useTheme } from "@mui/material";
-
-const { buttonSize, rightPanelButtonFontSize, buttonSmallSize } = variables;
+import { Icon } from "./ToolbarButtonStyled";
+import { getEventTrackingProps, mapToolbarButtonToStatisticsEvent } from "../../../containers/event-tracking";
 
 export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
-    { onDrop, title, className, disabled, name, icon, hasError, isActive, ...props },
+    { onDrop, title, className, disabled, name, icon, hasError, isActive, type, ...props },
     ref,
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
-    const {
-        custom: { colors },
-    } = useTheme();
+    const { palette } = useTheme();
 
     const margin = 2;
-    const width = parseFloat(variant === ButtonsVariant.small ? buttonSmallSize : buttonSize) - 2 * margin;
+    const width = (variant === ButtonsVariant.small ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE) - 2 * margin;
     const styles = css({
         margin,
         padding: variant === ButtonsVariant.small ? 0 : "4px 0",
@@ -32,32 +29,31 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
         userSelect: "none",
         opacity: disabled ? 0.3 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
-        fontSize: rightPanelButtonFontSize,
         width,
-        height: width,
+        height: "fit-content",
         outline: "none",
 
-        borderColor: hasError ? colors.error : "transparent",
-        ":focus": {
-            borderColor: colors.cobalt,
-        },
+        borderColor: hasError ? palette.error.main : "transparent",
 
-        color: hasError ? colors.error : isActive ? colors.ok : colors.secondaryColor,
+        color: hasError ? palette.error.main : isActive ? palette.success.main : palette.text.secondary,
 
-        backgroundColor: colors.primaryBackground,
+        backgroundColor: palette.background.paper,
         ":hover": {
-            backgroundColor: disabled ? colors.primaryBackground : colors.charcoal,
+            backgroundColor: disabled ? "inherit" : palette.action.hover,
         },
     });
 
     const buttonProps = {
         ...props,
+        ...getEventTrackingProps({ selector: mapToolbarButtonToStatisticsEvent(type) }),
         title: title || name,
         className: cx(styles, className),
         children: (
             <>
                 <Icon title={title}>{icon}</Icon>
-                <Label variant={variant}>{name}</Label>
+                <Typography variant={"overline"} display={variant === ButtonsVariant.small ? "none" : "unset"}>
+                    {name}
+                </Typography>
             </>
         ),
     };

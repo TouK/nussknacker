@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.test
 
-import io.restassured.builder.MultiPartSpecBuilder
 import io.restassured.http.ContentType
 import io.restassured.response.ValidatableResponse
 import io.restassured.specification.RequestSpecification
@@ -10,15 +9,6 @@ import pl.touk.nussknacker.test.NuRestAssureMatchers.equalsJson
 import java.nio.charset.StandardCharsets
 
 trait NuRestAssureExtensions {
-
-  implicit class Mocking[T <: RequestSpecification](requestSpecification: T) {
-
-    def assume(f: => Unit): T = {
-      val _ = f
-      requestSpecification
-    }
-
-  }
 
   implicit class AppConfiguration[T <: RequestSpecification](requestSpecification: T) {
 
@@ -43,6 +33,14 @@ trait NuRestAssureExtensions {
         .none()
     }
 
+    // https://github.com/rest-assured/rest-assured/issues/507
+    def preemptiveBasicAuth(name: String, password: String): RequestSpecification = {
+      requestSpecification
+        .auth()
+        .preemptive()
+        .basic(name, password)
+    }
+
   }
 
   implicit class JsonBody[T <: RequestSpecification](requestSpecification: T) {
@@ -65,21 +63,31 @@ trait NuRestAssureExtensions {
 
   }
 
-  implicit class MultiPartBody[T <: RequestSpecification](requestSpecification: T) {
+  implicit class StreamBody[T <: RequestSpecification](requestSpecification: T) {
     private val doubleQuote = '"'
 
-    def multiPartBody(fileContent: String, fileName: String): RequestSpecification = {
+    def streamBody(fileContent: String, fileName: String): RequestSpecification = {
       requestSpecification
-        .multiPart(
-          new MultiPartSpecBuilder(fileContent)
-            // https://github.com/rest-assured/rest-assured/issues/866#issuecomment-617127889
-            .header(
-              "Content-Disposition",
-              s"form-data; name=${doubleQuote}attachment${doubleQuote}; filename=${doubleQuote}${fileName}${doubleQuote}"
-            )
-            .build()
+        .body(fileContent.getBytes(StandardCharsets.UTF_8))
+        .contentType(ContentType.BINARY)
+        .header(
+          "Content-Disposition",
+          s"attachment; filename=${doubleQuote}${fileName}${doubleQuote}"
         )
-        .contentType("multipart/form-data")
+    }
+
+  }
+
+  implicit class VerifyState(validatableResponse: ValidatableResponse) {
+
+    def verifyApplicationState(f: => Unit): ValidatableResponse = {
+      val _ = f
+      validatableResponse
+    }
+
+    def verifyExternalState(f: => Unit): ValidatableResponse = {
+      val _ = f
+      validatableResponse
     }
 
   }
@@ -106,13 +114,20 @@ trait NuRestAssureExtensions {
 
   }
 
-  implicit class ExtractLong[T <: ValidatableResponse](validatableResponse: T) {
+  implicit class ExtractUsingJsonPath[T <: ValidatableResponse](validatableResponse: T) {
 
     def extractLong(jsonPath: String): Long = {
       validatableResponse
         .extract()
         .jsonPath()
         .getLong(jsonPath)
+    }
+
+    def extractString(jsonPath: String): String = {
+      validatableResponse
+        .extract()
+        .jsonPath()
+        .getString(jsonPath)
     }
 
   }

@@ -1,13 +1,21 @@
 describe("Processes list", () => {
     const NAME = "process-list";
+    const PROCESSING_MODE = "processing-mode";
 
     before(() => {
         cy.deleteAllTestProcesses({ filter: NAME, force: true });
+        cy.deleteAllTestProcesses({ filter: PROCESSING_MODE, force: true });
         cy.createTestProcessName(NAME).as("processName");
+        cy.createTestProcess(`${PROCESSING_MODE}-Request-Response`, undefined, "RequestResponse", "Request-Response");
+
+        // Sometimes it's a small difference with the creation date time of scenarios, that's why we need to wait to keep elements in the same order
+        cy.wait(1000);
+        cy.createTestProcess(`${PROCESSING_MODE}-Streaming`, undefined, undefined, "Unbounded-Stream");
     });
 
     after(() => {
         cy.deleteAllTestProcesses({ filter: NAME });
+        cy.deleteAllTestProcesses({ filter: PROCESSING_MODE });
     });
 
     beforeEach(() => {
@@ -23,10 +31,14 @@ describe("Processes list", () => {
     });
 
     it("should allow creating new process", function () {
-        cy.contains(/^new scenario$/i)
+        cy.contains(/^add new scenario$/i)
             .should("be.visible")
             .click();
         cy.get("#newProcessName", { timeout: 30000 }).type(this.processName);
+        cy.get('[data-testid="window-frame"]')
+            .contains(/request-response/i)
+            .click();
+        cy.get("#processCategory input").select(2);
         cy.contains(/^create$/i)
             .should("be.enabled")
             .click();
@@ -41,6 +53,39 @@ describe("Processes list", () => {
         cy.contains(this.processName).should("be.visible"); //.matchImage() FIXME
         cy.contains(this.processName).click({ x: 10, y: 10 });
         cy.url().should("contain", `visualization/${this.processName}`);
+    });
+
+    it("should filter by processing mode", function () {
+        cy.get("[placeholder='Search...']").type(`${PROCESSING_MODE}`);
+        cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
+
+        cy.get("body").matchImage({ maxDiffThreshold: 0.02 });
+
+        cy.contains("button", /processing mode/i).click();
+
+        cy.get("ul[role='menu']").matchImage();
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/streaming/i).click();
+        });
+
+        cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
+
+        cy.get("body").click();
+
+        cy.contains("button", /processing mode/i).click();
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/Default/i).click();
+        });
+
+        cy.contains(/2 of the 3 rows match the filters/i).should("be.visible");
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/Request-Response/i).click();
+        });
+
+        cy.contains(/1 of the 3 rows match the filters/i).should("be.visible");
     });
 });
 
@@ -68,7 +113,7 @@ describe.skip("Processes list (new table)", () => {
     });
 
     it("should allow creating new process", function () {
-        cy.contains(/^new scenario$/i)
+        cy.contains(/^add new scenario$/i)
             .should("be.visible")
             .click();
         cy.get("#newProcessName", { timeout: 30000 }).type(this.processName);

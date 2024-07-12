@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.process.migrate
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.{Path, Query}
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials, RawHeader}
+import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.Materializer
@@ -13,17 +12,19 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
+import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessName, ScenarioVersion, VersionId}
+import pl.touk.nussknacker.engine.deployment.EngineSetupName
 import pl.touk.nussknacker.restmodel.scenariodetails.ScenarioWithDetailsForMigrations
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationErrors
 import pl.touk.nussknacker.ui.NuDesignerError.XError
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
-import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
+import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Dtos.ApiVersion
+import pl.touk.nussknacker.ui.migrations.{MigrateScenarioData, MigrateScenarioDataV1, MigrationApiAdapterService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ScenarioGraphComparator
 import pl.touk.nussknacker.ui.util.ScenarioGraphComparator.Difference
+import pl.touk.nussknacker.ui.util.{ApiAdapterServiceError, OutOfRangeAdapterRequestError, ScenarioGraphComparator}
 import pl.touk.nussknacker.ui.{FatalError, NuDesignerError}
 
 import java.net.URLEncoder
@@ -47,7 +48,14 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ScenarioVersion]]
 
-  def migrate(localProcess: ScenarioGraph, processName: ProcessName, category: String, isFragment: Boolean)(
+  def migrate(
+      processingMode: ProcessingMode,
+      engineSetupName: EngineSetupName,
+      processCategory: String,
+      scenarioGraph: ScenarioGraph,
+      processName: ProcessName,
+      isFragment: Boolean
+  )(
       implicit ec: ExecutionContext,
       loggedUser: LoggedUser
   ): Future[Either[NuDesignerError, Unit]]
@@ -63,6 +71,19 @@ trait RemoteEnvironment {
 
 }
 
+final case class MigrationApiAdapterError(apiAdapterError: ApiAdapterServiceError)
+    extends FatalError(
+      apiAdapterError match {
+        case OutOfRangeAdapterRequestError(currentVersion, signedNoOfVersionsLeftToApply) =>
+          signedNoOfVersionsLeftToApply match {
+            case n if n >= 0 =>
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to $signedNoOfVersionsLeftToApply version(s) up"
+            case _ =>
+              s"Migration API Adapter error occurred when trying to adapt MigrateScenarioRequest in version: $currentVersion to ${-signedNoOfVersionsLeftToApply} version(s) down"
+          }
+      }
+    )
+
 final case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, message: String)
     extends FatalError(message)
 
@@ -74,6 +95,11 @@ final case class MigrationValidationError(errors: ValidationErrors)
         }
       s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
     })
+
+final case class MissingScenarioGraphError(msg: String)
+    extends FatalError(
+      msg
+    )
 
 final case class MigrationToArchivedError(processName: ProcessName, environment: String)
     extends FatalError(
@@ -129,13 +155,16 @@ class HttpRemoteEnvironment(
 final case class StandardRemoteEnvironmentConfig(
     uri: String,
     batchSize: Int = 10,
-    batchTimeout: FiniteDuration = 120 seconds
+    batchTimeout: FiniteDuration = 120 seconds,
+    useLegacyCreateScenarioApi: Boolean = false
 )
 
 //TODO: extract interface to remote environment?
-trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
+trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment with LazyLogging {
 
   private type FutureE[T] = EitherT[Future, NuDesignerError, T]
+
+  private val migrationApiAdapterService: MigrationApiAdapterService = new MigrationApiAdapterService()
 
   def environmentId: String
 
@@ -175,60 +204,79 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def migrate(
-      localGraph: ScenarioGraph,
+      processingMode: ProcessingMode,
+      engineSetupName: EngineSetupName,
+      processCategory: String,
+      scenarioGraph: ScenarioGraph,
       processName: ProcessName,
-      category: String,
       isFragment: Boolean
   )(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[NuDesignerError, Unit]] = {
-    (for {
-      validation <- EitherT(validateScenarioGraph(localGraph, processName))
-      _ <- EitherT.fromEither[Future](
-        if (validation.errors != ValidationErrors.success)
-          Left[NuDesignerError, Unit](MigrationValidationError(validation.errors))
-        else Right(())
-      )
-      remoteProcessEither <- fetchProcessDetails(processName)
-      _ <- remoteProcessEither match {
-        case Right(processDetails) if processDetails.isArchived =>
-          EitherT.leftT[Future, NuDesignerError](
-            MigrationToArchivedError(processDetails.name, environmentId)
-          )
-        case Right(_) => EitherT.rightT[Future, NuDesignerError](())
-        case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) =>
-          val userToForward = if (passUsernameInMigration) Some(loggedUser) else None
-          createProcessOnRemote(processName, category, isFragment, userToForward)
-        case Left(other) => EitherT.leftT[Future, NuDesignerError](other)
-      }
-      usernameToPass = if (passUsernameInMigration) Some(RemoteUserName(loggedUser.username)) else None
-      _ <- EitherT {
-        saveProcess(
-          localGraph,
+
+    val result: EitherT[Future, NuDesignerError, Unit] = for {
+      remoteScenarioDescriptionVersion <- fetchRemoteMigrationScenarioDescriptionVersion
+      localScenarioDescriptionVersion = migrationApiAdapterService.getCurrentApiVersion
+      migrateScenarioRequest: MigrateScenarioData =
+        MigrateScenarioDataV1(
+          environmentId,
+          loggedUser.username,
+          processingMode,
+          engineSetupName,
+          processCategory,
+          scenarioGraph,
           processName,
-          UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"),
-          usernameToPass
+          isFragment
         )
-      }
-    } yield ()).value
+      versionsDifference = localScenarioDescriptionVersion - remoteScenarioDescriptionVersion
+      transformedMigrateScenarioRequestE =
+        if (versionsDifference > 0)
+          migrationApiAdapterService.adaptDown(migrateScenarioRequest, versionsDifference)
+        else
+          Right(migrateScenarioRequest)
+      _ <- handleTransformedMigrateScenarioRequest(transformedMigrateScenarioRequestE)
+    } yield ()
+
+    result.value
   }
 
-  private def createProcessOnRemote(
-      processName: ProcessName,
-      category: String,
-      isFragment: Boolean,
-      loggedUser: Option[LoggedUser]
-  )(
-      implicit ec: ExecutionContext
-  ): FutureE[Unit] = {
-    val remoteUserNameHeader: List[HttpHeader] =
-      loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
-    EitherT {
-      invokeForSuccess(
-        HttpMethods.POST,
-        List("processes", processName.value, category),
-        Query(("isFragment", isFragment.toString)),
-        HttpEntity.Empty,
-        remoteUserNameHeader
+  private def handleTransformedMigrateScenarioRequest(
+      transformedMigrateScenarioRequestE: Either[ApiAdapterServiceError, MigrateScenarioData]
+  )(implicit ec: ExecutionContext): EitherT[Future, NuDesignerError, Unit] = {
+    transformedMigrateScenarioRequestE match {
+      case Left(apiAdapterServiceError) =>
+        EitherT.leftT(MigrationApiAdapterError(apiAdapterServiceError))
+      case Right(transformedMigrateScenarioRequest) =>
+        import pl.touk.nussknacker.ui.api.description.MigrationApiEndpoints.Codecs.MigrateScenarioRequestDto.encoder
+        val dto = MigrateScenarioData.fromDomain(transformedMigrateScenarioRequest)
+        EitherT(
+          invokeForSuccess(
+            HttpMethods.POST,
+            List("migrate"),
+            Query.Empty,
+            HttpEntity(dto.asJson.noSpaces),
+            List()
+          )
+        )
+    }
+  }
+
+  private def fetchRemoteMigrationScenarioDescriptionVersion(implicit ec: ExecutionContext) = {
+    EitherT(
+      fetchRemoteMigrationScenarioDescriptionVersionAux.map[Either[NuDesignerError, Int]](apiVersion =>
+        Right(apiVersion.version)
       )
+    )
+  }
+
+  private def fetchRemoteMigrationScenarioDescriptionVersionAux(implicit ec: ExecutionContext): Future[ApiVersion] = {
+    // TODO: let's use client created from Tapir endpoints instead
+    invoke[ApiVersion](
+      HttpMethods.GET,
+      List("migration", "scenario", "description", "version"),
+      Query.Empty,
+      requestEntity = HttpEntity.Empty,
+      headers = Seq.empty
+    ) { res =>
+      Unmarshal(res.entity).to[ApiVersion]
     }
   }
 
@@ -289,12 +337,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     )
   }
 
-  private def fetchProcessDetails(
-      name: ProcessName
-  )(implicit ec: ExecutionContext): FutureE[Either[NuDesignerError, ScenarioWithDetailsForMigrations]] = {
-    EitherT(invokeJson[ScenarioWithDetailsForMigrations](HttpMethods.GET, List("processes", name.value)).map(_.asRight))
-  }
-
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
     invokeJson[List[ScenarioWithDetailsForMigrations]](
       HttpMethods.GET,
@@ -305,37 +347,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         ("skipNodeResults", "true"),
       )
     )
-  }
-
-  private def validateScenarioGraph(
-      scenarioGraph: ScenarioGraph,
-      processName: ProcessName
-  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
-    for {
-      scenarioGraphToValidate <- Marshal(scenarioGraph).to[MessageEntity]
-      validation <- invokeJson[ValidationResult](
-        HttpMethods.POST,
-        List("processValidation", processName.value),
-        requestEntity = scenarioGraphToValidate
-      )
-    } yield validation
-  }
-
-  private def saveProcess(
-      scenarioGraph: ScenarioGraph,
-      processName: ProcessName,
-      comment: UpdateProcessComment,
-      forwardedUserName: Option[RemoteUserName]
-  )(implicit ec: ExecutionContext): Future[Either[NuDesignerError, ValidationResult]] = {
-    for {
-      processToSave <- Marshal(UpdateProcessCommand(scenarioGraph, comment, forwardedUserName))
-        .to[MessageEntity](marshaller, ec)
-      response <- invokeJson[ValidationResult](
-        HttpMethods.PUT,
-        List("processes", processName.value),
-        requestEntity = processToSave
-      )
-    } yield response
   }
 
   private def invoke[T](

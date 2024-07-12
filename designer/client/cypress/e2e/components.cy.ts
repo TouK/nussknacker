@@ -111,14 +111,17 @@ describe("Components list", () => {
         cy.matchQuery("?STATUS=RUNNING&STATUS=NOT_DEPLOYED");
         cy.get("body").click();
         cy.contains("components-test").click();
-        cy.contains("import test data").should("be.visible");
+        cy.contains("import test data").should("exist");
     });
 
     it("should apply filters from query", () => {
         cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=Category1&USAGES=-1");
         cy.contains(/^name$/i).should("be.visible");
         cy.get("[role=row]").should("have.length", 2);
-        cy.contains("[role=row] *", /^Default$/).should("be.visible");
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=button]", /^Default$/).should("be.visible");
+        // Close more menu
+        cy.get("body").click(0, 0).click();
         cy.wait(300);
         cy.get("#app-container>main").matchImage();
     });
@@ -127,10 +130,12 @@ describe("Components list", () => {
         filterByBaseGroup();
         cy.contains(/^category$/i).should("be.visible");
         cy.get("[role=row]").should("have.length.above", 1);
-        cy.contains("[role=row] *", /^Default$/).click();
-        cy.contains("[role=row] *", /^Category1$/).click();
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Default$/).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Category1$/).click({ force: true });
         cy.matchQuery("?GROUP=base&CATEGORY=Default&CATEGORY=Category1");
-        cy.contains("[role=row] *", /^Default$/).click();
+        cy.contains("[role=row] *", /more/i).click({ force: true });
+        cy.contains("[role=row] *[role=button]", /^Default$/).click({ force: true });
         cy.matchQuery("?GROUP=base&CATEGORY=Category1");
     });
 
@@ -159,7 +164,7 @@ describe("Components list", () => {
             .click();
 
         // we are clicking "X more" on list of places of usages to test usages list expansion
-        cy.contains("4 more").click();
+        cy.contains("5 more").click();
         cy.get("#app-container>main").matchImage({
             screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 300 } },
         });
@@ -183,7 +188,8 @@ describe("Components list", () => {
     it("should filter usage types", () => {
         cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
         cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
-        cy.get("#toolbox").contains("fragments").should("be.visible").click();
+        cy.get("#toolbox").contains("fragments").should("exist").scrollIntoView();
+        cy.layoutScenario();
         cy.contains(`${seed}_xxx`)
             .last()
             .should("be.visible")
@@ -207,9 +213,7 @@ describe("Components list", () => {
             .contains(/\sdirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
             .contains(/\sdirect/i)
@@ -218,9 +222,7 @@ describe("Components list", () => {
             .contains(/indirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.02,
-        });
+        cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
             .contains(/indirect/i)
@@ -231,8 +233,26 @@ describe("Components list", () => {
         cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.02,
+            screenshotConfig: {
+                blackout: ["[role='row']:not(:first-of-type) > [role='cell'][data-field='modificationDate'] span"],
+            },
         });
+    });
+
+    it("should allow filtering by processing mode", () => {
+        // Filter by processing mode
+        cy.contains("button", /processing mode/i).click();
+
+        cy.get("ul[role='menu']").matchImage();
+
+        cy.get("ul[role='menu']").within(() => {
+            cy.contains(/streaming/i).click();
+        });
+
+        // Sort by processing mode
+        cy.get("[role='columnheader'][aria-label='Processing modes']").dblclick({ force: true });
+
+        cy.get("#app-container>main").matchImage();
     });
 
     function filterByDefaultCategory() {

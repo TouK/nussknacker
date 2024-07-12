@@ -45,6 +45,18 @@ class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with Sca
     authConfig.cachingHashesOrDefault.toCacheConfig.value shouldEqual CacheConfig(expireAfterAccess = Some(10.minutes))
   }
 
+  it should "parse is admin impersonation possible" in {
+    val config = ConfigFactory.parseString("""
+        authentication: {
+         usersFile: "./src/test/resources/oauth2-users.conf"
+         isAdminImpersonationPossible: true
+        }
+      """.stripMargin)
+
+    val authConfig = BasicAuthenticationConfiguration.create(config)
+    authConfig.isAdminImpersonationPossible shouldBe true
+  }
+
   it should "parse oidc config with no users" in {
     val config = ConfigFactory
       .parseString(ResourceLoader.load("/oidc.conf"))

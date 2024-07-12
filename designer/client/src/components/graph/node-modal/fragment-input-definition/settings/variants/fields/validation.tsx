@@ -13,6 +13,7 @@ import { SettingLabelStyled, CustomSwitch } from "./StyledSettingsComponnets";
 import { NodeValidationError, VariableTypes } from "../../../../../../../types";
 import { ExpressionLang } from "../../../../editors/expression/types";
 import { useSettings } from "../../SettingsProvider";
+import { nodeValue } from "../../../../NodeDetailsContent/NodeTableStyled";
 
 interface Validation {
     item: AnyValueWithSuggestionsParameterVariant | AnyValueParameterVariant | DefaultParameterVariant;
@@ -33,7 +34,7 @@ export function ValidationsFields(props: Validation) {
         <>
             <FormControl>
                 <SettingLabelStyled required>{t("fragment.validation.validation", "Validation:")}</SettingLabelStyled>
-                <Box className={"node-value"}>
+                <Box className={nodeValue}>
                     <FormControlLabel
                         control={
                             <CustomSwitch
@@ -62,7 +63,7 @@ export function ValidationsFields(props: Validation) {
                         }
                         label=""
                     />
-                    <Typography variant={"subtitle2"}>
+                    <Typography component={"p"} color={"text.secondary"} variant={"caption"}>
                         {t(
                             "fragment.validation.validationWarning",
                             "When validation is enabled, only literal values and operations on them are allowed in the parameter's value (i.e. the value passed to the fragment when it is used). This is because Nussknacker has to be able to evaluate it at deployment time.",

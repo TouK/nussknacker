@@ -2,7 +2,15 @@ package pl.touk.nussknacker.restmodel
 
 import pl.touk.nussknacker.restmodel.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.security.AuthCredentials
-import sttp.model.StatusCode.{Forbidden, Unauthorized}
+import pl.touk.nussknacker.ui.security.api.SecurityError
+import pl.touk.nussknacker.ui.security.api.SecurityError.{
+  CannotAuthenticateUser,
+  ImpersonatedUserDataNotFoundError,
+  ImpersonationMissingPermissionError,
+  ImpersonationNotSupportedError,
+  InsufficientPermission
+}
+import sttp.model.StatusCode.{Forbidden, NotFound, NotImplemented, Unauthorized}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir._
 
@@ -38,21 +46,55 @@ object BaseEndpointDefinitions {
           oneOf(
             oneOfVariantFromMatchType(
               Unauthorized,
-              plainBody[SecurityError.AuthenticationError.type]
+              plainBody[CannotAuthenticateUser.type]
                 .example(
                   Example.of(
                     summary = Some("Authentication failed"),
-                    value = SecurityError.AuthenticationError
+                    value = CannotAuthenticateUser
+                  )
+                )
+            ),
+            oneOfVariantFromMatchType(
+              NotImplemented,
+              plainBody[ImpersonationNotSupportedError.type]
+                .description("Impersonation is not supported for defined authentication mechanism")
+                .example(
+                  Example.of(
+                    summary = Some(
+                      "Cannot authenticate impersonated user as impersonation is not supported by the authentication mechanism"
+                    ),
+                    value = ImpersonationNotSupportedError
+                  )
+                )
+            ),
+            oneOfVariantFromMatchType(
+              NotFound,
+              plainBody[ImpersonatedUserDataNotFoundError.type]
+                .description("Identity provided in the Nu-Impersonate-User-Identity header did not match any user")
+                .example(
+                  Example.of(
+                    summary = Some("No impersonated user's data found for provided identity"),
+                    value = ImpersonatedUserDataNotFoundError
                   )
                 )
             ),
             oneOfVariantFromMatchType(
               Forbidden,
-              plainBody[SecurityError.AuthorizationError.type]
+              plainBody[ImpersonationMissingPermissionError.type]
+                .example(
+                  Example.of(
+                    summary = Some("Authorization failed, user does not have permission to impersonate"),
+                    value = ImpersonationMissingPermissionError
+                  )
+                )
+            ),
+            oneOfVariantFromMatchType(
+              Forbidden,
+              plainBody[InsufficientPermission.type]
                 .example(
                   Example.of(
                     summary = Some("Authorization failed"),
-                    value = SecurityError.AuthorizationError
+                    value = InsufficientPermission
                   )
                 )
             )
@@ -64,31 +106,59 @@ object BaseEndpointDefinitions {
 
   private object Codecs {
 
-    implicit val authenticationErrorCodec
-        : Codec[String, SecurityError.AuthenticationError.type, CodecFormat.TextPlain] = {
+    implicit val authenticationErrorCodec: Codec[String, CannotAuthenticateUser.type, CodecFormat.TextPlain] = {
       Codec.string.map(
-        Mapping.from[String, SecurityError.AuthenticationError.type](_ => SecurityError.AuthenticationError)(_ =>
+        Mapping.from[String, CannotAuthenticateUser.type](_ => CannotAuthenticateUser)(_ =>
           "The supplied authentication is invalid"
         )
       )
     }
 
-    implicit val authorizationErrorCodec
-        : Codec[String, SecurityError.AuthorizationError.type, CodecFormat.TextPlain] = {
+    implicit val authorizationErrorCodec: Codec[String, InsufficientPermission.type, CodecFormat.TextPlain] = {
       Codec.string.map(
-        Mapping.from[String, SecurityError.AuthorizationError.type](_ => SecurityError.AuthorizationError)(_ =>
+        Mapping.from[String, InsufficientPermission.type](_ => InsufficientPermission)(_ =>
           "The supplied authentication is not authorized to access this resource"
+        )
+      )
+    }
+
+    implicit val impersonationPermissionErrorCodec
+        : Codec[String, ImpersonationMissingPermissionError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, ImpersonationMissingPermissionError.type](_ => ImpersonationMissingPermissionError)(_ =>
+          ImpersonationMissingPermissionError.errorMessage
+        )
+      )
+    }
+
+    implicit val impersonatedDataNotFoundErrorCodec
+        : Codec[String, ImpersonatedUserDataNotFoundError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, ImpersonatedUserDataNotFoundError.type](_ => ImpersonatedUserDataNotFoundError)(_ =>
+          ImpersonatedUserDataNotFoundError.errorMessage
+        )
+      )
+    }
+
+    implicit val impersonationNotSupportedErrorCodec
+        : Codec[String, ImpersonationNotSupportedError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, ImpersonationNotSupportedError.type](_ => ImpersonationNotSupportedError)(_ =>
+          ImpersonationNotSupportedError.errorMessage
         )
       )
     }
 
   }
 
-}
+  def toTextPlainCodecSerializationOnly[T](
+      toMessage: T => String
+  ): Codec[String, T, CodecFormat.TextPlain] =
+    Codec.string.map(
+      Mapping.from[String, T](deserializationNotSupportedException)(toMessage)
+    )
 
-sealed trait SecurityError
+  private def deserializationNotSupportedException =
+    (_: Any) => throw new IllegalStateException("Deserializing errors is not supported.")
 
-object SecurityError {
-  case object AuthenticationError extends SecurityError
-  case object AuthorizationError  extends SecurityError
 }

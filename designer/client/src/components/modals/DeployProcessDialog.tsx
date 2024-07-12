@@ -9,7 +9,8 @@ import { ProcessName } from "../Process/types";
 import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../comment/CommentInput";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
-import { FormHelperText } from "@mui/material";
+import { FormHelperText, Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export type ToggleProcessActionModalData = {
     action: (processName: ProcessName, comment: string) => Promise<unknown>;
@@ -41,7 +42,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
@@ -50,7 +51,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark")}>
-                <h3>{props.data.title}</h3>
+                <Typography variant={"h3"}>{props.data.title}</Typography>
                 {displayWarnings && <ProcessDialogWarnings />}
                 <CommentInput
                     onChange={(e) => setComment(e.target.value)}

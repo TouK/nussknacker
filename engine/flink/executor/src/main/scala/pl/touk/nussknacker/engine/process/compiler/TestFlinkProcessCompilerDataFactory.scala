@@ -5,12 +5,16 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
+import pl.touk.nussknacker.engine.flink.api.process.{
+  CustomizableContextInitializerSource,
+  FlinkSource,
+  FlinkSourceTestSupport
+}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -21,14 +25,14 @@ object TestFlinkProcessCompilerDataFactory {
       process: CanonicalProcess,
       scenarioTestData: ScenarioTestData,
       modelData: ModelData,
-      collectingListener: ResultsCollectingListener
+      collectingListener: ResultsCollectingListener[_]
   ): FlinkProcessCompilerDataFactory = {
     new StubbedFlinkProcessCompilerDataFactory(
       process,
       modelData.configCreator,
       modelData.extractModelDefinitionFun,
       modelData.modelConfig,
-      modelData.objectNaming,
+      modelData.namingStrategy,
       ComponentUseCase.TestRuntime
     ) {
 
@@ -64,6 +68,7 @@ object TestFlinkProcessCompilerDataFactory {
               case sourceWithTestSupport: Source with FlinkSourceTestSupport[Object @unchecked] =>
                 sourcePreparer.prepareStubbedSource(sourceWithTestSupport, typingResult, nodeId)
               case _ =>
+//              TODO: Why not throw exception here? Maybe we need to remodel FlinkSourceWithParameters interface?
                 EmptySource[Object](typingResult)(TypeInformation.of(classOf[Object]))
             }
           }
@@ -101,14 +106,22 @@ class StubbedSourcePreparer(
   ): FlinkSource = {
     val samples: List[Object] = collectSamples(originalSource, nodeId)
     originalSource match {
-      case sourceWithContextInitializer: FlinkIntermediateRawSource[Object @unchecked] =>
-        new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
+      case sourceWithContextInitializer: CustomizableContextInitializerSource[Object @unchecked] =>
+        new CollectionSource[Object](
+          list = samples,
+          timestampAssigner = originalSource.timestampAssignerForTest,
+          returnType = typingResult,
+        )(
           originalSource.typeInformation
         ) {
           override val contextInitializer: ContextInitializer[Object] = sourceWithContextInitializer.contextInitializer
         }
       case _ =>
-        new CollectionSource[Object](samples, originalSource.timestampAssignerForTest, typingResult)(
+        new CollectionSource[Object](
+          list = samples,
+          timestampAssigner = originalSource.timestampAssignerForTest,
+          returnType = typingResult
+        )(
           originalSource.typeInformation
         )
     }

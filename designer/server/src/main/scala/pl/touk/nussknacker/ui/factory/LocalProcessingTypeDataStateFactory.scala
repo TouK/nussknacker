@@ -1,55 +1,45 @@
 package pl.touk.nussknacker.ui.factory
 
-import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.ui.process.deployment.{AllDeployedScenarioService, DeploymentService}
-import pl.touk.nussknacker.ui.process.processingtypedata.{
-  DefaultProcessingTypeDeploymentService,
-  ProcessingTypeDataState
-}
-import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
-import _root_.sttp.client3.SttpBackend
 import pl.touk.nussknacker.engine.api.component.AdditionalUIConfigProvider
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReader.toValueWithPermission
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataReader.toValueWithRestriction
+import pl.touk.nussknacker.ui.process.processingtype.{
+  CombinedProcessingTypeData,
+  ProcessingTypeData,
+  ProcessingTypeDataState
+}
+import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel.{category, typeName}
 
-import java.util.function.Supplier
-import scala.concurrent.{ExecutionContext, Future}
+import java.nio.file.Path
 
 class LocalProcessingTypeDataStateFactory(
     modelData: ModelData,
     deploymentManagerProvider: DeploymentManagerProvider,
-    managerConfig: Config
+    deploymentConfig: Config
 ) extends ProcessingTypeDataStateFactory {
 
   override def create(
       designerConfig: ConfigWithUnresolvedVersion,
-      deploymentServiceSupplier: Supplier[DeploymentService],
-      createAllDeployedScenarioService: ProcessingType => AllDeployedScenarioService,
-      additionalUIConfigProvider: AdditionalUIConfigProvider
-  )(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem,
-      sttpBackend: SttpBackend[Future, Any]
+      getModelDependencies: ProcessingType => ModelDependencies,
+      getDeploymentManagerDependencies: ProcessingType => DeploymentManagerDependencies,
   ): ProcessingTypeDataState[ProcessingTypeData, CombinedProcessingTypeData] = {
-    val deploymentService: DeploymentService = deploymentServiceSupplier.get()
-    val allDeploymentsService                = createAllDeployedScenarioService(typeName)
-    implicit val processTypeDeploymentService: ProcessingTypeDeploymentService =
-      new DefaultProcessingTypeDeploymentService(typeName, deploymentService, allDeploymentsService)
+    val deploymentManagerDependencies = getDeploymentManagerDependencies(typeName)
     val data =
       ProcessingTypeData.createProcessingTypeData(
         typeName,
-        deploymentManagerProvider,
         modelData,
-        managerConfig,
-        category
+        deploymentManagerProvider,
+        deploymentManagerDependencies,
+        deploymentManagerProvider.defaultEngineSetupName,
+        deploymentConfig,
+        category,
       )
     val processingTypes = Map(typeName -> data)
     val combinedData    = CombinedProcessingTypeData.create(processingTypes)
-    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithPermission), () => combinedData, new Object)
+    ProcessingTypeDataState(processingTypes.mapValuesNow(toValueWithRestriction), () => combinedData, new Object)
   }
 
 }

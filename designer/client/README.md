@@ -108,7 +108,11 @@ Just like in options above, you should run backend and frontend before and the s
 #### Using unified linux environment
 
 This is the correct option if you want to add/modify image snapshots and make sure that it was done in deterministic way.
-It runs backend in Docker container, frontend connected to this backend and after that it runs cypress tests also in Docker container.
+It runs:
+
+-   NU backend and frontend in a Docker container using docker compose
+-   [Redpanada](https://redpanda.com/) for Kafka and SchemaRegistry support, via docker compose
+-   [Cypress](https://www.cypress.io/) tests in Docker container
 
 You should run once:
 
@@ -121,6 +125,15 @@ and after that you can run multiple times:
 ```
 npm run test:e2e:linux
 ```
+
+#### backend:docker
+
+This npm task is mainly aliases for docker compose commad to prepare the envs for cypress testing:
+
+-   runs NU backend and frontend
+-   runs [Redpanada](https://redpanda.com/) for Kafka and SchemaRegistry support
+
+Behind the scenes, we clean up and run docker compose env, which is located in the `client/docker-compose.yml` file.
 
 #### Using unified linux environment with update image snapshots mode enabled
 
@@ -170,3 +183,15 @@ We use `react-i18next` package for internalizations. This mechanism has priority
 2. `default` passed as an argument
 
 File `translations/$lng/main.json` is generated in `prebuild` phase based on defaults. During development (`start` scripts) is removed to avoid confusions.
+
+# Theme customization
+
+We utilize the [Mui theme](https://mui.com/material-ui/customization/default-theme) for style customization. There are two themes:
+
+-   Designer [client theme](./src/containers/theme/nuTheme.tsx)
+-   Designer [components theme](../submodules/packages/components/src/common/defaultTheme.tsx)
+    The components theme inherits the client theme
+
+## Theme colors customization
+
+All Colors are stored in the [modePalette](./src/containers/theme/darkModePalette.ts), Currently, only dark mode palette support is available.

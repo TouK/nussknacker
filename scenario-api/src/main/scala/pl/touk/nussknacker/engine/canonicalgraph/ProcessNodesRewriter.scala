@@ -84,8 +84,8 @@ object ProcessNodesRewriter {
       ): Expression =
         rewrite(expressionIdWithMetaData)(e)
     }
-    new ProcessNodesRewriter {
 
+    new ProcessNodesRewriter {
       override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         Some(exprRewriter.rewriteNode(data))
     }
@@ -151,10 +151,10 @@ trait ExpressionRewriter {
   private def rewriteParameters(
       list: List[NodeParameter]
   )(implicit metaData: MetaData, nodeId: NodeId): List[NodeParameter] =
-    list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name)))
+    list.map(p => p.copy(expression = rewriteExpressionInternal(p.expression, p.name.value)))
 
   private def rewriteDefaultExpressionInternal(e: Expression)(implicit metaData: MetaData, nodeId: NodeId): Expression =
-    rewriteExpressionInternal(e, DefaultExpressionId)
+    rewriteExpressionInternal(e, DefaultExpressionIdParamName.value)
 
   private def rewriteExpressionInternal(
       e: Expression,

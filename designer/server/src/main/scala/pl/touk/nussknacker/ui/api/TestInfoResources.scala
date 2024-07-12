@@ -7,7 +7,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.definition.test.TestingCapabilities
 import pl.touk.nussknacker.ui.process.ProcessService
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -33,7 +33,7 @@ class TestInfoResources(
       (post & processDetailsForName(processName)) { processDetails =>
         entity(as[ScenarioGraph]) { scenarioGraph =>
           canDeploy(processDetails.idWithNameUnsafe) {
-            val scenarioTestService = scenarioTestServices.forTypeUnsafe(processDetails.processingType)
+            val scenarioTestService = scenarioTestServices.forProcessingTypeUnsafe(processDetails.processingType)
             path("capabilities") {
               complete {
                 scenarioTestService.getTestingCapabilities(scenarioGraph, processName, processDetails.isFragment)

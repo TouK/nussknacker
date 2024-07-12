@@ -5,17 +5,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
-import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.test.base.db.WithHsqlDbTesting
+import pl.touk.nussknacker.test.utils.domain.TestFactory.mapProcessingTypeDataProvider
+import pl.touk.nussknacker.test.utils.domain.{ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.ScenarioQuery
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{
   ProcessUpdated,
   UpdateProcessAction
 }
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{LoggedUser, RealLoggedUser}
 
 import java.time.Instant
 import scala.concurrent.ExecutionContext
@@ -36,44 +36,53 @@ class DBFetchingProcessRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with WithHsqlDbTesting
-    with PatientScalaFutures
-    with TestPermissions {
+    with PatientScalaFutures {
 
   private val dbioRunner = DBIOActionRunner(testDbRef)
 
+  private val commentRepository = new CommentRepository(testDbRef)
+
   private val writingRepo =
-    new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
+    new DBProcessRepository(testDbRef, commentRepository, mapProcessingTypeDataProvider("Streaming" -> 0)) {
       override protected def now: Instant = currentTime
     }
 
   private var currentTime: Instant = Instant.now()
 
   private val actions =
-    new DbProcessActionRepository(testDbRef, ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+    new DbProcessActionRepository(
+      testDbRef,
+      commentRepository,
+      ProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
+    )
 
   private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
-  private val activities = DbProcessActivityRepository(testDbRef)
+  private val activities = DbProcessActivityRepository(testDbRef, commentRepository)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 
   test("fetch processes for category") {
 
-    def saveProcessForCategory(cat: String) = {
+    def saveProcessForCategory(category: String) = {
       saveProcess(
         ScenarioBuilder
-          .streaming(s"categorized-$cat")
+          .streaming(s"categorized-$category")
           .source("s", "")
           .emptySink("sink", ""),
         Instant.now(),
-        category = cat
+        category = category
       )
     }
 
-    val c1Reader = TestFactory.user(permissions = "c1" -> Permission.Read)
+    val c1Reader = RealLoggedUser(
+      id = "1",
+      username = "user",
+      categoryPermissions = Map("Category1" -> Set(Permission.Read))
+    )
 
-    saveProcessForCategory("c1")
-    saveProcessForCategory("c2")
+    saveProcessForCategory("Category1")
+    saveProcessForCategory("Category2")
     val processes = fetching
       .fetchLatestProcessesDetails(ScenarioQuery(isArchived = Some(false)))(
         ScenarioShapeFetchStrategy.NotFetch,
@@ -82,7 +91,7 @@ class DBFetchingProcessRepositorySpec
       )
       .futureValue
 
-    processes.map(_.name.value) shouldEqual "categorized-c1" :: Nil
+    processes.map(_.name.value) shouldEqual "categorized-Category1" :: Nil
   }
 
   test("should rename process") {
@@ -295,13 +304,17 @@ class DBFetchingProcessRepositorySpec
     dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
   }
 
-  private def saveProcess(process: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
+  private def saveProcess(
+      process: CanonicalProcess,
+      now: Instant = Instant.now(),
+      category: String = "Category1"
+  ) = {
     currentTime = now
     val action = CreateProcessAction(
       process.name,
       category,
       process,
-      TestProcessingTypes.Streaming,
+      "Streaming",
       isFragment = false,
       forwardedUserName = None
     )
@@ -309,7 +322,7 @@ class DBFetchingProcessRepositorySpec
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue
   }
 
-  private def renameProcess(processName: ProcessName, newName: ProcessName) = {
+  private def renameProcess(processName: ProcessName, newName: ProcessName): Unit = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
     dbioRunner
       .runInTransaction(writingRepo.renameProcess(ProcessIdWithName(processId, processName), newName))

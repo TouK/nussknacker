@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{BuiltInComponentId, ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.node.Case
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData.{
   existingSinkFactory,
   existingSinkFactory2,
   existingSourceFactory
@@ -13,22 +13,22 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{
 
 class ScenarioComponentsUsagesHelperTest extends AnyFunSuite with Matchers {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("should compute usages for a single scenario") {
     val scenario = ScenarioBuilder
       .streaming("scenario")
       .source("source", existingSourceFactory)
-      .filter("checkId", "#input.id != null")
-      .buildSimpleVariable("var1", "varName", "''")
-      .filter("checkId2", "#input.id != null")
+      .filter("checkId", "#input.id != null".spel)
+      .buildSimpleVariable("var1", "varName", "''".spel)
+      .filter("checkId2", "#input.id != null".spel)
       .fragmentOneOut("fragment1", "barfragment", "out", "subOutput")
       .switch(
         "switch1",
-        "#input.id != null",
+        "#input.id != null".spel,
         "output",
-        Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
-        Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
+        Case("'1'".spel, GraphBuilder.emptySink("out1", existingSinkFactory)),
+        Case("'2'".spel, GraphBuilder.emptySink("out2", existingSinkFactory2))
       )
 
     val usages = ScenarioComponentsUsagesHelper.compute(scenario)

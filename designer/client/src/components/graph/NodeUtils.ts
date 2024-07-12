@@ -8,9 +8,9 @@ import {
     FragmentNodeType,
     NodeId,
     NodeType,
-    ScenarioGraph,
     ProcessDefinitionData,
     PropertiesType,
+    ScenarioGraph,
     UINodeType,
 } from "../../types";
 import { UnknownRecord } from "../../types/common";
@@ -22,8 +22,8 @@ class NodeUtils {
         return !isEmpty(obj) && has(obj, "id") && has(obj, "type");
     };
 
-    nodeType = (node: NodeType) => {
-        return node.type ? node.type : "Properties";
+    nodeType = (node: UINodeType) => {
+        return node?.type ? node.type : "Properties";
     };
 
     nodeIsProperties = (node: UINodeType): node is PropertiesType => {
@@ -31,7 +31,7 @@ class NodeUtils {
         return type === "Properties";
     };
 
-    nodeIsFragment = (node): node is FragmentNodeType => {
+    nodeIsFragment = (node: UINodeType): node is FragmentNodeType => {
         return this.nodeType(node) === "FragmentInput";
     };
 

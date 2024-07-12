@@ -10,7 +10,7 @@ export const filterRules = createFilterRules<ComponentType, ComponentsFiltersMod
         return segments.every((segment) => row["name"]?.toLowerCase().includes(segment));
     },
     GROUP: (row, value) => !value?.length || [].concat(value).some((f) => row["componentGroupName"]?.includes(f)),
-    CATEGORY: (row, value) => !value?.length || [].concat(value).every((f) => row["categories"]?.includes(f)),
+    CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["categories"]?.includes(f)),
     USAGES: (row, values = []) => {
         return [].concat(values).every((value) => {
             if (value === 0) {
@@ -24,5 +24,8 @@ export const filterRules = createFilterRules<ComponentType, ComponentsFiltersMod
             }
             return true;
         });
+    },
+    PROCESSING_MODE: (row, value) => {
+        return !value?.length || [].concat(value).some((f) => row["allowedProcessingModes"]?.includes(f));
     },
 });

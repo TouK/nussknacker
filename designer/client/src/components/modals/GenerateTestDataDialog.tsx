@@ -15,9 +15,13 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { NodeInput } from "../withFocus";
+import { NodeInput } from "../FormElements";
 import ValidationLabels from "./ValidationLabels";
 import { isEmpty } from "lodash";
+import { FormControl, Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
+import { nodeInput, nodeValue } from "../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 
 function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
@@ -41,7 +45,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
 
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.ok", "Ok"), disabled: !isValid, action: () => confirmAction() },
         ],
         [t, confirmAction, props, isValid],
@@ -49,18 +53,18 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
 
     return (
         <PromptContent {...props} buttons={buttons}>
-            <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
-                <h3>{t("test-generate.title", "Generate test data")}</h3>
-                <NodeInput
-                    value={testSampleSize}
-                    onChange={(event) => setState({ testSampleSize: event.target.value })}
-                    className={css({
-                        minWidth: "100%",
-                    })}
-                    autoFocus
-                />
-                <ValidationLabels fieldErrors={getValidationErrorsForField(errors, "testData")} />
-            </div>
+            <NodeTable className={cx("modalContentDark", css({ minWidth: 400 }))}>
+                <Typography variant={"h6"}>{t("test-generate.title", "Generate test data")}</Typography>
+                <div className={nodeValue}>
+                    <NodeInput
+                        value={testSampleSize}
+                        onChange={(event) => setState({ testSampleSize: event.target.value })}
+                        className={nodeInput}
+                        autoFocus
+                    />
+                    <ValidationLabels fieldErrors={getValidationErrorsForField(errors, "testData")} />
+                </div>
+            </NodeTable>
         </PromptContent>
     );
 }

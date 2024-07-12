@@ -6,6 +6,7 @@ import { DualEditorMode, EditorType } from "../../src/components/graph/node-moda
 import { TimeRange } from "../../src/components/graph/node-modal/editors/expression/Duration/TimeRangeComponent";
 import { mockFormatter, mockFieldErrors, mockValueChange } from "./helpers";
 import { NuThemeProvider } from "../../src/containers/theme/nuThemeProvider";
+import { nodeInputWithError } from "../../src/components/graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 describe(PeriodEditor.name, () => {
     it("should display validation error when the field is required", () => {
@@ -28,7 +29,7 @@ describe(PeriodEditor.name, () => {
             </NuThemeProvider>,
         );
 
-        expect(screen.getByRole("spinbutton")).toHaveClass("node-input-with-error");
+        expect(screen.getByRole("spinbutton")).toHaveClass(nodeInputWithError);
         expect(screen.getByText("validation error")).toBeInTheDocument();
     });
 });

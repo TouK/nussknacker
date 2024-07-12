@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.{
   BuiltInComponentId,
   ComponentId,
@@ -13,7 +14,8 @@ import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, Fragm
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.restmodel.definition.UINodeEdges
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessingType.Streaming
+import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 
 class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
@@ -21,9 +23,9 @@ class EdgeTypesPreparerTest extends AnyFunSuite with Matchers with ValidatedValu
     val sampleFragmentDef = new FragmentComponentDefinitionExtractor(
       getClass.getClassLoader,
       Some(_),
-      DesignerWideComponentId.default(TestProcessingTypes.Streaming, _)
+      DesignerWideComponentId.default(Streaming.stringify, _)
     )
-      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment)
+      .extractFragmentComponentDefinition(ProcessTestData.sampleFragment, AllowedProcessingModes.All)
       .validValue
     val definitionsWithFragments = ProcessTestData
       .modelDefinition()

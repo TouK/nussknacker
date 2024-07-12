@@ -8,8 +8,15 @@ import net.ceedubs.ficus.readers._
 import java.util.UUID
 import scala.language.implicitConversions
 
-// We exclude URLReader because of our own implementation with fallback to a File url
-object CustomFicusInstances
+/**
+ * Configuration extending default Ficus decoding.
+ *
+ * Customizations:
+ *
+ *  - [[URLReader]] is modified to default to the `file://` scheme
+ *  - String values can be read as [[UUID]] instances
+ */
+trait CustomFicusInstances
     extends AnyValReaders
     with StringReader
     with SymbolReader
@@ -28,11 +35,13 @@ object CustomFicusInstances
     with URIExtensions {
 
   implicit val urlValueReader: ValueReader[URL] =
-    javaURIReader.map(uri => uri.withFileSchemeDefault.toURL)
+    URIReaders.javaURIReader.map(uri => uri.withFileSchemeDefault.toURL)
 
-  implicit val uuidValueReader: ValueReader[UUID] = ValueReader[String]
-    .map(value => UUID.fromString(value))
+  implicit val uuidValueReader: ValueReader[UUID] =
+    StringReader.stringValueReader.map(value => UUID.fromString(value))
 
   implicit def toFicusConfig(config: Config): FicusConfig = SimpleFicusConfig(config)
 
 }
+
+object CustomFicusInstances extends CustomFicusInstances

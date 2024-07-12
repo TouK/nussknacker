@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.data.Validated.{Invalid, Valid, invalidNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
-import io.circe.Json.{Null, fromFields, fromInt, fromJsonObject, fromLong, fromString, obj}
+import io.circe.Json.{Null, fromFields, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{ObjectSchema, Schema => EveritSchema, StringSchema}
 import org.scalatest.funsuite.AnyFunSuite
@@ -18,11 +18,14 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   EmptyMandatoryParameter,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.TopicName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.engine.kafka.UnspecializedTopicName.ToUnspecializedTopicName
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -43,7 +46,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   import LiteKafkaComponentProvider._
   import SpecialSpELElement._
   import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
@@ -285,7 +288,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     results.isValid shouldBe true // it should be invalid, but it's so edge case that we decided to live with it
     val runtimeError = results.validValue.errors.head
-    runtimeError.nodeComponentInfo.get.nodeId shouldBe "my-sink"
+    runtimeError.nodeId shouldBe Some("my-sink")
     runtimeError.throwable.asInstanceOf[RuntimeException].getMessage shouldBe "#: [1,2] is not a valid enum value"
   }
 
@@ -319,7 +322,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
-      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some("Value"), "#input['foo_int']"))),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                     SpecialSpELElement("#input['foo_int']"),      lax,                  invalidNel(ExpressionParserCompilationError("There is no property 'foo_int' in type: Record{definedProp: String}", "my-sink", Some(ParameterName("Value")), "#input['foo_int']", None))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
@@ -344,7 +347,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   test("pattern properties validations should work in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
     }
 
     val objWithNestedPatternPropertiesMapSchema =
@@ -394,8 +397,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       val dummyInputObject = obj()
       val cfg              = config(dummyInputObject, schemaMapAny, sinkSchema)
       val jsonScenario     = createEditorModeScenario(cfg, sinkFields)
-      runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
-      runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+      runner.registerJsonSchema(cfg.sourceTopic.toUnspecialized, cfg.sourceSchema)
+      runner.registerJsonSchema(cfg.sinkTopic.toUnspecialized, cfg.sinkSchema)
 
       val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
       val results = runner
@@ -410,10 +413,12 @@ class LiteKafkaUniversalJsonFunctionalTest
         result: ValidatedNel[ProcessCompilationError, Map[String, Json]]
     ): Assertion =
       result shouldBe Valid(expectedObject)
+
     def expectedMissingValue(result: ValidatedNel[ProcessCompilationError, Map[String, Json]]): Assertion =
       result.invalidValue should matchPattern {
-        case NonEmptyList(EmptyMandatoryParameter(_, _, `ObjectFieldName`, `sinkName`), Nil) =>
+        case NonEmptyList(EmptyMandatoryParameter(_, _, ParameterName(`ObjectFieldName`), `sinkName`), Nil) =>
       }
+
     forAll(
       Table[EveritSchema, String, ValidatedNel[ProcessCompilationError, Map[String, Json]] => Assertion](
         ("outputSchema", "fieldExpression", "expectationCheckingFun"),
@@ -441,8 +446,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       val dummyInputObject = obj()
       val cfg              = config(dummyInputObject, schemaMapAny, outputSchema)
       val jsonScenario     = createEditorModeScenario(cfg, Map(ObjectFieldName -> fieldExpression))
-      runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
-      runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+      runner.registerJsonSchema(cfg.sourceTopic.toUnspecialized, cfg.sourceSchema)
+      runner.registerJsonSchema(cfg.sinkTopic.toUnspecialized, cfg.sinkSchema)
       val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
 
       val validatedResults = runner.runWithStringData(jsonScenario, List(input))
@@ -539,10 +544,10 @@ class LiteKafkaUniversalJsonFunctionalTest
       fieldsExpressions: Map[String, String]
   ): CanonicalProcess = {
     val sinkParams = (Map(
-      TopicParamName         -> s"'${config.sinkTopic}'",
-      SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      SinkKeyParamName       -> "",
-      SinkRawEditorParamName -> "false",
+      topicParamName.value         -> s"'${config.sinkTopic.name}'",
+      schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
+      sinkKeyParamName.value       -> "",
+      sinkRawEditorParamName.value -> "false",
     ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
 
     ScenarioBuilder
@@ -550,8 +555,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
   }
@@ -637,8 +642,8 @@ class LiteKafkaUniversalJsonFunctionalTest
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, String]] = {
     val jsonScenario: CanonicalProcess = createScenario(config)
-    runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
-    runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
+    runner.registerJsonSchema(config.sourceTopic.toUnspecialized, config.sourceSchema)
+    runner.registerJsonSchema(config.sinkTopic.toUnspecialized, config.sinkSchema)
 
     val input  = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
     val result = runner.runWithStringData(jsonScenario, List(input))
@@ -651,18 +656,18 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        TopicParamName         -> s"'${config.sourceTopic}'",
-        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
+        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        TopicParamName                  -> s"'${config.sinkTopic}'",
-        SchemaVersionParamName          -> s"'${SchemaVersionOption.LatestOptionName}'",
-        SinkKeyParamName                -> "",
-        SinkValueParamName              -> s"${config.sinkDefinition}",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> s"'${config.validationModeName}'"
+        topicParamName.value              -> s"'${config.sinkTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"${config.sinkDefinition}".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
+        sinkValidationModeParamName.value -> s"'${config.validationModeName}'".spel
       )
 
   case class ScenarioConfig(
@@ -674,8 +679,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       validationMode: Option[ValidationMode]
   ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic                = s"$topic-input"
-    lazy val sinkTopic                  = s"$topic-output"
+    lazy val sourceTopic                = TopicName.ForSource(s"$topic-input")
+    lazy val sinkTopic                  = TopicName.ForSink(s"$topic-output")
   }
 
   private def conf(

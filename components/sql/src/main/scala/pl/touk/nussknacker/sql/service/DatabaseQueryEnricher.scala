@@ -4,17 +4,17 @@ import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerParameter,
   NodeDependencyValue,
-  SingleInputGenericNodeTransformation
+  SingleInputDynamicComponent
 }
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.sql.db.pool.{DBPoolConfig, HikariDataSourceFactory}
 import pl.touk.nussknacker.sql.db.query._
@@ -27,29 +27,40 @@ import java.time.temporal.ChronoUnit
 object DatabaseQueryEnricher {
   final val ArgPrefix: String = "arg"
 
-  final val CacheTTLParamName: String = "Cache TTL"
-
-  final val QueryParamName: String = "Query"
-
-  final val ResultStrategyParamName: String = "Result strategy"
-
   val metaData: TypedNodeDependency[MetaData] = TypedNodeDependency[MetaData]
 
-  val CacheTTLParam: Parameter = Parameter
-    .optional(CacheTTLParamName, Typed[Duration])
-    .copy(
-      editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES)))
-    )
+  final val cacheTTLParamName: ParameterName = ParameterName("Cache TTL")
 
-  val QueryParam: Parameter = Parameter(QueryParamName, Typed[String]).copy(editor = Some(SqlParameterEditor))
+  final val cacheTTLParamDeclaration: ParameterExtractor[Duration] with ParameterCreatorWithNoDependency =
+    ParameterDeclaration
+      .optional[Duration](cacheTTLParamName)
+      .withCreator(
+        modify =
+          _.copy(editor = Some(DurationParameterEditor(List(ChronoUnit.DAYS, ChronoUnit.HOURS, ChronoUnit.MINUTES))))
+      )
 
-  val ResultStrategyParam: Parameter = {
-    val strategyNames = List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name).map {
-      strategyName => FixedExpressionValue(s"'$strategyName'", strategyName)
-    }
-    Parameter(ResultStrategyParamName, Typed[String]).copy(
-      editor = Some(FixedValuesParameterEditor(strategyNames))
-    )
+  final val queryParamName: ParameterName = ParameterName("Query")
+
+  final val queryParamDeclaration =
+    ParameterDeclaration
+      .mandatory[String](queryParamName)
+      .withCreator(modify = _.copy(editor = Some(SqlParameterEditor)))
+
+  final val resultStrategyParamName: ParameterName = ParameterName("Result strategy")
+
+  final val resultStrategyParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[String] = {
+    ParameterDeclaration
+      .mandatory[String](resultStrategyParamName)
+      .withCreator(
+        modify = _.copy(editor =
+          Some(
+            FixedValuesParameterEditor(
+              List(SingleResultStrategy.name, ResultSetStrategy.name, UpdateResultStrategy.name)
+                .map { strategyName => FixedExpressionValue(s"'$strategyName'", strategyName) }
+            )
+          )
+        )
+      )
   }
 
   final case class TransformationState(
@@ -71,7 +82,7 @@ TODO:
 class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvider: DbMetaDataProvider)
     extends EagerService
     with TimeMeasuringService
-    with SingleInputGenericNodeTransformation[ServiceInvoker]
+    with SingleInputDynamicComponent[ServiceInvoker]
     with LazyLogging {
 
   import DatabaseQueryEnricher._
@@ -82,12 +93,12 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   protected lazy val sqlDialect                       = new SqlDialect(dbMetaDataProvider.getDialectMetaData)
   override val nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: metaData :: Nil
 
-  protected val queryArgumentsExtractor: (Int, Map[String, Any]) => QueryArguments =
-    (argsCount: Int, params: Map[String, Any]) => {
+  protected val queryArgumentsExtractor: (Int, Params, Context) => QueryArguments =
+    (argsCount: Int, params: Params, context: Context) => {
       QueryArguments(
         (1 to argsCount).map { argNo =>
-          val paramName = s"$ArgPrefix$argNo"
-          QueryArgument(index = argNo, value = params(paramName))
+          val paramName = ParameterName(s"$ArgPrefix$argNo")
+          QueryArgument(index = argNo, value = params.extractOrEvaluateLazyParam(paramName, context))
         }.toList
       )
     }
@@ -111,29 +122,32 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     initialStep(context, dependencies) orElse
       queryParamStep(context, dependencies) orElse
       finalStep(context, dependencies)
 
   protected def initialStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(Nil, _) =>
-    NextParameters(parameters = ResultStrategyParam :: QueryParam :: CacheTTLParam :: Nil)
+  ): ContextTransformationDefinition = { case TransformationStep(Nil, _) =>
+    NextParameters(parameters =
+      resultStrategyParamDeclaration.createParameter() ::
+        queryParamDeclaration.createParameter() ::
+        cacheTTLParamDeclaration.createParameter() :: Nil
+    )
   }
 
   protected def queryParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = {
+  ): ContextTransformationDefinition = {
     case TransformationStep(
-          (ResultStrategyParamName, DefinedEagerParameter(strategyName: String, _)) :: (
-            QueryParamName,
-            DefinedEagerParameter(query: String, _)
-          ) :: (CacheTTLParamName, _) :: Nil,
+          (`resultStrategyParamName`, DefinedEagerParameter(strategyName: String, _)) ::
+          (`queryParamName`, DefinedEagerParameter(query: String, _)) ::
+          (`cacheTTLParamName`, _) :: Nil,
           None
         ) =>
       if (query.isEmpty) {
-        FinalResults(context, errors = CustomNodeError("Query is missing", Some(QueryParamName)) :: Nil, state = None)
+        FinalResults(context, errors = CustomNodeError("Query is missing", Some(queryParamName)) :: Nil, state = None)
       } else {
         parseQuery(context, dependencies, strategyName, query)
       }
@@ -164,7 +178,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
         case Left(errorMsg) =>
           FinalResults(
             context,
-            errors = CustomNodeError(errorMsg, Some(QueryParamName)) :: Nil,
+            errors = CustomNodeError(errorMsg, Some(queryParamName)) :: Nil,
             state = None
           )
         case Right(tableDefinition) =>
@@ -182,7 +196,7 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       }
     } catch {
       case e: SQLException =>
-        val error = CustomNodeError(messageFromSQLException(query, e), Some(QueryParamName))
+        val error = CustomNodeError(messageFromSQLException(query, e), Some(queryParamName))
         FinalResults.forValidation(context, errors = List(error))(
           _.withVariable(name = OutputVariableNameDependency.extract(dependencies), value = Unknown, paramName = None)
         )
@@ -197,14 +211,14 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
       s"Failed to execute query: $e"
   }
 
-  protected def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
+  private def toParameters(dbParameterMetaData: DbParameterMetaData): List[Parameter] =
     (1 to dbParameterMetaData.parameterCount).map { paramNo =>
-      Parameter(s"$ArgPrefix$paramNo", typing.Unknown).copy(isLazyParameter = true)
+      Parameter(ParameterName(s"$ArgPrefix$paramNo"), typing.Unknown).copy(isLazyParameter = true)
     }.toList
 
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition = { case TransformationStep(_, Some(state)) =>
+  ): ContextTransformationDefinition = { case TransformationStep(_, Some(state)) =>
     createFinalResults(context, dependencies, state)
   }
 
@@ -223,40 +237,48 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   }
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalState: Option[TransformationState]
   ): ServiceInvoker = {
     val state          = finalState.get
-    val cacheTTLOption = extractOptional[Duration](params, CacheTTLParamName)
+    val cacheTTLOption = cacheTTLParamDeclaration.extractValue(params)
+
+    val query                   = state.query
+    val argsCount               = state.argsCount
+    val tableDef                = state.tableDef
+    val strategy                = state.strategy
+    val outputType              = state.outputType
+    val getConnectionCallback   = () => dataSource.getConnection()
+    val timeMeasurementCallback = () => timeMeasurement
+
     cacheTTLOption match {
       case Some(cacheTTL) =>
         new DatabaseEnricherInvokerWithCache(
-          state.query,
-          state.argsCount,
-          state.tableDef,
-          state.strategy,
+          query,
+          argsCount,
+          tableDef,
+          strategy,
           queryArgumentsExtractor,
           cacheTTL,
-          state.outputType,
-          () => dataSource.getConnection(),
-          () => timeMeasurement
+          outputType,
+          getConnectionCallback,
+          timeMeasurementCallback,
+          params
         )
       case None =>
         new DatabaseEnricherInvoker(
-          state.query,
-          state.argsCount,
-          state.tableDef,
-          state.strategy,
+          query,
+          argsCount,
+          tableDef,
+          strategy,
           queryArgumentsExtractor,
-          state.outputType,
-          () => dataSource.getConnection(),
-          () => timeMeasurement
+          outputType,
+          getConnectionCallback,
+          timeMeasurementCallback,
+          params
         )
     }
   }
-
-  protected def extractOptional[T](params: Map[String, Any], paramName: String): Option[T] =
-    params.get(paramName).flatMap(Option(_)).map(_.asInstanceOf[T])
 
 }

@@ -1,6 +1,6 @@
 import { css, cx } from "@emotion/css";
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
-import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
+import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import Handlebars from "./handlebars.svg";
 import { styled, useTheme } from "@mui/material";
 
@@ -59,7 +59,7 @@ export const DragHandle: React.FC<{ active?: boolean }> = ({ active }): React.JS
             className={css({
                 outline: "none",
                 ":focus": {
-                    filter: `drop-shadow(0px 0px 3px ${theme.custom.colors.accent})`,
+                    filter: `drop-shadow(0px 0px 3px ${theme.palette.primary.main})`,
                 },
             })}
         >
@@ -68,7 +68,7 @@ export const DragHandle: React.FC<{ active?: boolean }> = ({ active }): React.JS
                 onMouseUp={onMouseUp}
                 className={cx(
                     css({
-                        g: { fill: isActive ? theme.custom.colors.accent : theme.custom.colors.primary },
+                        g: { fill: isActive ? theme.palette.primary.main : theme.palette.text.secondary },
                     }),
                 )}
             />

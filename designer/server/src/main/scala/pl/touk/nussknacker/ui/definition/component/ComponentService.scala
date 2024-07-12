@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition.component
 
 import cats.data.Validated.Valid
-import pl.touk.nussknacker.engine.api.component.{ComponentId, DesignerWideComponentId}
+import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.process.ProcessingType
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
@@ -17,9 +17,8 @@ import pl.touk.nussknacker.ui.NuDesignerError.XError
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.definition.AlignedComponentsDefinitionProvider
 import pl.touk.nussknacker.ui.definition.component.DefaultComponentService.toComponentUsagesInScenario
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtype.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ScenarioWithDetailsEntity
 import pl.touk.nussknacker.ui.process.{ProcessService, ScenarioQuery}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -32,6 +31,11 @@ trait ComponentService {
   def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
   ): Future[XError[List[ComponentUsagesInScenario]]]
+
+  def getUsagesPerDesignerWideComponentId(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[DesignerWideComponentId, Long]]
 
 }
 
@@ -121,13 +125,12 @@ class DefaultComponentService(
 
   private def createComponents(
       componentsDefinition: List[ComponentDefinitionWithImplementation],
-      category: Category,
+      category: String,
   ): List[ComponentListElement] = {
     componentsDefinition
       .map { definition =>
         val designerWideId = definition.designerWideId
         val links          = createComponentLinks(designerWideId, definition)
-
         ComponentListElement(
           id = designerWideId,
           name = definition.name,
@@ -136,10 +139,16 @@ class DefaultComponentService(
           componentGroupName = definition.componentGroup,
           categories = List(category),
           links = links,
-          usageCount = -1 // It will be enriched in the next step, after merge of components definitions
+          usageCount = -1, // It will be enriched in the next step, after merge of components definitions
+          allowedProcessingModes = definition.allowedProcessingModes
         )
       }
   }
+
+  override def getUsagesPerDesignerWideComponentId(
+      implicit loggedUser: LoggedUser,
+      ec: ExecutionContext
+  ): Future[Map[DesignerWideComponentId, Long]] = getUserAccessibleComponentUsages
 
   private def getUserAccessibleComponentUsages(
       implicit loggedUser: LoggedUser,
@@ -211,5 +220,5 @@ private final case class ComponentNotFoundError(designerWideComponentId: Designe
 
 case class ComponentServiceProcessingTypeData(
     alignedComponentsDefinitionProvider: AlignedComponentsDefinitionProvider,
-    category: Category
+    category: String
 )

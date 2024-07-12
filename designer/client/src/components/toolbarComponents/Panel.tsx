@@ -1,38 +1,28 @@
 import { Collapse, styled } from "@mui/material";
-import { getContrastColor, getDarkenContrastColor } from "../../containers/theme/helpers";
+import { blendDarken, blendLighten } from "../../containers/theme/helpers";
+import { getLuminance } from "@mui/system/colorManipulator";
 
-const __panelBorder = "--panel-Border";
-const __panelHeaderText = "--panel-HeaderText";
-const __panelColor = "--panel-Color";
-const __panelText = "--panel-Text";
-
-export const PanelHeader = styled("div")(({ theme }) => ({
-    all: "unset",
+export const PanelHeader = styled("div")<{ color?: string }>(({ color, theme }) => ({
     display: "flex",
-    height: "2em",
-    textTransform: "uppercase",
-    fontSize: ".625em",
-    background: `var(${__panelBorder})`,
-    color: `var(${__panelHeaderText})`,
+    background: getLuminance(color) > 0.5 ? blendDarken(color, 0.15) : blendLighten(color, 0.15),
+    color: theme.palette.getContrastText(color),
     justifyContent: "space-between",
-    lineHeight: "2em",
-    padding: "0 .5em",
+    padding: theme.spacing(0.25, 0.5),
     flexGrow: 0,
     ":focus": {
         background: theme.palette.action.focus,
+    },
+    "@media (hover: none)": {
+        padding: ".4em",
     },
 }));
 
 export const Panel = styled("div")<{ expanded?: boolean; color?: string; width?: number | string }>(
     ({ expanded, color, width = 200, theme }) => ({
-        [__panelColor]: color,
-        [__panelBorder]: getDarkenContrastColor(color, 1.25),
-        [__panelText]: getContrastColor(color),
-        [__panelHeaderText]: getContrastColor(getDarkenContrastColor(color, 1.25)),
         pointerEvents: "auto",
         width,
-        borderColor: `var(${__panelBorder})`,
-        background: `var(${__panelColor})`,
+        borderColor: blendDarken(color, 0.25),
+        background: color,
         opacity: expanded ? 1 : 0.86,
         transition: theme.transitions.create("all", { easing: "ease-in-out" }),
         display: "flex",
@@ -40,10 +30,10 @@ export const Panel = styled("div")<{ expanded?: boolean; color?: string; width?:
     }),
 );
 
-const PanelContent = styled("div")({
+const PanelContent = styled("div")(({ theme }) => ({
     userSelect: "text",
     display: "flow-root",
-    color: `var(${__panelText})`,
-});
+    color: theme.typography.overline.color,
+}));
 
 export const CollapsiblePanelContent = PanelContent.withComponent(Collapse);

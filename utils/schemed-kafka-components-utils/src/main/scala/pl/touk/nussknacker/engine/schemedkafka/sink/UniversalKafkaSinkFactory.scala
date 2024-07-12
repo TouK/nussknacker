@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -10,9 +12,10 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
   NodeDependencyValue
 }
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, TopicName}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
+import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId, Params}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
@@ -23,7 +26,6 @@ import pl.touk.nussknacker.engine.schemedkafka.{
   SchemaDeterminerErrorHandler
 }
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
-import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
 /**
@@ -33,8 +35,8 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 object UniversalKafkaSinkFactory {
 
   private val paramsDeterminedAfterSchema = List(
-    Parameter.optional[CharSequence](SinkKeyParamName).copy(isLazyParameter = true),
-    Parameter[Boolean](SinkRawEditorParamName).copy(
+    Parameter.optional[CharSequence](sinkKeyParamName).copy(isLazyParameter = true),
+    Parameter[Boolean](sinkRawEditorParamName).copy(
       defaultValue = Some(Expression.spel("false")),
       editor = Some(BoolParameterEditor),
       validators = List(MandatoryParameterValidator)
@@ -49,47 +51,59 @@ class UniversalKafkaSinkFactory(
     val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
     val modelDependencies: ProcessObjectDependencies,
     implProvider: UniversalKafkaSinkImplFactory
-) extends KafkaUniversalComponentTransformer[Sink]
+) extends KafkaUniversalComponentTransformer[Sink, TopicName.ForSink]
     with SinkFactory {
 
   override type State = TransformationState
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
 
-  private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
+  private val rawValueParamDeclaration = ParameterDeclaration.lazyMandatory[AnyRef](sinkValueParamName).withCreator()
 
-  private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(editor =
-    Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))
-  )
+  private val validationModeParamDeclaration =
+    ParameterDeclaration
+      .mandatory[String](sinkValidationModeParamName)
+      .withCreator(
+        modify = _.copy(editor =
+          Some(
+            FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))
+          )
+        )
+      )
 
   private val restrictedParamNames: Set[ParameterName] = Set(
     topicParamName,
-    SchemaVersionParamName,
-    SinkKeyParamName,
-    SinkRawEditorParamName,
-    SinkValidationModeParameterName
+    schemaVersionParamName,
+    sinkKeyParamName,
+    sinkRawEditorParamName,
+    sinkValidationModeParamName
   )
+
+  override protected def topicFrom(value: String): TopicName.ForSink = TopicName.ForSink(value)
 
   protected def rawEditorParameterStep(
       context: ValidationContext
-  )(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
-          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (
-            SinkRawEditorParamName,
-            DefinedEagerParameter(true, _)
-          ) :: Nil,
+          (`topicParamName`, _) ::
+          (`schemaVersionParamName`, _) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, DefinedEagerParameter(true, _)) :: Nil,
           _
         ) =>
-      NextParameters(validationModeParam :: rawValueParam :: Nil)
+      NextParameters(
+        validationModeParamDeclaration.createParameter() :: rawValueParamDeclaration.createParameter() :: Nil
+      )
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
-          (SinkKeyParamName, _) ::
-          (SinkRawEditorParamName, _) ::
-          (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
-          (SinkValueParamName, value: BaseDefinedParameter) :: Nil,
+          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, _) ::
+          (`sinkValidationModeParamName`, DefinedEagerParameter(mode: String, _)) ::
+          (`sinkValueParamName`, value: BaseDefinedParameter) :: Nil,
           _
         ) =>
+      // edge case - for some reason Topic/Version is not defined
       getSchema(topic, version)
         .andThen { runtimeSchemaData =>
           schemaBasedMessagesSerdeProvider.schemaValidator
@@ -104,12 +118,12 @@ class UniversalKafkaSinkFactory(
               runtimeSchemaData.schema,
               rawMode = true,
               validationMode = extractValidationMode(mode),
-              rawParameter = rawValueParam,
+              rawParameter = rawValueParamDeclaration.createParameter(),
               restrictedParamNames
             )
             .map { extractedSinkParameter =>
               val validationAgainstSchemaErrors = extractedSinkParameter
-                .validateParams(Map(SinkValueParamName -> value))
+                .validateParams(Map(sinkValueParamName -> value))
                 .swap
                 .map(_.toList)
                 .getOrElse(List.empty)
@@ -120,14 +134,16 @@ class UniversalKafkaSinkFactory(
               )
             }
         }
-        .valueOr(e => FinalResults(context, e.toList))
-    // edge case - for some reason Topic/Version is not defined
+        .valueOr { errors =>
+          FinalResults(context, errors.toList)
+        }
     case TransformationStep(
-          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (
-            SinkRawEditorParamName,
-            _
-          ) ::
-          (SinkValidationModeParameterName, _) :: (SinkValueParamName, _) :: Nil,
+          (`topicParamName`, _) ::
+          (`schemaVersionParamName`, _) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, _) ::
+          (`sinkValidationModeParamName`, _) ::
+          (`sinkValueParamName`, _) :: Nil,
           _
         ) =>
       FinalResults(context, Nil)
@@ -135,19 +151,19 @@ class UniversalKafkaSinkFactory(
 
   private def valueEditorParamStep(
       context: ValidationContext
-  )(implicit nodeId: NodeId): NodeTransformationDefinition = {
+  )(implicit nodeId: NodeId): ContextTransformationDefinition = {
     case TransformationStep(
           (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-          (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
-          (SinkKeyParamName, _) ::
-          (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: Nil,
+          (`schemaVersionParamName`, DefinedEagerParameter(version: String, _)) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) :: Nil,
           _
         ) =>
       val determinedSchema = getSchema(topic, version)
-      val validatedSchema = determinedSchema.andThen { s =>
+      val validatedSchema = determinedSchema.andThen { schema =>
         schemaBasedMessagesSerdeProvider.schemaValidator
-          .validateSchema(s.schema)
-          .map(_ => s)
+          .validateSchema(schema.schema)
+          .map(_ => schema)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }
       validatedSchema
@@ -158,7 +174,7 @@ class UniversalKafkaSinkFactory(
               schemaData.schema,
               rawMode = false,
               validationMode = ValidationMode.lax,
-              rawValueParam,
+              rawValueParamDeclaration.createParameter(),
               restrictedParamNames
             )
             .map { valueParam =>
@@ -171,12 +187,15 @@ class UniversalKafkaSinkFactory(
               }
             }
         }
-        .valueOr(e => FinalResults(context, e.toList))
+        .valueOr { errors =>
+          FinalResults(context, errors.toList)
+        }
     case TransformationStep(
-          (`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (
-            SinkRawEditorParamName,
-            DefinedEagerParameter(false, _)
-          ) :: valueParams,
+          (`topicParamName`, _) ::
+          (`schemaVersionParamName`, _) ::
+          (`sinkKeyParamName`, _) ::
+          (`sinkRawEditorParamName`, DefinedEagerParameter(false, _)) ::
+          valueParams,
           Some(state)
         ) =>
       val errors = state.schemaBasedParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
@@ -194,19 +213,19 @@ class UniversalKafkaSinkFactory(
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
-  ): NodeTransformationDefinition =
+  ): ContextTransformationDefinition =
     topicParamStep orElse
-      schemaParamStep orElse
+      schemaParamStep(paramsDeterminedAfterSchema) orElse
       rawEditorParameterStep(context) orElse
       valueEditorParamStep(context)
 
   override def implementation(
-      params: Map[String, Any],
+      params: Params,
       dependencies: List[NodeDependencyValue],
       finalStateOpt: Option[State]
   ): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val key           = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
+    val key           = params.extractUnsafe[LazyParameter[CharSequence]](sinkKeyParamName)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
@@ -220,9 +239,14 @@ class UniversalKafkaSinkFactory(
       kafkaConfig
     )
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).name}-${preparedTopic.prepared}"
-    val validationMode = extractValidationMode(
-      params.getOrElse(SinkValidationModeParameterName, ValidationMode.strict.name).asInstanceOf[String]
-    )
+    val validationMode = if (params.extractUnsafe[Boolean](sinkRawEditorParamName)) {
+      validationModeParamDeclaration.extractValue(params) match {
+        case Some(validationModeString) => extractValidationMode(validationModeString)
+        case None                       => ValidationMode.strict
+      }
+    } else {
+      ValidationMode.strict
+    }
 
     implProvider.createSink(
       preparedTopic,
@@ -237,5 +261,8 @@ class UniversalKafkaSinkFactory(
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
+
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
 }

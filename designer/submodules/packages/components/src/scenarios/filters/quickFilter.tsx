@@ -12,7 +12,10 @@ export function QuickFilter<F extends Record<string, any>>({
     isLoading,
     filter,
     ...props
-}: PropsWithChildren<{ filter: keyof F; isLoading?: boolean }>): JSX.Element {
+}: PropsWithChildren<{
+    filter: keyof F;
+    isLoading?: boolean;
+}>): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<F>();
 
@@ -32,6 +35,7 @@ export function QuickFilter<F extends Record<string, any>>({
                     value={getFilter(filter) || ""}
                     onChange={setFilter(filter)}
                     sx={{
+                        flex: 1,
                         ".MuiOutlinedInput-notchedOutline": {
                             borderStartEndRadius: 0,
                             borderEndEndRadius: 0,
@@ -42,8 +46,8 @@ export function QuickFilter<F extends Record<string, any>>({
                         },
                     }}
                     startAdornment={
-                        <InputAdornment position="start">
-                            <Search sx={{ marginTop: "3px", opacity: 0.5 }} />
+                        <InputAdornment sx={(theme) => ({ color: theme.palette.text.secondary })} position="start">
+                            <Search sx={{ marginTop: "3px" }} />
                         </InputAdornment>
                     }
                 />

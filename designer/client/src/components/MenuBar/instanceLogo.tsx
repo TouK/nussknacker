@@ -7,12 +7,31 @@ const Logo = styled("img")({
     maxWidth: 150,
 });
 
-export function InstanceLogo({ fallback = null, ...props }: { fallback?: ReactNode } & ComponentProps<typeof Logo>) {
-    const [validLogo, setValidLogo] = useState(true);
+enum State {
+    PENDING,
+    ERROR,
+    SUCCESS,
+}
 
-    if (!validLogo) {
+export function InstanceLogo({
+    fallback = null,
+    ...props
+}: {
+    fallback?: ReactNode;
+} & ComponentProps<typeof Logo>) {
+    const [logoState, setLogoState] = useState<State>(State.PENDING);
+
+    if (logoState === State.ERROR) {
         return <>{fallback}</>;
     }
 
-    return <Logo src={absoluteBePath("/assets/img/instance-logo.svg")} {...props} onError={() => setValidLogo(false)} />;
+    return (
+        <Logo
+            src={absoluteBePath("/assets/img/instance-logo.svg")}
+            {...props}
+            sx={{ display: logoState === State.SUCCESS ? "inline-block" : "none" }}
+            onLoad={() => setLogoState(State.SUCCESS)}
+            onError={() => setLogoState(State.ERROR)}
+        />
+    );
 }

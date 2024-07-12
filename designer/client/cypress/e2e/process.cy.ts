@@ -8,7 +8,6 @@ describe("Process", () => {
     after(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
-
     describe("initially clean", () => {
         beforeEach(() => {
             cy.visitNewProcess(seed).as("processName");
@@ -110,7 +109,7 @@ describe("Process", () => {
     describe("with data", () => {
         const screenshotOptions: Cypress.MatchImageOptions = {
             screenshotConfig: {
-                blackout: ["> :not(#nk-graph-main) > div"],
+                blackout: ["> div > :not(#nk-graph-main)"],
             },
         };
 
@@ -127,8 +126,8 @@ describe("Process", () => {
 
         it("should allow drag component and drop on edge", () => {
             cy.contains(/^custom$/)
-                .should("be.visible")
-                .click();
+                .should("exist")
+                .scrollIntoView();
             cy.layoutScenario();
             cy.get("[data-testid='component:customFilter']")
                 .should("be.visible")
@@ -202,6 +201,8 @@ describe("Process", () => {
         it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
 
+            // Collapse toolbar to make counts button visible
+            cy.contains(/^scenario details$/i).click();
             cy.contains(/^counts$/i).as("button");
             cy.get("@button").should("be.visible").matchImage();
             cy.get("@button").click();
@@ -274,8 +275,8 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
 
         cy.contains(/^sinks$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         const x = 900;
         const y = 630;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
@@ -329,8 +330,8 @@ describe("Process", () => {
             .matchImage({ screenshotConfig: { padding: 16 } });
 
         cy.contains(/^sinks$/)
-            .should("be.visible")
-            .click();
+            .should("exist")
+            .scrollIntoView();
         const x = 700;
         const y = 600;
         cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
@@ -385,6 +386,7 @@ describe("Process", () => {
 
         // Center diagram before the screen to have all nodes visible
         cy.contains("button", "layout").click();
+        cy.wait(500);
         cy.getNode("filter")
             .click()
             .parent()
@@ -397,7 +399,7 @@ describe("Process", () => {
         cy.layoutScenario();
 
         cy.contains("button", "ad hoc").should("be.enabled").click();
-        cy.get("[data-testid=window]").should("be.visible").find(".ace_editor").type("10");
+        cy.get("[data-testid=window]").should("be.visible").find("input").type("10"); //There should be only one input field
         cy.get("[data-testid=window]")
             .contains(/^test$/i)
             .should("be.enabled")
@@ -423,5 +425,16 @@ describe("Process", () => {
                     expect($current.height()).to.equal(height);
                 });
             });
+    });
+
+    it("should open more scenario details", () => {
+        cy.visitNewProcess(seed, "rrEmpty", "RequestResponse");
+        cy.viewport(1500, 800);
+        cy.layoutScenario();
+
+        cy.contains("a", "More scenario details").click();
+        cy.get("[data-testid=window]").matchImage({
+            maxDiffThreshold: 0.02,
+        });
     });
 });

@@ -66,10 +66,7 @@ If you want to read more than 20 records from file, you will need to change [tes
 
 Almost all nodes use SpEL expressions; sometimes it is not clear what was the result of the SpEL expression for the given input record. If scenario is run using data from file it is possible to check results of expression evaluation - separately for each input record. 
 
-![alt_text](img/nodeDebugging.png "Debugging a node") 
-
-You can also watch [this video](/quickstart/flink#correcting-errors) to see debugging functionality in action.
-
+![alt_text](img/nodeDebugging.png "Debugging a node")
 
 ## Watching nodes filtering behaviour with counts
 

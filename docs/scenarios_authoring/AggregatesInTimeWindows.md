@@ -10,9 +10,9 @@ sidebar_position: 5
 
 Computations in different forms of time windows are the very essence of stream processing. Results of functions applied to all events which fall into the particular time window can bring valuable insights in fraud detection, IoT events, clickstream analysis, etc. A good introduction to aggregating events in streams can be found in this [article](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/time/#windowing).
 
-Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only).
+Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so watch out for the differences. 
 
-Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bear in mind the differences. 
+Regardless of the window type used, events are grouped into windows based on the event time. Therefore, it is important to understand where Nussknacker takes information about event time from, can event time info be accessed from SpEL and so on - you can find more info [here](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only).
 
 
 ## Common behavior
@@ -41,10 +41,12 @@ Two additional new variables will always be available 'downstream' of the aggreg
 
 Our imaginary banking application emits several events per each transaction. The data stream contains the following events:
 
-`{"subscriberId":1,"transactionId":11,"operation":"RECHARGE","amount":"500.00"}`
-`{"subscriberId":2,"transactionId":12,"operation":"RECHARGE","amount":"200.00"}`
-`{"subscriberId":1,"transactionId":13,"operation":"TRANSFER","amount":"5000.00"}`
-`{"subscriberId":1,"transactionId":14,"operation":"TRANSFER","amount":"1000.00"}`
+```json
+{"subscriberId":1,"transactionId":11,"operation":"RECHARGE","amount":"500.00"}
+{"subscriberId":2,"transactionId":12,"operation":"RECHARGE","amount":"200.00"}
+{"subscriberId":1,"transactionId":13,"operation":"TRANSFER","amount":"5000.00"}
+{"subscriberId":1,"transactionId":14,"operation":"TRANSFER","amount":"1000.00"}
+```
 
 Let’s assume that all the above events qualify to the time windows discussed below.
 
@@ -146,7 +148,6 @@ Let's use the following example in case the above explanation is not clear. Imag
 &nbsp
 
 
-
 ## Session-window
 
 Session-window does not have a predefined length. As the name suggests, it is used to compute aggregates for 'sessions' - a set of time related events, which may have or may have not an event signalling an end of a session. In a first case, an event signalling an end of the session is used to close the window. In the latter case, a session ends after the specified amount of inactivity time passes from the last event. 
@@ -164,6 +165,20 @@ Parameters specific to the session-window:
 Possible values are:
 - `On each event` - Window won't be emitted on session end, but after each event. This would be useful e.g. when we want to know values of aggregations while session is in progress, but we're not interested in specific event ending the session.
 - `After session end`
+
+## A bit more complex aggregation example
+
+In all examples above there was only one field which was passed to the aggregator function. What if one needs to pass multiple fields to different aggregator functions? The example below shows the configuration in such a case.
+
+![alt_text](img/complexAggregation.png "a bit more complex aggregation")
+
+There are two fields `destinationBank` and `amount` passed to the respective aggregator functions. Note use of the #AGG helper in the definition of the aggregations. The aggregated values will be available as `#totalTransfers.destinationBank` and `#totalTransfers.amount`.
+
+A frequent requirement is to access a field from the groupBy clause downstream the aggregation node. Let's imagine that we need the value of the `subscriberId` for the emitted aggregate. One could extract `subscriberId` using the `#key` variable by applying a set of string manipulation functions. While this is doable even in complex cases (variable string lengths for each of the fields forming the composite groupBy expression) there is an easier way shown below:
+
+![alt_text](img/keyExtraction.png "extracting key from the composite key")
+
+The `subscriberId` will be available in a `#totalTransfers.subscriberId` variable.
 
 ## Single-side-join
 
@@ -206,8 +221,7 @@ then a new event is still emitted, but some aggregates have a value of zero.
 Some additional notes:
 
 * Unlike single-side-join, full-outer-join can have more than two input branches
-* The input variable will not be available downstream. Output variable can be used to get the key of the
-  event that entered full-outer-join.
+* The `#input` variable will not be available downstream. Output variable can be used to get the key of the event that entered full-outer-join - see description field in the picture above.
 * Names of returned aggregates are generated based on the names of input nodes.
 
 ## Some closing fine points

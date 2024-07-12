@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.common.components.DecisionTable
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSink
 import pl.touk.nussknacker.engine.lite.api.{commonTypes, customComponentTypes}
@@ -37,9 +38,18 @@ object LiteBaseComponentProvider {
   def create(docsConfig: DocsConfig): List[ComponentDefinition] = {
     import docsConfig._
     List(
-      ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
-      ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend")
+      ComponentDefinition("for-each", ForEachTransformer)
+        .withRelativeDocs("BasicNodes#foreach")
+        .withDesignerWideId("for-each"),
+      ComponentDefinition("union", Union)
+        .withRelativeDocs("BasicNodes#union")
+        .withDesignerWideId("union"),
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink))
+        .withRelativeDocs("DataSourcesAndSinks#deadend")
+        .withDesignerWideId("dead-end"),
+      ComponentDefinition(name = "decision-table", component = DecisionTable)
+        .withRelativeDocs("BasicNodes#decisiontable")
+        .withDesignerWideId("decision-table")
     )
 
   }

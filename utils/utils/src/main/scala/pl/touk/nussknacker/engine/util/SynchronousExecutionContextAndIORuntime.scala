@@ -19,13 +19,15 @@ object SynchronousExecutionContextAndIORuntime extends LazyLogging {
   })
 
   private def createSyncIORuntime(): IORuntime = {
-    IORuntime(
-      compute = syncEc,
-      blocking = syncEc,
-      scheduler = DummyScheduler,
-      shutdown = () => {},
-      config = IORuntimeConfig()
-    )
+    withDisableCatsTracingMode {
+      IORuntime(
+        compute = syncEc,
+        blocking = syncEc,
+        scheduler = DummyScheduler,
+        shutdown = () => {},
+        config = IORuntimeConfig()
+      )
+    }
   }
 
   // note: we provide a dummy implementation of scheduler, because IORuntime requires some. We don't want to use real
@@ -47,6 +49,24 @@ object SynchronousExecutionContextAndIORuntime extends LazyLogging {
     }
 
     override def monotonicNanos(): Long = System.nanoTime()
+  }
+
+  // note: even if the provided by us IORuntime is dummy, it registers MBean for a sake of monitoring fibers. We don't
+  //       need it, so we just disable it. There is no other way to do it by setting system property. After IORuntime
+  //       creation we clear the property (to not affect creating other /not existing currently/ IORuntimes). Note that
+  //       we change here the global state, so this is not a bullet proof solution.
+  private def withDisableCatsTracingMode(create: => IORuntime): IORuntime = synchronized {
+    val tracingModePropertyName = "cats.effect.tracing.mode"
+    val originalTracingMode     = Option(System.getProperty(tracingModePropertyName))
+    System.setProperty(tracingModePropertyName, "NONE")
+    try {
+      create
+    } finally {
+      originalTracingMode match {
+        case Some(mode) => System.setProperty(tracingModePropertyName, mode)
+        case None       => System.clearProperty(tracingModePropertyName)
+      }
+    }
   }
 
 }

@@ -12,6 +12,8 @@ import HttpService from "../../http/HttpService";
 import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Typography } from "@mui/material";
+import { LoadingButtonTypes } from "../../windowManager/LoadingButton";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const location = useLocation();
@@ -60,7 +62,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
-            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close() },
+            { title: t("dialog.button.cancel", "Cancel"), action: () => props.close(), classname: LoadingButtonTypes.secondaryButton },
             { title: t("dialog.button.ok", "Ok"), action: () => confirmAction() },
         ],
         [confirmAction, props, t],
@@ -69,7 +71,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
     return (
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 600 }))}>
-                <h3>{props.data.title}</h3>
+                <Typography variant={"h3"}>{props.data.title}</Typography>
                 <CommentInput
                     onChange={(e) => setState(e.target.value)}
                     value={comment}

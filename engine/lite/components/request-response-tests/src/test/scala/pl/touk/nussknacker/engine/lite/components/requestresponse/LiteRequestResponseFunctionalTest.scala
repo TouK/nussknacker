@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
   CustomNodeError,
   ExpressionParserCompilationError
 }
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -24,9 +25,9 @@ import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
-import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
@@ -120,7 +121,7 @@ class LiteRequestResponseFunctionalTest
         |""".stripMargin
     val params: List[(String, Expression)] = List(
       // TODO: currently inline map is not properly typed here :/
-      "field" -> "#input"
+      "field" -> "#input".spel
     )
     val scenario = ScenarioBuilder
       .requestResponse("test")
@@ -131,13 +132,17 @@ class LiteRequestResponseFunctionalTest
         )
       )
       .source("input", "request")
-      .emptySink(sinkName, "response", (SinkRawEditorParamName -> ("false": Expression)) :: params: _*)
+      .emptySink(sinkName, "response", (SinkRawEditorParamName.value -> ("false".spel: Expression)) :: params: _*)
 
     val result = runner.runWithRequests(scenario) { _ => }
 
     result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil))
-          if message.startsWith("Bad expression type") =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(message, `sinkName`, Some(ParameterName("field")), _, None),
+              Nil
+            )
+          ) if message.startsWith("Bad expression type") =>
     }
   }
 
@@ -184,7 +189,7 @@ class LiteRequestResponseFunctionalTest
         )
       )
       .source("input", "request")
-      .emptySink(sinkName, "response", SinkRawEditorParamName -> "false")
+      .emptySink(sinkName, "response", SinkRawEditorParamName.value -> "false".spel)
 
     val result = runner.runWithRequests(scenario) { invoker =>
       invoker(HttpRequest(HttpMethods.POST, entity = "{}}")).rightValue
@@ -339,7 +344,7 @@ class LiteRequestResponseFunctionalTest
   test("validate pattern properties on sink in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
-      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(ParameterName(fieldName)))))
     }
     val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
@@ -370,8 +375,8 @@ class LiteRequestResponseFunctionalTest
     forAll(testData) { (sinkSchema: Schema, sinkFields: Map[String, String], expected: Validated[_, Json]) =>
       val cfg = config(sampleObjWithAdds, schemaObjString(true), sinkSchema)
       val sinkParams = (Map(
-        SinkRawEditorParamName          -> "false",
-        SinkValidationModeParameterName -> s"'${cfg.validationModeName}'",
+        SinkRawEditorParamName.value          -> "false",
+        SinkValidationModeParameterName.value -> s"'${cfg.validationModeName}'",
       ) ++ sinkFields).mapValuesNow(Expression.spel)
       val scenario = ScenarioBuilder
         .requestResponse("test")
@@ -441,8 +446,8 @@ class LiteRequestResponseFunctionalTest
 
     val cfg = config(sampleObjWithAdds, schemaObjString(true), nestedSchema)
     val sinkParams = (Map(
-      SinkRawEditorParamName          -> "false",
-      SinkValidationModeParameterName -> s"'${cfg.validationModeName}'",
+      SinkRawEditorParamName.value          -> "false",
+      SinkValidationModeParameterName.value -> s"'${cfg.validationModeName}'",
     ) ++ sinkFields).mapValuesNow(Expression.spel)
     val scenario = ScenarioBuilder
       .requestResponse("test")
@@ -484,9 +489,9 @@ class LiteRequestResponseFunctionalTest
       .emptySink(
         sinkName,
         "response",
-        SinkRawEditorParamName          -> "true",
-        SinkValidationModeParameterName -> s"'${config.validationModeName}'",
-        SinkRawValueParamName           -> config.sinkDefinition
+        SinkRawEditorParamName.value          -> "true".spel,
+        SinkValidationModeParameterName.value -> s"'${config.validationModeName}'".spel,
+        SinkRawValueParamName.value           -> config.sinkDefinition.spel
       )
 
   case class ScenarioConfig(

@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSpec with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
   test("should return service invoke value") {
     val input = "input"
@@ -27,8 +27,8 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .enricher("service", "output", TestService.ServiceId, "param" -> "#input")
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#output")
+        .enricher("service", "output", TestService.ServiceId, "param" -> "#input".spel)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val runResults =
       TestScenarioRunner
@@ -47,8 +47,8 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .enricher("service", "output", TestService.ServiceId, "param" -> "#input")
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#output")
+        .enricher("service", "output", TestService.ServiceId, "param" -> "#input".spel)
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#output".spel)
 
     val runResults =
       TestScenarioRunner
@@ -66,7 +66,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#SAMPLE.foo")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#SAMPLE.foo".spel)
 
     val runResults =
       TestScenarioRunner
@@ -83,7 +83,7 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#NUMERIC.negate(#input)")
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#NUMERIC.negate(#input)".spel)
 
     val runResults =
       TestScenarioRunner
@@ -99,8 +99,8 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
       ScenarioBuilder
         .streaming(getClass.getName)
         .source("start", TestScenarioRunner.testDataSource)
-        .filter("filter", "#input / 0 != 0") // intentional throwing of an exception
-        .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#input")
+        .filter("filter", "#input / 0 != 0".spel) // intentional throwing of an exception
+        .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#input".spel)
 
     val runResults =
       TestScenarioRunner
@@ -123,16 +123,15 @@ class FlinkTestScenarioRunnerSpec extends AnyFunSuite with Matchers with FlinkSp
     val MockedValued = "sample-mocked"
 
     @MethodToInvoke
-    def invoke(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
+    def prepare(@ParamName("param") value: LazyParameter[String]): ServiceInvoker = new ServiceInvoker {
 
-      override def invokeService(params: Map[String, Any])(
+      override def invoke(context: Context)(
           implicit ec: ExecutionContext,
           collector: ServiceInvocationCollector,
-          contextId: ContextId,
           componentUseCase: ComponentUseCase
       ): Future[String] = {
         collector.collect(s"test-service-$value", Option(MockedValued)) {
-          Future.successful(params("param").asInstanceOf[String])
+          Future.successful(value.evaluate(context))
         }
       }
 

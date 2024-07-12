@@ -1,14 +1,17 @@
 /* eslint-disable i18next/no-literal-string */
 import { UnknownRecord, Instant } from "../../types/common";
 import { ScenarioGraph, ValidationResult } from "../../types";
+import { ProcessingMode } from "../../http/HttpService";
 
-export enum ActionType {
+export enum PredefinedActionName {
     Deploy = "DEPLOY",
     Cancel = "CANCEL",
     Archive = "ARCHIVE",
     UnArchive = "UNARCHIVE",
     Pause = "PAUSE",
 }
+
+export type ActionName = string;
 
 export type ProcessVersionId = number;
 
@@ -22,7 +25,7 @@ export type BuildInfoType = {
 export type ProcessActionType = {
     performedAt: Instant;
     user: string;
-    actionType: ActionType;
+    actionName: ActionName;
     commentId?: number;
     comment?: string;
     buildInfo?: BuildInfoType;
@@ -45,9 +48,10 @@ export interface Scenario {
     isLatestVersion: boolean;
     processCategory: string;
     processType: string;
-    modificationDate: Instant;
+    modificationDate: Instant; // Deprecated
     modifiedBy: string;
     createdAt: Instant;
+    modifiedAt: Instant;
     createdBy: string;
     lastAction?: ProcessActionType;
     lastDeployedAction?: ProcessActionType;
@@ -56,6 +60,8 @@ export interface Scenario {
     scenarioGraph: ScenarioGraph;
     validationResult: ValidationResult;
     processingType: string;
+    processingMode: ProcessingMode;
+    engineSetupName: string;
 }
 
 export type ProcessName = Scenario["name"];
@@ -63,7 +69,7 @@ export type ProcessName = Scenario["name"];
 export type ProcessStateType = {
     status: StatusType;
     externalDeploymentId?: string;
-    allowedActions: Array<ActionType>;
+    allowedActions: Array<ActionName>;
     icon: string;
     tooltip: string;
     description: string;
