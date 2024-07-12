@@ -78,6 +78,8 @@ object PeriodicDeploymentManager {
 
     val toClose = () => {
       runSafely(listener.close())
+      // deploymentActor and rescheduleFinishedActor just call methods from PeriodicProcessService on interval,
+      // they don't have any internal state, so stopping them non-gracefully is safe
       runSafely(dependencies.actorSystem.stop(deploymentActor))
       runSafely(dependencies.actorSystem.stop(rescheduleFinishedActor))
       runSafely(db.close())
