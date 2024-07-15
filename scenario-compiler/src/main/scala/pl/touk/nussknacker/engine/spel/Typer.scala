@@ -238,7 +238,7 @@ private[spel] class Typer(
     }
 
     def typeArrayConstructor(constructedClass: Class[_], dimensions: Array[SpelNodeImpl]): TypingR[TypingResult] = {
-      def getClassOfArray(clazz: Class[_], arrayDimensionCount: Int) = {
+      def getClassOfArray(arrayDimensionCount: Int) = {
         val dimensionsArray = Array.fill(arrayDimensionCount)(0)
         java.lang.reflect.Array.newInstance(constructedClass, dimensionsArray: _*).getClass
       }
@@ -264,7 +264,7 @@ private[spel] class Typer(
         }.toList
         dimensionErrors match {
           case head :: _ => invalid(head)
-          case Nil       => valid(Typed.typedClass(getClassOfArray(constructedClass, dimensionNodesTyped.length)))
+          case Nil       => valid(Typed.typedClass(getClassOfArray(dimensionNodesTyped.length)))
         }
       }
     }
