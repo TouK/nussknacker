@@ -11,6 +11,16 @@ import { useAnonymousStatistics } from "./useAnonymousStatistics";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
 import { useRegisterTrackingEvents } from "./event-tracking";
+import { init as initApm } from "@elastic/apm-rum";
+
+initApm({
+    serviceName: "my-service-name",
+    disableInstrumentations: ["fetch", "xmlhttprequest", "click", "history", "eventtarget", "page-load"],
+    serverUrl: "https://apm.staging-cloud.nussknacker.io",
+    serviceVersion: "1",
+    serverUrlPrefix: "/nu-events",
+    environment: "my-environment",
+});
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
