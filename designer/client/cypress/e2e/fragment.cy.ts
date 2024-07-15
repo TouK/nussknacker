@@ -8,14 +8,14 @@ describe("Fragment", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     beforeEach(() => {
         cy.viewport(1440, 1200);
     });
 
-    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
+    it("should allow adding input parameters and display used fragment graph in modal", () => {
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
