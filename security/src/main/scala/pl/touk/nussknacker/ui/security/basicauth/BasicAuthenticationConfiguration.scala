@@ -11,7 +11,8 @@ case class BasicAuthenticationConfiguration(
     usersFile: URI,
     cachingHashes: Option[CachingHashesConfig],
     anonymousUserRole: Option[String] = None,
-    isAdminImpersonationPossible: Boolean = false
+    isAdminImpersonationPossible: Boolean = false,
+    realm: Option[String] = None
 ) extends AuthenticationConfiguration {
   override def name: String = BasicAuthenticationConfiguration.name
 
