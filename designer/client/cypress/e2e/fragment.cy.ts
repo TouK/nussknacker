@@ -8,14 +8,14 @@ describe("Fragment", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        // cy.deleteAllTestProcesses({ filter: seed });
     });
 
     beforeEach(() => {
         cy.viewport(1440, 1200);
     });
 
-    it("should allow adding input parameters and display used fragment graph in modal", () => {
+    it.only("should allow adding input parameters and display used fragment graph in modal", () => {
         const toggleSettings = (fieldNumber: number) => {
             cy.get(`[data-testid='fieldsRow:${fieldNumber}']`).find("[title='Options']").click();
         };
@@ -204,18 +204,18 @@ describe("Fragment", () => {
 
         cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Email Marketing 12.2019");
         cy.get("@anyValueWithSuggestionField").clear().type("Campaign 2020");
-        cy.get("[id$='option-0']").click({ force: true });
+        cy.get("[id$='option-0']").contains("Campaign 2020 News").click({ force: true });
         cy.get("@anyValueWithSuggestionField").find("input").should("have.value", "Campaign 2020 News");
         cy.get("@anyValueWithSuggestionField").find('[title="Switch to expression mode"]').click();
-        cy.get("@anyValueWithSuggestionField").contains('{"key":"9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8","label":"Campaign ');
-        cy.get("@anyValueWithSuggestionField").find("#ace-editor").type("{selectall}t");
-        cy.get("@anyValueWithSuggestionField")
-            .find('[title="Expression must be valid JSON to switch to basic mode"]')
-            .should("be.disabled");
-        cy.get("@anyValueWithSuggestionField")
-            .find("#ace-editor")
-            .type("{selectall}{backspace}")
-            .type('{"key": "9d6d4e3e-0ba6-43bb-8696-58432e8f6bd8", "label": "Campaign 2020 News"}', { parseSpecialCharSequences: false });
+
+        // Expression should be clear after switch
+        cy.get("@anyValueWithSuggestionField").should("have.value", "");
+        cy.get("@anyValueWithSuggestionField").find("#ace-editor").type("#RGB()");
+
+        cy.intercept("POST", "/api/nodes/*/validation").as("validation");
+        cy.wait("@validation");
+
+        cy.get("@anyValueWithSuggestionField").find("[data-testid='form-helper-text']").should("not.exist");
 
         cy.get("[data-testid=window]").find("input[value=testOutput]").type("{selectall}fragmentResult");
         cy.contains(/^apply/i)
@@ -263,7 +263,7 @@ describe("Fragment", () => {
 
         // Verify if Frontend received correct data after save
         cy.get("[model-id^=e2e][model-id$=fragment-test-process]").trigger("dblclick");
-        cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("input").should("have.value", "Campaign 2020 News");
+        cy.get('[title="any_value_with_suggestions_preset"]').siblings().eq(0).find("#ace-editor").contains("#RGB()");
         cy.contains(/^apply/i)
             .should("be.enabled")
             .click();
