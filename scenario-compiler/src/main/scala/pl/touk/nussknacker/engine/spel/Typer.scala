@@ -22,6 +22,10 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArrayConstructorError.{
+  EmptyArrayDimension,
+  IllegalArrayDimensionType
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   ConstructionOfUnknown,
@@ -258,14 +262,56 @@ private[spel] class Typer(
         }
 
       case e: ConstructorReference =>
+        // TODO: validate constructor parameters...
         withTypedChildren { _ =>
-          val className  = e.getChild(0).toStringAST
-          val classToUse = Try(evaluationContext.getTypeLocator.findType(className)).toOption
-          // TODO: validate constructor parameters...
-          val clazz = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
-          clazz match {
-            case Some(typedClass) => valid(typedClass)
-            case None             => invalid(ConstructionOfUnknown(classToUse))
+          val className    = e.getChild(0).toStringAST
+          val classToUse   = Try(evaluationContext.getTypeLocator.findType(className)).toOption
+          val typingResult = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
+          typingResult match {
+            case Some(tc @ TypedClass(constructedClass, _)) =>
+              val dimensionsField = e.getClass.getDeclaredField("dimensions")
+              dimensionsField.setAccessible(true)
+              val dimensions: Array[SpelNodeImpl] =
+                dimensionsField.get(e).asInstanceOf[Array[SpelNodeImpl]]
+
+              if (dimensions != null) {
+                if (dimensions.isEmpty || dimensions.contains(null)) {
+                  invalid(EmptyArrayDimension)
+                } else {
+                  val dimensionNodesTyped =
+                    dimensions.map(dimensionNode => typeNode(validationContext, dimensionNode, current))
+                  val dimensionErrors = dimensionNodesTyped
+                    .flatMap(d => {
+                      val (errors, result) = d.run
+                      if (errors.nonEmpty) {
+                        errors
+                      } else {
+                        val dimensionTypingResult = result.finalResult.typingResult
+                        if (!dimensionTypingResult.canBeSubclassOf(Typed[Number])) {
+                          List(IllegalArrayDimensionType(dimensionTypingResult))
+                        } else {
+                          Nil
+                        }
+                      }
+                    })
+                    .toList
+                  dimensionErrors match {
+                    case head :: _ => invalid(head)
+                    case Nil => {
+                      val dimensionsArray = Array.fill(dimensionNodesTyped.length)(0)
+                      val arrayClass =
+                        java.lang.reflect.Array.newInstance(constructedClass, dimensionsArray: _*).getClass
+                      valid(Typed.typedClass(arrayClass))
+                    }
+                  }
+                }
+
+              } else {
+                // is not array
+                valid(tc)
+              }
+            case Some(_) => throw new IllegalStateException("should not happen")
+            case None    => invalid(ConstructionOfUnknown(classToUse))
           }
         }
       case e: Elvis =>

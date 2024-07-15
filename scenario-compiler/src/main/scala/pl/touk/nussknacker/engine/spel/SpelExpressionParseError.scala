@@ -222,6 +222,21 @@ object SpelExpressionParseError {
       expression.substring(1, expression.length - 1)
   }
 
+  sealed trait ArrayConstructorError extends ExpressionParseError
+
+  object ArrayConstructorError {
+
+    final case class IllegalArrayDimensionType(usedType: TypingResult) extends ArrayConstructorError {
+      override def message: String =
+        s"Array dimensions must be specified with numeric values. Found type: ${usedType.withoutValue.display}"
+    }
+
+    final object EmptyArrayDimension extends ArrayConstructorError {
+      override def message: String = "Dimensions definition of array constructor cannot be empty"
+    }
+
+  }
+
   object OverloadedFunctionError extends ExpressionParseError {
     override def message: String = "Could not match any overloaded method"
   }

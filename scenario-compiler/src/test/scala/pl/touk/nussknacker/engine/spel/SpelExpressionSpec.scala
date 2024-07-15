@@ -28,6 +28,10 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeLis
 import pl.touk.nussknacker.engine.definition.clazz.{ClassDefinitionSet, JavaClassWithVarargs}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.parse.{CompiledExpression, TypedExpression}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArrayConstructorError.{
+  EmptyArrayDimension,
+  IllegalArrayDimensionType
+}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{
   InvalidMethodReference,
   TypeReferenceError
@@ -359,7 +363,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("invoke list variable reference with different concrete type after compilation") {
     def contextWithList(value: Any) = ctx.withVariable("list", value)
-    val expr                        = parse[Any]("#list", contextWithList(Collections.emptyList())).validExpression
+
+    val expr = parse[Any]("#list", contextWithList(Collections.emptyList())).validExpression
 
     // first run - nothing happens, we bump the counter
     expr.evaluateSync[Any](contextWithList(null))
@@ -1243,6 +1248,42 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         .validValue
       parseV[Any](expression, validationContext).validValue.typingInfo.typingResult shouldBe expectedResultType
     }
+  }
+
+  test("should type and evaluate empty array from array constructor") {
+    val result = parse[Any]("new String[0]", ctx)
+    result.validValue.returnType shouldBe Typed.typedClass[Array[String]]
+    result.validExpression.evaluateSync[Array[String]](ctx) shouldBe Array[String]()
+  }
+
+  test("should type and evaluate empty array from array constructor with values") {
+    val result = parse[Any]("new String[2]{'str1', 'str2'}", ctx)
+    result.validValue.returnType shouldBe Typed.fromInstance(Array("str1", "str2"))
+    result.validExpression.evaluateSync[Array[String]](ctx) shouldBe Array("str1", "str2")
+  }
+
+  test("should type and evaluate empty multidimensional array from array constructor") {
+    val result = parse[Any]("new String[0][0]", ctx)
+    result.validValue.returnType shouldBe Typed.typedClass[Array[Array[String]]]
+    result.validExpression.evaluateSync[Array[String]](ctx) shouldBe Array[Array[String]]()
+  }
+
+  test("should not validate empty dimensions in array constructor") {
+    List("new String[]", "new String[ ]").map(illegalExpr =>
+      parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(EmptyArrayDimension)
+    )
+  }
+
+  test("should not validate non-numeric type in dimension of array constructor") {
+    parse[Any]("new String['str']", ctx).invalidValue shouldBe NonEmptyList.one(
+      IllegalArrayDimensionType(Typed.fromInstance("str"))
+    )
+  }
+
+  test("should not allow accessing methods on unknown in dimensions of array constructor") {
+    parse[Any]("new String[{1,2,3}.remove(1) == null ? 0 : 0]", ctx).invalidValue shouldBe NonEmptyList.one(
+      UnknownMethodError("remove", "List[Unknown]")
+    )
   }
 
 }
