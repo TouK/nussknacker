@@ -28,7 +28,6 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
   def apply(
       config: UsageStatisticsReportsConfig,
-      urlConfig: StatisticUrlConfig,
       processService: ProcessService,
       // TODO: Instead of passing deploymentManagerTypes next to processService, we should split domain ScenarioWithDetails from DTOs - see comment in ScenarioWithDetails
       deploymentManagerTypes: ProcessingTypeDataProvider[DeploymentManagerType, _],
@@ -81,7 +80,6 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
     new UsageStatisticsReportsSettingsService(
       config,
-      urlConfig,
       fingerprintService,
       fetchNonArchivedScenarioParameters,
       fetchActivity,
@@ -108,35 +106,25 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
 
 class UsageStatisticsReportsSettingsService(
     config: UsageStatisticsReportsConfig,
-    urlConfig: StatisticUrlConfig,
     fingerprintService: FingerprintService,
     fetchNonArchivedScenariosInputData: () => Future[Either[StatisticError, List[ScenarioStatisticsInputData]]],
     fetchActivity: () => Future[Map[String, Int]],
-    fetchFeStatistics: () => Future[Map[String, Long]],
+    fetchFeStatistics: () => Future[RawFEStatistics],
     components: List[ComponentDefinitionWithImplementation],
     componentUsage: () => Future[Map[DesignerWideComponentId, Long]],
     designerClock: Clock
 )(implicit ec: ExecutionContext) {
-  private val statisticsUrls    = new StatisticsUrls(urlConfig)
   private val designerStartTime = designerClock.instant()
 
-  def prepareStatisticsUrl(): Future[Either[StatisticError, List[String]]] = {
+  def prepareStatisticsUrl(): Future[Either[StatisticError, Statistics]] = {
     if (config.enabled) {
-      val maybeUrls = for {
-        queryParams <- determineQueryParams()
-        fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
-        correlationId = CorrelationId.apply()
-        urls <- EitherT.pure[Future, StatisticError](
-          statisticsUrls.prepare(fingerprint, correlationId, queryParams)
-        )
-      } yield urls
-      maybeUrls.value
+      determineStatistics().value
     } else {
-      Future.successful(Right(Nil))
+      Future.successful(Right(Statistics.Empty))
     }
   }
 
-  private[statistics] def determineQueryParams(): EitherT[Future, StatisticError, Map[String, String]] = {
+  private def determineStatistics(): EitherT[Future, StatisticError, Statistics] = {
     for {
       scenariosInputData <- new EitherT(fetchNonArchivedScenariosInputData())
       scenariosStatistics = ScenarioStatistics.getScenarioStatistics(scenariosInputData)
@@ -151,15 +139,18 @@ class UsageStatisticsReportsSettingsService(
       componentStatistics = ScenarioStatistics.getComponentStatistics(componentDesignerWideUsage, components)
       feStatistics <- EitherT.liftF(fetchFeStatistics())
       designerUptimeStatistics = getDesignerUptimeStatistics
-    } yield basicStatistics ++
-      scenariosStatistics ++
-      generalStatistics ++
-      activityStatistics ++
-      componentStatistics ++
-      designerUptimeStatistics ++
-      feStatistics.map { case (k, v) =>
-        k -> v.toString
-      }
+      fingerprint <- new EitherT(fingerprintService.fingerprint(config, nuFingerprintFileName))
+      requestId = RequestId()
+      combinedStatistics = basicStatistics ++
+        scenariosStatistics ++
+        generalStatistics ++
+        activityStatistics ++
+        componentStatistics ++
+        designerUptimeStatistics ++
+        feStatistics.raw.map { case (k, v) =>
+          k -> v.toString
+        }
+    } yield new Statistics.NonEmpty(fingerprint, requestId, combinedStatistics)
   }
 
   private def determineBasicStatistics(
@@ -201,11 +192,11 @@ private[statistics] class IgnoringErrorsFEStatisticsRepository(repository: FESta
 ) extends ReadFEStatisticsRepository[Future]
     with LazyLogging {
 
-  override def read(): Future[Map[String, Long]] = repository
+  override def read(): Future[RawFEStatistics] = repository
     .read()
     .recover { case ex: Exception =>
       logger.warn("Exception occurred during statistics read", ex)
-      Map.empty[String, Long]
+      RawFEStatistics.empty
     }
 
 }

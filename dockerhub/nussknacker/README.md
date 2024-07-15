@@ -13,8 +13,6 @@ Docker in version 20.10.14+
 
 # How to use
 
-Follow steps described in [Quickstart](https://nussknacker.io/documentation/quickstart/lite-streaming/)
-
 Repository with docker-compose presenting typical usage: [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
 ## Streaming | Lite engine 
@@ -28,7 +26,7 @@ where:
 - `-e KAFKA_ADDRESS=localhost:3032` - Kafka address
 - `-e SCHEMA_REGISTRY_URL=http://localhost:3082` - Schema Registry URL
 
-Both Kafka and Schema Registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
+Both Kafka and Schema Registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart)
 
 After it started go to http://localhost:8080 and login using credentials: admin/admin.
 

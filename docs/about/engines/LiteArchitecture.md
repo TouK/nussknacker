@@ -23,7 +23,7 @@ resilience, operations, delivery guarantees.
 Each Lite scenario creates a [K8s Deployment](https://kubernetes.io/docs/reference/glossary/?fundamental=true#term-deployment)
 that uses a dedicated [nu-runtime-image](https://hub.docker.com/r/touk/nussknacker-lite-runtime-app),
 each new deployment of a scenario creates a new Deployment version.
-A detailed deployment configuration can be set through [deployment manager configuration](../../installation_configuration_guide/ScenarioDeploymentConfiguration.md),
+A detailed deployment configuration can be set through [deployment manager configuration](../../configuration/ScenarioDeploymentConfiguration.md),
 both scenario and its configuration are passed to Nu runtime pods as Config Maps where an interpreter can
 execute scenario logic as JVM code without an additional layer such as Flink.
 

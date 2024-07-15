@@ -125,7 +125,7 @@ In the example below, a sum of field `#input.transfer` will be computed  in the 
 ![alt_text](img/tumblingWindow.png "tumbling-window")
 
 ### Offset
-Tumbling windows are aligned according to UTC time by default. It is possible to configure offset to change that, but please be aware that it is global configuration. For more details please see [docs](../installation_configuration_guide/model/Flink.md#configuring-offset-for-tumbling-aggregate-time-windows)
+Tumbling windows are aligned according to UTC time by default. It is possible to configure offset to change that, but please be aware that it is global configuration. For more details please see [docs](../configuration/model/Flink.md#configuring-offset-for-tumbling-aggregate-time-windows)
 
 ## Sliding-window
 
