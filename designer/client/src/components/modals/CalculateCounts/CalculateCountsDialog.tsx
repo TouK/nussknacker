@@ -17,6 +17,7 @@ import { WindowHeaderIconStyled } from "../../graph/node-modal/nodeDetails/NodeD
 export type State = {
     from: PickerInput;
     to: PickerInput;
+    refresh?: number | null;
 };
 
 const initState = (): State => {
@@ -33,11 +34,21 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
     const dispatch = useDispatch();
     const scenarioGraph = useSelector(getScenarioGraph);
 
-    const confirm = useCallback(async () => {
-        await dispatch(fetchAndDisplayProcessCounts(processName, moment(state.from), moment(state.to), scenarioGraph));
-    }, [dispatch, processName, state.from, state.to, scenarioGraph]);
+    const from = useMemo(() => moment(state?.from), [state?.from]);
+    const to = useMemo(() => moment(state?.to), [state?.to]);
+    const confirm = useCallback(() => {
+        return dispatch(
+            fetchAndDisplayProcessCounts({
+                scenarioGraph,
+                processName,
+                from,
+                to,
+                refreshIn: state?.refresh,
+            }),
+        );
+    }, [dispatch, from, processName, scenarioGraph, state?.refresh, to]);
 
-    const isStateValid = moment(state.from).isValid() && moment(state.to).isValid();
+    const isStateValid = from.isValid() && to.isValid() && from.isBefore(to);
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             {
