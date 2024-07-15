@@ -78,16 +78,12 @@ Nussknacker is typically used as a component of a larger system, but it can be u
 
 ## Quickstart
 
-If you want to see Nussknacker in action without any other dependencies, you can use embedded engine in Request-response mode (scenario logic is exposed with REST API), just run:
+To run Nussknacker on your host as quickly as possible, just copy and paste the following code into your terminal:
 ```bash
-docker run -it -p 8080:8080 -p 8181:8181 touk/nussknacker:latest
+curl -o- https://raw.githubusercontent.com/TouK/nussknacker-quickstart/main/download-and-start.sh | bash
 ```
-After it started go to http://localhost:8080 and login using credentials: admin/admin.
-REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
-Be aware that some things (e.g. metrics) will not work, and this engine is not intended for production use.
 
-If you want to follow step-by-step via more complex tutorials, based on production ready engines, read
-the [quickstart guide](https://nussknacker.io/documentation/quickstart/docker).
+To learn more about this quickstart please visit the [quickstart guide](https://nussknacker.io/documentation/quickstart/docker).
 
 ## Contact
 

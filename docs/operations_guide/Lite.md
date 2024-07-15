@@ -100,7 +100,7 @@ If you need more fine-grained control over logging in specific scenario deployme
 file which is being used by it, by overriding config map linked to your runtime container under `logback.xml` key.
 Please be aware, that modifications made to this config map are transient - every (re)deploy of scenario, creates config
 map from scratch with default (or configured in DeploymentManager -
-see [docs](../installation_configuration_guide/ScenarioDeploymentConfiguration.md#configuring-runtime-logging) ) content.
+see [docs](../configuration/ScenarioDeploymentConfiguration.md#configuring-runtime-logging) ) content.
 
 ### Managing lifecycle of scenario
 

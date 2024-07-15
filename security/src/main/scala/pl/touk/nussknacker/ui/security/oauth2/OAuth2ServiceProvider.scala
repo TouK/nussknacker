@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}

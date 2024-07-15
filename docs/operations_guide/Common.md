@@ -80,7 +80,7 @@ Below we describe endpoints that return general information about the Nussknacke
   * 200 - if all scenarios are valid
   * 500 - list of not-valid scenarios
 * `/api/app/config GET` (requires admin permissions) - serialized configuration of Nussknacker Designer and components (NOTE: configuration returned by this endpoint does not have all [substitutions](https://github.com/lightbend/config/blob/master/HOCON.md#substitutions) resolved, e.g. some environmental variables will not be returned)
-* `/api/app/processingtype/reload POST` (requires admin permissions) - reload [Model](../installation_configuration_guide/model/ModelConfiguration.md) configuration. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
+* `/api/app/processingtype/reload POST` (requires admin permissions) - reload [Model](../configuration/model/ModelConfiguration.md) configuration. Used mostly if you use custom components which have dynamic configuration (e.g. list of components depend on external registry, like MLFlow or OpenAPI)
 
 #### Deployment REST API
 
@@ -174,7 +174,7 @@ Please note that:
 If errors occur, their details can be found in one or more logs:
 * engine log which contains **stdout** of the engine process
 * in the streaming processing mode a [dedicated Kafka topic](../integration/KafkaIntegration.md#exception-handling) can be configured where additional error details will be written. 
-* if Flink engine is used, [additional logging mechanisms can be configured](../installation_configuration_guide/model/Flink.md#configuring-exception-handling) - the logs will be viewable via Flink console. 
+* if Flink engine is used, [additional logging mechanisms can be configured](../configuration/model/Flink.md#configuring-exception-handling) - the logs will be viewable via Flink console. 
 
 
 
