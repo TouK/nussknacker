@@ -237,6 +237,38 @@ private[spel] class Typer(
       }
     }
 
+    def typeArrayConstructor(constructedClass: Class[_], dimensions: Array[SpelNodeImpl]): TypingR[TypingResult] = {
+      def getClassOfArray(clazz: Class[_], arrayDimensionCount: Int) = {
+        val dimensionsArray = Array.fill(arrayDimensionCount)(0)
+        java.lang.reflect.Array.newInstance(constructedClass, dimensionsArray: _*).getClass
+      }
+
+      if (dimensions.isEmpty || dimensions.contains(null)) {
+        invalid(EmptyArrayDimension)
+      } else {
+        val dimensionNodesTyped = dimensions.map { dimensionNode =>
+          typeNode(validationContext, dimensionNode, current)
+        }
+        val dimensionErrors = dimensionNodesTyped.flatMap { d =>
+          val (errors, result) = d.run
+          if (errors.nonEmpty) {
+            errors
+          } else {
+            val dimensionTypingResult = result.finalResult.typingResult
+            if (!dimensionTypingResult.canBeSubclassOf(Typed[Number])) {
+              List(IllegalArrayDimensionType(dimensionTypingResult))
+            } else {
+              Nil
+            }
+          }
+        }.toList
+        dimensionErrors match {
+          case head :: _ => invalid(head)
+          case Nil       => valid(Typed.typedClass(getClassOfArray(constructedClass, dimensionNodesTyped.length)))
+        }
+      }
+    }
+
     catchUnexpectedErrors(node match {
 
       case e: Assign =>
@@ -273,41 +305,11 @@ private[spel] class Typer(
               dimensionsField.setAccessible(true)
               val dimensions: Array[SpelNodeImpl] =
                 dimensionsField.get(e).asInstanceOf[Array[SpelNodeImpl]]
+              val isArray = dimensions != null
 
-              if (dimensions != null) {
-                if (dimensions.isEmpty || dimensions.contains(null)) {
-                  invalid(EmptyArrayDimension)
-                } else {
-                  val dimensionNodesTyped =
-                    dimensions.map(dimensionNode => typeNode(validationContext, dimensionNode, current))
-                  val dimensionErrors = dimensionNodesTyped
-                    .flatMap(d => {
-                      val (errors, result) = d.run
-                      if (errors.nonEmpty) {
-                        errors
-                      } else {
-                        val dimensionTypingResult = result.finalResult.typingResult
-                        if (!dimensionTypingResult.canBeSubclassOf(Typed[Number])) {
-                          List(IllegalArrayDimensionType(dimensionTypingResult))
-                        } else {
-                          Nil
-                        }
-                      }
-                    })
-                    .toList
-                  dimensionErrors match {
-                    case head :: _ => invalid(head)
-                    case Nil => {
-                      val dimensionsArray = Array.fill(dimensionNodesTyped.length)(0)
-                      val arrayClass =
-                        java.lang.reflect.Array.newInstance(constructedClass, dimensionsArray: _*).getClass
-                      valid(Typed.typedClass(arrayClass))
-                    }
-                  }
-                }
-
+              if (isArray) {
+                typeArrayConstructor(constructedClass, dimensions)
               } else {
-                // is not array
                 valid(tc)
               }
             case Some(_) => throw new IllegalStateException("should not happen")
