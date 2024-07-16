@@ -62,8 +62,11 @@ object DefaultComponentConfigDeterminer {
       docsUrl: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
+      isDeprecated: Boolean
   ): ComponentUiDefinition = {
-    val originalGroupName = DefaultsComponentGroupName.FragmentsGroupName
+    val originalGroupName =
+      if (isDeprecated) DefaultsComponentGroupName.DeprecatedGroupName
+      else DefaultsComponentGroupName.FragmentsGroupName
     ComponentUiDefinition(
       originalGroupName = originalGroupName,
       componentGroup = translateGroupName(originalGroupName)

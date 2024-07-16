@@ -12,5 +12,6 @@ object DefaultsComponentGroupName {
   val SourcesGroupName: ComponentGroupName              = ComponentGroupName("sources")
   val FragmentsGroupName: ComponentGroupName            = ComponentGroupName("fragments")
   val FragmentsDefinitionGroupName: ComponentGroupName  = ComponentGroupName("fragmentDefinition")
+  val DeprecatedGroupName: ComponentGroupName           = ComponentGroupName("deprecated")
 
 }

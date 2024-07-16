@@ -22,12 +22,13 @@ object FragmentComponentDefinition {
       parameters: List[Parameter],
       outputNames: List[String],
       docsUrl: Option[String],
+      isDeprecated: Boolean,
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
       allowedProcessingModes: AllowedProcessingModes,
   ): ComponentDefinitionWithImplementation = {
     val uiDefinition =
-      DefaultComponentConfigDeterminer.forFragment(docsUrl, translateGroupName, designerWideId)
+      DefaultComponentConfigDeterminer.forFragment(docsUrl, translateGroupName, designerWideId, isDeprecated)
     // Currently fragments are represented as method-based component, probably we should change it to some dedicated type
     MethodBasedComponentDefinitionWithImplementation(
       name = name,
