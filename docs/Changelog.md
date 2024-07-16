@@ -8,8 +8,9 @@
   can be customized using env `AUTHENTICATION_REALM` (its default value "nussknacker" remains un changed)
 * [6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
   provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
+* [6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 
-1.16.0 (11 July 2024)
+  1.16.0 (11 July 2024)
 -------------------------
 
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.
