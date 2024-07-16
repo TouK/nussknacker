@@ -501,7 +501,8 @@ class AkkaHttpBasedRouteProvider(
       val settingsResources = new SettingsResources(
         featureTogglesConfig,
         authenticationResources.name,
-        usageStatisticsReportsConfig
+        usageStatisticsReportsConfig,
+        fingerprintService
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
