@@ -27,17 +27,32 @@ import scala.util.Try
 
 sealed trait ScenarioSpecificData extends TypeSpecificData
 
-case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
-  override def toMap: Map[String, String] = Map(FragmentSpecificData.docsUrlName -> docsUrl.getOrElse(""))
-  override def metaDataType: String       = FragmentSpecificData.typeName
+case class FragmentSpecificData(
+    docsUrl: Option[String] = None,
+    isDeprecated: Boolean = false
+) extends TypeSpecificData {
+
+  override def toMap: Map[String, String] = Map(
+    FragmentSpecificData.docsUrlName      -> docsUrl.getOrElse(""),
+    FragmentSpecificData.isDeprecatedName -> (if (isDeprecated) "true" else "false")
+  )
+
+  override def metaDataType: String = FragmentSpecificData.typeName
 }
 
 object FragmentSpecificData {
-  val typeName    = "FragmentSpecificData"
-  val docsUrlName = "docsUrl"
+  val typeName         = "FragmentSpecificData"
+  val docsUrlName      = "docsUrl"
+  val isDeprecatedName = "isDeprecated"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
-    FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
+    FragmentSpecificData(
+      docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)),
+      isDeprecated = properties.get(isDeprecatedName) match {
+        case Some("true") => true
+        case _            => false
+      },
+    )
   }
 
 }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.MetaDataInitializer
-import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, ScenarioPropertyConfig}
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -12,7 +12,10 @@ object NewProcessPreparer {
 
   private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
     None,
-    Map(FragmentSpecificData.docsUrlName -> ""),
+    Map(
+      FragmentSpecificData.docsUrlName      -> "",
+      FragmentSpecificData.isDeprecatedName -> "false",
+    ),
     FragmentSpecificData.typeName
   )
 
