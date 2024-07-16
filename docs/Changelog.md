@@ -1,5 +1,10 @@
 # Changelog
 
+1.16.1
+-------------------------
+
+* [#6382](https://github.com/TouK/nussknacker/pull/6382) Avoid timeout on model reload by stopping DeploymentActor and RescheduleFinishedActor non-gracefully. Instead, retry until success while creating new actors.
+
 1.16.0 (11 July 2024)
 -------------------------
 
