@@ -26,7 +26,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
-  def getComponentsList(withUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]]
+  def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]]
 
   def getComponentUsages(designerWideComponentId: DesignerWideComponentId)(
       implicit user: LoggedUser
@@ -70,7 +70,7 @@ class DefaultComponentService(
 
   import cats.syntax.traverse._
 
-  override def getComponentsList(withUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
+  override def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
     val componentsFuture = processingTypeDataProvider.all.toList.flatTraverse {
       case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType)
@@ -79,7 +79,7 @@ class DefaultComponentService(
     componentsFuture.flatMap { components =>
       val mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
 
-      if (withUsages) {
+      if (!skipUsages) {
         getUserAccessibleComponentUsages.map { userAccessibleComponentUsages =>
           val enrichedWithUsagesComponents = mergedComponents.map { c =>
             c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))

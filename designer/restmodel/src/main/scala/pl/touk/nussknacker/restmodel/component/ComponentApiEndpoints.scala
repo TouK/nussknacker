@@ -47,7 +47,7 @@ class ComponentApiEndpoints(auth: EndpointInput[AuthCredentials]) extends BaseEn
       .withSecurity(auth)
       .get
       .in("components")
-      .in(query[Option[Boolean]]("withUsages"))
+      .in(query[Option[Boolean]]("skipUsages"))
       .out(
         statusCode(Ok).and(
           jsonBody[List[ComponentListElement]]
