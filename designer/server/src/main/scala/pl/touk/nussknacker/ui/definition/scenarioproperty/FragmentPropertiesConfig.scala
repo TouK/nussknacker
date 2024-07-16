@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
   FixedValuesParameterEditor,
+  MandatoryParameterValidator,
   StringParameterEditor
 }
 
@@ -24,9 +25,9 @@ object FragmentPropertiesConfig {
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(
-        FixedValuesParameterEditor(List(FixedExpressionValue("true", "True"), FixedExpressionValue("false", "False")))
+        FixedValuesParameterEditor(List(FixedExpressionValue("false", "False"), FixedExpressionValue("true", "True")))
       ),
-      validators = None,
+      validators = Some(List(MandatoryParameterValidator)),
       label = Some("Deprecated")
     )
 
