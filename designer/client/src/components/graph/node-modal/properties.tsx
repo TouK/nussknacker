@@ -20,19 +20,6 @@ interface Props {
     showValidation?: boolean;
 }
 
-function renderPropertiesFieldLabels(propName: string, label: string, hintText?: string): JSX.Element {
-    return (
-        <>
-            <FormLabel title={propName}>
-                <div>
-                    <div>{label}:</div>
-                </div>
-                {hintText && <StyledNodeTip title={hintText} icon={<InfoIcon />} />}
-            </FormLabel>
-        </>
-    );
-}
-
 export function Properties({
     errors = [],
     isEditMode,
@@ -82,6 +69,19 @@ export function Properties({
                 setProperty={setProperty}
                 errors={errors}
             />
+        </>
+    );
+}
+
+function renderPropertiesFieldLabels(propName: string, label: string, hintText?: string): JSX.Element {
+    return (
+        <>
+            <FormLabel title={propName}>
+                <div>
+                    <div>{label}:</div>
+                </div>
+                {hintText && <StyledNodeTip title={hintText} icon={<InfoIcon />} />}
+            </FormLabel>
         </>
     );
 }
