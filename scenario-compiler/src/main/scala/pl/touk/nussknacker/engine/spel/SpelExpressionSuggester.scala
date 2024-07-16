@@ -19,11 +19,14 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
 import pl.touk.nussknacker.engine.util.CaretPosition2d
+import scala.collection.compat.immutable.LazyList
+import scala.jdk.CollectionConverters._
+
 import cats._
 import cats.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 class SpelExpressionSuggester(
     expressionConfig: ExpressionConfigDefinition,
@@ -50,18 +53,52 @@ class SpelExpressionSuggester(
         validationContext
       )
 
-    lazy val newExpression: Expression = truncateExpressionByCaretPosition2d(expression, caretPosition2d)
+    lazy val newExpressionForSpELVariable: Option[Expression] =
+      truncateExpressionToCorrespondingSpELVariable(expression, caretPosition2d)
 
-    lazy val futureSuggestionsAfterTruncatingExpressionByCaretPositionOption = expressionSuggestionsAux(
-      newExpression,
-      caretPosition2d.normalizedCaretPosition(newExpression.expression),
-      validationContext
+    lazy val futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption =
+      newExpressionForSpELVariable.flatMap(e =>
+        expressionSuggestionsAux(
+          e,
+          e.expression.length,
+          validationContext
+        )
+      )
+
+    val lazyListOfFutureSuggestions = LazyList(
+      futureSuggestionsOption,
+      futureSuggestionsAfterTruncatingExpressionToCorrespondingSpELVariableOption
     )
-
-    val firstNonEmptySuggestionFuture =
-      futureSuggestionsOption orElse futureSuggestionsAfterTruncatingExpressionByCaretPositionOption getOrElse successfulNil
+    val firstNonEmptySuggestionFuture = firstNonEmptyFuture[ExpressionSuggestion](lazyListOfFutureSuggestions)
 
     firstNonEmptySuggestionFuture.map(_.toList.sortBy(_.methodName)).map(_.toList)
+  }
+
+  private def firstNonEmptyFuture[A](
+      options: LazyList[Option[Future[Iterable[A]]]]
+  )(implicit ec: ExecutionContext): Future[Iterable[A]] = {
+    def processOption(optFuture: Option[Future[Iterable[A]]]): Future[Iterable[A]] = {
+      optFuture match {
+        case Some(future) =>
+          future.flatMap {
+            case iterable if iterable.isEmpty => Future.failed(new Exception("Empty iterable"))
+            case nonEmptyIterable             => Future.successful(nonEmptyIterable)
+          }
+        case None => Future.failed(new Exception("None should be skipped"))
+      }
+    }
+
+    def processOptionsRecursively(opts: LazyList[Option[Future[Iterable[A]]]]): Future[Iterable[A]] = {
+      opts match {
+        case LazyList() => Future.successful(Iterable.empty)
+        case ll =>
+          processOption(ll.head).recoverWith { case _: Exception =>
+            processOptionsRecursively(ll.tail)
+          }
+      }
+    }
+
+    processOptionsRecursively(options)
   }
 
   private def expressionSuggestionsAux(
@@ -284,10 +321,31 @@ class SpelExpressionSuggester(
     suggestions
   }
 
-  private def truncateExpressionByCaretPosition2d(
+  private def expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(plainExpression: String): Boolean =
+    plainExpression.count(
+      _ == '\''
+    ) % 2 == 1 || plainExpression.count(_ == '\"') % 2 == 1
+
+  private def truncateExpressionToCorrespondingSpELVariable(
       expression: Expression,
       caretPosition2d: CaretPosition2d
-  ): Expression = {
+  ): Option[Expression] = {
+    val truncatedPlainExpression = truncatePlainExpression(expression, caretPosition2d)
+
+    truncatedPlainExpression match {
+      case expr
+          if expr.isEmpty || !expr
+            .contains('#') || expr.last == ' ' || expressionContainOddNumberOfQuotesOrOddNumberOfDoubleQuotes(expr) =>
+        None
+      case expr =>
+        expr.split('#').toList.reverse.headOption match {
+          case Some(alignedSpELVariableName) => Some(expression.copy(expression = s"#$alignedSpELVariableName"))
+          case None                          => None
+        }
+    }
+  }
+
+  private def truncatePlainExpression(expression: Expression, caretPosition2d: CaretPosition2d) = {
     val transformedPlainExpression = expression.expression
       .split("\n")
       .toList
@@ -299,7 +357,7 @@ class SpelExpressionSuggester(
       }
       .mkString("\n")
 
-    expression.copy(expression = transformedPlainExpression)
+    transformedPlainExpression
   }
 
   private def insertDummyVariable(s: String, index: Int): String = {
