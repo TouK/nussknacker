@@ -10,7 +10,7 @@ import { Notifications } from "./Notifications";
 import { useAnonymousStatistics } from "./useAnonymousStatistics";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
-import { useRegisterTrackingEvents } from "./event-tracking/use-register-tracking-events";
+import { useRegisterTrackingEvents } from "./event-tracking";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);

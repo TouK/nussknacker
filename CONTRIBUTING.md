@@ -130,7 +130,7 @@ Changing the version of the Scala is done by setting `NUSSKNACKER_SCALA_VERSION`
 
 #### Running using integration environment
 
-- Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
+- Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart)
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
 
 #### Running Designer with model classes on the same classes as designer
@@ -146,7 +146,7 @@ and add dependency to `designer` module like in flink-streaming case.
 #### Setting up Kubernetes environment
 
 To run streaming Lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
-[nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) setup
+[nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart/tree/old-quickstart) setup
 - run integration environment, as described above
 - `K3D_FIX_DNS=1 PROJECT_ROOT=$(pwd) k3d cluster create --network nussknacker_network --config=.k3d/single-cluster.yml` 
   This will create K8s cluster, which has access to Docker network used by integration environment. [K3D_FIX_DNS](https://github.com/rancher/k3d/issues/209).

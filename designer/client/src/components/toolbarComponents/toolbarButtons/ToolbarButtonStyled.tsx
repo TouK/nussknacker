@@ -2,7 +2,7 @@ import { styled } from "@mui/material";
 import { PANEL_BUTTON_SIZE } from "../../../stylesheets/variables";
 
 export const Icon = styled("div")({
-    // TODO: flatten nested usages 
+    // TODO: flatten nested usages
     "&, &>*": {
         flex: 1,
         lineHeight: 0,

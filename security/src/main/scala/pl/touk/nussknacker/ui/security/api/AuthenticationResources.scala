@@ -53,6 +53,8 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport with 
 
 object AuthenticationResources {
 
+  val defaultRealm = "nussknacker"
+
   def apply(config: Config, classLoader: ClassLoader, sttpBackend: SttpBackend[Future, Any])(
       implicit ec: ExecutionContext
   ): AuthenticationResources = {

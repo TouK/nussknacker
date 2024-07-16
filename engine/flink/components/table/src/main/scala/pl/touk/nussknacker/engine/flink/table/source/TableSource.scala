@@ -31,10 +31,11 @@ import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
-    enableFlinkBatchExecutionMode: Boolean
+    enableFlinkBatchExecutionMode: Boolean,
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
-    with FlinkSourceTestSupport[RECORD] {
+    with FlinkSourceTestSupport[RECORD]
+    with TestDataGenerator {
 
   import scala.jdk.CollectionConverters._
 
@@ -86,6 +87,9 @@ class TableSource(
 //  TODO: add implementation during task with test from file
   override def testRecordParser: TestRecordParser[RECORD] = ???
 
+  private lazy val dataGenerator = new FlinkMiniClusterDataGenerator(tableDefinition.toFlinkSchema)
+
+  override def generateTestData(size: Int): TestData = dataGenerator.generateTestData(size)
 }
 
 object TableSource {

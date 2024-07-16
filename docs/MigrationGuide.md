@@ -13,7 +13,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
 
-## In version 1.16.0 (Not released yet)
+## In version 1.16.0
 
 ### Code API changes
 
