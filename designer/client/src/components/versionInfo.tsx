@@ -1,18 +1,8 @@
 import { css } from "@emotion/css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { alpha, Box } from "@mui/material";
-import HttpService, { AppBuildInfo } from "../http/HttpService";
 import NuLogoIcon from "../assets/img/nussknacker-logo-icon.svg";
-
-function useAppInfo(): AppBuildInfo {
-    const [appInfo, setAppInfo] = useState<AppBuildInfo>();
-
-    useEffect(() => {
-        HttpService.fetchAppBuildInfo().then((res) => setAppInfo(res.data));
-    }, []);
-
-    return appInfo;
-}
+import { useBuildInfo } from "../containers/BuildInfoProvider";
 
 function useTimer(): [(t: number) => Promise<number>, () => void] {
     const timeout = useRef(null);
@@ -37,8 +27,8 @@ function useTimer(): [(t: number) => Promise<number>, () => void] {
 }
 
 export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
-    const appInfo = useAppInfo();
-    const variedVersions = __BUILD_VERSION__ !== appInfo?.version;
+    const buildInfo = useBuildInfo();
+    const variedVersions = __BUILD_VERSION__ !== buildInfo?.version;
 
     const [expanded, setExpanded] = useState(false);
     const [startTimer, stopTimer] = useTimer();
@@ -106,7 +96,7 @@ export function VersionInfo({ t = 3000 }: { t?: number }): JSX.Element {
                 })}
             >
                 <div className={css({ fontWeight: "bolder" })}>{variedVersions ? `UI ${__BUILD_VERSION__}` : __BUILD_VERSION__}</div>
-                {variedVersions && <div>API {appInfo?.version}</div>}
+                {variedVersions && <div>API {buildInfo?.version}</div>}
             </div>
         </Box>
     );

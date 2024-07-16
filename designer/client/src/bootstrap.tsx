@@ -11,6 +11,7 @@ import RootErrorBoundary from "./components/common/RootErrorBoundary";
 import { NuThemeProvider } from "./containers/theme/nuThemeProvider";
 import { GlideGridPortal } from "./components/graph/node-modal/editors/expression/Table/glideGridPortal";
 import { createRoot } from "react-dom/client";
+import { BuildInfoProvider } from "./containers/BuildInfoProvider";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -32,7 +33,9 @@ const Root = () => {
                     <StoreProvider>
                         <SettingsProvider>
                             <NussknackerInitializer>
-                                <RouterProvider router={router} />
+                                <BuildInfoProvider>
+                                    <RouterProvider router={router} />
+                                </BuildInfoProvider>
                             </NussknackerInitializer>
                         </SettingsProvider>
                     </StoreProvider>
