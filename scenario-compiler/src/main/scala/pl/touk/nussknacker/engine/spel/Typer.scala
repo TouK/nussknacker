@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedList
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -50,8 +51,8 @@ import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import scala.annotation.tailrec
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
@@ -295,13 +296,9 @@ private[spel] class Typer(
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
           val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
-          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
+          val childrenCombinedValue = children.flatMap(_.valueOpt)
 
-          val typedClass = Typed.genericTypeClass[java.util.List[_]](List(elementType))
-
-          valid(
-            TypedObjectWithValue(typedClass, childrenCombinedValue)
-          )
+          valid(typedList(elementType, childrenCombinedValue))
         }
 
       case e: InlineMap =>
