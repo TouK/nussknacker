@@ -2,6 +2,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.16.2 (Not released yet)
+
+### Code API changes
+
+* [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
+  setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
+  is only considered in case of Sinks). Create proper topics manually if needed.
+
 ## In version 1.16.0
 
 ### Code API changes

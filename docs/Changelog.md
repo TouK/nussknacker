@@ -4,6 +4,8 @@
 -------------------------
 
 * [#6382](https://github.com/TouK/nussknacker/pull/6382) Avoid timeout on model reload by stopping DeploymentActor and RescheduleFinishedActor non-gracefully. Instead, retry until success while creating new actors.
+* [#6269](https://github.com/TouK/nussknacker/pull/6269) SpEL expression validator now works with values that are lists or maps.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 
 1.16.0 (11 July 2024)
 -------------------------
