@@ -1227,11 +1227,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List(
         NodeParameter(
           ParameterName("mapParam1"),
-          "{'field': 'valid'}".spel
+          Expression.spel("{'field': 'valid'}")
         ),
         NodeParameter(
           ParameterName("mapParam2"),
-          "{'field': 'invalid'}".spel
+          Expression.spel("{'field': 'invalid'}")
         ),
       )
     )
@@ -1276,11 +1276,11 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
       List(
         NodeParameter(
           ParameterName("listParam1"),
-          "{'foo', 'bar'}".spel
+          Expression.spel("{'foo', 'bar'}")
         ),
         NodeParameter(
           ParameterName("listParam2"),
-          "{'bar'}".spel
+          Expression.spel("{'bar'}")
         ),
       )
     )
