@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.data.Validated
-import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
@@ -21,7 +20,6 @@ class SettingsResources(
 )(implicit ec: ExecutionContext)
     extends Directives
     with FailFastCirceSupport
-    with LazyLogging
     with RouteWithoutUser {
 
   def publicRoute(): Route =
@@ -31,7 +29,6 @@ class SettingsResources(
           fingerprintService
             .fingerprint(usageStatisticsReportsConfig)
             .map { fingerprint =>
-              logger.info(s"<>UConfig: $usageStatisticsReportsConfig")
               val toggleOptions = ToggleFeaturesOptions(
                 counts = config.counts.isDefined,
                 metrics = config.metrics,
