@@ -265,17 +265,20 @@ class BaseFlowTest
       "environment" -> UiScenarioPropertyConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
-        label = Some("Environment")
+        label = Some("Environment"),
+        hintText = None
       ),
       "maxEvents" -> UiScenarioPropertyConfig(
         defaultValue = None,
         editor = StringParameterEditor,
-        label = Some("Max events")
+        label = Some("Max events"),
+        hintText = Some("Maximum number of events")
       ),
       "numberOfThreads" -> UiScenarioPropertyConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
-        label = Some("Number of threads")
+        label = Some("Number of threads"),
+        hintText = None
       ),
       TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioPropertyConfig(
         TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride(

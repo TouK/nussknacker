@@ -9,6 +9,7 @@ export interface ScenarioPropertyConfig {
     editor: any;
     label: string;
     defaultValue: string | null;
+    hintText: string | null;
 }
 
 interface Props {
