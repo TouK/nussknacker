@@ -6,9 +6,7 @@ import { sortBy } from "lodash";
 import { IdField } from "./IdField";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
-import { FormLabel } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
-import { StyledNodeTip } from "./FieldLabel";
+import { FieldLabel } from "./FieldLabel";
 
 interface Props {
     isEditMode?: boolean;
@@ -56,7 +54,7 @@ export function Properties({
                     propertyConfig={propConfig}
                     errors={errors}
                     onChange={setProperty}
-                    renderFieldLabel={() => renderPropertiesFieldLabels(propName, propConfig.label, propConfig.hintText)}
+                    renderFieldLabel={() => <FieldLabel title={propName} label={propConfig.label} hintText={propConfig.hintText} />}
                     editedNode={node}
                     readOnly={!isEditMode}
                 />
@@ -69,19 +67,6 @@ export function Properties({
                 setProperty={setProperty}
                 errors={errors}
             />
-        </>
-    );
-}
-
-function renderPropertiesFieldLabels(propName: string, label: string, hintText?: string): JSX.Element {
-    return (
-        <>
-            <FormLabel title={propName}>
-                <div>
-                    <div>{label}:</div>
-                </div>
-                {hintText && <StyledNodeTip title={hintText} icon={<InfoIcon />} />}
-            </FormLabel>
         </>
     );
 }
