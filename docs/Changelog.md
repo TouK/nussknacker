@@ -18,6 +18,8 @@
 * [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
   increased from `500ms` to `10s` to avoid scenario starting problems
 * [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
+* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) SpEL expression validator now works with values that are lists or maps.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 
 1.16.1 (16 July 2024)
 -------------------------
