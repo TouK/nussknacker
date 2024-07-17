@@ -77,6 +77,7 @@ class DefaultComponentService(
     }
 
     componentsFuture.flatMap { components =>
+      // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
       val mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
 
       if (!skipUsages) {
