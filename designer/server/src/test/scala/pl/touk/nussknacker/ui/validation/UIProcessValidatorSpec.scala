@@ -319,13 +319,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           defaultValue = None,
           editor = None,
           validators = Some(List(MandatoryParameterValidator)),
-          label = Some("label1")
+          label = Some("label1"),
+          hintText = None
         ),
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = None,
-          label = Some("label2")
+          label = Some("label2"),
+          hintText = None
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
@@ -407,13 +409,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           defaultValue = None,
           editor = None,
           validators = Some(List(MandatoryParameterValidator)),
-          label = Some("label1")
+          label = Some("label1"),
+          hintText = None
         ),
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(MandatoryParameterValidator)),
-          label = Some("label2")
+          label = Some("label2"),
+          hintText = None
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
@@ -434,13 +438,15 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           defaultValue = None,
           editor = Some(FixedValuesParameterEditor(possibleValues)),
           validators = Some(List(FixedValuesValidator(possibleValues))),
-          label = Some("label")
+          label = Some("label"),
+          hintText = None
         ),
         "field2" -> ScenarioPropertyConfig(
           defaultValue = None,
           editor = None,
           validators = Some(List(LiteralIntegerValidator)),
-          label = Some("label")
+          label = Some("label"),
+          hintText = None
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
@@ -463,7 +469,8 @@ class UIProcessValidatorSpec extends AnyFunSuite with Matchers with TableDrivenP
           defaultValue = None,
           editor = None,
           validators = Some(List(CompileTimeEvaluableValueValidator)),
-          label = Some("label")
+          label = Some("label"),
+          hintText = None
         )
       ) ++ FlinkStreamingPropertiesConfig.properties
     )
@@ -2049,19 +2056,22 @@ private object UIProcessValidatorSpec {
         defaultValue = None,
         editor = Some(StringParameterEditor),
         validators = Some(List(MandatoryParameterValidator)),
-        label = Some("label")
+        label = Some("label"),
+        hintText = None
       ),
       "numberOfThreads" -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(TestFactory.possibleValues)),
         validators = Some(List(FixedValuesValidator(TestFactory.possibleValues))),
-        label = None
+        label = None,
+        hintText = None
       ),
       "maxEvents" -> ScenarioPropertyConfig(
         defaultValue = None,
         editor = None,
         validators = Some(List(CompileTimeEvaluableValueValidator)),
-        label = Some("label")
+        label = Some("label"),
+        hintText = None
       )
     ) ++ FlinkStreamingPropertiesConfig.properties
   )

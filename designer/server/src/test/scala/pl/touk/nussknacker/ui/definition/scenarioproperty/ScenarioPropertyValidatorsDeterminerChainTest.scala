@@ -17,6 +17,7 @@ class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Mat
       None,
       None,
       Some(List(MandatoryParameterValidator)),
+      None,
       None
     )
 
@@ -30,6 +31,7 @@ class ScenarioPropertyValidatorsDeterminerChainTest extends AnyFunSuite with Mat
     val config = ScenarioPropertyConfig(
       None,
       Some(FixedValuesParameterEditor(possibleValues)),
+      None,
       None,
       None
     )
