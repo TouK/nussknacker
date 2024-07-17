@@ -12,7 +12,8 @@ object FragmentPropertiesConfig {
       editor = Some(StringParameterEditor),
       // TODO: some validator
       validators = None,
-      label = Some("Documentation url")
+      label = Some("Documentation url"),
+      hintText = None
     )
 
   // TODO: We should probably allow to add some properties definition using configuration like in the scenario case

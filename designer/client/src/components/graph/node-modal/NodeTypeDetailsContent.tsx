@@ -11,7 +11,7 @@ import {
 } from "./NodeDetailsContent/selectors";
 import { adjustParameters } from "./ParametersUtils";
 import { generateUUIDs } from "./nodeUtils";
-import { FieldLabel } from "./FieldLabel";
+import { ParamFieldLabel } from "./FieldLabel";
 import { cloneDeep, isEqual, set } from "lodash";
 import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import NodeUtils from "../NodeUtils";
@@ -87,7 +87,7 @@ export function NodeTypeDetailsContent({
 
     const renderFieldLabel = useCallback(
         (paramName: string): JSX.Element => {
-            return <FieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
+            return <ParamFieldLabel parameterDefinitions={parameterDefinitions} paramName={paramName} />;
         },
         [parameterDefinitions],
     );

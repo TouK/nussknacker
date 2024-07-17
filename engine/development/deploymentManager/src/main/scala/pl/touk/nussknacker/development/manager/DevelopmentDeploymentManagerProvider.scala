@@ -239,7 +239,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
     Map(
-      "deploymentManagerProperty" -> ScenarioPropertyConfig(None, None, None, None)
+      "deploymentManagerProperty" -> ScenarioPropertyConfig(None, None, None, None, None)
     ) ++ FlinkStreamingPropertiesConfig.properties
 
   override def name: String = "development-tests"

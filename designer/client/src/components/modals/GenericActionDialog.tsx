@@ -9,7 +9,7 @@ import { WindowContent, WindowKind } from "../../windowManager";
 import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
-import { FieldLabel } from "../graph/node-modal/FieldLabel";
+import { ParamFieldLabel } from "../graph/node-modal/FieldLabel";
 import { validateGenericActionParameters } from "../../actions/nk/genericAction";
 import { getGenericActionValidation } from "../../reducers/selectors/genericActionState";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
@@ -87,7 +87,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                             param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null;
                         return (
                             <FormControl key={param.name}>
-                                <FieldLabel parameterDefinitions={action.parameters} paramName={param.name} />
+                                <ParamFieldLabel parameterDefinitions={action.parameters} paramName={param.name} />
                                 <ErrorBoundary>
                                     <Editor
                                         editorConfig={param?.editor}

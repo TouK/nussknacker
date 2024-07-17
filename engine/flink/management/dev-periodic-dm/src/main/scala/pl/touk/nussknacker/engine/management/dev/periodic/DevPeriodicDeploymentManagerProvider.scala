@@ -39,7 +39,8 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
       defaultValue = None, // TODO: Maybe once a day at 0:00 ?
       editor = None,
       validators = Some(List(MandatoryParameterValidator, CronParameterValidator.delegate)),
-      label = None
+      label = None,
+      hintText = None
     )
   ) ++ FlinkStreamingPropertiesConfig.properties
 
