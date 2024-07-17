@@ -9,6 +9,10 @@
 * [6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
   provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
 
+1.16.1 (16 July 2024)
+-------------------------
+* [#6382](https://github.com/TouK/nussknacker/pull/6382) Avoid timeout on model reload by stopping DeploymentActor and RescheduleFinishedActor non-gracefully. Instead, retry until success while creating new actors.
+
 1.16.0 (11 July 2024)
 -------------------------
 
