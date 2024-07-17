@@ -84,7 +84,7 @@ class DefaultComponentService(
   private def enrichUsagesIfNeeded(
       components: List[ComponentListElement],
       skipUsages: Boolean
-  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ComponentListElement]] = {
+  )(implicit loggedUser: LoggedUser): Future[List[ComponentListElement]] = {
     if (skipUsages) {
       Future.successful(components)
     } else {
