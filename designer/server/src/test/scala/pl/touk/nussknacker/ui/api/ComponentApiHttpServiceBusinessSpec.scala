@@ -40,9 +40,10 @@ class ComponentApiHttpServiceBusinessSpec
     "return component list for current user" in {
       def getComponentListIds(skipUsages: Boolean) = {
         given()
+          .queryParam("skipUsages", skipUsages)
           .when()
           .basicAuthAllPermUser()
-          .get(s"$nuDesignerHttpAddress/api/components?skipUsages=$skipUsages")
+          .get(s"$nuDesignerHttpAddress/api/components")
           .Then()
           .statusCode(200)
           .extractToStringsList("id")
