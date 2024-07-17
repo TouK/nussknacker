@@ -6,13 +6,7 @@ import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy.ForLargeNumbersOperation
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  Typed,
-  TypedClass,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  Unknown
-}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
@@ -210,10 +204,8 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
       case (f @ TypedClass(`fClass`, element :: Nil)) :: _ => f.copy(params = element.withoutValue :: Nil).validNel
-      case TypedObjectWithValue(f @ TypedClass(`fClass`, element :: Nil), _) :: _ =>
-        f.copy(params = element.withoutValue :: Nil).validNel
-      case firstArgument :: _ => firstArgument.validNel
-      case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case firstArgument :: _                              => firstArgument.validNel
+      case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -225,10 +217,8 @@ object CollectionUtils {
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
       case TypedClass(`fClass`, componentType :: Nil) :: _ => componentType.withoutValue.validNel
-      case TypedObjectWithValue(TypedClass(`fClass`, componentType :: Nil), _) :: _ =>
-        componentType.withoutValue.validNel
-      case firstArgument :: _ => firstArgument.withoutValue.validNel
-      case _                  => GenericFunctionTypingError.ArgumentTypeError.invalidNel
+      case firstArgument :: _                              => firstArgument.withoutValue.validNel
+      case _                                               => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
 
   }
@@ -269,30 +259,10 @@ object CollectionUtils {
     override def computeResultType(
         arguments: List[typing.TypingResult]
     ): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = arguments match {
-      case (list1 @ TypedClass(`fClass`, _ :: Nil)) ::
-          (list2 @ TypedClass(`fClass`, _ :: Nil)) :: Nil =>
-        concatType(list1, list2)
-
-      case (list1 @ TypedClass(`fClass`, _ :: Nil)) ::
-          TypedObjectWithValue(list2 @ TypedClass(`fClass`, _ :: Nil), _) :: Nil =>
-        concatType(list1, list2)
-
-      case TypedObjectWithValue(list1 @ TypedClass(`fClass`, _ :: Nil), _) ::
-          (list2 @ TypedClass(`fClass`, _ :: Nil)) :: Nil =>
-        concatType(list1, list2)
-
-      case TypedObjectWithValue(list1 @ TypedClass(`fClass`, _ :: Nil), _) ::
-          TypedObjectWithValue(list2 @ TypedClass(`fClass`, _ :: Nil), _) :: Nil =>
-        concatType(list1, list2)
-
-      case _ => Typed.genericTypeClass(fClass, List(Unknown)).validNel
-    }
-
-    private def concatType(list1: TypedClass, list2: TypedClass) = (list1, list2) match {
-      case (
-            listType @ TypedClass(`fClass`, firstComponentType :: Nil),
-            TypedClass(`fClass`, secondComponentType :: Nil)
-          ) =>
+      case (listType @ TypedClass(`fClass`, firstComponentType :: Nil)) :: TypedClass(
+            `fClass`,
+            secondComponentType :: Nil
+          ) :: Nil =>
         (firstComponentType, secondComponentType) match {
           case (TypedObjectTypingResult(x, _, infoX), TypedObjectTypingResult(y, _, infoY))
               if commonFieldHasTheSameType(x, y) =>

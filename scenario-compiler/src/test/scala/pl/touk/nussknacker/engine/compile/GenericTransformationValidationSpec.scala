@@ -27,7 +27,6 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedList
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
@@ -99,7 +98,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       Map(
         "val1" -> Typed.fromInstance("aa"),
         "val2" -> Typed.fromInstance(11),
-        "val3" -> typedList(Typed[java.lang.Boolean], List(false))
+        "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
       )
     )
 
@@ -128,7 +127,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       Map(
         "val1" -> Typed.fromInstance("aa"),
         "val2" -> Typed.fromInstance(11),
-        "val3" -> typedList(Typed[java.lang.Boolean], List(false))
+        "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
       )
     )
 
