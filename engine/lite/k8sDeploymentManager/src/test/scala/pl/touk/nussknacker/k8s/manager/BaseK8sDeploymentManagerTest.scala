@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.{DeploymentManagerDependencies, ModelData}
-import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
 import skuber.LabelSelector.dsl._
 import skuber.Pod.LogQueryParams
 import skuber.api.client.KubernetesClient
@@ -122,7 +122,7 @@ class BaseK8sDeploymentManagerTest
       val manager: K8sDeploymentManager,
       val scenario: CanonicalProcess,
       val version: ProcessVersion
-  ) extends ExtremelyPatientScalaFutures
+  ) extends VeryPatientScalaFutures
       with Matchers
       with LazyLogging {
 
