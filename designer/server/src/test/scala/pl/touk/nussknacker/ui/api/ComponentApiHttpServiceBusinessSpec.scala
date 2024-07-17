@@ -52,7 +52,7 @@ class ComponentApiHttpServiceBusinessSpec
       val componentIdListForTestUser              = getComponentListIds(skipUsages = false)
       val componentIdListForTestUserSkippedUsages = getComponentListIds(skipUsages = true)
 
-      componentIdListForTestUser.sorted shouldBe componentIdListForTestUserSkippedUsages.sorted
+      componentIdListForTestUser shouldBe componentIdListForTestUserSkippedUsages
       componentIdListForTestUser.sorted should contain theSameElementsAs expectedComponentIdsForAllPermUser
     }
   }

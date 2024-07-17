@@ -71,25 +71,29 @@ class DefaultComponentService(
   import cats.syntax.traverse._
 
   override def getComponentsList(skipUsages: Boolean)(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
-    val componentsFuture = processingTypeDataProvider.all.toList.flatTraverse {
-      case (processingType, processingTypeData) =>
+    for {
+      components <- processingTypeDataProvider.all.toList.flatTraverse { case (processingType, processingTypeData) =>
         extractComponentsFromProcessingType(processingTypeData, processingType)
-    }
-
-    componentsFuture.flatMap { components =>
-      // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
-      val mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
-
-      if (!skipUsages) {
-        getUserAccessibleComponentUsages.map { userAccessibleComponentUsages =>
-          val enrichedWithUsagesComponents = mergedComponents.map { c =>
-            c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
-          }
-          enrichedWithUsagesComponents.sortBy(ComponentListElement.sortMethod)
-        }
-      } else {
-        Future.successful(mergedComponents)
       }
+      // TODO: We should firstly merge components and after that create DTOs (ComponentListElement). See TODO in ComponentsValidator
+      mergedComponents = mergeSameComponentsAcrossProcessingTypes(components)
+      optionallyEnrichedComponents <- enrichUsagesIfNeeded(mergedComponents, skipUsages)
+    } yield optionallyEnrichedComponents.sortBy(ComponentListElement.sortMethod)
+  }
+
+  private def enrichUsagesIfNeeded(
+      components: List[ComponentListElement],
+      skipUsages: Boolean
+  )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[ComponentListElement]] = {
+    if (skipUsages) {
+      Future.successful(components)
+    } else {
+      for {
+        userAccessibleComponentUsages <- getUserAccessibleComponentUsages
+        enrichedWithUsagesComponents = components.map(c =>
+          c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0))
+        )
+      } yield enrichedWithUsagesComponents
     }
   }
 

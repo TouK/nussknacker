@@ -578,8 +578,7 @@ class DefaultComponentServiceSpec
         val returnedComponentsWithUsages    = componentService.getComponentsList(skipUsages = false)(user).futureValue
         val returnedComponentsWithoutUsages = componentService.getComponentsList(skipUsages = true)(user).futureValue
 
-        returnedComponentsWithUsages.map(_.id) should contain theSameElementsAs
-          returnedComponentsWithoutUsages.map(_.id)
+        returnedComponentsWithUsages.map(_.id) shouldBe returnedComponentsWithoutUsages.map(_.id)
 
         returnedComponentsWithUsages.map(_.id).sortBy(_.value) should contain theSameElementsAs expectedComponents
           .map(_.id)
