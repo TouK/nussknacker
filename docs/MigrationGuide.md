@@ -17,6 +17,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
     * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
         * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+* [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait 
+  changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a 
+  single `TestRecord` and returns a list of results instead of a single result.
 
 ## In version 1.16.0
 
