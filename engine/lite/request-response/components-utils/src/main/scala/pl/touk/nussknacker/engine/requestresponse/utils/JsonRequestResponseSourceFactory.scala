@@ -27,8 +27,10 @@ class JsonRequestResponseSourceFactory[T: Decoder: ClassTag]
         CirceUtil.decodeJsonUnsafe(parameters, "invalid request in request-response source")
       }
 
-      override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) =>
-        CirceUtil.decodeJsonUnsafe(testRecord.json, "invalid request in request-response source")
+      override def testRecordParser: TestRecordParser[T] = (testRecords: List[TestRecord]) =>
+        testRecords.map { testRecord =>
+          CirceUtil.decodeJsonUnsafe(testRecord.json, "invalid request in request-response source")
+        }
 
     })
 

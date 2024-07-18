@@ -9,6 +9,8 @@ import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor,
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterDataGenerator._
 import pl.touk.nussknacker.engine.util.ThreadUtils
+import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterUtils.{delete, deleteTable}
+
 import java.util.UUID
 
 import java.nio.charset.StandardCharsets
@@ -144,6 +146,31 @@ object FlinkMiniClusterDataGenerator {
     )
     conf.set(CoreOptions.DEFAULT_PARALLELISM, miniClusterTestingEnvParallelism)
     EnvironmentSettings.newInstance().withConfiguration(conf).build()
+  }
+
+}
+
+object FlinkMiniClusterUtils extends LazyLogging {
+
+  def delete(dir: Path): Unit = Try {
+    Files
+      .walk(dir)
+      .sorted(java.util.Comparator.reverseOrder())
+      .forEach(path => Files.deleteIfExists(path))
+    logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dir.toUri.toURL}'")
+  } match {
+    case Failure(e) =>
+      logger.error(
+        s"Couldn't properly delete temporary test data dumping directory at: '${dir.toUri.toURL}'",
+        e
+      )
+    case Success(_) => ()
+  }
+
+  def deleteTable(env: TableEnvironment, tableName: String): Unit = {
+    if (!env.dropTemporaryTable(tableName)) {
+      logger.error(s"Couldn't properly delete temporary temporary table: '$tableName'")
+    }
   }
 
 }
