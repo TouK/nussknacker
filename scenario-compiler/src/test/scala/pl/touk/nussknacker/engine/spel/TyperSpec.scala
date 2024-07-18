@@ -49,14 +49,10 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   }
 
   test("detect proper List type with value - record inside") {
-    typeExpression("{{'a': 1}}").validValue.finalResult.typingResult shouldBe
+    typeExpression(s"{$testRecordExpr}").validValue.finalResult.typingResult shouldBe
       typedListWithElementValues(
-        Typed.record(
-          Map(
-            "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1)
-          )
-        ),
-        List(Map("a" -> 1).asJava)
+        testRecordTyped.withoutValue,
+        List(testRecordTyped.valueOpt.get)
       )
   }
 
