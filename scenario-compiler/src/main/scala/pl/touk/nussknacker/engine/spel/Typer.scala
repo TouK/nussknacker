@@ -295,7 +295,7 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype)
+          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
           val childrenCombinedValue = children.flatMap(_.valueOpt)
 
           valid(typedListWithElementValues(elementType, childrenCombinedValue))
