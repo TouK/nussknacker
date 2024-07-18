@@ -14,4 +14,14 @@ object DefaultsComponentGroupName {
   val FragmentsDefinitionGroupName: ComponentGroupName  = ComponentGroupName("fragmentDefinition")
   val DeprecatedGroupName: ComponentGroupName           = ComponentGroupName("deprecated")
 
+  val allAvailableForFragment: List[ComponentGroupName] = List(
+    FragmentsGroupName,
+    ServicesGroupName,
+    EnrichersGroupName,
+    CustomGroupName,
+    SinksGroupName,
+    SourcesGroupName,
+    DeprecatedGroupName
+  )
+
 }

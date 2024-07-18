@@ -29,29 +29,26 @@ sealed trait ScenarioSpecificData extends TypeSpecificData
 
 case class FragmentSpecificData(
     docsUrl: Option[String] = None,
-    isDeprecated: Boolean = false
+    componentGroupName: Option[String] = None // None means the fragment is in the default group for fragments
 ) extends TypeSpecificData {
 
   override def toMap: Map[String, String] = Map(
-    FragmentSpecificData.docsUrlName      -> docsUrl.getOrElse(""),
-    FragmentSpecificData.isDeprecatedName -> (if (isDeprecated) "true" else "false")
+    FragmentSpecificData.docsUrlName            -> docsUrl.getOrElse(""),
+    FragmentSpecificData.componentGroupNameName -> componentGroupName.getOrElse(""),
   )
 
   override def metaDataType: String = FragmentSpecificData.typeName
 }
 
 object FragmentSpecificData {
-  val typeName         = "FragmentSpecificData"
-  val docsUrlName      = "docsUrl"
-  val isDeprecatedName = "isDeprecated"
+  val typeName               = "FragmentSpecificData"
+  val docsUrlName            = "docsUrl"
+  val componentGroupNameName = "componentGroup"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
     FragmentSpecificData(
       docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)),
-      isDeprecated = properties.get(isDeprecatedName) match {
-        case Some("true") => true
-        case _            => false
-      },
+      componentGroupName = mapEmptyStringToNone(properties.get(componentGroupNameName))
     )
   }
 

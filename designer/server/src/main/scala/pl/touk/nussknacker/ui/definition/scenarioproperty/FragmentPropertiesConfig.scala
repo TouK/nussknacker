@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   MandatoryParameterValidator,
   StringParameterEditor
 }
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
 
 object FragmentPropertiesConfig {
 
@@ -21,17 +22,22 @@ object FragmentPropertiesConfig {
       hintText = None
     )
 
-  val isDeprecatedConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.isDeprecatedName ->
+  val componentGroupNameConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.componentGroupNameName ->
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(
-        FixedValuesParameterEditor(List(FixedExpressionValue("false", "False"), FixedExpressionValue("true", "True")))
+        FixedValuesParameterEditor(
+          DefaultsComponentGroupName.allAvailableForFragment.map(groupName =>
+            FixedExpressionValue(groupName.value, groupName.value)
+          )
+        )
       ),
       validators = Some(List(MandatoryParameterValidator)),
-      label = Some("Deprecated")
+      label = Some("Component group"),
+      // TODO: add hint text after https://github.com/TouK/nussknacker/pull/6398 is merged
     )
 
   // TODO: We should probably allow to add some properties definition using configuration like in the scenario case
-  val properties: Map[String, ScenarioPropertyConfig] = Map(docsUrlConfig, isDeprecatedConfig)
+  val properties: Map[String, ScenarioPropertyConfig] = Map(docsUrlConfig, componentGroupNameConfig)
 
 }
