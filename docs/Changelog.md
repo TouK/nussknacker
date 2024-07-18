@@ -13,12 +13,14 @@
 * [#6269](https://github.com/TouK/nussknacker/pull/6269) SpEL expression validator now works with values that are lists or maps.
   * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+* [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
+* [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
 
 1.16.1 (16 July 2024)
 -------------------------
 * [#6382](https://github.com/TouK/nussknacker/pull/6382) Avoid timeout on model reload by stopping DeploymentActor and RescheduleFinishedActor non-gracefully. Instead, retry until success while creating new actors.
 
-  1.16.0 (11 July 2024)
+1.16.0 (11 July 2024)
 -------------------------
 
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.

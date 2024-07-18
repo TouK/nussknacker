@@ -19,6 +19,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
   * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+* [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait 
+  changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a 
+  single `TestRecord` and returns a list of results instead of a single result.
 
 ## In version 1.16.0
 
