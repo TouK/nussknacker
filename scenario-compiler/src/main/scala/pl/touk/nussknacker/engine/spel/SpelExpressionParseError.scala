@@ -43,6 +43,10 @@ object SpelExpressionParseError {
         "Currently inline maps with not literal keys (e.g. expressions as keys) are not supported"
     }
 
+    case object ArrayConstructorError extends UnsupportedOperationError {
+      override def message: String = "Array constructor is not supported"
+    }
+
   }
 
   trait DictError extends ExpressionParseError {
@@ -220,21 +224,6 @@ object SpelExpressionParseError {
     // Operators AST has form "(expression)" so we need to extract it.
     private def stripOperatorAST(expression: String) =
       expression.substring(1, expression.length - 1)
-  }
-
-  sealed trait ArrayConstructorError extends ExpressionParseError
-
-  object ArrayConstructorError {
-
-    final case class IllegalArrayDimensionType(usedType: TypingResult) extends ArrayConstructorError {
-      override def message: String =
-        s"Array dimensions must be specified with numeric values. Found type: ${usedType.withoutValue.display}"
-    }
-
-    final object EmptyArrayDimension extends ArrayConstructorError {
-      override def message: String = "Dimensions definition of array constructor cannot be empty"
-    }
-
   }
 
   object OverloadedFunctionError extends ExpressionParseError {

@@ -22,10 +22,6 @@ import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArrayConstructorError.{
-  EmptyArrayDimension,
-  IllegalArrayDimensionType
-}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{
   ConstructionOfUnknown,
@@ -45,6 +41,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorE
   TernaryOperatorNotBooleanError
 }
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.UnsupportedOperationError.{
+  ArrayConstructorError,
   BeanReferenceError,
   MapWithExpressionKeysError,
   ModificationError
@@ -56,7 +53,6 @@ import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
-import scala.jdk.CollectionConverters._
 import scala.annotation.tailrec
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
@@ -237,38 +233,6 @@ private[spel] class Typer(
       }
     }
 
-    def typeArrayConstructor(constructedClass: Class[_], dimensions: Array[SpelNodeImpl]): TypingR[TypingResult] = {
-      def getClassOfArray(arrayDimensionCount: Int) = {
-        val dimensionsArray = Array.fill(arrayDimensionCount)(0)
-        java.lang.reflect.Array.newInstance(constructedClass, dimensionsArray: _*).getClass
-      }
-
-      if (dimensions.isEmpty || dimensions.contains(null)) {
-        invalid(EmptyArrayDimension)
-      } else {
-        val dimensionNodesTyped = dimensions.map { dimensionNode =>
-          typeNode(validationContext, dimensionNode, current)
-        }
-        val dimensionErrors = dimensionNodesTyped.flatMap { d =>
-          val (errors, result) = d.run
-          if (errors.nonEmpty) {
-            errors
-          } else {
-            val dimensionTypingResult = result.finalResult.typingResult
-            if (!dimensionTypingResult.canBeSubclassOf(Typed[Number])) {
-              List(IllegalArrayDimensionType(dimensionTypingResult))
-            } else {
-              Nil
-            }
-          }
-        }.toList
-        dimensionErrors match {
-          case head :: _ => invalid(head)
-          case Nil       => valid(Typed.typedClass(getClassOfArray(dimensionNodesTyped.length)))
-        }
-      }
-    }
-
     catchUnexpectedErrors(node match {
 
       case e: Assign =>
@@ -300,20 +264,20 @@ private[spel] class Typer(
           val classToUse   = Try(evaluationContext.getTypeLocator.findType(className)).toOption
           val typingResult = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
           typingResult match {
-            case Some(tc @ TypedClass(constructedClass, _)) =>
-              val dimensionsField = e.getClass.getDeclaredField("dimensions")
+            case Some(tc @ TypedClass(_, _)) =>
+              val dimensionsField = e.getClass.getDeclaredField("isArrayConstructor")
               dimensionsField.setAccessible(true)
-              val dimensions: Array[SpelNodeImpl] =
-                dimensionsField.get(e).asInstanceOf[Array[SpelNodeImpl]]
-              val isArray = dimensions != null
-
-              if (isArray) {
-                typeArrayConstructor(constructedClass, dimensions)
+              val isArrayConstructor: Boolean = dimensionsField.get(e).asInstanceOf[Boolean]
+              if (isArrayConstructor) {
+                invalid(ArrayConstructorError)
               } else {
                 valid(tc)
               }
-            case Some(_) => throw new IllegalStateException("should not happen")
-            case None    => invalid(ConstructionOfUnknown(classToUse))
+            case Some(_) =>
+              throw new IllegalStateException(
+                "Illegal construction of ConstructorReference. Expected nonempty typing result of TypedClass or empty typing result"
+              )
+            case None => invalid(ConstructionOfUnknown(classToUse))
           }
         }
       case e: Elvis =>
