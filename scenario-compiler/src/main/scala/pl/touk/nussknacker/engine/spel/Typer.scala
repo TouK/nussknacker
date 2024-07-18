@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedList
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -295,10 +295,10 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
+          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype)
           val childrenCombinedValue = children.flatMap(_.valueOpt)
 
-          valid(typedList(elementType, childrenCombinedValue))
+          valid(typedListWithElementValues(elementType, childrenCombinedValue))
         }
 
       case e: InlineMap =>

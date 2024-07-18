@@ -68,10 +68,15 @@ object TypeEncoders {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, value) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded: (String, Json) = "value" -> SimpleObjectEncoder
+      val dataEncoded: Option[Json] = SimpleObjectEncoder
         .encode(underlying, value)
-        .getOrElse(throw new IllegalStateException(s"Not supported data value: $value"))
-      objTypeEncoded.+:(dataEncoded)
+        .map(Some(_))
+        .getOrElse(None)
+
+      dataEncoded match {
+        case Some(value) => objTypeEncoded.+:("value" -> value)
+        case None        => objTypeEncoded
+      }
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
@@ -129,8 +134,11 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
-    value      <- SimpleObjectEncoder.decode(valueClass, obj.downField("value"))
-  } yield TypedObjectWithValue(valueClass, value)
+    value = SimpleObjectEncoder.decode(valueClass, obj.downField("value"))
+  } yield value match {
+    case Left(_)      => valueClass // TODO
+    case Right(value) => TypedObjectWithValue(valueClass, value)
+  }
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)

@@ -8,6 +8,7 @@ import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
@@ -47,12 +48,21 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     )
   }
 
+  test("detect proper List type with value - record inside") {
+    typeExpression("{{'a': 1}}").validValue.finalResult.typingResult shouldBe
+      typedListWithElementValues(
+        Typed.record(
+          Map(
+            "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1)
+          )
+        ),
+        List(Map("a" -> 1).asJava)
+      )
+  }
+
   test("detect proper List type with value") {
     typeExpression("{1,2}").validValue.finalResult.typingResult shouldBe
-      TypedObjectWithValue(
-        Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])),
-        List(1, 2).asJava
-      )
+      typedListWithElementValues(Typed.typedClass[Int], List(1, 2))
   }
 
   test("detect proper selection types - List") {
@@ -87,6 +97,11 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   test("restricting simple type selection") {
     typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").invalidValue.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
+  }
+
+  test("type record expression") {
+    typeExpression(testRecordExpr).validValue.finalResult.typingResult shouldBe
+      testRecordTyped
   }
 
   test("indexing on records for primitive types") {
