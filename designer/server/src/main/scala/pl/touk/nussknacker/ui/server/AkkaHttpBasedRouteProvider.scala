@@ -494,7 +494,7 @@ class AkkaHttpBasedRouteProvider(
         authManager,
         usageStatisticsReportsSettingsService,
         feStatisticsRepository,
-        StatisticUrlConfig()
+        StatisticUrlConfig(encryptQueryParams = resolvedConfig.getBoolean("usageStatisticsReports.encrypted"))
       )
 
       // TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings

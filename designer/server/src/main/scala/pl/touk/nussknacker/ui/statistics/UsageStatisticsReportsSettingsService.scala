@@ -35,6 +35,7 @@ object UsageStatisticsReportsSettingsService extends LazyLogging {
       componentList: List[ComponentDefinitionWithImplementation],
       designerClock: Clock
   )(implicit ec: ExecutionContext): UsageStatisticsReportsSettingsService = {
+
     val ignoringErrorsFEStatisticsRepository = new IgnoringErrorsFEStatisticsRepository(statisticsRepository)
     implicit val user: LoggedUser            = NussknackerInternalUser.instance
 

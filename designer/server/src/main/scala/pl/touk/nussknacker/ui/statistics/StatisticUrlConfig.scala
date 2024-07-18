@@ -5,5 +5,6 @@ final case class StatisticUrlConfig(
     urlBytesSizeLimit: Int = 7000,
     nuStatsUrl: String = "https://stats.nussknacker.io/?",
     queryParamsSeparator: String = "&",
-    emptyString: String = ""
+    emptyString: String = "",
+    encryptQueryParams: Boolean = true
 )
