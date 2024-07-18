@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import java.net.URL
 
 class StatisticsSpec extends AnyFunSuite with Matchers {
-  private val cfg = StatisticUrlConfig()
+  private val cfg = StatisticUrlConfig(encryptQueryParams = false)
 
   test("should split parameters into 2 URLS") {
     val threeThousandCharsParam = (1 to 3000).map(_ => "x").mkString
