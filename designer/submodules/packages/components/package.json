@@ -5,6 +5,7 @@
     "author": "",
     "contextPath": "components",
     "dependencies": {
+        "@emotion/css": "11.11.2",
         "@emotion/react": "11.11.3",
         "@emotion/styled": "11.11.0",
         "@loadable/component": "5.15.2",
