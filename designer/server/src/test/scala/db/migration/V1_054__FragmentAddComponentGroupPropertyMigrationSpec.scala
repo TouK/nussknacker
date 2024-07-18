@@ -5,9 +5,9 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 
-class V1_054__FragmentIsDeprecatedPropertyMigrationSpec extends AnyFlatSpec with Matchers {
+class V1_054__FragmentAddComponentGroupPropertyMigrationSpec extends AnyFlatSpec with Matchers {
 
-  it should "set isDeprecated to false if not present" in {
+  it should "set componentGroup to 'fragments' if not present" in {
     val rawJsonString =
       """
         |{
@@ -26,17 +26,17 @@ class V1_054__FragmentIsDeprecatedPropertyMigrationSpec extends AnyFlatSpec with
 
     val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
 
-    val migratedJson = V1_054__FragmentAddIsDeprecatedProperty.migrateMetadata(oldJson)
+    val migratedJson = V1_054__FragmentAddComponentGroupProperty.migrateMetadata(oldJson)
 
     migratedJson shouldBe defined
     migratedJson.get.hcursor
       .downField("metaData")
       .downField("additionalFields")
       .downField("properties")
-      .get[Boolean]("isDeprecated") shouldBe Right(false)
+      .get[String]("componentGroup") shouldBe Right("fragments")
   }
 
-  it should "leave isDeprecated unchanged if present" in {
+  it should "leave componentGroup unchanged if present" in {
     val rawJsonString =
       """
         |{
@@ -44,7 +44,7 @@ class V1_054__FragmentIsDeprecatedPropertyMigrationSpec extends AnyFlatSpec with
         |    "id": "empty-2",
         |    "additionalFields": {
         |       "properties": {
-        |         "isDeprecated": true
+        |         "componentGroup": "custom"
         |       }
         |     },
         |    "typeSpecificData": {
@@ -57,14 +57,14 @@ class V1_054__FragmentIsDeprecatedPropertyMigrationSpec extends AnyFlatSpec with
 
     val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
 
-    val migratedJson = V1_054__FragmentAddIsDeprecatedProperty.migrateMetadata(oldJson)
+    val migratedJson = V1_054__FragmentAddComponentGroupProperty.migrateMetadata(oldJson)
 
     migratedJson shouldBe defined
     migratedJson.get.hcursor
       .downField("metaData")
       .downField("additionalFields")
       .downField("properties")
-      .get[Boolean]("isDeprecated") shouldBe Right(true)
+      .get[String]("componentGroup") shouldBe Right("custom")
   }
 
 }
