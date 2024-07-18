@@ -54,7 +54,7 @@ export function Properties({
                     propertyConfig={propConfig}
                     errors={errors}
                     onChange={setProperty}
-                    renderFieldLabel={() => <FieldLabel title={propName} label={propConfig.label} hintText={propConfig.hintText} />}
+                    renderFieldLabel={() => <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />}
                     editedNode={node}
                     readOnly={!isEditMode}
                 />
