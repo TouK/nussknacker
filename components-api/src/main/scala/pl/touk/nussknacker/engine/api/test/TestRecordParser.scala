@@ -2,6 +2,6 @@ package pl.touk.nussknacker.engine.api.test
 
 trait TestRecordParser[+T] {
 
-  def parse(testRecord: TestRecord): T
+  def parse(testRecords: List[TestRecord]): List[T]
 
 }

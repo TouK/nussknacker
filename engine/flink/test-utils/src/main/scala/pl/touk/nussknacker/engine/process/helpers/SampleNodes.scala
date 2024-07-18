@@ -885,8 +885,10 @@ object SampleNodes {
           elementsValue.map(e => TestRecord(Json.fromString(e)))
         )
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+          }
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
       }
@@ -1015,7 +1017,7 @@ object SampleNodes {
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
 
-    override def parse(testRecord: TestRecord): SimpleRecord = {
+    override def parse(testRecords: List[TestRecord]) = testRecords.map { testRecord =>
       val parts = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
       SimpleRecord(
         parts(0),
@@ -1043,9 +1045,10 @@ object SampleNodes {
     new CollectionSource[SimpleJsonRecord](List(), None, Typed[SimpleJsonRecord])
       with FlinkSourceTestSupport[SimpleJsonRecord] {
 
-      override def testRecordParser: TestRecordParser[SimpleJsonRecord] = (testRecord: TestRecord) => {
-        CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
-      }
+      override def testRecordParser: TestRecordParser[SimpleJsonRecord] = (testRecords: List[TestRecord]) =>
+        testRecords.map { testRecord =>
+          CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
+        }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
     }
@@ -1063,9 +1066,10 @@ object SampleNodes {
         with FlinkSourceTestSupport[TypedMap]
         with ReturningType {
 
-        override def testRecordParser: TestRecordParser[TypedMap] = (testRecord: TestRecord) => {
-          TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
-        }
+        override def testRecordParser: TestRecordParser[TypedMap] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
+          }
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 

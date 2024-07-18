@@ -38,7 +38,7 @@ class KafkaSourceFactorySpec
   ): List[AnyRef] = {
     val source   = createSource(sourceFactory, topic)
     val testData = source.generateTestData(numberOfMessages)
-    testData.testRecords.map(source.testRecordParser.parse)
+    source.testRecordParser.parse(testData.testRecords)
   }
 
   private def createSource[K, V](

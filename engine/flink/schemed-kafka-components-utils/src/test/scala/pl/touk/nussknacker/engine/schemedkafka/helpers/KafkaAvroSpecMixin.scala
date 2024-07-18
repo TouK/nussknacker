@@ -301,7 +301,7 @@ trait KafkaAvroSpecMixin
         val testData = source.generateTestData(1)
         info("test object: " + testData)
         val deserializedObj =
-          source.testRecordParser.parse(testData.testRecords.head).asInstanceOf[ConsumerRecord[Any, Any]]
+          source.testRecordParser.parse(testData.testRecords).head.asInstanceOf[ConsumerRecord[Any, Any]]
 
         deserializedObj.key() shouldEqual givenKey
         deserializedObj.value() shouldEqual givenValue
