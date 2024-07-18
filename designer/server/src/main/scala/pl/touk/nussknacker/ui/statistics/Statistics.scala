@@ -2,10 +2,13 @@ package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.ui.statistics.Encryption.getSymmetricKey
+import pl.touk.nussknacker.ui.statistics.Encryption.EncryptionTypes.{AES, RSA}
 import pl.touk.nussknacker.ui.util.IterableExtensions.Chunked
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 import scala.util.{Failure, Success, Try}
 
 sealed trait Statistics {
@@ -23,6 +26,9 @@ object Statistics extends LazyLogging {
       encodeQueryParam(RequestIdStat.name -> requestId.value)
     )
 
+    private val encryptedQueryParam = "encrypted="
+    private val keyQueryParam       = "&key="
+
     override def prepareURLs(cfg: StatisticUrlConfig): Either[StatisticError, List[URL]] =
       rawStatistics.toList
         // Sorting for purpose of easier testing
@@ -38,10 +44,25 @@ object Statistics extends LazyLogging {
     private def prepareUrlString(queryParams: Iterable[String], cfg: StatisticUrlConfig): Option[String] = {
       if (queryParams.nonEmpty) {
         val queryParamsWithFingerprint = queryParams ++ queryParamsForEveryURL
-        Some(queryParamsWithFingerprint.mkString(cfg.nuStatsUrl, cfg.queryParamsSeparator, cfg.emptyString))
+        val queryParamsString =
+          queryParamsWithFingerprint.mkString(cfg.emptyString, cfg.queryParamsSeparator, cfg.emptyString)
+
+        if (cfg.encryptQueryParams) {
+          val encryptedQueryParams = encryptUrl(queryParamsString)
+          Some(cfg.nuStatsUrl ++ encryptedQueryParams)
+        } else {
+          Some(cfg.nuStatsUrl ++ queryParamsString)
+        }
       } else {
         None
       }
+    }
+
+    private def encryptUrl(url: String): String = {
+      val encryptedQueryParams = Encryption.encode(url, AES)
+      val encryptedSecretKey   = Encryption.encode(Base64.getEncoder.encodeToString(getSymmetricKey.getEncoded), RSA)
+
+      encryptedQueryParam ++ encryptedQueryParams ++ keyQueryParam ++ encryptedSecretKey
     }
 
   }
