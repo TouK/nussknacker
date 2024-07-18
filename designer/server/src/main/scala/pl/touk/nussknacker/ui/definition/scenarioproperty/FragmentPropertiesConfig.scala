@@ -34,7 +34,7 @@ object FragmentPropertiesConfig {
       ),
       validators = Some(List(MandatoryParameterValidator)),
       label = Some("Component group"),
-      // TODO: add hint text after https://github.com/TouK/nussknacker/pull/6398 is merged
+      hintText = Some("Group of components in the Creator Panel in which this fragment will be available")
     )
 
   // TODO: We should probably allow to add some properties definition using configuration like in the scenario case
