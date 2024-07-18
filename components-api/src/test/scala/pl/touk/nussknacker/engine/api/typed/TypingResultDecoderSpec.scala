@@ -42,9 +42,22 @@ class TypingResultDecoderSpec
         Map("field1" -> Typed[String]),
         Typed.typedClass[Map[String, Any]],
         Map[String, AdditionalDataValue]("ad1" -> "aaa", "ad2" -> 22L, "ad3" -> true)
-      )
+      ),
+//      typedListWithElementValues(Typed[Int], List(1, 2, 3)),
+//      typedListWithElementValues(
+//        Typed.record(
+//          Map(
+//            "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1)
+//          )
+//        ),
+//        List(Map("a" -> 1).asJava)
+//      )
     ).foreach { typing =>
-      decoder.decodeTypingResults.decodeJson(TypeEncoders.typingResultEncoder(typing)).rightValue shouldBe typing
+      val encoded = TypeEncoders.typingResultEncoder(typing)
+      println(encoded.spaces4)
+      println()
+
+      decoder.decodeTypingResults.decodeJson(encoded).rightValue shouldBe typing
     }
 
   }

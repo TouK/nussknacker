@@ -257,10 +257,16 @@ object typing {
       cl
     }
 
-    def typedList[T](elementType: TypingResult, elements: List[T]): TypedObjectWithValue =
+    def typedListWithElementValues[T](elementType: TypingResult, elementValues: List[T]): TypedObjectWithValue =
+      typedListWithElementValues(elementType, elementValues.asJava)
+
+    def typedListWithElementValues[T](
+        elementType: TypingResult,
+        elementValues: java.util.List[T]
+    ): TypedObjectWithValue =
       TypedObjectWithValue(
         Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)),
-        elements.asJava
+        elementValues
       )
 
     private def toRuntime[T: ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
@@ -335,6 +341,16 @@ object typing {
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
           genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
+//        case list: List[_] => TODO
+//          typedListWithElementValues(
+//            genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list))),
+//            list
+//          )
+//        case javaList: java.util.List[_] => TODO
+//          typedListWithElementValues(
+//            genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList))),
+//            javaList
+//          )
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
         case other =>
           Typed(other.getClass) match {
