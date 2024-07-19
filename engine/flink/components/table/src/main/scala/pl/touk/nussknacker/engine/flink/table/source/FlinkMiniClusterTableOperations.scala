@@ -26,7 +26,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      implicit val env: TableEnvironment    = TableEnvironment.create(tableEnvConfig)
+      implicit val env: TableEnvironment    = MiniClusterEnvBuilder.buildTableEnv
       val (inputTableName, outputTableName) = generateTestDataTableNames
       createRandomDataGeneratorTable(amountOfRecordsToGenerate, schema, inputTableName)
       val outputFilePath = createTempFileTable(schema, outputTableName)
@@ -42,20 +42,17 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
 
   def parseTestRecords(records: List[TestRecord], schema: Schema): List[RECORD] =
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      implicit val env: StreamTableEnvironment = StreamTableEnvironment.create(
-        StreamExecutionEnvironment.createLocalEnvironment(streamEnvConfig),
-        tableEnvConfig
-      )
-      val (inputTableName, _) = generateTestDataTableNames
-      val inputTablePath      = createTempFileTable(schema, inputTableName)
-      Try {
+      implicit val env: StreamTableEnvironment = MiniClusterEnvBuilder.buildStreamTableEnv
+      val (inputTableName, _)                  = generateTestDataTableNames
+      val inputTablePath                       = createTempFileTable(schema, inputTableName)
+      val parsedRecords = Try {
         writeRecordsToFile(inputTablePath, records)
+        val inputTable   = env.from(inputTableName)
+        val streamOfRows = env.toDataStream(inputTable).executeAndCollect().asScala.toList
+        streamOfRows.map(rowToMap)
       }
-      val inputTable   = env.from(inputTableName)
-      val streamOfRows = env.toDataStream(inputTable).executeAndCollect().asScala.toList
-      val maps         = streamOfRows.map(rowToMap)
       cleanup(inputTablePath, List(inputTableName))
-      maps
+      parsedRecords.get
     }
 
   private def writeRecordsToFile(path: Path, records: List[TestRecord]): Unit = {
@@ -104,7 +101,8 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   )
 
   private def createTempFileTable(flinkTableSchema: Schema, tableName: String)(implicit env: TableEnvironment): Path = {
-    val tempDir = Files.createTempDirectory(tempTestDataOutputFilePrefix)
+    val tempTestDataOutputFilePrefix = "tableSourceDataDump-"
+    val tempDir                      = Files.createTempDirectory(tempTestDataOutputFilePrefix)
     logger.debug(s"Created temporary directory for dumping test data at: '${tempDir.toUri.toURL}'")
     env.createTemporaryTable(
       tableName,
@@ -147,28 +145,37 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
     s"testDataInputTable_$tableNameValidRandomValue" -> s"testDataOutputTable_$tableNameValidRandomValue"
   }
 
-  private val tempTestDataOutputFilePrefix = "tableSourceDataDump-"
+  private object MiniClusterEnvBuilder {
 
-  // TODO: how to get path of jar cleaner? Through config?
-  private val classPathUrlsForMiniClusterTestingEnv = List(
-    "components/flink-table/flinkTable.jar"
-  ).map(Path.of(_).toUri.toURL)
+    // TODO: how to get path of jar cleaner? Through config?
+    private val classPathUrlsForMiniClusterTestingEnv = List(
+      "components/flink-table/flinkTable.jar"
+    ).map(Path.of(_).toUri.toURL)
 
-  private val streamEnvConfig = {
-    val conf = new Configuration()
+    private val streamEnvConfig = {
+      val conf = new Configuration()
 
-    // parent-first - otherwise linkage error (loader constraint violation, a different class with the same name was
-    // previously loaded by 'app') for class 'org.apache.commons.math3.random.RandomDataGenerator'
-    conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
+      // parent-first - otherwise linkage error (loader constraint violation, a different class with the same name was
+      // previously loaded by 'app') for class 'org.apache.commons.math3.random.RandomDataGenerator'
+      conf.set(CoreOptions.CLASSLOADER_RESOLVE_ORDER, "parent-first")
 
-    // without this, on Flink taskmanager level the classloader is basically empty
-    conf.set(
-      PipelineOptions.CLASSPATHS,
-      classPathUrlsForMiniClusterTestingEnv.map(_.toString).asJava
+      // without this, on Flink taskmanager level the classloader is basically empty
+      conf.set(
+        PipelineOptions.CLASSPATHS,
+        classPathUrlsForMiniClusterTestingEnv.map(_.toString).asJava
+      )
+      conf.set(CoreOptions.DEFAULT_PARALLELISM, Int.box(1))
+    }
+
+    private val tableEnvConfig = EnvironmentSettings.newInstance().withConfiguration(streamEnvConfig).build()
+
+    def buildTableEnv: TableEnvironment = TableEnvironment.create(tableEnvConfig)
+
+    def buildStreamTableEnv: StreamTableEnvironment = StreamTableEnvironment.create(
+      StreamExecutionEnvironment.createLocalEnvironment(streamEnvConfig),
+      tableEnvConfig
     )
-    conf.set(CoreOptions.DEFAULT_PARALLELISM, Int.box(1))
-  }
 
-  private val tableEnvConfig = EnvironmentSettings.newInstance().withConfiguration(streamEnvConfig).build()
+  }
 
 }
