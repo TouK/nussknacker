@@ -4,7 +4,8 @@ import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
+import pl.touk.nussknacker.engine.api.typed.typing.{Unknown, _}
 
 class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
@@ -59,7 +60,7 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
   }
 
   test("should type empty list") {
-    Typed.fromInstance(Nil).canBeSubclassOf(Typed(classOf[List[_]])) shouldBe true
+    Typed.fromInstance(Nil).canBeSubclassOf(Typed(classOf[java.util.List[_]])) shouldBe true
     Typed.fromInstance(Nil.asJava).canBeSubclassOf(Typed(classOf[java.util.List[_]])) shouldBe true
   }
 
@@ -68,21 +69,29 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
       val typingResult = Typed.fromInstance(obj)
 
       typingResult.canBeSubclassOf(Typed(klass)) shouldBe true
-      typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(paramTypingResult) shouldBe true
+      typingResult.withoutValue
+        .asInstanceOf[TypedClass]
+        .params
+        .loneElement
+        .canBeSubclassOf(paramTypingResult) shouldBe true
     }
 
     def checkNotASubclassOfOtherParamTypingResult(obj: Any, otherParamTypingResult: TypingResult): Unit = {
       val typingResult = Typed.fromInstance(obj)
-      typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(otherParamTypingResult) shouldBe false
+      typingResult.withoutValue
+        .asInstanceOf[TypedClass]
+        .params
+        .loneElement
+        .canBeSubclassOf(otherParamTypingResult) shouldBe false
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)
-    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Number]))
+    checkTypingResult(listOfSimpleObjects, classOf[java.util.List[_]], Typed(classOf[Number]))
     checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps      = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
     val typedMapTypingResult = Typed.record(Map("a" -> Typed(classOf[Integer])))
-    checkTypingResult(listOfTypedMaps, classOf[List[_]], typedMapTypingResult)
+    checkTypingResult(listOfTypedMaps, classOf[java.util.List[_]], typedMapTypingResult)
     checkTypingResult(listOfTypedMaps.asJava, classOf[java.util.List[_]], typedMapTypingResult)
     checkNotASubclassOfOtherParamTypingResult(
       listOfTypedMaps,
@@ -99,11 +108,17 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
   }
 
   test("should find element type for lists of different elements") {
-    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.genericTypeClass(
-      classOf[List[_]],
-      List(Typed.typedClass[Number])
+    val numberList = List(4L, 6.35, 8.47)
+    Typed.fromInstance(numberList) shouldBe typedListWithElementValues(
+      Typed.typedClass[Double],
+      numberList
     )
-    Typed.fromInstance(List(3, "t")) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Unknown))
+
+    val anyList = List(3, "t")
+    Typed.fromInstance(anyList) shouldBe typedListWithElementValues(
+      Unknown,
+      anyList
+    )
   }
 
   test("should fallback to object's class") {

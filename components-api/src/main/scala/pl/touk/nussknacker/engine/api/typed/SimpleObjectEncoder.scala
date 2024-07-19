@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import io.circe.Json.{fromBigDecimal, fromBigInt, fromBoolean, fromDouble, fromFloat, fromInt, fromLong, fromString}
 import io.circe.{ACursor, Decoder, DecodingFailure, Json}
@@ -41,10 +41,13 @@ object SimpleObjectEncoder {
       val encodedValues = vals.asScala.map(elem => encodeValue(elem)).toList.sequence
       encodedValues.map(values => Json.fromValues(values))
     case vals: java.util.Map[_, _] =>
-      val encodedMap = vals.asScala
+      val encodedMap: Validated[NonEmptyList[String], List[(String, Json)]] = vals.asScala
         .map { case (key, value) =>
           encodeValue(key).andThen(encodedKey =>
-            encodeValue(value).map(encodedValue => encodedKey.asString.get /* FIXME */ -> encodedValue)
+            encodedKey.asString match {
+              case Some(encodedKeyString) => encodeValue(value).map(encodedValue => encodedKeyString -> encodedValue)
+              case None                   => s"Failed to encode Record key '$encodedKey' as String".invalidNel
+            }
           )
         }
         .toList
@@ -85,7 +88,7 @@ object SimpleObjectEncoder {
             case None =>
               Left(
                 DecodingFailure(
-                  s"Record field '$fieldName' isn't present in know Record fields: ${record.fields}",
+                  s"Record field '$fieldName' isn't present in known Record fields: ${record.fields}",
                   List()
                 )
               )
