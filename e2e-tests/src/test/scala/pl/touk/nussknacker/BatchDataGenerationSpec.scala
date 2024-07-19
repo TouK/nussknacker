@@ -27,11 +27,13 @@ class BatchDataGenerationSpec
 
   private val designerServiceUrl = "http://localhost:8080"
 
+  override def beforeAll(): Unit = {
+    createBatchScenario(simpleBatchTableScenario.name.value)
+    super.beforeAll()
+  }
+
   "Generate file endpoint should generate records with randomized values for scenario with table source" in {
     given()
-      .applicationState(
-        createBatchScenario(simpleBatchTableScenario.name.value)
-      )
       .when()
       .request()
       .basicAuthAdmin()
@@ -52,6 +54,143 @@ class BatchDataGenerationSpec
              |   }
              |}
              |""".stripMargin)
+      )
+  }
+
+  "Test on generated data endpoint should return results and counts for scenario with table source" in {
+    given()
+      .when()
+      .request()
+      .basicAuthAdmin()
+      .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
+      .post(
+        s"$designerServiceUrl/api/processManagement/generateAndTest/${simpleBatchTableScenario.name.value}/1"
+      )
+      .Then()
+      .statusCode(200)
+      .body(
+        matchJsonWithRegexValues(s"""{
+             |  "results": {
+             |    "nodeResults": {
+             |      "sourceId": [
+             |        {
+             |          "id": "SumTransactions-sourceId-0-0",
+             |          "variables": {
+             |            "input": {
+             |              "pretty": {
+             |                 "datetime": "${regexes.localDateTimeRegex}",
+             |                 "client_id": "[a-z\\\\d]{100}",
+             |                 "amount": "${regexes.decimalRegex}"
+             |              }
+             |            }
+             |          }
+             |        }
+             |      ],
+             |      "end": [
+             |        {
+             |          "id": "SumTransactions-sourceId-0-0",
+             |          "variables": {
+             |            "input": {
+             |              "pretty": {
+             |                 "datetime": "${regexes.localDateTimeRegex}",
+             |                 "client_id": "[a-z\\\\d]{100}",
+             |                 "amount": "${regexes.decimalRegex}"
+             |              }
+             |            }
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "invocationResults": {},
+             |    "externalInvocationResults": {},
+             |    "exceptions": []
+             |  },
+             |  "counts": {
+             |      "sourceId": {
+             |        "all": 1,
+             |        "errors": 0,
+             |        "fragmentCounts": {}
+             |      },
+             |      "end": {
+             |        "all": 1,
+             |        "errors": 0,
+             |        "fragmentCounts": {}
+             |      }
+             |  }
+             |}""".stripMargin)
+      )
+  }
+
+  "Test from file endpoint should return results and counts for scenario with table source" in {
+    given()
+      .when()
+      .request()
+      .basicAuthAdmin()
+      .multiPart(
+        "scenarioGraph",
+        toScenarioGraph(simpleBatchTableScenario).asJson.spaces2,
+        "application/json"
+      )
+      .multiPart(
+        "testData",
+        """{"sourceId":"sourceId","record":{"datetime":"2024-07-19 08:56:08.485","client_id":"aClientId","amount":123123.12}}""",
+        "text/ plain"
+      )
+      .post(
+        s"$designerServiceUrl/api/processManagement/test/${simpleBatchTableScenario.name.value}"
+      )
+      .Then()
+      .statusCode(200)
+      .body(
+        matchJsonWithRegexValues(s"""{
+             |  "results": {
+             |    "nodeResults": {
+             |      "sourceId": [
+             |        {
+             |          "id": "SumTransactions-sourceId-0-0",
+             |          "variables": {
+             |            "input": {
+             |              "pretty": {
+             |                 "datetime": "2024-07-19T08:56:08.485",
+             |                 "client_id": "aClientId",
+             |                 "amount": "123123.12"
+             |              }
+             |            }
+             |          }
+             |        }
+             |      ],
+             |      "end": [
+             |        {
+             |          "id": "SumTransactions-sourceId-0-0",
+             |          "variables": {
+             |            "input": {
+             |              "pretty": {
+             |                 "datetime": "2024-07-19T08:56:08.485",
+             |                 "client_id": "aClientId",
+             |                 "amount": "123123.12"
+             |              }
+             |            }
+             |          }
+             |        }
+             |      ]
+             |    },
+             |    "invocationResults": {},
+             |    "externalInvocationResults": {},
+             |    "exceptions": []
+             |  },
+             |  "counts": {
+             |      "sourceId": {
+             |        "all": 1,
+             |        "errors": 0,
+             |        "fragmentCounts": {}
+             |      },
+             |      "end": {
+             |        "all": 1,
+             |        "errors": 0,
+             |        "fragmentCounts": {}
+             |      }
+             |  }
+             |}""".stripMargin)
       )
   }
 
