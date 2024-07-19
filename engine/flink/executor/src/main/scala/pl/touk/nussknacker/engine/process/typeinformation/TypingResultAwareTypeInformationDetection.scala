@@ -71,7 +71,9 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
         additionalTypeInfoDeterminer.apply(a)
-      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 => // todo
+      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 =>
+        new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
+      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 =>
         new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
       case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 =>
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](a.params.head), forType[AnyRef](a.params.last))
@@ -88,6 +90,8 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
       case a: SingleTypingResult if a.objType.params.isEmpty =>
         TypeInformation.of(a.objType.klass)
       // TODO: how can we handle union - at least of some types?
+      case TypedObjectWithValue(tc: TypedClass, _) =>
+        forType(tc)
       case _ =>
         fallback[Any]
     }).asInstanceOf[TypeInformation[T]]

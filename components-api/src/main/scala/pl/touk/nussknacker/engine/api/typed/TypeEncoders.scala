@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json._
 import io.circe._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
@@ -13,7 +15,7 @@ import scala.util.{Failure, Success, Try}
 //TODO: refactor way of encoding to easier handle decoding.
 
 // If changes are made to Encoders/Decoders should also change Schemas in NodesApiEndpoints.TypingDtoSchemas for OpenApi
-object TypeEncoders {
+object TypeEncoders extends LazyLogging {
 
   private[typed] val typeField = "type"
 
@@ -68,14 +70,15 @@ object TypeEncoders {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, value) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded: Option[Json] = SimpleObjectEncoder
-        .encode(underlying, value)
-        .map(Some(_))
-        .getOrElse(None)
+      val dataEncoded = SimpleObjectEncoder
+        .encodeValue(value)
 
       dataEncoded match {
-        case Some(value) => objTypeEncoded.+:("value" -> value)
-        case None        => objTypeEncoded
+        case Valid(value) =>
+          objTypeEncoded.+:("value" -> value)
+        case Invalid(e) =>
+          logger.warn(s"Failed value encoding: $e")
+          objTypeEncoded
       }
     case cl: TypedClass => encodeTypedClass(cl)
   }
@@ -99,7 +102,7 @@ object TypeEncoders {
   Primitives can be handled by ClassUtils from spring, but we don't want to have explicit dependency in this module
   See NodeResources in UI for usage
  */
-class TypingResultDecoder(loadClass: String => Class[_]) {
+class TypingResultDecoder(loadClass: String => Class[_]) extends LazyLogging {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].flatMap {
@@ -134,9 +137,11 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
-    value = SimpleObjectEncoder.decode(valueClass, obj.downField("value"))
+    value = SimpleObjectEncoder.decodeValue(valueClass, obj.downField("value"))
   } yield value match {
-    case Left(_)      => valueClass // TODO
+    case Left(e) =>
+      logger.warn(s"Failed value decoding: $e")
+      valueClass
     case Right(value) => TypedObjectWithValue(valueClass, value)
   }
 
