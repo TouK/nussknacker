@@ -84,14 +84,11 @@ class TableSource(
 
   override def typeInformation: TypeInformation[RECORD] = TypeInformation.of(classOf[RECORD])
 
-  private lazy val recordParser = new FlinkMiniClusterRecordParser(tableDefinition.toFlinkSchema)
-
   override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
-    recordParser.parse(testRecords)
+    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
 
-  private lazy val dataGenerator = new FlinkMiniClusterDataGenerator(tableDefinition.toFlinkSchema)
-
-  override def generateTestData(size: Int): TestData = dataGenerator.generateTestData(size)
+  override def generateTestData(size: Int): TestData =
+    FlinkMiniClusterTableOperations.generateTestData(size, tableDefinition.toFlinkSchema)
 }
 
 object TableSource {
