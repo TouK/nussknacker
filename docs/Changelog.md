@@ -12,7 +12,7 @@
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 * [#6269](https://github.com/TouK/nussknacker/pull/6269) SpEL expression validator now works with values that are lists or maps.
   * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
-* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to EagerServiceWithStaticParamers. returnType
+* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
 
 1.16.1 (16 July 2024)
 -------------------------
