@@ -13,16 +13,19 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
 
-class FingerprintService(fingerprintRepository: FingerprintRepository[DB])(
+class FingerprintService(fingerprintRepository: FingerprintRepository[DB], fingerprintFileName: FileName)(
     implicit ec: ExecutionContext,
     dbioRunner: DBIOActionRunner
 ) extends LazyLogging
     with DBIOActionExtensions {
 
-  def fingerprint(
-      config: UsageStatisticsReportsConfig,
-      fingerprintFileName: FileName
-  ): Future[Either[StatisticError, Fingerprint]] = {
+  def this(
+      fingerprintRepository: FingerprintRepository[DB]
+  )(implicit ec: ExecutionContext, dbioRunner: DBIOActionRunner) = {
+    this(fingerprintRepository, new FileName("nussknacker.fingerprint"))(ec, dbioRunner)
+  }
+
+  def fingerprint(config: UsageStatisticsReportsConfig): Future[Either[StatisticError, Fingerprint]] = {
     // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
     // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
     config.fingerprint.filterNot(_.isBlank) match {
