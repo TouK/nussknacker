@@ -9,6 +9,7 @@
   can be customized using env `AUTHENTICATION_REALM` (its default value "nussknacker" remains un changed)
 * [6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
   provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
+* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
 
 1.16.0 (11 July 2024)
 -------------------------

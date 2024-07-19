@@ -1774,7 +1774,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     override def returnType(
         validationContext: ValidationContext,
         parameters: Map[ParameterName, DefinedSingleParameter]
-    ): ValidatedNel[ProcessCompilationError, TypingResult] = {
+    )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, TypingResult] = {
       Valid(
         parameters
           .get(ParameterName("definition"))

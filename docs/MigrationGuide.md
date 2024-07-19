@@ -2,6 +2,13 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.17.0 (Not released yet)
+
+### Code API changes
+
+* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+    * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+
 ## In version 1.16.0 (Not released yet)
 
 ### Code API changes
