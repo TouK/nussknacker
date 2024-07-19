@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import scala.reflect.runtime.universe._
 
 class TestDataPreparer(
     classloader: ClassLoader,
