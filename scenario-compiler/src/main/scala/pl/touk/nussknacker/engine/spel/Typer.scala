@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedList
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.definition.globalvariables.ExpressionConfigDefinition
@@ -226,7 +225,6 @@ private[spel] class Typer(
         // TODO: how to handle other cases?
         case TypedNull =>
           invalidNodeResult(IllegalIndexingOperation)
-        case TypedObjectWithValue(underlying, _) => typeIndexer(e, underlying)
         case _ =>
           val w = validNodeResult(Unknown)
           if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
@@ -307,10 +305,8 @@ private[spel] class Typer(
           def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
-          val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
-          val childrenCombinedValue = children.flatMap(_.valueOpt)
-
-          valid(typedList(elementType, childrenCombinedValue))
+          val elementType = if (children.isEmpty) Unknown else children.reduce(getSupertype)
+          valid(Typed.genericTypeClass[java.util.List[_]](List(elementType)))
         }
 
       case e: InlineMap =>
@@ -425,8 +421,6 @@ private[spel] class Typer(
           elementType <- extractIterativeType(iterateType)
           result <- typeChildren(validationContext, node, current.pushOnStack(elementType)) {
             case result :: Nil =>
-              // Limitation: projection on an iterative type makes it loses it's known value,
-              // as properly determining it would require evaluating the projection expression for each element (likely working on the AST)
               valid(Typed.genericTypeClass[java.util.List[_]](List(result)))
             case other =>
               invalid(IllegalSelectionTypeError(other))
@@ -511,23 +505,7 @@ private[spel] class Typer(
       childElementType: TypingResult
   ) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
-
-    if (isSingleElementSelection)
-      childElementType
-    else {
-      // Limitation: selection from an iterative type makes it loses it's known value,
-      // as properly determining it would require evaluating the selection expression for each element (likely working on the AST)
-      parentType match {
-        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
-          tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.klass.isArray =>
-          tc.withoutValue
-        case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-          Typed.record(Map.empty)
-        case _ =>
-          parentType
-      }
-    }
+    if (isSingleElementSelection) childElementType else parentType
   }
 
   private def checkEqualityLikeOperation(

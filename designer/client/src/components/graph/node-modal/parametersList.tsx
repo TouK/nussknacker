@@ -1,50 +1,26 @@
-import { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
-import { ParameterExpressionField } from "./ParameterExpressionField";
+import { Parameter } from "../../../types";
+import { ParameterExpressionField, ParameterExpressionFieldProps } from "./ParameterExpressionField";
 import React from "react";
 
-interface ParametersListProps {
-    parameters: Parameter[];
-    node: NodeType;
-    errors: NodeValidationError[];
-    findAvailableVariables: (nodeId: NodeId, parameterDefinition?: UIParameter) => VariableTypes;
-    isEditMode?: boolean;
-    getListFieldPath: (index: number) => string;
-    parameterDefinitions: UIParameter[];
-    renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
-    showSwitch?: boolean;
-    showValidation?: boolean;
-}
+type ParametersListItemProps = Omit<ParameterExpressionFieldProps, "listFieldPath" | "parameter">;
 
-export const ParametersList = ({
-    parameters = [],
-    node,
-    errors,
-    findAvailableVariables,
-    isEditMode,
-    getListFieldPath,
-    parameterDefinitions,
-    renderFieldLabel,
-    setProperty,
-    showSwitch,
-    showValidation,
-}: ParametersListProps) => (
-    <>
-        {parameters.map((param, index) => (
-            <ParameterExpressionField
-                key={node.id + param.name + index}
-                errors={errors}
-                findAvailableVariables={findAvailableVariables}
-                isEditMode={isEditMode}
-                listFieldPath={getListFieldPath(index)}
-                node={node}
-                parameter={param}
-                parameterDefinitions={parameterDefinitions}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                showSwitch={showSwitch}
-                showValidation={showValidation}
-            />
-        ))}
-    </>
-);
+export type ParametersListProps = ParametersListItemProps & {
+    parameters: Parameter[];
+    getListFieldPath: (index: number) => string;
+};
+
+export const ParametersList = ({ parameters = [], getListFieldPath, ...props }: ParametersListProps) => {
+    const { node } = props;
+    return (
+        <>
+            {parameters.map((param, index) => (
+                <ParameterExpressionField
+                    key={node.id + param.name + index}
+                    listFieldPath={getListFieldPath(index)}
+                    parameter={param}
+                    {...props}
+                />
+            ))}
+        </>
+    );
+};
