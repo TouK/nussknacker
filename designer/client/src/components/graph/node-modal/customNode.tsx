@@ -1,27 +1,13 @@
 import { NodeType, NodeValidationError, ProcessDefinitionData, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { useTestResults } from "./TestResultsWrapper";
-import React, { useMemo } from "react";
+import React, { PropsWithChildren, useMemo } from "react";
 import { IdField } from "./IdField";
 import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
-import NodeUtils from "../NodeUtils";
-import BranchParameters from "./BranchParameters";
 import { DescriptionField } from "./DescriptionField";
 import { ParametersList } from "./parametersList";
 
-export function JoinCustomNode({
-    errors,
-    findAvailableVariables,
-    isEditMode,
-    node,
-    parameterDefinitions,
-    processDefinitionData,
-    renderFieldLabel,
-    setProperty,
-    showSwitch,
-    showValidation,
-}: {
+export type CustomNodeProps = {
     errors: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
@@ -32,8 +18,21 @@ export function JoinCustomNode({
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
-}): JSX.Element {
-    const testResultsState = useTestResults();
+};
+
+export function CustomNode({
+    children,
+    errors,
+    findAvailableVariables,
+    isEditMode,
+    node,
+    parameterDefinitions,
+    processDefinitionData,
+    renderFieldLabel,
+    setProperty,
+    showSwitch,
+    showValidation,
+}: PropsWithChildren<CustomNodeProps>): JSX.Element {
     const hasOutputVar = useMemo(
         (): boolean => !!ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
         [node, processDefinitionData.components],
@@ -61,19 +60,7 @@ export function JoinCustomNode({
                     errors={errors}
                 />
             )}
-            {NodeUtils.nodeIsJoin(node) && (
-                <BranchParameters
-                    node={node}
-                    showValidation={showValidation}
-                    showSwitch={showSwitch}
-                    isEditMode={isEditMode}
-                    errors={errors || []}
-                    parameterDefinitions={parameterDefinitions}
-                    setNodeDataAt={setProperty}
-                    testResultsToShow={testResultsState.testResultsToShow}
-                    findAvailableVariables={findAvailableVariables}
-                />
-            )}
+            {children}
             <ParametersList
                 parameters={node.parameters}
                 showSwitch={showSwitch}
