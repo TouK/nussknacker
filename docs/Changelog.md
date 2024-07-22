@@ -11,6 +11,7 @@
   provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+* [#6333](https://github.com/TouK/nussknacker/pull/6333) Test data generation: more meaningful error message when no data to generate
 * [#6386](https://github.com/TouK/nussknacker/pull/6386) Security fix for situation where array constructor could be 
   used to execute unallowed expressions by exploiting the lack of full validation inside array dimensions. 
   * Array constructor expressions are now illegal.

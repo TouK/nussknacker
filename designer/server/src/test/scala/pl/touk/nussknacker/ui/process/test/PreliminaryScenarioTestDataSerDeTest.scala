@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.test
 
+import cats.data.NonEmptyList
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -21,13 +22,13 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   )
 
   private val scenarioTestData = PreliminaryScenarioTestData(
-    List(
+    NonEmptyList(
       PreliminaryScenarioTestRecord.Standard(
         "source1",
         Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
         timestamp = Some(24L)
       ),
-      PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")),
+      PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")) :: Nil
     )
   )
 
@@ -43,7 +44,9 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
 
   test("should fail trying to serialize too much bytes") {
     val testData = PreliminaryScenarioTestData(
-      List.fill(10)(PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a JSON string")))
+      NonEmptyList.fromListUnsafe(
+        List.fill(10)(PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a JSON string")))
+      )
     )
 
     val error = serDe.serialize(testData).leftValue
