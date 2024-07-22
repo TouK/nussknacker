@@ -61,6 +61,11 @@ trait BoundedStreamComponent { self: Component =>
     AllowedProcessingModes.SetOf(ProcessingMode.BoundedStream)
 }
 
+trait StreamComponent { self: Component =>
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
+}
+
 trait RequestResponseComponent { self: Component =>
   override def allowedProcessingModes: AllowedProcessingModes =
     AllowedProcessingModes.SetOf(ProcessingMode.RequestResponse)
