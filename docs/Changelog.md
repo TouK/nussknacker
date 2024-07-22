@@ -5,13 +5,11 @@
 * [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
 * [#6282](https://github.com/TouK/nussknacker/pull/6184) From now on, the existence of Kafka topics used in Sources and/or 
   Sinks will always be validated. (`topicsExistenceValidationConfig.enabled` default was changed from `false` to `true`)
-* [#6384](https://github.com/TouK/nussknacker/pull/6384) Value of [Realm](https://datatracker.ietf.org/doc/html/rfc2617#section-1.2) 
+* [6384](https://github.com/TouK/nussknacker/pull/6384) Value of [Realm](https://datatracker.ietf.org/doc/html/rfc2617#section-1.2) 
   can be customized using env `AUTHENTICATION_REALM` (its default value "nussknacker" remains un changed)
-* [#6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
+* [6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
   provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
-* [#6269](https://github.com/TouK/nussknacker/pull/6269) SpEL expression validator now works with values that are lists or maps.
-  * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
 
 1.16.1 (16 July 2024)
