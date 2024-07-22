@@ -14,7 +14,6 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
 ) {
     const { variant } = useContext(ToolbarButtonsContext);
     const { palette } = useTheme();
-    throw new Error("my test error123");
     const margin = 2;
     const width = (variant === ButtonsVariant.small ? PANEL_BUTTON_SMALL_SIZE : PANEL_BUTTON_SIZE) - 2 * margin;
     const styles = css({
