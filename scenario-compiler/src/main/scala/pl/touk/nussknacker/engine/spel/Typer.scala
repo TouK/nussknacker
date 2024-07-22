@@ -263,10 +263,7 @@ private[spel] class Typer(
           val typingResult = classToUse.flatMap(kl => classDefinitionSet.get(kl).map(_.clazzName))
           typingResult match {
             case Some(tc @ TypedClass(_, _)) =>
-              val dimensionsField = e.getClass.getDeclaredField("isArrayConstructor")
-              dimensionsField.setAccessible(true)
-              val isArrayConstructor: Boolean = dimensionsField.get(e).asInstanceOf[Boolean]
-              if (isArrayConstructor) {
+              if (isArrayConstructor(e)) {
                 invalid(ArrayConstructorError)
               } else {
                 valid(tc)
@@ -506,6 +503,12 @@ private[spel] class Typer(
   ) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
     if (isSingleElementSelection) childElementType else parentType
+  }
+
+  private def isArrayConstructor(constructorReference: ConstructorReference): Boolean = {
+    val dimensionsField = constructorReference.getClass.getDeclaredField("isArrayConstructor")
+    dimensionsField.setAccessible(true)
+    dimensionsField.get(constructorReference).asInstanceOf[Boolean]
   }
 
   private def checkEqualityLikeOperation(
