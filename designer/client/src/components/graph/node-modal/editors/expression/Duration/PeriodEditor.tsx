@@ -7,7 +7,6 @@ import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
 import { ExtendedEditor } from "../Editor";
 import { FieldError } from "../../Validators";
-import { TimeRange } from "./TimeRangeComponent";
 
 export type Period = {
     years: number;
@@ -69,7 +68,7 @@ export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
             encode={encode}
             decode={decode}
             onValueChange={onValueChange}
-            editorConfig={{ ...editorConfig }}
+            editorConfig={editorConfig}
             readOnly={readOnly}
             showValidation={showValidation}
             fieldErrors={fieldErrors}
