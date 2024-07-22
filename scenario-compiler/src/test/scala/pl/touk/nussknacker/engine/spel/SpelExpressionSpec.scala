@@ -360,8 +360,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("invoke list variable reference with different concrete type after compilation") {
     def contextWithList(value: Any) = ctx.withVariable("list", value)
-
-    val expr = parse[Any]("#list", contextWithList(Collections.emptyList())).validExpression
+    val expr                        = parse[Any]("#list", contextWithList(Collections.emptyList())).validExpression
 
     // first run - nothing happens, we bump the counter
     expr.evaluateSync[Any](contextWithList(null))
@@ -1248,8 +1247,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should not validate array constructor") {
-    List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]").map(illegalExpr =>
-      parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
+    List("new String[]", "new String[ ]", "new String[0]", "new String[#invalidRef]", "new String[invalidSyntax]").map(
+      illegalExpr => parse[Any](illegalExpr, ctx).invalidValue shouldBe NonEmptyList.one(ArrayConstructorError)
     )
   }
 
