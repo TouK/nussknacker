@@ -1,26 +1,30 @@
 import { useTestResults } from "./TestResultsWrapper";
 import ExpressionField from "./editors/expression/ExpressionField";
 import { findParamDefinitionByName } from "./FieldLabel";
-import React, { useMemo } from "react";
-import { NodeType, NodeValidationError, Parameter, UIParameter } from "../../../types";
-import ProcessUtils from "../../../common/ProcessUtils";
+import React, { ComponentType, PropsWithChildren, useMemo } from "react";
+import { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
 
-interface ParameterExpressionField {
-    errors: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
-    isEditMode?: boolean;
+export type FieldWrapperProps = PropsWithChildren<Omit<ParameterExpressionFieldProps, "FieldWrapper">>;
+
+export type ParameterExpressionFieldProps = {
     listFieldPath: string;
-    node: NodeType;
     parameter: Parameter;
+
+    FieldWrapper?: ComponentType<FieldWrapperProps>;
+    errors: NodeValidationError[];
+    findAvailableVariables?: (nodeId: NodeId, parameterDefinition?: UIParameter) => VariableTypes;
+    isEditMode?: boolean;
+    node: NodeType;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
-}
+};
+
 //this is for "dynamic" parameters in sources, sinks, services etc.
-export function ParameterExpressionField(props: ParameterExpressionField): JSX.Element {
+export function ParameterExpressionField({ FieldWrapper = React.Fragment, ...props }: ParameterExpressionFieldProps): JSX.Element {
     const {
         errors,
         findAvailableVariables,
@@ -47,20 +51,22 @@ export function ParameterExpressionField(props: ParameterExpressionField): JSX.E
     );
 
     return (
-        <ExpressionField
-            fieldName={parameter.name}
-            fieldLabel={parameter.name}
-            exprPath={`${listFieldPath}.${expressionProperty}`}
-            isEditMode={isEditMode}
-            editedNode={node}
-            showValidation={showValidation}
-            showSwitch={showSwitch}
-            parameterDefinition={findParamDefinitionByName(parameterDefinitions, parameter.name)}
-            setNodeDataAt={setProperty}
-            testResultsToShow={testResultsState.testResultsToShow}
-            renderFieldLabel={renderFieldLabel}
-            variableTypes={variableTypes}
-            fieldErrors={getValidationErrorsForField(errors, parameter.name)}
-        />
+        <FieldWrapper {...props}>
+            <ExpressionField
+                fieldName={parameter.name}
+                fieldLabel={parameter.name}
+                exprPath={`${listFieldPath}.${expressionProperty}`}
+                isEditMode={isEditMode}
+                editedNode={node}
+                showValidation={showValidation}
+                showSwitch={showSwitch}
+                parameterDefinition={findParamDefinitionByName(parameterDefinitions, parameter.name)}
+                setNodeDataAt={setProperty}
+                testResultsToShow={testResultsState.testResultsToShow}
+                renderFieldLabel={renderFieldLabel}
+                variableTypes={variableTypes}
+                fieldErrors={getValidationErrorsForField(errors, parameter.name)}
+            />
+        </FieldWrapper>
     );
 }

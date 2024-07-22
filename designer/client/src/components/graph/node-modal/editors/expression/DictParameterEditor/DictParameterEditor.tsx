@@ -5,7 +5,7 @@ import { getScenario } from "../../../../../../reducers/selectors/graph";
 import { useSelector } from "react-redux";
 import { debounce } from "@mui/material/utils";
 import { ExtendedEditor } from "../Editor";
-import { ExpressionObj } from "../types";
+import { ExpressionLang, ExpressionObj } from "../types";
 import { FieldError } from "../../Validators";
 import { ParamType } from "../../types";
 import { NodeInput } from "../../../../../FormElements";
@@ -44,7 +44,8 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
             return null;
         }
 
-        return tryParseOrNull(expressionObj.expression);
+        const parseObject = tryParseOrNull(expressionObj.expression);
+        return typeof parseObject === "object" ? parseObject : null;
     });
     const [inputValue, setInputValue] = useState("");
     const [isFetching, setIsFetching] = useState(false);
@@ -128,11 +129,17 @@ export const DictParameterEditor: ExtendedEditor<Props> = ({
     );
 };
 
-const isParseable = (expression: ExpressionObj): boolean => {
-    return tryParseOrNull(expression.expression);
-};
+const isParseable = (expressionObj: ExpressionObj) =>
+    tryParseOrNull(expressionObj.expression) && typeof tryParseOrNull(expressionObj.expression) === "object";
 
 DictParameterEditor.switchableToHint = () => i18next.t("editors.dictParameter.switchableToHint", "Switch to basic mode");
-DictParameterEditor.notSwitchableToHint = () =>
-    i18next.t("editors.dictParameter.notSwitchableToHint", "Expression must be valid JSON to switch to basic mode");
-DictParameterEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);
+DictParameterEditor.notSwitchableToHint = () => i18next.t("editors.dictParameter.notSwitchableToHint", "");
+DictParameterEditor.isSwitchableTo = () => true;
+DictParameterEditor.getExpressionMode = (expressionObj) => ({
+    language: ExpressionLang.SpEL,
+    expression: isParseable(expressionObj) ? "" : expressionObj.expression,
+});
+DictParameterEditor.getBasicMode = (expressionObj) => ({
+    language: ExpressionLang.DictKeyWithLabel,
+    expression: isParseable(expressionObj) ? expressionObj.expression : "",
+});
