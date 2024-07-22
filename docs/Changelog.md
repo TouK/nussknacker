@@ -12,6 +12,8 @@
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
 * [#6333](https://github.com/TouK/nussknacker/pull/6333) Test data generation: more meaningful error message when no data to generate
+* [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
+  increased from `500ms` to `10s` to avoid scenario starting problems
 
 1.16.1 (16 July 2024)
 -------------------------
