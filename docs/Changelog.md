@@ -15,6 +15,8 @@
 * [#6386](https://github.com/TouK/nussknacker/pull/6386) Security fix for situation where array constructor could be 
   used to execute unallowed expressions by exploiting the lack of full validation inside array dimensions. 
   * Array constructor expressions are now illegal.
+* [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
+  increased from `500ms` to `10s` to avoid scenario starting problems
 
 1.16.1 (16 July 2024)
 -------------------------
