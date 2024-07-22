@@ -41,6 +41,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       |    `tinyInt`             TINYINT,
       |    `smallInt`            SMALLINT,
       |    `int`                 INT,
+      |    `bigint`              BIGINT,
       |    `float`               FLOAT,
       |    `double`              DOUBLE,
       |    `decimal`             DECIMAL,
@@ -127,6 +128,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
         "123," +
         "123," +
         "123," +
+        "123," +
         "123.12," +
         "123.12," +
         "1," +
@@ -141,7 +143,8 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
         |  tinyInt: $spelByte,
         |  smallInt: $spelShort,
         |  int: $spelInt,
-        |  decimal: $spelDecimal,
+        |  bigint: $spelLong,
+        |  decimal: $spelBigDecimal,
         |  float:  $spelFloat,
         |  double: $spelDouble,
         |  date: $spelLocalDate,
