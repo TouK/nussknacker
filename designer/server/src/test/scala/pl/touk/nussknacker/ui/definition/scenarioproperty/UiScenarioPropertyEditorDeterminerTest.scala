@@ -15,7 +15,7 @@ class UiScenarioPropertyEditorDeterminerTest extends AnyFunSuite with Matchers {
     val configured = FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))
 
     val determined =
-      UiScenarioPropertyEditorDeterminer.determine(ScenarioPropertyConfig(None, Some(configured), None, None))
+      UiScenarioPropertyEditorDeterminer.determine(ScenarioPropertyConfig(None, Some(configured), None, None, None))
 
     determined shouldBe configured
   }

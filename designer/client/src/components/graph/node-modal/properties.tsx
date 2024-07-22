@@ -6,6 +6,7 @@ import { sortBy } from "lodash";
 import { IdField } from "./IdField";
 import ScenarioProperty from "./ScenarioProperty";
 import { DescriptionField } from "./DescriptionField";
+import { FieldLabel } from "./FieldLabel";
 
 interface Props {
     isEditMode?: boolean;
@@ -16,6 +17,7 @@ interface Props {
     errors?: NodeValidationError[];
     showValidation?: boolean;
 }
+
 export function Properties({
     errors = [],
     isEditMode,
@@ -52,7 +54,7 @@ export function Properties({
                     propertyConfig={propConfig}
                     errors={errors}
                     onChange={setProperty}
-                    renderFieldLabel={renderFieldLabel}
+                    renderFieldLabel={() => <FieldLabel title={propConfig.label} label={propConfig.label} hintText={propConfig.hintText} />}
                     editedNode={node}
                     readOnly={!isEditMode}
                 />
