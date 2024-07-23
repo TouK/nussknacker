@@ -27,17 +27,23 @@ import scala.util.Try
 
 sealed trait ScenarioSpecificData extends TypeSpecificData
 
-case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
-  override def toMap: Map[String, String] = Map(FragmentSpecificData.docsUrlName -> docsUrl.getOrElse(""))
-  override def metaDataType: String       = FragmentSpecificData.typeName
+case class FragmentSpecificData(docsUrl: Option[String] = None, icon: Option[String] = Some("FragmentInput"))
+    extends TypeSpecificData {
+  override def toMap: Map[String, String] =
+    Map(FragmentSpecificData.docsUrlName -> docsUrl.getOrElse(""), FragmentSpecificData.iconName -> icon.getOrElse(""))
+  override def metaDataType: String = FragmentSpecificData.typeName
 }
 
 object FragmentSpecificData {
   val typeName    = "FragmentSpecificData"
   val docsUrlName = "docsUrl"
+  val iconName    = "icon"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
-    FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
+    FragmentSpecificData(
+      docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)),
+      icon = mapEmptyStringToNone(properties.get(iconName))
+    )
   }
 
 }

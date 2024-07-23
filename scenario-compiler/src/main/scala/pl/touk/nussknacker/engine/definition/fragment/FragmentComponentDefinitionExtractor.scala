@@ -30,9 +30,11 @@ class FragmentComponentDefinitionExtractor(
     FragmentGraphDefinitionExtractor.extractFragmentGraph(fragment).map { case (input, _, outputs) =>
       val parameters =
         parametersExtractor.extractFragmentParametersDefinition(input.parameters)(NodeId(input.id)).value
-      val outputNames = outputs.map(_.name).sorted
-      val docsUrl     = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-      val componentId = determineDesignerWideId(ComponentId(ComponentType.Fragment, fragment.name.value))
+      val outputNames          = outputs.map(_.name).sorted
+      val fragmentSpecificData = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData]
+      val docsUrl              = fragmentSpecificData.docsUrl
+      val icon                 = fragmentSpecificData.icon
+      val componentId          = determineDesignerWideId(ComponentId(ComponentType.Fragment, fragment.name.value))
 
       FragmentComponentDefinition(
         name = fragment.name.value,
@@ -40,6 +42,7 @@ class FragmentComponentDefinitionExtractor(
         parameters = parameters,
         outputNames = outputNames,
         docsUrl = docsUrl,
+        icon = icon,
         translateGroupName = translateGroupName,
         designerWideId = componentId,
         allowedProcessingModes = allowedProcessingModes,
