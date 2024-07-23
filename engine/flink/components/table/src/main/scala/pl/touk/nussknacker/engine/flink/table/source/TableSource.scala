@@ -65,7 +65,6 @@ class TableSource(
     val streamOfRows: DataStream[Row] = tableEnv.toDataStream(finalQuery)
 
     val streamOfMaps = streamOfRows
-      // TODO: add type alignment, e.g. bigint is represented as long by flink tables
       .map(RowConversions.rowToMap)
       .returns(classOf[RECORD])
 

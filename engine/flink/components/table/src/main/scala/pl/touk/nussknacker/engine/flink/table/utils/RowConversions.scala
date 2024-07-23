@@ -18,7 +18,6 @@ object RowConversions {
 
   def mapToRow(map: java.util.Map[String, Any], columnNames: Iterable[String]): Row = {
     val row = Row.withNames()
-    // TODO: add type alignment, e.g. bigint is represented as long by flink tables
     columnNames.foreach(columnName => row.setField(columnName, map.get(columnName)))
     row
   }
