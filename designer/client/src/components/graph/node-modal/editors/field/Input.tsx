@@ -38,7 +38,7 @@ export default function Input(props: InputProps): JSX.Element {
 
     return (
         <div className={className}>
-            <div className={isMarked ? " marked" : ""}>
+            <div className={cx({ marked: isMarked })}>
                 <NodeInput
                     {...rest}
                     autoFocus={autoFocus}
