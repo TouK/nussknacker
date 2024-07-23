@@ -14,6 +14,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   is only considered in case of Sinks). Create proper topics manually if needed.
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
   * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+* Removed deprecated operation to create a scenario: POST `/api/processes/{name}/{category}`. POST `/api/processes`
+  should be used instead.
 
 ## In version 1.16.0
 
