@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -54,7 +54,36 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     extends TypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
-    Typed.typedClass[BigDecimal] -> TypeInformation.of(classOf[BigDecimal])
+    Typed.typedClass[String]                  -> Types.STRING,
+    Typed.typedClass[Boolean]                 -> Types.BOOLEAN,
+    Typed.typedClass[Byte]                    -> Types.BYTE,
+    Typed.typedClass[Short]                   -> Types.SHORT,
+    Typed.typedClass[Integer]                 -> Types.INT,
+    Typed.typedClass[Long]                    -> Types.LONG,
+    Typed.typedClass[Float]                   -> Types.FLOAT,
+    Typed.typedClass[Double]                  -> Types.DOUBLE,
+    Typed.typedClass[Character]               -> Types.CHAR,
+    Typed.typedClass[java.math.BigDecimal]    -> Types.BIG_DEC,
+    Typed.typedClass[java.math.BigInteger]    -> Types.BIG_INT,
+    Typed.typedClass[java.time.LocalDate]     -> Types.LOCAL_DATE,
+    Typed.typedClass[java.time.LocalTime]     -> Types.LOCAL_TIME,
+    Typed.typedClass[java.time.LocalDateTime] -> Types.LOCAL_DATE_TIME,
+    Typed.typedClass[java.time.Instant]       -> Types.INSTANT,
+    Typed.typedClass[java.sql.Date]           -> Types.SQL_DATE,
+    Typed.typedClass[java.sql.Time]           -> Types.SQL_TIME,
+    Typed.typedClass[java.sql.Timestamp]      -> Types.SQL_TIMESTAMP,
+  )
+
+  // See Types.PRIMITIVE_ARRAY
+  private val primitiveArraySupportedTypes = Set[TypingResult](
+    Typed.typedClass[Boolean],
+    Typed.typedClass[Byte],
+    Typed.typedClass[Short],
+    Typed.typedClass[Integer],
+    Typed.typedClass[Long],
+    Typed.typedClass[Float],
+    Typed.typedClass[Double],
+    Typed.typedClass[Character],
   )
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
@@ -73,6 +102,13 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
         additionalTypeInfoDeterminer.apply(a)
       case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 =>
         new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
+      case a: TypedClass
+          if a.klass == classOf[Array[AnyRef]] && a.params.size == 1 && primitiveArraySupportedTypes.contains(
+            a.params.head
+          ) =>
+        Types.PRIMITIVE_ARRAY(forType[AnyRef](a.params.head))
+      case a: TypedClass if a.klass == classOf[Array[AnyRef]] && a.params.size == 1 =>
+        Types.OBJECT_ARRAY(forType[AnyRef](a.params.head))
       case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 =>
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](a.params.head), forType[AnyRef](a.params.last))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
@@ -114,17 +150,5 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
   )
 
   private def fallback[T](kl: Class[T]): TypeInformation[T] = TypeInformation.of(kl)
-
-}
-
-private object TraversableType {
-
-  // we have to pick exact types, to avoid problems with "::" classes etc.
-  private val handledTypes = List(classOf[List[_]], classOf[Seq[_]])
-
-  def unapply(typedClass: TypingResult): Option[(Class[_], TypingResult)] = typedClass match {
-    case TypedClass(klass, param :: Nil) => handledTypes.find(_.isAssignableFrom(klass)).map((_, param))
-    case _                               => None
-  }
 
 }

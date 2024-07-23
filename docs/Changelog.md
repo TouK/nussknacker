@@ -18,7 +18,11 @@
 * [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
   increased from `500ms` to `10s` to avoid scenario starting problems
 * [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
-* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) SpEL expression validator now works with values that are lists or maps.
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Table components: table name with special characters such as hyphen are now allowed
+  in table name
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
+  and arrays are serialized/deserialized more optimal in aggregates
+* [#6436](https://github.com/TouK/nussknacker/pull/6436) SpEL expression validator now works with values that are lists or maps.
     * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 
 1.16.1 (16 July 2024)
