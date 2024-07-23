@@ -74,6 +74,17 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     Typed.typedClass[java.sql.Timestamp]      -> Types.SQL_TIMESTAMP,
   )
 
+  // See Types.PRIMITIVE_ARRAY
+  private val primitiveArraySupportedTypes = Set[TypingResult](
+    Typed.typedClass[Boolean],
+    Typed.typedClass[Byte],
+    Typed.typedClass[Short],
+    Typed.typedClass[Integer],
+    Typed.typedClass[Long],
+    Typed.typedClass[Double],
+    Typed.typedClass[Character],
+  )
+
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(
       TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
@@ -90,6 +101,13 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
         additionalTypeInfoDeterminer.apply(a)
       case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 =>
         new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
+      case a: TypedClass
+          if a.klass == classOf[Array[AnyRef]] && a.params.size == 1 && primitiveArraySupportedTypes.contains(
+            a.params.head
+          ) =>
+        Types.PRIMITIVE_ARRAY(forType[AnyRef](a.params.head))
+      case a: TypedClass if a.klass == classOf[Array[AnyRef]] && a.params.size == 1 =>
+        Types.OBJECT_ARRAY(forType[AnyRef](a.params.head))
       case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 =>
         new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](a.params.head), forType[AnyRef](a.params.last))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
