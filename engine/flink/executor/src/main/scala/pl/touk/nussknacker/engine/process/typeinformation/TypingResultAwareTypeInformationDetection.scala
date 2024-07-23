@@ -68,6 +68,10 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     Typed.typedClass[java.time.LocalDate]     -> Types.LOCAL_DATE,
     Typed.typedClass[java.time.LocalTime]     -> Types.LOCAL_TIME,
     Typed.typedClass[java.time.LocalDateTime] -> Types.LOCAL_DATE_TIME,
+    Typed.typedClass[java.time.Instant]       -> Types.INSTANT,
+    Typed.typedClass[java.sql.Date]           -> Types.SQL_DATE,
+    Typed.typedClass[java.sql.Time]           -> Types.SQL_TIME,
+    Typed.typedClass[java.sql.Timestamp]      -> Types.SQL_TIMESTAMP,
   )
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
@@ -125,17 +129,5 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
   )
 
   private def fallback[T](kl: Class[T]): TypeInformation[T] = TypeInformation.of(kl)
-
-}
-
-private object TraversableType {
-
-  // we have to pick exact types, to avoid problems with "::" classes etc.
-  private val handledTypes = List(classOf[List[_]], classOf[Seq[_]])
-
-  def unapply(typedClass: TypingResult): Option[(Class[_], TypingResult)] = typedClass match {
-    case TypedClass(klass, param :: Nil) => handledTypes.find(_.isAssignableFrom(klass)).map((_, param))
-    case _                               => None
-  }
 
 }
