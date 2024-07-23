@@ -14,6 +14,7 @@ export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChan
         readOnly?: boolean;
         rows?: number;
         editorMode?: EditorMode;
+        placeholder?: string;
     };
     customAceEditorCompleter?;
     showLineNumbers?: boolean;
@@ -160,6 +161,7 @@ export default forwardRef(function AceWrapper(
             setOptions={{ ...DEFAULT_OPTIONS, showLineNumbers }}
             enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
             commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
+            placeholder={inputProps.placeholder}
         />
     );
 });

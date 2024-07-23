@@ -1,6 +1,6 @@
 import "ace-builds/src-noconflict/ace";
 import { isEmpty, isEqual } from "lodash";
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessingType } from "../../../../../reducers/selectors/graph";
@@ -29,6 +29,7 @@ interface InputProps {
     style: SerializedStyles;
     cols: number;
     editorMode?: EditorMode;
+    placeholder?: string;
 }
 
 interface Props {

@@ -21,6 +21,7 @@ export type RawEditorProps = {
     variableTypes: VariableTypes;
     validationLabelInfo?: string;
     editorMode?: EditorMode;
+    placeholder?: string;
 };
 
 const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
@@ -37,6 +38,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
         variableTypes,
         validationLabelInfo,
         editorMode,
+        placeholder,
     } = props;
 
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
@@ -54,8 +56,9 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             readOnly: readOnly,
             ref: forwardedRef,
             editorMode: editorMode,
+            placeholder: placeholder,
         }),
-        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode],
+        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode, placeholder],
     );
 
     return (
