@@ -339,12 +339,12 @@ object typing {
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
           typedListWithElementValues(
-            supertypeOfElementTypes(list),
+            supertypeOfElementTypes(list).withoutValue,
             list
           )
         case javaList: java.util.List[_] =>
           typedListWithElementValues(
-            supertypeOfElementTypes(javaList.asScala.toList),
+            supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
             javaList
           )
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult

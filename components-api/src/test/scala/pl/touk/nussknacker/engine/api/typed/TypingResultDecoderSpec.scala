@@ -71,7 +71,7 @@ class TypingResultDecoderSpec
         val encoded = TypeEncoders.typingResultEncoder(input)
         val decoded = decoder.decodeTypingResults.decodeJson(encoded).rightValue
         withClue(s"Decoded: ${decoded.display};") {
-          decoded.display shouldBe input.display
+          decoded shouldBe input
         }
       }
     }

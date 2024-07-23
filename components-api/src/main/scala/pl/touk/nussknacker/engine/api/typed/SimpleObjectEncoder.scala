@@ -70,7 +70,7 @@ object SimpleObjectEncoder {
     case `stringClass`                  => obj.as[String]
     case `byteClass`                    => obj.as[Byte]
     case `bigIntegerClass`              => obj.as[BigInteger]
-    case `bigDecimalClass`              => obj.as[BigDecimal]
+    case `bigDecimalClass`              => obj.as[java.math.BigDecimal]
     case TypedClass(klass, List(elementType: TypingResult)) if klass == classOf[java.util.List[_]] =>
       obj.values
         .getOrElse {
