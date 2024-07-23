@@ -17,6 +17,7 @@ export type AceWrapperInputProps = {
     style?: SerializedStyles;
     rows?: number;
     cols?: number;
+    placeholder?: string;
 };
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
@@ -166,6 +167,7 @@ export default forwardRef(function AceWrapper(
             setOptions={{ ...DEFAULT_OPTIONS, showLineNumbers }}
             enableBasicAutocompletion={customAceEditorCompleter && [customAceEditorCompleter]}
             commands={[...DEFAULT_COMMANDS, ...commands] as unknown as ICommand[]}
+            placeholder={inputProps.placeholder}
         />
     );
 });
