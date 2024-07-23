@@ -4,10 +4,7 @@ import { UIParameter } from "../../../types";
 import NodeTip from "./NodeTip";
 import InfoIcon from "@mui/icons-material/Info";
 import ProcessUtils from "../../../common/ProcessUtils";
-
-export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
-    return definitions?.find((param) => param.name === paramName);
-}
+import { findParamDefinitionByName } from "./parameterHelpers";
 
 export const StyledNodeTip = styled(NodeTip)({
     margin: "0 8px",

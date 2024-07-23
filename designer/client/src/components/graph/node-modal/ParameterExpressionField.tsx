@@ -1,9 +1,9 @@
 import { useTestResults } from "./TestResultsWrapper";
 import ExpressionField from "./editors/expression/ExpressionField";
-import { findParamDefinitionByName } from "./FieldLabel";
 import React, { ComponentType, PropsWithChildren, useMemo } from "react";
 import { NodeId, NodeType, NodeValidationError, Parameter, UIParameter, VariableTypes } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
+import { findParamDefinitionByName } from "./parameterHelpers";
 
 export type FieldWrapperProps = PropsWithChildren<Omit<ParameterExpressionFieldProps, "FieldWrapper">>;
 
