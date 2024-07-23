@@ -6,6 +6,7 @@ import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import { DescriptionField } from "./DescriptionField";
 import { ParametersList } from "./parametersList";
+import { CustomNodeFieldOverrideWrapper } from "./customNodeParameters";
 
 export type CustomNodeProps = {
     errors: NodeValidationError[];
@@ -73,6 +74,7 @@ export function CustomNode({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `parameters[${index}]`}
+                FieldWrapper={CustomNodeFieldOverrideWrapper}
             />
             <DescriptionField
                 node={node}
