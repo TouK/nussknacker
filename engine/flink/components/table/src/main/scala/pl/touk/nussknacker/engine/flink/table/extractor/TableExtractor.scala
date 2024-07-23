@@ -39,7 +39,7 @@ object TableExtractor extends LazyLogging {
       // table path may be different for some catalog-managed tables - for example JDBC catalog adds a schema name to
       // table name when listing tables, but querying using tablePath with catalog.database.schema.tableName throws
       // exception
-      tablePath = s"$catalogName.$databaseName.$tableName"
+      tablePath = s"$catalogName.$databaseName.`$tableName`"
       table = Try(tableEnv.from(tablePath))
         .getOrElse(
           throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tablePath")

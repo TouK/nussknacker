@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.sink
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
+import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
@@ -21,19 +22,28 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
+class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures with LoneElement {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private lazy val outputDirectory1 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-1")
-  private lazy val outputDirectory2 = Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-2")
-  private lazy val inputDirectory =
+  private val pingPongInputTableName    = "ping-pong-input"
+  private val pingPongOutputTableName   = "ping-pong-output"
+  private val expressionOutputTableName = "expression-output"
+  private val oneColumnOutputTableName  = "one-column-output"
+
+  private lazy val pingPongInputDirectory =
     new File("engine/flink/components/base-tests/src/test/resources/tables/primitives").toPath.toAbsolutePath
+  private lazy val pingPongOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$pingPongOutputTableName")
+  private lazy val expressionOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$expressionOutputTableName")
+  private lazy val oneColumnOutputDirectory =
+    Files.createTempDirectory(s"nusssknacker-${getClass.getSimpleName}-$oneColumnOutputTableName")
 
   private lazy val tablesDefinition =
     s"""
-      |CREATE TABLE input (
+      |CREATE TABLE `$pingPongInputTableName` (
       |    `string`              STRING,
       |    `boolean`             BOOLEAN,
       |    `tinyInt`             TINYINT,
@@ -49,22 +59,29 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       |    `timestampLtz`        TIMESTAMP_LTZ
       |) WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$inputDirectory',
+      |      'path' = 'file:///$pingPongInputDirectory',
       |      'format' = 'json'
       |);
       |
-      |CREATE TABLE output1 WITH (
+      |CREATE TABLE `$pingPongOutputTableName` WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$outputDirectory1',
+      |      'path' = 'file:///$pingPongOutputDirectory',
       |      'format' = 'json'
-      |) LIKE input;
+      |) LIKE `$pingPongInputTableName`;
       |
-      |CREATE TABLE output2 WITH (
+      |CREATE TABLE `$expressionOutputTableName` WITH (
       |      'connector' = 'filesystem',
-      |      'path' = 'file:///$outputDirectory2',
+      |      'path' = 'file:///$expressionOutputDirectory',
       |      'format' = 'csv'
-      |) LIKE input;
+      |) LIKE `$pingPongInputTableName`;
       |
+      |CREATE TABLE `$oneColumnOutputTableName` (
+      |    `one`                 STRING
+      |) WITH (
+      |      'connector' = 'filesystem',
+      |      'path' = 'file:///$oneColumnOutputDirectory',
+      |      'format' = 'csv'
+      |);
       |""".stripMargin
 
   private lazy val sqlTablesDefinitionFilePath = {
@@ -92,29 +109,41 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     .build()
 
   override protected def afterAll(): Unit = {
-    FileUtils.deleteQuietly(outputDirectory1.toFile)
-    FileUtils.deleteQuietly(outputDirectory2.toFile)
+    FileUtils.deleteQuietly(pingPongOutputDirectory.toFile)
+    FileUtils.deleteQuietly(expressionOutputDirectory.toFile)
+    FileUtils.deleteQuietly(oneColumnOutputDirectory.toFile)
     super.afterAll()
   }
 
   test("should do file-to-file ping-pong for all primitive types") {
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", "table", "Table" -> "'input'".spel)
-      .emptySink("end", "table", "Table" -> "'output1'".spel, "Value" -> "#input".spel)
+      .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
+      .emptySink("end", "table", "Table" -> s"'$pingPongOutputTableName'".spel, "Value" -> "#input".spel)
 
     val result = runner.runWithoutData(scenario)
     result.isValid shouldBe true
 
-    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(outputDirectory1)
-    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(inputDirectory)
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(pingPongOutputDirectory)
+    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
 
     outputFileContent shouldBe inputFileContent
   }
 
   test("should do spel-to-file for all primitive types") {
     val primitiveTypesRecordCsvFirstLine =
-      """str,true,123,123,123,123,123.0,123.0,1,2020-12-31,10:15:00,"2020-12-31 10:15:00","2020-12-31 10:15:00Z""""
+      "str," +
+        "true," +
+        "123," +
+        "123," +
+        "123," +
+        "123," +
+        "123.12," +
+        "123.12," +
+        "1," +
+        "2020-12-31,10:15:00," +
+        "\"2020-12-31 10:15:00\"," +
+        "\"2020-12-31 10:15:00Z\""
 
     val primitiveTypesExpression = Expression.spel(s"""
         |{
@@ -123,8 +152,8 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
         |  tinyInt: $spelByte,
         |  smallInt: $spelShort,
         |  int: $spelInt,
-        |  bigint: $spelBigint,
-        |  decimal: $spelDecimal,
+        |  bigint: $spelLong,
+        |  decimal: $spelBigDecimal,
         |  float:  $spelFloat,
         |  double: $spelDouble,
         |  date: $spelLocalDate,
@@ -137,15 +166,37 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .emptySink("end", "table", "Table" -> "'output2'".spel, "Value" -> primitiveTypesExpression)
+      .emptySink("end", "table", "Table" -> s"'$expressionOutputTableName'".spel, "Value" -> primitiveTypesExpression)
 
     val result = runner.runWithoutData(
       scenario = scenario
     )
     result.isValid shouldBe true
 
-    val outputFileContentLines = getLinesOfSingleFileInDirectoryEventually(outputDirectory2)
-    outputFileContentLines contains primitiveTypesRecordCsvFirstLine
+    getLinesOfSingleFileInDirectoryEventually(
+      expressionOutputDirectory
+    ).loneElement shouldBe primitiveTypesRecordCsvFirstLine
+  }
+
+  test("should skip redundant fields") {
+    val valueExpression = Expression.spel(s"""
+         |{
+         |  two: $spelStr,
+         |  one: $spelStr
+         |}
+         |""".stripMargin)
+
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .emptySink("end", "table", "Table" -> s"'$oneColumnOutputTableName'".spel, "Value" -> valueExpression)
+
+    val result = runner.runWithoutData(
+      scenario = scenario
+    )
+    result.isValid shouldBe true
+
+    getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "str"
   }
 
   private def getLinesOfSingleFileInDirectoryEventually(directory: Path) = {

@@ -13,6 +13,8 @@ final case class TableDefinition(tableName: String, typingResult: TypingResult, 
     Schema.newBuilder().fromRowDataType(DataTypes.ROW(cols)).build()
   }
 
+  def columnNames: List[String] = columns.map(_.columnName)
+
 }
 
 final case class ColumnDefinition(columnName: String, typingResult: TypingResult, flinkDataType: DataType)

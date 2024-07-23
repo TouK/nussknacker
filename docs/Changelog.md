@@ -18,6 +18,10 @@
 * [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
   increased from `500ms` to `10s` to avoid scenario starting problems
 * [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Table components: table name with special characters such as hyphen are now allowed
+  in table name
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
+  and arrays are serialized/deserialized more optimal in aggregates
 
 1.16.1 (16 July 2024)
 -------------------------
