@@ -81,6 +81,7 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     Typed.typedClass[Short],
     Typed.typedClass[Integer],
     Typed.typedClass[Long],
+    Typed.typedClass[Float],
     Typed.typedClass[Double],
     Typed.typedClass[Character],
   )
