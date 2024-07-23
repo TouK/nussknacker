@@ -41,7 +41,7 @@ interface RowSelectProps extends Omit<HTMLProps<HTMLSelectElement>, "value" | "o
     isMarked?: boolean;
     value: Option;
     placeholder?: string;
-    fieldErrors: FieldError[];
+    fieldErrors?: FieldError[];
 }
 
 export function TypeSelect({
@@ -52,7 +52,7 @@ export function TypeSelect({
     onChange,
     onBlur,
     placeholder,
-    fieldErrors,
+    fieldErrors = [],
     ...props
 }: RowSelectProps): JSX.Element {
     const { setCaptureEsc, preventEsc } = useCaptureEsc();

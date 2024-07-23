@@ -23,14 +23,14 @@ interface Props {
     isMarked?: boolean;
     showValidation?: boolean;
     onValueChange: (value: string) => void;
-    fieldErrors: FieldError[];
+    fieldErrors?: FieldError[];
     variableTypes: VariableTypes;
     validationLabelInfo?: string;
     placeholder?: string;
 }
 
 export const EditableEditor = forwardRef((props: Props, ref) => {
-    const { expressionObj, valueClassName, param, fieldErrors, validationLabelInfo } = props;
+    const { expressionObj, valueClassName, param, fieldErrors = [], validationLabelInfo } = props;
 
     const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
 
