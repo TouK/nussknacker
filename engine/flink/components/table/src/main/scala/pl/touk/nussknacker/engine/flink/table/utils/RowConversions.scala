@@ -34,7 +34,6 @@ object RowConversions {
 
   private def scalaMapToRow(map: Map[String, Any]): Row = {
     val row = Row.withNames()
-    // TODO: add type alignment, e.g. bigint is represented as long by flink tables
     map.foreach { case (name, value) =>
       row.setField(name, value)
     }

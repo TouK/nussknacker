@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.flink.table.join
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.connector.source.Boundedness
-import org.scalatest.Inside
+import org.scalatest.{Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderProduct
+import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
@@ -17,7 +17,13 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.beans.BeanProperty
 
-class TableJoinTest extends AnyFunSuite with FlinkSpec with Matchers with Inside with ValidatedValuesDetailedMessage {
+class TableJoinTest
+    extends AnyFunSuite
+    with FlinkSpec
+    with Matchers
+    with Inside
+    with ValidatedValuesDetailedMessage
+    with LoneElement {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -67,22 +73,40 @@ class TableJoinTest extends AnyFunSuite with FlinkSpec with Matchers with Inside
             ),
             "output" -> "#input".spel,
           )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "{#input, #product}".spel)
+          .emptySink(
+            "end",
+            TestScenarioRunner.testResultSink,
+            "value" ->
+              """{
+                |  orderId: #input.id,
+                |  product: {
+                |   id: #product.id,
+                |   name: #product.name
+                |  }
+                |}""".stripMargin.spel
+          )
       )
 
-    val result = runner.runWithData(
+    val productId = 1
+    val orderId   = 10
+    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
       scenario,
       List(
-        OrderProduct("product", 1, -1),
-        OrderProduct("order", 10, 1),
+        OrderOrProduct.createProduct(productId, "Foo product"),
+        OrderOrProduct.createOrder(orderId, productId),
       ),
       Boundedness.BOUNDED,
       Some(RuntimeExecutionMode.BATCH)
     )
 
-    result.validValue.successes shouldBe List(
-      List(OrderProduct("order", 10, 1), OrderProduct("product", 1, -1)).asJava,
-    )
+    val expectedEnrichedOrder = Map(
+      "orderId" -> orderId,
+      "product" -> Map(
+        "id"   -> productId,
+        "name" -> "Foo product"
+      ).asJava
+    ).asJava
+    enrichedOrders.validValue.successes.loneElement shouldEqual expectedEnrichedOrder
   }
 
 }
@@ -91,14 +115,28 @@ object TableJoinTest {
 
   // TODO: split into separate classes and pass two streams to separate source nodes
   // productId is dedicated only for order events
+  // name is dedicated only for order events
   // It have to by POJO in order by acceptable by table api operators
-  case class OrderProduct(
+  class OrderOrProduct(
       @BeanProperty var `type`: String,
       @BeanProperty var id: Int,
+      @BeanProperty var name: String,
       @BeanProperty var productId: Int
   ) {
 
-    def this() = this(null, -1, -1)
+    def this() = this(null, -1, null, -1)
+
+  }
+
+  object OrderOrProduct {
+
+    def createOrder(id: Int, productId: Int): OrderOrProduct = {
+      new OrderOrProduct("order", id, null, productId)
+    }
+
+    def createProduct(id: Int, name: String): OrderOrProduct = {
+      new OrderOrProduct("product", id, name, -1)
+    }
 
   }
 

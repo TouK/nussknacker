@@ -231,11 +231,15 @@ object TableJoinComponent extends CustomStreamTransformer with JoinDynamicCompon
   }
 
   private def extractMainBranchId(branchTypeByBranchId: Map[String, BranchType]) = {
-    branchTypeByBranchId.find(_._2 == BranchType.MAIN).map(_._1)
+    branchTypeByBranchId.collectFirst { case (branchId, BranchType.MAIN) =>
+      branchId
+    }
   }
 
   private def extractJoinedBranchId(branchTypeByBranchId: Map[String, BranchType]) = {
-    branchTypeByBranchId.find(_._2 == BranchType.JOINED).map(_._1)
+    branchTypeByBranchId.collectFirst { case (branchId, BranchType.JOINED) =>
+      branchId
+    }
   }
 
 }
