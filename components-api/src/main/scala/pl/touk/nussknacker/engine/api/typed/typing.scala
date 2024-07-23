@@ -257,10 +257,16 @@ object typing {
       cl
     }
 
-    def typedList[T](elementType: TypingResult, elements: List[T]): TypedObjectWithValue =
+    def typedListWithElementValues[T](elementType: TypingResult, elementValues: List[T]): TypedObjectWithValue =
+      typedListWithElementValues(elementType, elementValues.asJava)
+
+    def typedListWithElementValues[T](
+        elementType: TypingResult,
+        elementValues: java.util.List[T]
+    ): TypedObjectWithValue =
       TypedObjectWithValue(
         Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)),
-        elements.asJava
+        elementValues
       )
 
     private def toRuntime[T: ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
@@ -332,14 +338,20 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
+          typedListWithElementValues(
+            supertypeOfElementTypes(list).withoutValue,
+            list
+          )
         case javaList: java.util.List[_] =>
-          genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
+          typedListWithElementValues(
+            supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
+            javaList
+          )
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
-              SimpleObjectEncoder.encode(typedClass, other) match {
+              SimpleObjectEncoder.encodeValue(other) match {
                 case Valid(_)   => TypedObjectWithValue(typedClass, other)
                 case Invalid(_) => typedClass
               }

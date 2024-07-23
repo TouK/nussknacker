@@ -88,6 +88,8 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
       case a: SingleTypingResult if a.objType.params.isEmpty =>
         TypeInformation.of(a.objType.klass)
       // TODO: how can we handle union - at least of some types?
+      case TypedObjectWithValue(tc: TypedClass, _) =>
+        forType(tc)
       case _ =>
         fallback[Any]
     }).asInstanceOf[TypeInformation[T]]
