@@ -92,7 +92,7 @@ object aggregates {
     )
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(
-      Typed.genericTypeClass[List[_]](List(input))
+      Typed.genericTypeClass[java.util.List[_]](List(input))
     )
 
   }

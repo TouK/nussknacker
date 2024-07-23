@@ -348,6 +348,7 @@ object typing {
             javaList
           )
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
+        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>

@@ -335,7 +335,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
         evaluateType(expression, variables)
       }
       caught.getMessage should include(
-        "NonComparable that does not match any of declared types (Comparable[Unknown]) when called with arguments (List[NonComparable])"
+        "NonComparable that does not match any of declared types (Comparable[Unknown]) when called with arguments (List[NonComparable]"
       )
     }
 
