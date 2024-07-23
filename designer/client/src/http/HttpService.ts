@@ -738,11 +738,11 @@ class HttpService {
             );
     }
 
-    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, { refClazzName }: ReturnedType) {
+    fetchAllProcessDefinitionDataDicts(processingType: ProcessingType, refClazzName: string, type = "TypedClass") {
         return api
             .post<DictOption[]>(`/processDefinitionData/${processingType}/dicts`, {
                 expectedType: {
-                    value: { type: "TypedClass", refClazzName, params: [] },
+                    value: { type: type, refClazzName, params: [] },
                 },
             })
             .catch((error) =>
