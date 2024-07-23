@@ -12,6 +12,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
+* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+  * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
 
 ## In version 1.16.0
 

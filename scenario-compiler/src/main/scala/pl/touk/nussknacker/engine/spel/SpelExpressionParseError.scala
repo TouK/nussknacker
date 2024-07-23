@@ -43,6 +43,10 @@ object SpelExpressionParseError {
         "Currently inline maps with not literal keys (e.g. expressions as keys) are not supported"
     }
 
+    case object ArrayConstructorError extends UnsupportedOperationError {
+      override def message: String = "Array constructor is not supported"
+    }
+
   }
 
   trait DictError extends ExpressionParseError {

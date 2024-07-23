@@ -21,7 +21,7 @@ import { TableEditor } from "./Table/TableEditor";
 import { DictParameterEditor } from "./DictParameterEditor";
 
 export type EditorProps = {
-    onValueChange: (value: string) => void;
+    onValueChange: OnValueChange;
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
@@ -44,6 +44,8 @@ export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
     switchableToHint: () => string;
     notSwitchableToHint: () => string;
+    getExpressionMode?: (expressionObj: ExpressionObj) => ExpressionObj;
+    getBasicMode?: (expressionObj: ExpressionObj) => ExpressionObj;
 };
 
 export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
@@ -93,4 +95,8 @@ export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
     [EditorType.DICT_PARAMETER_EDITOR]: DictParameterEditor,
     [EditorType.TABLE_EDITOR]: TableEditor,
+};
+
+export type OnValueChange = {
+    (expression: ExpressionObj | string): void;
 };

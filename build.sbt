@@ -1160,8 +1160,7 @@ lazy val flinkComponentsUtils = (project in flink("components-utils"))
     name := "nussknacker-flink-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java"     % flinkV % Provided,
-        "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       )
     }
   )
