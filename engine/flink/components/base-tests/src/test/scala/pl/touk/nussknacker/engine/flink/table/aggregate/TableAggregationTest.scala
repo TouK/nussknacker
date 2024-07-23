@@ -39,8 +39,12 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   test("should be able to aggregate by number types, string and boolean") {
     val aggregatingBranches =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions).zipWithIndex.map {
-        case (expr, i) =>
-          aggregationTypeTestingBranch(groupByExpr = spelStr.spel, aggregateByExpr = expr.spel, idSuffix = i.toString)
+        case (expr, branchIndex) =>
+          aggregationTypeTestingBranch(
+            groupByExpr = spelStr.spel,
+            aggregateByExpr = expr.spel,
+            idSuffix = branchIndex.toString
+          )
       }
 
     val scenario = ScenarioBuilder
@@ -58,8 +62,12 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
   test("should be able to group by simple types") {
     val aggregatingBranches =
       (spelBoolean :: spelStr :: spelBigDecimal :: numberPrimitiveLiteralExpressions ::: tableApiSupportedTimeLiteralExpressions).zipWithIndex
-        .map { case (expr, i) =>
-          aggregationTypeTestingBranch(groupByExpr = expr.spel, aggregateByExpr = spelStr.spel, idSuffix = i.toString)
+        .map { case (expr, branchIndex) =>
+          aggregationTypeTestingBranch(
+            groupByExpr = expr.spel,
+            aggregateByExpr = spelStr.spel,
+            idSuffix = branchIndex.toString
+          )
         }
 
     val scenario = ScenarioBuilder

@@ -63,7 +63,7 @@ class TableSink(
     sqlStatements.foreach(tableEnv.executeSql)
 
     val statementSet = tableEnv.createStatementSet()
-    statementSet.add(inputValueTable.insertInto(tableDefinition.tableName))
+    statementSet.add(inputValueTable.insertInto(s"`${tableDefinition.tableName}`"))
     statementSet.attachAsDataStream()
 
     /*
