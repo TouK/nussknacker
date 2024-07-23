@@ -13,7 +13,7 @@ export const useGetAllDicts = ({ typ }: Props) => {
     const processingType = useSelector(getProcessingType);
 
     useEffect(() => {
-        httpService.fetchAllProcessDefinitionDataDicts(processingType, typ).then((response) => {
+        httpService.fetchAllProcessDefinitionDataDicts(processingType, typ.refClazzName).then((response) => {
             setProcessDefinitionDicts(response.data.map(({ id, label }) => ({ label, value: id })));
         });
     }, [processingType, typ]);
