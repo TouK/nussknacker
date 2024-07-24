@@ -49,9 +49,10 @@ class StubbedFragmentSourceDefinitionPreparer(
       parameters = List.empty,
       outputNames = List.empty,
       docsUrl = None,
+      componentGroupName = None,
       translateGroupName = Some(_),
       designerWideId = DesignerWideComponentId("dumpId"),
-      allowedProcessingModes = AllowedProcessingModes.All
+      allowedProcessingModes = AllowedProcessingModes.All,
     )
   }
 
