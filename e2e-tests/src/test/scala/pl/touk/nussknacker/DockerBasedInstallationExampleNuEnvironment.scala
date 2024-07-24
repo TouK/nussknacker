@@ -76,7 +76,8 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
     ),
     waitingFor = Some(
       WaitingForService("spec-setup", new LogMessageWaitStrategy().withRegEx("^Setup done!.*"))
-    )
+    ),
+    tailChildContainers = true
   )
 
   singletonContainer.start()
