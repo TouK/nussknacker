@@ -83,7 +83,8 @@ object DockerBasedInstallationExampleNuEnvironment extends LazyLogging {
           .withStartupTimeout(Duration.ofSeconds(120L))
       )
     ),
-    tailChildContainers = true
+    // Change to 'true' to enable logging
+    tailChildContainers = false
   )
 
   singletonContainer.start()
