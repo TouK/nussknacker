@@ -192,7 +192,8 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
       |    "description": null,
       |    "properties": {
       |      "docsUrl" : "someUrl",
-      |      "componentGroup" : ""
+      |      "componentGroup" : "",
+      |      "icon": ""
       |    },
       |    "metaDataType": "FragmentSpecificData"
       |  }
