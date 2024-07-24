@@ -22,6 +22,22 @@ object DefaultsComponentIcon {
   val FragmentInputDefinitionIcon  = "/assets/components/FragmentInputDefinition.svg"
   val FragmentOutputDefinitionIcon = "/assets/components/FragmentOutputDefinition.svg"
 
+  val AllIcons = List(
+    SourceIcon,
+    SinkIcon,
+    EnricherIcon,
+    ServiceIcon,
+    CustomComponentIcon,
+    FragmentIcon,
+    FilterIcon,
+    SplitIcon,
+    ChoiceIcon,
+    VariableIcon,
+    RecordVariableIcon,
+    FragmentInputDefinitionIcon,
+    FragmentOutputDefinitionIcon
+  )
+
   def fromComponentId(componentId: ComponentId, isEnricher: Option[Boolean]): String = {
     forNotBuiltInComponentType.lift((componentId.`type`, isEnricher)).getOrElse(forBuiltInComponent(componentId))
   }

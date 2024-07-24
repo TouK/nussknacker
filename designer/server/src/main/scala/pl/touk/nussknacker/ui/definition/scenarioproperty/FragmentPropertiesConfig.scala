@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
 
 object FragmentPropertiesConfig {
 
@@ -37,7 +38,20 @@ object FragmentPropertiesConfig {
       hintText = Some("Group of components in the Creator Panel in which this fragment will be available")
     )
 
+  private val icons = DefaultsComponentIcon.AllIcons.map(e =>
+    FixedExpressionValue(e, e.stripPrefix("/assets/components/").stripSuffix(".svg"))
+  )
+
+  val iconConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.iconName ->
+    ScenarioPropertyConfig(
+      defaultValue = None,
+      editor = Some(FixedValuesParameterEditor(icons)),
+      validators = Some(List(MandatoryParameterValidator)),
+      label = Some("Icon"),
+      hintText = None
+    )
+
   // TODO: We should probably allow to add some properties definition using configuration like in the scenario case
-  val properties: Map[String, ScenarioPropertyConfig] = Map(docsUrlConfig, componentGroupNameConfig)
+  val properties: Map[String, ScenarioPropertyConfig] = Map(docsUrlConfig, componentGroupNameConfig, iconConfig)
 
 }

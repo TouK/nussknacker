@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.{Context, NodeId, Params}
 import pl.touk.nussknacker.engine.definition.component.ComponentDefinitionWithImplementation
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.FragmentIcon
 import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentParametersDefinitionExtractor
@@ -50,6 +51,7 @@ class StubbedFragmentSourceDefinitionPreparer(
       outputNames = List.empty,
       docsUrl = None,
       componentGroupName = None,
+      icon = Some(FragmentIcon),
       translateGroupName = Some(_),
       designerWideId = DesignerWideComponentId("dumpId"),
       allowedProcessingModes = AllowedProcessingModes.All,

@@ -25,6 +25,7 @@
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
+* [#6438](https://github.com/TouK/nussknacker/pull/6438) Fragment icon can be changed in the fragment properties
 
 1.16.1 (16 July 2024)
 -------------------------
