@@ -50,10 +50,11 @@ object TypeSpecificDataTestData {
   val requestResponseFullProperties: Map[String, String]    = Map("slug" -> "exampleSlug")
 
   // fragment
-  val fragmentEmptyTypeData: FragmentSpecificData  = FragmentSpecificData(None)
-  val fragmentFullTypeData: FragmentSpecificData   = FragmentSpecificData(docsUrl = Some("exampleUrl"))
-  val fragmentEmptyProperties: Map[String, String] = Map("docsUrl" -> "")
-  val fragmentFullProperties: Map[String, String]  = Map("docsUrl" -> "exampleUrl")
+  val fragmentEmptyTypeData: FragmentSpecificData = FragmentSpecificData(None, None)
+  val fragmentFullTypeData: FragmentSpecificData =
+    FragmentSpecificData(docsUrl = Some("exampleUrl"), componentGroupName = Some("someGroup"))
+  val fragmentEmptyProperties: Map[String, String] = Map("docsUrl" -> "", "componentGroup" -> "")
+  val fragmentFullProperties: Map[String, String]  = Map("docsUrl" -> "exampleUrl", "componentGroup" -> "someGroup")
 
   val flinkMetaDataName           = "StreamMetaData"
   val liteStreamMetaDataName      = "LiteStreamMetaData"
