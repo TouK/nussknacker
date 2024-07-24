@@ -133,6 +133,13 @@ paths:
           type:
           - string
           - 'null'
+      - name: skipUsages
+        in: query
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
       responses:
         '200':
           description: ''
@@ -162,7 +169,8 @@ paths:
                     allowedProcessingModes:
                     - Request-Response
         '400':
-          description: 'Invalid value for: header Nu-Impersonate-User-Identity'
+          description: 'Invalid value for: header Nu-Impersonate-User-Identity, Invalid
+            value for: query parameter skipUsages'
           content:
             text/plain:
               schema:
