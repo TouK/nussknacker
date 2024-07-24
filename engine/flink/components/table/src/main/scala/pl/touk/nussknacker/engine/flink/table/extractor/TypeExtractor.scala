@@ -18,7 +18,7 @@ object TypeExtractor {
     TableTypingResult(typedColumnsToRecordTypingResult(columnsTypingData), columnsTypingData)
   }
 
-  // TODO: handle complex types like maps, lists, rows, raws
+  // TODO: handle complex types like maps, lists, rows, raws and types alignment
   private def flinkTypeToTypingResult(dataType: DataType) =
     Typed.typedClass(dataType.getLogicalType.getDefaultConversion)
 

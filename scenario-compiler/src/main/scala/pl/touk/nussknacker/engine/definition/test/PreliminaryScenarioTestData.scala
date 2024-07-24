@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.definition.test
 
+import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.test.ScenarioTestJsonRecord
 
-case class PreliminaryScenarioTestData(testRecords: List[PreliminaryScenarioTestRecord])
+case class PreliminaryScenarioTestData(testRecords: NonEmptyList[PreliminaryScenarioTestRecord])
 
 sealed trait PreliminaryScenarioTestRecord
 

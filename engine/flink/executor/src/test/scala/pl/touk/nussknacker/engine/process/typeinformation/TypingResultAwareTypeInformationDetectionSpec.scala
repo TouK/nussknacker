@@ -4,16 +4,18 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.base.array.{IntPrimitiveArraySerializer, StringArraySerializer}
 import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
-import org.scalatest.Assertion
 import org.scalatest.Inside.inside
+import org.scalatest.Inspectors.forAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, OptionValues}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
@@ -30,7 +32,8 @@ import scala.jdk.CollectionConverters._
 class TypingResultAwareTypeInformationDetectionSpec
     extends AnyFunSuite
     with Matchers
-    with FlinkTypeInformationSerializationMixin {
+    with FlinkTypeInformationSerializationMixin
+    with OptionValues {
 
   private val informationDetection =
     new TypingResultAwareTypeInformationDetection((originalDetection: TypeInformationDetection) => {
@@ -84,23 +87,39 @@ class TypingResultAwareTypeInformationDetectionSpec
   }
 
   test("test context serialization") {
-    val ctx = Context("11").copy(variables = Map("one" -> 11, "two" -> "ala", "three" -> Map("key" -> "value")))
+    val ctx = Context("11").copy(variables =
+      Map(
+        "one"            -> 11,
+        "two"            -> "ala",
+        "three"          -> Map("key" -> "value"),
+        "arrayOfStrings" -> Array("foo", "bar", "baz"),
+        "arrayOfInts"    -> Array(1, 2, 3),
+      )
+    )
     val vCtx = ValidationContext(
       Map(
-        "one"   -> Typed[Int],
-        "two"   -> Typed[String],
-        "three" -> TypedObjectTypingResult(Map("key" -> Typed[String]), Typed.typedClass[Map[String, Any]])
+        "one"            -> Typed[Int],
+        "two"            -> Typed[String],
+        "three"          -> TypedObjectTypingResult(Map("key" -> Typed[String]), Typed.typedClass[Map[String, Any]]),
+        "arrayOfStrings" -> Typed.fromDetailedType[Array[String]],
+        "arrayOfInts"    -> Typed.fromDetailedType[Array[Int]],
       )
     )
 
-    val typeInfo = informationDetection.forContext(vCtx)
-    serializeRoundTrip(ctx, typeInfo)()
+    val typeInfo          = informationDetection.forContext(vCtx)
+    val ctxAfterRoundTrip = getSerializeRoundTrip(ctx, typeInfo)
+    checkContextAreSame(ctxAfterRoundTrip, ctx)
 
-    val valueTypeInfo = informationDetection.forValueWithContext[String](vCtx, Typed[String])
-    serializeRoundTrip(ValueWithContext[String]("qwerty", ctx), valueTypeInfo)()
+    val valueTypeInfo                  = informationDetection.forValueWithContext[String](vCtx, Typed[String])
+    val givenValue                     = "qwerty"
+    val valueWithContextAfterRoundTrip = getSerializeRoundTrip(ValueWithContext[String](givenValue, ctx), valueTypeInfo)
+    valueWithContextAfterRoundTrip.value shouldEqual givenValue
+    checkContextAreSame(valueWithContextAfterRoundTrip.context, ctx)
 
     assertSerializersInContext(
       typeInfo.createSerializer(executionConfigWithoutKryo),
+      ("arrayOfInts", _ shouldBe new IntPrimitiveArraySerializer),
+      ("arrayOfStrings", _ shouldBe new StringArraySerializer),
       ("one", _ shouldBe new IntSerializer),
       ("three", assertMapSerializers(_, ("key", new StringSerializer))),
       ("two", _ shouldBe new StringSerializer)
@@ -191,6 +210,20 @@ class TypingResultAwareTypeInformationDetectionSpec
     oldSerializerSnapshot.resolveSchemaCompatibility(oldSerializer).isCompatibleAsIs shouldBe true
     oldSerializerSnapshot.resolveSchemaCompatibility(addFieldSerializer).isIncompatible shouldBe true
     oldSerializerSnapshot.resolveSchemaCompatibility(removeFieldSerializer).isIncompatible shouldBe true
+  }
+
+  // We have to compare it this way because context can contains arrays
+  private def checkContextAreSame(givenContext: Context, expectedContext: Context): Unit = {
+    givenContext.id shouldEqual expectedContext.id
+    givenContext.variables.keys should contain theSameElementsAs expectedContext.variables.keys
+    forAll(givenContext.variables) { case (variableName, variableValue) =>
+      expectedContext.variables.get(variableName).value shouldEqual variableValue
+    }
+    inside((givenContext.parentContext, expectedContext.parentContext)) {
+      case (None, None) =>
+      case (Some(givenParent: Context), Some(expectedParent: Context)) =>
+        checkContextAreSame(givenParent, expectedParent)
+    }
   }
 
   private def assertSerializersInContext(
