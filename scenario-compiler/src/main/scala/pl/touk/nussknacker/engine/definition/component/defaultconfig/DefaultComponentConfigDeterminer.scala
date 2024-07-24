@@ -60,13 +60,15 @@ object DefaultComponentConfigDeterminer {
   // We can just return final, ComponentUiDefinition
   def forFragment(
       docsUrl: Option[String],
+      componentGroupName: Option[ComponentGroupName],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
   ): ComponentUiDefinition = {
-    val originalGroupName = DefaultsComponentGroupName.FragmentsGroupName
+    val beforeTranslationGroupName = componentGroupName.getOrElse(DefaultsComponentGroupName.FragmentsGroupName)
+
     ComponentUiDefinition(
-      originalGroupName = originalGroupName,
-      componentGroup = translateGroupName(originalGroupName)
+      originalGroupName = beforeTranslationGroupName,
+      componentGroup = translateGroupName(beforeTranslationGroupName)
         .getOrElse(throw new IllegalStateException("Fragments can't be assigned to the null component group")),
       icon = DefaultsComponentIcon.FragmentIcon,
       docsUrl = docsUrl,
