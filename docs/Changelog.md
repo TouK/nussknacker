@@ -23,6 +23,7 @@
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
   and arrays are serialized/deserialized more optimal in aggregates
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
+* [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
 
 1.16.1 (16 July 2024)
 -------------------------
