@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{
   DefinedEagerBranchParameter,
+  DefinedEagerParameter,
   DefinedSingleParameter,
   JoinDynamicComponent,
   NodeDependencyValue
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomJoinTransformation,
@@ -29,28 +31,36 @@ import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.{TypeInformat
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-object TableJoinComponent extends CustomStreamTransformer with JoinDynamicComponent[FlinkCustomJoinTransformation] {
+object TableJoinComponent
+    extends CustomStreamTransformer
+    with JoinDynamicComponent[FlinkCustomJoinTransformation]
+    with WithExplicitTypesToExtract {
 
   private val contextInternalColumnName   = "context"
   private val mainKeyInternalColumnName   = "mainKey"
   private val joinedKeyInternalColumnName = "joinedKey"
   private val outputInternalColumnName    = "output"
 
-  val BranchTypeParamName: ParameterName = ParameterName("branchType")
+  val BranchTypeParamName: ParameterName = ParameterName("Branch Type")
 
   private val BranchTypeParamDeclaration
       : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, BranchType]] =
     ParameterDeclaration.branchMandatory[BranchType](BranchTypeParamName).withCreator()
 
-  val KeyParamName: ParameterName = ParameterName("key")
+  val JoinTypeParamName: ParameterName = ParameterName("Join Type")
+
+  private val JoinTypeParamDeclaration: ParameterCreatorWithNoDependency with ParameterExtractor[JoinType] =
+    ParameterDeclaration.mandatory[JoinType](JoinTypeParamName).withCreator()
+
+  val KeyParamName: ParameterName = ParameterName("Key")
 
   private val KeyParamDeclaration
       : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[String]]] =
     ParameterDeclaration.branchLazyMandatory[String](KeyParamName).withCreator()
 
-  val OutputParamName: ParameterName = ParameterName("output")
+  val OutputParamName: ParameterName = ParameterName("Output")
 
-  override type State = Nothing
+  override type State = JoinType
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
 
@@ -86,6 +96,7 @@ object TableJoinComponent extends CustomStreamTransformer with JoinDynamicCompon
         .mapValuesNow(AdditionalVariableProvidedInRuntime(_))
       NextParameters(
         List(
+          JoinTypeParamDeclaration.createParameter(),
           ParameterDeclaration
             .lazyMandatory[AnyRef](OutputParamName)
             .withCreator(_.copy(additionalVariables = joinedVariables))
@@ -93,27 +104,30 @@ object TableJoinComponent extends CustomStreamTransformer with JoinDynamicCompon
         ),
         error
       )
-
     case TransformationStep(
           (
             `BranchTypeParamName`,
             DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType] @unchecked, _)
           ) ::
-          (`KeyParamName`, _) :: (`OutputParamName`, outputParameter: DefinedSingleParameter) :: Nil,
+          (`KeyParamName`, _) ::
+          (`JoinTypeParamName`, DefinedEagerParameter(joinType: JoinType, _)) ::
+          (`OutputParamName`, outputParameter: DefinedSingleParameter) ::
+          Nil,
           _
         ) =>
       val outName     = OutputVariableNameDependency.extract(dependencies)
       val mainContext = extractMainBranchId(branchTypeByBranchId).map(contexts).getOrElse(ValidationContext())
-      FinalResults.forValidation(mainContext)(
-        _.withVariable(OutputVar.customNode(outName), outputParameter.returnType)
-      )
-
+      FinalResults
+        .forValidation(mainContext)(
+          _.withVariable(OutputVar.customNode(outName), outputParameter.returnType)
+        )
+        .copy(state = Some(joinType))
   }
 
   override def implementation(
       params: Params,
       dependencies: List[NodeDependencyValue],
-      finalState: Option[Nothing]
+      joinTypeState: Option[JoinType]
   ): FlinkCustomJoinTransformation = new FlinkCustomJoinTransformation {
 
     override def transform(
@@ -121,10 +135,14 @@ object TableJoinComponent extends CustomStreamTransformer with JoinDynamicCompon
         flinkNodeContext: FlinkCustomNodeContext
     ): DataStream[ValueWithContext[AnyRef]] = {
       val branchTypeByBranchId: Map[String, BranchType] = BranchTypeParamDeclaration.extractValueUnsafe(params)
-      val mainBranchId                                  = extractMainBranchId(branchTypeByBranchId).get
-      val joinedBranchId                                = extractJoinedBranchId(branchTypeByBranchId).get
-      val mainStream                                    = inputs(mainBranchId)
-      val joinedStream                                  = inputs(joinedBranchId)
+      val mainBranchId =
+        extractMainBranchId(branchTypeByBranchId).getOrElse(throw new IllegalStateException("Not defined main branch"))
+      val joinedBranchId = extractJoinedBranchId(branchTypeByBranchId).getOrElse(
+        throw new IllegalStateException("Not defined joined branch")
+      )
+      val mainStream   = inputs(mainBranchId)
+      val joinedStream = inputs(joinedBranchId)
+      val joinType     = joinTypeState.getOrElse(throw new IllegalStateException("Not defined join type"))
 
       val env      = mainStream.getExecutionEnvironment
       val tableEnv = StreamTableEnvironment.create(env)
@@ -154,8 +172,11 @@ object TableJoinComponent extends CustomStreamTransformer with JoinDynamicCompon
         )
       )
 
-      val resultTable =
-        mainTable.join(joinedTable, $(joinedKeyInternalColumnName).isEqual($(mainKeyInternalColumnName)))
+      val joinPredicate = $(joinedKeyInternalColumnName).isEqual($(mainKeyInternalColumnName))
+      val resultTable = joinType match {
+        case JoinType.INNER => mainTable.join(joinedTable, joinPredicate)
+        case JoinType.OUTER => mainTable.leftOuterJoin(joinedTable, joinPredicate)
+      }
 
       tableEnv
         .toDataStream(resultTable)
@@ -241,5 +262,9 @@ object TableJoinComponent extends CustomStreamTransformer with JoinDynamicCompon
       branchId
     }
   }
+
+  override def typesToExtract: List[TypedClass] = List(
+    Typed.typedClass[JoinType],
+  )
 
 }

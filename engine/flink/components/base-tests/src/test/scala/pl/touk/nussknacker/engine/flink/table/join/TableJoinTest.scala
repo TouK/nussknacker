@@ -38,76 +38,139 @@ class TableJoinTest
     .withExtraComponents(additionalComponents)
     .build()
 
-  private val MainBranchId = "main"
+  private val mainBranchId   = "main"
+  private val joinedBranchId = "joined"
 
-  private val JoinedBranchId = "joined"
+  private val joinNodeId = "joined-node-id"
 
-  private val JoinNodeId = "joined-node-id"
+  private val someProduct    = OrderOrProduct.createProduct(1, "Foo product")
+  private val anotherProduct = OrderOrProduct.createProduct(2, "Bar product")
+  private val delayedProduct = OrderOrProduct.createProduct(3, "Delayed product")
 
-  test("should be able to join") {
-    val scenario = ScenarioBuilder
-      .streaming("sample-join-last")
-      .sources(
-        GraphBuilder
-          .source("orders-source", TestScenarioRunner.testDataSource)
-          .filter("orders-filter", "#input.type == 'order'".spel)
-          .branchEnd(MainBranchId, JoinNodeId),
-        GraphBuilder
-          .source("products-source", TestScenarioRunner.testDataSource)
-          .filter("product-filter", "#input.type == 'product'".spel)
-          .branchEnd(JoinedBranchId, JoinNodeId),
-        GraphBuilder
-          .join(
-            JoinNodeId,
-            "join",
-            Some("product"),
-            List(
-              MainBranchId -> List(
-                "branchType" -> s"T(${classOf[BranchType].getName}).MAIN".spel,
-                "key"        -> s"#input.productId.toString".spel
-              ),
-              JoinedBranchId -> List(
-                "branchType" -> s"T(${classOf[BranchType].getName}).JOINED".spel,
-                "key"        -> s"#input.id.toString".spel
-              )
-            ),
-            "output" -> "#input".spel,
-          )
-          .emptySink(
-            "end",
-            TestScenarioRunner.testResultSink,
-            "value" ->
-              """{
-                |  orderId: #input.id,
-                |  product: {
-                |   id: #product.id,
-                |   name: #product.name
-                |  }
-                |}""".stripMargin.spel
-          )
-      )
+  private val orderReferringToExistingProduct = OrderOrProduct.createOrder(10, someProduct.id)
 
-    val productId = 1
-    val orderId   = 10
+  private val nonExistingProductId               = 100
+  private val orderReferringToNonExistingProduct = OrderOrProduct.createOrder(20, nonExistingProductId)
+
+  private val orderReferringToDelayedProduct = OrderOrProduct.createOrder(30, delayedProduct.id)
+
+  test("should inner join stream") {
     val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
-      scenario,
+      prepareJoiningScenario(JoinType.INNER),
       List(
-        OrderOrProduct.createProduct(productId, "Foo product"),
-        OrderOrProduct.createOrder(orderId, productId),
+        someProduct,
+        anotherProduct,
+        orderReferringToExistingProduct,
+        orderReferringToNonExistingProduct,
+        orderReferringToDelayedProduct,
+        delayedProduct
       ),
       Boundedness.BOUNDED,
       Some(RuntimeExecutionMode.BATCH)
     )
 
-    val expectedEnrichedOrder = Map(
-      "orderId" -> orderId,
-      "product" -> Map(
-        "id"   -> productId,
-        "name" -> "Foo product"
+    enrichedOrders.validValue.errors shouldBe empty
+    enrichedOrders.validValue.successes shouldEqual List(
+      Map(
+        "orderId" -> orderReferringToExistingProduct.id,
+        "product" -> Map(
+          "id"   -> someProduct.id,
+          "name" -> someProduct.name
+        ).asJava
+      ).asJava,
+      Map(
+        "orderId" -> orderReferringToDelayedProduct.id,
+        "product" -> Map(
+          "id"   -> delayedProduct.id,
+          "name" -> delayedProduct.name
+        ).asJava
       ).asJava
-    ).asJava
-    enrichedOrders.validValue.successes.loneElement shouldEqual expectedEnrichedOrder
+    )
   }
+
+  test("should outer join stream") {
+    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+      prepareJoiningScenario(JoinType.OUTER),
+      List(
+        someProduct,
+        anotherProduct,
+        orderReferringToExistingProduct,
+        orderReferringToNonExistingProduct,
+        orderReferringToDelayedProduct,
+        delayedProduct
+      ),
+      Boundedness.BOUNDED,
+      Some(RuntimeExecutionMode.BATCH)
+    )
+
+    enrichedOrders.validValue.errors shouldBe empty
+    enrichedOrders.validValue.successes shouldEqual List(
+      Map(
+        "orderId" -> orderReferringToExistingProduct.id,
+        "product" -> Map(
+          "id"   -> someProduct.id,
+          "name" -> someProduct.name
+        ).asJava
+      ).asJava,
+      Map(
+        "orderId" -> orderReferringToNonExistingProduct.id,
+        "product" -> Map(
+          "id"   -> null,
+          "name" -> null
+        ).asJava
+      ).asJava,
+      Map(
+        "orderId" -> orderReferringToDelayedProduct.id,
+        "product" -> Map(
+          "id"   -> delayedProduct.id,
+          "name" -> delayedProduct.name
+        ).asJava
+      ).asJava
+    )
+  }
+
+  private def prepareJoiningScenario(joinType: JoinType) = ScenarioBuilder
+    .streaming(classOf[TableJoinTest].getSimpleName)
+    .sources(
+      GraphBuilder
+        .source("orders-source", TestScenarioRunner.testDataSource)
+        .filter("orders-filter", "#input.type == 'order'".spel)
+        .branchEnd(mainBranchId, joinNodeId),
+      GraphBuilder
+        .source("products-source", TestScenarioRunner.testDataSource)
+        .filter("product-filter", "#input.type == 'product'".spel)
+        .branchEnd(joinedBranchId, joinNodeId),
+      GraphBuilder
+        .join(
+          joinNodeId,
+          "join",
+          Some("product"),
+          List(
+            mainBranchId -> List(
+              "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.MAIN}".spel,
+              "Key"         -> s"#input.productId.toString".spel
+            ),
+            joinedBranchId -> List(
+              "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.JOINED}".spel,
+              "Key"         -> s"#input.id.toString".spel
+            )
+          ),
+          "Join Type" -> s"T(${classOf[JoinType].getName}).$joinType".spel,
+          "Output"    -> "#input".spel,
+        )
+        .emptySink(
+          "end",
+          TestScenarioRunner.testResultSink,
+          "value" ->
+            """{
+              |  orderId: #input.id,
+              |  product: {
+              |   id: #product?.id,
+              |   name: #product?.name
+              |  }
+              |}""".stripMargin.spel
+        )
+    )
 
 }
 
