@@ -25,7 +25,8 @@ protected object OptionalityBasedDefaultValueDeterminer extends ParameterDefault
     editor match {
       case BoolParameterEditor | StringParameterEditor | DateParameterEditor | TimeParameterEditor |
           DateTimeParameterEditor | TextareaParameterEditor | JsonParameterEditor | DurationParameterEditor(_) |
-          PeriodParameterEditor(_) | CronParameterEditor | FixedValuesParameterEditor(_) =>
+          PeriodParameterEditor(_) | CronParameterEditor | FixedValuesParameterEditor(_) |
+          FixedValuesWithIconParameterEditor(_) =>
         Expression.Language.Spel
       case SqlParameterEditor | SpelTemplateParameterEditor =>
         Expression.Language.SpelTemplate
