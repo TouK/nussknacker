@@ -9,7 +9,18 @@ import pl.touk.nussknacker.engine.api.definition.{
   StringParameterEditor
 }
 import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentGroupName
-import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon
+import pl.touk.nussknacker.engine.definition.component.defaultconfig.DefaultsComponentIcon.{
+  ChoiceIcon,
+  CustomComponentIcon,
+  EnricherIcon,
+  FilterIcon,
+  FragmentIcon,
+  ServiceIcon,
+  SinkIcon,
+  SourceIcon,
+  SplitIcon,
+  VariableIcon
+}
 
 object FragmentPropertiesConfig {
 
@@ -38,8 +49,17 @@ object FragmentPropertiesConfig {
       hintText = Some("Group of components in the Creator Panel in which this fragment will be available")
     )
 
-  private val icons = DefaultsComponentIcon.AllIcons.map(e =>
-    FixedExpressionValue(e, e.stripPrefix("/assets/components/").stripSuffix(".svg"))
+  private val icons = List(
+    FixedExpressionValue(SourceIcon, "Source"),
+    FixedExpressionValue(SinkIcon, "Sink"),
+    FixedExpressionValue(EnricherIcon, "Enricher"),
+    FixedExpressionValue(ServiceIcon, "Service"),
+    FixedExpressionValue(CustomComponentIcon, "Custom component"),
+    FixedExpressionValue(FragmentIcon, "Fragment"),
+    FixedExpressionValue(FilterIcon, "Filter"),
+    FixedExpressionValue(SplitIcon, "Split"),
+    FixedExpressionValue(ChoiceIcon, "Choice"),
+    FixedExpressionValue(VariableIcon, "Variable"),
   )
 
   val iconConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.iconName ->
