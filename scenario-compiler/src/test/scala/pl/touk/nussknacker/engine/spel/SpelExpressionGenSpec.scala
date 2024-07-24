@@ -48,6 +48,8 @@ class SpelExpressionGenSpec
 
   private val NotAcceptingZeroOnRightOperators = List("/", "%")
 
+  private val bigDecimalTolerance = BigDecimal("1")
+
   test("all combinations of simple arithmetic operators and operands") {
     val operatorGen = Gen.oneOf(NoRestrictionsOperators)
 
@@ -96,7 +98,14 @@ class SpelExpressionGenSpec
           inside(validate(expr, a, b)) { case Valid(typedExpression) =>
             typedExpression.typingInfo.typingResult match {
               case TypedObjectWithValue(TypedClass(typedClass, Nil), typedValue) =>
-                typedValue shouldEqual evaluatedValue
+                (typedValue, evaluatedValue) match {
+                  case (v1: java.math.BigDecimal, v2: java.math.BigDecimal) =>
+                    // SpEL evaluation uses different precision and rounding than MathUtils
+                    (v1.subtract(v2).abs.compareTo(bigDecimalTolerance) <= 0) shouldBe true
+                  case _ =>
+                    typedValue shouldEqual evaluatedValue
+                }
+
                 typedClass shouldEqual evaluatedValue.getClass
               case TypedClass(typedClass, Nil) =>
                 typedClass shouldEqual evaluatedValue.getClass
