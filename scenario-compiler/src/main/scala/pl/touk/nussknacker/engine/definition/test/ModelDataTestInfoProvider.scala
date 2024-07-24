@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition.test
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -83,31 +84,46 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       }
     }
 
-  override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData] = {
-    val sourceTestDataGenerators = prepareTestDataGenerators(scenario)
-    val sourceTestDataList = sourceTestDataGenerators.map { case (sourceId, testDataGenerator) =>
-      val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-      sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
-    }
-    val scenarioTestRecords = ListUtil.mergeLists(sourceTestDataList, size)
-    // Records without timestamp are put at the end of the list.
-    val sortedRecords          = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-    val preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
-    Some(preliminaryTestRecords).filter(_.nonEmpty).map(PreliminaryScenarioTestData)
+  override def generateTestData(scenario: CanonicalProcess, size: Int): Either[String, PreliminaryScenarioTestData] = {
+    for {
+      generators <- prepareTestDataGenerators(scenario)
+      generatedData = generateTestData(generators, size)
+      // Records without timestamp are put at the end of the list.
+      sortedRecords          = generatedData.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+      preliminaryTestRecords = sortedRecords.map(PreliminaryScenarioTestRecord.apply)
+      nonEmptyPreliminaryTestRecords <- NonEmptyList
+        .fromList(preliminaryTestRecords)
+        .map(Right(_))
+        .getOrElse(Left("Empty list of generated data"))
+    } yield PreliminaryScenarioTestData(nonEmptyPreliminaryTestRecords)
   }
 
-  private def prepareTestDataGenerators(scenario: CanonicalProcess): List[(NodeId, TestDataGenerator)] = {
-    for {
+  private def prepareTestDataGenerators(
+      scenario: CanonicalProcess
+  ): Either[String, NonEmptyList[(NodeId, TestDataGenerator)]] = {
+    val generatorsForSourcesSupportingTestDataGeneration = for {
       source            <- collectAllSources(scenario)
       sourceObj         <- prepareSourceObj(source)(scenario.metaData, NodeId(source.id))
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
+    NonEmptyList
+      .fromList(generatorsForSourcesSupportingTestDataGeneration)
+      .map(Right(_))
+      .getOrElse(Left("Scenario doesn't have any source supporting test data generation"))
   }
 
   private def prepareSourceObj(
       source: SourceNodeData
   )(implicit metaData: MetaData, nodeId: NodeId): Option[process.Source] = {
     nodeCompiler.compileSource(source).compiledObject.toOption
+  }
+
+  private def generateTestData(generators: NonEmptyList[(NodeId, TestDataGenerator)], size: Int) = {
+    val sourceTestDataList = generators.map { case (sourceId, testDataGenerator) =>
+      val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+      sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
+    }
+    ListUtil.mergeLists(sourceTestDataList.toList, size)
   }
 
   override def prepareTestData(
@@ -131,7 +147,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
           Left(formatError("scenario has multiple sources but got record without source id", recordIdx))
       }
       .sequence
-      .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords))
+      .map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords.toList))
   }
 
   private def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {

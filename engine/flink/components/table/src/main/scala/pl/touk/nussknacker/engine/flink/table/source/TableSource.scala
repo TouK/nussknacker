@@ -51,12 +51,12 @@ class TableSource(
 
     sqlStatements.foreach(tableEnv.executeSql)
 
-    val selectQuery = tableEnv.from(tableDefinition.tableName)
+    val selectQuery = tableEnv.from(s"`${tableDefinition.tableName}`")
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
       .map { case SqlFilteringExpression(sqlExpression) =>
         tableEnv.executeSql(
-          s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM ${tableDefinition.tableName} WHERE $sqlExpression"
+          s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM `${tableDefinition.tableName}` WHERE $sqlExpression"
         )
         tableEnv.from(filteringInternalViewName)
       }

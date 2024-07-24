@@ -1,17 +1,15 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import cats.data.NonEmptyList
-import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import org.apache.flink.api.common.functions.{RichFunction, RuntimeContext}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{NodeId, ValueWithContext, Context => NkContext}
+import pl.touk.nussknacker.engine.api.{Context => NkContext, NodeId, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
@@ -20,7 +18,6 @@ import pl.touk.nussknacker.engine.util
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
 
-import java.util.concurrent.TimeUnit
 import scala.language.higherKinds
 
 // This is the real SlidingWindow with slide = 1min - moving with time for each key. It reduce on each emit and store
@@ -68,10 +65,6 @@ trait AggregatorFunctionMixin[MapT[K, V]] extends RichFunction { self: StateHold
   protected def name: String = "aggregator"
 
   protected def tags: Map[String, String] = Map(nodeIdTag -> nodeId.id)
-
-  protected def newHistogram() = new DropwizardHistogramWrapper(
-    new Histogram(new SlidingTimeWindowReservoir(10, TimeUnit.SECONDS))
-  )
 
   protected lazy val metricsProvider: MetricsProviderForScenario = engineRuntimeContext.metricsProvider
 

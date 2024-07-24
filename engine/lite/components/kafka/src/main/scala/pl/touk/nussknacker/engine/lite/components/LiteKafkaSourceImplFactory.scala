@@ -68,7 +68,7 @@ class LiteKafkaSourceImpl[K, V](
     initializerFun = contextInitializer.initContext(contextIdGenerator)
   }
 
-  override val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
+  override lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
 
   override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
     val deserialized = deserializationSchema.deserialize(record)

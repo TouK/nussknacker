@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
 import org.apache.flink.api.common.functions.{FlatMapFunction, RuntimeContext}
+import org.apache.flink.api.common.typeinfo.Types
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.ProcessFunction
@@ -8,8 +9,8 @@ import org.apache.flink.table.api.Expressions.{$, call}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
-import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api
+import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
@@ -21,9 +22,7 @@ import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation.{
   aggregateByInternalColumnName,
   groupByInternalColumnName
 }
-import pl.touk.nussknacker.engine.flink.table.utils.NestedRowConversions.ColumnFlinkSchema
-import pl.touk.nussknacker.engine.flink.table.utils.TableTypeConversions.getFlinkTypeForNuTypeOrThrow
-import pl.touk.nussknacker.engine.flink.table.utils.{NestedRowConversions, RowConversions}
+import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
 object TableAggregation {
   private val aggregateByInternalColumnName = "aggregateByInternalColumn"
@@ -45,19 +44,16 @@ class TableAggregation(
     val env      = start.getExecutionEnvironment
     val tableEnv = StreamTableEnvironment.create(env)
 
-    val streamOfRows = start.flatMap(new LazyInterpreterFunction(groupByLazyParam, aggregateByLazyParam, context))
-
-    val groupByFlinkType     = getFlinkTypeForNuTypeOrThrow(groupByLazyParam.returnType)
-    val aggregateByFlinkType = getFlinkTypeForNuTypeOrThrow(aggregateByLazyParam.returnType)
-
-    val inputParametersTable = NestedRowConversions.buildTableFromRowStream(
-      tableEnv = tableEnv,
-      streamOfRows = streamOfRows,
-      columnSchema = List(
-        ColumnFlinkSchema(groupByInternalColumnName, groupByFlinkType),
-        ColumnFlinkSchema(aggregateByInternalColumnName, aggregateByFlinkType)
+    val streamOfRows = start.flatMap(
+      new LazyInterpreterFunction(groupByLazyParam, aggregateByLazyParam, context),
+      Types.ROW_NAMED(
+        Array(groupByInternalColumnName, aggregateByInternalColumnName),
+        context.typeInformationDetection.forType(groupByLazyParam.returnType),
+        context.typeInformationDetection.forType(aggregateByLazyParam.returnType)
       )
     )
+
+    val inputParametersTable = tableEnv.fromDataStream(streamOfRows)
 
     val groupedTable = inputParametersTable
       .groupBy($(groupByInternalColumnName))
