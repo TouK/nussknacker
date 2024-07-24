@@ -14,6 +14,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   is only considered in case of Sinks). Create proper topics manually if needed.
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
   * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+* [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
+  POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
 * [#TODO](https://github.com/TouK/nussknacker/pull/TODO) Changes to `TypingResult` of SpEL expressions that are maps or lists:
     * `TypedObjectTypingResult.valueOpt` now returns a `java.util.map` instead of `scala.collection.immutable.Map`
         * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map

@@ -22,6 +22,9 @@
   in table name
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
   and arrays are serialized/deserialized more optimal in aggregates
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
+* [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
+  POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
 * [#6436](https://github.com/TouK/nussknacker/pull/6436) SpEL expression validator now works with values that are lists or maps.
     * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 
