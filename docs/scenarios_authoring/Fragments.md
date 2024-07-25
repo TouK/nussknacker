@@ -8,6 +8,19 @@ Fragments are a way to share processing logic - if many scenarios require identi
 
 Once a fragment is created using Designer (see Fragments tab) it can be used in other scenarios in the same category.
 
+## Properties
+
+Fragment properties can be accessed and edited through the "properties" menu found in scenario tab:
+
+![fragment_properties](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_fragments_-_Properties0.png)
+
+| Property name     | Description                                                                            |
+|-------------------|----------------------------------------------------------------------------------------|
+| Name              | The name of this fragment.                                                             |
+| Documentation url | If defined, a button redirecting to this url will be shown in fragment modal.          |
+| Description       | The description of this fragment.                                                      |
+| Component group   | The group of components in the Creator Panel in which this fragment will be available. |
+
 ## Inputs
 Fragment must have exactly one input node. You can define parameters of a fragment:
 
