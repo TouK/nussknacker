@@ -615,7 +615,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, Nil),
-          invalidTypes("path 'field' actual: 'List[Unknown]([])' expected: 'Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'List[Unknown]({})' expected: 'Map[String,Null | Integer]'")
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, null),
@@ -635,7 +635,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         ),
         (
           rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfIntsSchema, Nil),
-          invalidTypes("path 'field' actual: 'List[Unknown]([])' expected: 'Null | Map[String,Null | Integer]'")
+          invalidTypes("path 'field' actual: 'List[Unknown]({})' expected: 'Null | Map[String,Null | Integer]'")
         ),
         (
           rConfig(
@@ -670,7 +670,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, Nil),
           invalidTypes(
-            "path 'field' actual: 'List[Unknown]([])' expected: 'Null | Map[String,Null | Map[String,Null | Integer]]'"
+            "path 'field' actual: 'List[Unknown]({})' expected: 'Null | Map[String,Null | Map[String,Null | Integer]]'"
           )
         ),
         (
@@ -718,7 +718,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, Nil),
           invalidTypes(
-            "path 'field' actual: 'List[Unknown]([])' expected: 'Null | Map[String,Null | Record{price: Null | Double}]'"
+            "path 'field' actual: 'List[Unknown]({})' expected: 'Null | Map[String,Null | Record{price: Null | Double}]'"
           )
         ),
         (
@@ -784,7 +784,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest
         (
           rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, Nil),
           invalidTypes(
-            "path 'field' actual: 'List[Unknown]([])' expected: 'Null | Record{sub: Null | Record{price: Null | Double}}'"
+            "path 'field' actual: 'List[Unknown]({})' expected: 'Null | Record{sub: Null | Record{price: Null | Double}}'"
           )
         ),
         (

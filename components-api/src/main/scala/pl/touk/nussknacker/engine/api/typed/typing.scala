@@ -116,12 +116,17 @@ object typing {
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
-    override def display: String = {
-      val dataString = value.toString
-      val shortenedDataString =
-        if (dataString.length <= maxDataDisplaySize) dataString
-        else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
-      s"${underlying.display}($shortenedDataString)"
+    override def display: String = s"${underlying.display}($shortenedDataString)"
+
+    private def shortenedDataString = {
+      val dataString = value match {
+        case l: java.util.List[_]       => l.asScala.mkString("{", ", ", "}")
+        case l: scala.collection.Seq[_] => l.mkString("{", ", ", "}")
+        case _                          => value.toString
+      }
+
+      if (dataString.length <= maxDataDisplaySize) dataString
+      else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
     }
 
   }

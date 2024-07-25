@@ -25,8 +25,8 @@
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
-* [#6436](https://github.com/TouK/nussknacker/pull/6436) SpEL expression validator now works with values that are lists or maps.
-    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
+* [#6436](https://github.com/TouK/nussknacker/pull/6436) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
 
 1.16.1 (16 July 2024)
 -------------------------

@@ -41,21 +41,20 @@ object SimpleObjectEncoder {
       val encodedValues = vals.asScala.map(elem => encodeValue(elem)).toList.sequence
       encodedValues.map(values => Json.fromValues(values))
     case vals: java.util.Map[_, _] =>
-      val encodedMap: Validated[NonEmptyList[String], List[(String, Json)]] = vals.asScala
-        .map { case (key, value) =>
-          encodeValue(key).andThen(encodedKey =>
-            encodedKey.asString match {
-              case Some(encodedKeyString) => encodeValue(value).map(encodedValue => encodedKeyString -> encodedValue)
-              case None                   => s"Failed to encode Record key '$encodedKey' as String".invalidNel
-            }
-          )
-        }
-        .toList
-        .sequence
+      val encodedFields = vals.asScala.toList.map { case (key, value) =>
+        encodeValue(key).andThen(encodedKey =>
+          encodedKey.asString match {
+            case Some(encodedKeyString) =>
+              encodeValue(value).map(encodedValue => encodedKeyString -> encodedValue)
+            case None =>
+              s"Failed to encode Record key '$encodedKey' as String".invalidNel
+          }
+        )
+      }
 
-      encodedMap.map(values => Json.fromFields(values))
+      encodedFields.sequence.map(values => Json.fromFields(values))
     case value =>
-      s"No encoding logic for value $value of class ${value.getClass}".invalidNel
+      s"Encoding of value [$value] of class [${value.getClass.getName}] is not supported".invalidNel
   }
 
   def decodeValue(typ: TypingResult, obj: ACursor): Decoder.Result[Any] = typ match {
@@ -72,30 +71,31 @@ object SimpleObjectEncoder {
     case `bigIntegerClass`              => obj.as[BigInteger]
     case `bigDecimalClass`              => obj.as[java.math.BigDecimal]
     case TypedClass(klass, List(elementType: TypingResult)) if klass == classOf[java.util.List[_]] =>
-      obj.values
-        .getOrElse {
-          throw new RuntimeException(s"$typ  -  ${obj.toString}")
-        }
-        .toList
-        .traverse(v => decodeValue(elementType, v.hcursor))
-        .map(_.asJava)
-    case record: TypedObjectTypingResult =>
+      obj.values match {
+        case Some(values) =>
+          values.toList
+            .traverse(v => decodeValue(elementType, v.hcursor))
+            .map(_.asJava)
+        case None =>
+          Left(DecodingFailure(s"Expected encoded List to be a Json array", List()))
+      }
+    case record: TypedObjectTypingResult => // TODO: test
       for {
-        fields <- obj.as[Map[String, Json]]
-        decodedFields <- fields.toList.traverse { case (fieldName, fieldJson) =>
-          record.fields.get(fieldName) match {
-            case Some(fieldTyp) => decodeValue(fieldTyp, fieldJson.hcursor).map(fieldName -> _)
+        fieldsJson <- obj.as[Map[String, Json]]
+        decodedFields <- record.fields.toList.traverse { case (fieldName, fieldType) =>
+          fieldsJson.get(fieldName) match {
+            case Some(fieldJson) => decodeValue(fieldType, fieldJson.hcursor).map(fieldName -> _)
             case None =>
               Left(
                 DecodingFailure(
-                  s"Record field '$fieldName' isn't present in known Record fields: ${record.fields}",
+                  s"Record field '$fieldName' isn't present in encoded Record fields: $fieldsJson",
                   List()
                 )
               )
           }
         }
       } yield decodedFields.toMap.asJava
-    case typ => Left(DecodingFailure(s"No decoding logic for $typ.", List()))
+    case typ => Left(DecodingFailure(s"Decoding of type [$typ] is not supported.", List()))
   }
 
 }

@@ -491,22 +491,16 @@ private[spel] class Typer(
   private def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult, fallbackType: TypingResult)(
       op: (A, B) => Validated[ExpressionParseError, R]
   ): TypingR[TypingResult] =
-    (left.valueOpt, right.valueOpt) match {
-      case (Some(leftValue), Some(rightValue)) =>
-        Try(op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])) match {
-          case Failure(a: ArithmeticException) =>
-            logger.debug(s"Arithmetic exception during op, using fallback. $a")
-            valid(fallbackType)
-          case Failure(e) =>
-            throw e
-          case Success(res) =>
-            res
-              .map(Typed.fromInstance)
-              .map(valid)
-              .valueOr(invalid(_, fallbackType))
-        }
-      case _ => valid(fallbackType)
-    }
+    (for {
+      leftValue  <- left.valueOpt
+      rightValue <- right.valueOpt
+      res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])
+    } yield {
+      res
+        .map(Typed.fromInstance)
+        .map(valid)
+        .valueOr(invalid(_, fallbackType))
+    }).getOrElse(valid(fallbackType))
 
   // currently there is no better way than to check ast string starting with $ or ^
   private def resolveSelectionTypingResult(

@@ -15,7 +15,7 @@ import scala.util.{Failure, Success, Try}
 //TODO: refactor way of encoding to easier handle decoding.
 
 // If changes are made to Encoders/Decoders should also change Schemas in NodesApiEndpoints.TypingDtoSchemas for OpenApi
-object TypeEncoders extends LazyLogging {
+object TypeEncoders {
 
   private[typed] val typeField = "type"
 
@@ -70,16 +70,11 @@ object TypeEncoders extends LazyLogging {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, value) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded = SimpleObjectEncoder
+      val dataEncoded: (String, Json) = "value" -> SimpleObjectEncoder
         .encodeValue(value)
+        .getOrElse(throw new IllegalStateException(s"Not supported data value: $value"))
 
-      dataEncoded match {
-        case Valid(value) =>
-          objTypeEncoded.+:("value" -> value)
-        case Invalid(e) =>
-          logger.warn(s"Failed value encoding: $e")
-          objTypeEncoded
-      }
+      objTypeEncoded.+:(dataEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
@@ -102,7 +97,7 @@ object TypeEncoders extends LazyLogging {
   Primitives can be handled by ClassUtils from spring, but we don't want to have explicit dependency in this module
   See NodeResources in UI for usage
  */
-class TypingResultDecoder(loadClass: String => Class[_]) extends LazyLogging {
+class TypingResultDecoder(loadClass: String => Class[_]) {
 
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].flatMap {
@@ -137,13 +132,8 @@ class TypingResultDecoder(loadClass: String => Class[_]) extends LazyLogging {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
-    value = SimpleObjectEncoder.decodeValue(valueClass, obj.downField("value"))
-  } yield value match {
-    case Left(e) =>
-      logger.warn(s"Failed value decoding: $e")
-      valueClass
-    case Right(value) => TypedObjectWithValue(valueClass, value)
-  }
+    value      <- SimpleObjectEncoder.decodeValue(valueClass, obj.downField("value"))
+  } yield TypedObjectWithValue(valueClass, value)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)

@@ -63,7 +63,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ),
       (
         "#COLLECTION.merge({a:{innerA:{10,20}}},{b:{innerB:{20}}})",
-        "Record{a: Record{innerA: List[Integer]([10, 20])}, b: Record{innerB: List[Integer]([20])}}"
+        "Record{a: Record{innerA: List[Integer]({10, 20})}, b: Record{innerB: List[Integer]({20})}}"
       ),
       ("#COLLECTION.merge({a:4,b:3},{a:'5'})", "Record{a: String(5), b: Integer(3)}"),
       ("#COLLECTION.merge(#unknownMap,{a:'5'})", "Map[Unknown,Unknown]"),

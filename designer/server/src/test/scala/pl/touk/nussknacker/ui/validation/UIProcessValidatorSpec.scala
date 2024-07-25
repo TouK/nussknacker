@@ -77,7 +77,6 @@ import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.security.api.{AdminUser, LoggedUser}
 
-import scala.collection.immutable.Map
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 
