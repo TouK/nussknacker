@@ -25,6 +25,7 @@
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
+* [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
 
 1.16.1 (16 July 2024)
 -------------------------
