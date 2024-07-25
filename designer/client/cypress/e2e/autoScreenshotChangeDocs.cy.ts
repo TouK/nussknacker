@@ -30,8 +30,8 @@ describe("Auto Screenshot Change Docs -", () => {
         takeWindowScreenshot(); // take screenshot of node window
     });
 
-    it("basic components - mapmariable", () => {
-        cy.visitNewProcess(seed, "docsBasicComponentsMapVariable#0");
+    it("basic components - recordVariable", () => {
+        cy.visitNewProcess(seed, "docsBasicComponentsRecordVariable#0");
         cy.layoutScenario();
         cy.get('[model-id="node label goes here"]').dblclick();
         cy.get('[title="Name"]').click();
@@ -115,6 +115,15 @@ describe("Auto Screenshot Change Docs -", () => {
         cy.layoutScenario();
         cy.get('[model-id="full-outer-join"]').dblclick();
         cy.get('[title="Name"]').click();
+        takeWindowScreenshot();
+    });
+
+    it("fragments - Properties", () => {
+        cy.viewport(1920, 1080);
+        cy.visitNewFragment(seed, "fragment").as("fragmentName");
+
+        cy.contains(/^properties/i).click();
+
         takeWindowScreenshot();
     });
 
