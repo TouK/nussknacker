@@ -9,6 +9,7 @@ import scala.util.Try
 
 trait WithConfig {
 
+  // Here is the place where we can change the entry config file
   protected val configFilename: String = "application.conf"
 
   protected lazy val config: Config = {
