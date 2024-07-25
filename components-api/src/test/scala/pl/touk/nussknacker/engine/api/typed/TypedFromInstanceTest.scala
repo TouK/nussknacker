@@ -60,7 +60,7 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
   }
 
   test("should type empty list") {
-    Typed.fromInstance(Nil).canBeSubclassOf(Typed(classOf[java.util.List[_]])) shouldBe true
+    Typed.fromInstance(Nil).canBeSubclassOf(Typed(classOf[List[_]])) shouldBe true
     Typed.fromInstance(Nil.asJava).canBeSubclassOf(Typed(classOf[java.util.List[_]])) shouldBe true
   }
 
@@ -86,12 +86,12 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)
-    checkTypingResult(listOfSimpleObjects, classOf[java.util.List[_]], Typed(classOf[Number]))
+    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Number]))
     checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps      = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
     val typedMapTypingResult = Typed.record(Map("a" -> Typed(classOf[Integer])))
-    checkTypingResult(listOfTypedMaps, classOf[java.util.List[_]], typedMapTypingResult)
+    checkTypingResult(listOfTypedMaps, classOf[List[_]], typedMapTypingResult)
     checkTypingResult(listOfTypedMaps.asJava, classOf[java.util.List[_]], typedMapTypingResult)
     checkNotASubclassOfOtherParamTypingResult(
       listOfTypedMaps,

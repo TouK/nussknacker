@@ -352,9 +352,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     parse[Any]("null").toOption.get.returnType shouldBe TypedNull
     parse[java.util.List[String]]("{'t', null, 'a'}").toOption.get.returnType shouldBe
-      typedListWithElementValues(Typed[String], List("t", null, "a"))
+      typedListWithElementValues(Typed[String], List("t", null, "a").asJava)
     parse[java.util.List[Any]]("{5, 't', null}").toOption.get.returnType shouldBe
-      typedListWithElementValues(Typed[Any], List(5, "t", null))
+      typedListWithElementValues(Typed[Any], List(5, "t", null).asJava)
     parse[Int]("true ? 8 : null").toOption.get.returnType shouldBe Typed[Int]
   }
 
@@ -816,7 +816,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     )
     shouldHaveBadType(
       parse[String]("{1, 2, 3}", ctx),
-      s"Bad expression type, expected: String, found: ${typedListWithElementValues(Typed[Int], List(1, 2, 3)).display}"
+      s"Bad expression type, expected: String, found: ${typedListWithElementValues(Typed[Int], List(1, 2, 3).asJava).display}"
     )
     shouldHaveBadType(
       parse[java.util.Map[_, _]]("'alaMa'", ctx),

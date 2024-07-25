@@ -258,7 +258,10 @@ object typing {
     }
 
     def typedListWithElementValues[T](elementType: TypingResult, elementValues: List[T]): TypedObjectWithValue =
-      typedListWithElementValues(elementType, elementValues.asJava)
+      TypedObjectWithValue(
+        Typed.genericTypeClass(classOf[List[_]], List(elementType)),
+        elementValues
+      )
 
     def typedListWithElementValues[T](
         elementType: TypingResult,

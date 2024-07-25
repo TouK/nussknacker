@@ -306,7 +306,7 @@ private[spel] class Typer(
             CommonSupertypeFinder.Default.commonSupertype(a, b)
 
           val elementType           = if (children.isEmpty) Unknown else children.reduce(getSupertype).withoutValue
-          val childrenCombinedValue = children.flatMap(_.valueOpt)
+          val childrenCombinedValue = children.flatMap(_.valueOpt).asJava
 
           valid(typedListWithElementValues(elementType, childrenCombinedValue))
         }

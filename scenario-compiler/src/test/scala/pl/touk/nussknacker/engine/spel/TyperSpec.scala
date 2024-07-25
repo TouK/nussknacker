@@ -52,13 +52,13 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     typeExpression(s"{$testRecordExpr}").validValue.finalResult.typingResult shouldBe
       typedListWithElementValues(
         testRecordTyped.withoutValue,
-        List(testRecordTyped.valueOpt.get)
+        List(testRecordTyped.valueOpt.get).asJava
       )
   }
 
   test("detect proper List type with value") {
     typeExpression("{1,2}").validValue.finalResult.typingResult shouldBe
-      typedListWithElementValues(Typed.typedClass[Int], List(1, 2))
+      typedListWithElementValues(Typed.typedClass[Int], List(1, 2).asJava)
   }
 
   test("detect proper selection types - List") {

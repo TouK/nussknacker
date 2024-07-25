@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.modelconfig.ComponentsUiConfig
 import pl.touk.nussknacker.engine.testing.ModelDefinitionBuilder
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
+import scala.jdk.CollectionConverters._
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
@@ -99,7 +100,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       Map(
         "val1" -> Typed.fromInstance("aa"),
         "val2" -> Typed.fromInstance(11),
-        "val3" -> typedListWithElementValues(Typed[java.lang.Boolean], List(false))
+        "val3" -> typedListWithElementValues(Typed[java.lang.Boolean], List(false).asJava)
       )
     )
 
@@ -128,7 +129,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       Map(
         "val1" -> Typed.fromInstance("aa"),
         "val2" -> Typed.fromInstance(11),
-        "val3" -> typedListWithElementValues(Typed[java.lang.Boolean], List(false))
+        "val3" -> typedListWithElementValues(Typed[java.lang.Boolean], List(false).asJava)
       )
     )
 

@@ -47,7 +47,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
       ListAggregator,
       Typed[JustAnyClass],
       justAnyObject,
-      Typed.fromDetailedType[JList[JustAnyClass]],
+      Typed.fromDetailedType[List[JustAnyClass]],
       Typed.fromDetailedType[JList[JustAnyClass]]
     )
   )
@@ -181,7 +181,7 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
     val optionAggregator     = new OptionAggregator(aggregator)
     val input                = Typed.fromDetailedType[Option[Double]]
     val elem: Option[Double] = Some(1.0)
-    val stored               = Typed.fromDetailedType[Option[java.util.List[Double]]]
+    val stored               = Typed.fromDetailedType[Option[List[Double]]]
     val output               = Typed.fromDetailedType[java.util.List[Double]]
 
     checkAggregator(optionAggregator, input, elem, stored, output)

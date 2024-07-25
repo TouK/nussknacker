@@ -45,14 +45,14 @@ class TypingResultDecoderSpec
         Typed.typedClass[Map[String, Any]],
         Map[String, AdditionalDataValue]("ad1" -> "aaa", "ad2" -> 22L, "ad3" -> true)
       ),
-      typedListWithElementValues(Typed[Int], List(1, 2, 3)),
-      typedListWithElementValues(Typed[String], List("foo", "bar")),
-      typedListWithElementValues(Typed.record(Map.empty), List(Map.empty.asJava)),
+      typedListWithElementValues(Typed[Int], List(1, 2, 3).asJava),
+      typedListWithElementValues(Typed[String], List("foo", "bar").asJava),
+      typedListWithElementValues(Typed.record(Map.empty), List(Map.empty.asJava).asJava),
       typedListWithElementValues(
         Typed.record(
           Map("a" -> TypedObjectWithValue(Typed.typedClass[Int], 1))
         ),
-        List(Map("a" -> 1).asJava)
+        List(Map("a" -> 1).asJava).asJava
       )
     ).foreach { typing =>
       val encoded = TypeEncoders.typingResultEncoder(typing)
