@@ -200,7 +200,6 @@ describe("Process", () => {
         });
 
         it("should have counts button and modal", () => {
-            cy.mockWindowDate();
             cy.viewport("macbook-15");
 
             // Collapse toolbar to make counts button visible
