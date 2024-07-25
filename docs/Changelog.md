@@ -26,6 +26,8 @@
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
 * [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
+* [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
+  determined automatically, developer doesn't need to provide it by his/her own
 
 1.16.2 (18 July 2024)
 -------------------------

@@ -53,8 +53,6 @@ class FullOuterJoinTransformer(
 
   import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer._
 
-  override def canHaveManyInputs: Boolean = true
-
   override type State = Nothing
 
   override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)

@@ -87,8 +87,6 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
   import UnionTransformer._
 
-  override def canHaveManyInputs: Boolean = true
-
   @MethodToInvoke
   def execute(
       @BranchParamName("Output expression") outputExpressionByBranchId: Map[String, LazyParameter[AnyRef]],
