@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.statistics
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.hamcrest.Matchers.{equalTo, matchesRegex}
 
 import java.net.URL
 
@@ -50,6 +51,18 @@ class StatisticsSpec extends AnyFunSuite with Matchers {
 
   test("should return error if the URL cannot be constructed") {
     Statistics.toURL("xd://stats.nussknacker.io/?f=a+b") shouldBe Left(CannotGenerateStatisticsError)
+  }
+
+  test("should return encrypted URL if not set otherwise") {
+    val cfg = StatisticUrlConfig()
+    val sut = new Statistics.NonEmpty(
+      new Fingerprint("t"),
+      new RequestId("req_id"),
+      Map("f" -> "a b", "v" -> "1.6.5-a&b=c")
+    )
+    sut.prepareURLs(cfg).getOrElse(List.empty).map { url =>
+      url.toString matches s"https://stats.nussknacker.io/\\?encrypted=\\S+key=\\S+" shouldBe true
+    }
   }
 
 }
