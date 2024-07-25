@@ -5,13 +5,17 @@ import org.apache.commons.io.IOUtils
 
 import java.nio.charset.StandardCharsets
 
+import scala.util.Try
+
 trait WithConfig {
 
   protected val configFilename: String = "application.conf"
 
   protected lazy val config: Config = {
-    val resource = IOUtils.resourceToString(s"/$configFilename", StandardCharsets.UTF_8)
-    val config   = ConfigFactory.parseString(resource)
+    val config = Try(IOUtils.resourceToString(s"/$configFilename", StandardCharsets.UTF_8)).toOption
+      .map(ConfigFactory.parseString)
+      .getOrElse(ConfigFactory.empty())
+
     resolveConfig(config.resolve())
   }
 
