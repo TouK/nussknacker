@@ -138,7 +138,7 @@ class K8sTestUtils(k8s: KubernetesClient)
         )
       )
     )
-    // We set proxy_set_header Connection close to make sure that nginx don't cache any connection to upstream server
+    // We set proxy_set_header Connection close to make sure that nginx doesn't cache any connection to upstream server
     val configMap = ConfigMap(
       metadata = ObjectMeta(reverseProxyConfConfigMapName),
       data = Map(
