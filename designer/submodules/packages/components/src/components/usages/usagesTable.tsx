@@ -12,6 +12,7 @@ import { UsageWithStatus } from "../useComponentsQuery";
 import { Box } from "@mui/material";
 import { ScenarioStatusFormatted } from "../cellRenderers/scenarioStatusFormatted";
 import { EventTrackingSelector, getEventTrackingProps } from "nussknackerUi/eventTracking";
+import { formatDateTime } from "nussknackerUi/DateUtils";
 
 export function nodeFilter(f, u: NodeUsageData) {
     switch (f) {
@@ -92,7 +93,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 headerName: t("table.usages.title.CREATION_DATE", "Creation date"),
                 type: "string",
                 flex: 2,
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} value={formatDateTime(props.value)} />,
                 hide: true,
                 sortingOrder: ["desc", "asc", null],
             },
@@ -115,7 +116,7 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                 field: "modificationDate",
                 headerName: t("table.usages.title.MODIFICATION_DATE", "Modification date"),
                 type: "string",
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} value={formatDateTime(props.value)} />,
                 sortingOrder: ["desc", "asc", null],
                 minWidth: 180,
             },

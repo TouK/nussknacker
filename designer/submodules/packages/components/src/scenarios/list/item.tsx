@@ -11,6 +11,7 @@ import { CopyTooltip } from "./copyTooltip";
 import { ProcessActionType } from "nussknackerUi/components/Process/types";
 import { ScenarioStatus } from "./scenarioStatus";
 import { ProcessingModeItem } from "./processingMode";
+import { formatDateTime } from "nussknackerUi/DateUtils";
 
 function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
@@ -95,8 +96,8 @@ function ModificationDate({ row }: { row: RowType }): JSX.Element {
     return (
         <Typography variant={"caption"}>
             {t("scenario.modifiedAtLabel", "Last modified:")}{" "}
-            {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: row.modificationDate })} {t("scenario.authorBy", "by")}{" "}
-            <Author value={row.modifiedBy} />
+            {t("scenario.modifiedAt", "{{date, relativeDate}}", { date: formatDateTime(row.modificationDate) })}{" "}
+            {t("scenario.authorBy", "by")} <Author value={row.modifiedBy} />
         </Typography>
     );
 }

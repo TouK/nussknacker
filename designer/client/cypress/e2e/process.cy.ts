@@ -2,6 +2,7 @@ describe("Process", () => {
     const seed = "process";
 
     before(() => {
+        cy.mockWindowDate();
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
@@ -199,6 +200,7 @@ describe("Process", () => {
         });
 
         it("should have counts button and modal", () => {
+            cy.mockWindowDate();
             cy.viewport("macbook-15");
 
             // Collapse toolbar to make counts button visible

@@ -3,6 +3,8 @@ describe("Compare versions", () => {
     const fragmentSeed = "fragment";
 
     before(() => {
+        cy.mockWindowDate();
+
         cy.deleteAllTestProcesses({ filter: seed, force: true });
         cy.deleteAllTestProcesses({ filter: fragmentSeed, force: true });
     });

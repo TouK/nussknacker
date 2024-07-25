@@ -1,6 +1,7 @@
 describe("Compare", () => {
     const seed = "compare";
     before(() => {
+        cy.mockWindowDate();
         cy.viewport("macbook-16");
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });

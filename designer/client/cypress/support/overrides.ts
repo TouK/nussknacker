@@ -93,45 +93,43 @@ Cypress.Commands.overwrite<"matchImage", "element">(
     "matchImage",
     (originalFn, $el, { updateSnapshotsOnFail, ...options }: Cypress.MatchImageOptionsExtended = {}) => {
         hideInputCaret($el);
-        const now = new Date(2024, 0, 4).getTime(); // Months are zero-indexed in JavaScript
-        cy.clock(now, ["Date"]).then(($clock) => {
-            cy.wait(200);
-            if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
-                let path = null;
-                const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold");
-                return recurse(
-                    () =>
-                        originalFn($el, {
-                            ...options,
-                            maxDiffThreshold: 1,
-                            matchAgainstPath: path,
-                            updateImages: !!path,
-                            title: path && "__temp", //prevent # mismatch
-                        }),
-                    (r) => r.diffValue < threshold,
-                    {
-                        log: false,
-                        delay: 200,
-                        limit: 2,
-                        yield: "value",
-                        postLastValue: true,
-                        post: ({ value, limit, success }) => {
-                            $clock.restore();
-                            showInputCaret($el);
-                            path = path || value.imgPath;
-                            if (!success) {
-                                return cy.log("Snapshot needs update", value);
-                            }
-                            if (limit <= 1) {
-                                return cy.log("Updated snapshot", value);
-                            }
-                        },
+        options.maxDiffThreshold = 0.0001;
+
+        cy.wait(200);
+        if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
+            let path = null;
+            const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold");
+            return recurse(
+                () =>
+                    originalFn($el, {
+                        ...options,
+                        maxDiffThreshold: 1,
+                        matchAgainstPath: path,
+                        updateImages: !!path,
+                        title: path && "__temp", //prevent # mismatch
+                    }),
+                (r) => r.diffValue < threshold,
+                {
+                    log: false,
+                    delay: 200,
+                    limit: 2,
+                    yield: "value",
+                    postLastValue: true,
+                    post: ({ value, limit, success }) => {
+                        showInputCaret($el);
+                        path = path || value.imgPath;
+                        if (!success) {
+                            return cy.log("Snapshot needs update", value);
+                        }
+                        if (limit <= 1) {
+                            return cy.log("Updated snapshot", value);
+                        }
                     },
-                );
-            }
-            originalFn($el, options);
-            cy.wait(200);
-        });
+                },
+            );
+        }
+        originalFn($el, options);
+        cy.wait(200);
     },
 );
 
