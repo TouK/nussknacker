@@ -8,8 +8,9 @@ import pl.touk.nussknacker.engine.api.definition.{
   SqlParameterEditor
 }
 import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
+import pl.touk.nussknacker.engine.definition.component.parameter.EditorBasedLanguageDeterminer
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language.DictKeyWithLabel
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultValueDeterminer {
 
@@ -42,13 +43,11 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   }
 
   private def defaultStringExpression(editor: Option[ParameterEditor]): Expression =
-    editor
-      .collect { // TODO: maybe some better way to specify language like Parameter.language
-        case SpelTemplateParameterEditor => Expression.spelTemplate("") // template not need to be wrapped in ''
-        case SqlParameterEditor          => Expression.spelTemplate("")
-        case DictParameterEditor(_)      => Expression(DictKeyWithLabel, "")
-        case DualParameterEditor(DictParameterEditor(_), _) => Expression(DictKeyWithLabel, "")
-      }
-      .getOrElse(Expression.spel("''"))
+    EditorBasedLanguageDeterminer.determineLanguageOf(editor) match {
+      case Language.Spel                  => Expression.spel("''")
+      case Language.SpelTemplate          => Expression.spelTemplate("") // template not need to be wrapped in ''
+      case Language.DictKeyWithLabel      => Expression(Language.DictKeyWithLabel, "")
+      case Language.TabularDataDefinition => Expression(Language.TabularDataDefinition, "")
+    }
 
 }
