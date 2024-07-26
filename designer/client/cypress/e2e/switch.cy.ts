@@ -34,10 +34,13 @@ describe("Process", () => {
             cy.get("[data-testid=window]").find("[data-testid='fieldsRow:0']").find(".ace_editor").as("input");
             cy.get("[data-testid=window]").matchImage();
             cy.get("@input").click().type(" || false");
+
+            cy.intercept("POST", "/api/nodes/*/validation").as("validation");
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
             cy.get("[data-testid=window]").should("not.exist");
+            cy.wait("@validation");
             cy.get("[data-testid=graphPage]").matchImage({
                 screenshotConfig: {
                     blackout: ["> div > :not(#nk-graph-main)"],
