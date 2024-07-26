@@ -75,7 +75,7 @@ Cypress.Commands.overwrite("visit", (original, ...args: VisitArgs) => {
 });
 
 const hideInputCaret = ($el: JQueryWithSelector) => {
-    cy.get("input, textarea, select").then(($input) => {
+    cy.get("input, textarea, select").each(($input) => {
         const originalCaretColor = $el.css("caret-color");
         $el.attr("data-original-caret-color", originalCaretColor);
         $input.css("caret-color", "transparent");
@@ -83,7 +83,7 @@ const hideInputCaret = ($el: JQueryWithSelector) => {
 };
 
 const showInputCaret = ($el: JQueryWithSelector) => {
-    cy.get("input, textarea, select").then(($input) => {
+    cy.get("input, textarea, select").each(($input) => {
         const originalCaretColor = $el.attr("data-original-caret-color");
         $input.css("caret-color", originalCaretColor);
     });
