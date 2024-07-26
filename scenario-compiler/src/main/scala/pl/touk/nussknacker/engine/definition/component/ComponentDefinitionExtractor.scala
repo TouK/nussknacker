@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.context.JoinContextTransformation
 import pl.touk.nussknacker.engine.api.context.transformation._
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -150,7 +150,7 @@ object ComponentDefinitionExtractor {
               val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
               val invoker          = extractComponentImplementationInvoker(component, methodDef)
               val componentSpecificData = extractComponentSpecificData(component) {
-                methodDef.definedParameters.exists(_.branchParam)
+                methodDef.runtimeClass == classOf[JoinContextTransformation]
               }
               MethodBasedComponentDefinitionWithImplementation(
                 name = componentName,
