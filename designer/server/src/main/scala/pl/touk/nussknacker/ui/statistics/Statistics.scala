@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.statistics.Encryption.{createSymmetricKey, publicKey}
+import pl.touk.nussknacker.ui.statistics.Encryption.{createSymmetricKey, nuPublicKey}
 import pl.touk.nussknacker.ui.statistics.Encryption.EncryptionTypes.{AES, RSA}
 import pl.touk.nussknacker.ui.util.IterableExtensions.Chunked
 
@@ -62,7 +62,7 @@ object Statistics extends LazyLogging {
       val symmetricKey         = createSymmetricKey
       val encryptedQueryParams = Encryption.encode(url, AES, symmetricKey)
       val encryptedSecretKey =
-        Encryption.encode(Base64.getEncoder.encodeToString(symmetricKey.getEncoded), RSA, publicKey)
+        Encryption.encode(Base64.getEncoder.encodeToString(symmetricKey.getEncoded), RSA, nuPublicKey)
 
       encryptedQueryParam ++ encryptedQueryParams ++ keyQueryParam ++ encryptedSecretKey
     }
