@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.component
 
 import cats.implicits.catsSyntaxSemigroup
 import pl.touk.nussknacker.engine.api.component._
+import pl.touk.nussknacker.engine.api.context.JoinContextTransformation
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory}
@@ -58,20 +59,21 @@ object ComponentDefinitionExtractor {
       determineDesignerWideId: ComponentId => DesignerWideComponentId,
       additionalConfigsFromProvider: Map[DesignerWideComponentId, ComponentAdditionalConfig]
   ): Option[ComponentDefinitionWithImplementation] = {
-    val (methodDefinitionExtractor: MethodDefinitionExtractor[Component], componentTypeSpecificData) =
+    val (
+      methodDefinitionExtractor: MethodDefinitionExtractor[Component],
+      componentType,
+      customCanBeEnding: Option[Boolean]
+    ) =
       component match {
-        case _: SourceFactory => (MethodDefinitionExtractor.Source, SourceSpecificData)
-        case _: SinkFactory   => (MethodDefinitionExtractor.Sink, SinkSpecificData)
-        case _: Service       => (MethodDefinitionExtractor.Service, ServiceSpecificData)
+        case _: SourceFactory => (MethodDefinitionExtractor.Source, ComponentType.Source, None)
+        case _: SinkFactory   => (MethodDefinitionExtractor.Sink, ComponentType.Sink, None)
+        case _: Service       => (MethodDefinitionExtractor.Service, ComponentType.Service, None)
         case custom: CustomStreamTransformer =>
-          (
-            MethodDefinitionExtractor.CustomStreamTransformer,
-            CustomComponentSpecificData(custom.canHaveManyInputs, custom.canBeEnding)
-          )
+          (MethodDefinitionExtractor.CustomStreamTransformer, ComponentType.CustomComponent, Some(custom.canBeEnding))
         case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
       }
 
-    val componentId = ComponentId(componentTypeSpecificData.componentType, componentName)
+    val componentId = ComponentId(componentType, componentName)
 
     def additionalConfigFromProvider(overriddenDesignerWideId: Option[DesignerWideComponentId]) = {
       val designerWideId = overriddenDesignerWideId.getOrElse(determineDesignerWideId(componentId))
@@ -89,7 +91,11 @@ object ComponentDefinitionExtractor {
         returnType: Option[TypingResult]
     )(f: (ComponentUiDefinition, Map[ParameterName, ParameterConfig]) => T): Option[T] = {
       val defaultConfig =
-        DefaultComponentConfigDeterminer.forNotBuiltInComponentType(componentTypeSpecificData, returnType.isDefined)
+        DefaultComponentConfigDeterminer.forNotBuiltInComponentType(
+          componentType,
+          returnType.isDefined,
+          customCanBeEnding
+        )
       val configFromAdditional                    = additionalConfigs.getConfig(componentId)
       val combinedConfigWithoutConfigFromProvider = configFromAdditional |+| configFromDefinition |+| defaultConfig
       val designerWideId                          = combinedConfigWithoutConfigFromProvider.componentId
@@ -99,19 +105,26 @@ object ComponentDefinitionExtractor {
     }
 
     (component match {
-      case e: DynamicComponent[_] =>
-        val invoker = new DynamicComponentImplementationInvoker(e)
+      case dynamicComponent: DynamicComponent[_] =>
+        val invoker = new DynamicComponentImplementationInvoker(dynamicComponent)
         Right(
-          withUiDefinitionForNotDisabledComponent(DynamicComponentStaticDefinitionDeterminer.staticReturnType(e)) {
-            (uiDefinition, parametersConfig) =>
-              DynamicComponentDefinitionWithImplementation(
-                name = componentName,
-                implementationInvoker = invoker,
-                component = e,
-                componentTypeSpecificData = componentTypeSpecificData,
-                uiDefinition = uiDefinition,
-                parametersConfig = parametersConfig
-              )
+          withUiDefinitionForNotDisabledComponent(
+            DynamicComponentStaticDefinitionDeterminer.staticReturnType(dynamicComponent)
+          ) { (uiDefinition, parametersConfig) =>
+            val componentSpecificData = extractComponentSpecificData(component) {
+              dynamicComponent match {
+                case _: JoinDynamicComponent[_]        => true
+                case _: SingleInputDynamicComponent[_] => false
+              }
+            }
+            DynamicComponentDefinitionWithImplementation(
+              name = componentName,
+              implementationInvoker = invoker,
+              component = dynamicComponent,
+              componentTypeSpecificData = componentSpecificData,
+              uiDefinition = uiDefinition,
+              parametersConfig = parametersConfig
+            )
           }
         )
       case _ =>
@@ -136,11 +149,14 @@ object ComponentDefinitionExtractor {
             withUiDefinitionForNotDisabledComponent(returnType) { (uiDefinition, _) =>
               val staticDefinition = ComponentStaticDefinition(methodDef.definedParameters, returnType)
               val invoker          = extractComponentImplementationInvoker(component, methodDef)
+              val componentSpecificData = extractComponentSpecificData(component) {
+                methodDef.runtimeClass == classOf[JoinContextTransformation]
+              }
               MethodBasedComponentDefinitionWithImplementation(
                 name = componentName,
                 implementationInvoker = invoker,
                 component = component,
-                componentTypeSpecificData = componentTypeSpecificData,
+                componentTypeSpecificData = componentSpecificData,
                 staticDefinition = staticDefinition,
                 uiDefinition = uiDefinition
               )
@@ -149,6 +165,16 @@ object ComponentDefinitionExtractor {
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
+
+  private def extractComponentSpecificData(component: Component)(determineCanHaveManyInputsForCustom: => Boolean) =
+    component match {
+      case _: SourceFactory => SourceSpecificData
+      case _: SinkFactory   => SinkSpecificData
+      case _: Service       => ServiceSpecificData
+      case custom: CustomStreamTransformer =>
+        CustomComponentSpecificData(determineCanHaveManyInputsForCustom, custom.canBeEnding)
+      case other => throw new IllegalStateException(s"Not supported Component class: ${other.getClass}")
+    }
 
   private def extractComponentImplementationInvoker(
       component: Component,

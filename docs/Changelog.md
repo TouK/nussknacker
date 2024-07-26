@@ -26,12 +26,19 @@
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
 * [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
+* [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
+  determined automatically, developer doesn't need to provide it by his/her own
+
+1.16.2 (18 July 2024)
+-------------------------
+* [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
+* [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
 
 1.16.1 (16 July 2024)
 -------------------------
 * [#6382](https://github.com/TouK/nussknacker/pull/6382) Avoid timeout on model reload by stopping DeploymentActor and RescheduleFinishedActor non-gracefully. Instead, retry until success while creating new actors.
 
-  1.16.0 (11 July 2024)
+1.16.0 (11 July 2024)
 -------------------------
 
 * [#6184](https://github.com/TouK/nussknacker/pull/6184) Removed `Remote[]` string part from forwarded username for scenario creation and updates.

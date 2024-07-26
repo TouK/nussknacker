@@ -17,8 +17,6 @@ import javax.annotation.Nullable
 
 object JoinTransformerWithEditors extends CustomStreamTransformer with Serializable {
 
-  override def canHaveManyInputs: Boolean = true
-
   @MethodToInvoke
   def execute(
       @BranchParamName("branchType") branchTypeByBranchId: Map[String, JavaSampleEnum],

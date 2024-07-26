@@ -12,8 +12,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
-* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
-  * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+* Component's API changes
+  * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+    Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+  * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
+    removed. You don't need to implement any other method in replacement, just remove this method.
+
+### REST API changes
+
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
 
