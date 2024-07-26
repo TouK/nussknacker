@@ -22,6 +22,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
+* [#6213](https://github.com/TouK/nussknacker/pull/6213) Improvement: Load resource config only in test context
+  * Default behaviour for `WithConfig` was broken, and now for load application.conf file from test resources you need to override `configFilename`
 
 ## In version 1.16.0
 
