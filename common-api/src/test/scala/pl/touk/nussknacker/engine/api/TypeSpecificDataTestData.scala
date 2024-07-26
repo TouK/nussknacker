@@ -52,7 +52,7 @@ object TypeSpecificDataTestData {
   // fragment
   val fragmentEmptyTypeData: FragmentSpecificData = FragmentSpecificData(None, None)
   val fragmentFullTypeData: FragmentSpecificData =
-    FragmentSpecificData(docsUrl = Some("exampleUrl"), componentGroupName = Some("someGroup"))
+    FragmentSpecificData(docsUrl = Some("exampleUrl"), componentGroup = Some("someGroup"))
   val fragmentEmptyProperties: Map[String, String] = Map("docsUrl" -> "", "componentGroup" -> "")
   val fragmentFullProperties: Map[String, String]  = Map("docsUrl" -> "exampleUrl", "componentGroup" -> "someGroup")
 
