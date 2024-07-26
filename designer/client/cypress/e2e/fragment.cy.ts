@@ -320,7 +320,7 @@ describe("Fragment", () => {
 
         const docsUrl = "https://nussknacker.io/";
 
-        cy.get("[data-testid=window]").should("be.visible").find("input").eq(1).click().type(docsUrl);
+        cy.get("[data-testid=window]").should("be.visible").find("input").eq(2).click().type(docsUrl);
 
         cy.contains(/^apply/i)
             .should("be.enabled")
