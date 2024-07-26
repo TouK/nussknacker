@@ -67,4 +67,28 @@ class V1_054__FragmentAddComponentGroupPropertyMigrationSpec extends AnyFlatSpec
       .get[String]("componentGroup") shouldBe Right("custom")
   }
 
+  it should "doesn't set componentGroup for non-fragments" in {
+    val rawJsonString =
+      """
+        |{
+        |  "metaData": {
+        |    "id": "empty-2",
+        |    "additionalFields": {
+        |       "properties": {}
+        |     },
+        |    "typeSpecificData": {
+        |      "docsUrl": null,
+        |      "type": "StreamMetaData"
+        |    }
+        |  }
+        |}
+        |""".stripMargin
+
+    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+
+    val migratedJson = V1_054__FragmentAddComponentGroupProperty.migrateMetadata(oldJson)
+
+    migratedJson shouldBe empty
+  }
+
 }
