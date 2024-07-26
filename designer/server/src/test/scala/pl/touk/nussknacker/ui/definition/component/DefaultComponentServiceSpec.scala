@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.definition.component
 
-import cats.data.NonEmptySet
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
 import org.scalatest.OptionValues

@@ -100,7 +100,7 @@ object ProcessTestData {
       .withCustom(
         existingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .withService(
         dictParameterEditorServiceId,
@@ -110,22 +110,22 @@ object ProcessTestData {
       .withCustom(
         otherExistingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .withCustom(
         otherExistingStreamTransformer2,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
       )
       .withCustom(
         optionalEndingStreamTransformer,
         Some(Typed[String]),
-        CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
+        CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = true),
       )
       .withCustom(
         union,
         Some(Unknown),
-        CustomComponentSpecificData(manyInputs = true, canBeEnding = true),
+        CustomComponentSpecificData(canHaveManyInputs = true, canBeEnding = true),
       )
       .build
 
