@@ -22,7 +22,7 @@ object FragmentPropertiesConfig {
       hintText = None
     )
 
-  val componentGroupNameConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.componentGroupNameName ->
+  val componentGroupNameConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.componentGroupName ->
     ScenarioPropertyConfig(
       defaultValue = None,
       editor = Some(
