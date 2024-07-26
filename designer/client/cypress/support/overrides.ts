@@ -116,7 +116,6 @@ Cypress.Commands.overwrite<"matchImage", "element">(
                     yield: "value",
                     postLastValue: true,
                     post: ({ value, limit, success }) => {
-                        showInputCaret($el);
                         path = path || value.imgPath;
                         if (!success) {
                             return cy.log("Snapshot needs update", value);
@@ -130,6 +129,7 @@ Cypress.Commands.overwrite<"matchImage", "element">(
         }
         originalFn($el, options);
         cy.wait(200);
+        showInputCaret($el);
     },
 );
 
