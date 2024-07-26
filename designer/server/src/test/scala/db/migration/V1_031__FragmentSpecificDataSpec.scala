@@ -32,7 +32,7 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |    "id": "empty-2",
         |    "typeSpecificData": {
         |      "docsUrl": null,
-        |      "componentGroupName" : null,
+        |      "componentGroup" : null,
         |      "type": "FragmentSpecificData"
         |    }
         |  }

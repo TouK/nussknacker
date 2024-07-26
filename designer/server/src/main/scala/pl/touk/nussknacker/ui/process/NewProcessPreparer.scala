@@ -14,8 +14,8 @@ object NewProcessPreparer {
   private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
     None,
     Map(
-      FragmentSpecificData.docsUrlName            -> "",
-      FragmentSpecificData.componentGroupNameName -> DefaultsComponentGroupName.FragmentsGroupName.value,
+      FragmentSpecificData.docsUrlName        -> "",
+      FragmentSpecificData.componentGroupName -> DefaultsComponentGroupName.FragmentsGroupName.value,
     ),
     FragmentSpecificData.typeName
   )
