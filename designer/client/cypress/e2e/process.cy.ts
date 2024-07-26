@@ -8,6 +8,11 @@ describe("Process", () => {
     after(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
+
+    beforeEach(() => {
+        cy.mockWindowDate();
+    });
+
     describe("initially clean", () => {
         beforeEach(() => {
             cy.visitNewProcess(seed).as("processName");
