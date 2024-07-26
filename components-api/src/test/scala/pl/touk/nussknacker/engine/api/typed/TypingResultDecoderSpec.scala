@@ -7,6 +7,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+
 import scala.jdk.CollectionConverters._
 
 class TypingResultDecoderSpec

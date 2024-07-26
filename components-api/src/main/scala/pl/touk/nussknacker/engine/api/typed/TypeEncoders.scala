@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.NonEmptyList
-import cats.data.Validated.{Invalid, Valid}
-import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json._
 import io.circe._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
@@ -70,7 +68,7 @@ object TypeEncoders {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, value) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded: (String, Json) = "value" -> SimpleObjectEncoder
+      val dataEncoded: (String, Json) = "value" -> ValueEncoder
         .encodeValue(value)
         .getOrElse(throw new IllegalStateException(s"Not supported data value: $value"))
 
@@ -132,7 +130,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj)
-    value      <- SimpleObjectEncoder.decodeValue(valueClass, obj.downField("value"))
+    value      <- ValueDecoder.decodeValue(valueClass, obj.downField("value"))
   } yield TypedObjectWithValue(valueClass, value)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {

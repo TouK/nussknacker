@@ -360,7 +360,7 @@ object typing {
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
-              SimpleObjectEncoder.encodeValue(other) match {
+              ValueEncoder.encodeValue(other) match {
                 case Valid(_)   => TypedObjectWithValue(typedClass, other)
                 case Invalid(_) => typedClass
               }
