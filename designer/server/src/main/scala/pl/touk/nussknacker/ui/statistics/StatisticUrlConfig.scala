@@ -6,5 +6,6 @@ final case class StatisticUrlConfig(
     nuStatsUrl: String = "https://stats.nussknacker.io/?",
     queryParamsSeparator: String = "&",
     emptyString: String = "",
-    encryptQueryParams: Boolean = true
+    // TODO: switch to true once logstash is ready
+    encryptQueryParams: Boolean = false
 )

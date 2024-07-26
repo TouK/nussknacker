@@ -11,7 +11,7 @@ import javax.crypto.{Cipher, KeyGenerator, SecretKey}
 object Encryption {
   private val plainPublicKey: String =
     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhiVyC/SBAie86jFktE5/MX2s5+j98d4PeaFV5YAwY12BNJ4Tn36x4lw5htKK/6dbQbbUIJ6aSpQsKIetQxfgqqpF9N6mOABUzpX6VmlZHvvNfV/9+ka7HGxBBwpNza15fGshiaCFkPfyOCSYb1HRWBoy+7beI08WKEC3wM1IXCgQZWUxYADyu4qSRHTMSVJAd1eyho50fc/LamnlZ4go5dK5HZSibDgUWyzodF45z7zugh5VvKeyLYPlLKa8YZMuEetH6LvR2Ag6WpYOUYgx2D8m25o4o3HWvDYJ67/gQ/Ty/UNsYHD/5bCpR7kMn4SJNK8zfDGymzozfsVmjTCNfwIDAQAB"
-  val publicKey: PublicKey = setupPublicKey(plainPublicKey)
+  val nuPublicKey: PublicKey = setupPublicKey(plainPublicKey)
 
   def encode(toEncode: String, encryptionType: EncryptionType, key: Key): String = {
     val cipher: Cipher = Cipher.getInstance(encryptionType.toString)
