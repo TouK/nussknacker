@@ -7,6 +7,7 @@ trait V1_054__FragmentAddComponentGroupPropertyDefinition extends ProcessJsonMig
 
   override def updateProcessJson(jsonProcess: Json): Option[Json] =
     V1_054__FragmentAddComponentGroupProperty.migrateMetadata(jsonProcess)
+
 }
 
 object V1_054__FragmentAddComponentGroupProperty {
