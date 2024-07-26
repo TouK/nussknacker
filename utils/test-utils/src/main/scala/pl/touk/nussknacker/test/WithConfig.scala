@@ -5,15 +5,14 @@ import org.apache.commons.io.IOUtils
 
 import java.nio.charset.StandardCharsets
 
-import scala.util.Try
-
 trait WithConfig {
 
   // Here is the place where we can change the entry config file
-  protected val configFilename: String = "application.conf"
+  protected val configFilename: Option[String] = None
 
   protected lazy val config: Config = {
-    val config = Try(IOUtils.resourceToString(s"/$configFilename", StandardCharsets.UTF_8)).toOption
+    val config = configFilename
+      .map(file => IOUtils.resourceToString(s"/$file", StandardCharsets.UTF_8))
       .map(ConfigFactory.parseString)
       .getOrElse(ConfigFactory.empty())
 
