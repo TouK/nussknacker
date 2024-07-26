@@ -2,7 +2,6 @@ describe("Process", () => {
     const seed = "process";
 
     before(() => {
-        cy.mockWindowDate();
         cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
@@ -115,6 +114,7 @@ describe("Process", () => {
         };
 
         beforeEach(() => {
+            cy.mockWindowDate();
             cy.visitNewProcess(seed, "testProcess");
         });
 

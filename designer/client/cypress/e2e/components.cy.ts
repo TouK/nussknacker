@@ -4,7 +4,6 @@ describe("Components list", () => {
     const baseGroupComponents = 5;
     const totalGroups = 7;
     before(() => {
-        cy.mockWindowDate();
         cy.deleteAllTestProcesses({ filter: seed, force: true });
         cy.createTestProcess(seed, "testProcess2");
     });
@@ -14,6 +13,7 @@ describe("Components list", () => {
     });
 
     beforeEach(() => {
+        cy.mockWindowDate();
         cy.viewport(1400, 1000);
         cy.visit("/components");
     });

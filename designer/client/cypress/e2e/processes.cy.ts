@@ -3,7 +3,6 @@ describe("Processes list", () => {
     const PROCESSING_MODE = "processing-mode";
 
     before(() => {
-        cy.mockWindowDate();
         cy.deleteAllTestProcesses({ filter: NAME, force: true });
         cy.deleteAllTestProcesses({ filter: PROCESSING_MODE, force: true });
         cy.createTestProcessName(NAME).as("processName");
@@ -20,6 +19,7 @@ describe("Processes list", () => {
     });
 
     beforeEach(() => {
+        cy.mockWindowDate();
         cy.visit("/");
         cy.url().should("match", /scenarios/);
         cy.get("[placeholder='Search...']", { timeout: 60000 }).should("be.visible");
