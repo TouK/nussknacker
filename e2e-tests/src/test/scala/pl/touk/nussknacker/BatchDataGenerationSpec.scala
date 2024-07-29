@@ -28,33 +28,60 @@ class BatchDataGenerationSpec
   private val designerServiceUrl = "http://localhost:8080"
 
   override def beforeAll(): Unit = {
-    createBatchScenario(simpleBatchTableScenario.name.value)
+    createEmptyBatchScenario(simpleBatchTableScenario.name.value)
     super.beforeAll()
   }
 
-  "Generate file endpoint should generate records with randomized values for scenario with table source" in {
-    given()
-      .when()
-      .request()
-      .basicAuthAdmin()
-      .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
-      .post(
-        s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/10"
-      )
-      .Then()
-      .statusCode(200)
-      .body(
-        matchAllNdJsonWithRegexValues(s"""
-             |{
-             |   "sourceId": "sourceId",
-             |   "record": {
-             |      "datetime": "${regexes.localDateRegex}",
-             |      "client_id": "[a-z\\\\d]{100}",
-             |      "amount": "${regexes.decimalRegex}"
-             |   }
-             |}
-             |""".stripMargin)
-      )
+  "Generate file endpoint for scenario with table source should generate" - {
+//  TODO: unignore after adding the ability to switch the test method through API call instead of through config
+    "randomized records when configured with random mode" ignore {
+      given()
+        .when()
+        .request()
+        .basicAuthAdmin()
+        .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
+        .post(
+          s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/10"
+        )
+        .Then()
+        .statusCode(200)
+        .body(
+          matchAllNdJsonWithRegexValues(s"""
+               |{
+               |   "sourceId": "sourceId",
+               |   "record": {
+               |      "datetime": "${regexes.localDateRegex}",
+               |      "client_id": "[a-z\\\\d]{100}",
+               |      "amount": "${regexes.decimalRegex}"
+               |   }
+               |}
+               |""".stripMargin)
+        )
+    }
+    "real records from data source when configured with real data mode" in {
+      given()
+        .when()
+        .request()
+        .basicAuthAdmin()
+        .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
+        .post(
+          s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/1"
+        )
+        .Then()
+        .statusCode(200)
+        .body(
+          equalsJson(s"""
+               |{
+               |   "sourceId": "sourceId",
+               |   "record": {
+               |      "datetime": "2024-01-01 10:00:00",
+               |      "client_id": "client1",
+               |      "amount": 100.1
+               |   }
+               |}
+               |""".stripMargin)
+        )
+    }
   }
 
   "Test on generated data endpoint should return results and counts for scenario with table source" in {
@@ -78,9 +105,9 @@ class BatchDataGenerationSpec
              |          "variables": {
              |            "input": {
              |              "pretty": {
-             |                 "datetime": "${regexes.localDateTimeRegex}",
-             |                 "client_id": "[a-z\\\\d]{100}",
-             |                 "amount": "${regexes.decimalRegex}"
+             |                "datetime": "2024-01-01T10:00:00",
+             |                "client_id": "client1",
+             |                "amount": 100.1
              |              }
              |            }
              |          }
@@ -92,9 +119,9 @@ class BatchDataGenerationSpec
              |          "variables": {
              |            "input": {
              |              "pretty": {
-             |                 "datetime": "${regexes.localDateTimeRegex}",
-             |                 "client_id": "[a-z\\\\d]{100}",
-             |                 "amount": "${regexes.decimalRegex}"
+             |                "datetime": "2024-01-01T10:00:00",
+             |                "client_id": "client1",
+             |                "amount": 100.1
              |              }
              |            }
              |          }
@@ -194,7 +221,7 @@ class BatchDataGenerationSpec
       )
   }
 
-  private def createBatchScenario(scenarioName: String): Unit = {
+  private def createEmptyBatchScenario(scenarioName: String): Unit = {
     given()
       .when()
       .request()
