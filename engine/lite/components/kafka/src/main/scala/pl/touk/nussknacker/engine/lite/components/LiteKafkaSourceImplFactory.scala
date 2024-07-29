@@ -80,7 +80,7 @@ class LiteKafkaSourceImpl[K, V](
   // We don't use passed deserializationSchema, as in lite tests deserialization is done after parsing test data
   // (see difference with Flink implementation)
   override def testRecordParser: TestRecordParser[ConsumerRecord[Array[Byte], Array[Byte]]] =
-    (testRecord: TestRecord) => formatter.parseRecord(topics.head, testRecord)
+    (testRecords: List[TestRecord]) => testRecords.map { testRecord => formatter.parseRecord(topics.head, testRecord) }
 
   override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 

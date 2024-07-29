@@ -146,13 +146,25 @@ Because we use [HOCON](#conventions), you can set (or override) any configuratio
 
 ## Conventions
 
-* We use HOCON (see the [introduction](https://github.com/lightbend/config#using-hocon-the-json-superset) or the [full specification](https://github.com/lightbend/config/blob/master/HOCON.md) for details) as our main configuration format. [Lightbend config library](https://github.com/lightbend/config/tree/master) is used for parsing configuration files - you can check the [documentation](https://github.com/lightbend/config#standard-behavior) for details on conventions of file names and merging of configuration files.
-* `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HOCON fallback mechanism). This mechanism is used to extend or override default configuration contained in the [minimal configuration file](#minimal-configuration-file)  - see docker demo for example:
+* We use HOCON (see the [introduction](https://github.com/lightbend/config#using-hocon-the-json-superset) or 
+  the [full specification](https://github.com/lightbend/config/blob/master/HOCON.md) for details) as our main 
+  configuration format. [Lightbend config library](https://github.com/lightbend/config/tree/master) is used for 
+  parsing configuration files - you can check the [documentation](https://github.com/lightbend/config#standard-behavior)
+  for details on conventions of file names and merging of configuration files.
+* `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines 
+  location of configuration files (separated by comma). The files are read in order, entries from later files can 
+  override the former (using HOCON fallback mechanism). This mechanism is used to extend or override default 
+  configuration contained in the [minimal configuration file](#minimal-configuration-file)  - see docker demo 
+  for example:
   * [setting multiple configuration files](https://github.com/TouK/nussknacker-installation-example/blob/master/docker-compose.yml#L29)
   * [file with configuration override](https://github.com/TouK/nussknacker-installation-example/blob/master/designer/application-customizations.conf)
-* If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
+* If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env 
+  variables. This property is set to true in the official Nussknacker Docker image.
 
-It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.md) for the details. 
+It’s important to remember that model configuration is prepared a bit differently. Please read 
+[model configuration](./model/ModelConfiguration.md) for the details. 
 
 ## What is next?
-Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration key - see the [configuration file](#configuration-file). The details of enrichers configuration are in the [Integration chapter](../integration/) of the documentation. 
+Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration 
+key - see the [configuration file](#configuration-file). The details of enrichers configuration are in 
+the [Integration chapter](../integration/index.md) of the documentation. 
