@@ -122,7 +122,23 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       .emptySink("end", "table", "Table" -> s"'$pingPongOutputTableName'".spel, "Value" -> "#input".spel)
 
     val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
+
+    val outputFileContent = getLinesOfSingleFileInDirectoryEventually(pingPongOutputDirectory)
+    val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
+
+    outputFileContent shouldBe inputFileContent
+  }
+
+  test("should allow to access fields of Row produced by source") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
+      .buildSimpleVariable("variable", "someVar", "#input.string.length".spel)
+      .emptySink("end", "table", "Table" -> s"'$pingPongOutputTableName'".spel, "Value" -> "#input".spel)
+
+    val result = runner.runWithoutData(scenario)
+    result shouldBe Symbol("valid")
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(pingPongOutputDirectory)
     val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
@@ -171,7 +187,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val result = runner.runWithoutData(
       scenario = scenario
     )
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(
       expressionOutputDirectory
