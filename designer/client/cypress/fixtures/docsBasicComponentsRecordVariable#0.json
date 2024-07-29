@@ -1,6 +1,6 @@
 {
     "metaData": {
-        "id": "First-MapVriable",
+        "id": "First-RecordVariable",
         "additionalFields": {
             "description": null,
             "properties": {
@@ -54,7 +54,7 @@
         },
         {
             "id": "node label goes here",
-            "varName": "myFirstMapVariable",
+            "varName": "myFirstRecordVariable",
             "fields": [
                 {
                     "name": "subscriberId",
@@ -64,7 +64,7 @@
                     }
                 },
                 {
-                    "name": "transactiomId",
+                    "name": "transactionId",
                     "expression": {
                         "language": "spel",
                         "expression": "11"
@@ -99,7 +99,7 @@
             "varName": "myVariable",
             "value": {
                 "language": "spel",
-                "expression": "{\"subscriberId\": 1, \"transactiomId\": 11, \"operation\": 'TRANSFER', \"value\": 500.0}"
+                "expression": "{\"subscriberId\": 1, \"transactionId\": 11, \"operation\": 'TRANSFER', \"value\": 500.0}"
             },
             "additionalFields": {
                 "description": null,

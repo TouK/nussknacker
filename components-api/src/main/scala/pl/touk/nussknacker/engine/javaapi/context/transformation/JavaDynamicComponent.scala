@@ -129,8 +129,6 @@ class JoinDynamicComponentWrapper[ST](javaDef: JavaJoinDynamicComponent[_ <: Any
 
   override type State = ST
 
-  override def canHaveManyInputs: Boolean = true
-
   override def canBeEnding: Boolean = javaDef.canBeEnding
 
   override def contextTransformation(context: Map[String, ValidationContext], dependencies: List[NodeDependencyValue])(

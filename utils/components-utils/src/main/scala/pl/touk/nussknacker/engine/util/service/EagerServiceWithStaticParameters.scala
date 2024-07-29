@@ -56,7 +56,7 @@ trait EagerServiceWithStaticParameters
   def returnType(
       validationContext: ValidationContext,
       parameters: Map[ParameterName, DefinedSingleParameter]
-  ): ValidatedNel[ProcessCompilationError, TypingResult]
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, TypingResult]
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -117,7 +117,7 @@ trait EagerServiceWithStaticParametersAndReturnType extends EagerServiceWithStat
   override def returnType(
       validationContext: ValidationContext,
       parameters: Map[ParameterName, DefinedSingleParameter]
-  ): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
+  )(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, TypingResult] = Valid(returnType)
 
   private class ServiceInvokerImplementation(
       eagerParameters: Map[ParameterName, Any],

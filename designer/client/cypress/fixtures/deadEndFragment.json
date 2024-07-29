@@ -4,7 +4,8 @@
         "additionalFields": {
             "description": null,
             "properties": {
-                "docsUrl": ""
+                "docsUrl": "",
+                "componentGroup": "fragments"
             },
             "metaDataType": "FragmentSpecificData"
         }

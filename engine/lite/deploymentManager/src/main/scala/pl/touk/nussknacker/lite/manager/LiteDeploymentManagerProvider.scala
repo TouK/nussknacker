@@ -50,7 +50,8 @@ object LitePropertiesConfig {
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
-      label = Some("Parallelism")
+      label = Some("Parallelism"),
+      hintText = None
     )
 
   private val slugConfig: (String, ScenarioPropertyConfig) = RequestResponseMetaData.slugName ->
@@ -58,7 +59,8 @@ object LitePropertiesConfig {
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = None,
-      label = Some("Slug")
+      label = Some("Slug"),
+      hintText = None
     )
 
   val streamProperties: Map[String, ScenarioPropertyConfig] = Map(parallelismConfig)

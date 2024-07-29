@@ -138,7 +138,7 @@ class K8sTestUtils(k8s: KubernetesClient)
         )
       )
     )
-    // We setup keepalive_timeout to 0 to make sure that nginx won't keep any idle connection to terminating pods
+    // We set proxy_set_header Connection close to make sure that nginx doesn't cache any connection to upstream server
     val configMap = ConfigMap(
       metadata = ObjectMeta(reverseProxyConfConfigMapName),
       data = Map(
@@ -147,7 +147,7 @@ class K8sTestUtils(k8s: KubernetesClient)
          |  listen $reverseProxyPodRemotePort;
          |  location / {
          |    proxy_pass $targetUrl;
-         |    keepalive_timeout 0;
+         |    proxy_set_header Connection close;
          |  }
          |}""".stripMargin
       )

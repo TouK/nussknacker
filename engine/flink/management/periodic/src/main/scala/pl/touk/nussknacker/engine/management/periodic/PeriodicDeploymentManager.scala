@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{CustomActionDefinition, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
-import pl.touk.nussknacker.engine.management.periodic.Utils.{gracefulStopActor, runSafely}
+import pl.touk.nussknacker.engine.management.periodic.Utils.{createActorWithRetry, runSafely}
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
 import pl.touk.nussknacker.engine.management.periodic.service.{
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.management.periodic.service.{
   PeriodicProcessListenerFactory,
   ProcessConfigEnricherFactory
 }
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies, newdeployment}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerDependencies}
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 
@@ -60,21 +60,28 @@ object PeriodicDeploymentManager {
       clock,
       dependencies.actionService
     )
-    val deploymentActor = dependencies.actorSystem.actorOf(
+
+    // These actors have to be created with retries because they can initially fail to create due to taken names,
+    // if the actors (with the same names) created before reload aren't fully stopped (and their names freed) yet
+    val deploymentActor = createActorWithRetry(
+      s"periodic-${periodicBatchConfig.processingType}-deployer",
       DeploymentActor.props(service, periodicBatchConfig.deployInterval),
-      s"periodic-${periodicBatchConfig.processingType}-deployer"
+      dependencies.actorSystem
     )
-    val rescheduleFinishedActor = dependencies.actorSystem.actorOf(
+    val rescheduleFinishedActor = createActorWithRetry(
+      s"periodic-${periodicBatchConfig.processingType}-rescheduler",
       RescheduleFinishedActor.props(service, periodicBatchConfig.rescheduleCheckInterval),
-      s"periodic-${periodicBatchConfig.processingType}-rescheduler"
+      dependencies.actorSystem
     )
 
     val customActionsProvider = customActionsProviderFactory.create(scheduledProcessesRepository, service)
 
     val toClose = () => {
       runSafely(listener.close())
-      runSafely(gracefulStopActor(deploymentActor, dependencies.actorSystem))
-      runSafely(gracefulStopActor(rescheduleFinishedActor, dependencies.actorSystem))
+      // deploymentActor and rescheduleFinishedActor just call methods from PeriodicProcessService on interval,
+      // they don't have any internal state, so stopping them non-gracefully is safe
+      runSafely(dependencies.actorSystem.stop(deploymentActor))
+      runSafely(dependencies.actorSystem.stop(rescheduleFinishedActor))
       runSafely(db.close())
     }
     new PeriodicDeploymentManager(

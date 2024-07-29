@@ -30,7 +30,7 @@ Note that as classPath elements you can use:
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../installation/Installation.md#basic-environment-variables).
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../configuration/Common.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming

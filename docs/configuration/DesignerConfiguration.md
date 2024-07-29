@@ -132,9 +132,9 @@ Each user has id and set of permissions for every scenario category. The followi
 * Write - user can modify/add new scenarios in category
 * Deploy - user can deploy or cancel scenarios in given category
 
-You can set `isAdmin` flag to a certain role in the [users configuration file](/docs/installation_configuration_guide/DesignerConfiguration.md#Users-file-format).
+You can set `isAdmin` flag to a certain role in the [users configuration file](#users-file-format).
 Users who have this role will be considered an Admin user by the system and will have all the permissions to every
-scenario category as well as all the [global permissions](/docs/installation_configuration_guide/DesignerConfiguration.md#Global-permissions).
+scenario category as well as all the [global permissions](#global-permissions).
 
 You can set a role assigned to an anonymous user with the `anonymousUserRole` setting in the `authentication` section in the configuration.
 When no value is provided (default), no anonymous access will be granted.
@@ -743,24 +743,25 @@ You can configure `secondaryEnvironment` to allow for
 
 ## Other configuration options
 
-| Parameter name                   | Importance | Type     | Default value | Description                                                                                                                                                                                                                 |
-|----------------------------------|------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| attachments.maxSizeInBytes       | Medium     | long     | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
-| analytics.engine                 | Low        | Matomo   |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
-| analytics.url                    | Low        | string   |               | URL of Matomo server                                                                                                                                                                                                        |
-| analytics.siteId                 | Low        | string   |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
-| intervalTimeSettings.processes   | Low        | int      | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
-| intervalTimeSettings.healthCheck | Low        | int      | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
-| developmentMode                  | Medium     | boolean  | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
-| enableConfigEndpoint             | Medium     | boolean  | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
-| redirectAfterArchive             | Low        | boolean  | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
-| scenarioStateTimeout             | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
-| usageStatisticsReports.enabled   | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
+| Parameter name                             | Importance | Type     | Default value | Description                                                                                                                                                                                                                 |
+|--------------------------------------------|------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| attachments.maxSizeInBytes                 | Medium     | long     | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
+| analytics.engine                           | Low        | Matomo   |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
+| analytics.url                              | Low        | string   |               | URL of Matomo server                                                                                                                                                                                                        |
+| analytics.siteId                           | Low        | string   |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
+| intervalTimeSettings.processes             | Low        | int      | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
+| intervalTimeSettings.healthCheck           | Low        | int      | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
+| developmentMode                            | Medium     | boolean  | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
+| enableConfigEndpoint                       | Medium     | boolean  | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
+| redirectAfterArchive                       | Low        | boolean  | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
+| scenarioStateTimeout                       | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
+| usageStatisticsReports.enabled             | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
+| usageStatisticsReports.errorReportsEnabled | Low        | boolean  | true          | When enabled browser will send anonymous errors reports to `stats.nussknacker.io`                                                                                                                                           |
 
 ## Scenario type, categories
 
 Every scenario has to belong to a group called `category`. Category defines the business area around which you can organize 
-[users permissions](/installation_configuration_guide/DesignerConfiguration/#users-roles-and-permissions).
+[users permissions](/configuration/DesignerConfiguration/#users-roles-and-permissions).
 
 For example, in one Nussknacker installation you can have scenarios detecting frauds, and those implementing marketing campaigns. Then, the configuration will look like:
 

@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
 import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
@@ -88,6 +89,10 @@ object FlinkTableComponentProvider {
     ComponentDefinition(
       "aggregate",
       new TableAggregationFactory()
+    ),
+    ComponentDefinition(
+      "join",
+      TableJoinComponent
     )
   )
 
