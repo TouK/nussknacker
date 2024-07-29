@@ -93,7 +93,6 @@ Cypress.Commands.overwrite<"matchImage", "element">(
     "matchImage",
     (originalFn, $el, { updateSnapshotsOnFail, ...options }: Cypress.MatchImageOptionsExtended = {}) => {
         hideInputCaret($el);
-        options.maxDiffThreshold = 0.000001;
 
         cy.wait(200);
         if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
