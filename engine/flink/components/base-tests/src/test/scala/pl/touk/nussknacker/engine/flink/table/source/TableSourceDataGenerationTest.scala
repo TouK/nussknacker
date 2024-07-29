@@ -10,7 +10,8 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
   private val tableSource = new TableSource(
     tableDefinition = SimpleTypesTestCase.tableDefinition,
     sqlStatements = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement),
-    enableFlinkBatchExecutionMode = true
+    enableFlinkBatchExecutionMode = true,
+    useRealDataForTests = false
   )
 
   /*

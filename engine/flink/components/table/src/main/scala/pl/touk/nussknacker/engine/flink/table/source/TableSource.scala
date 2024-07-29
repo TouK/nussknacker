@@ -4,6 +4,7 @@ import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.{Table, TableEnvironment}
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
@@ -32,6 +33,7 @@ class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
     enableFlinkBatchExecutionMode: Boolean,
+    useRealDataForTests: Boolean
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
     with FlinkSourceTestSupport[RECORD]
@@ -47,11 +49,9 @@ class TableSource(
     if (enableFlinkBatchExecutionMode) {
       env.setRuntimeMode(RuntimeExecutionMode.BATCH)
     }
-    val tableEnv = StreamTableEnvironment.create(env);
+    val tableEnv = StreamTableEnvironment.create(env)
 
-    sqlStatements.foreach(tableEnv.executeSql)
-
-    val selectQuery = tableEnv.from(s"`${tableDefinition.tableName}`")
+    val selectQuery = executeSqlAndGetTable(sqlStatements, tableDefinition.tableName, tableEnv)
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
       .map { case SqlFilteringExpression(sqlExpression) =>
@@ -87,11 +87,27 @@ class TableSource(
   override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
     FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
 
-  override def generateTestData(size: Int): TestData =
-    FlinkMiniClusterTableOperations.generateTestData(size, tableDefinition.toFlinkSchema)
+  override def generateTestData(size: Int): TestData = {
+    val mode =
+      if (useRealDataForTests) DataGenerationMode.RealDataMode(sqlStatements, tableDefinition.tableName)
+      else DataGenerationMode.RandomDataMode
+    FlinkMiniClusterTableOperations.generateTestData(size, tableDefinition.toFlinkSchema, mode)
+  }
+
 }
 
 object TableSource {
   type RECORD = java.util.Map[String, Any]
   private val filteringInternalViewName = "filteringView"
+
+  private[source] def executeSqlAndGetTable(
+      sqlStatements: List[SqlStatement],
+      tableName: String,
+      tableEnv: TableEnvironment
+  ): Table = {
+    sqlStatements.foreach(tableEnv.executeSql)
+    // TODO local: or just string tableName?
+    tableEnv.from(s"`$tableName`")
+  }
+
 }
