@@ -13,6 +13,7 @@ describe("Compare versions", () => {
     });
 
     beforeEach(() => {
+        cy.mockWindowDate();
         cy.viewport(1440, 1200);
     });
 

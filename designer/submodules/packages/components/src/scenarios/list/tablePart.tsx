@@ -10,6 +10,7 @@ import { IconButton } from "@mui/material";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import { LastAction } from "./item";
 import { getEventTrackingProps, EventTrackingSelector } from "nussknackerUi/eventTracking";
+import { formatDateTime } from "nussknackerUi/DateUtils";
 
 export function TablePart(props: ListPartProps<RowType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -66,7 +67,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 headerName: t("table.scenarios.title.MODIFICATION_DATE", "Modification date"),
                 type: "dateTime",
                 flex: 2,
-                renderCell: (props) => <Highlight filterText={filterText} {...props} />,
+                renderCell: (props) => <Highlight filterText={filterText} {...props} value={formatDateTime(props.value)} />,
                 sortingOrder: ["desc", "asc", null],
             },
             {

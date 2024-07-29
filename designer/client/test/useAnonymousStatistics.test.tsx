@@ -67,7 +67,7 @@ describe("useAnonymousStatistics", () => {
 
         mockUserSelector.mockReturnValue({ usageStatisticsReports: { enabled: true } });
 
-        renderHook(() => useAnonymousStatistics(0.01));
+        renderHook(() => useAnonymousStatistics(0.001));
 
         await waitFor(() => {
             expect(httpService.fetchStatisticUsage).toHaveBeenCalledTimes(1);

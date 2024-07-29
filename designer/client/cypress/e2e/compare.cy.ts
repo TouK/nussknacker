@@ -10,6 +10,7 @@ describe("Compare", () => {
     });
 
     beforeEach(() => {
+        cy.mockWindowDate();
         cy.visitNewProcess(seed, "testProcess");
     });
 
