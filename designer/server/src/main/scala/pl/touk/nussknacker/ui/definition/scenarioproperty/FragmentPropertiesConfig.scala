@@ -4,7 +4,9 @@ import pl.touk.nussknacker.engine.api.FragmentSpecificData
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{
   FixedExpressionValue,
+  FixedExpressionValueWithIcon,
   FixedValuesParameterEditor,
+  FixedValuesWithIconParameterEditor,
   MandatoryParameterValidator,
   StringParameterEditor
 }
@@ -50,22 +52,22 @@ object FragmentPropertiesConfig {
     )
 
   private val icons = List(
-    FixedExpressionValue(SourceIcon, "Source"),
-    FixedExpressionValue(SinkIcon, "Sink"),
-    FixedExpressionValue(EnricherIcon, "Enricher"),
-    FixedExpressionValue(ServiceIcon, "Service"),
-    FixedExpressionValue(CustomComponentIcon, "Custom component"),
-    FixedExpressionValue(FragmentIcon, "Fragment"),
-    FixedExpressionValue(FilterIcon, "Filter"),
-    FixedExpressionValue(SplitIcon, "Split"),
-    FixedExpressionValue(ChoiceIcon, "Choice"),
-    FixedExpressionValue(VariableIcon, "Variable"),
+    FixedExpressionValueWithIcon(SourceIcon, "Source", SourceIcon),
+    FixedExpressionValueWithIcon(SinkIcon, "Sink", SinkIcon),
+    FixedExpressionValueWithIcon(EnricherIcon, "Enricher", EnricherIcon),
+    FixedExpressionValueWithIcon(ServiceIcon, "Service", ServiceIcon),
+    FixedExpressionValueWithIcon(CustomComponentIcon, "Custom component", CustomComponentIcon),
+    FixedExpressionValueWithIcon(FragmentIcon, "Fragment", FragmentIcon),
+    FixedExpressionValueWithIcon(FilterIcon, "Filter", FilterIcon),
+    FixedExpressionValueWithIcon(SplitIcon, "Split", SplitIcon),
+    FixedExpressionValueWithIcon(ChoiceIcon, "Choice", ChoiceIcon),
+    FixedExpressionValueWithIcon(VariableIcon, "Variable", VariableIcon),
   )
 
   val iconConfig: (String, ScenarioPropertyConfig) = FragmentSpecificData.iconName ->
     ScenarioPropertyConfig(
       defaultValue = None,
-      editor = Some(FixedValuesParameterEditor(icons)),
+      editor = Some(FixedValuesWithIconParameterEditor(icons)),
       validators = Some(List(MandatoryParameterValidator)),
       label = Some("Icon"),
       hintText = None
