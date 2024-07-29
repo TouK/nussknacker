@@ -15,14 +15,20 @@ import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{PatientScalaFutures, ValidatedValuesDetailedMessage}
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters._
 
-class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures with LoneElement {
+class TableFileSinkTest
+    extends AnyFunSuite
+    with FlinkSpec
+    with Matchers
+    with PatientScalaFutures
+    with LoneElement
+    with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -122,7 +128,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       .emptySink("end", "table", "Table" -> s"'$pingPongOutputTableName'".spel, "Value" -> "#input".spel)
 
     val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
 
     val outputFileContent = getLinesOfSingleFileInDirectoryEventually(pingPongOutputDirectory)
     val inputFileContent  = getLinesOfSingleFileInDirectoryEventually(pingPongInputDirectory)
@@ -171,7 +177,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val result = runner.runWithoutData(
       scenario = scenario
     )
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(
       expressionOutputDirectory

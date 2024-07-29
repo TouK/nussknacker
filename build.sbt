@@ -817,6 +817,8 @@ lazy val scenarioCompiler = (project in file("scenario-compiler"))
       Seq(
         "org.typelevel"          %% "cats-effect"                   % catsEffectV,
         "org.scala-lang.modules" %% "scala-java8-compat"            % scalaCompatV,
+        // For Row type purpose, it is provided by flink-executor module
+        "org.apache.flink"        % "flink-core"                    % flinkV         % Provided,
         "org.apache.avro"         % "avro"                          % avroV          % Test,
         "org.scalacheck"         %% "scalacheck"                    % scalaCheckV    % Test,
         "com.cronutils"           % "cron-utils"                    % cronParserV    % Test,
@@ -1003,7 +1005,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils"))
   )
   .dependsOn(testUtils, kafkaUtils, commonUtils % Provided)
 
-// This module should be provided by one module - interpreter, because it is is the common module shared between designer and runtime
+// This module should be provided by one module - scenarioCompiler, because it is is the common module shared between designer and runtime
 lazy val componentsUtils = (project in utils("components-utils"))
   .settings(commonSettings)
   .settings(
@@ -1084,7 +1086,7 @@ lazy val utilsInternal = (project in utils("utils-internal"))
   )
   .dependsOn(commonUtils, extensionsApi, testUtils % Test)
 
-// This module should be provided by one module - interpreter
+// This module should be provided by one module - scenarioCompiler
 lazy val mathUtils = (project in utils("math-utils"))
   .settings(commonSettings)
   .settings(

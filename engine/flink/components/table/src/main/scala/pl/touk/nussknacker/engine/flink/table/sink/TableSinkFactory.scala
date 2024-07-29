@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -21,7 +22,7 @@ object TableSinkFactory {
   // TODO: add non-raw value parameters
   val valueParameterName: ParameterName = ParameterName("Value")
   private val rawValueParameterDeclaration =
-    ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
+    ParameterDeclaration.lazyMandatory[Row](valueParameterName).withCreator()
 }
 
 class TableSinkFactory(definition: TableSqlDefinitions)

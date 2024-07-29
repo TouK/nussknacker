@@ -5,30 +5,19 @@ import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-
-import java.util
 
 object RowConversions {
 
   import scala.jdk.CollectionConverters._
 
-  def rowToMap(row: Row): java.util.Map[String, Any] = {
-    val fields: Map[String, AnyRef] = rowToScalaMap(row)
-    new util.HashMap[String, Any](fields.asJava)
-  }
-
-  private def rowToScalaMap(row: Row): Map[String, AnyRef] = {
-    val fieldNames = row.getFieldNames(true).asScala
-    val fields     = fieldNames.map(n => n -> row.getField(n)).toMap
-    fields
-  }
-
-  def mapToRow(map: java.util.Map[String, Any], columnNames: Iterable[String]): Row = {
-    val row = Row.withNames()
-    columnNames.foreach(columnName => row.setField(columnName, map.get(columnName)))
+  def contextToRow(context: Context): Row = {
+    val row          = Row.withPositions(context.parentContext.map(_ => 3).getOrElse(2))
+    val variablesRow = scalaMapToRow(context.variables)
+    row.setField(0, context.id)
+    row.setField(1, variablesRow)
+    context.parentContext.map(contextToRow).foreach(row.setField(2, _))
     row
   }
 
@@ -40,15 +29,6 @@ object RowConversions {
     row
   }
 
-  def contextToRow(context: Context): Row = {
-    val row          = Row.withPositions(context.parentContext.map(_ => 3).getOrElse(2))
-    val variablesRow = scalaMapToRow(context.variables)
-    row.setField(0, context.id)
-    row.setField(1, variablesRow)
-    context.parentContext.map(contextToRow).foreach(row.setField(2, _))
-    row
-  }
-
   def rowToContext(row: Row): Context = {
     Context(
       row.getField(0).asInstanceOf[String],
@@ -57,20 +37,13 @@ object RowConversions {
     )
   }
 
-  implicit class TypeInformationDetectionExtension(typeInformationDetection: TypeInformationDetection) {
+  private def rowToScalaMap(row: Row): Map[String, AnyRef] = {
+    val fieldNames = row.getFieldNames(true).asScala
+    val fields     = fieldNames.map(n => n -> row.getField(n)).toMap
+    fields
+  }
 
-    def rowTypeInfoWithColumnsInGivenOrder(
-        recordTypingResult: TypedObjectTypingResult,
-        columnNames: Iterable[String]
-    ): RowTypeInfo = {
-      val (fieldNames, typeInfos) = columnNames.flatMap { columnName =>
-        recordTypingResult.fields
-          .get(columnName)
-          .map(typeInformationDetection.forType)
-          .map(columnName -> _)
-      }.unzip
-      new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
-    }
+  implicit class TypeInformationDetectionExtension(typeInformationDetection: TypeInformationDetection) {
 
     def contextRowTypeInfo(validationContext: ValidationContext): TypeInformation[_] = {
       val (fieldNames, typeInfos) =

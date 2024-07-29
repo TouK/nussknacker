@@ -7,6 +7,7 @@ import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.types.Row
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
@@ -320,7 +321,7 @@ private[spel] class Typer(
           if (literalKeys.size != keys.size) {
             invalid(MapWithExpressionKeysError)
           } else {
-            valid(Typed.record(literalKeys.zip(typedValues).toMap))
+            valid(Typed.record(literalKeys.zip(typedValues).toMap, Typed.typedClass[Row]))
           }
         }
       case e: MethodReference =>

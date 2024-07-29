@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.extractor
 
 import org.apache.flink.table.api.Table
 import org.apache.flink.table.types.DataType
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.table.ColumnDefinition
 
@@ -23,6 +24,6 @@ object TypeExtractor {
     Typed.typedClass(dataType.getLogicalType.getDefaultConversion)
 
   private def typedColumnsToRecordTypingResult(columns: List[ColumnDefinition]) =
-    Typed.record(columns.map(c => c.columnName -> c.typingResult).toMap)
+    Typed.record(columns.map(c => c.columnName -> c.typingResult).toMap, Typed.typedClass[Row])
 
 }
