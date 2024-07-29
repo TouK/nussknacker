@@ -28,9 +28,14 @@
 * [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
 * [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
   determined automatically, developer doesn't need to provide it by his/her own
-* [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
-* [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* [#6195](https://github.com/TouK/nussknacker/pull/6195) [#6340](https://github.com/TouK/nussknacker/pull/6340) [#6195](https://github.com/TouK/nussknacker/pull/6195) Added test data generation and testing for Table Source:
+  * Added test data generation with 2 modes:
+    * Random (default) - generates randomized records
+    * Real - generates records dumped from the actual configured data source 
+  * Data generation mode can be configured through the `useRealDataForTests` flag in the table components' configuration
+  * The test data can be generated into a file through the `generate file` button
+  * Added ability to run tests on data from file or generated on the spot (the `generated` button)
 
 1.16.2 (18 July 2024)
 -------------------------
