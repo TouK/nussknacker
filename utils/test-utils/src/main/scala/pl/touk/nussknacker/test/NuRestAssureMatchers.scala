@@ -14,8 +14,9 @@ import scala.util.Try
 trait NuRestAssureMatchers {
 
   object regexes {
-    val localDateRegex = "^\\\\d{4}-\\\\d{2}-\\\\d{2}\\\\s\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{1,3}$$"
-    val zuluDateRegex  = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}(?:\\\\.\\\\d{3,6})?Z$$"
+    val localDateRegex     = "^\\\\d{4}-\\\\d{2}-\\\\d{2}\\\\s\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{1,3}$$"
+    val localDateTimeRegex = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{1,3}$$"
+    val zuluDateRegex      = "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}(?:\\\\.\\\\d{3,6})?Z$$"
     // ujson treats all numbers as a double
     val digitsRegex  = "^\\\\d+\\\\.0$$"
     val decimalRegex = "^\\\\d+(\\\\.\\\\d+)?([eE]\\\\d+)?$$"

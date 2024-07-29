@@ -288,8 +288,10 @@ object validationHelpers {
 
       new Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+          }
 
         override def generateTestData(size: Int): TestData = TestData((for {
           number <- 1 to size
@@ -322,8 +324,10 @@ object validationHelpers {
         finalState: Option[List[String]]
     ): Source = {
       new Source with SourceTestSupport[String] {
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+          }
       }
     }
 
@@ -337,8 +341,10 @@ object validationHelpers {
         finalState: Option[List[String]]
     ): Source = {
       new Source with SourceTestSupport[String] with TestWithParametersSupport[String] {
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord =>
+            CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+          }
 
         override def testParametersDefinition: List[Parameter] = Nil
 
