@@ -35,7 +35,7 @@ class TestDataPreparer(
   private lazy val expressionCompiler: ExpressionCompiler =
     ExpressionCompiler.withoutOptimization(classloader, dictRegistry, expressionConfig, classDefinitionSet)
 
-  def prepareRecordForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {
+  def prepareRecordsForTest[T](source: Source, records: List[ScenarioTestRecord]): List[T] = {
     val (jsonRecordList, parametersRecordList) = records.partition {
       case _: ScenarioTestJsonRecord       => true
       case _: ScenarioTestParametersRecord => false

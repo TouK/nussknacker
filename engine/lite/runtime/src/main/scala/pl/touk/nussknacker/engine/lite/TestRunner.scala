@@ -82,7 +82,7 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
         .flatMap { case (nodeId, scenarioTestRecords) =>
           val sourceId                     = SourceId(nodeId.id)
           val source                       = getSourceById(sourceId)
-          val preparedRecords: List[Input] = testDataPreparer.prepareRecordForTest(source, scenarioTestRecords)
+          val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
           preparedRecords.map(record => sourceId -> record)
         }
     )

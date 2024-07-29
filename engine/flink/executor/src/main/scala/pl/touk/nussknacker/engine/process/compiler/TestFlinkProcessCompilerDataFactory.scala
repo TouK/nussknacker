@@ -129,7 +129,7 @@ class StubbedSourcePreparer(
 
   private def collectSamples(originalSource: Source, nodeId: NodeId): List[Object] = {
     val testRecordsForSource = scenarioTestData.testRecords.filter(_.sourceId == nodeId)
-    testDataPreparer.prepareRecordForTest(originalSource, testRecordsForSource)
+    testDataPreparer.prepareRecordsForTest(originalSource, testRecordsForSource)
   }
 
 }
