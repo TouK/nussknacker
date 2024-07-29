@@ -1,6 +1,7 @@
 import { defaultsDeep } from "lodash";
 import UAParser from "ua-parser-js";
 import { recurse } from "cypress-recurse";
+import JQueryWithSelector = Cypress.JQueryWithSelector;
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -73,9 +74,26 @@ Cypress.Commands.overwrite("visit", (original, ...args: VisitArgs) => {
     return original(typeof first === "string" ? { auth, ...second, url: first } : { auth, ...first });
 });
 
+const hideInputCaret = ($el: JQueryWithSelector) => {
+    cy.get("input, textarea, select").each(($input) => {
+        const originalCaretColor = $el.css("caret-color");
+        $el.attr("data-original-caret-color", originalCaretColor);
+        $input.css("caret-color", "transparent");
+    });
+};
+
+const showInputCaret = ($el: JQueryWithSelector) => {
+    cy.get("input, textarea, select").each(($input) => {
+        const originalCaretColor = $el.attr("data-original-caret-color");
+        $input.css("caret-color", originalCaretColor);
+    });
+};
+
 Cypress.Commands.overwrite<"matchImage", "element">(
     "matchImage",
     (originalFn, $el, { updateSnapshotsOnFail, ...options }: Cypress.MatchImageOptionsExtended = {}) => {
+        hideInputCaret($el);
+
         cy.wait(200);
         if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
             let path = null;
@@ -110,6 +128,7 @@ Cypress.Commands.overwrite<"matchImage", "element">(
         }
         originalFn($el, options);
         cy.wait(200);
+        showInputCaret($el);
     },
 );
 

@@ -9,16 +9,11 @@ import org.apache.flink.types.Row
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.transformation.{
-  DefinedEagerBranchParameter,
-  DefinedEagerParameter,
-  DefinedSingleParameter,
-  JoinDynamicComponent,
-  NodeDependencyValue
-}
+import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
+import pl.touk.nussknacker.engine.api.typed.supertype.CommonSupertypeFinder
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
@@ -55,8 +50,8 @@ object TableJoinComponent
   val KeyParamName: ParameterName = ParameterName("Key")
 
   private val KeyParamDeclaration
-      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[String]]] =
-    ParameterDeclaration.branchLazyMandatory[String](KeyParamName).withCreator()
+      : ParameterCreatorWithNoDependency with ParameterExtractor[Map[String, LazyParameter[AnyRef]]] =
+    ParameterDeclaration.branchLazyMandatory[AnyRef](KeyParamName).withCreator()
 
   val OutputParamName: ParameterName = ParameterName("Output")
 
@@ -69,26 +64,37 @@ object TableJoinComponent
   ): ContextTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(
-        List(BranchTypeParamDeclaration, KeyParamDeclaration)
+        List(BranchTypeParamDeclaration, KeyParamDeclaration, JoinTypeParamDeclaration)
           .map(_.createParameter())
       )
     case TransformationStep(
           (
             `BranchTypeParamName`,
             DefinedEagerBranchParameter(branchTypeByBranchId: Map[String, BranchType] @unchecked, _)
-          ) :: (`KeyParamName`, _) :: Nil,
+          ) ::
+          (`KeyParamName`, DefinedLazyBranchParameter(keyTypeByBranchId)) ::
+          (`JoinTypeParamName`, _) ::
+          Nil,
           _
         ) =>
-      val error =
+      val illegalBranchTypesErrorOpt = {
         if (branchTypeByBranchId.values.toList.sorted != BranchType.values().toList)
-          List(
+          Some(
             CustomNodeError(
               s"Has to be exactly one MAIN and JOINED branch, got: ${branchTypeByBranchId.values.mkString(", ")}",
               Some(BranchTypeParamName)
             )
           )
         else
-          Nil
+          None
+      }
+      val mismatchKeyTypesErrorOpt = Option(keyTypeByBranchId.values.toList.sortBy(_.display)).collect {
+        case left :: right :: Nil if CommonSupertypeFinder.Intersection.commonSupertypeOpt(left, right).isEmpty =>
+          CustomNodeError(
+            s"Types ${left.display} and ${right.display} are not comparable",
+            Some(KeyParamName)
+          )
+      }
       val joinedVariables = extractJoinedBranchId(branchTypeByBranchId)
         .map(contexts)
         .getOrElse(ValidationContext())
@@ -96,13 +102,12 @@ object TableJoinComponent
         .mapValuesNow(AdditionalVariableProvidedInRuntime(_))
       NextParameters(
         List(
-          JoinTypeParamDeclaration.createParameter(),
           ParameterDeclaration
             .lazyMandatory[AnyRef](OutputParamName)
             .withCreator(_.copy(additionalVariables = joinedVariables))
             .createParameter()
         ),
-        error
+        illegalBranchTypesErrorOpt.toList ::: mismatchKeyTypesErrorOpt.toList ::: Nil
       )
     case TransformationStep(
           (
@@ -153,7 +158,11 @@ object TableJoinComponent
             KeyParamDeclaration.extractValueUnsafe(params)(mainBranchId),
             flinkNodeContext.lazyParameterHelper
           ),
-          mainBranchTypeInfo(flinkNodeContext, mainBranchId)
+          mainBranchTypeInfo(
+            flinkNodeContext,
+            flinkNodeContext.branchValidationContext(mainBranchId),
+            KeyParamDeclaration.extractValueUnsafe(params)(mainBranchId)
+          )
         )
       )
 
@@ -168,7 +177,11 @@ object TableJoinComponent
             outputLazyParam,
             flinkNodeContext.lazyParameterHelper
           ),
-          joinedBranchTypeInfo(flinkNodeContext, outputLazyParam)
+          joinedBranchTypeInfo(
+            flinkNodeContext,
+            outputLazyParam,
+            KeyParamDeclaration.extractValueUnsafe(params)(joinedBranchId)
+          )
         )
       )
 
@@ -193,7 +206,7 @@ object TableJoinComponent
   }
 
   private class MainBranchToRowFunction(
-      mainKeyLazyParam: LazyParameter[String],
+      mainKeyLazyParam: LazyParameter[AnyRef],
       lazyParameterHelper: FlinkLazyParameterFunctionHelper
   ) extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper)
       with FlatMapFunction[Context, Row] {
@@ -211,18 +224,20 @@ object TableJoinComponent
 
   }
 
-  private def mainBranchTypeInfo(flinkNodeContext: FlinkCustomNodeContext, mainBranchId: String) = {
+  private def mainBranchTypeInfo(
+      flinkNodeContext: FlinkCustomNodeContext,
+      mainBranchValidationContext: ValidationContext,
+      mainKeyLazyParam: LazyParameter[_]
+  ) = {
     Types.ROW_NAMED(
       Array(contextInternalColumnName, mainKeyInternalColumnName),
-      flinkNodeContext.typeInformationDetection.contextRowTypeInfo(
-        flinkNodeContext.branchValidationContext(mainBranchId)
-      ),
-      Types.STRING
+      flinkNodeContext.typeInformationDetection.contextRowTypeInfo(mainBranchValidationContext),
+      flinkNodeContext.typeInformationDetection.forType(mainKeyLazyParam.returnType)
     )
   }
 
   private class JoinedBranchToRowFunction(
-      joinedKeyLazyParam: LazyParameter[String],
+      joinedKeyLazyParam: LazyParameter[AnyRef],
       outputLazyParam: LazyParameter[AnyRef],
       lazyParameterHelper: FlinkLazyParameterFunctionHelper
   ) extends AbstractLazyParameterInterpreterFunction(lazyParameterHelper)
@@ -243,10 +258,14 @@ object TableJoinComponent
 
   }
 
-  private def joinedBranchTypeInfo(flinkNodeContext: FlinkCustomNodeContext, outputLazyParam: LazyParameter[_]) = {
+  private def joinedBranchTypeInfo(
+      flinkNodeContext: FlinkCustomNodeContext,
+      outputLazyParam: LazyParameter[_],
+      joinedKeyLazyParam: LazyParameter[_]
+  ) = {
     Types.ROW_NAMED(
       Array(joinedKeyInternalColumnName, outputInternalColumnName),
-      Types.STRING,
+      flinkNodeContext.typeInformationDetection.forType(joinedKeyLazyParam.returnType),
       flinkNodeContext.typeInformationDetection.forType(outputLazyParam.returnType)
     )
   }
@@ -264,6 +283,7 @@ object TableJoinComponent
   }
 
   override def typesToExtract: List[TypedClass] = List(
+    Typed.typedClass[BranchType],
     Typed.typedClass[JoinType],
   )
 
