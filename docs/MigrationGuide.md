@@ -12,16 +12,24 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [6282](https://github.com/TouK/nussknacker/pull/6184) If you relied on the default value of the `topicsExistenceValidationConfig.enabled`
   setting, you must now be aware that topics will be validated by default (Kafka's `auto.create.topics.enable` setting
   is only considered in case of Sinks). Create proper topics manually if needed.
-* [#6269](https://github.com/TouK/nussknacker/pull/6269) Changes to `TypingResult` of SpEL expressions that are maps or lists:
-    * `TypedObjectTypingResult.valueOpt` now returns a `java.util.map` instead of `scala.collection.immutable.Map`
-        * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
-    * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
-        * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+* Component's API changes
+  * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+    Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+  * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
+    removed. You don't need to implement any other method in replacement, just remove this method.
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
-  * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
-* [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait 
-  changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a 
+    * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+* [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait
+  changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a
   single `TestRecord` and returns a list of results instead of a single result.
+
+### REST API changes
+
+* [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
+  POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
+* [#6213](https://github.com/TouK/nussknacker/pull/6213) Improvement: Load resource config only in test context
+  * `WithConfig` from `test-utils` modules behaviour changes: now it only parses given config, 
+    without resolving reference configs, system env variables etc.
 
 ## In version 1.16.0
 

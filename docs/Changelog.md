@@ -10,11 +10,31 @@
 * [#6363](https://github.com/TouK/nussknacker/pull/6363) Improvement on SpEL suggestions mechanism, now we are able to 
   provide suggestions even if the whole expression does not evaluate to proper SpEL expression. 
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
-* [#6269](https://github.com/TouK/nussknacker/pull/6269) SpEL expression validator now works with values that are lists or maps.
-  * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper aren't properly supported in validation expressions, and will cause the result to always be invalid
 * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+* [#6333](https://github.com/TouK/nussknacker/pull/6333) Test data generation: more meaningful error message when no data to generate
+* [#6386](https://github.com/TouK/nussknacker/pull/6386) Security fix for situation where array constructor could be 
+  used to execute unallowed expressions by exploiting the lack of full validation inside array dimensions. 
+  * Array constructor expressions are now illegal.
+* [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
+  increased from `500ms` to `10s` to avoid scenario starting problems
+* [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Table components: table name with special characters such as hyphen are now allowed
+  in table name
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
+  and arrays are serialized/deserialized more optimal in aggregates
+* [#6353](https://github.com/TouK/nussknacker/pull/6353) Added `join` component available in Batch processing mode
+* [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
+  POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
+* [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
+* [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
+  determined automatically, developer doesn't need to provide it by his/her own
 * [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
 * [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
+
+1.16.2 (18 July 2024)
+-------------------------
+* [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
+* [#6398](https://github.com/TouK/nussknacker/pull/6398) Added possibility to define hint texts for scenario properties in config.
 
 1.16.1 (16 July 2024)
 -------------------------

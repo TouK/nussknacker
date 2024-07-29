@@ -94,7 +94,7 @@ class ComponentGroupsPreparerSpec
         .withCustom(
           name = "fooTransformer",
           returnType = Some(Unknown),
-          componentSpecificData = CustomComponentSpecificData(manyInputs = false, canBeEnding = false),
+          componentSpecificData = CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false),
           componentGroupName = Some(ComponentGroupName("group1")),
           designerWideComponentId = None
         )
@@ -115,7 +115,7 @@ class ComponentGroupsPreparerSpec
         .withCustom(
           "fooTransformer",
           Some(Unknown),
-          CustomComponentSpecificData(manyInputs = false, canBeEnding = true),
+          CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = true),
           parameter
         )
         .build

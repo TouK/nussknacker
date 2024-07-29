@@ -53,6 +53,7 @@ interface EditSession extends Ace.EditSession {
 
 interface Completion extends Ace.ValueCompletion {
     readonly className: `${string} ace_`; //not documented, hack with some private api
+    readonly completer: Ace.Completer;
 }
 
 const DocHTML = ({ description, parameters, methodName, refClazz }: ExpressionSuggestion) => {
@@ -72,12 +73,24 @@ const DocHTML = ({ description, parameters, methodName, refClazz }: ExpressionSu
     );
 };
 
-const suggestionToCompletion = (suggestion: ExpressionSuggestion): Completion => ({
-    value: suggestion.methodName,
+const getNormalizedValue = (suggestion: ExpressionSuggestion): string => {
+    switch (suggestion.refClazz.type) {
+        case "TypedDict":
+            if (suggestion.methodName.match(/\s/)) {
+                return `["${suggestion.methodName}"]`;
+            }
+    }
+    return suggestion.methodName;
+};
+
+const suggestionToCompletion = (completer: Ace.Completer, suggestion: ExpressionSuggestion): Completion => ({
+    value: getNormalizedValue(suggestion),
+    caption: suggestion.methodName,
     score: suggestion.fromClass ? 1 : 1000,
     meta: ProcessUtils.humanReadableType(suggestion.refClazz),
     docHTML: ReactDOMServer.renderToStaticMarkup(<DocHTML {...suggestion} />),
     className: `${suggestion.fromClass ? `class` : `default`}Method ace_`, //not documented, some private api
+    completer,
 });
 
 export class CustomAceEditorCompleter implements Ace.Completer {
@@ -89,6 +102,13 @@ export class CustomAceEditorCompleter implements Ace.Completer {
     private revertCompleterOverrides: (() => void) | null;
 
     constructor(private expressionSuggester: ExpressionSuggester) {}
+
+    onInsert = (editor: Ace.Editor, { value }: Completion) => {
+        // correct wrong dict value after insert by removing dot.
+        if (value.match(/^\[".*"]$/)) {
+            editor.session.replace(editor.find(`.${value}`, { backwards: true }), value);
+        }
+    };
 
     replaceSuggester(expressionSuggester: ExpressionSuggester) {
         this.expressionSuggester = expressionSuggester;
@@ -111,7 +131,10 @@ export class CustomAceEditorCompleter implements Ace.Completer {
         const value = editor.getValue();
 
         this.expressionSuggester.suggestionsFor(value, caretPosition2d).then((suggestions) => {
-            callback(null, suggestions.map(suggestionToCompletion));
+            callback(
+                null,
+                suggestions.map((s) => suggestionToCompletion(this, s)),
+            );
         });
     }
 

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import cats.data.NonEmptyList
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.apache.commons.lang3.StringUtils
@@ -45,14 +46,18 @@ class TestInfoResourcesSpec
 
     override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
 
-    override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData] = Some(
-      PreliminaryScenarioTestData(
-        PreliminaryScenarioTestRecord.Standard(
-          "sourceId",
-          Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")
-        ) :: Nil
+    override def generateTestData(scenario: CanonicalProcess, size: Int): Either[String, PreliminaryScenarioTestData] =
+      Right(
+        PreliminaryScenarioTestData(
+          NonEmptyList(
+            PreliminaryScenarioTestRecord.Standard(
+              "sourceId",
+              Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")
+            ),
+            Nil
+          )
+        )
       )
-    )
 
     override def prepareTestData(
         preliminaryTestData: PreliminaryScenarioTestData,

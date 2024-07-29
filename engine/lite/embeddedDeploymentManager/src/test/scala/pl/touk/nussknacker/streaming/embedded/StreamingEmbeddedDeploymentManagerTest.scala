@@ -288,7 +288,7 @@ class StreamingEmbeddedDeploymentManagerTest
     kafkaClient.sendMessage(inputTopic.name, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic.name, message("2")).futureValue
 
-    val preliminaryTestData = testInfoProvider.generateTestData(scenario, 2).value
+    val preliminaryTestData = testInfoProvider.generateTestData(scenario, 2).rightValue
 
     val testData = testInfoProvider.prepareTestData(preliminaryTestData, scenario).rightValue
     val results = wrapInFailingLoader {
