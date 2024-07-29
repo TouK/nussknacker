@@ -32,7 +32,11 @@ object TestTableComponents {
   val singleRecordBatchTable: ComponentDefinition =
     ComponentDefinition(
       oneRecordTableSourceName,
-      new TableSourceFactory(tableDefs(oneRecordTableName), enableFlinkBatchExecutionMode = true)
+      new TableSourceFactory(
+        tableDefs(oneRecordTableName),
+        enableFlinkBatchExecutionMode = true,
+        useRealDataForTests = false
+      )
     )
 
 }
