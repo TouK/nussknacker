@@ -24,7 +24,7 @@ class QueryStringTestRecordParserSpec extends AnyFunSuite with Matchers with Tab
 
     forAll(testingData) { (query: String, result: TypedMap) =>
       val testRecord = TestRecord(Json.fromString(query))
-      parser.parse(testRecord) shouldBe result
+      parser.parse(List(testRecord)) shouldBe List(result)
     }
   }
 

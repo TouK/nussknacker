@@ -75,11 +75,17 @@ class InterpreterTestRunner[F[_]: Monad: InterpreterShape: CapabilityTransformer
     )
 
     val testDataPreparer = TestDataPreparer(modelData, process)
-    val inputs = ScenarioInputBatch(scenarioTestData.testRecords.map { scenarioTestRecord =>
-      val sourceId = SourceId(scenarioTestRecord.sourceId.id)
-      val source   = getSourceById(sourceId)
-      sourceId -> testDataPreparer.prepareRecordForTest[Input](source, scenarioTestRecord)
-    })
+    val inputs = ScenarioInputBatch(
+      scenarioTestData.testRecords
+        .groupBy(_.sourceId)
+        .toList
+        .flatMap { case (nodeId, scenarioTestRecords) =>
+          val sourceId                     = SourceId(nodeId.id)
+          val source                       = getSourceById(sourceId)
+          val preparedRecords: List[Input] = testDataPreparer.prepareRecordsForTest(source, scenarioTestRecords)
+          preparedRecords.map(record => sourceId -> record)
+        }
+    )
 
     try {
       scenarioInterpreter.open(testContext)

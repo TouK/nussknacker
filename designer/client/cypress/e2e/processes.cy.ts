@@ -19,6 +19,7 @@ describe("Processes list", () => {
     });
 
     beforeEach(() => {
+        cy.mockWindowDate();
         cy.visit("/");
         cy.url().should("match", /scenarios/);
         cy.get("[placeholder='Search...']", { timeout: 60000 }).should("be.visible");
