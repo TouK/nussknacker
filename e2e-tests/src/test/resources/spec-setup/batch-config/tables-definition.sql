@@ -5,5 +5,5 @@ CREATE TABLE transactions (
 ) WITH (
       'connector' = 'filesystem',
       'path' = 'file:///transactions',
-      'format' = 'csv'
+      'format' = 'json'
 );

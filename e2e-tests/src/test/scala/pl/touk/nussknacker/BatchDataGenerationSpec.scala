@@ -99,7 +99,7 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(200)
       .body(
-        matchJsonWithRegexValues(s"""{
+        equalsJson(s"""{
              |  "results": {
              |    "nodeResults": {
              |      "sourceId": [
@@ -172,7 +172,7 @@ class BatchDataGenerationSpec
       .Then()
       .statusCode(200)
       .body(
-        matchJsonWithRegexValues(s"""{
+        equalsJson(s"""{
              |  "results": {
              |    "nodeResults": {
              |      "sourceId": [
