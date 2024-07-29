@@ -27,21 +27,24 @@ class BatchDataGenerationSpec
 
   private val designerServiceUrl = "http://localhost:8080"
 
+  private val randomDataGenScenarioName = "SumTransactions-RandomData"
+  private val realDataGenScenarioName   = "SumTransactions-RealData"
+
   override def beforeAll(): Unit = {
-    createEmptyBatchScenario(simpleBatchTableScenario.name.value)
+    createEmptyBatchScenario(randomDataGenScenarioName, "Default")
+    createEmptyBatchScenario(realDataGenScenarioName, "BatchTestOnRealData")
     super.beforeAll()
   }
 
   "Generate file endpoint for scenario with table source should generate" - {
-//  TODO: unignore after adding the ability to switch the test method through API call instead of through config
-    "randomized records when configured with random mode" ignore {
+    "randomized records when configured with random mode" in {
       given()
         .when()
         .request()
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/10"
+          s"$designerServiceUrl/api/testInfo/$randomDataGenScenarioName/generate/10"
         )
         .Then()
         .statusCode(200)
@@ -65,7 +68,7 @@ class BatchDataGenerationSpec
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/${simpleBatchTableScenario.name.value}/generate/1"
+          s"$designerServiceUrl/api/testInfo/$realDataGenScenarioName/generate/1"
         )
         .Then()
         .statusCode(200)
@@ -91,7 +94,7 @@ class BatchDataGenerationSpec
       .basicAuthAdmin()
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
       .post(
-        s"$designerServiceUrl/api/processManagement/generateAndTest/${simpleBatchTableScenario.name.value}/1"
+        s"$designerServiceUrl/api/processManagement/generateAndTest/$realDataGenScenarioName/1"
       )
       .Then()
       .statusCode(200)
@@ -164,7 +167,7 @@ class BatchDataGenerationSpec
         "text/ plain"
       )
       .post(
-        s"$designerServiceUrl/api/processManagement/test/${simpleBatchTableScenario.name.value}"
+        s"$designerServiceUrl/api/processManagement/test/$realDataGenScenarioName"
       )
       .Then()
       .statusCode(200)
@@ -221,7 +224,7 @@ class BatchDataGenerationSpec
       )
   }
 
-  private def createEmptyBatchScenario(scenarioName: String): Unit = {
+  private def createEmptyBatchScenario(scenarioName: String, category: String): Unit = {
     given()
       .when()
       .request()
@@ -229,7 +232,7 @@ class BatchDataGenerationSpec
       .jsonBody(s"""
                    |{
                    |    "name" : "$scenarioName",
-                   |    "category" : "Default",
+                   |    "category" : "$category",
                    |    "isFragment" : false,
                    |    "processingMode" : "Bounded-Stream"
                    |}
