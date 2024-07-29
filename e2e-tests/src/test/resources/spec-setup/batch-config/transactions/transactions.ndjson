@@ -1,0 +1,3 @@
+{"datetime": "2024-01-01 10:00:00","client_id": "client1","amount": 100.10}
+{"datetime": "2024-01-01 10:00:01","client_id": "client2","amount": 100.20}
+{"datetime": "2024-01-01 10:00:02","client_id": "client1","amount": 100.30}
