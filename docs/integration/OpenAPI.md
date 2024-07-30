@@ -44,7 +44,7 @@ For arrays, we use `items` to define type of elements.
 ## Configuration
 
 Open API enricher is configured under `components` configuration key. Check
-this [configuration file snippet](../configuration/Common.md#configuration-areas) to understand the
+this [configuration file snippet](../configuration/index.md#configuration-areas) to understand the
 placement of `components` configuration key in the configuration file.
 
 Sample configuration:
