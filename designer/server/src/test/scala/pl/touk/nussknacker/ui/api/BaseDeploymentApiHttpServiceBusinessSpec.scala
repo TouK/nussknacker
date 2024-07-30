@@ -60,7 +60,8 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     .emptySink(
       id = "sink",
       typ = "table",
-      "Table" -> Expression.spel("'transactions_summary'"),
+      "Table"      -> Expression.spel("'transactions_summary'"),
+      "Raw editor" -> Expression.spel("true"),
       "Value" -> Expression.spel(
         "{client_id: #keyValues[0], date: #keyValues[1], amount: #agg}"
       )
