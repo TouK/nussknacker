@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.flink.table.source
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlTestData.SimpleTypesTestCase
 
 class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
 
   private val tableSource = new TableSource(
-    tableDefinition = SimpleTypesTestCase.tableDefinition,
-    sqlStatements = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement),
+    tableDefinition = SimpleTable.tableDefinition,
+    sqlStatements = SqlStatementReader.readSql(SimpleTable.sqlStatement),
     enableFlinkBatchExecutionMode = true
   )
 
