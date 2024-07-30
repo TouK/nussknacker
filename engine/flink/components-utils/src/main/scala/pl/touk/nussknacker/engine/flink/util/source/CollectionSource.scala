@@ -38,7 +38,7 @@ case class CollectionSource[T: TypeInformation](
     flinkRuntimeMode.foreach(env.setRuntimeMode)
     boundedness match {
       case Boundedness.BOUNDED =>
-        env.fromCollection(list.asJava)
+        env.fromCollection(list.asJava, typeInformation)
       case Boundedness.CONTINUOUS_UNBOUNDED =>
         StandardFlinkSourceFunctionUtils.createSourceStream(
           env = env,
