@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedRecordParameter,
   SingleSchemaBasedParameter
 }
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
 import scala.collection.immutable.ListMap
 
@@ -34,8 +35,8 @@ object TableSinkFactory {
   private val rawValueParameterDeclaration =
     ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
 
-  private val tableNameParameterName      = TableSourceFactory.tableNameParamName
-  val rawModeParameterName: ParameterName = ParameterName("Raw editor")
+  private val tableNameParameterName              = TableSourceFactory.tableNameParamName
+  private val rawModeParameterName: ParameterName = ParameterName("Raw editor")
 
   private val rawModeParameterDeclaration = ParameterDeclaration
     .mandatory[Boolean](rawModeParameterName)
@@ -77,8 +78,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
     val finalState = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    // TODO local: extract based on param in state
-    val lazyValueParam = rawValueParameterDeclaration.extractValueUnsafe(params)
+    val lazyValueParam = SinkValue.applyUnsafe(finalState.valueParam, params).toLazyParameter
 
     new TableSink(
       tableDefinition = finalState.table,
@@ -176,7 +176,6 @@ class TableSinkFactory(definition: TableSqlDefinitions)
     val tableColumnValueParams =
       table.columns.map(c => {
         if (restrictedParamNamesForNonRawMode.contains(ParameterName(c.columnName))) {
-          // TODO local: Deduplicate - Make a typed error common with avro one
           invalid(
             NonEmptyList.one(
               CustomNodeError(
