@@ -128,9 +128,8 @@ class StubbedSourcePreparer(
   }
 
   private def collectSamples(originalSource: Source, nodeId: NodeId): List[Object] = {
-    scenarioTestData.testRecords.filter(_.sourceId == nodeId).map { scenarioTestRecord =>
-      testDataPreparer.prepareRecordForTest[Object](originalSource, scenarioTestRecord)
-    }
+    val testRecordsForSource = scenarioTestData.testRecords.filter(_.sourceId == nodeId)
+    testDataPreparer.prepareRecordsForTest(originalSource, testRecordsForSource)
   }
 
 }

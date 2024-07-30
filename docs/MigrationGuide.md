@@ -17,6 +17,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
   * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
     removed. You don't need to implement any other method in replacement, just remove this method.
+* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+    * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+* [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait
+  changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a
+  single `TestRecord` and returns a list of results instead of a single result.
 
 ### REST API changes
 

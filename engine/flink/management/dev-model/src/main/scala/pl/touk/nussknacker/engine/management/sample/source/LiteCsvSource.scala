@@ -23,7 +23,9 @@ class LiteCsvSource(override val nodeId: NodeId)
     )
   )
 
-  override def testRecordParser: TestRecordParser[CsvRecord] =
-    (testRecord: TestRecord) => CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
+  override def testRecordParser: TestRecordParser[CsvRecord] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord =>
+      CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
+    }
 
 }

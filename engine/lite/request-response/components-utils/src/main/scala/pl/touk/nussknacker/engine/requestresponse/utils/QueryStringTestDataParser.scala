@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class QueryStringTestDataParser extends TestRecordParser[TypedMap] {
 
-  override def parse(testRecord: TestRecord): TypedMap = {
+  override def parse(testRecords: List[TestRecord]): List[TypedMap] = testRecords.map { testRecord =>
     val queryString = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
     val paramMap = queryString
       .split("&")
