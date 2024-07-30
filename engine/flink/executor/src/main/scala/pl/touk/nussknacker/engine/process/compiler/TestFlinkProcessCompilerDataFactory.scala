@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -69,7 +68,7 @@ object TestFlinkProcessCompilerDataFactory {
                 sourcePreparer.prepareStubbedSource(sourceWithTestSupport, typingResult, nodeId)
               case _ =>
 //              TODO: Why not throw exception here? Maybe we need to remodel FlinkSourceWithParameters interface?
-                EmptySource[Object](typingResult)(TypeInformation.of(classOf[Object]))
+                EmptySource(typingResult)
             }
           }
         })
@@ -111,8 +110,6 @@ class StubbedSourcePreparer(
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
           returnType = typingResult,
-        )(
-          originalSource.typeInformation
         ) {
           override val contextInitializer: ContextInitializer[Object] = sourceWithContextInitializer.contextInitializer
         }
@@ -121,8 +118,6 @@ class StubbedSourcePreparer(
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
           returnType = typingResult
-        )(
-          originalSource.typeInformation
         )
     }
   }

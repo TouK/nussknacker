@@ -23,16 +23,14 @@ import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySour
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.process.compiler.StubbedFlinkProcessCompilerDataFactoryTest.mockServiceResultsHolder
-import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
+import pl.touk.nussknacker.engine.process.helpers.TestResultsHolder
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExtension._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 
 class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matchers {
-
-  private implicit val intTypeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
 
   private val scenarioWithSingleSource = ScenarioBuilder
     .streaming("test")
@@ -99,7 +97,7 @@ class StubbedFlinkProcessCompilerDataFactoryTest extends AnyFunSuite with Matche
     val sources = compiledProcess.sources.collect { case source: SourcePart =>
       source.obj
     }
-    sources should matchPattern { case (_: EmptySource[_]) :: (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
+    sources should matchPattern { case (_: EmptySource) :: (_: EmptySource) :: (_: EmptySource) :: Nil =>
     }
   }
 

@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkContextInitializingFunction,
   FlinkCustomNodeContext,
@@ -17,17 +17,19 @@ import pl.touk.nussknacker.engine.flink.api.process.{
 import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunctuatedExtractor
 
 import java.time.Duration
+import scala.reflect.ClassTag
 
 /**
  * This source in contrary to `CollectionSource` emit watermark after each element. It is important feature during tests if you want to make them deterministic.
  */
 @silent("deprecated")
-class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](
+class EmitWatermarkAfterEachElementCollectionSource[T](
     list: Seq[T],
+    returnType: TypingResult,
     timestampAssigner: AssignerWithPunctuatedWatermarks[T]
 ) extends FlinkSource {
 
-  private val contextInitializer = new BasicContextInitializer[T](Unknown)
+  private val contextInitializer = new BasicContextInitializer[T](returnType)
 
   private val flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -61,7 +63,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
     env
-      .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
+      .addSource(flinkSourceFunction, flinkNodeContext.typeInformationDetection.forType[T](returnType))
       .name(s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source")
       .map(
         new FlinkContextInitializingFunction(
@@ -77,7 +79,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](
 
 object EmitWatermarkAfterEachElementCollectionSource {
 
-  def create[T: TypeInformation](
+  def create[T: ClassTag](
       elements: Seq[T],
       extractTimestampFun: T => Long,
       maxOutOfOrderness: Duration
@@ -85,7 +87,7 @@ object EmitWatermarkAfterEachElementCollectionSource {
     val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
       override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
     }
-    new EmitWatermarkAfterEachElementCollectionSource[T](elements, assigner)
+    new EmitWatermarkAfterEachElementCollectionSource[T](elements, Typed.typedClass[T], assigner)
   }
 
 }

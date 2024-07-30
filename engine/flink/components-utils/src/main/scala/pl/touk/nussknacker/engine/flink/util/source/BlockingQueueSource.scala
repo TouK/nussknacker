@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
 import com.github.ghik.silencer.silent
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkContextInitializingFunction,
   FlinkCustomNodeContext,
@@ -19,14 +18,15 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunc
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-import scala.jdk.CollectionConverters._
 import scala.collection.concurrent.TrieMap
+import scala.jdk.CollectionConverters._
+import scala.reflect.ClassTag
 
 /**
   * This source allow to add elements after creation or decide when input stream is finished. It also emit watermark after each added element.
   */
 @silent("deprecated")
-class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPunctuatedWatermarks[T])
+class BlockingQueueSource[T](returnType: TypingResult, timestampAssigner: AssignerWithPunctuatedWatermarks[T])
     extends FlinkSource
     with Serializable {
 
@@ -36,7 +36,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
 
   def finish(): Boolean = BlockingQueueSource.getForId[T](id).add(None)
 
-  private val contextInitializer = new BasicContextInitializer[T](Unknown)
+  private val contextInitializer = new BasicContextInitializer[T](returnType)
 
   private def flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose
@@ -74,7 +74,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
     env
-      .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
+      .addSource(flinkSourceFunction, flinkNodeContext.typeInformationDetection.forType[T](returnType))
       .name(s"${flinkNodeContext.metaData.name}-${flinkNodeContext.nodeId}-source")
       .map(
         new FlinkContextInitializingFunction(
@@ -95,14 +95,14 @@ object BlockingQueueSource {
   private def getForId[T](id: String): BlockingQueue[Option[T]] =
     queueById.getOrElseUpdate(id, new LinkedBlockingQueue).asInstanceOf[BlockingQueue[Option[T]]]
 
-  def create[T: TypeInformation](
+  def create[T: ClassTag](
       extractTimestampFun: T => Long,
       maxOutOfOrderness: Duration
   ): BlockingQueueSource[T] = {
     val assigner = new BoundedOutOfOrdernessPunctuatedExtractor[T](maxOutOfOrderness.toMillis) {
       override def extractTimestamp(element: T, recordTimestamp: Long): Long = extractTimestampFun(element)
     }
-    new BlockingQueueSource[T](assigner)
+    new BlockingQueueSource[T](Typed.typedClass[T], assigner)
   }
 
 }
