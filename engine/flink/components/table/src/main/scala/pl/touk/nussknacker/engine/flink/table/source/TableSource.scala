@@ -106,7 +106,6 @@ object TableSource {
       tableEnv: TableEnvironment
   ): Table = {
     sqlStatements.foreach(tableEnv.executeSql)
-    // TODO local: or just string tableName?
     tableEnv.from(s"`$tableName`")
   }
 
