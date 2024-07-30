@@ -39,7 +39,7 @@ class TableSink(
 
     /*
       DataStream to Table transformation:
-      1. Map the dataStream[some record type] to dataStream[Row]
+      1. Map the dataStream[any record type] to dataStream[Row]
       2. Map dataStream[Row] to table
       3. Add sink table to environment
       4. Insert the input value table into the sink table in the correct order of column names
