@@ -3,6 +3,7 @@
     "description": "Nussknacker designer - client",
     "version": "0.0.0",
     "dependencies": {
+        "@elastic/apm-rum": "5.16.0",
         "@emotion/css": "11.11.2",
         "@emotion/react": "11.11.4",
         "@emotion/styled": "11.11.5",
