@@ -75,18 +75,39 @@ Cypress.Commands.overwrite("visit", (original, ...args: VisitArgs) => {
 });
 
 const hideInputCaret = ($el: JQueryWithSelector) => {
-    cy.get("input, textarea, select").each(($input) => {
-        const originalCaretColor = $el.css("caret-color");
-        $el.attr("data-original-caret-color", originalCaretColor);
-        $input.css("caret-color", "transparent");
-    });
+    cy.get("input, textarea, select")
+        .should("have.length.gte", 0)
+        .each(($input) => {
+            const originalCaretColor = $el.css("caret-color");
+            $el.attr("data-original-caret-color", originalCaretColor);
+            $input.css("caret-color", "transparent");
+        });
+
+    cy.get(".ace_cursor")
+        .should("have.length.gte", 0)
+        .each(($input) => {
+            const originalCaretDisplay = $el.css("display");
+            $el.attr("data-original-caret-display", originalCaretDisplay);
+            $input.css("display", "none");
+        });
 };
 
 const showInputCaret = ($el: JQueryWithSelector) => {
-    cy.get("input, textarea, select").each(($input) => {
-        const originalCaretColor = $el.attr("data-original-caret-color");
-        $input.css("caret-color", originalCaretColor);
-    });
+    cy.get("input, textarea, select")
+        .should("have.length.gte", 0)
+        .each(($input) => {
+            const originalCaretColor = $el.attr("data-original-caret-color");
+            const originalCaretDisplay = $el.attr("data-original-caret-display");
+            $input.css("caret-color", originalCaretColor);
+            $input.css("display", originalCaretDisplay);
+        });
+
+    cy.get(".ace_cursor")
+        .should("have.length.gte", 0)
+        .each(($input) => {
+            const originalCaretDisplay = $el.attr("data-original-caret-display");
+            $input.css("display", originalCaretDisplay);
+        });
 };
 
 Cypress.Commands.overwrite<"matchImage", "element">(
