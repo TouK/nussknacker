@@ -98,56 +98,56 @@ class BatchDataGenerationSpec
       )
       .Then()
       .statusCode(200)
-      .body(
-        equalsJson(s"""{
-             |  "results": {
-             |    "nodeResults": {
-             |      "sourceId": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                "datetime": "2024-01-01T10:00:00",
-             |                "client_id": "client1",
-             |                "amount": 100.1
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ],
-             |      "end": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                "datetime": "2024-01-01T10:00:00",
-             |                "client_id": "client1",
-             |                "amount": 100.1
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ]
-             |    },
-             |    "invocationResults": {},
-             |    "externalInvocationResults": {},
-             |    "exceptions": []
-             |  },
-             |  "counts": {
-             |      "sourceId": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      },
-             |      "end": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      }
-             |  }
-             |}""".stripMargin)
+      .equalsJsonBody(
+        s"""{
+           |  "results": {
+           |    "nodeResults": {
+           |      "sourceId": [
+           |        {
+           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.1
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ],
+           |      "end": [
+           |        {
+           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                "datetime": "2024-01-01T10:00:00",
+           |                "client_id": "client1",
+           |                "amount": 100.1
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "invocationResults": {},
+           |    "externalInvocationResults": {},
+           |    "exceptions": []
+           |  },
+           |  "counts": {
+           |      "sourceId": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      },
+           |      "end": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      }
+           |  }
+           |}""".stripMargin
       )
   }
 
@@ -171,56 +171,56 @@ class BatchDataGenerationSpec
       )
       .Then()
       .statusCode(200)
-      .body(
-        equalsJson(s"""{
-             |  "results": {
-             |    "nodeResults": {
-             |      "sourceId": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                 "datetime": "2024-07-19T08:56:08.485",
-             |                 "client_id": "aClientId",
-             |                 "amount": "123123.12"
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ],
-             |      "end": [
-             |        {
-             |          "id": "SumTransactions-sourceId-0-0",
-             |          "variables": {
-             |            "input": {
-             |              "pretty": {
-             |                 "datetime": "2024-07-19T08:56:08.485",
-             |                 "client_id": "aClientId",
-             |                 "amount": "123123.12"
-             |              }
-             |            }
-             |          }
-             |        }
-             |      ]
-             |    },
-             |    "invocationResults": {},
-             |    "externalInvocationResults": {},
-             |    "exceptions": []
-             |  },
-             |  "counts": {
-             |      "sourceId": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      },
-             |      "end": {
-             |        "all": 1,
-             |        "errors": 0,
-             |        "fragmentCounts": {}
-             |      }
-             |  }
-             |}""".stripMargin)
+      .equalsJsonBody(
+        s"""{
+           |  "results": {
+           |    "nodeResults": {
+           |      "sourceId": [
+           |        {
+           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                 "datetime": "2024-07-19T08:56:08.485",
+           |                 "client_id": "aClientId",
+           |                 "amount": 123123.12
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ],
+           |      "end": [
+           |        {
+           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "variables": {
+           |            "input": {
+           |              "pretty": {
+           |                 "datetime": "2024-07-19T08:56:08.485",
+           |                 "client_id": "aClientId",
+           |                 "amount": 123123.12
+           |              }
+           |            }
+           |          }
+           |        }
+           |      ]
+           |    },
+           |    "invocationResults": {},
+           |    "externalInvocationResults": {},
+           |    "exceptions": []
+           |  },
+           |  "counts": {
+           |      "sourceId": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      },
+           |      "end": {
+           |        "all": 1,
+           |        "errors": 0,
+           |        "fragmentCounts": {}
+           |      }
+           |  }
+           |}""".stripMargin
       )
   }
 
