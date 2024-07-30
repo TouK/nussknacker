@@ -20,7 +20,7 @@ import scala.jdk.CollectionConverters._
 case class CollectionSource[T](
     list: List[T],
     override val timestampAssigner: Option[TimestampWatermarkHandler[T]],
-    returnType: TypingResult,
+    override val returnType: TypingResult,
     boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
     flinkRuntimeMode: Option[RuntimeExecutionMode] = None
 ) extends StandardFlinkSource[T]

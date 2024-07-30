@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
 import io.circe.Json
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition

@@ -17,7 +17,7 @@ class ReturningClassInstanceSource extends SourceFactory with UnboundedStreamCom
       ) additionalClass: String
   ) = {
     val resultClass = Class.forName(additionalClass)
-    CollectionSource(List.empty, None, Typed.typedClass(resultClass))
+    CollectionSource[Any](List.empty, None, Typed.typedClass(resultClass))
   }
 
 }
