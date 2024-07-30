@@ -80,8 +80,8 @@ private class InterpreterInternal[F[_]: Monad](
         val newParentContext = outputVar match {
           case Some(FragmentOutputVarDefinition(varName, fields)) =>
             // TODO simplify
-            val withModifiedVariable = createOrUpdateVariable(ctx, varName, fields)
-            parentContext.withVariable(varName, withModifiedVariable(varName))
+            val ctxWithParentVars = createVariable(ctx, varName, fields)
+            parentContext.withVariable(varName, ctxWithParentVars(varName))
           case None => parentContext
         }
         interpretNext(next, newParentContext)
@@ -202,14 +202,11 @@ private class InterpreterInternal[F[_]: Monad](
       }
     }
 
-  private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])(
+  private def createVariable(context: Context, varName: String, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
   ): Context = {
-    val contextWithInitialVariable =
-      ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
-
-    fields.foldLeft(contextWithInitialVariable) { case (context, field) =>
+    fields.foldLeft(context) { case (context, field) =>
       val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, context)
       valueWithContext.context.modifyVariable[java.util.Map[String, Any]](
         varName,
@@ -220,6 +217,16 @@ private class InterpreterInternal[F[_]: Monad](
         }
       )
     }
+  }
+
+  private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])(
+      implicit metaData: MetaData,
+      node: Node
+  ): Context = {
+    val contextWithInitialVariable =
+      ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
+
+    createVariable(contextWithInitialVariable, varName, fields)
   }
 
   private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)(
