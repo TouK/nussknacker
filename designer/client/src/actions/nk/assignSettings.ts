@@ -10,6 +10,8 @@ export type MetricsType = {
 
 export type UsageStatisticsReports = {
     enabled: boolean;
+    errorReportsEnabled: boolean;
+    fingerprint: string;
 };
 
 export type SurveySettings = {

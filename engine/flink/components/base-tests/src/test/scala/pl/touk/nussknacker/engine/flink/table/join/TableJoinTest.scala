@@ -7,11 +7,14 @@ import org.scalatest.{Inside, LoneElement}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinTest.OrderOrProduct
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -129,7 +132,59 @@ class TableJoinTest
     )
   }
 
-  private def prepareJoiningScenario(joinType: JoinType) = ScenarioBuilder
+  test("should allow to use different types that can be compared in key expressions") {
+    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+      prepareJoiningScenario(
+        JoinType.INNER,
+        orderKeyExpression = "#input.productId".spel,
+        productKeyExpression = "#input.id.longValue".spel
+      ),
+      List(
+        someProduct,
+        orderReferringToExistingProduct
+      ),
+      Boundedness.BOUNDED,
+      Some(RuntimeExecutionMode.BATCH)
+    )
+
+    enrichedOrders.validValue.errors shouldBe empty
+    enrichedOrders.validValue.successes shouldEqual List(
+      Map(
+        "orderId" -> orderReferringToExistingProduct.id,
+        "product" -> Map(
+          "id"   -> someProduct.id,
+          "name" -> someProduct.name
+        ).asJava
+      ).asJava
+    )
+  }
+
+  test("shouldn't allow to use types that can't be compared in key expressions") {
+    val enrichedOrders = runner.runWithData[OrderOrProduct, java.util.Map[String, AnyRef]](
+      prepareJoiningScenario(
+        JoinType.INNER,
+        orderKeyExpression = "#input.productId".spel,
+        productKeyExpression = "#input.id.toString".spel
+      ),
+      List(orderReferringToNonExistingProduct),
+      Boundedness.BOUNDED,
+      Some(RuntimeExecutionMode.BATCH)
+    )
+
+    enrichedOrders.invalidValue.toList should matchPattern {
+      case CustomNodeError(
+            `joinNodeId`,
+            "Types Integer and String are not comparable",
+            Some(ParameterName("Key"))
+          ) :: Nil =>
+    }
+  }
+
+  private def prepareJoiningScenario(
+      joinType: JoinType,
+      orderKeyExpression: Expression = "#input.productId".spel,
+      productKeyExpression: Expression = "#input.id".spel
+  ) = ScenarioBuilder
     .streaming(classOf[TableJoinTest].getSimpleName)
     .sources(
       GraphBuilder
@@ -148,11 +203,11 @@ class TableJoinTest
           List(
             mainBranchId -> List(
               "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.MAIN}".spel,
-              "Key"         -> s"#input.productId.toString".spel
+              "Key"         -> orderKeyExpression
             ),
             joinedBranchId -> List(
               "Branch Type" -> s"T(${classOf[BranchType].getName}).${BranchType.JOINED}".spel,
-              "Key"         -> s"#input.id.toString".spel
+              "Key"         -> productKeyExpression
             )
           ),
           "Join Type" -> s"T(${classOf[JoinType].getName}).$joinType".spel,
