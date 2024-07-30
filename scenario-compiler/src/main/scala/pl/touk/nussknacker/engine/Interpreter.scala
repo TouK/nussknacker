@@ -79,9 +79,9 @@ private class InterpreterInternal[F[_]: Monad](
         val parentContext = ctx.parentContext.getOrElse(ctx.copy(variables = Map.empty))
         val newParentContext = outputVar match {
           case Some(FragmentOutputVarDefinition(varName, fields)) =>
-            // TODO simplify
-            val ctxWithParentVars = createVariable(ctx, varName, fields)
-            parentContext.withVariable(varName, ctxWithParentVars(varName))
+            // TODO simplify - only push Map(field -> value) into parentContext instead of the whole object
+            val parsedFieldsMap = parseFragmentOutput(ctx, fields)
+            parentContext.withVariable(varName, parsedFieldsMap)
           case None => parentContext
         }
         interpretNext(next, newParentContext)
@@ -202,7 +202,7 @@ private class InterpreterInternal[F[_]: Monad](
       }
     }
 
-  private def createVariable(context: Context, varName: String, fields: Seq[Field])(
+  private def updateVariable(context: Context, varName: String, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
   ): Context = {
@@ -226,7 +226,20 @@ private class InterpreterInternal[F[_]: Monad](
     val contextWithInitialVariable =
       ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
 
-    createVariable(contextWithInitialVariable, varName, fields)
+    updateVariable(contextWithInitialVariable, varName, fields)
+  }
+
+  private def parseFragmentOutput(ctx: Context, fields: Seq[Field])(
+      implicit metaData: MetaData,
+      node: Node
+  ): Map[String, Any] = {
+    val newCtx = fields.foldLeft(ctx) { case (context, field) =>
+      val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, context)
+      valueWithContext.context.withVariable(field.name, valueWithContext.value)
+    }
+    val fieldSet: Set[Field] = fields.toSet
+    val fieldNames           = fieldSet.map(_.name)
+    newCtx.variables.filter { case (key, _) => fieldNames.contains(key) }
   }
 
   private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)(
