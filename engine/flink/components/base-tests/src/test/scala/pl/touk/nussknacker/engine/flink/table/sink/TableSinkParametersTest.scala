@@ -1,107 +1,119 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
-import org.apache.flink.table.api.DataTypes
+import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, invalid, valid}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Inside.inside
+import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.DefinedEagerParameter
-import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
-import pl.touk.nussknacker.engine.flink.table.sink.TableSinkParametersTest.IllegalParamColumnNameCase
-import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
-import pl.touk.nussknacker.engine.flink.table.{ColumnDefinition, TableDefinition, TableSqlDefinitions}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CustomNodeError,
+  ExpressionParserCompilationError
+}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
+import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
+import pl.touk.nussknacker.engine.flink.test.FlinkSpec
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.PatientScalaFutures
 
-class TableSinkParametersTest extends AnyFunSuite with Matchers {
+class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers with PatientScalaFutures {
 
-  private implicit val nodeId: NodeId = NodeId("id")
+  import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+  import pl.touk.nussknacker.engine.spel.SpelExtension._
 
-  private val tableSink = new TableSinkFactory(
-    TableSqlDefinitions(
-      List(SimpleTable.tableDefinition, IllegalParamColumnNameCase.tableDefinition),
-      List(SimpleTable.sqlStatement, IllegalParamColumnNameCase.sqlStatement)
-    )
+  private lazy val tableComponentsConfig: Config = ConfigFactory.parseString(s"""
+       |{
+       |  tableDefinitionFilePath: "engine/flink/components/base-tests/src/test/resources/tables-definition-table-sink-parameters-test.sql"
+       |  enableFlinkBatchExecutionMode: true
+       |}
+       |""".stripMargin)
+
+  private lazy val tableComponents: List[ComponentDefinition] = new FlinkTableComponentProvider().create(
+    tableComponentsConfig,
+    ProcessObjectDependencies.withConfig(tableComponentsConfig)
   )
 
-  test("should return parameters for columns for non-raw mode") {
-    val ctxDefinition = tableSink.contextTransformation(ValidationContext(), List())
-    val result = ctxDefinition(
-      tableSink.TransformationStep(
-        parameters = List(
-          TableComponentFactory.tableNameParamName -> DefinedEagerParameter(
-            SimpleTable.tableName,
-            Typed[String]
-          ),
-          TableSinkFactory.rawModeParameterName -> DefinedEagerParameter(false, Typed[Boolean]),
-        ),
-        state = None
+  private val inputTableName                 = "input"
+  private val outputTableName                = "output"
+  private val outputTableNameWithInvalidCols = "output_invalid_column_names"
+
+  private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
+    .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .withExtraComponents(singleRecordBatchTable :: tableComponents)
+    .build()
+
+  test("should take parameters per column in non-raw mode") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$outputTableName'".spel,
+        "Raw editor" -> "false".spel,
+        "client_id"  -> "''".spel,
+        "amount"     -> "123.11".spel,
       )
-    )
-    inside(result) { case tableSink.NextParameters(params, _, _) =>
-      params shouldBe List(
-        Parameter(ParameterName("someString"), Typed[String]).copy(isLazyParameter = true),
-        Parameter(ParameterName("someVarChar"), Typed[String]).copy(isLazyParameter = true),
-        Parameter(ParameterName("someInt"), Typed[Integer]).copy(isLazyParameter = true),
+
+    val result = runner.runWithoutData(scenario)
+    result.isValid shouldBe true
+  }
+
+  test("should return errors for type errors in non-raw mode value parameters") {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$outputTableName'".spel,
+        "Raw editor" -> "false".spel,
+        "client_id"  -> "123.11".spel,
+        "amount"     -> "''".spel,
       )
+
+    val result = runner.runWithoutData(scenario)
+    inside(result) {
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Bad expression type, expected: String, found: Double(123.11)",
+                "end",
+                _,
+                _,
+                _
+              ),
+              ExpressionParserCompilationError(
+                "Bad expression type, expected: BigDecimal, found: String()",
+                "end",
+                _,
+                _,
+                _
+              ) :: Nil
+            )
+          ) =>
     }
   }
 
   test("should return errors for illegally named columns for non-raw mode") {
-    val ctxDefinition = tableSink.contextTransformation(ValidationContext(), List())
-    val result = ctxDefinition(
-      tableSink.TransformationStep(
-        parameters = List(
-          TableComponentFactory.tableNameParamName -> DefinedEagerParameter(
-            IllegalParamColumnNameCase.tableName,
-            Typed[String]
-          ),
-          TableSinkFactory.rawModeParameterName -> DefinedEagerParameter(false, Typed[Boolean]),
-        ),
-        state = None
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$outputTableNameWithInvalidCols'".spel,
+        "Raw editor" -> "false".spel
       )
-    )
-    inside(result) {
-      case tableSink.NextParameters(params, CustomNodeError(_, _, _) :: CustomNodeError(_, _, _) :: Nil, _) =>
-        params shouldBe Nil
+
+    val result = runner.runWithoutData(scenario)
+    inside(result) { case Invalid(NonEmptyList(CustomNodeError("end", _, _), CustomNodeError("end", _, _) :: Nil)) =>
     }
-  }
-
-}
-
-object TableSinkParametersTest {
-
-  object IllegalParamColumnNameCase {
-    val tableName = "invalidParamsTable"
-
-    val sqlStatement: String =
-      s"""|CREATE TABLE $tableName
-          |(
-          |    `Raw editor`  STRING,
-          |    `Table`       STRING
-          |) WITH (
-          |    'connector' = 'filesystem'
-          |);""".stripMargin
-
-    val schemaTypingResult: TypingResult = Typed.record(
-      Map(
-        "Raw editor" -> Typed[String],
-        "Table"      -> Typed[String],
-      )
-    )
-
-    val tableDefinition: TableDefinition = TableDefinition(
-      tableName,
-      schemaTypingResult,
-      columns = List(
-        ColumnDefinition("Raw editor", Typed[String], DataTypes.STRING()),
-        ColumnDefinition("Table", Typed[String], DataTypes.STRING()),
-      )
-    )
-
   }
 
 }
