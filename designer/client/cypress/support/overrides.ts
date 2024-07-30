@@ -116,6 +116,9 @@ Cypress.Commands.overwrite<"matchImage", "element">(
         hideInputCaret($el);
 
         cy.wait(200);
+
+        options.maxDiffThreshold = 0.000001;
+
         if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
             let path = null;
             const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold");
