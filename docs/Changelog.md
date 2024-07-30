@@ -31,6 +31,8 @@
 * [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
 * [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* [#6518](https://github.com/TouK/nussknacker/pull/6518) Added user friendly editor for Table Sink output value
+  * The editor can be easily switched backed to 'raw' version similarly to the current Kafka Sink
 
 1.16.2 (18 July 2024)
 -------------------------
