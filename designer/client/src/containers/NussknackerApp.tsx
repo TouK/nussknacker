@@ -11,12 +11,14 @@ import { useAnonymousStatistics } from "./useAnonymousStatistics";
 import { WindowManager } from "../windowManager";
 import { ConnectionErrorProvider } from "./connectionErrorProvider";
 import { useRegisterTrackingEvents } from "./event-tracking";
+import { useErrorRegister } from "./event-tracking/use-error-register";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
 
     useAnonymousStatistics();
     useRegisterTrackingEvents();
+    useErrorRegister();
 
     if (isEmpty(loggedUser)) {
         return null;
