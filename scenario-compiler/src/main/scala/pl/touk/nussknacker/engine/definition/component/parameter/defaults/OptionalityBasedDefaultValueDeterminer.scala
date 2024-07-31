@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 
 protected object OptionalityBasedDefaultValueDeterminer
     extends ParameterDefaultValueDeterminer
-    with SimpleParameterEditorHelper {
+    with SimpleLanguageDeterminer {
 
   override def determineParameterDefaultValue(parameters: DefaultValueDeterminerParameters): Option[Expression] =
     Option(parameters).filter(_.isOptional).flatMap { _ =>

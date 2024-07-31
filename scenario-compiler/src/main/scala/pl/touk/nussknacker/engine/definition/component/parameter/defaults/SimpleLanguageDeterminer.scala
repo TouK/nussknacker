@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-trait SimpleParameterEditorHelper {
+trait SimpleLanguageDeterminer {
 
   def calculateDefaultValue(
       determinedEditor: Option[ParameterEditor],
