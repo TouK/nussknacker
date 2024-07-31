@@ -22,6 +22,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait
   changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a
   single `TestRecord` and returns a list of results instead of a single result.
+* [#6520](https://github.com/TouK/nussknacker/pull/6520) `ExplicitTypeInformationSource` trait was removed - now
+  `TypeInformation` produced by `SourceFunction` passed to `StreamExecutionEnvironment.addSource` is detected based
+  on `TypingResult` (thanks to `GenericTypeInformationDetection`)
+  * `BlockingQueueSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
+  * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
+  * `CollectionSource`'s `TypeInformation` implicit parameter was removed
+  * `EmptySource`'s `TypeInformation` implicit parameter was removed
+* [#6436](https://github.com/TouK/nussknacker/pull/6436) Changes to `TypingResult` of SpEL expressions that are maps or lists:
+    * `TypedObjectTypingResult.valueOpt` now returns a `java.util.Map` instead of `scala.collection.immutable.Map`
+        * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
+    * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
+        * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
 
 ### REST API changes
 

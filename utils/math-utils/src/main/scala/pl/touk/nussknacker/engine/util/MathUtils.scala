@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{
 }
 
 import java.lang
+import java.math.RoundingMode
 
 trait MathUtils {
 
@@ -114,8 +115,13 @@ trait MathUtils {
         n1.divide(n2)
       override def onFloats(n1: java.lang.Float, n2: java.lang.Float): java.lang.Float     = n1 / n2
       override def onDoubles(n1: java.lang.Double, n2: java.lang.Double): java.lang.Double = n1 / n2
-      override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal =
-        n1.divide(n2)
+      override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = {
+        n1.divide(
+          n2,
+          Math.max(n1.scale(), n2.scale),
+          RoundingMode.HALF_EVEN
+        ) // same scale and rounding as used by OpDivide in SpelExpression.java
+      }
     })(NumberTypesPromotionStrategy.ForMathOperation)
   }
 

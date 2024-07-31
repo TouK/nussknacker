@@ -29,6 +29,8 @@
 * [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
   determined automatically, developer doesn't need to provide it by his/her own
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* [#6436](https://github.com/TouK/nussknacker/pull/6436) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
 * [#6195](https://github.com/TouK/nussknacker/pull/6195) [#6340](https://github.com/TouK/nussknacker/pull/6340) [#6195](https://github.com/TouK/nussknacker/pull/6195) Added test data generation and testing for Table Source:
   * Added test data generation with 2 modes:
     * Live (default) - creates records by pulling data from the currently configured data source

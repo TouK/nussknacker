@@ -32,10 +32,8 @@ class CsvSource extends StandardFlinkSource[CsvRecord] with FlinkSourceTestSuppo
 
       override def run(ctx: SourceContext[CsvRecord]): Unit = {}
     },
-    typeInformation = typeInformation
+    typeInformation = TypeInformation.of(classOf[CsvRecord])
   )
-
-  override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 
   override def generateTestData(size: Int): TestData = TestData(
     List(
