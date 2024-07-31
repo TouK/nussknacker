@@ -226,14 +226,15 @@ private class InterpreterInternal[F[_]: Monad](
       implicit metaData: MetaData,
       node: Node
   ): java.util.HashMap[String, Any] = {
-    val fieldsMap = fields
-      .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
-      .toMap
+    {
+      import scala.jdk.CollectionConverters._
+      val fieldsMap = fields
+        .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
+        .toMap
+        .asJava
 
-    import scala.jdk.CollectionConverters._
-    import scala.collection.mutable
-    new java.util.HashMap[String, Any](mutable.Map(fieldsMap.toSeq: _*).asJava)
-
+      new java.util.HashMap[String, Any](fieldsMap)
+    }
   }
 
   private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)(
