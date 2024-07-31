@@ -31,7 +31,7 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import scala.collection.immutable.ListMap
 
 object TableSinkFactory {
-  val valueParameterName: ParameterName = ParameterName("Value")
+  private val valueParameterName: ParameterName = ParameterName("Value")
   private val rawValueParameterDeclaration =
     ParameterDeclaration.lazyMandatory[AnyRef](valueParameterName).withCreator()
 
