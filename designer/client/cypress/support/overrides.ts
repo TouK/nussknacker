@@ -74,12 +74,15 @@ Cypress.Commands.overwrite("visit", (original, ...args: VisitArgs) => {
     return original(typeof first === "string" ? { auth, ...second, url: first } : { auth, ...first });
 });
 
+const originalCaretColorName = "data-original-caret-color";
+const originalCaretDisplayName = "data-original-caret-display";
+
 const hideInputCaret = ($el: JQueryWithSelector) => {
     cy.get("input, textarea, select")
         .should("have.length.gte", 0)
         .each(($input) => {
             const originalCaretColor = $el.css("caret-color");
-            $el.attr("data-original-caret-color", originalCaretColor);
+            $el.attr(originalCaretColorName, originalCaretColor);
             $input.css("caret-color", "transparent");
         });
 
@@ -87,7 +90,7 @@ const hideInputCaret = ($el: JQueryWithSelector) => {
         .should("have.length.gte", 0)
         .each(($input) => {
             const originalCaretDisplay = $el.css("display");
-            $el.attr("data-original-caret-display", originalCaretDisplay);
+            $el.attr(originalCaretDisplayName, originalCaretDisplay);
             $input.css("display", "none");
         });
 };
@@ -96,16 +99,14 @@ const showInputCaret = ($el: JQueryWithSelector) => {
     cy.get("input, textarea, select")
         .should("have.length.gte", 0)
         .each(($input) => {
-            const originalCaretColor = $el.attr("data-original-caret-color");
-            const originalCaretDisplay = $el.attr("data-original-caret-display");
+            const originalCaretColor = $el.attr(originalCaretColorName);
             $input.css("caret-color", originalCaretColor);
-            $input.css("display", originalCaretDisplay);
         });
 
     cy.get(".ace_cursor")
         .should("have.length.gte", 0)
         .each(($input) => {
-            const originalCaretDisplay = $el.attr("data-original-caret-display");
+            const originalCaretDisplay = $el.attr(originalCaretDisplayName);
             $input.css("display", originalCaretDisplay);
         });
 };
