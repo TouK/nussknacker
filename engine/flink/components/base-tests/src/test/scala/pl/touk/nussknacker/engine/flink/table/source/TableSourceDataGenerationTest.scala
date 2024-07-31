@@ -12,7 +12,7 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
     tableDefinition = SimpleTypesTestCase.tableDefinition,
     sqlStatements = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement),
     enableFlinkBatchExecutionMode = true,
-    testDataGenerationMode = TestDataGenerationMode.Live
+    testDataGenerationMode = TestDataGenerationMode.Random
   )
 
   /*
