@@ -120,9 +120,8 @@ object typing {
 
     private def shortenedDataString = {
       val dataString = value match {
-        case l: java.util.List[_]       => l.asScala.mkString("{", ", ", "}")
-        case l: scala.collection.Seq[_] => l.mkString("{", ", ", "}")
-        case _                          => value.toString
+        case l: java.util.List[_] => l.asScala.mkString("{", ", ", "}")
+        case _                    => value.toString
       }
 
       if (dataString.length <= maxDataDisplaySize) dataString
