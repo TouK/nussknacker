@@ -111,7 +111,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   )(
       implicit env: TableEnvironment
   ): String = {
-    TableSource.executeSqlAndGetTable(sqlStatements, tableName, env)
+    TableSource.executeSqlDDL(sqlStatements, env)
     tableName
   }
 

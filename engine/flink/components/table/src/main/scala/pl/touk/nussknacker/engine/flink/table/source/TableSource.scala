@@ -51,7 +51,8 @@ class TableSource(
     }
     val tableEnv = StreamTableEnvironment.create(env)
 
-    val selectQuery = executeSqlAndGetTable(sqlStatements, tableDefinition.tableName, tableEnv)
+    executeSqlDDL(sqlStatements, tableEnv)
+    val selectQuery = tableEnv.from(s"`${tableDefinition.tableName}`")
 
     val finalQuery = flinkNodeContext.nodeDeploymentData
       .map { case SqlFilteringExpression(sqlExpression) =>
@@ -100,13 +101,9 @@ object TableSource {
   type RECORD = java.util.Map[String, Any]
   private val filteringInternalViewName = "filteringView"
 
-  private[source] def executeSqlAndGetTable(
+  private[source] def executeSqlDDL(
       sqlStatements: List[SqlStatement],
-      tableName: String,
       tableEnv: TableEnvironment
-  ): Table = {
-    sqlStatements.foreach(tableEnv.executeSql)
-    tableEnv.from(s"`$tableName`")
-  }
+  ): Unit = sqlStatements.foreach(tableEnv.executeSql)
 
 }
