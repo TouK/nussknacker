@@ -27,7 +27,6 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterTableOperations.TestDataSource
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
@@ -90,12 +89,19 @@ class TableSource(
   override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
     FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
 
-  override def generateTestData(size: Int): TestData = {
-    val mode = testDataGenerationMode match {
-      case TestDataGenerationMode.Random => TestDataSource.Random
-      case TestDataGenerationMode.Live   => TestDataSource.Live(sqlStatements, tableDefinition.tableName)
-    }
-    FlinkMiniClusterTableOperations.generateTestData(size, tableDefinition.toFlinkSchema, mode)
+  override def generateTestData(size: Int): TestData = testDataGenerationMode match {
+    case TestDataGenerationMode.Random =>
+      FlinkMiniClusterTableOperations.generateRandomTestData(
+        amount = size,
+        schema = tableDefinition.toFlinkSchema
+      )
+    case TestDataGenerationMode.Live =>
+      FlinkMiniClusterTableOperations.generateLiveTestData(
+        limit = size,
+        schema = tableDefinition.toFlinkSchema,
+        sqlStatements = sqlStatements,
+        tableName = tableDefinition.tableName
+      )
   }
 
 }

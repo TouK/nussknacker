@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.source
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlTestData.SimpleTypesTestCase
 
@@ -11,7 +12,7 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
     tableDefinition = SimpleTypesTestCase.tableDefinition,
     sqlStatements = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement),
     enableFlinkBatchExecutionMode = true,
-    useRealDataForTests = false
+    testDataGenerationMode = TestDataGenerationMode.Live
   )
 
   /*

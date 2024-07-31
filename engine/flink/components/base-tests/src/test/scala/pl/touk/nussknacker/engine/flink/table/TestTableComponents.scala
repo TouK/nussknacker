@@ -4,6 +4,7 @@ import org.apache.flink.table.api.DataTypes
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 
 // TODO: move this to testkit after table api components exit experimental stage
@@ -35,7 +36,7 @@ object TestTableComponents {
       new TableSourceFactory(
         tableDefs(oneRecordTableName),
         enableFlinkBatchExecutionMode = true,
-        useRealDataForTests = false
+        testDataGenerationMode = TestDataGenerationMode.Live
       )
     )
 
