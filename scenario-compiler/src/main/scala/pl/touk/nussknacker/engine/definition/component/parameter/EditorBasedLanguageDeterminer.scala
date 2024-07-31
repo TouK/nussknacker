@@ -21,16 +21,18 @@ import pl.touk.nussknacker.engine.api.definition.{
   TextareaParameterEditor,
   TimeParameterEditor
 }
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 // TODO: maybe some better way to specify language like Parameter.language
 object EditorBasedLanguageDeterminer {
 
   def determineLanguageOf(editor: Option[ParameterEditor]): Expression.Language = editor match {
-    case Some(RawParameterEditor)                   => Expression.Language.Spel
-    case Some(simpleEditor: SimpleParameterEditor)  => determineLanguageOf(simpleEditor)
-    case Some(DualParameterEditor(simpleEditor, _)) => determineLanguageOf(simpleEditor)
-    case None                                       => Expression.Language.Spel
+    case Some(simpleEditor: SimpleParameterEditor)                      => determineLanguageOf(simpleEditor)
+    case Some(DualParameterEditor(simpleEditor, DualEditorMode.SIMPLE)) => determineLanguageOf(simpleEditor)
+    case Some(DualParameterEditor(_, DualEditorMode.RAW))               => Expression.Language.Spel
+    case Some(RawParameterEditor)                                       => Expression.Language.Spel
+    case None                                                           => Expression.Language.Spel
   }
 
   private def determineLanguageOf(editor: SimpleParameterEditor) = {
