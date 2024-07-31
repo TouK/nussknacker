@@ -79,7 +79,6 @@ private class InterpreterInternal[F[_]: Monad](
         val parentContext = ctx.parentContext.getOrElse(ctx.copy(variables = Map.empty))
         val newParentContext = outputVar match {
           case Some(FragmentOutputVarDefinition(varName, fields)) =>
-            // TODO simplify - only push Map(field -> value) into parentContext instead of the whole object
             val parsedFieldsMap = parseFragmentOutput(ctx, fields)
             parentContext.withVariable(varName, parsedFieldsMap)
           case None => parentContext
@@ -222,6 +221,7 @@ private class InterpreterInternal[F[_]: Monad](
     }
   }
 
+  // We need java HashMap here because spel evaluator will fail on scala Map
   private def parseFragmentOutput(ctx: Context, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node

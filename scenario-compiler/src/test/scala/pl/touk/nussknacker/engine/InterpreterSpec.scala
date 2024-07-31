@@ -800,7 +800,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val process = ScenarioBuilder
       .streaming("test")
       .source("source", "transaction-source")
-      .fragmentOneOut("sub", "fragment1", "outputDefinitionName", "zmienna", "param" -> "#input.accountId".spel)
+      .fragmentOneOut("sub", "fragment1", "outputDefinitionName", "fragmentOut", "param" -> "#input.accountId".spel)
       .buildSimpleVariable("result-sink", resultVariable, "'result'".spel)
       .emptySink("end-sink", "dummySink")
 
@@ -810,8 +810,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         FlatNode(
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
-        FlatNode(Variable("stefan", "zmienna", "'stefan'".spel)),
-        FlatNode(FragmentOutputDefinition("out1", "outputDefinitionName", List(Field("cokolwiek", "'cokolwiek'".spel))))
+        FlatNode(Variable("myVar", "fragmentOut", "'fragmentOut'".spel)),
+        FlatNode(FragmentOutputDefinition("out1", "outputDefinitionName", List(Field("paramX", "'paramX'".spel))))
       ),
       List.empty
     )
