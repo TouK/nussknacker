@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
 import io.circe.Json
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputDynamicComponent}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -86,19 +85,21 @@ object GenericSourceWithCustomVariablesSample
   ): Source = {
     val elementsValue = elementsParamDeclaration.extractValueUnsafe(params).asScala.toList
 
-    new CollectionSource(
+    new CollectionSource[ProcessingType](
       list = elementsValue,
       timestampAssigner = None,
       returnType = Typed[ProcessingType],
-    )(TypeInformation.of(classOf[ProcessingType])) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] {
+    ) with TestDataGenerator with FlinkSourceTestSupport[ProcessingType] {
       override val contextInitializer: ContextInitializer[ProcessingType] = customContextInitializer
 
       override def generateTestData(size: Int): TestData = TestData(
         elementsValue.map(el => TestRecord(Json.fromString(el)))
       )
 
-      override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-        CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+      override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+        testRecords.map { testRecord =>
+          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
     }

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import cats.data.NonEmptyList
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStreamSource
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
@@ -66,15 +65,11 @@ class FlinkKafkaSource[T](
     StandardFlinkSourceFunctionUtils.createSourceStream(
       env = env,
       sourceFunction = sourceFunction,
-      typeInformation = typeInformation
+      typeInformation = wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
     )
   }
 
   protected lazy val topics: NonEmptyList[TopicName.ForSource] = preparedTopics.map(_.prepared)
-
-  override val typeInformation: TypeInformation[T] = {
-    wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
-  }
 
   @silent("deprecated")
   protected def flinkSourceFunction(
@@ -101,11 +96,12 @@ class FlinkKafkaSource[T](
   }
 
   // Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
-  override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) => {
-    // TODO: we assume parsing for all topics is the same
-    val topic = topics.head
-    deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
-  }
+  override def testRecordParser: TestRecordParser[T] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord =>
+      // TODO: we assume parsing for all topics is the same
+      val topic = topics.head
+      deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
+    }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 
@@ -205,9 +201,5 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](
         )
       )
     )
-
-  override val typeInformation: TypeInformation[ConsumerRecord[K, V]] = {
-    TypeInformation.of(classOf[ConsumerRecord[K, V]])
-  }
 
 }

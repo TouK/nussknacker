@@ -54,8 +54,8 @@ class ModelDataTestInfoProviderSpec
 
       new process.Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-          CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+        override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+          testRecords.map { testRecord => CirceUtil.decodeJsonUnsafe[String](testRecord.json) }
 
         override def generateTestData(size: Int): TestData = TestData((for {
           number <- 1 to size
@@ -76,7 +76,7 @@ class ModelDataTestInfoProviderSpec
 
       new process.Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testRecordParser: TestRecordParser[String] = (_: TestRecord) => ???
+        override def testRecordParser: TestRecordParser[String] = (_: List[TestRecord]) => ???
 
         override def generateTestData(size: Int): TestData = TestData(Nil)
       }

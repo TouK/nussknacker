@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -66,7 +65,7 @@ class JavaCollectionsSerializationTest extends AnyFunSuite with FlinkSpec with M
 
   def modelData(collectingListener: ResultsCollectingListener[Any], list: List[Record] = List()): LocalModelData = {
     val sourceComponent = SourceFactory.noParamUnboundedStreamFactory[Record](
-      CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])(TypeInformation.of(classOf[Record]))
+      CollectionSource[Record](list, None, Typed.fromDetailedType[List[Record]])
     )
     LocalModelData(
       ConfigFactory

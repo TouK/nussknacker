@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
@@ -153,10 +152,6 @@ object KafkaSourceFactoryMixin {
   @JsonCodec case class SampleKey(partOne: String, partTwo: Long) extends DisplayJsonWithEncoder[SampleKey]
   @JsonCodec case class SampleValue(id: String, field: String)    extends DisplayJsonWithEncoder[SampleValue]
   @JsonCodec case class ObjToSerialize(value: SampleValue, key: SampleKey, headers: Map[String, String])
-
-  implicit val sampleKeyTypeInformation: TypeInformation[SampleKey]     = TypeInformation.of(classOf[SampleKey])
-  implicit val sampleValueTypeInformation: TypeInformation[SampleValue] = TypeInformation.of(classOf[SampleValue])
-  implicit val stringTypeInformation: TypeInformation[String]           = TypeInformation.of(classOf[String])
 
   val sampleKeyJsonDeserializer: Deserializer[SampleKey]     = createDeserializer[SampleKey]
   val sampleValueJsonDeserializer: Deserializer[SampleValue] = createDeserializer[SampleValue]

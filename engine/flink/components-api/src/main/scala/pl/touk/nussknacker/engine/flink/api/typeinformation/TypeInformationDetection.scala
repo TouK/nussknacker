@@ -24,6 +24,6 @@ trait TypeInformationDetection extends Serializable {
       value: TypeInformation[T]
   ): TypeInformation[ValueWithContext[T]]
 
-  def forType[T <: AnyRef](typingResult: TypingResult): TypeInformation[T]
+  def forType[T](typingResult: TypingResult): TypeInformation[T]
 
 }

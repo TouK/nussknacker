@@ -51,6 +51,4 @@ object Sorter extends CustomStreamTransformer {
       })
   }
 
-  override def canHaveManyInputs: Boolean = true
-
 }

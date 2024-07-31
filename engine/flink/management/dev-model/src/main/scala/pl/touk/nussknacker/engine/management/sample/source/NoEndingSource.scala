@@ -59,8 +59,6 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
     )
   }
 
-  override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
-
   override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(
     StandardTimestampWatermarkHandler
       .boundedOutOfOrderness[String](
@@ -71,6 +69,9 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
 
-  override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) =>
-    CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+  override def testRecordParser: TestRecordParser[String] = (testRecords: List[TestRecord]) =>
+    testRecords.map { testRecord =>
+      CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+    }
+
 }

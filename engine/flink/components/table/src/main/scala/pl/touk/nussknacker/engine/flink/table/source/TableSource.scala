@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{
   TestDataGenerator,
   TestWithParametersSupport
 }
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
@@ -82,17 +81,14 @@ class TableSource(
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[RECORD]] = None
 
-  override def typeInformation: TypeInformation[RECORD] = TypeInformation.of(classOf[RECORD])
+  override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
+    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
 
-//  TODO: add implementation during task with test from file
-  override def testRecordParser: TestRecordParser[RECORD] = ???
-
-  private lazy val dataGenerator = new FlinkMiniClusterDataGenerator(tableDefinition.toFlinkSchema)
-
-  override def generateTestData(size: Int): TestData = dataGenerator.generateTestData(size)
+  override def generateTestData(size: Int): TestData =
+    FlinkMiniClusterTableOperations.generateTestData(size, tableDefinition.toFlinkSchema)
 }
 
 object TableSource {
-  private type RECORD = java.util.Map[String, Any]
+  type RECORD = java.util.Map[String, Any]
   private val filteringInternalViewName = "filteringView"
 }

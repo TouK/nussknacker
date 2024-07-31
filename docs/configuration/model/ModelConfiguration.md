@@ -5,7 +5,7 @@ sidebar_position: 1
 # Model configuration
 
 Model definition is part of a scenario type definition. There can be multiple scenario types in one Nussknacker installation, consequently there will also be multiple model definitions in such a case. 
-Check [configuration areas](../Common.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](../ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
+Check [configuration areas](../index.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](../ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
 
 Model defines how to configure [components](../../about/GLOSSARY#component) and certain runtime behavior (e.g. error handling) for a given scenario type. Model configuration is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
 

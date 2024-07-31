@@ -37,7 +37,7 @@ object FragmentComponentDefinition {
       componentTypeSpecificData = FragmentSpecificData(outputNames),
       staticDefinition = ComponentStaticDefinition(
         parameters,
-        Some(Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)))
+        Some(Typed.genericTypeClass[Map[_, _]](List(Typed[String], Unknown)))
       ),
       uiDefinition = uiDefinition
     )

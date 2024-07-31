@@ -45,8 +45,6 @@ class UnionWithMemoTransformer(
 
   val KeyField = "key"
 
-  override def canHaveManyInputs: Boolean = true
-
   @MethodToInvoke
   def execute(
       @BranchParamName("key") keyByBranchId: Map[String, LazyParameter[CharSequence]],

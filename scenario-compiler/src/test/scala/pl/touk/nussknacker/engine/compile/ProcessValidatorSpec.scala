@@ -45,7 +45,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 
-  private val nonEndingOneInputComponent = CustomComponentSpecificData(manyInputs = false, canBeEnding = false)
+  private val nonEndingOneInputComponent = CustomComponentSpecificData(canHaveManyInputs = false, canBeEnding = false)
 
   private val baseDefinitionBuilder = ModelDefinitionBuilder.empty
     .withGlobalVariable("processHelper", ProcessHelper)

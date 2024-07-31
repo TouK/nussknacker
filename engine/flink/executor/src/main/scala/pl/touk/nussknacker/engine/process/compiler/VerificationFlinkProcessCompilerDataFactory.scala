@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -40,7 +39,7 @@ object VerificationFlinkProcessCompilerDataFactory {
       ): ComponentDefinitionWithImplementation =
         sourceFactory.withImplementationInvoker(new StubbedComponentImplementationInvoker(sourceFactory) {
           override def handleInvoke(impl: Any, typingResult: TypingResult, nodeId: NodeId): Any =
-            new EmptySource[Object](typingResult)(TypeInformation.of(classOf[Object]))
+            EmptySource(typingResult)
         })
 
     }
