@@ -31,6 +31,8 @@
 * [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
 * [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* [#6436](https://github.com/TouK/nussknacker/pull/6436) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
 
 1.16.2 (18 July 2024)
 -------------------------

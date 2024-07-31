@@ -4,8 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+
+import scala.jdk.CollectionConverters._
 
 class TypingResultDecoderSpec
     extends AnyFunSuite
@@ -42,9 +45,20 @@ class TypingResultDecoderSpec
         Map("field1" -> Typed[String]),
         Typed.typedClass[Map[String, Any]],
         Map[String, AdditionalDataValue]("ad1" -> "aaa", "ad2" -> 22L, "ad3" -> true)
+      ),
+      typedListWithElementValues(Typed[Int], List(1, 2, 3).asJava),
+      typedListWithElementValues(Typed[String], List("foo", "bar").asJava),
+      typedListWithElementValues(Typed.record(Map.empty), List(Map.empty.asJava).asJava),
+      typedListWithElementValues(
+        Typed.record(
+          Map("a" -> TypedObjectWithValue(Typed.typedClass[Int], 1))
+        ),
+        List(Map("a" -> 1).asJava).asJava
       )
     ).foreach { typing =>
-      decoder.decodeTypingResults.decodeJson(TypeEncoders.typingResultEncoder(typing)).rightValue shouldBe typing
+      val encoded = TypeEncoders.typingResultEncoder(typing)
+
+      decoder.decodeTypingResults.decodeJson(encoded).rightValue shouldBe typing
     }
 
   }
