@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -112,9 +111,7 @@ class UnionTransformersTestModeSpec
     val sourceComponent = ComponentDefinition(
       "start",
       SourceFactory.noParamUnboundedStreamFactory[String](
-        CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])(
-          TypeInformation.of(classOf[String])
-        )
+        CollectionSource(inputElements, timestampAssigner = None, returnType = Typed[String])
       )
     )
     LocalModelData(

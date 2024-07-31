@@ -143,8 +143,6 @@ object SingleSideJoinTransformerSpec {
 
   private val customElementName = "single-side-join-in-test"
 
-  private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
-
   private val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
   private def prepareComponents(

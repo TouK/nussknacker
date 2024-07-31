@@ -52,21 +52,6 @@ import scala.util.Try
 //TODO: clean up sample objects...
 object SampleNodes {
 
-  implicit val intTypeInformation: TypeInformation[Int] =
-    TypeInformation.of(classOf[Int])
-  implicit val longTypeInformation: TypeInformation[Long] =
-    TypeInformation.of(classOf[Long])
-  implicit val stringTypeInformation: TypeInformation[String] =
-    TypeInformation.of(classOf[String])
-  implicit val simpleRecordTypeInformation: TypeInformation[SimpleRecord] =
-    TypeInformation.of(classOf[SampleNodes.SimpleRecord])
-  implicit val simpleJsonRecordTypeInformation: TypeInformation[SimpleJsonRecord] =
-    TypeInformation.of(classOf[SampleNodes.SimpleJsonRecord])
-  implicit val typedMapTypeInformation: TypeInformation[TypedMap] =
-    TypeInformation.of(classOf[TypedMap])
-
-  // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
-
   case class SimpleRecord(
       id: String,
       value1: Long,
@@ -87,8 +72,8 @@ object SampleNodes {
   class IntParamSourceFactory extends SourceFactory with UnboundedStreamComponent {
 
     @MethodToInvoke
-    def create(@ParamName("param") param: Int) =
-      new CollectionSource[Int](list = List(param), timestampAssigner = None, returnType = Typed[Int])
+    def create(@ParamName("param") param: Integer) =
+      new CollectionSource[Integer](list = List(param), timestampAssigner = None, returnType = Typed[Integer])
 
   }
 

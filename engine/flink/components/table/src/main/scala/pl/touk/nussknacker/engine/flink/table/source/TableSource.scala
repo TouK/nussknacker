@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.Expressions.$
@@ -80,9 +79,6 @@ class TableSource(
   }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
-
-  // FIXME: TypeInformationDetection should be used
-  override def typeInformation: TypeInformation[Row] = TypeInformation.of(classOf[Row])
 
   override def testRecordParser: TestRecordParser[Row] = (testRecords: List[TestRecord]) =>
     FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)

@@ -21,8 +21,6 @@ import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
-import scala.reflect.ClassTag
-
 object TypingResultAwareTypeInformationDetection {
 
   def apply(classLoader: ClassLoader): TypingResultAwareTypeInformationDetection = {
@@ -129,7 +127,7 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
         TypeInformation.of(a.objType.klass)
       // TODO: how can we handle union - at least of some types?
       case _ =>
-        fallback[Any]
+        TypeInformation.of(classOf[Any])
     }).asInstanceOf[TypeInformation[T]]
   }
 
@@ -146,11 +144,5 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
 
   private lazy val additionalTypeInfoDeterminer: PartialFunction[TypingResult, TypeInformation[_]] =
     customisation.customise(this)
-
-  private def fallback[T: ClassTag]: TypeInformation[T] = fallback(
-    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
-  )
-
-  private def fallback[T](kl: Class[T]): TypeInformation[T] = TypeInformation.of(kl)
 
 }

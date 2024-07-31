@@ -44,7 +44,10 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
 
     const isDurationDefined = useCallback(
         (value: Duration) =>
-            isValueNotNullAndNotZero(value.days) || isValueNotNullAndNotZero(value.hours) || isValueNotNullAndNotZero(value.minutes),
+            isValueNotNullAndNotZero(value.days) ||
+            isValueNotNullAndNotZero(value.hours) ||
+            isValueNotNullAndNotZero(value.minutes) ||
+            isValueNotNullAndNotZero(value.seconds),
         [isValueNotNullAndNotZero],
     );
 
