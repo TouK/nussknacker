@@ -202,11 +202,14 @@ private class InterpreterInternal[F[_]: Monad](
       }
     }
 
-  private def updateVariable(context: Context, varName: String, fields: Seq[Field])(
+  private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
   ): Context = {
-    fields.foldLeft(context) { case (context, field) =>
+    val contextWithInitialVariable =
+      ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
+
+    fields.foldLeft(contextWithInitialVariable) { case (context, field) =>
       val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, context)
       valueWithContext.context.modifyVariable[java.util.Map[String, Any]](
         varName,
@@ -219,27 +222,13 @@ private class InterpreterInternal[F[_]: Monad](
     }
   }
 
-  private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])(
-      implicit metaData: MetaData,
-      node: Node
-  ): Context = {
-    val contextWithInitialVariable =
-      ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
-
-    updateVariable(contextWithInitialVariable, varName, fields)
-  }
-
   private def parseFragmentOutput(ctx: Context, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
   ): Map[String, Any] = {
-    val newCtx = fields.foldLeft(ctx) { case (context, field) =>
-      val valueWithContext = expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, context)
-      valueWithContext.context.withVariable(field.name, valueWithContext.value)
-    }
-    val fieldSet: Set[Field] = fields.toSet
-    val fieldNames           = fieldSet.map(_.name)
-    newCtx.variables.filter { case (key, _) => fieldNames.contains(key) }
+    fields
+      .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
+      .toMap
   }
 
   private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)(
