@@ -16,9 +16,6 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
-import java.util
-import scala.collection.mutable
-import scala.compat.java8.FunctionConverters.enrichAsJavaFunction
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
