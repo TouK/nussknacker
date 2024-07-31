@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
@@ -18,7 +17,7 @@ class ReturningClassInstanceSource extends SourceFactory with UnboundedStreamCom
       ) additionalClass: String
   ) = {
     val resultClass = Class.forName(additionalClass)
-    CollectionSource(List.empty, None, Typed.typedClass(resultClass))(TypeInformation.of(resultClass))
+    CollectionSource[Any](List.empty, None, Typed.typedClass(resultClass))
   }
 
 }

@@ -22,6 +22,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait
   changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a
   single `TestRecord` and returns a list of results instead of a single result.
+* [#6520](https://github.com/TouK/nussknacker/pull/6520) `ExplicitTypeInformationSource` trait was removed - now
+  `TypeInformation` produced by `SourceFunction` passed to `StreamExecutionEnvironment.addSource` is detected based
+  on `TypingResult` (thanks to `GenericTypeInformationDetection`)
+  * `BlockingQueueSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
+  * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
+  * `CollectionSource`'s `TypeInformation` implicit parameter was removed
+  * `EmptySource`'s `TypeInformation` implicit parameter was removed
 
 ### REST API changes
 

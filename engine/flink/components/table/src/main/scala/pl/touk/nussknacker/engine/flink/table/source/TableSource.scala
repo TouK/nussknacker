@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
@@ -81,8 +80,6 @@ class TableSource(
   }.asJava
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[RECORD]] = None
-
-  override def typeInformation: TypeInformation[RECORD] = TypeInformation.of(classOf[RECORD])
 
   override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
     FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)

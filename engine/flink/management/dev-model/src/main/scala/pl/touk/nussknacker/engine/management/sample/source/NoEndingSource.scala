@@ -59,8 +59,6 @@ class NoEndingSource extends StandardFlinkSource[String] with FlinkSourceTestSup
     )
   }
 
-  override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
-
   override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(
     StandardTimestampWatermarkHandler
       .boundedOutOfOrderness[String](

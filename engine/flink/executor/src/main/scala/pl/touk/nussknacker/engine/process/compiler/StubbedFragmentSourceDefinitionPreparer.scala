@@ -2,9 +2,6 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
 import pl.touk.nussknacker.engine.api.component.DesignerWideComponentId
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -24,12 +21,7 @@ import pl.touk.nussknacker.engine.definition.fragment.{
   FragmentComponentDefinition,
   FragmentParametersDefinitionExtractor
 }
-import pl.touk.nussknacker.engine.flink.api.process.{
-  CustomizableContextInitializerSource,
-  FlinkCustomNodeContext,
-  FlinkSource,
-  FlinkSourceTestSupport
-}
+import pl.touk.nussknacker.engine.flink.api.process.{CustomizableContextInitializerSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 
@@ -62,9 +54,6 @@ class StubbedFragmentSourceDefinitionPreparer(
       with FlinkSourceTestSupport[Map[String, Any]]
       with TestWithParametersSupport[Map[String, Any]] {
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Map[String, Any]]] = None
-
-      override def typeInformation: TypeInformation[Map[String, Any]] =
-        TypeInformation.of(classOf[Map[String, Any]])
 
       override def testRecordParser: TestRecordParser[Map[String, Any]] = ???
 
