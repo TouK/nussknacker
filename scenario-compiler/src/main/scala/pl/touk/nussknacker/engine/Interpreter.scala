@@ -228,7 +228,7 @@ private class InterpreterInternal[F[_]: Monad](
   private def parseFragmentOutput(ctx: Context, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
-  ): util.HashMap[String, Any] = {
+  ): java.util.HashMap[String, Any] = {
     val fieldsMap = fields
       .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
       .toMap
