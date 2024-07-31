@@ -28,7 +28,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
       val (inputTablePath, inputTableName)     = createTempFileTable(schema)
       val parsedRecords = Try {
         writeRecordsToFile(inputTablePath, records)
-        val inputTable   = env.from(inputTableName)
+        val inputTable   = env.from(s"`$inputTableName`")
         val streamOfRows = env.toDataStream(inputTable).executeAndCollect().asScala.toList
         streamOfRows.map(rowToMap)
       }
@@ -100,7 +100,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   private def insertDataAndAwait(inputTableName: TableName, outputTableName: TableName, limit: Int)(
       implicit env: TableEnvironment
   ): Unit = {
-    val inputTable = env.from(inputTableName).limit(limit)
+    val inputTable = env.from(s"`$inputTableName`").limit(limit)
     // TODO: Avoid blocking the thread. Refactor `generateTestData` to return future and use a separate blocking thread
     //  pool here
     inputTable.insertInto(outputTableName).execute().await()
