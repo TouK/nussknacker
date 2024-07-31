@@ -107,14 +107,22 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     )
   }
 
-  test("should find element type for lists of different elements") {
-    val numberList = List(4L, 6.35, 8.47)
+  test("should find element type for scala lists of different elements") {
+    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.genericTypeClass(
+      classOf[List[_]],
+      List(Typed.typedClass[Number])
+    )
+    Typed.fromInstance(List(3, "t")) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Unknown))
+  }
+
+  test("should find element type and keep values for java lists of different elements") {
+    val numberList = List(4L, 6.35, 8.47).asJava
     Typed.fromInstance(numberList) shouldBe typedListWithElementValues(
       Typed.typedClass[Double],
       numberList
     )
 
-    val anyList = List(3, "t")
+    val anyList = List(3, "t").asJava
     Typed.fromInstance(anyList) shouldBe typedListWithElementValues(
       Unknown,
       anyList

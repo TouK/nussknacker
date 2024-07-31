@@ -262,12 +262,6 @@ object typing {
       cl
     }
 
-    def typedListWithElementValues[T](elementType: TypingResult, elementValues: List[T]): TypedObjectWithValue =
-      TypedObjectWithValue(
-        Typed.genericTypeClass(classOf[List[_]], List(elementType)),
-        elementValues
-      )
-
     def typedListWithElementValues[T](
         elementType: TypingResult,
         elementValues: java.util.List[T]
@@ -346,10 +340,7 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedListWithElementValues(
-            supertypeOfElementTypes(list).withoutValue,
-            list
-          )
+          genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
           typedListWithElementValues(
             supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
