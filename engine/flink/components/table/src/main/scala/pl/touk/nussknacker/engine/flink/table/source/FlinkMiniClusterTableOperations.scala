@@ -44,7 +44,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   ): TestData = generateTestData(
     limit = limit,
     schema = schema,
-    buildSourceTable = createRealDataGeneratorTable(sqlStatements, tableName)
+    buildSourceTable = createLiveDataGeneratorTable(sqlStatements, tableName)
   )
 
   def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
@@ -122,7 +122,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
     tableName
   }
 
-  private def createRealDataGeneratorTable(
+  private def createLiveDataGeneratorTable(
       sqlStatements: List[SqlStatement],
       tableName: TableName,
   )(env: TableEnvironment): TableName = {
