@@ -235,7 +235,7 @@ private class InterpreterInternal[F[_]: Monad](
 
     import scala.jdk.CollectionConverters._
     import scala.collection.mutable
-    new util.HashMap[String, Any](mutable.Map(fieldsMap.toSeq: _*).asJava)
+    new java.util.HashMap[String, Any](mutable.Map(fieldsMap.toSeq: _*).asJava)
 
   }
 
