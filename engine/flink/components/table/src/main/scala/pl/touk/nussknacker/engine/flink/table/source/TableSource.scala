@@ -4,7 +4,7 @@ import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.table.api.{Table, TableEnvironment}
+import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
@@ -24,8 +24,10 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.source.FlinkMiniClusterTableOperations.TestDataSource
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
@@ -33,7 +35,7 @@ class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
     enableFlinkBatchExecutionMode: Boolean,
-    useRealDataForTests: Boolean
+    testDataGenerationMode: TestDataGenerationMode
 ) extends StandardFlinkSource[RECORD]
     with TestWithParametersSupport[RECORD]
     with FlinkSourceTestSupport[RECORD]
@@ -89,9 +91,10 @@ class TableSource(
     FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
 
   override def generateTestData(size: Int): TestData = {
-    val mode =
-      if (useRealDataForTests) DataGenerationMode.RealDataMode(sqlStatements, tableDefinition.tableName)
-      else DataGenerationMode.RandomDataMode
+    val mode = testDataGenerationMode match {
+      case TestDataGenerationMode.Random => TestDataSource.Random
+      case TestDataGenerationMode.Live   => TestDataSource.Live(sqlStatements, tableDefinition.tableName)
+    }
     FlinkMiniClusterTableOperations.generateTestData(size, tableDefinition.toFlinkSchema, mode)
   }
 

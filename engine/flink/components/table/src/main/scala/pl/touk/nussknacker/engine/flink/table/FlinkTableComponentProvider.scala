@@ -2,19 +2,19 @@ package pl.touk.nussknacker.engine.flink.table
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider.configIndependentComponents
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
-import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 import java.nio.file.{Path, Paths}
 import scala.util.{Failure, Success, Try}
@@ -31,21 +31,23 @@ import scala.util.{Failure, Success, Try}
  */
 class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
 
-  import net.ceedubs.ficus.Ficus._
-
   override def providerName: String = "flinkTable"
   private val tableComponentName    = "table"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val parsedConfig = config.rootAs[TableComponentProviderConfig]
-
-    val definition = extractTableDefinitionsFromSqlFileOrThrow(parsedConfig.tableDefinitionFilePath)
+    val parsedConfig = TableComponentProviderConfig.parse(config)
+    val definition   = extractTableDefinitionsFromSqlFileOrThrow(parsedConfig.tableDefinitionFilePath)
+    val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
 
     ComponentDefinition(
       tableComponentName,
-      new TableSourceFactory(definition, parsedConfig.enableFlinkBatchExecutionMode, parsedConfig.useRealDataForTests)
+      new TableSourceFactory(
+        definition,
+        parsedConfig.enableFlinkBatchExecutionMode,
+        testDataGenerationModeOrDefault
+      )
     ) :: ComponentDefinition(
       tableComponentName,
       new TableSinkFactory(definition)
@@ -107,5 +109,43 @@ final case class TableSqlDefinitions(
 final case class TableComponentProviderConfig(
     tableDefinitionFilePath: String,
     enableFlinkBatchExecutionMode: Boolean,
-    useRealDataForTests: Boolean = false
+    testDataGenerationMode: Option[TestDataGenerationMode]
 )
+
+object TableComponentProviderConfig {
+
+  import TestDataGenerationMode.configReader
+  import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
+
+  private[table] def parse(config: Config) = config.rootAs[TableComponentProviderConfig]
+
+  implicit val configReader: ValueReader[TableComponentProviderConfig] = ValueReader.relative { config =>
+    {
+      TableComponentProviderConfig(
+        tableDefinitionFilePath = config.getString("tableDefinitionFilePath"),
+        enableFlinkBatchExecutionMode = config.getBoolean("enableFlinkBatchExecutionMode"),
+        testDataGenerationMode = config.getAs[TestDataGenerationMode]("testDataGenerationMode")
+      )
+    }
+  }
+
+  sealed trait TestDataGenerationMode
+
+  object TestDataGenerationMode {
+    case object Random extends TestDataGenerationMode
+    case object Live   extends TestDataGenerationMode
+
+    implicit val configReader: ValueReader[Option[TestDataGenerationMode]] = (config: Config, path: String) => {
+      config.getAs[String](path) match {
+        case Some("random") => Some(Random)
+        case Some("live")   => Some(Live)
+        case None           => None
+        case Some(other)    => throw new IllegalArgumentException(s"Unknown TestDataGenerationMode: $other")
+      }
+    }
+
+    val default: TestDataGenerationMode = Live
+  }
+
+}

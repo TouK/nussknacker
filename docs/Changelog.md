@@ -31,9 +31,10 @@
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
 * [#6195](https://github.com/TouK/nussknacker/pull/6195) [#6340](https://github.com/TouK/nussknacker/pull/6340) [#6195](https://github.com/TouK/nussknacker/pull/6195) Added test data generation and testing for Table Source:
   * Added test data generation with 2 modes:
-    * Random (default) - generates randomized records
-    * Real - generates records dumped from the actual configured data source 
-  * Data generation mode can be configured through the `useRealDataForTests` flag in the table components' configuration
+    * Live (default) - creates records by pulling data from the currently configured data source
+    * Random - creates randomized records
+  * Data generation mode can be configured through the `testDataGenerationMode` in the table components configuration 
+    with `"live"` or `"real"` setting
   * The test data can be generated into a file through the `generate file` button
   * Added ability to run tests on data from file or generated on the spot (the `generated` button)
 

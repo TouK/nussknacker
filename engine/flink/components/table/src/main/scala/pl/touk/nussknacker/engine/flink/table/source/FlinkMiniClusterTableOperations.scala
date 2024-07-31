@@ -10,7 +10,6 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor, TableEnvironment}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.source.DataGenerationMode.{RandomDataMode, RealDataMode}
 import pl.touk.nussknacker.engine.flink.table.source.TableSource.RECORD
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.rowToMap
 import pl.touk.nussknacker.engine.util.ThreadUtils
@@ -24,14 +23,14 @@ import scala.util.{Failure, Success, Try, Using}
 object FlinkMiniClusterTableOperations extends LazyLogging {
 
   // TODO: check the minicluster releases memory properly and if not, refactor to reuse one minicluster per all usages
-  def generateTestData(amountOfRecordsToGenerate: Int, schema: Schema, mode: DataGenerationMode): TestData =
+  def generateTestData(amountOfRecordsToGenerate: Int, schema: Schema, mode: TestDataSource): TestData =
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       implicit val env: TableEnvironment = MiniClusterEnvBuilder.buildTableEnv
       val inputTableName = mode match {
-        case RandomDataMode                         => createRandomDataGeneratorTable(amountOfRecordsToGenerate, schema)
-        case RealDataMode(sqlStatements, tableName) => createRealDataGeneratorTable(sqlStatements, tableName)
+        case TestDataSource.Random => createRandomDataGeneratorTable(amountOfRecordsToGenerate, schema)
+        case TestDataSource.Live(sqlStatements, tableName) => createRealDataGeneratorTable(sqlStatements, tableName)
       }
       val (outputFilePath, outputTableName) = createTempFileTable(schema)
       val generatedRows = Try {
@@ -182,11 +181,11 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
 
   }
 
-}
+  sealed trait TestDataSource
 
-sealed trait DataGenerationMode
+  object TestDataSource {
+    case object Random                                                    extends TestDataSource
+    case class Live(sqlStatements: List[SqlStatement], tableName: String) extends TestDataSource
+  }
 
-object DataGenerationMode {
-  case object RandomDataMode                                                    extends DataGenerationMode
-  case class RealDataMode(sqlStatements: List[SqlStatement], tableName: String) extends DataGenerationMode
 }

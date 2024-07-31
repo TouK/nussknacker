@@ -27,12 +27,12 @@ class BatchDataGenerationSpec
 
   private val designerServiceUrl = "http://localhost:8080"
 
+  private val liveDataGenScenarioName   = "SumTransactions-LiveData"
   private val randomDataGenScenarioName = "SumTransactions-RandomData"
-  private val realDataGenScenarioName   = "SumTransactions-RealData"
 
   override def beforeAll(): Unit = {
-    createEmptyBatchScenario(randomDataGenScenarioName, "Default")
-    createEmptyBatchScenario(realDataGenScenarioName, "BatchTestOnRealData")
+    createEmptyBatchScenario(liveDataGenScenarioName, "Default")
+    createEmptyBatchScenario(randomDataGenScenarioName, "BatchTestOnRandomData")
     super.beforeAll()
   }
 
@@ -61,14 +61,14 @@ class BatchDataGenerationSpec
                |""".stripMargin)
         )
     }
-    "real records from data source when configured with real data mode" in {
+    "live records from data source with default configuration" in {
       given()
         .when()
         .request()
         .basicAuthAdmin()
         .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
         .post(
-          s"$designerServiceUrl/api/testInfo/$realDataGenScenarioName/generate/1"
+          s"$designerServiceUrl/api/testInfo/$liveDataGenScenarioName/generate/1"
         )
         .Then()
         .statusCode(200)
@@ -94,7 +94,7 @@ class BatchDataGenerationSpec
       .basicAuthAdmin()
       .jsonBody(toScenarioGraph(simpleBatchTableScenario).asJson.spaces2)
       .post(
-        s"$designerServiceUrl/api/processManagement/generateAndTest/$realDataGenScenarioName/1"
+        s"$designerServiceUrl/api/processManagement/generateAndTest/$liveDataGenScenarioName/1"
       )
       .Then()
       .statusCode(200)
@@ -104,7 +104,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
-           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -118,7 +118,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
-           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -167,7 +167,7 @@ class BatchDataGenerationSpec
         "text/ plain"
       )
       .post(
-        s"$designerServiceUrl/api/processManagement/test/$realDataGenScenarioName"
+        s"$designerServiceUrl/api/processManagement/test/$liveDataGenScenarioName"
       )
       .Then()
       .statusCode(200)
@@ -177,7 +177,7 @@ class BatchDataGenerationSpec
            |    "nodeResults": {
            |      "sourceId": [
            |        {
-           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
@@ -191,7 +191,7 @@ class BatchDataGenerationSpec
            |      ],
            |      "end": [
            |        {
-           |          "id": "SumTransactions-RealData-sourceId-0-0",
+           |          "id": "SumTransactions-LiveData-sourceId-0-0",
            |          "variables": {
            |            "input": {
            |              "pretty": {
