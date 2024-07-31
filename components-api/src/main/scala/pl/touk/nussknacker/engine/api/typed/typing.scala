@@ -71,8 +71,8 @@ object typing {
       objType: TypedClass,
       additionalInfo: Map[String, AdditionalDataValue] = Map.empty
   ) extends SingleTypingResult {
-    override def valueOpt: Option[Map[String, Any]] =
-      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*))
+    override def valueOpt: Option[java.util.Map[String, Any]] =
+      fields.map { case (k, v) => v.valueOpt.map((k, _)) }.toList.sequence.map(Map(_: _*).asJava)
 
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
@@ -116,12 +116,16 @@ object typing {
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
-    override def display: String = {
-      val dataString = value.toString
-      val shortenedDataString =
-        if (dataString.length <= maxDataDisplaySize) dataString
-        else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
-      s"${underlying.display}($shortenedDataString)"
+    override def display: String = s"${underlying.display}($shortenedDataString)"
+
+    private def shortenedDataString = {
+      val dataString = value match {
+        case l: java.util.List[_] => l.asScala.mkString("{", ", ", "}")
+        case _                    => value.toString
+      }
+
+      if (dataString.length <= maxDataDisplaySize) dataString
+      else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
     }
 
   }
@@ -257,6 +261,15 @@ object typing {
       cl
     }
 
+    def typedListWithElementValues[T](
+        elementType: TypingResult,
+        elementValues: java.util.List[T]
+    ): TypedObjectWithValue =
+      TypedObjectWithValue(
+        Typed.genericTypeClass(classOf[java.util.List[_]], List(elementType)),
+        elementValues
+      )
+
     private def toRuntime[T: ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     // parameters - None if you are not in generic aware context, Some - otherwise
@@ -328,12 +341,16 @@ object typing {
         case list: List[_] =>
           genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
+          typedListWithElementValues(
+            supertypeOfElementTypes(javaList.asScala.toList).withoutValue,
+            javaList
+          )
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
+        // TODO: handle more types, for example Set
         case other =>
           Typed(other.getClass) match {
             case typedClass: TypedClass =>
-              SimpleObjectEncoder.encode(typedClass, other) match {
+              ValueEncoder.encodeValue(other) match {
                 case Valid(_)   => TypedObjectWithValue(typedClass, other)
                 case Invalid(_) => typedClass
               }

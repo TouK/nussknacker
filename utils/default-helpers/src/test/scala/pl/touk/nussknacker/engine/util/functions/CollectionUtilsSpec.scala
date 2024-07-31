@@ -63,7 +63,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ),
       (
         "#COLLECTION.merge({a:{innerA:{10,20}}},{b:{innerB:{20}}})",
-        "Record{a: Record{innerA: List[Integer]}, b: Record{innerB: List[Integer(20)]}}"
+        "Record{a: Record{innerA: List[Integer]({10, 20})}, b: Record{innerB: List[Integer]({20})}}"
       ),
       ("#COLLECTION.merge({a:4,b:3},{a:'5'})", "Record{a: String(5), b: Integer(3)}"),
       ("#COLLECTION.merge(#unknownMap,{a:'5'})", "Map[Unknown,Unknown]"),
@@ -316,7 +316,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateType("#COLLECTION.flatten({{'1'},{'2', '3'},{'3'}})") shouldBe "List[String]".valid
     evaluateType("#COLLECTION.flatten({{1},{2},{3}})") shouldBe "List[Integer]".valid
     evaluateType("#COLLECTION.flatten({{{a:1},{b:2}},{{c:3},{d:4}}})") shouldBe
-      "List[Record{a: Integer(1), b: Integer(2), c: Integer(3), d: Integer(4)}]".valid
+      "List[Record{a: Integer, b: Integer, c: Integer, d: Integer}]".valid
   }
 
   test("should throw if elements are not comparable") {
@@ -335,7 +335,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
         evaluateType(expression, variables)
       }
       caught.getMessage should include(
-        "NonComparable that does not match any of declared types (Comparable[Unknown]) when called with arguments (List[NonComparable])"
+        "NonComparable that does not match any of declared types (Comparable[Unknown]) when called with arguments (List[NonComparable]"
       )
     }
 
