@@ -16,6 +16,9 @@ import pl.touk.nussknacker.engine.expression.parse.CompiledExpression
 import pl.touk.nussknacker.engine.node.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
+import java.util
+import scala.collection.mutable
+import scala.compat.java8.FunctionConverters.enrichAsJavaFunction
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
@@ -225,10 +228,15 @@ private class InterpreterInternal[F[_]: Monad](
   private def parseFragmentOutput(ctx: Context, fields: Seq[Field])(
       implicit metaData: MetaData,
       node: Node
-  ): Map[String, Any] = {
-    fields
+  ): util.HashMap[String, Any] = {
+    val fieldsMap = fields
       .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
       .toMap
+
+    import scala.jdk.CollectionConverters._
+    import scala.collection.mutable
+    new util.HashMap[String, Any](mutable.Map(fieldsMap.toSeq: _*).asJava)
+
   }
 
   private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)(
