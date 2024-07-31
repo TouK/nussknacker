@@ -29,6 +29,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
   * `CollectionSource`'s `TypeInformation` implicit parameter was removed
   * `EmptySource`'s `TypeInformation` implicit parameter was removed
+* [#6503](https://github.com/TouK/nussknacker/pull/6503) `FlinkTestScenarioRunner` cleanups
+  * `runWithDataAndTimestampAssigner` method was removed. Instead, `timestampAssigner` was added as an optional parameter into `runWithData`
+  * new `runWithDataWithType` was added allowing to test using other types than classes e.g. records
 
 ### REST API changes
 
