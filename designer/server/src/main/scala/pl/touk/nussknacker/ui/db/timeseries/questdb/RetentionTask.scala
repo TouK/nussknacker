@@ -52,8 +52,8 @@ private[questdb] class RetentionTask(
       maybeTodayMidnightInMicroseconds: Option[Long],
       allPartitions: List[(String, Long)]
   ): Option[NonEmptyList[String]] = {
-    maybeTodayMidnightInMicroseconds.flatMap(truncatedToday => {
-      allPartitions.span(p => p._2 < truncatedToday) match {
+    maybeTodayMidnightInMicroseconds.flatMap(todayMidnightInMicroseconds => {
+      allPartitions.span(p => p._2 < todayMidnightInMicroseconds) match {
         case (oldPartitions @ _ :: _, _ :: _) => NonEmptyList.fromList(oldPartitions.map(_._1))
         case _                                => None
       }
