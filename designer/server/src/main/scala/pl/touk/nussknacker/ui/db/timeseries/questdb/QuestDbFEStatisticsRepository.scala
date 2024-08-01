@@ -140,7 +140,7 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
 
   private def createFlushDataTask() = new FlushDataTask(engine.get(), walTableWriterPool)
   private def createPurgeWalTask()  = new PurgeWalTask(engine.get())
-  private def createRetentionTask() = new RetentionTask(engine.get(), tableName, sqlContextPool, clock)
+  private def createRetentionTask() = new RetentionTask(engine.get(), tableName, sqlContextPool)
 }
 
 object QuestDbFEStatisticsRepository extends LazyLogging {
