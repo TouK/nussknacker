@@ -36,7 +36,7 @@
     * Live (default) - creates records by pulling data from the currently configured data source
     * Random - creates randomized records
   * Data generation mode can be configured through the `testDataGenerationMode` in the table components configuration 
-    with `"live"` or `"real"` setting
+    with `"live"` or `"random"` setting
   * The test data can be generated into a file through the `generate file` button
   * Added ability to run tests on data from file or generated on the spot (the `generated` button)
 
