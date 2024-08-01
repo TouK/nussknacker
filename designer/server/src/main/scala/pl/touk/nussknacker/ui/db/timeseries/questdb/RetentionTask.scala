@@ -23,10 +23,10 @@ private[questdb] class RetentionTask(
   def runUnsafe(): Unit = {
     logger.info("Cleaning up old data")
     // TODO: remove it if automatic retention will be available: https://github.com/questdb/questdb/issues/4369
-    val sqlContext          = sqlContextPool.get()
-    val allPartitions       = getPartitions(sqlContext)
-    val maybeTruncatedToday = ensureSelectFromTableIsPossible(sqlContext)
-    ensureOnePartitionExist(maybeTruncatedToday, allPartitions).foreach { partitionsToDrop =>
+    val sqlContext                       = sqlContextPool.get()
+    val allPartitions                    = getPartitions(sqlContext)
+    val maybeTodayMidnightInMicroseconds = ensureSelectFromTableIsPossible(sqlContext)
+    ensureOnePartitionExist(maybeTodayMidnightInMicroseconds, allPartitions).foreach { partitionsToDrop =>
       val query = buildDropPartitionsQuery(tableName, partitionsToDrop)
       logger.info(s"Dropping old partitions: $query")
       engine.ddl(query, sqlContext)
@@ -49,10 +49,10 @@ private[questdb] class RetentionTask(
 
   // This check is needed because if the retention task would drop last partition, the db can't create new partition
   private def ensureOnePartitionExist(
-      maybeTruncatedToday: Option[Long],
+      maybeTodayMidnightInMicroseconds: Option[Long],
       allPartitions: List[(String, Long)]
   ): Option[NonEmptyList[String]] = {
-    maybeTruncatedToday.flatMap(truncatedToday => {
+    maybeTodayMidnightInMicroseconds.flatMap(truncatedToday => {
       allPartitions.span(p => p._2 < truncatedToday) match {
         case (oldPartitions @ _ :: _, _ :: _) => NonEmptyList.fromList(oldPartitions.map(_._1))
         case _                                => None

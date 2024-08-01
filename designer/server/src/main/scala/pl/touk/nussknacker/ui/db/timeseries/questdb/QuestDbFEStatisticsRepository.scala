@@ -82,7 +82,6 @@ private class QuestDbFEStatisticsRepository(private val engine: AtomicReference[
         name -> count
       }
       .toMap
-    logger.debug("Fetched FE statistics: {}", result)
     RawFEStatistics(result)
   }
 
