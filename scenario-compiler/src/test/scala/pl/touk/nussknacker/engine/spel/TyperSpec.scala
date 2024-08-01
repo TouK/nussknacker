@@ -8,6 +8,7 @@ import org.springframework.expression.common.TemplateParserContext
 import org.springframework.expression.spel.standard
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.typedListWithElementValues
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.clazz.ClassDefinitionSet
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
@@ -18,6 +19,8 @@ import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.TyperSpecTestData.TestRecord._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+
+import scala.jdk.CollectionConverters._
 
 class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
@@ -45,9 +48,28 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
     )
   }
 
-  test("detect proper selection types") {
+  test("detect proper List type with value - record inside") {
+    typeExpression(s"{$testRecordExpr}").validValue.finalResult.typingResult shouldBe
+      typedListWithElementValues(
+        testRecordTyped.withoutValue,
+        List(testRecordTyped.valueOpt.get).asJava
+      )
+  }
+
+  test("detect proper List type with value") {
+    typeExpression("{1,2}").validValue.finalResult.typingResult shouldBe
+      typedListWithElementValues(Typed.typedClass[Int], List(1, 2).asJava)
+  }
+
+  test("detect proper selection types - List") {
     typeExpression("{1,2}.?[(#this==1)]").validValue.finalResult.typingResult shouldBe
       Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
+    // see comment in Typer.resolveSelectionTypingResult
+  }
+
+  test("detect proper selection types - Map") {
+    typeExpression("{'field1': 1, 'field2': 2}.?[(#this.value==1)]").validValue.finalResult.typingResult shouldBe
+      Typed.record(Map.empty) // see comment in Typer.resolveSelectionTypingResult
   }
 
   test("detect proper first selection types") {
@@ -71,6 +93,11 @@ class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMe
   test("restricting simple type selection") {
     typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").invalidValue.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
+  }
+
+  test("type record expression") {
+    typeExpression(testRecordExpr).validValue.finalResult.typingResult shouldBe
+      testRecordTyped
   }
 
   test("indexing on records for primitive types") {
