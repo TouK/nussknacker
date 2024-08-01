@@ -6,10 +6,5 @@ services:
       TABLES_DEFINITION_FILE: "/opt/nussknacker/conf/tables-definition.sql"
     volumes:
       - ../../e2e-tests/src/test/resources/spec-setup/batch-config/batch-customizations.conf:/opt/nussknacker/conf/batch-customizations.conf
+      - ../../e2e-tests/src/test/resources/spec-setup/batch-config/transactions:/transactions
       - ../../e2e-tests/src/test/resources/spec-setup/batch-config/tables-definition.sql:/opt/nussknacker/conf/tables-definition.sql
-
-  flink-jobmanager:
-    environment:
-      TABLES_DEFINITION_FILE: "/opt/flink/data/test-data/tables-definition.sql"
-    volumes:
-      - ../../e2e-tests/src/test/resources/spec-setup/batch-config/tables-definition.sql:/opt/flink/data/test-data/tables-definition.sql

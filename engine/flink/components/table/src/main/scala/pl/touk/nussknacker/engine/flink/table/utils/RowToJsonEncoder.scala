@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.utils
 
 import io.circe.Json
 import org.apache.flink.types.Row
-import org.everit.json.schema.{ObjectSchema, Schema}
+import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.util.json.{EncodeOutput, ToJsonBasedOnSchemaEncoder, ToJsonEncoder}
 
 import scala.jdk.CollectionConverters._
