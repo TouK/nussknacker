@@ -384,6 +384,11 @@ describe("Fragment", () => {
         cy.get<string>("@fragmentName").then((name) => cy.visitProcess(name));
         cy.contains("sinks").should("exist").scrollIntoView();
         cy.getNode("output").as("output");
+
+        // There is a race condition
+        // and it can be a situation that dead-end node is dropped before the scenario is visible.
+        // To be sure that element is visible, let's click on it first
+        cy.get("@output").click();
         cy.contains("dead-end")
             .first()
             .should("be.visible")

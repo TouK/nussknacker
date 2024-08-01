@@ -27,6 +27,7 @@ function CompareButton(props: Props): JSX.Element {
                     title: t("dialog.title.compareVersions", "compare versions"),
                     isResizable: true,
                     minWidth: 980,
+                    minHeight: 200,
                     kind: WindowKind.compareVersions,
                 })
             }
