@@ -41,7 +41,7 @@ describe("CountsRangesButtons tests", () => {
         );
         fireEvent.click(screen.getByRole("button", { name: /range1/ }));
         expect(changeFn).toHaveBeenCalledTimes(1);
-        expect(changeFn).toHaveBeenCalledWith([range1.from(), range1.to()]);
+        expect(changeFn).toHaveBeenCalledWith([range1.from(), range1.to()], null);
     });
 
     it("should collapse buttons", () => {
@@ -62,7 +62,7 @@ describe("CountsRangesButtons tests", () => {
         expect(options2).toHaveLength(2);
         fireEvent.click(options2.item(1));
         expect(changeFn).toHaveBeenCalledTimes(1);
-        expect(changeFn).toHaveBeenCalledWith([range3.from(), range3.to()]);
+        expect(changeFn).toHaveBeenCalledWith([range3.from(), range3.to()], null);
     });
 
     it("should hide expand button when not needed", () => {
@@ -76,6 +76,6 @@ describe("CountsRangesButtons tests", () => {
         expect(buttons).toHaveLength(3);
         fireEvent.click(buttons[buttons.length - 1]);
         expect(changeFn).toHaveBeenCalledTimes(1);
-        expect(changeFn).toHaveBeenCalledWith([range3.from(), range3.to()]);
+        expect(changeFn).toHaveBeenCalledWith([range3.from(), range3.to()], null);
     });
 });
