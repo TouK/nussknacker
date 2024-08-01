@@ -2,6 +2,15 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.16.3
+
+### Code API changes
+* [#6527](https://github.com/TouK/nussknacker/pull/6527) Changes to `TypingResult` of SpEL expressions that are maps or lists:
+    * `TypedObjectTypingResult.valueOpt` now returns a `java.util.Map` instead of `scala.collection.immutable.Map`
+        * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
+    * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
+        * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+
 ## In version 1.16.0
 
 ### Code API changes

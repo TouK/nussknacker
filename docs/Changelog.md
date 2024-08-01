@@ -1,5 +1,10 @@
 # Changelog
 
+1.16.3
+-------------------------
+* [#6527](https://github.com/TouK/nussknacker/pull/6527) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
+
 1.16.2 (18 July 2024)
 -------------------------
 * [#6388](https://github.com/TouK/nussknacker/pull/6388) Fix issue with suggestion expression mode and any value with suggestion in fragmentInput component, now supporting SpEL expressions.
