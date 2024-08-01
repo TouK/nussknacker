@@ -195,6 +195,7 @@ describe("Process", () => {
                 sendSms: { all: 60, errors: 0, fragmentCounts: {} },
             });
 
+            cy.contains(/^today$/i).click();
             cy.contains(/^counts$/i).click();
 
             cy.get("[data-testid=window]").contains(/^ok$/i).click();
