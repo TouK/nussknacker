@@ -1,4 +1,4 @@
-import { Moment } from "moment";
+import moment, { Moment } from "moment";
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { PredefinedDropdownButton, PredefinedRangeButton } from "./CountsStyled";
 import { useTranslation } from "react-i18next";
@@ -7,17 +7,26 @@ export interface Range {
     name: string;
     from: () => Moment;
     to: () => Moment;
+    refresh?: number;
 }
 
 interface RangesButtonsProps {
     ranges: Range[];
-    onChange: (value: [Moment, Moment]) => void;
+    onChange: (value: [Moment, Moment], refresh?: number | null) => void;
     limit?: number;
 }
 
 export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: PropsWithChildren<RangesButtonsProps>): JSX.Element {
     const { t } = useTranslation();
-    const changeHandler = useCallback(({ from, to }: Range) => onChange([from(), to()]), [onChange]);
+    const changeHandler = useCallback(
+        (range: Range) => {
+            const from = range.from();
+            const to = range.to();
+            const refresh = range.refresh ?? (moment().isBefore(to) ? 10 : null);
+            onChange([from, to], refresh);
+        },
+        [onChange],
+    );
 
     const visible = useMemo(() => (limit >= 0 ? ranges.slice(0, limit) : ranges), [ranges, limit]);
     const collapsed = useMemo(() => (limit >= 0 ? ranges.slice(limit) : []), [ranges, limit]);
