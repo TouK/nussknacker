@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes._
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
+import pl.touk.nussknacker.engine.requestresponse.customtransformers.Sorter
 import pl.touk.nussknacker.engine.requestresponse.utils.JsonRequestResponseSourceFactory
-import pl.touk.nussknacker.engine.requestresponse.utils.customtransformers.Sorter
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 
 import java.util.concurrent.atomic.AtomicInteger

@@ -8,9 +8,9 @@ import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptio
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor, TableEnvironment}
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
-import pl.touk.nussknacker.engine.flink.table.source.TableSource.RECORD
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.rowToMap
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.nio.charset.StandardCharsets
@@ -21,38 +21,57 @@ import scala.util.{Failure, Success, Try, Using}
 
 object FlinkMiniClusterTableOperations extends LazyLogging {
 
+  def parseTestRecords(records: List[TestRecord], schema: Schema): List[Row] =
+    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
+      implicit val env: StreamTableEnvironment = MiniClusterEnvBuilder.buildStreamTableEnv
+      val (inputTablePath, inputTableName)     = createTempFileTable(schema)
+      val parsedRecords = Try {
+        writeRecordsToFile(inputTablePath, records)
+        val inputTable = env.from(s"`$inputTableName`")
+        env.toDataStream(inputTable).executeAndCollect().asScala.toList
+      }
+      cleanup(inputTablePath)
+      parsedRecords.get
+    }
+
+  def generateLiveTestData(
+      limit: Int,
+      schema: Schema,
+      sqlStatements: List[SqlStatement],
+      tableName: TableName
+  ): TestData = generateTestData(
+    limit = limit,
+    schema = schema,
+    buildSourceTable = createLiveDataGeneratorTable(sqlStatements, tableName)
+  )
+
+  def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
+    limit = amount,
+    schema = schema,
+    buildSourceTable = createRandomDataGeneratorTable(amount, schema)
+  )
+
+  private type TableName = String
+
   // TODO: check the minicluster releases memory properly and if not, refactor to reuse one minicluster per all usages
-  def generateTestData(amountOfRecordsToGenerate: Int, schema: Schema): TestData = {
+  private def generateTestData(
+      limit: Int,
+      schema: Schema,
+      buildSourceTable: TableEnvironment => TableName
+  ): TestData =
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       implicit val env: TableEnvironment    = MiniClusterEnvBuilder.buildTableEnv
-      val (inputTableName, outputTableName) = generateTestDataTableNames
-      createRandomDataGeneratorTable(amountOfRecordsToGenerate, schema, inputTableName)
-      val outputFilePath = createTempFileTable(schema, outputTableName)
+      val inputTableName                    = buildSourceTable(env)
+      val (outputFilePath, outputTableName) = createTempFileTable(schema)
       val generatedRows = Try {
-        insertDataAndAwait(inputTableName, outputTableName)
+        insertDataAndAwait(inputTableName, outputTableName, limit)
         readRecordsFromFilesUnderPath(outputFilePath)
       }
-      cleanup(outputFilePath, List(inputTableName, outputTableName))
+      cleanup(outputFilePath)
       val rows = generatedRows.get
       TestData(rows.map(TestRecord(_)))
-    }
-  }
-
-  def parseTestRecords(records: List[TestRecord], schema: Schema): List[RECORD] =
-    ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      implicit val env: StreamTableEnvironment = MiniClusterEnvBuilder.buildStreamTableEnv
-      val (inputTableName, _)                  = generateTestDataTableNames
-      val inputTablePath                       = createTempFileTable(schema, inputTableName)
-      val parsedRecords = Try {
-        writeRecordsToFile(inputTablePath, records)
-        val inputTable   = env.from(inputTableName)
-        val streamOfRows = env.toDataStream(inputTable).executeAndCollect().asScala.toList
-        streamOfRows.map(rowToMap)
-      }
-      cleanup(inputTablePath, List(inputTableName))
-      parsedRecords.get
     }
 
   private def writeRecordsToFile(path: Path, records: List[TestRecord]): Unit = {
@@ -76,10 +95,10 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
     }
   }
 
-  private def insertDataAndAwait(inputTableName: String, outputTableName: String)(
+  private def insertDataAndAwait(inputTableName: TableName, outputTableName: TableName, limit: Int)(
       implicit env: TableEnvironment
   ): Unit = {
-    val inputTable = env.from(inputTableName)
+    val inputTable = env.from(s"`$inputTableName`").limit(limit)
     // TODO: Avoid blocking the thread. Refactor `generateTestData` to return future and use a separate blocking thread
     //  pool here
     inputTable.insertInto(outputTableName).execute().await()
@@ -88,22 +107,32 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   private def createRandomDataGeneratorTable(
       amountOfRecordsToGenerate: Int,
       flinkTableSchema: Schema,
-      tableName: String
-  )(
-      implicit env: TableEnvironment
-  ): Unit = env.createTemporaryTable(
-    tableName,
-    TableDescriptor
-      .forConnector("datagen")
-      .option("number-of-rows", amountOfRecordsToGenerate.toString)
-      .schema(flinkTableSchema)
-      .build()
-  )
+  )(env: TableEnvironment): TableName = {
+    val tableName = generateTableName
+    env.createTemporaryTable(
+      tableName,
+      TableDescriptor
+        .forConnector("datagen")
+        .option("number-of-rows", amountOfRecordsToGenerate.toString)
+        .schema(flinkTableSchema)
+        .build()
+    )
+    tableName
+  }
 
-  private def createTempFileTable(flinkTableSchema: Schema, tableName: String)(implicit env: TableEnvironment): Path = {
+  private def createLiveDataGeneratorTable(
+      sqlStatements: List[SqlStatement],
+      tableName: TableName,
+  )(env: TableEnvironment): TableName = {
+    TableSource.executeSqlDDL(sqlStatements, env)
+    tableName
+  }
+
+  private def createTempFileTable(flinkTableSchema: Schema)(implicit env: TableEnvironment): (Path, TableName) = {
     val tempTestDataOutputFilePrefix = "tableSourceDataDump-"
     val tempDir                      = Files.createTempDirectory(tempTestDataOutputFilePrefix)
     logger.debug(s"Created temporary directory for dumping test data at: '${tempDir.toUri.toURL}'")
+    val tableName = generateTableName
     env.createTemporaryTable(
       tableName,
       TableDescriptor
@@ -113,37 +142,25 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
         .schema(flinkTableSchema)
         .build()
     )
-    tempDir
+    tempDir -> tableName
   }
 
-  private def cleanup(dir: Path, tableNames: List[String])(implicit env: TableEnvironment): Unit = {
-    def delete(dir: Path): Unit = Try {
-      Files
-        .walk(dir)
-        .sorted(java.util.Comparator.reverseOrder())
-        .forEach(path => Files.deleteIfExists(path))
-      logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dir.toUri.toURL}'")
-    } match {
-      case Failure(e) =>
-        logger.error(
-          s"Couldn't properly delete temporary test data dumping directory at: '${dir.toUri.toURL}'",
-          e
-        )
-      case Success(_) => ()
-    }
-    def deleteTable(tableName: String)(implicit env: TableEnvironment): Unit = {
-      if (!env.dropTemporaryTable(tableName)) {
-        logger.error(s"Couldn't properly delete temporary temporary table: '$tableName'")
-      }
-    }
-    delete(dir)
-    tableNames.foreach(deleteTable)
+  private def cleanup(dir: Path): Unit = Try {
+    Files
+      .walk(dir)
+      .sorted(java.util.Comparator.reverseOrder())
+      .forEach(path => Files.deleteIfExists(path))
+    logger.debug(s"Successfully deleted temporary test data dumping directory at: '${dir.toUri.toURL}'")
+  } match {
+    case Failure(e) =>
+      logger.error(
+        s"Couldn't properly delete temporary test data dumping directory at: '${dir.toUri.toURL}'",
+        e
+      )
+    case Success(_) => ()
   }
 
-  private def generateTestDataTableNames = {
-    def tableNameValidRandomValue = UUID.randomUUID().toString.replaceAll("-", "")
-    s"testDataInputTable_$tableNameValidRandomValue" -> s"testDataOutputTable_$tableNameValidRandomValue"
-  }
+  private def generateTableName: TableName = s"testDataInputTable_${UUID.randomUUID().toString.replaceAll("-", "")}"
 
   private object MiniClusterEnvBuilder {
 

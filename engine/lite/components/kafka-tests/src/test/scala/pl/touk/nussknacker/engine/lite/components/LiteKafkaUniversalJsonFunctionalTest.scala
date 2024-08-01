@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 class LiteKafkaUniversalJsonFunctionalTest
-  extends AnyFunSuite
+    extends AnyFunSuite
     with Matchers
     with ScalaCheckDrivenPropertyChecks
     with Inside
@@ -50,8 +50,8 @@ class LiteKafkaUniversalJsonFunctionalTest
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
-  private val lax = List(ValidationMode.lax)
-  private val strict = List(ValidationMode.strict)
+  private val lax          = List(ValidationMode.lax)
+  private val strict       = List(ValidationMode.strict)
   private val strictAndLax = ValidationMode.values
 
   test("should test end to end kafka json data at sink and source / handling nulls and empty json") {
@@ -198,14 +198,14 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) {
       (
-        input: Json,
-        sourceSchema: EveritSchema,
-        sinkSchema: EveritSchema,
-        validationModes: List[ValidationMode],
-        expected: Validated[_, RunResult]
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -225,14 +225,14 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) {
       (
-        input: Json,
-        sourceSchema: EveritSchema,
-        sinkSchema: EveritSchema,
-        validationModes: List[ValidationMode],
-        expected: Validated[_, RunResult]
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -240,7 +240,7 @@ class LiteKafkaUniversalJsonFunctionalTest
   }
 
   test("sink with enum schema") {
-    val A = Json.fromString("A")
+    val A   = Json.fromString("A")
     val one = Json.fromInt(1)
     val two = Json.fromInt(2)
     val obj = Json.obj(("x", A), ("y", Json.arr(one, two)))
@@ -267,14 +267,14 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) {
       (
-        input: Json,
-        sourceSchema: EveritSchema,
-        sinkSchema: EveritSchema,
-        validationModes: List[ValidationMode],
-        expected: Validated[_, RunResult]
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -305,10 +305,10 @@ class LiteKafkaUniversalJsonFunctionalTest
       Map("definedProp" -> schemaString)
     )
 
-    val inputObjectIntPropValue = fromInt(1)
+    val inputObjectIntPropValue     = fromInt(1)
     val inputObjectDefinedPropValue = fromString("someString")
-    val inputObject = obj("foo_int" -> inputObjectIntPropValue)
-    val inputObjectWithDefinedProp = obj("definedProp" -> inputObjectDefinedPropValue)
+    val inputObject                 = obj("foo_int" -> inputObjectIntPropValue)
+    val inputObjectWithDefinedProp  = obj("definedProp" -> inputObjectDefinedPropValue)
 
     //@formatter:off
     val testData = Table(
@@ -331,15 +331,15 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) {
       (
-        input: Json,
-        sourceSchema: EveritSchema,
-        sinkSchema: EveritSchema,
-        sinkExpression: SpecialSpELElement,
-        validationModes: List[ValidationMode],
-        expected: Validated[_, RunResult]
+          input: Json,
+          sourceSchema: EveritSchema,
+          sinkSchema: EveritSchema,
+          sinkExpression: SpecialSpELElement,
+          validationModes: List[ValidationMode],
+          expected: Validated[_, RunResult]
       ) =>
         validationModes.foreach { mode =>
-          val cfg = config(input, sourceSchema, sinkSchema, output = sinkExpression, Some(mode))
+          val cfg     = config(input, sourceSchema, sinkSchema, output = sinkExpression, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -354,8 +354,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     val objWithNestedPatternPropertiesMapSchema =
       createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaLong)))
-    val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "field": {
@@ -398,8 +397,8 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) { (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult]) =>
       val dummyInputObject = obj()
-      val cfg = config(dummyInputObject, schemaMapAny, sinkSchema)
-      val jsonScenario = createEditorModeScenario(cfg, sinkFields)
+      val cfg              = config(dummyInputObject, schemaMapAny, sinkSchema)
+      val jsonScenario     = createEditorModeScenario(cfg, sinkFields)
       runner.registerJsonSchema(cfg.sourceTopic.toUnspecialized, cfg.sourceSchema)
       runner.registerJsonSchema(cfg.sinkTopic.toUnspecialized, cfg.sinkSchema)
 
@@ -413,7 +412,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
   test("various combinations of optional-like fields with sink in editor mode") {
     def expectValidObject(expectedObject: Map[String, Json])(
-      result: ValidatedNel[ProcessCompilationError, Map[String, Json]]
+        result: ValidatedNel[ProcessCompilationError, Map[String, Json]]
     ): Assertion =
       result shouldBe Valid(expectedObject)
 
@@ -447,8 +446,8 @@ class LiteKafkaUniversalJsonFunctionalTest
       )
     ) { (outputSchema, fieldExpression, expectationCheckingFun) =>
       val dummyInputObject = obj()
-      val cfg = config(dummyInputObject, schemaMapAny, outputSchema)
-      val jsonScenario = createEditorModeScenario(cfg, Map(ObjectFieldName -> fieldExpression))
+      val cfg              = config(dummyInputObject, schemaMapAny, outputSchema)
+      val jsonScenario     = createEditorModeScenario(cfg, Map(ObjectFieldName -> fieldExpression))
       runner.registerJsonSchema(cfg.sourceTopic.toUnspecialized, cfg.sourceSchema)
       runner.registerJsonSchema(cfg.sinkTopic.toUnspecialized, cfg.sinkSchema)
       val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
@@ -532,7 +531,7 @@ class LiteKafkaUniversalJsonFunctionalTest
     val strictValidationErrors = runWithValueResults(strictConfig).invalidValue
     strictValidationErrors should matchPattern {
       case NonEmptyList(CustomNodeError(`sinkName`, message, _), Nil)
-        if message.contains(s"Redundant fields: $secondsField") =>
+          if message.contains(s"Redundant fields: $secondsField") =>
     }
 
     val laxConfig = strictConfig.copy(validationMode = Some(ValidationMode.lax))
@@ -543,13 +542,13 @@ class LiteKafkaUniversalJsonFunctionalTest
   }
 
   private def createEditorModeScenario(
-                                        config: ScenarioConfig,
-                                        fieldsExpressions: Map[String, String]
-                                      ): CanonicalProcess = {
+      config: ScenarioConfig,
+      fieldsExpressions: Map[String, String]
+  ): CanonicalProcess = {
     val sinkParams = (Map(
-      topicParamName.value -> s"'${config.sinkTopic.name}'",
+      topicParamName.value         -> s"'${config.sinkTopic.name}'",
       schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'",
-      sinkKeyParamName.value -> "",
+      sinkKeyParamName.value       -> "",
       sinkRawEditorParamName.value -> "false",
     ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
 
@@ -558,7 +557,7 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value -> s"'${config.sourceTopic.name}'".spel,
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
@@ -594,7 +593,7 @@ class LiteKafkaUniversalJsonFunctionalTest
 
     forAll(testData) { (input: Json, sourceSchema: EveritSchema, expected: String) =>
       // here we're testing only source runtime validation so to prevent typing issues we pass literal as sink expression
-      val cfg = config(input, sourceSchema, schemaString, output = "someString")
+      val cfg     = config(input, sourceSchema, schemaString, output = "someString")
       val results = runWithValueResults(cfg)
       val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
@@ -648,7 +647,7 @@ class LiteKafkaUniversalJsonFunctionalTest
     runner.registerJsonSchema(config.sourceTopic.toUnspecialized, config.sourceSchema)
     runner.registerJsonSchema(config.sinkTopic.toUnspecialized, config.sinkSchema)
 
-    val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
+    val input  = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
     val result = runner.runWithStringData(jsonScenario, List(input))
     result
   }
@@ -659,47 +658,47 @@ class LiteKafkaUniversalJsonFunctionalTest
       .source(
         sourceName,
         KafkaUniversalName,
-        topicParamName.value -> s"'${config.sourceTopic.name}'".spel,
+        topicParamName.value         -> s"'${config.sourceTopic.name}'".spel,
         schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel
       )
       .emptySink(
         sinkName,
         KafkaUniversalName,
-        topicParamName.value -> s"'${config.sinkTopic.name}'".spel,
-        schemaVersionParamName.value -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
-        sinkKeyParamName.value -> "".spel,
-        sinkValueParamName.value -> s"${config.sinkDefinition}".spel,
-        sinkRawEditorParamName.value -> "true".spel,
+        topicParamName.value              -> s"'${config.sinkTopic.name}'".spel,
+        schemaVersionParamName.value      -> s"'${SchemaVersionOption.LatestOptionName}'".spel,
+        sinkKeyParamName.value            -> "".spel,
+        sinkValueParamName.value          -> s"${config.sinkDefinition}".spel,
+        sinkRawEditorParamName.value      -> "true".spel,
         sinkValidationModeParamName.value -> s"'${config.validationModeName}'".spel
       )
 
   case class ScenarioConfig(
-                             topic: String,
-                             inputData: Json,
-                             sourceSchema: EveritSchema,
-                             sinkSchema: EveritSchema,
-                             sinkDefinition: String,
-                             validationMode: Option[ValidationMode]
-                           ) {
+      topic: String,
+      inputData: Json,
+      sourceSchema: EveritSchema,
+      sinkSchema: EveritSchema,
+      sinkDefinition: String,
+      validationMode: Option[ValidationMode]
+  ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
-    lazy val sourceTopic = TopicName.ForSource(s"$topic-input")
-    lazy val sinkTopic = TopicName.ForSink(s"$topic-output")
+    lazy val sourceTopic                = TopicName.ForSource(s"$topic-input")
+    lazy val sinkTopic                  = TopicName.ForSink(s"$topic-output")
   }
 
   private def conf(
-                    outputSchema: EveritSchema,
-                    output: Any = Input,
-                    validationMode: Option[ValidationMode] = None
-                  ): ScenarioConfig =
+      outputSchema: EveritSchema,
+      output: Any = Input,
+      validationMode: Option[ValidationMode] = None
+  ): ScenarioConfig =
     config(Null, schemaNull, outputSchema, output, validationMode)
 
   private def config(
-                      inputData: Json,
-                      sourceSchema: EveritSchema,
-                      sinkSchema: EveritSchema,
-                      output: Any = Input,
-                      validationMode: Option[ValidationMode] = None
-                    ): ScenarioConfig =
+      inputData: Json,
+      sourceSchema: EveritSchema,
+      sinkSchema: EveritSchema,
+      output: Any = Input,
+      validationMode: Option[ValidationMode] = None
+  ): ScenarioConfig =
     ScenarioConfig(randomTopic, inputData, sourceSchema, sinkSchema, output.toSpELLiteral, validationMode)
 
 }

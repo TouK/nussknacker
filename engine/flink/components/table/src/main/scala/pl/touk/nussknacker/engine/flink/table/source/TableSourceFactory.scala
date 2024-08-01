@@ -11,13 +11,17 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 
-class TableSourceFactory(definition: TableSqlDefinitions, enableFlinkBatchExecutionMode: Boolean)
-    extends SingleInputDynamicComponent[Source]
+class TableSourceFactory(
+    definition: TableSqlDefinitions,
+    enableFlinkBatchExecutionMode: Boolean,
+    testDataGenerationMode: TestDataGenerationMode
+) extends SingleInputDynamicComponent[Source]
     with SourceFactory
     with BoundedStreamComponent {
 
@@ -49,7 +53,7 @@ class TableSourceFactory(definition: TableSqlDefinitions, enableFlinkBatchExecut
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new TableSource(selectedTable, definition.sqlStatements, enableFlinkBatchExecutionMode)
+    new TableSource(selectedTable, definition.sqlStatements, enableFlinkBatchExecutionMode, testDataGenerationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List.empty

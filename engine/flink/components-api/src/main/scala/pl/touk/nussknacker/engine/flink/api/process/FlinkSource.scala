@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, Source, SourceTestSupport}
@@ -51,18 +51,22 @@ trait StandardFlinkSource[Raw]
   protected def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[Raw]
+  ): DataStream[Raw]
 
   override final def contextStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
   ): DataStream[Context] = {
+    val streamOfRaw = sourceStream(env, flinkNodeContext)
     // 1. set UID and override source name
-    val rawSourceWithUid = setUidToNodeIdIfNeed[Raw](
-      flinkNodeContext,
-      sourceStream(env, flinkNodeContext)
-        .name(flinkNodeContext.nodeId)
-    )
+    val rawSourceWithUid = streamOfRaw match {
+      case singleOut: SingleOutputStreamOperator[_] =>
+        setUidToNodeIdIfNeed[Raw](
+          flinkNodeContext,
+          singleOut.name(flinkNodeContext.nodeId)
+        )
+      case _ => streamOfRaw
+    }
 
     // 2. assign timestamp and watermark policy
     val rawSourceWithUidAndTimestamp = timestampAssigner

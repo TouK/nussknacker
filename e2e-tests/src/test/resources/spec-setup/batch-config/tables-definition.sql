@@ -4,6 +4,6 @@ CREATE TABLE transactions (
     amount    DECIMAL(15, 2)
 ) WITH (
       'connector' = 'filesystem',
-      'path' = 'file:///opt/flink/data/transactions-data/transactions',
-      'format' = 'csv'
+      'path' = 'file:///transactions',
+      'format' = 'json'
 );

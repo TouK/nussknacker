@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
+import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, RowTypeInfo}
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -113,6 +114,9 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
         TypedMapTypeInformation(a.fields.mapValuesNow(forType))
+      case a: TypedObjectTypingResult if a.objType.klass == classOf[Row] =>
+        val (fieldNames, typeInfos) = a.fields.toList.sortBy(_._1).unzip
+        new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
