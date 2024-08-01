@@ -18,21 +18,24 @@
 * [#6432](https://github.com/TouK/nussknacker/pull/6432) The default `topicsExistenceValidationConfig.validatorConfig.adminClientTimeout` 
   increased from `500ms` to `10s` to avoid scenario starting problems
 * [#6217](https://github.com/TouK/nussknacker/pull/6217) Improvement: Make flink-metrics-dropwizard as provided dependency at flink-components-utils
-* [#6353](https://github.com/TouK/nussknacker/pull/6353) Table components: table name with special characters such as hyphen are now allowed
-  in table name
 * [#6353](https://github.com/TouK/nussknacker/pull/6353) Performance improvement: simple types such as numbers, boolean, string, date types
   and arrays are serialized/deserialized more optimal in aggregates
-* [#6353](https://github.com/TouK/nussknacker/pull/6353) [#6467](https://github.com/TouK/nussknacker/pull/6467) Added `join` component available in Batch processing mode
 * [#6437](https://github.com/TouK/nussknacker/pull/6437) Removed deprecated operation to create a scenario:
   POST `/api/processes/{name}/{category}`. POST `/api/processes` should be used instead.
 * [#6415](https://github.com/TouK/nussknacker/pull/6415) Added "Component group" field to fragment properties, which allows selection of the group of components in the Creator Panel in which the fragment will be available
 * [#6462](https://github.com/TouK/nussknacker/pull/6462) Improvement of Component's API: `canHaveManyInputs` property is now 
   determined automatically, developer doesn't need to provide it by his/her own
 * [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
-* [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
 * [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
 * [#6436](https://github.com/TouK/nussknacker/pull/6436) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
     * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
+* [#6445](https://github.com/TouK/nussknacker/pull/6445) [#6499](https://github.com/TouK/nussknacker/pull/6499) Add support to seconds in a duration editor
+* Batch processing mode related improvements:
+  * [#6195](https://github.com/TouK/nussknacker/pull/6195) Added randomized test data generation for Table Source scenarios
+  * [#6340](https://github.com/TouK/nussknacker/pull/6340) Added running tests on generated data for Table Source scenarios
+  * [#6353](https://github.com/TouK/nussknacker/pull/6353) [#6467](https://github.com/TouK/nussknacker/pull/6467) Added `join` component
+  * [#6503](https://github.com/TouK/nussknacker/pull/6503) Records are produced by Table Source as `Row`s instead of `Map`s. 
+    Thanks to that, more scenario constructions work correctly with table components such as `join`.
 
 1.16.2 (18 July 2024)
 -------------------------

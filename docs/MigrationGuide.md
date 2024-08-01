@@ -34,6 +34,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
         * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
     * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
         * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+* [#6503](https://github.com/TouK/nussknacker/pull/6503) `FlinkTestScenarioRunner` cleanups
+  * `runWithDataAndTimestampAssigner` method was removed. Instead, `timestampAssigner` was added as an optional parameter into `runWithData`
+  * new `runWithDataWithType` was added allowing to test using other types than classes e.g. records
 
 ### REST API changes
 
