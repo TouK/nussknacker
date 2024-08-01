@@ -8,12 +8,13 @@ import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, OutputValid
 
 object TypingResultOutputValidator {
 
+  private val determinerAcceptingVariousObjTypeForRecord = new CanBeSubclassDeterminer {
+    override protected def checkObjTypeForRecord: Boolean = false
+  }
+
   // TODO: make this validation more precise analogous to kafka avro / json
   def validate(actualType: TypingResult, expectedType: TypingResult): ValidatedNel[OutputValidatorError, Unit] = {
-    val determiner = new CanBeSubclassDeterminer {
-      override protected def checkObjTypeForRecord: Boolean = false
-    }
-    if (determiner.canBeSubclassOf(actualType, expectedType).isValid) {
+    if (determinerAcceptingVariousObjTypeForRecord.canBeSubclassOf(actualType, expectedType).isValid) {
       Valid(())
     } else {
       invalidNel(
