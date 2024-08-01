@@ -36,9 +36,9 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
     val testData = tableSource.generateTestData(1).testRecords
     val result   = tableSource.testRecordParser.parse(testData).head
 
-    result.get("someString") shouldBe a[String]
-    result.get("someVarChar") shouldBe a[String]
-    result.get("someInt") shouldBe a[Number]
+    result.getField("someString") shouldBe a[String]
+    result.getField("someVarChar") shouldBe a[String]
+    result.getField("someInt") shouldBe a[Number]
   }
 
 }

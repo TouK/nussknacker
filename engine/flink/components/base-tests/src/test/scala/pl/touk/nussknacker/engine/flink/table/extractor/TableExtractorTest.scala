@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
 import org.apache.flink.table.api.DataTypes
+import org.apache.flink.types.Row
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -46,7 +47,7 @@ class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPrope
     extractionResults.tableDefinitions shouldBe List(
       TableDefinition(
         tableName,
-        typingResult = Typed.record(Map("someString" -> Typed[String])),
+        typingResult = Typed.record(Map("someString" -> Typed[String]), Typed.typedClass[Row]),
         columns = List(
           ColumnDefinition("someString", Typed[String], DataTypes.STRING())
         )
@@ -120,7 +121,8 @@ object SqlTestData {
         "someString"  -> Typed[String],
         "someVarChar" -> Typed[String],
         "someInt"     -> Typed[Integer],
-      )
+      ),
+      Typed.typedClass[Row]
     )
 
     val tableDefinition: TableDefinition = TableDefinition(

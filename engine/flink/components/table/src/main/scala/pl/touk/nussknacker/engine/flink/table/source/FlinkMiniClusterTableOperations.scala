@@ -8,10 +8,9 @@ import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptio
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor, TableEnvironment}
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.source.TableSource.RECORD
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.rowToMap
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.nio.charset.StandardCharsets
@@ -22,15 +21,14 @@ import scala.util.{Failure, Success, Try, Using}
 
 object FlinkMiniClusterTableOperations extends LazyLogging {
 
-  def parseTestRecords(records: List[TestRecord], schema: Schema): List[RECORD] =
+  def parseTestRecords(records: List[TestRecord], schema: Schema): List[Row] =
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       implicit val env: StreamTableEnvironment = MiniClusterEnvBuilder.buildStreamTableEnv
       val (inputTablePath, inputTableName)     = createTempFileTable(schema)
       val parsedRecords = Try {
         writeRecordsToFile(inputTablePath, records)
-        val inputTable   = env.from(s"`$inputTableName`")
-        val streamOfRows = env.toDataStream(inputTable).executeAndCollect().asScala.toList
-        streamOfRows.map(rowToMap)
+        val inputTable = env.from(s"`$inputTableName`")
+        env.toDataStream(inputTable).executeAndCollect().asScala.toList
       }
       cleanup(inputTablePath)
       parsedRecords.get

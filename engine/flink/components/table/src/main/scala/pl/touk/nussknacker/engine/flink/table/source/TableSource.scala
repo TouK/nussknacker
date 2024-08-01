@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.table.source;
 
 import org.apache.flink.api.common.RuntimeExecutionMode
-import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSource}
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
@@ -28,24 +29,21 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
 class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
     enableFlinkBatchExecutionMode: Boolean,
     testDataGenerationMode: TestDataGenerationMode
-) extends StandardFlinkSource[RECORD]
-    with TestWithParametersSupport[RECORD]
-    with FlinkSourceTestSupport[RECORD]
+) extends StandardFlinkSource[Row]
+    with TestWithParametersSupport[Row]
+    with FlinkSourceTestSupport[Row]
     with TestDataGenerator {
-
-  import scala.jdk.CollectionConverters._
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
       flinkNodeContext: FlinkCustomNodeContext
-  ): DataStreamSource[RECORD] = {
+  ): DataStream[Row] = {
     // TODO: move this to flink-executor - ideally should set be near level of ExecutionConfigPreparer
     if (enableFlinkBatchExecutionMode) {
       env.setRuntimeMode(RuntimeExecutionMode.BATCH)
@@ -60,31 +58,32 @@ class TableSource(
         tableEnv.executeSql(
           s"CREATE TEMPORARY VIEW $filteringInternalViewName AS SELECT * FROM `${tableDefinition.tableName}` WHERE $sqlExpression"
         )
-        tableEnv.from(filteringInternalViewName)
+        tableEnv
+          .from(filteringInternalViewName)
       }
       .getOrElse(selectQuery)
+      // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
+      .select(tableDefinition.columnNames.sorted.map($): _*)
 
-    val streamOfRows: DataStream[Row] = tableEnv.toDataStream(finalQuery)
-
-    val streamOfMaps = streamOfRows
-      .map(RowConversions.rowToMap)
-      .returns(classOf[RECORD])
-
-    new DataStreamSource(streamOfMaps)
+    tableEnv.toDataStream(finalQuery)
   }
 
-  override val contextInitializer: ContextInitializer[RECORD] = new BasicContextInitializer[RECORD](Typed[RECORD])
+  override val contextInitializer: ContextInitializer[Row] = new BasicContextInitializer[Row](Typed[Row])
 
   override def testParametersDefinition: List[Parameter] =
     tableDefinition.columns.map(c => Parameter(ParameterName(c.columnName), c.typingResult))
 
-  override def parametersToTestData(params: Map[ParameterName, AnyRef]): RECORD = params.map {
-    case (paramName, value) => paramName.value -> value.asInstanceOf[Any]
-  }.asJava
+  override def parametersToTestData(params: Map[ParameterName, AnyRef]): Row = {
+    val row = Row.withNames()
+    params.foreach { case (paramName, value) =>
+      row.setField(paramName.value, value)
+    }
+    row
+  }
 
-  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[RECORD]] = None
+  override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
 
-  override def testRecordParser: TestRecordParser[RECORD] = (testRecords: List[TestRecord]) =>
+  override def testRecordParser: TestRecordParser[Row] = (testRecords: List[TestRecord]) =>
     FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
 
   override def generateTestData(size: Int): TestData = testDataGenerationMode match {
@@ -105,7 +104,6 @@ class TableSource(
 }
 
 object TableSource {
-  type RECORD = java.util.Map[String, Any]
   private val filteringInternalViewName = "filteringView"
 
   private[source] def executeSqlDDL(

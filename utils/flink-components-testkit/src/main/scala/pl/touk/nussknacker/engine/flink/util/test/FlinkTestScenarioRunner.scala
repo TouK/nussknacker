@@ -7,8 +7,7 @@ import pl.touk.nussknacker.defaultmodel.DefaultConfigCreator
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.FlinkBaseUnboundedComponentProvider
@@ -32,29 +31,32 @@ import scala.util.Using
 
 private object testComponents {
 
-  def testDataSourceComponent[T: ClassTag](
+  def testDataSourceComponent[T](
       data: List[T],
+      inputType: TypingResult,
       timestampAssigner: Option[TimestampWatermarkHandler[T]],
       boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
       flinkExecutionMode: Option[RuntimeExecutionMode] = None
   ): ComponentDefinition = ComponentDefinition(
     TestScenarioRunner.testDataSource,
-    SourceFactory.noParamUnboundedStreamFromClassTag[T](
+    SourceFactory.noParamUnboundedStreamFactory(
       new CollectionSource[T](
         list = data,
         timestampAssigner = timestampAssigner,
-        returnType = Typed.apply[T],
+        returnType = inputType,
         boundedness = boundedness,
         flinkRuntimeMode = flinkExecutionMode
-      )
+      ),
+      inputType
     )
   )
 
   def noopSourceComponent: ComponentDefinition = {
     ComponentDefinition(
       TestScenarioRunner.noopSource,
-      SourceFactory.noParamUnboundedStreamFromClassTag[Any](
-        new CollectionSource[Any](List.empty, None, typing.Unknown)
+      SourceFactory.noParamUnboundedStreamFactory(
+        new CollectionSource[Any](List.empty, None, Unknown),
+        Unknown
       )
     )
   }
@@ -74,7 +76,7 @@ class FlinkTestScenarioRunner(
 ) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
-    runWithTestSourceComponent(scenario, testDataSourceComponent(data, None))
+    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Typed.typedClass[I], None))
   }
 
   def runWithData[I: ClassTag, R](
@@ -86,19 +88,22 @@ class FlinkTestScenarioRunner(
   ): RunnerListResult[R] = {
     runWithTestSourceComponent(
       scenario,
-      testDataSourceComponent(data, timestampAssigner, boundedness, flinkExecutionMode)
+      testDataSourceComponent(data, Typed.typedClass[I], timestampAssigner, boundedness, flinkExecutionMode)
     )
   }
 
-  /**
-   * Can be used to test Flink aggregates where record timestamp is crucial
-   */
-  def runWithDataAndTimestampAssigner[I: ClassTag, R](
+  def runWithDataWithType[I, R](
       scenario: CanonicalProcess,
       data: List[I],
-      timestampAssigner: TimestampWatermarkHandler[I]
+      inputType: TypingResult,
+      boundedness: Boundedness = Boundedness.CONTINUOUS_UNBOUNDED,
+      flinkExecutionMode: Option[RuntimeExecutionMode] = None,
+      timestampAssigner: Option[TimestampWatermarkHandler[I]] = None
   ): RunnerListResult[R] = {
-    runWithTestSourceComponent(scenario, testDataSourceComponent(data, Some(timestampAssigner)))
+    runWithTestSourceComponent(
+      scenario,
+      testDataSourceComponent(data, inputType, timestampAssigner, boundedness, flinkExecutionMode)
+    )
   }
 
   private def runWithTestSourceComponent[I: ClassTag, R](
@@ -131,7 +136,7 @@ class FlinkTestScenarioRunner(
    * Can be used to test Flink based sinks.
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResultUnit = {
-    val testComponents = testDataSourceComponent(data, None) :: noopSourceComponent :: Nil
+    val testComponents = testDataSourceComponent(data, Typed.typedClass[I], None) :: noopSourceComponent :: Nil
     Using.resource(
       TestExtensionsHolder.registerTestExtensions(components ++ testComponents, List.empty, globalVariables)
     ) { testComponentHolder =>

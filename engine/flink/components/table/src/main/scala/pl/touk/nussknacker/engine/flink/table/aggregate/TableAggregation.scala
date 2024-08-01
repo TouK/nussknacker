@@ -12,6 +12,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
@@ -22,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregation.{
   aggregateByInternalColumnName,
   groupByInternalColumnName
 }
-import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 
 object TableAggregation {
   private val aggregateByInternalColumnName = "aggregateByInternalColumn"
@@ -65,14 +65,19 @@ class TableAggregation(
     val groupedStream: DataStream[Row] = tableEnv.toDataStream(groupedTable)
 
     groupedStream
-      .map(RowConversions.rowToMap)
-      .returns(classOf[java.util.Map[String, Any]])
-      .process(new AggregateResultContextFunction(context.convertToEngineRuntimeContext))
+      .process(
+        new AggregateResultContextFunction(context.convertToEngineRuntimeContext),
+        context.typeInformationDetection.forValueWithContext(
+          ValidationContext.empty.withVariableUnsafe(KeyVariableName, groupByLazyParam.returnType),
+          aggregateByLazyParam.returnType
+        )
+      )
   }
 
   private class AggregateResultContextFunction(
       convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
-  ) extends ProcessFunction[java.util.Map[String, Any], ValueWithContext[AnyRef]] {
+  ) extends ProcessFunction[Row, ValueWithContext[AnyRef]] {
+
     @transient
     private var contextIdGenerator: ContextIdGenerator = _
 
@@ -81,12 +86,12 @@ class TableAggregation(
     }
 
     override def processElement(
-        value: java.util.Map[String, Any],
-        ctx: ProcessFunction[java.util.Map[String, Any], ValueWithContext[AnyRef]]#Context,
+        value: Row,
+        ctx: ProcessFunction[Row, ValueWithContext[AnyRef]]#Context,
         out: Collector[ValueWithContext[AnyRef]]
     ): Unit = {
-      val aggregateResultValue = value.get(aggregateByInternalColumnName).asInstanceOf[AnyRef]
-      val groupedByValue       = value.get(groupByInternalColumnName)
+      val aggregateResultValue = value.getField(aggregateByInternalColumnName)
+      val groupedByValue       = value.getField(groupByInternalColumnName)
       val ctx = api.Context(contextIdGenerator.nextContextId()).withVariable(KeyVariableName, groupedByValue)
       val valueWithContext = ValueWithContext(aggregateResultValue, ctx)
       out.collect(valueWithContext)
