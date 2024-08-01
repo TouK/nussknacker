@@ -3,21 +3,14 @@ package pl.touk.nussknacker.engine.definition.component.parameter.defaults
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-trait SimpleLanguageDeterminer {
+object EditorBasedLanguageDeterminer {
 
-  def calculateDefaultValue(
-      determinedEditor: Option[ParameterEditor],
-      defaultValue: Option[String]
-  ): Option[Expression] =
-    for {
-      value <- defaultValue
-      language <- determinedEditor
-        .collect {
-          case RawParameterEditor                   => Expression.Language.Spel
-          case simpleEditor: SimpleParameterEditor  => determineLanguageOf(simpleEditor)
-          case DualParameterEditor(simpleEditor, _) => determineLanguageOf(simpleEditor)
-        } orElse Some(Expression.Language.Spel)
-    } yield Expression(language, value)
+  def determineLanguageOf(editor: Option[ParameterEditor]): Expression.Language = editor match {
+    case Some(RawParameterEditor)                   => Expression.Language.Spel
+    case Some(simpleEditor: SimpleParameterEditor)  => determineLanguageOf(simpleEditor)
+    case Some(DualParameterEditor(simpleEditor, _)) => determineLanguageOf(simpleEditor)
+    case None                                       => Expression.Language.Spel
+  }
 
   private def determineLanguageOf(editor: SimpleParameterEditor): Expression.Language =
     editor match {
