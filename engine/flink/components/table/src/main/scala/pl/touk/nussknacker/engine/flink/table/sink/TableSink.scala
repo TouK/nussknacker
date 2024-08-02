@@ -61,7 +61,7 @@ class TableSink(
 
     val inputValueTable = tableEnv
       .fromDataStream(streamOfRows)
-      .select(tableDefinition.sinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala.map($): _*)
+      .select(tableDefinition.sinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala.toList.map($): _*)
 
     sqlStatements.foreach(tableEnv.executeSql)
 
