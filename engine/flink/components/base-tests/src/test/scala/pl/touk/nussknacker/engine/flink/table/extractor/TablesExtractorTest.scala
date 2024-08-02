@@ -46,7 +46,7 @@ class TablesExtractorTest extends AnyFunSuite with Matchers with TableDrivenProp
     extractionResults.tableDefinitions shouldBe List(
       TableDefinition(
         tableName,
-        ResolvedSchema.of(Column.physical("someString", DataTypes.INT()))
+        ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
       )
     )
   }
