@@ -28,7 +28,14 @@ const CollapsibleScrollPanel = forwardRef<HTMLDivElement, CollapsibleScrollPanel
     );
 
     return (
-        <CollapsiblePanel ref={ref} side={side} isExpanded={isExpanded} className={className} scrollVisible={scrollVisible}>
+        <CollapsiblePanel
+            ref={ref}
+            side={side}
+            data-testid="SidePanel"
+            isExpanded={isExpanded}
+            className={className}
+            scrollVisible={scrollVisible}
+        >
             <ScrollbarsExtended onScrollToggle={scrollToggle} side={side}>
                 <ErrorBoundary>
                     <ScrollPanelContent side={side}>{children}</ScrollPanelContent>

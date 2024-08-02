@@ -31,7 +31,7 @@ describe("Description", () => {
 
 *Everything* is going according to **plan**.`);
 
-        cy.contains("Show description every time").click();
+        cy.contains("Show description each time scenario is opened").click();
 
         cy.get("@window")
             .contains(/^apply$/i)
