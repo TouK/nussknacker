@@ -170,8 +170,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     outputFileContent shouldBe inputFileContent
   }
 
-  // FIXME: we type virtual columns correctly but detected serializer is invalid (only physical columns should be serialized)
-  ignore("should be able to access virtual columns in input table") {
+  test("should be able to access virtual columns in input table") {
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'$virtualColumnInputTableName'".spel)

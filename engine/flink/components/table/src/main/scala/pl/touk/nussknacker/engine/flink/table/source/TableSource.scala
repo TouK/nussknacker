@@ -41,7 +41,7 @@ class TableSource(
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator {
 
-  private val sourceType         = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
+  private val sourceType         = tableDefinition.sourceRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
   private val physicalSourceType = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
 
   private val physicalSchema = Schema.newBuilder().fromRowDataType(tableDefinition.physicalRowDataType).build()
