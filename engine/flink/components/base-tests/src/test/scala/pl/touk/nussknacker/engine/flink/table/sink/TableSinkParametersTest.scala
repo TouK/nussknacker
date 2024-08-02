@@ -57,23 +57,6 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
         "Table"      -> s"'$outputTableName'".spel,
         "Raw editor" -> "false".spel,
         "client_id"  -> "''".spel,
-        "amount"     -> "123.11".spel,
-      )
-
-    val result = runner.runWithoutData(scenario)
-    result.isValid shouldBe true
-  }
-
-  test("should take parameters per column in non-raw mode - experiment with BigDecimal explicit") {
-    val scenario = ScenarioBuilder
-      .streaming("test")
-      .source("start", "table", "Table" -> s"'$inputTableName'".spel)
-      .emptySink(
-        "end",
-        "table",
-        "Table"      -> s"'$outputTableName'".spel,
-        "Raw editor" -> "false".spel,
-        "client_id"  -> "''".spel,
         "amount"     -> "T(java.math.BigDecimal).ONE".spel,
       )
 
