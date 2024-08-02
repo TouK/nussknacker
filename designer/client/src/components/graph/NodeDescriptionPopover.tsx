@@ -22,7 +22,7 @@ export function NodeDescriptionPopover(props: { graphRef: MutableRefObject<Graph
 
     const [open, setOpen] = useState(false);
     const [description, setDescription] = useState<string>();
-    const [anchorEl, setAnchorEl] = React.useState<PopoverProps["anchorEl"]>(null);
+    const [anchorEl, setAnchorEl] = useState<PopoverProps["anchorEl"]>(null);
 
     const hideDescription = useCallback(() => {
         setOpen(false);
@@ -100,7 +100,7 @@ export function NodeDescriptionPopover(props: { graphRef: MutableRefObject<Graph
                         <MarkdownStyled
                             sx={{
                                 maxWidth: (t) => t.breakpoints.values.sm,
-                                mt: -2,
+                                mt: 0,
                                 px: 2,
                                 py: 0,
                                 overflow: "auto",
