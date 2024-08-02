@@ -128,7 +128,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
-      .emptySink("end", "table", "Table" -> s"'$pingPongOutputTableName'".spel, "Value" -> "#input".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$pingPongOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
 
     val result = runner.runWithoutData(scenario)
     result shouldBe Symbol("valid")
@@ -144,7 +150,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       .streaming("test")
       .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
       .buildSimpleVariable("variable", "someVar", "#input.string.length".spel)
-      .emptySink("end", "table", "Table" -> s"'$rowFieldAccessOutputTableName'".spel, "Value" -> "#input".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$rowFieldAccessOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
 
     val result = runner.runWithoutData(scenario)
     result shouldBe Symbol("valid")
@@ -191,7 +203,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .emptySink("end", "table", "Table" -> s"'$expressionOutputTableName'".spel, "Value" -> primitiveTypesExpression)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$expressionOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> primitiveTypesExpression
+      )
 
     val result = runner.runWithoutData(
       scenario = scenario
@@ -214,7 +232,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
     val scenario = ScenarioBuilder
       .streaming("test")
       .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
-      .emptySink("end", "table", "Table" -> s"'$oneColumnOutputTableName'".spel, "Value" -> valueExpression)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$oneColumnOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> valueExpression
+      )
 
     val result = runner.runWithoutData(
       scenario = scenario

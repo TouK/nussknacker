@@ -5,17 +5,18 @@ import org.apache.flink.table.catalog.{Column, ResolvedSchema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table._
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractorTest.invalidSqlStatements
 
 class TablesExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
-    val statements        = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement)
+    val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
     val dataSourceConfigs = TablesExtractor.extractTablesFromFlinkRuntime(statements)
 
     val expectedResult = TablesExtractionResult(
-      tableDefinitions = List(SimpleTypesTestCase.tableDefinition),
+      tableDefinitions = List(SimpleTable.tableDefinition),
       sqlStatementExecutionErrors = List.empty
     )
 
@@ -63,9 +64,9 @@ class TablesExtractorTest extends AnyFunSuite with Matchers with TableDrivenProp
 
 }
 
-object SqlTestData {
+object TablesExtractorTest {
 
-  val invalidSqlStatements: List[String] = List(
+  private val invalidSqlStatements: List[String] = List(
     """|CREATE TABLE testTable
        |(
        |    someString  STRING
@@ -73,54 +74,28 @@ object SqlTestData {
        |      'connector' = 'datagen
        |);""".stripMargin, // no closing quote
     """|CREATE TABLE testTable
-        |(
-        |    someString  STRING
-        |)
-        |;""".stripMargin, // no WITH clause
+       |(
+       |    someString  STRING
+       |)
+       |;""".stripMargin, // no WITH clause
     """|CREATE TABLE testTable
-        |(
-        |    someString  STRING
-        |) WITH (
-        |      'connector' = ''
-        |);""".stripMargin, // empty string connector - does not reach the dedicated error because fails earlier
+       |(
+       |    someString  STRING
+       |) WITH (
+       |      'connector' = ''
+       |);""".stripMargin, // empty string connector - does not reach the dedicated error because fails earlier
     """|CREATE TABLE test-table
-         |(
-         |    someString  STRING
-         |) WITH (
-         |      'connector' = 'datagen'
-         |);""".stripMargin, // invalid table name
+       |(
+       |    someString  STRING
+       |) WITH (
+       |      'connector' = 'datagen'
+       |);""".stripMargin, // invalid table name
     """|CREATE TABLE somedb.testTable
-         |(
-         |    someString  STRING
-         |) WITH (
-         |      'connector' = 'datagen'
-         |);""".stripMargin, // trying to create a table under non-existing database
+       |(
+       |    someString  STRING
+       |) WITH (
+       |      'connector' = 'datagen'
+       |);""".stripMargin, // trying to create a table under non-existing database
   )
-
-  object SimpleTypesTestCase {
-
-    val tableName = "testTable"
-    val connector = "filesystem"
-
-    val sqlStatement: String =
-      s"""|CREATE TABLE testTable
-         |(
-         |    someString  STRING,
-         |    someVarChar VARCHAR(150),
-         |    someInt     INT
-         |) WITH (
-         |      'connector' = '$connector'
-         |);""".stripMargin
-
-    val tableDefinition: TableDefinition = TableDefinition(
-      tableName,
-      ResolvedSchema.of(
-        Column.physical("someString", DataTypes.STRING()),
-        Column.physical("someVarChar", DataTypes.VARCHAR(150)),
-        Column.physical("someInt", DataTypes.INT()),
-      )
-    )
-
-  }
 
 }

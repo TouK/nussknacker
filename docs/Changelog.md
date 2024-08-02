@@ -41,6 +41,8 @@
       with `"live"` or `"random"` setting
     * The test data can be generated into a file through the `generate file` button
     * Added ability to run tests on data from file or generated on the spot (the `generated` button)
+  * [#6518](https://github.com/TouK/nussknacker/pull/6518) Added user friendly editor for Table Sink output value
+    * The editor can be easily switched backed to 'raw' version similarly to the current Kafka Sink
 
 1.16.2 (18 July 2024)
 -------------------------
