@@ -48,6 +48,10 @@ object TypingResultAwareTypeInformationDetection {
 
   To use it for serialization between operators use TypeInformationDetection service loading.
   To use it for state serialization one can use it directly in operators/process functions (compatibility is *NOT* guaranteed ATM).
+
+  We should try to produce types supported in TypeInfoDataTypeConverter. Otherwise, we will get problems like:
+  Column types of query result and sink for '...' do not match.
+  when we use non handled type of variable in table api component.
  */
 class TypingResultAwareTypeInformationDetection(customisation: TypingResultAwareTypeInformationCustomisation)
     extends TypeInformationDetection {

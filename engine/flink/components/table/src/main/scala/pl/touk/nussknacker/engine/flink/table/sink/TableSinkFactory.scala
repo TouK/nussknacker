@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, ParameterDecla
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTypeConverter
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory.{rawValueParameterDeclaration, valueParameterName}
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
@@ -53,7 +54,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
 
       val valueParameterTypeErrors = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.typingResult)
+        TypingResultOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType.toTypingResult)
       ).validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
 
       FinalResults(context, valueParameterTypeErrors, Some(selectedTable))

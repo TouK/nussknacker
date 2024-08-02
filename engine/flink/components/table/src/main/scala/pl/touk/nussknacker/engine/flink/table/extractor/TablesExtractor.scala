@@ -5,12 +5,11 @@ import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementNotExecutedError.statementNotExecutedErrorDescription
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TypeExtractor.extractTypingResult
 
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.{Failure, Success, Try}
 
-object TableExtractor extends LazyLogging {
+object TablesExtractor extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
@@ -18,7 +17,7 @@ object TableExtractor extends LazyLogging {
   // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
   def extractTablesFromFlinkRuntime(
       sqlStatements: List[SqlStatement]
-  ): TableExtractorResult = {
+  ): TablesExtractionResult = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
@@ -44,15 +43,14 @@ object TableExtractor extends LazyLogging {
         .getOrElse(
           throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tablePath")
         )
-      typedTable = extractTypingResult(table)
-    } yield TableDefinition(tableName, typedTable.typingResult, typedTable.columns)
+    } yield TableDefinition(tableName, table.getResolvedSchema)
 
-    TableExtractorResult(tableDefinitions, sqlErrors)
+    TablesExtractionResult(tableDefinitions, sqlErrors)
   }
 
 }
 
-final case class TableExtractorResult(
+final case class TablesExtractionResult(
     tableDefinitions: List[TableDefinition],
     sqlStatementExecutionErrors: List[SqlStatementNotExecutedError]
 )

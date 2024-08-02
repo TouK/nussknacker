@@ -1,20 +1,9 @@
 package pl.touk.nussknacker.engine.flink.table
 
-import org.apache.flink.table.api.{DataTypes, Schema}
+import org.apache.flink.table.catalog.ResolvedSchema
 import org.apache.flink.table.types.DataType
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-import scala.jdk.CollectionConverters._
-
-final case class TableDefinition(tableName: String, typingResult: TypingResult, columns: List[ColumnDefinition]) {
-
-  def toFlinkSchema: Schema = {
-    val cols = columns.map(c => DataTypes.FIELD(c.columnName, c.flinkDataType)).asJava
-    Schema.newBuilder().fromRowDataType(DataTypes.ROW(cols)).build()
-  }
-
-  def columnNames: List[String] = columns.map(_.columnName)
-
+final case class TableDefinition(tableName: String, schema: ResolvedSchema) {
+  lazy val physicalRowDataType: DataType = schema.toPhysicalRowDataType
+  lazy val sinkRowDataType: DataType     = schema.toSinkRowDataType
 }
-
-final case class ColumnDefinition(columnName: String, typingResult: TypingResult, flinkDataType: DataType)

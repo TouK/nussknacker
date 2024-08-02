@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.table
 
 import org.apache.flink.table.api.DataTypes
+import org.apache.flink.table.catalog.{Column, ResolvedSchema}
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 
@@ -19,10 +18,7 @@ object TestTableComponents {
     tableDefinitions = List(
       TableDefinition(
         tableName = tableName,
-        typingResult = typing.Typed.record(Map(testColumnName -> Typed[Int])),
-        columns = List(
-          ColumnDefinition(columnName = testColumnName, typingResult = Typed[Int], flinkDataType = DataTypes.INT())
-        )
+        ResolvedSchema.of(Column.physical(testColumnName, DataTypes.INT()))
       )
     ),
     sqlStatements = List(
@@ -35,7 +31,7 @@ object TestTableComponents {
       oneRecordTableSourceName,
       new TableSourceFactory(
         tableDefs(oneRecordTableName),
-        enableFlinkBatchExecutionMode = true,
+        enableFlinkBatchExecutionMode = false,
         testDataGenerationMode = TestDataGenerationMode.Live
       )
     )

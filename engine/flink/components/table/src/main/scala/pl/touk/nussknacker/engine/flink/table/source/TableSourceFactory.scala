@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
+import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory.tableNameParamName
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
@@ -40,8 +41,9 @@ class TableSourceFactory(
       )
     case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
       val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
-      val typingResult  = selectedTable.typingResult
-      val initializer   = new BasicContextInitializer(typingResult)
+      val initializer = new BasicContextInitializer(
+        selectedTable.sinkRowDataType.getLogicalType.toTypingResult
+      )
       FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
   }
 

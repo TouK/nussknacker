@@ -4,8 +4,8 @@ import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.Expressions.$
-import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
+import org.apache.flink.table.api.{Schema, TableEnvironment}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -28,6 +28,7 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 
 class TableSource(
@@ -39,6 +40,10 @@ class TableSource(
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator {
+
+  private val sourceType = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
+
+  private val schema = Schema.newBuilder().fromRowDataType(tableDefinition.physicalRowDataType).build()
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -63,7 +68,7 @@ class TableSource(
       }
       .getOrElse(selectQuery)
       // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
-      .select(tableDefinition.columnNames.sorted.map($): _*)
+      .select(sourceType.fields.keys.toList.sorted.map($): _*)
 
     tableEnv.toDataStream(finalQuery)
   }
@@ -71,7 +76,7 @@ class TableSource(
   override val contextInitializer: ContextInitializer[Row] = new BasicContextInitializer[Row](Typed[Row])
 
   override def testParametersDefinition: List[Parameter] =
-    tableDefinition.columns.map(c => Parameter(ParameterName(c.columnName), c.typingResult))
+    sourceType.fields.toList.map(c => Parameter(ParameterName(c._1), c._2))
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): Row = {
     val row = Row.withNames()
@@ -84,21 +89,23 @@ class TableSource(
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
 
   override def testRecordParser: TestRecordParser[Row] = (testRecords: List[TestRecord]) =>
-    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDefinition.toFlinkSchema)
+    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, schema)
 
-  override def generateTestData(size: Int): TestData = testDataGenerationMode match {
-    case TestDataGenerationMode.Random =>
-      FlinkMiniClusterTableOperations.generateRandomTestData(
-        amount = size,
-        schema = tableDefinition.toFlinkSchema
-      )
-    case TestDataGenerationMode.Live =>
-      FlinkMiniClusterTableOperations.generateLiveTestData(
-        limit = size,
-        schema = tableDefinition.toFlinkSchema,
-        sqlStatements = sqlStatements,
-        tableName = tableDefinition.tableName
-      )
+  override def generateTestData(size: Int): TestData = {
+    testDataGenerationMode match {
+      case TestDataGenerationMode.Random =>
+        FlinkMiniClusterTableOperations.generateRandomTestData(
+          amount = size,
+          schema = schema
+        )
+      case TestDataGenerationMode.Live =>
+        FlinkMiniClusterTableOperations.generateLiveTestData(
+          limit = size,
+          schema = schema,
+          sqlStatements = sqlStatements,
+          tableName = tableDefinition.tableName
+        )
+    }
   }
 
 }
