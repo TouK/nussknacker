@@ -1,12 +1,13 @@
 import { Parameter, UIParameter } from "../../../types";
 import { useMemo } from "react";
 
-export function useParameter(parameters: Parameter[], paramName: string): [Parameter, string] {
-    const index = useMemo(() => parameters?.findIndex((param) => param.name === paramName), [paramName, parameters]);
-    const parameter = useMemo(() => parameters[index], [index, parameters]);
-    const path = useMemo(() => `parameters[${index}].expression.expression`, [index]);
+export function getParamIndex(parameters: Parameter[], paramName: string) {
+    return parameters?.findIndex((param) => param.name === paramName);
+}
 
-    return [parameter, path];
+export function useParameterPath(parameters: Parameter[], paramName: string): string {
+    const index = useMemo(() => getParamIndex(parameters, paramName), [paramName, parameters]);
+    return useMemo(() => `parameters[${index}].expression.expression`, [index]);
 }
 
 export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {

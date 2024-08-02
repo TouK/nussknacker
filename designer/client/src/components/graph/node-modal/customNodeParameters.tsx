@@ -1,18 +1,17 @@
 import { FieldWrapperProps } from "./ParameterExpressionField";
-import React from "react";
+import React, { useContext } from "react";
 import { AggregatorField } from "./aggregate/aggregatorField";
+import { AggregateContext } from "./aggregate/aggregateContext";
 
-export const CustomNodeFieldOverrideWrapper = ({ children, ...props }: FieldWrapperProps) => {
-    switch (props.node.nodeType) {
-        case "aggregate-session":
-        case "aggregate-sliding":
-        case "aggregate-tumbling":
-            switch (props.parameter.name) {
-                case "aggregator":
-                    return <AggregatorField {...props}>{children}</AggregatorField>;
-                case "aggregateBy":
-                    return null;
-            }
+export const AggregateFieldOverrideWrapper = function AggregateFieldOverrideWrapper({ children, ...props }: FieldWrapperProps) {
+    const { values } = useContext(AggregateContext);
+    if (values?.length) {
+        switch (props.parameter.name) {
+            case "aggregator":
+                return <AggregatorField {...props} />;
+            case "aggregateBy":
+                return null;
+        }
     }
     return <>{children}</>;
 };
