@@ -31,7 +31,7 @@ object TestTableComponents {
       oneRecordTableSourceName,
       new TableSourceFactory(
         tableDefs(oneRecordTableName),
-        enableFlinkBatchExecutionMode = false,
+        enableFlinkBatchExecutionMode = true,
         testDataGenerationMode = TestDataGenerationMode.Live
       )
     )

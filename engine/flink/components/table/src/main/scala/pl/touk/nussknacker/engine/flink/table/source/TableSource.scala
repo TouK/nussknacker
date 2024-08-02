@@ -41,9 +41,10 @@ class TableSource(
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator {
 
-  private val sourceType = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
+  private val sourceType         = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
+  private val physicalSourceType = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
 
-  private val schema = Schema.newBuilder().fromRowDataType(tableDefinition.physicalRowDataType).build()
+  private val physicalSchema = Schema.newBuilder().fromRowDataType(tableDefinition.physicalRowDataType).build()
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -76,7 +77,7 @@ class TableSource(
   override val contextInitializer: ContextInitializer[Row] = new BasicContextInitializer[Row](Typed[Row])
 
   override def testParametersDefinition: List[Parameter] =
-    sourceType.fields.toList.map(c => Parameter(ParameterName(c._1), c._2))
+    physicalSourceType.fields.toList.map(c => Parameter(ParameterName(c._1), c._2))
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): Row = {
     val row = Row.withNames()
@@ -89,19 +90,19 @@ class TableSource(
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
 
   override def testRecordParser: TestRecordParser[Row] = (testRecords: List[TestRecord]) =>
-    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, schema)
+    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, physicalSchema)
 
   override def generateTestData(size: Int): TestData = {
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
         FlinkMiniClusterTableOperations.generateRandomTestData(
           amount = size,
-          schema = schema
+          schema = physicalSchema
         )
       case TestDataGenerationMode.Live =>
         FlinkMiniClusterTableOperations.generateLiveTestData(
           limit = size,
-          schema = schema,
+          schema = physicalSchema,
           sqlStatements = sqlStatements,
           tableName = tableDefinition.tableName
         )
