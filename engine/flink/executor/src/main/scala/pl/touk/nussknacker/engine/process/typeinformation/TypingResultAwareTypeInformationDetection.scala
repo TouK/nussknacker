@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.process.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeInformation, Types}
-import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, RowTypeInfo}
+import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo, MultisetTypeInfo, RowTypeInfo}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.api.TypedMultiset
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{
   TypeInformationDetection,
   TypingResultAwareTypeInformationCustomisation
@@ -77,18 +78,6 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     Typed.typedClass[java.sql.Timestamp]      -> Types.SQL_TIMESTAMP,
   )
 
-  // See Types.PRIMITIVE_ARRAY
-  private val primitiveArraySupportedTypes = Set[TypingResult](
-    Typed.typedClass[Boolean],
-    Typed.typedClass[Byte],
-    Typed.typedClass[Short],
-    Typed.typedClass[Integer],
-    Typed.typedClass[Long],
-    Typed.typedClass[Float],
-    Typed.typedClass[Double],
-    Typed.typedClass[Character],
-  )
-
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(
       Typed.record(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]])
@@ -103,17 +92,15 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
         additionalTypeInfoDeterminer.apply(a)
-      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 =>
-        new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
-      case a: TypedClass
-          if a.klass == classOf[Array[AnyRef]] && a.params.size == 1 && primitiveArraySupportedTypes.contains(
-            a.params.head
-          ) =>
-        Types.PRIMITIVE_ARRAY(forType[AnyRef](a.params.head))
-      case a: TypedClass if a.klass == classOf[Array[AnyRef]] && a.params.size == 1 =>
-        Types.OBJECT_ARRAY(forType[AnyRef](a.params.head))
-      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 =>
-        new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](a.params.head), forType[AnyRef](a.params.last))
+      case TypedClass(klass, elementType :: Nil) if klass == classOf[java.util.List[_]] =>
+        new ListTypeInfo[AnyRef](forType[AnyRef](elementType))
+      case TypedClass(klass, elementType :: Nil) if klass == classOf[Array[AnyRef]] =>
+        // We have to use OBJECT_ARRAY even for numeric types, because ARRAY<INT> is represented as Integer[] which can't be handled by IntPrimitiveArraySerializer
+        Types.OBJECT_ARRAY(forType[AnyRef](elementType))
+      case TypedClass(klass, keyType :: valueType :: Nil) if klass == classOf[java.util.Map[_, _]] =>
+        new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](keyType), forType[AnyRef](valueType))
+      case TypedMultiset(elementType) =>
+        new MultisetTypeInfo[AnyRef](forType[AnyRef](elementType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
@@ -123,7 +110,8 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
         // Warning: RowTypeInfo is fields order sensitive
         new RowTypeInfo(typeInfos.map(forType).toArray[TypeInformation[_]], fieldNames.toArray)
       // TODO: better handle specific map implementations - other than HashMap?
-      case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
+      case a: TypedObjectTypingResult
+          if classOf[java.util.Map[String @unchecked, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: SingleTypingResult if registeredTypeInfos.contains(a.objType) =>
         registeredTypeInfos(a.objType)
