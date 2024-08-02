@@ -1,7 +1,7 @@
 import React from "react";
 import { alpha, css, FormLabel, styled, Switch } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
-import { StyledNodeTip } from "../../../../ParamLabel";
+import { StyledNodeTip } from "../../../../FieldLabel";
 
 import { blendLighten } from "../../../../../../../containers/theme/helpers";
 

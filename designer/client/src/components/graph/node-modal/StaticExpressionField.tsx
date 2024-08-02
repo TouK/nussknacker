@@ -1,6 +1,6 @@
 import { useTestResults } from "./TestResultsWrapper";
 import ExpressionField from "./editors/expression/ExpressionField";
-import { findParamDefinitionByName } from "./ParamLabel";
+import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../types";
 import { getValidationErrorsForField } from "./editors/Validators";
