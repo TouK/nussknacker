@@ -40,7 +40,7 @@ export const ScenarioDescription = () => {
                         background: (t) => alpha(t.palette.background.paper, 0.75),
                         backdropFilter: "blur(25px)",
                         margin: 0,
-                        padding: 0,
+                        padding: 1,
                         display: "flex",
                         flexGrow: 0,
                         flexShrink: 1,
@@ -51,7 +51,7 @@ export const ScenarioDescription = () => {
                         sx={{
                             position: "absolute",
                             top: 0,
-                            right: 0,
+                            left: 0,
                             borderRadius: 0,
                         }}
                         disableFocusRipple
