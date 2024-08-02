@@ -18,7 +18,7 @@ const Colon = createToken({
 });
 const Identifier = createToken({
     name: "Identifier",
-    pattern: /([a-zA-Z]\w+|"[^"]+")/,
+    pattern: /([a-zA-Z]\w*|"[^"]+")/,
 });
 const Number = createToken({
     name: "Number",
@@ -72,8 +72,12 @@ export class AggMapLikeParser extends EmbeddedActionsParser {
             { ALT: () => this.CONSUME(Number) },
         ]);
 
-        const key = lit.isInsertedInRecovery ? "BAD_KEY" : lit.image.replaceAll(/"/g, "");
-        obj[key] = value.image;
+        let key: string;
+
+        if (!lit.isInsertedInRecovery) {
+            key = lit.image.replaceAll(/"/g, "");
+            obj[key] = value.image;
+        }
 
         return obj;
     });

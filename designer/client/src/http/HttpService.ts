@@ -18,7 +18,7 @@ import {
 } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ReturnedType, ScenarioGraph, VariableTypes } from "../types";
+import { Component, Expression, NodeType, ProcessAdditionalFields, ProcessDefinitionData, ScenarioGraph, VariableTypes } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -27,7 +27,6 @@ import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInf
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { GenericValidationRequest } from "../actions/nk/genericAction";
-import { EventTrackingSelector } from "../containers/event-tracking";
 import { EventTrackingSelectorType, EventTrackingType } from "../containers/event-tracking/use-register-tracking-events";
 
 type HealthCheckProcessDeploymentType = {
@@ -160,6 +159,46 @@ export interface ScenarioParametersCombinations {
 export type ProcessDefinitionDataDictOption = { key: string; label: string };
 type DictOption = { id: string; label: string };
 
+function fixBranchParametersTemplate({ node, branchParametersTemplate, ...component }: Component): Component {
+    // This is a walk-around for having part of node template (branch parameters) outside of itself.
+    // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
+    return {
+        ...component,
+        node: {
+            ...node,
+            branchParametersTemplate,
+        },
+        branchParametersTemplate,
+    };
+}
+
+function fixAggregateParameters(component: Component): Component {
+    if (!["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(component.node.nodeType)) {
+        return component;
+    }
+
+    const parameters = component.node.parameters.map((parameter) => {
+        switch (parameter.name) {
+            case "aggregator":
+                return {
+                    ...parameter,
+                    expression: { ...parameter.expression, expression: "#AGG.map({count: #AGG.sum})" },
+                };
+            case "aggregateBy":
+                return {
+                    ...parameter,
+                    expression: { ...parameter.expression, expression: "{count: 1}" },
+                };
+        }
+        return parameter;
+    });
+
+    return {
+        ...component,
+        node: { ...component.node, parameters },
+    };
+}
+
 class HttpService {
     //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
     #notificationActions: NotificationActions = null;
@@ -220,17 +259,16 @@ class HttpService {
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
         const promise = api
             .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
-            .then((response) => {
-                // This is a walk-around for having part of node template (branch parameters) outside of itself.
-                // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
-                response.data.componentGroups.forEach((group) => {
-                    group.components.forEach((component) => {
-                        component.node.branchParametersTemplate = component.branchParametersTemplate;
-                    });
-                });
-
-                return response;
-            });
+            .then(({ data, ...response }) => ({
+                ...response,
+                data: {
+                    ...data,
+                    componentGroups: data.componentGroups.map(({ components, ...group }) => ({
+                        ...group,
+                        components: components.map(fixBranchParametersTemplate).map(fixAggregateParameters),
+                    })),
+                },
+            }));
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );

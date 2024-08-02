@@ -6,7 +6,7 @@ import { NodeField } from "./NodeField";
 import { FieldType } from "./editors/field/Field";
 import { DescriptionField } from "./DescriptionField";
 import { ParametersList } from "./parametersList";
-import { CustomNodeFieldOverrideWrapper } from "./customNodeParameters";
+import { AggregateParametersList } from "./aggregateParametersList";
 
 export type CustomNodeProps = {
     errors: NodeValidationError[];
@@ -38,6 +38,12 @@ export function CustomNode({
         (): boolean => !!ProcessUtils.extractComponentDefinition(node, processDefinitionData.components)?.returnType || !!node.outputVar,
         [node, processDefinitionData.components],
     );
+
+    const ParametersComponent = useMemo(() => {
+        const isAggregate = ["aggregate-session", "aggregate-sliding", "aggregate-tumbling"].includes(node.nodeType);
+        return isAggregate ? AggregateParametersList : ParametersList;
+    }, [node.nodeType]);
+
     return (
         <>
             <IdField
@@ -62,7 +68,7 @@ export function CustomNode({
                 />
             )}
             {children}
-            <ParametersList
+            <ParametersComponent
                 parameters={node.parameters}
                 showSwitch={showSwitch}
                 findAvailableVariables={findAvailableVariables}
@@ -74,7 +80,6 @@ export function CustomNode({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 getListFieldPath={(index: number) => `parameters[${index}]`}
-                FieldWrapper={CustomNodeFieldOverrideWrapper}
             />
             <DescriptionField
                 node={node}
