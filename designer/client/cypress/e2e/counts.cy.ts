@@ -49,4 +49,38 @@ describe("Counts", () => {
         cy.get("[data-testid=window]").contains("Latest deploy").click();
         cy.get("[data-testid=window]").contains("10 seconds").should("be.visible");
     });
+
+    it("should display question mark when renaming a node and updating the count", () => {
+        const fakeResponse = {
+            periodic: { all: 10, errors: 0, fragmentCounts: {} },
+            "dead-end": { all: 120, errors: 10, fragmentCounts: {} },
+        };
+
+        cy.intercept("GET", "/api/processCounts/*", fakeResponse);
+
+        cy.contains(/^counts$/i).click();
+        cy.get("[data-testid=window]")
+            .contains(/^today$/i)
+            .click();
+        cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+        cy.get("[model-id=dead-end]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").find("input[type=text]").type("12");
+        cy.get("[data-testid=window]")
+            .contains(/^apply$/i)
+            .click();
+
+        cy.intercept("GET", "/api/processCounts/*", fakeResponse);
+
+        cy.contains(/^counts$/i).click();
+
+        cy.get("[data-testid=window]")
+            .contains(/^today$/i)
+            .click();
+        cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+        cy.getNode("enricher")
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+    });
 });
