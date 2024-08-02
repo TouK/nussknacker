@@ -278,6 +278,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             return {
                 ...state,
                 processCounts: action.processCounts,
+                processCountsRefresh: action.refresh,
             };
         }
         case "DISPLAY_TEST_RESULTS_DETAILS": {
@@ -292,6 +293,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 ...state,
                 testResults: null,
                 processCounts: null,
+                processCountsRefresh: null,
             };
         }
         case "EXPAND_SELECTION": {
