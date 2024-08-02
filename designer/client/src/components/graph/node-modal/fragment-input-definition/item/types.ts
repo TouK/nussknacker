@@ -25,6 +25,7 @@ export enum InputMode {
 export interface FixedValuesOption {
     expression: string;
     label: string;
+    icon?: string;
 }
 
 export interface GenericParameterVariant {

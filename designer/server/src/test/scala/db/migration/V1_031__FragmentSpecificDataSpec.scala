@@ -33,6 +33,7 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |    "typeSpecificData": {
         |      "docsUrl": null,
         |      "componentGroup" : null,
+        |      "icon": "/assets/components/FragmentInput.svg",
         |      "type": "FragmentSpecificData"
         |    }
         |  }

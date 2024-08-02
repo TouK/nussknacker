@@ -29,12 +29,14 @@ sealed trait ScenarioSpecificData extends TypeSpecificData
 
 case class FragmentSpecificData(
     docsUrl: Option[String] = None,
-    componentGroup: Option[String] = None // None means the fragment is in the default group for fragments
+    componentGroup: Option[String] = None, // None means the fragment is in the default group for fragments
+    icon: Option[String] = None
 ) extends TypeSpecificData {
 
   override def toMap: Map[String, String] = Map(
     FragmentSpecificData.docsUrlName        -> docsUrl.getOrElse(""),
     FragmentSpecificData.componentGroupName -> componentGroup.getOrElse(""),
+    FragmentSpecificData.iconName           -> icon.getOrElse("")
   )
 
   override def metaDataType: String = FragmentSpecificData.typeName
@@ -44,11 +46,13 @@ object FragmentSpecificData {
   val typeName           = "FragmentSpecificData"
   val docsUrlName        = "docsUrl"
   val componentGroupName = "componentGroup"
+  val iconName           = "icon"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
     FragmentSpecificData(
       docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)),
-      componentGroup = mapEmptyStringToNone(properties.get(componentGroupName))
+      componentGroup = mapEmptyStringToNone(properties.get(componentGroupName)),
+      icon = mapEmptyStringToNone(properties.get(iconName))
     )
   }
 

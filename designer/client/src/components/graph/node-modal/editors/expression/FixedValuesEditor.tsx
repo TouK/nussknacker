@@ -5,9 +5,11 @@ import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { cx } from "@emotion/css";
 import { selectStyled } from "../../../../../stylesheets/SelectStyled";
-import { useTheme } from "@mui/material";
+import { Stack, styled, Typography, useTheme } from "@mui/material";
 import { ExtendedEditor } from "./Editor";
 import { FieldError } from "../Validators";
+import { FixedValuesOption } from "../../fragment-input-definition/item";
+import { PreloadedIcon } from "../../../../toolbars/creator/ComponentIcon";
 
 type Props = {
     editorConfig: $TodoType;
@@ -23,17 +25,14 @@ type Props = {
 interface Option {
     label: string;
     value: string;
+    icon: string | null;
 }
 
-function getOptions(
-    values: {
-        expression: string;
-        label: string;
-    }[],
-): Option[] {
+function getOptions(values: FixedValuesOption[]): Option[] {
     return values.map((value) => ({
         value: value.expression,
         label: value.label,
+        icon: value.icon,
     }));
 }
 
@@ -41,7 +40,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const handleCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
-            (expressionObj && { value: expressionObj.expression, label: expressionObj.expression }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
+            (expressionObj && { value: expressionObj.expression, label: expressionObj.expression, icon: null }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
             null
         ); // just leave undefined and let the user explicitly select one
     };
@@ -50,6 +49,12 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
     const options = getOptions(editorConfig.possibleValues);
     const currentOption = handleCurrentOption(expressionObj, options);
     const theme = useTheme();
+    const NodeIcon = styled(PreloadedIcon)({
+        minWidth: "1.5em",
+        maxWidth: "1.5em",
+        minHeight: "1.5em",
+        maxHeight: "1.5em",
+    });
 
     const { control, input, valueContainer, singleValue, menuPortal, menu, menuList, menuOption, indicatorSeparator, dropdownIndicator } =
         selectStyled(theme);
@@ -60,6 +65,16 @@ export const FixedValuesEditor: ExtendedEditor<Props> = (props: Props) => {
                 classNamePrefix={"test"}
                 onChange={(newValue) => onValueChange(newValue.value)}
                 options={options}
+                formatOptionLabel={(option) =>
+                    option.icon ? (
+                        <Stack direction={"row"} alignItems={"center"} spacing={1}>
+                            <NodeIcon src={option.icon} />
+                            <div>{option.label}</div>
+                        </Stack>
+                    ) : (
+                        option.label
+                    )
+                }
                 isDisabled={readOnly}
                 formatCreateLabel={(x) => x}
                 menuPortalTarget={document.body}

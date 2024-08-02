@@ -23,12 +23,19 @@ object FragmentComponentDefinition {
       outputNames: List[String],
       docsUrl: Option[String],
       componentGroupName: Option[ComponentGroupName],
+      icon: Option[String],
       translateGroupName: ComponentGroupName => Option[ComponentGroupName],
       designerWideId: DesignerWideComponentId,
       allowedProcessingModes: AllowedProcessingModes,
   ): ComponentDefinitionWithImplementation = {
     val uiDefinition =
-      DefaultComponentConfigDeterminer.forFragment(docsUrl, componentGroupName, translateGroupName, designerWideId)
+      DefaultComponentConfigDeterminer.forFragment(
+        docsUrl,
+        componentGroupName,
+        icon,
+        translateGroupName,
+        designerWideId
+      )
     // Currently fragments are represented as method-based component, probably we should change it to some dedicated type
     MethodBasedComponentDefinitionWithImplementation(
       name = name,

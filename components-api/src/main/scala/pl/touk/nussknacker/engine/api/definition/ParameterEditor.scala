@@ -76,6 +76,9 @@ case object CronParameterEditor extends SimpleParameterEditor
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue])
     extends SimpleParameterEditor
 
+@JsonCodec case class FixedValuesWithIconParameterEditor(possibleValues: List[FixedExpressionValueWithIcon])
+    extends SimpleParameterEditor
+
 // TODO: currently only supports String/Boolean/Long dictionaries (same set of supported types as AdditionalDataValue)
 @JsonCodec case class DictParameterEditor(
     dictId: String // dictId must be present in ExpressionConfigDefinition.dictionaries
