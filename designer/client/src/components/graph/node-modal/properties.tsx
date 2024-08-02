@@ -78,7 +78,7 @@ export function Properties({
                 errors={errors}
                 fieldType={FieldType.checkbox}
                 fieldName={"additionalFields.showDescription"}
-                description={"Show description every time"}
+                description={"Show description each time scenario is opened"}
             />
         </>
     );
