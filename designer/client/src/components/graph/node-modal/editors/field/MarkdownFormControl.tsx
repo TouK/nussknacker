@@ -10,7 +10,7 @@ type MarkdownFormControlProps = Omit<FieldProps, "type"> &
         onChange: (value: string) => void;
     }>;
 
-export const MarkdownFormControl = ({ value, onChange, className, children, ...props }: MarkdownFormControlProps) => (
+export const MarkdownFormControl = ({ value, onChange, className, children, readOnly, ...props }: MarkdownFormControlProps) => (
     <FormControl>
         {children}
         <CustomCompleterAceEditor
@@ -20,6 +20,7 @@ export const MarkdownFormControl = ({ value, onChange, className, children, ...p
                 className,
                 value,
                 onValueChange: onChange,
+                readOnly,
             }}
         />
     </FormControl>
