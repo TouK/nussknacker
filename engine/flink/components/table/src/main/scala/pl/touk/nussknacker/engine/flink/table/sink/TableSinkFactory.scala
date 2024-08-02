@@ -15,12 +15,12 @@ import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDepen
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -125,7 +125,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
 
       val valueParameter = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType.toTypingResult)
+        TableTypeOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType)
       )
       val valueParameterTypeErrors =
         valueParameter.validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
@@ -195,7 +195,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
         } else {
           val param: SchemaBasedParameter = SingleSchemaBasedParameter(
             value = Parameter(ParameterName(field.getName), field.getType.toTypingResult).copy(isLazyParameter = true),
-            validator = TypingResultOutputValidator.validate(_, field.getType.toTypingResult)
+            validator = TableTypeOutputValidator.validate(_, field.getType)
           )
           valid(field.getName -> param)
         }

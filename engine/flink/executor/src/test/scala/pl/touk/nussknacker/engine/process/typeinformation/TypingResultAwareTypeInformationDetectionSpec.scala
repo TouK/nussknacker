@@ -5,7 +5,12 @@ import com.esotericsoftware.kryo.{Kryo, Serializer}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.base.array.{IntPrimitiveArraySerializer, StringArraySerializer}
-import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
+import org.apache.flink.api.common.typeutils.base.{
+  GenericArraySerializer,
+  IntSerializer,
+  LongSerializer,
+  StringSerializer
+}
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.scalatest.Inside.inside
@@ -93,7 +98,7 @@ class TypingResultAwareTypeInformationDetectionSpec
         "two"            -> "ala",
         "three"          -> Map("key" -> "value"),
         "arrayOfStrings" -> Array("foo", "bar", "baz"),
-        "arrayOfInts"    -> Array(1, 2, 3),
+        "arrayOfInts"    -> Array[Integer](1, 2, 3),
       )
     )
     val vCtx = ValidationContext(
@@ -118,7 +123,7 @@ class TypingResultAwareTypeInformationDetectionSpec
 
     assertSerializersInContext(
       typeInfo.createSerializer(executionConfigWithoutKryo),
-      ("arrayOfInts", _ shouldBe new IntPrimitiveArraySerializer),
+      ("arrayOfInts", _ shouldBe new GenericArraySerializer(classOf[Integer], new IntSerializer)),
       ("arrayOfStrings", _ shouldBe new StringArraySerializer),
       ("one", _ shouldBe new IntSerializer),
       ("three", assertMapSerializers(_, ("key", new StringSerializer))),

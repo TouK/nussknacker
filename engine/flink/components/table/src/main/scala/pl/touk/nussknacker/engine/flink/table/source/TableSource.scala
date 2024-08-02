@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesExtensions._
 import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
 
 import scala.jdk.CollectionConverters._

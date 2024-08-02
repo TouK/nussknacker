@@ -33,7 +33,7 @@ case class FlinkCustomNodeContext(
   lazy val contextTypeInfo: TypeInformation[Context] =
     typeInformationDetection.forContext(asOneOutputContext)
 
-  val valueWithContextInfo = new valueWithContextInfo
+  lazy val valueWithContextInfo = new valueWithContextInfo
 
   class valueWithContextInfo {
 
