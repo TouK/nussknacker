@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table
 
 import org.apache.flink.table.api.DataTypes
+import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 object TableTestCases {
@@ -24,7 +25,8 @@ object TableTestCases {
         "someString"  -> Typed[String],
         "someVarChar" -> Typed[String],
         "someInt"     -> Typed[Integer],
-      )
+      ),
+      Typed.typedClass[Row]
     )
 
     val tableDefinition: TableDefinition = TableDefinition(

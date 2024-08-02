@@ -150,7 +150,13 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
       .streaming("test")
       .source("start", "table", "Table" -> s"'$pingPongInputTableName'".spel)
       .buildSimpleVariable("variable", "someVar", "#input.string.length".spel)
-      .emptySink("end", "table", "Table" -> s"'$rowFieldAccessOutputTableName'".spel, "Value" -> "#input".spel)
+      .emptySink(
+        "end",
+        "table",
+        "Table"      -> s"'$rowFieldAccessOutputTableName'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
+      )
 
     val result = runner.runWithoutData(scenario)
     result shouldBe Symbol("valid")
