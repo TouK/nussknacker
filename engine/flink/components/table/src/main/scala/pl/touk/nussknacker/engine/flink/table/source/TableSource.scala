@@ -24,11 +24,11 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
+import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 
 class TableSource(
@@ -41,10 +41,15 @@ class TableSource(
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator {
 
-  private val sourceType         = tableDefinition.sourceRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
-  private val physicalSourceType = tableDefinition.physicalRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
+  private val sourceType = tableDefinition.sourceRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
+  private val sourceWithoutComputedColumnsType =
+    tableDefinition.sourceRowDataTypeWithoutComputedColumns.getLogicalType.toRowTypeUnsafe.toTypingResult
 
-  private val physicalSchema = Schema.newBuilder().fromRowDataType(tableDefinition.physicalRowDataType).build()
+  // FIXME: We should rewrite computed columns
+  private val sourceSchema =
+    Schema.newBuilder().fromRowDataType(tableDefinition.sourceRowDataType).build()
+  private val sourceWithoutComputedColumnsSchema =
+    Schema.newBuilder().fromRowDataType(tableDefinition.sourceRowDataTypeWithoutComputedColumns).build()
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -77,7 +82,7 @@ class TableSource(
   override val contextInitializer: ContextInitializer[Row] = new BasicContextInitializer[Row](Typed[Row])
 
   override def testParametersDefinition: List[Parameter] =
-    physicalSourceType.fields.toList.map(c => Parameter(ParameterName(c._1), c._2))
+    sourceWithoutComputedColumnsType.fields.toList.map(c => Parameter(ParameterName(c._1), c._2))
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): Row = {
     val row = Row.withNames()
@@ -90,19 +95,19 @@ class TableSource(
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
 
   override def testRecordParser: TestRecordParser[Row] = (testRecords: List[TestRecord]) =>
-    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, physicalSchema)
+    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, sourceSchema)
 
   override def generateTestData(size: Int): TestData = {
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
         FlinkMiniClusterTableOperations.generateRandomTestData(
           amount = size,
-          schema = physicalSchema
+          schema = sourceWithoutComputedColumnsSchema
         )
       case TestDataGenerationMode.Live =>
         FlinkMiniClusterTableOperations.generateLiveTestData(
           limit = size,
-          schema = physicalSchema,
+          schema = sourceWithoutComputedColumnsSchema,
           sqlStatements = sqlStatements,
           tableName = tableDefinition.tableName
         )

@@ -2,26 +2,37 @@ package pl.touk.nussknacker.engine.flink.table.extractor
 
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog.{Column, ResolvedSchema}
+import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTypeConverter
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table._
 import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractorTest.invalidSqlStatements
 
-class TablesExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
+import scala.jdk.CollectionConverters._
+
+class TablesExtractorTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
     val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
     val dataSourceConfigs = TablesExtractor.extractTablesFromFlinkRuntime(statements)
 
-    val expectedResult = TablesExtractionResult(
-      tableDefinitions = List(SimpleTable.tableDefinition),
-      sqlStatementExecutionErrors = List.empty
-    )
-
     dataSourceConfigs.sqlStatementExecutionErrors shouldBe empty
-    dataSourceConfigs shouldBe expectedResult
+    val tableDefinition = dataSourceConfigs.tableDefinitions.loneElement
+    val sourceRowType   = tableDefinition.sourceRowDataType.getLogicalType.toRowTypeUnsafe
+    sourceRowType.getFieldNames.asScala shouldBe List("someString", "someVarChar", "someInt", "someIntComputed")
+    sourceRowType.getTypeAt(0) shouldEqual DataTypes.STRING().getLogicalType
+    sourceRowType.getTypeAt(1) shouldEqual DataTypes.VARCHAR(150).getLogicalType
+    sourceRowType.getTypeAt(2) shouldEqual DataTypes.INT().getLogicalType
+    sourceRowType.getTypeAt(3) shouldEqual DataTypes.INT().getLogicalType
+
+    tableDefinition.sinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala shouldBe List(
+      "someString",
+      "someVarChar",
+      "someInt"
+    )
   }
 
   test("extracts configuration from tables outside of builtin catalog and database") {

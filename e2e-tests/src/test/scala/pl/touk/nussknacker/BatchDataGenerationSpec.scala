@@ -55,7 +55,8 @@ class BatchDataGenerationSpec
                |   "record": {
                |      "datetime": "${regexes.localDateRegex}",
                |      "client_id": "[a-z\\\\d]{100}",
-               |      "amount": "${regexes.decimalRegex}"
+               |      "amount": "${regexes.decimalRegex}",
+               |      "file.name": "[a-z\\\\d]{100}"
                |   }
                |}
                |""".stripMargin)
@@ -79,7 +80,8 @@ class BatchDataGenerationSpec
                |   "record": {
                |      "datetime": "2024-01-01 10:00:00",
                |      "client_id": "client1",
-               |      "amount": 100.1
+               |      "amount": 100.1,
+               |      "file.name": "transactions.ndjson"
                |   }
                |}
                |""".stripMargin)
@@ -110,7 +112,9 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                "datetime": "2024-01-01T10:00:00",
            |                "client_id": "client1",
-           |                "amount": 100.1
+           |                "amount": 100.1,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
            |              }
            |            }
            |          }
@@ -124,7 +128,9 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                "datetime": "2024-01-01T10:00:00",
            |                "client_id": "client1",
-           |                "amount": 100.1
+           |                "amount": 100.1,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
            |              }
            |            }
            |          }
