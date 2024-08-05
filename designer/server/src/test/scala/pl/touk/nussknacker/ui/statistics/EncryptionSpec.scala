@@ -5,8 +5,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.statistics.Encryption.EncryptionTypes.{AES, RSA}
-import pl.touk.nussknacker.ui.statistics.Encryption.{createSymmetricKey, setupPrivateKey, setupPublicKey}
+import pl.touk.nussknacker.ui.statistics.Encryption.EncryptionTypes.{AES, EncryptionType, RSA}
+import pl.touk.nussknacker.ui.statistics.Encryption.{createSymmetricKey, encode, setupPublicKey}
+
+import java.nio.charset.StandardCharsets
+import java.security.{Key, KeyFactory}
+import java.security.spec.{EncodedKeySpec, PKCS8EncodedKeySpec}
+import java.util.Base64
+import javax.crypto.Cipher
 
 class EncryptionSpec
     extends AnyFunSuite
@@ -29,13 +35,19 @@ class EncryptionSpec
     val publicKey           = setupPublicKey(publicKeyForTest)
     val encryptedMessageRSA = Encryption.encode(message, RSA, publicKey)
 
-    val decryptedAES = Encryption.decode(encryptedMessageAES, AES, secretKeyForTest)
+    val decryptedAES = decode(encryptedMessageAES, AES, secretKeyForTest)
 
     val privateKey   = setupPrivateKey(privateKeyForTest)
-    val decryptedRSA = Encryption.decode(encryptedMessageRSA, RSA, privateKey)
+    val decryptedRSA = decode(encryptedMessageRSA, RSA, privateKey)
 
     decryptedAES shouldBe message
     decryptedRSA shouldBe message
+
+    val secretKeyAsString = Base64.getEncoder.encodeToString(secretKeyForTest.getEncoded)
+    val sth1              = encode(secretKeyAsString, RSA, publicKey)
+    val sth2              = decode(sth1, RSA, privateKey)
+
+    sth2 shouldBe secretKeyAsString
   }
 
   test("Creating symmetric keys creates new one every time") {
@@ -43,6 +55,21 @@ class EncryptionSpec
     val key2 = createSymmetricKey
 
     key1 == key2 shouldBe false
+  }
+
+  private def setupPrivateKey(plainKey: String) = {
+    val privateKeyBytes         = Base64.getDecoder.decode(plainKey)
+    val keyFactory: KeyFactory  = KeyFactory.getInstance("RSA")
+    val keySpec: EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes)
+    keyFactory.generatePrivate(keySpec)
+  }
+
+  def decode(toDecode: String, encryptionType: EncryptionType, key: Key): String = {
+    val cipher: Cipher = Cipher.getInstance(encryptionType.toString)
+    cipher.init(Cipher.DECRYPT_MODE, key)
+
+    val decoded = cipher.doFinal(Base64.getDecoder.decode(toDecode))
+    new String(decoded, StandardCharsets.UTF_8)
   }
 
 }
