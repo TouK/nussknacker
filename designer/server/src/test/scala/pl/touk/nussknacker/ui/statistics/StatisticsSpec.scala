@@ -60,7 +60,7 @@ class StatisticsSpec extends AnyFunSuite with Matchers {
       Map("f" -> "a b", "v" -> "1.6.5-a&b=c")
     )
     sut.prepareURLs(cfg).getOrElse(List.empty).map { url =>
-      url.toString matches s"https://stats.nussknacker.io/\\?encrypted=\\S+key=\\S+" shouldBe true
+      url.toString matches s"https://stats.nussknacker.io/\\?encryptedParams=\\S+encryptionKey=\\S+" shouldBe true
     }
   }
 

@@ -26,8 +26,8 @@ object Statistics extends LazyLogging {
       encodeQueryParam(RequestIdStat.name -> requestId.value)
     )
 
-    private val encryptedQueryParam = "encrypted="
-    private val keyQueryParam       = "&key="
+    private val encryptedParamsQueryParamKey = "encryptedParams"
+    private val encryptionKeyQueryParamKey   = "encryptionKey"
 
     override def prepareURLs(cfg: StatisticUrlConfig): Either[StatisticError, List[URL]] =
       rawStatistics.toList
@@ -42,29 +42,34 @@ object Statistics extends LazyLogging {
       s"${URLEncoder.encode(entry._1, StandardCharsets.UTF_8)}=${URLEncoder.encode(entry._2, StandardCharsets.UTF_8)}"
 
     private def prepareUrlString(queryParams: Iterable[String], cfg: StatisticUrlConfig): Option[String] = {
-      if (queryParams.nonEmpty) {
-        val queryParamsWithFingerprint = queryParams ++ queryParamsForEveryURL
-        val queryParamsString =
-          queryParamsWithFingerprint.mkString(cfg.emptyString, cfg.queryParamsSeparator, cfg.emptyString)
-
-        if (cfg.encryptQueryParams) {
-          val encryptedQueryParams = encryptUrl(queryParamsString)
-          Some(cfg.nuStatsUrl ++ encryptedQueryParams)
-        } else {
-          Some(cfg.nuStatsUrl ++ queryParamsString)
-        }
+      val joinedQueryParams = if (queryParams.nonEmpty && cfg.encryptQueryParams) {
+        val joinedQueryParams = joinQueryParamsToString(queryParams, cfg)
+        val encryptedQuery    = encryptQueryParams(joinedQueryParams)
+        Some(encryptedQuery)
+      } else if (queryParams.nonEmpty) {
+        Some(joinQueryParamsToString(queryParams, cfg))
       } else {
         None
       }
+      joinedQueryParams.map(jqp => prependWithAddress(jqp, cfg))
     }
 
-    private def encryptUrl(url: String): String = {
+    private def encryptQueryParams(queryParams: String): String = {
       val symmetricKey         = createSymmetricKey
-      val encryptedQueryParams = Encryption.encode(url, AES, symmetricKey)
+      val encryptedQueryParams = Encryption.encode(queryParams, AES, symmetricKey)
       val encryptedSecretKey =
         Encryption.encode(Base64.getEncoder.encodeToString(symmetricKey.getEncoded), RSA, nuPublicKey)
 
-      encryptedQueryParam ++ encryptedQueryParams ++ keyQueryParam ++ encryptedSecretKey
+      s"$encryptedParamsQueryParamKey=$encryptedQueryParams&$encryptionKeyQueryParamKey=$encryptedSecretKey"
+    }
+
+    private def joinQueryParamsToString(queryParams: Iterable[String], cfg: StatisticUrlConfig): String = {
+      val queryParamsWithFingerprint = queryParams ++ queryParamsForEveryURL
+      queryParamsWithFingerprint.mkString(cfg.queryParamsSeparator)
+    }
+
+    private def prependWithAddress(joinedQueryParams: String, cfg: StatisticUrlConfig): String = {
+      s"${cfg.nuStatsUrl}$joinedQueryParams"
     }
 
   }
