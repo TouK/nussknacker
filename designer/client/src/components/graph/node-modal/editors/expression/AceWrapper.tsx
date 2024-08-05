@@ -1,4 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
+import "ace-builds/src-noconflict/ace";
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce, { IAceEditorProps } from "react-ace/lib/ace";
 import { IAceOptions, IEditorProps } from "react-ace/src/types";
@@ -7,14 +8,20 @@ import { ICommand } from "react-ace/lib/types";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
 import { EditorMode, ExpressionLang } from "./types";
+import { SerializedStyles } from "@emotion/react";
+
+export type AceWrapperInputProps = {
+    language: string;
+    readOnly?: boolean;
+    editorMode?: EditorMode;
+    className?: string;
+    style?: SerializedStyles;
+    rows?: number;
+    cols?: number;
+};
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
-    inputProps: {
-        language: string;
-        readOnly?: boolean;
-        rows?: number;
-        editorMode?: EditorMode;
-    };
+    inputProps: AceWrapperInputProps;
     customAceEditorCompleter?;
     showLineNumbers?: boolean;
     commands?: AceKeyCommand[];

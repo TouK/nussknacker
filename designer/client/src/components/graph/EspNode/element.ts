@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import { attributes, dia, shapes } from "jointjs";
-import { cloneDeepWith, get, isEmpty, toString } from "lodash";
+import { cloneDeepWith, isEmpty, toString } from "lodash";
 import { NodeCounts, ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
@@ -116,10 +116,25 @@ export const updateNodeCounts =
 
 export function makeElement(processDefinitionData: ProcessDefinitionData, theme: Theme): (node: NodeType) => shapes.devs.Model {
     return (node: NodeType) => {
-        const description = get(node.additionalFields, "description", null);
+        const description = node.additionalFields.description;
         const { text: bodyContent } = getBodyContent(node.id);
+        const { text: helpContent } = getBodyContent(description ? "𝒊" : "");
 
         const iconHref = getComponentIconSrc(node, processDefinitionData);
+
+        //This is used by jointjs to handle callbacks/changes
+        //TODO: figure out what should be here?
+        const definitionToCompare = {
+            node: cloneDeepWith(node, (val, key: string) => {
+                switch (key) {
+                    case "additionalFields":
+                    case "branchParameters":
+                    case "parameters":
+                        return null;
+                }
+            }),
+            description,
+        };
 
         const attributes: shapes.devs.ModelAttributes = {
             id: node.id,
@@ -130,9 +145,6 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                     fill: blendLighten(theme.palette.background.paper, 0.04),
                     opacity: node.isDisabled ? 0.5 : 1,
                 },
-                title: {
-                    text: description,
-                },
                 iconBackground: {
                     fill: theme.palette.custom.getNodeStyles(node).fill,
                     opacity: node.isDisabled ? 0.5 : 1,
@@ -140,6 +152,10 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
                 icon: {
                     xlinkHref: iconHref,
                     opacity: node.isDisabled ? 0.5 : 1,
+                },
+                help: {
+                    fontSize: theme.typography.h4.fontSize,
+                    text: helpContent,
                 },
                 content: {
                     fontSize: theme.typography.body1.fontSize,
@@ -155,13 +171,7 @@ export function makeElement(processDefinitionData: ProcessDefinitionData, theme:
             },
             rankDir: "R",
             nodeData: node,
-            //This is used by jointjs to handle callbacks/changes
-            //TODO: figure out what should be here?
-            definitionToCompare: {
-                node: cloneDeepWith(node, (val, key: string) =>
-                    ["additionalFields", "branchParameters", "parameters"].includes(key) ? null : undefined,
-                ),
-            },
+            definitionToCompare,
         };
 
         const ThemedEspNodeShape = EspNodeShape(theme, node);

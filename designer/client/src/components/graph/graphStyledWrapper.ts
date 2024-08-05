@@ -142,6 +142,12 @@ export const GraphStyledWrapper = styled("div")(({ theme }) =>
                         strokeDasharray: "3 0 3",
                     },
                 },
+                [`&.${dragHovered}`]: {
+                    ".connection": {
+                        strokeWidth: "3",
+                        strokeDasharray: "3 0 3",
+                    },
+                },
                 ".link-tool": {
                     // TODO: fix this without css
                     '&[visibility="hidden"]': {

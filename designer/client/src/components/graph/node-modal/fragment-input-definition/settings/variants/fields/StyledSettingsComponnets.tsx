@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, styled, FormLabel, css, alpha } from "@mui/material";
+import { alpha, css, FormLabel, styled, Switch } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { StyledNodeTip } from "../../../../FieldLabel";
 

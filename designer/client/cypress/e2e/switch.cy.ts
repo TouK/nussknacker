@@ -46,7 +46,7 @@ describe("Process", () => {
             cy.wait("@processValidation");
             cy.get("[data-testid=graphPage]").matchImage({
                 screenshotConfig: {
-                    blackout: ["> div > :not(#nk-graph-main)"],
+                    blackout: ["> div > :not(#nk-graph-main) > div"],
                 },
             });
         });
