@@ -30,6 +30,7 @@ interface State {
 }
 
 const VersionsForm = () => {
+    console.log("verification");
     const remotePrefix = "remote-";
     const initState: State = {
         otherVersion: null,
