@@ -45,6 +45,12 @@ trait CanBeSubclassDeterminer {
       givenType: SingleTypingResult,
       superclassCandidate: SingleTypingResult
   ): ValidatedNel[String, Unit] = {
+    val objTypeRestriction = {
+      superclassCandidate match {
+        case _: TypedObjectTypingResult if !checkObjTypeForRecord => ().validNel
+        case _ => classCanBeSubclassOf(givenType, superclassCandidate.objType)
+      }
+    }
     val typedObjectRestrictions = (_: Unit) =>
       superclassCandidate match {
         case superclass: TypedObjectTypingResult =>
@@ -114,9 +120,11 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
-    classCanBeSubclassOf(givenType, superclassCandidate.objType) andThen
+    objTypeRestriction andThen
       (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
+
+  protected def checkObjTypeForRecord: Boolean = true
 
   protected def classCanBeSubclassOf(
       givenType: SingleTypingResult,

@@ -2,15 +2,17 @@ package pl.touk.nussknacker.engine.flink.table.source
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
+import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlTestData.SimpleTypesTestCase
 
 class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
 
   private val tableSource = new TableSource(
-    tableDefinition = SimpleTypesTestCase.tableDefinition,
-    sqlStatements = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement),
-    enableFlinkBatchExecutionMode = true
+    tableDefinition = SimpleTable.tableDefinition,
+    sqlStatements = SqlStatementReader.readSql(SimpleTable.sqlStatement),
+    enableFlinkBatchExecutionMode = true,
+    testDataGenerationMode = TestDataGenerationMode.Random
   )
 
   /*
@@ -34,9 +36,9 @@ class TableSourceDataGenerationTest extends AnyFunSuite with Matchers {
     val testData = tableSource.generateTestData(1).testRecords
     val result   = tableSource.testRecordParser.parse(testData).head
 
-    result.get("someString") shouldBe a[String]
-    result.get("someVarChar") shouldBe a[String]
-    result.get("someInt") shouldBe a[Number]
+    result.getField("someString") shouldBe a[String]
+    result.getField("someVarChar") shouldBe a[String]
+    result.getField("someInt") shouldBe a[Number]
   }
 
 }

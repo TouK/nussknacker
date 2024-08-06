@@ -52,7 +52,7 @@ object ExplicitUidInOperatorsSupport {
     if (explicitUidInStatefulOperators) {
       stream match {
         case operator: SingleOutputStreamOperator[T] => operator.uid(uidValue)
-        case _ => throw new UnsupportedOperationException("Only supported for operators.")
+        case _ => throw new UnsupportedOperationException("Only supported for single output operator.")
       }
     } else
       stream

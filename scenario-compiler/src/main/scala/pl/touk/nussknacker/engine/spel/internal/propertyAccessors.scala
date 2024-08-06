@@ -210,7 +210,7 @@ object propertyAccessors {
     override def getSpecificTargetClasses: Array[Class[_]] = Array(classOf[DictInstance])
   }
 
-  // mainly for avro's GenericRecord purpose
+  // mainly for Avro's GenericRecord and Table API's Row purpose
   object MapLikePropertyAccessor extends PropertyAccessor with Caching with ReadOnly {
 
     override protected def invokeMethod(
@@ -223,7 +223,10 @@ object propertyAccessors {
     }
 
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.getMethods.find(m => m.getName == "get" && (m.getParameterTypes sameElements Array(classOf[String])))
+      target.getMethods.find(m =>
+        (m.getName == "get" || m.getName == "getField") &&
+          (m.getParameterTypes sameElements Array(classOf[String]))
+      )
     }
 
     override def getSpecificTargetClasses: Array[Class[_]] = null
