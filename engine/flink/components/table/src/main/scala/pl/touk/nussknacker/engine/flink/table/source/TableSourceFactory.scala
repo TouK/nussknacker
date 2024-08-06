@@ -47,7 +47,7 @@ class TableSourceFactory(
     case TransformationStep((`tableNameParamName`, DefinedEagerParameter(tableName: String, _)) :: Nil, _) =>
       val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
       val initializer = new BasicContextInitializer(
-        selectedTable.schema.toSinkRowDataType.getLogicalType.toTypingResult
+        selectedTable.schema.toSourceRowDataType.getLogicalType.toTypingResult
       )
       FinalResults.forValidation(context, Nil, Some(selectedTable))(initializer.validationContext)
   }

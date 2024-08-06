@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.process.{
   TestWithParametersSupport
 }
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{
   FlinkCustomNodeContext,
   FlinkSourceTestSupport,
@@ -77,7 +76,8 @@ class TableSource(
     tableEnv.toDataStream(finalQuery)
   }
 
-  override val contextInitializer: ContextInitializer[Row] = new BasicContextInitializer[Row](Typed[Row])
+  override val contextInitializer: ContextInitializer[Row] =
+    new BasicContextInitializer[Row](tableDefinition.schema.toSourceRowDataType.getLogicalType.toTypingResult)
 
   override def testParametersDefinition: List[Parameter] =
     fieldsWithoutComputedColumns
