@@ -664,6 +664,17 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
     testUtils            % Test
   )
 
+lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
+  .settings(commonSettings)
+  .settings(
+    name := "nussknacker-flink-metrics-deferred-reporter",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-streaming-java" % flinkV % Provided
+      )
+    },
+  )
+
 lazy val flinkDevModel = (project in flink("management/dev-model"))
   .settings(commonSettings)
   .settings(assemblyNoScala("devModel.jar"): _*)
