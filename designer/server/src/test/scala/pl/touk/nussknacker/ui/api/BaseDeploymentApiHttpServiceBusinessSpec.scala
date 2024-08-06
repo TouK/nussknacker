@@ -60,10 +60,11 @@ trait BaseDeploymentApiHttpServiceBusinessSpec extends WithFlinkContainersDeploy
     .emptySink(
       id = "sink",
       typ = "table",
-      "Table" -> Expression.spel("'transactions_summary'"),
-      "Value" -> Expression.spel(
-        "{client_id: #keyValues[0], date: #keyValues[1], amount: #agg}"
-      )
+      "Table"      -> Expression.spel("'transactions_summary'"),
+      "Raw editor" -> Expression.spel("false"),
+      "client_id"  -> Expression.spel("#keyValues[0]"),
+      "date"       -> Expression.spel("#keyValues[1]"),
+      "amount"     -> Expression.spel("#agg"),
     )
 
   protected val fragment: CanonicalProcess = ScenarioBuilder

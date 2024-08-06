@@ -184,8 +184,9 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .emptySink(
         "end",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest2'".spel,
-        TableSinkFactory.valueParameterName.value      -> "#input".spel
+        "Table"      -> s"'$sqlOutputTableNameTest2'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "#input".spel
       )
 
     run(process) {
@@ -215,8 +216,9 @@ class TableKafkaPingPongTest extends FlinkWithKafkaSuite {
       .emptySink(
         "end",
         tableComponentName,
-        TableComponentFactory.tableNameParamName.value -> s"'$sqlOutputTableNameTest3'".spel,
-        TableSinkFactory.valueParameterName.value      -> "{someInt: 2, someString: 'BBB'}".spel
+        "Table"      -> s"'$sqlOutputTableNameTest3'".spel,
+        "Raw editor" -> "true".spel,
+        "Value"      -> "{someInt: 2, someString: 'BBB'}".spel
       )
 
     run(process) {

@@ -5,18 +5,19 @@ import org.apache.flink.types.Row
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table._
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlTestData.{SimpleTypesTestCase, invalidSqlStatements}
+import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractorTest.invalidSqlStatements
 
 class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
-    val statements        = SqlStatementReader.readSql(SimpleTypesTestCase.sqlStatement)
+    val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
     val dataSourceConfigs = TableExtractor.extractTablesFromFlinkRuntime(statements)
 
     val expectedResult = TableExtractorResult(
-      tableDefinitions = List(SimpleTypesTestCase.tableDefinition),
+      tableDefinitions = List(SimpleTable.tableDefinition),
       sqlStatementExecutionErrors = List.empty
     )
 
@@ -67,9 +68,9 @@ class TableExtractorTest extends AnyFunSuite with Matchers with TableDrivenPrope
 
 }
 
-object SqlTestData {
+object TableExtractorTest {
 
-  val invalidSqlStatements: List[String] = List(
+  private val invalidSqlStatements: List[String] = List(
     """|CREATE TABLE testTable
        |(
        |    someString  STRING
@@ -77,64 +78,28 @@ object SqlTestData {
        |      'connector' = 'datagen
        |);""".stripMargin, // no closing quote
     """|CREATE TABLE testTable
-        |(
-        |    someString  STRING
-        |)
-        |;""".stripMargin, // no WITH clause
+       |(
+       |    someString  STRING
+       |)
+       |;""".stripMargin, // no WITH clause
     """|CREATE TABLE testTable
-        |(
-        |    someString  STRING
-        |) WITH (
-        |      'connector' = ''
-        |);""".stripMargin, // empty string connector - does not reach the dedicated error because fails earlier
+       |(
+       |    someString  STRING
+       |) WITH (
+       |      'connector' = ''
+       |);""".stripMargin, // empty string connector - does not reach the dedicated error because fails earlier
     """|CREATE TABLE test-table
-         |(
-         |    someString  STRING
-         |) WITH (
-         |      'connector' = 'datagen'
-         |);""".stripMargin, // invalid table name
+       |(
+       |    someString  STRING
+       |) WITH (
+       |      'connector' = 'datagen'
+       |);""".stripMargin, // invalid table name
     """|CREATE TABLE somedb.testTable
-         |(
-         |    someString  STRING
-         |) WITH (
-         |      'connector' = 'datagen'
-         |);""".stripMargin, // trying to create a table under non-existing database
+       |(
+       |    someString  STRING
+       |) WITH (
+       |      'connector' = 'datagen'
+       |);""".stripMargin, // trying to create a table under non-existing database
   )
-
-  object SimpleTypesTestCase {
-
-    val tableName = "testTable"
-    val connector = "filesystem"
-
-    val sqlStatement: String =
-      s"""|CREATE TABLE testTable
-         |(
-         |    someString  STRING,
-         |    someVarChar VARCHAR(150),
-         |    someInt     INT
-         |) WITH (
-         |      'connector' = '$connector'
-         |);""".stripMargin
-
-    val schemaTypingResult: TypingResult = Typed.record(
-      Map(
-        "someString"  -> Typed[String],
-        "someVarChar" -> Typed[String],
-        "someInt"     -> Typed[Integer],
-      ),
-      Typed.typedClass[Row]
-    )
-
-    val tableDefinition: TableDefinition = TableDefinition(
-      tableName,
-      schemaTypingResult,
-      columns = List(
-        ColumnDefinition("someString", Typed[String], DataTypes.STRING()),
-        ColumnDefinition("someVarChar", Typed[String], DataTypes.VARCHAR(150)),
-        ColumnDefinition("someInt", Typed[Integer], DataTypes.INT()),
-      )
-    )
-
-  }
 
 }
