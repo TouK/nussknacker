@@ -44,10 +44,10 @@ class EncryptionSpec
     decryptedRSA shouldBe message
 
     val secretKeyAsString = Base64.getEncoder.encodeToString(secretKeyForTest.getEncoded)
-    val sth1              = encode(secretKeyAsString, RSA, publicKey)
-    val sth2              = decode(sth1, RSA, privateKey)
+    val encodedSecretKey  = encode(secretKeyAsString, RSA, publicKey)
+    val decodedSecretKey  = decode(encodedSecretKey, RSA, privateKey)
 
-    sth2 shouldBe secretKeyAsString
+    decodedSecretKey shouldBe secretKeyAsString
   }
 
   test("Creating symmetric keys creates new one every time") {
