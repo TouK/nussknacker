@@ -30,7 +30,8 @@ class FlinkKafkaSink(
   override def toFlinkFunction: SinkFunction[AnyRef] =
     PartitionByKeyFlinkKafkaProducer(kafkaConfig, topic.prepared, serializationSchema, clientId)
 
-  override def prepareTestValue(value: AnyRef): AnyRef =
-    new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8)
+  override def prepareTestValueFunction: AnyRef => String =
+    value =>
+      new String(serializationSchema.serialize(value, System.currentTimeMillis()).value(), StandardCharsets.UTF_8)
 
 }
