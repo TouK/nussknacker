@@ -10,28 +10,40 @@ import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTyp
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table._
 import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractorTest.invalidSqlStatements
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.jdk.CollectionConverters._
 
-class TablesExtractorTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
+class TablesExtractorTest
+    extends AnyFunSuite
+    with Matchers
+    with LoneElement
+    with ValidatedValuesDetailedMessage
+    with TableDrivenPropertyChecks {
 
   test("extracts configuration from valid sql statement") {
     val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
-    val dataSourceConfigs = TablesExtractor.extractTablesFromFlinkRuntime(statements)
-
-    dataSourceConfigs.sqlStatementExecutionErrors shouldBe empty
-    val tableDefinition = dataSourceConfigs.tableDefinitions.loneElement
-    val sourceRowType   = tableDefinition.sourceRowDataType.getLogicalType.toRowTypeUnsafe
-    sourceRowType.getFieldNames.asScala shouldBe List("someString", "someVarChar", "someInt", "someIntComputed")
+    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
+    val tableDefinition   = tablesDefinitions.loneElement
+    val sourceRowType     = tableDefinition.schema.toSourceRowDataType.getLogicalType.toRowTypeUnsafe
+    sourceRowType.getFieldNames.asScala shouldBe List(
+      "someString",
+      "someVarChar",
+      "someInt",
+      "someIntComputed",
+      "file.name"
+    )
     sourceRowType.getTypeAt(0) shouldEqual DataTypes.STRING().getLogicalType
     sourceRowType.getTypeAt(1) shouldEqual DataTypes.VARCHAR(150).getLogicalType
     sourceRowType.getTypeAt(2) shouldEqual DataTypes.INT().getLogicalType
     sourceRowType.getTypeAt(3) shouldEqual DataTypes.INT().getLogicalType
+    sourceRowType.getTypeAt(4) shouldEqual DataTypes.STRING().notNull().getLogicalType
 
-    tableDefinition.sinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala shouldBe List(
+    tableDefinition.schema.toSinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala shouldBe List(
       "someString",
       "someVarChar",
-      "someInt"
+      "someInt",
+      "file.name"
     )
   }
 
@@ -52,24 +64,20 @@ class TablesExtractorTest extends AnyFunSuite with Matchers with LoneElement wit
        |);""".stripMargin
 
     val statements        = SqlStatementReader.readSql(statementsStr)
-    val extractionResults = TablesExtractor.extractTablesFromFlinkRuntime(statements)
+    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
 
-    extractionResults.sqlStatementExecutionErrors shouldBe empty
-    extractionResults.tableDefinitions shouldBe List(
-      TableDefinition(
-        tableName,
-        ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
-      )
+    tablesDefinitions.loneElement shouldBe TableDefinition(
+      tableName,
+      ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
     )
   }
 
   test("returns errors for statements that cannot be executed") {
     invalidSqlStatements.foreach { invalidStatement =>
-      val parsedStatement   = SqlStatementReader.readSql(invalidStatement)
-      val extractionResults = TablesExtractor.extractTablesFromFlinkRuntime(parsedStatement)
+      val parsedStatement             = SqlStatementReader.readSql(invalidStatement)
+      val sqlStatementExecutionErrors = TablesExtractor.extractTablesFromFlinkRuntime(parsedStatement).invalidValue
 
-      extractionResults.sqlStatementExecutionErrors.size shouldBe 1
-      extractionResults.tableDefinitions shouldBe empty
+      sqlStatementExecutionErrors.size shouldBe 1
     }
   }
 

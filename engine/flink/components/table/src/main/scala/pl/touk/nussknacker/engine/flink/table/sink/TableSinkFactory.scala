@@ -16,11 +16,13 @@ import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
 import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTypeConverter
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
-import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedParameter,
@@ -53,14 +55,17 @@ object TableSinkFactory {
 
 final case class TransformationState(table: TableDefinition, valueParam: SchemaBasedParameter)
 
-class TableSinkFactory(definition: TableSqlDefinitions)
+class TableSinkFactory(sqlStatements: List[SqlStatement])
     extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     with BoundedStreamComponent {
 
+  @transient
+  private lazy val tableDefinitions = TablesExtractor.extractTablesFromFlinkRuntimeUnsafe(sqlStatements)
+
   override type State = TransformationState
 
-  private val tableNameParameterDeclaration = TableComponentFactory.buildTableNameParam(definition.tableDefinitions)
+  private val tableNameParameterDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -84,7 +89,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
 
     new TableSink(
       tableDefinition = finalState.table,
-      sqlStatements = definition.sqlStatements,
+      sqlStatements = sqlStatements,
       value = lazyValueParam
     )
   }
@@ -116,11 +121,11 @@ class TableSinkFactory(definition: TableSqlDefinitions)
           (`valueParameterName`, rawValueParamValue) :: Nil,
           _
         ) =>
-      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
+      val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
 
       val valueParameter = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType.toTypingResult)
+        TypingResultOutputValidator.validate(_, selectedTable.schema.toSinkRowDataType.getLogicalType.toTypingResult)
       )
       val valueParameterTypeErrors =
         valueParameter.validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
@@ -136,7 +141,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
           (`rawModeParameterName`, DefinedEagerParameter(false, _)) :: Nil,
           _
         ) => {
-      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
+      val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
 
       val tableValueParamValidation = buildNonRawValueParameter(selectedTable)
 
@@ -176,7 +181,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
       table: TableDefinition
   )(implicit nodeId: NodeId): ValidatedNel[CustomNodeError, SchemaBasedRecordParameter] = {
     val tableColumnValueParams =
-      table.sinkRowDataType.getLogicalType.toRowTypeUnsafe.getFields.asScala.toList.map(field => {
+      table.schema.toSinkRowDataType.getLogicalType.toRowTypeUnsafe.getFields.asScala.toList.map(field => {
         if (restrictedParamNamesForNonRawMode.contains(ParameterName(field.getName))) {
           invalid(
             NonEmptyList.one(

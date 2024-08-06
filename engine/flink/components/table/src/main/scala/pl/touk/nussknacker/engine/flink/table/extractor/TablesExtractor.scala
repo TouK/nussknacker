@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
@@ -13,11 +15,22 @@ object TablesExtractor extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
+  def extractTablesFromFlinkRuntimeUnsafe(sqlStatements: List[SqlStatement]): List[TableDefinition] =
+    extractTablesFromFlinkRuntime(
+      sqlStatements
+    ).valueOr { errors =>
+      throw new IllegalStateException(
+        errors.toList
+          .map(_.message)
+          .mkString("Errors occurred when parsing sql component configuration file: ", ", ", "")
+      )
+    }
+
   // TODO: Make this extractor more memory/cpu efficient and ensure closing of resources. For more details see
   // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
   def extractTablesFromFlinkRuntime(
       sqlStatements: List[SqlStatement]
-  ): TablesExtractionResult = {
+  ): ValidatedNel[SqlStatementNotExecutedError, List[TableDefinition]] = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
@@ -45,15 +58,13 @@ object TablesExtractor extends LazyLogging {
         )
     } yield TableDefinition(tableName, table.getResolvedSchema)
 
-    TablesExtractionResult(tableDefinitions, sqlErrors)
+    NonEmptyList
+      .fromList(sqlErrors)
+      .map(_.invalid[List[TableDefinition]])
+      .getOrElse(tableDefinitions.valid)
   }
 
 }
-
-final case class TablesExtractionResult(
-    tableDefinitions: List[TableDefinition],
-    sqlStatementExecutionErrors: List[SqlStatementNotExecutedError]
-)
 
 final case class SqlStatementNotExecutedError(
     statement: SqlStatement,

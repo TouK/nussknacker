@@ -12,7 +12,8 @@ object TableTestCases {
           |    someString  STRING,
           |    someVarChar VARCHAR(150),
           |    someInt     INT,
-          |    someIntComputed AS someInt * 2
+          |    someIntComputed AS someInt * 2,
+          |    `file.name` STRING NOT NULL METADATA
           |) WITH (
           |      'connector' = '$connector'
           |);""".stripMargin

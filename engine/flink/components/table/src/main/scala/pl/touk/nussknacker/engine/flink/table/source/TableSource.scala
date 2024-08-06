@@ -5,7 +5,10 @@ import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{Schema, TableEnvironment}
+import org.apache.flink.table.api.{DataTypes, Schema, TableEnvironment}
+import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
+import org.apache.flink.table.catalog.{Column, ResolvedSchema}
+import org.apache.flink.table.types.utils.DataTypeUtils
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -31,6 +34,8 @@ import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
 
+import scala.jdk.CollectionConverters._
+
 class TableSource(
     tableDefinition: TableDefinition,
     sqlStatements: List[SqlStatement],
@@ -40,16 +45,6 @@ class TableSource(
     with TestWithParametersSupport[Row]
     with FlinkSourceTestSupport[Row]
     with TestDataGenerator {
-
-  private val sourceType = tableDefinition.sourceRowDataType.getLogicalType.toRowTypeUnsafe.toTypingResult
-  private val sourceWithoutComputedColumnsType =
-    tableDefinition.sourceRowDataTypeWithoutComputedColumns.getLogicalType.toRowTypeUnsafe.toTypingResult
-
-  // FIXME: We should rewrite computed columns
-  private val sourceSchema =
-    Schema.newBuilder().fromRowDataType(tableDefinition.sourceRowDataType).build()
-  private val sourceWithoutComputedColumnsSchema =
-    Schema.newBuilder().fromRowDataType(tableDefinition.sourceRowDataTypeWithoutComputedColumns).build()
 
   override def sourceStream(
       env: StreamExecutionEnvironment,
@@ -74,7 +69,10 @@ class TableSource(
       }
       .getOrElse(selectQuery)
       // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
-      .select(sourceType.fields.keys.toList.sorted.map($): _*)
+      .select(
+        tableDefinition.schema.toSourceRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala.toList.sorted
+          .map($): _*
+      )
 
     tableEnv.toDataStream(finalQuery)
   }
@@ -82,7 +80,8 @@ class TableSource(
   override val contextInitializer: ContextInitializer[Row] = new BasicContextInitializer[Row](Typed[Row])
 
   override def testParametersDefinition: List[Parameter] =
-    sourceWithoutComputedColumnsType.fields.toList.map(c => Parameter(ParameterName(c._1), c._2))
+    fieldsWithoutComputedColumns
+      .map(field => Parameter(ParameterName(field.getName), field.getDataType.getLogicalType.toTypingResult))
 
   override def parametersToTestData(params: Map[ParameterName, AnyRef]): Row = {
     val row = Row.withNames()
@@ -94,25 +93,53 @@ class TableSource(
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Row]] = None
 
-  override def testRecordParser: TestRecordParser[Row] = (testRecords: List[TestRecord]) =>
-    FlinkMiniClusterTableOperations.parseTestRecords(testRecords, sourceSchema)
+  override def testRecordParser: TestRecordParser[Row] = {
+    val tableDataParserSchema = {
+      val columnsWithMetadataAsPersisted = tableDefinition.schema.getColumns.asScala.map {
+        case p: PhysicalColumn => p
+        case c: ComputedColumn => c
+        case m: MetadataColumn => Column.physical(m.getName, m.getDataType)
+        case other             => throw new IllegalArgumentException(s"Unknown column type: ${other.getClass}")
+      }.asJava
+      val schemaWithMetadataColumnsAsPersisted = new ResolvedSchema(
+        columnsWithMetadataAsPersisted,
+        tableDefinition.schema.getWatermarkSpecs,
+        tableDefinition.schema.getPrimaryKey.orElse(null)
+      )
+      Schema.newBuilder().fromResolvedSchema(schemaWithMetadataColumnsAsPersisted).build()
+    }
+    (testRecords: List[TestRecord]) =>
+      FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDataParserSchema)
+  }
 
   override def generateTestData(size: Int): TestData = {
+    val generateDataSchema = {
+      val dataType = DataTypes.ROW(fieldsWithoutComputedColumns: _*)
+      Schema.newBuilder().fromRowDataType(dataType).build()
+    }
     testDataGenerationMode match {
       case TestDataGenerationMode.Random =>
         FlinkMiniClusterTableOperations.generateRandomTestData(
           amount = size,
-          schema = sourceWithoutComputedColumnsSchema
+          schema = generateDataSchema
         )
       case TestDataGenerationMode.Live =>
         FlinkMiniClusterTableOperations.generateLiveTestData(
           limit = size,
-          schema = sourceWithoutComputedColumnsSchema,
+          schema = generateDataSchema,
           sqlStatements = sqlStatements,
           tableName = tableDefinition.tableName
         )
     }
   }
+
+  // This is copy-paste of toSourceRowDataType with filtering-out of computed columns.
+  // We dont' want to generate data for computed columns - they will be added during parsing of test data
+  private def fieldsWithoutComputedColumns =
+    tableDefinition.schema.getColumns.asScala
+      .filterNot(c => c.isInstanceOf[ComputedColumn])
+      .map(c => DataTypes.FIELD(c.getName, DataTypeUtils.removeTimeAttribute(c.getDataType)))
+      .toList
 
 }
 

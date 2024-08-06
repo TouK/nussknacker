@@ -26,6 +26,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       implicit val env: StreamTableEnvironment = MiniClusterEnvBuilder.buildStreamTableEnv
       val (inputTablePath, inputTableName)     = createTempFileTable(schema)
+      logger.info(s"Parser schem: $schema")
       val parsedRecords = Try {
         writeRecordsToFile(inputTablePath, records)
         val inputTable = env.from(s"`$inputTableName`")
