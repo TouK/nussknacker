@@ -7,8 +7,6 @@ import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.table.api.{DataTypes, Schema, TableEnvironment}
 import org.apache.flink.table.catalog.Column.{ComputedColumn, MetadataColumn, PhysicalColumn}
-import org.apache.flink.table.catalog.{Column, ResolvedSchema}
-import org.apache.flink.table.types.utils.DataTypeUtils
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.component.SqlFilteringExpression
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -26,12 +24,13 @@ import pl.touk.nussknacker.engine.flink.api.process.{
   StandardFlinkSource
 }
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.source.TableSource._
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
+import pl.touk.nussknacker.engine.flink.table.utils.SchemaExtensions._
 
 import scala.jdk.CollectionConverters._
 
@@ -68,16 +67,13 @@ class TableSource(
       }
       .getOrElse(selectQuery)
       // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
-      .select(
-        tableDefinition.schema.toSourceRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala.toList.sorted
-          .map($): _*
-      )
+      .select(tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala.toList.sorted.map($): _*)
 
     tableEnv.toDataStream(finalQuery)
   }
 
   override val contextInitializer: ContextInitializer[Row] =
-    new BasicContextInitializer[Row](tableDefinition.schema.toSourceRowDataType.getLogicalType.toTypingResult)
+    new BasicContextInitializer[Row](tableDefinition.sourceRowDataType.getLogicalType.toTypingResult)
 
   override def testParametersDefinition: List[Parameter] =
     fieldsWithoutComputedColumns
@@ -98,15 +94,13 @@ class TableSource(
       val columnsWithMetadataAsPersisted = tableDefinition.schema.getColumns.asScala.map {
         case p: PhysicalColumn => p
         case c: ComputedColumn => c
-        case m: MetadataColumn => Column.physical(m.getName, m.getDataType)
+        case m: MetadataColumn => m.toPhysical
         case other             => throw new IllegalArgumentException(s"Unknown column type: ${other.getClass}")
       }.asJava
-      val schemaWithMetadataColumnsAsPersisted = new ResolvedSchema(
-        columnsWithMetadataAsPersisted,
-        tableDefinition.schema.getWatermarkSpecs,
-        tableDefinition.schema.getPrimaryKey.orElse(null)
-      )
-      Schema.newBuilder().fromResolvedSchema(schemaWithMetadataColumnsAsPersisted).build()
+      Schema
+        .newBuilder()
+        .fromResolvedSchema(tableDefinition.schema.withColumns(columnsWithMetadataAsPersisted))
+        .build()
     }
     (testRecords: List[TestRecord]) =>
       FlinkMiniClusterTableOperations.parseTestRecords(testRecords, tableDataParserSchema)
@@ -133,13 +127,9 @@ class TableSource(
     }
   }
 
-  // This is copy-paste of toSourceRowDataType with filtering-out of computed columns.
-  // We dont' want to generate data for computed columns - they will be added during parsing of test data
-  private def fieldsWithoutComputedColumns =
-    tableDefinition.schema.getColumns.asScala
-      .filterNot(c => c.isInstanceOf[ComputedColumn])
-      .map(c => DataTypes.FIELD(c.getName, DataTypeUtils.removeTimeAttribute(c.getDataType)))
-      .toList
+  // We don't want to generate data for computed columns - they will be added during parsing of test data
+  private def fieldsWithoutComputedColumns: List[DataTypes.Field] =
+    tableDefinition.schema.toRowDataTypeFields(c => !c.isInstanceOf[ComputedColumn])
 
 }
 

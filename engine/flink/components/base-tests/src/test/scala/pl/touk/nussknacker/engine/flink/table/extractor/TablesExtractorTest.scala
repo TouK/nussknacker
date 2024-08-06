@@ -6,7 +6,7 @@ import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTypeConverter
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableTestCases.SimpleTable
 import pl.touk.nussknacker.engine.flink.table._
 import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractorTest.invalidSqlStatements
@@ -25,7 +25,7 @@ class TablesExtractorTest
     val statements        = SqlStatementReader.readSql(SimpleTable.sqlStatement)
     val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
     val tableDefinition   = tablesDefinitions.loneElement
-    val sourceRowType     = tableDefinition.schema.toSourceRowDataType.getLogicalType.toRowTypeUnsafe
+    val sourceRowType     = tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe
     sourceRowType.getFieldNames.asScala shouldBe List(
       "someString",
       "someVarChar",
@@ -39,7 +39,7 @@ class TablesExtractorTest
     sourceRowType.getTypeAt(3) shouldEqual DataTypes.INT().getLogicalType
     sourceRowType.getTypeAt(4) shouldEqual DataTypes.STRING().notNull().getLogicalType
 
-    tableDefinition.schema.toSinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala shouldBe List(
+    tableDefinition.sinkRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala shouldBe List(
       "someString",
       "someVarChar",
       "someInt",

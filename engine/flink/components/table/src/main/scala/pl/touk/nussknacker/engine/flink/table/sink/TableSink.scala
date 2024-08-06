@@ -7,7 +7,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
-import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTypeConverter
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
@@ -60,9 +60,7 @@ class TableSink(
 
     val inputValueTable = tableEnv
       .fromDataStream(streamOfRows)
-      .select(
-        tableDefinition.schema.toSinkRowDataType.getLogicalType.toRowTypeUnsafe.getFieldNames.asScala.toList.map($): _*
-      )
+      .select(tableDefinition.sinkRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala.toList.map($): _*)
 
     sqlStatements.foreach(tableEnv.executeSql)
 

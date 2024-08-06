@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDepen
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
-import pl.touk.nussknacker.engine.flink.table.LogicalTypesConversions.LogicalTypeConverter
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
@@ -125,7 +125,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
 
       val valueParameter = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.schema.toSinkRowDataType.getLogicalType.toTypingResult)
+        TypingResultOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType.toTypingResult)
       )
       val valueParameterTypeErrors =
         valueParameter.validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
@@ -181,7 +181,7 @@ class TableSinkFactory(sqlStatements: List[SqlStatement])
       table: TableDefinition
   )(implicit nodeId: NodeId): ValidatedNel[CustomNodeError, SchemaBasedRecordParameter] = {
     val tableColumnValueParams =
-      table.schema.toSinkRowDataType.getLogicalType.toRowTypeUnsafe.getFields.asScala.toList.map(field => {
+      table.sinkRowDataType.toLogicalRowTypeUnsafe.getFields.asScala.toList.map(field => {
         if (restrictedParamNamesForNonRawMode.contains(ParameterName(field.getName))) {
           invalid(
             NonEmptyList.one(

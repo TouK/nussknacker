@@ -1,12 +1,19 @@
-package pl.touk.nussknacker.engine.flink.table
+package pl.touk.nussknacker.engine.flink.table.utils
 
+import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical.{LogicalType, RowType}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import scala.jdk.CollectionConverters._
 
-object LogicalTypesConversions {
+object DataTypesConversions {
+
+  implicit class DataTypeConverter(dataType: DataType) {
+
+    def toLogicalRowTypeUnsafe: RowType = dataType.getLogicalType.toRowTypeUnsafe
+
+  }
 
   implicit class LogicalTypeConverter(logicalType: LogicalType) {
 
