@@ -1821,6 +1821,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     }
   )
   .dependsOn(
+    flinkExecutor        % Provided,
     flinkComponentsApi   % Provided,
     componentsApi        % Provided,
     commonUtils          % Provided,

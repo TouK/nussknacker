@@ -7,11 +7,14 @@ import org.apache.flink.table.api.ValidationException
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
 import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationTest.TestRecord
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -19,7 +22,7 @@ import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
-class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
+class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks with FlinkSpec with Matchers with Inside {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import pl.touk.nussknacker.engine.spel.SpelExtension._
@@ -100,6 +103,74 @@ class TableAggregationTest extends AnyFunSuite with FlinkSpec with Matchers with
 
     assertThrows[ValidationException] {
       runner.runWithoutData(scenario)
+    }
+  }
+
+  // TODO: add all cases
+  test("should not validate types that dont work on table aggregations") {
+    val invalidSumCases = Table(
+      ("aggregateByInput", "aggregator"),
+      (List(java.math.BigInteger.ONE, java.math.BigInteger.TEN), "'Sum'".spel),
+    )
+    forAll(invalidSumCases) {
+      case (input, aggregator) => {
+        val scenario = ScenarioBuilder
+          .streaming("test")
+          .source("start", TestScenarioRunner.testDataSource)
+          .customNode(
+            id = "aggregate",
+            outputVar = "agg",
+            customNodeRef = "aggregate",
+            "groupBy"     -> "'strKey'".spel,
+            "aggregateBy" -> "#input".spel,
+            "aggregator"  -> aggregator,
+          )
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
+
+        val result = runner.runWithData(
+          scenario,
+          input,
+          Boundedness.BOUNDED,
+          Some(RuntimeExecutionMode.BATCH)
+        )
+
+        result.invalidValue.head should matchPattern {
+          case CustomNodeError(_, _, Some(paramName)) if paramName == aggregateByParamName =>
+        }
+      }
+    }
+  }
+
+  // TODO: add all cases
+  test("should do aggregations correctly") {
+    val data = Table(
+      ("aggregateByInput", "aggregator", "result"),
+      (List(1, 2), "'Sum'".spel, 3),
+    )
+    forAll(data) {
+      case (input, aggregator, expectedResult) => {
+        val scenario = ScenarioBuilder
+          .streaming("test")
+          .source("start", TestScenarioRunner.testDataSource)
+          .customNode(
+            id = "aggregate",
+            outputVar = "agg",
+            customNodeRef = "aggregate",
+            "groupBy"     -> "'strKey'".spel,
+            "aggregateBy" -> "#input".spel,
+            "aggregator"  -> aggregator,
+          )
+          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
+
+        val result = runner.runWithData(
+          scenario,
+          input,
+          Boundedness.BOUNDED,
+          Some(RuntimeExecutionMode.BATCH)
+        )
+
+        result.validValue.successes shouldBe expectedResult :: Nil
+      }
     }
   }
 

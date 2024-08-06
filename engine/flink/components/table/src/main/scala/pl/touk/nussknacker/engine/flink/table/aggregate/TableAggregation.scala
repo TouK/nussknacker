@@ -12,7 +12,7 @@ import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
