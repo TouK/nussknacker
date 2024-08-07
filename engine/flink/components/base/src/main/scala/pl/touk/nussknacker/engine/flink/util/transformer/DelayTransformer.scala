@@ -9,6 +9,8 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
+import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyOnlyMapper
@@ -20,6 +22,9 @@ import javax.annotation.Nullable
 object DelayTransformer extends DelayTransformer
 
 class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport with Serializable {
+
+  override def allowedProcessingModes: AllowedProcessingModes =
+    AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
   @MethodToInvoke(returnType = classOf[Void])
   def invoke(
