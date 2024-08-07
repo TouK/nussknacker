@@ -362,7 +362,7 @@ describe("Process", () => {
         cy.viewport(1500, 800);
         cy.layoutScenario();
 
-        cy.contains("a", "More scenario details").click();
+        cy.contains("a", "More details").click();
         cy.get("[data-testid=window]").matchImage({
             maxDiffThreshold: 0.02,
         });
