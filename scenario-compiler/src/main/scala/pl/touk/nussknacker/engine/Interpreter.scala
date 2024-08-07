@@ -79,9 +79,8 @@ private class InterpreterInternal[F[_]: Monad](
         val parentContext = ctx.parentContext.getOrElse(ctx.copy(variables = Map.empty))
         val newParentContext = outputVar match {
           case Some(FragmentOutputVarDefinition(varName, fields)) =>
-            // TODO simplify
-            val withModifiedVariable = createOrUpdateVariable(ctx, varName, fields)
-            parentContext.withVariable(varName, withModifiedVariable(varName))
+            val parsedFieldsMap = evaluateFragmentOutput(ctx, fields)
+            parentContext.withVariable(varName, parsedFieldsMap)
           case None => parentContext
         }
         interpretNext(next, newParentContext)
@@ -219,6 +218,22 @@ private class InterpreterInternal[F[_]: Monad](
           newMap
         }
       )
+    }
+  }
+
+  // We need java HashMap here because spel evaluator will fail on scala Map
+  private def evaluateFragmentOutput(ctx: Context, fields: Seq[Field])(
+      implicit metaData: MetaData,
+      node: Node
+  ): java.util.HashMap[String, Any] = {
+    {
+      import scala.jdk.CollectionConverters._
+      val fieldsMap = fields
+        .map(field => (field.name, expressionEvaluator.evaluate[Any](field.expression, field.name, node.id, ctx).value))
+        .toMap
+        .asJava
+
+      new java.util.HashMap[String, Any](fieldsMap)
     }
   }
 
