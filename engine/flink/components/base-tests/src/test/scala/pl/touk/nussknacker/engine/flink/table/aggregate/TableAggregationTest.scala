@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
+import java.time.LocalDate
 import scala.reflect.ClassTag
 
 class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks with FlinkSpec with Matchers with Inside {
@@ -124,23 +125,64 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     }
   }
 
-  // TODO: add all cases
-  test("should do aggregations correctly") {
-    val intData = Table(
-      ("aggregateByInput", "aggregator", "result"),
-      (List(1, 2), "'Sum'".spel, 3),
-      (List(1, 2), "'First'".spel, 1),
-    )
-    val doubleData = Table(
-      ("aggregateByInput", "aggregator", "result"),
-      (List(1.1, 2.2), "'Sum'".spel, 3.3),
-      (List(1.1, 2.2), "'First'".spel, 1.1),
-    )
-    forAll(intData) { case (input, aggregator, expectedResult) =>
+  test("should do aggregations correctly on integers") {
+    forAll(
+      Table(
+        ("aggregateByInput", "aggregator", "result"),
+        (List(1, 2), "'Sum'".spel, 3),
+        (List(1, 2), "'Average'".spel, 1),
+        (List(1, 2), "'First'".spel, 1),
+        (List(1, 2), "'Last'".spel, 2),
+        (List(1, 2), "'Min'".spel, 1),
+        (List(1, 2), "'Max'".spel, 2),
+        (List(1, 4), "'Population standard deviation'".spel, 1),
+        (List(1, 4), "'Sample standard deviation'".spel, 2),
+        (List(1, 4), "'Population variance'".spel, 2),
+        (List(1, 4), "'Sample variance'".spel, 5),
+      )
+    ) { case (input, aggregator, expectedResult) =>
       val result = runBatchAggregationScenario(input, aggregator)
       result.validValue.successes shouldBe expectedResult :: Nil
     }
-    forAll(doubleData) { case (input, aggregator, expectedResult) =>
+  }
+
+  test("should do aggregations correctly on doubles") {
+    forAll(
+      Table(
+        ("aggregateByInput", "aggregator", "result"),
+        (List(1.1, 2.2), "'Sum'".spel, 3.3000000000000003), // Floating-point arithmetic related error
+        (List(1.1, 2.2), "'Average'".spel, 1.6500000000000001),
+        (List(1.1, 2.2), "'First'".spel, 1.1),
+        (List(1.1, 2.2), "'Last'".spel, 2.2),
+        (List(1.1, 2.2), "'Min'".spel, 1.1),
+        (List(1.1, 2.2), "'Max'".spel, 2.2),
+        (List(1.1, 2.2), "'Population standard deviation'".spel, 0.5499999999999998),
+        (List(1.1, 2.2), "'Sample standard deviation'".spel, 0.777817459305202),
+        (List(1.1, 2.2), "'Population variance'".spel, 0.30249999999999977),
+        (List(1.1, 2.2), "'Sample variance'".spel, 0.6049999999999995),
+      )
+    ) { case (input, aggregator, expectedResult) =>
+      val result = runBatchAggregationScenario(input, aggregator)
+      result.validValue.successes shouldBe expectedResult :: Nil
+    }
+  }
+
+  test("should do aggregations correctly on local date") {
+    forAll(
+      Table(
+        ("aggregateByInput", "aggregator", "result"),
+        (
+          List(LocalDate.parse("2000-01-01"), LocalDate.parse("2000-01-02")),
+          "'Min'".spel,
+          LocalDate.parse("2000-01-01")
+        ),
+        (
+          List(LocalDate.parse("2000-01-01"), LocalDate.parse("2000-01-02")),
+          "'Max'".spel,
+          LocalDate.parse("2000-01-02")
+        )
+      )
+    ) { case (input, aggregator, expectedResult) =>
       val result = runBatchAggregationScenario(input, aggregator)
       result.validValue.successes shouldBe expectedResult :: Nil
     }

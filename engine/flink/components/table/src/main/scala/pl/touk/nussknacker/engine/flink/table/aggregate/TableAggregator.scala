@@ -5,14 +5,16 @@ import org.apache.flink.table.catalog.DataTypeFactory
 import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions, FunctionDefinition}
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.inference.CallContext
+import org.apache.flink.table.types.logical.{IntType, MultisetType}
 import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.{
-  NuSingleParameterFunctionCallContext,
+  NuAggregationFunctionCallContext,
   buildError,
   dataTypeFactory
 }
@@ -27,14 +29,23 @@ import scala.jdk.OptionConverters._
 
 // TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
 //  inconsistency in naming and may be confusing for users
-// TODO: add remaining aggregators
+// TODO: add remaining aggregations: COUNT, LISTAGG, LAG, LEAD, JSON aggs
 object TableAggregator extends Enum[TableAggregator] {
   val values = findValues
 
-  case object Sum extends TableAggregator {
-    override val displayName: String = "Sum"
-//    TODO: without lazy it doesnt work because of order of initialization? why
-    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.SUM
+  case object Average extends TableAggregator {
+    override val displayName: String                                = "Average"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.AVG
+  }
+
+  case object Max extends TableAggregator {
+    override val displayName: String                                = "Max"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.MAX
+  }
+
+  case object Min extends TableAggregator {
+    override val displayName: String                                = "Min"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.MIN
   }
 
   case object First extends TableAggregator {
@@ -42,34 +53,64 @@ object TableAggregator extends Enum[TableAggregator] {
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.FIRST_VALUE
   }
 
+  case object Last extends TableAggregator {
+    override val displayName: String                                = "Last"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.LAST_VALUE
+  }
+
+  case object Sum extends TableAggregator {
+    override val displayName: String                                = "Sum"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.SUM
+  }
+
+  case object PopulationStandardDeviation extends TableAggregator {
+    override val displayName: String                                = "Population standard deviation"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.STDDEV_POP
+  }
+
+  case object SampleStandardDeviation extends TableAggregator {
+    override val displayName: String                                = "Sample standard deviation"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.STDDEV_SAMP
+  }
+
+  case object PopulationVariance extends TableAggregator {
+    override val displayName: String                                = "Population variance"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.VAR_POP
+  }
+
+  case object SampleVariance extends TableAggregator {
+    override val displayName: String                                = "Sample variance"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.VAR_SAMP
+  }
+
   private val dataTypeFactory   = DataTypeFactoryPreparer.prepare()
   private val typeInfoDetection = TypingResultAwareTypeInformationDetection.apply(getClass.getClassLoader)
 
-  private class NuSingleParameterFunctionCallContext(
+  private class NuAggregationFunctionCallContext(
       val dataTypeFactory: DataTypeFactory,
       val functionDefinition: FunctionDefinition,
-      val argument: DataType
+      val arguments: List[DataType]
   ) extends CallContext {
     override def getDataTypeFactory: DataTypeFactory                         = dataTypeFactory
     override def getFunctionDefinition: FunctionDefinition                   = functionDefinition
     override def isArgumentLiteral(pos: Int): Boolean                        = false
     override def isArgumentNull(pos: Int): Boolean                           = false
     override def getArgumentValue[T](pos: Int, clazz: Class[T]): Optional[T] = None.toJava
-    override def getName: String                                             = "???"
-    override def getArgumentDataTypes: util.List[DataType]                   = List(argument).asJava
-    override def getOutputDataType: Optional[DataType]                       = Some(argument).toJava
+    override def getName: String                                             = "NuAggregationFunction"
+    override def getArgumentDataTypes: util.List[DataType]                   = arguments.asJava
+    override def getOutputDataType: Optional[DataType]                       = None.toJava
     override def isGroupedAggregation: Boolean                               = true
   }
 
-  private object NuSingleParameterFunctionCallContext {
+  private object NuAggregationFunctionCallContext {
 
     def apply(
         parameterType: TypingResult,
         function: BuiltInFunctionDefinition
-    ): NuSingleParameterFunctionCallContext = {
+    ): NuAggregationFunctionCallContext = {
       val typeInfo = typeInfoDetection.forType(parameterType)
       val dataType = TypeInfoDataTypeConverter.toDataType(dataTypeFactory, typeInfo)
-      new NuSingleParameterFunctionCallContext(dataTypeFactory, function, dataType)
+      new NuAggregationFunctionCallContext(dataTypeFactory, function, List(dataType))
     }
 
   }
@@ -95,10 +136,11 @@ sealed trait TableAggregator extends EnumEntry {
   val flinkFunctionName: String = flinkFunctionDefinition.getName
 
   // TODO: separate functions for validating input type and infering output type?
+  // TODO: handle functions that take no args or more than 1 arg
   def inferOutputType(inputType: TypingResult)(
       implicit nodeId: NodeId
   ): Either[ProcessCompilationError, TypingResult] = {
-    def validateInputType(callContext: NuSingleParameterFunctionCallContext): Either[ProcessCompilationError, Unit] = {
+    def validateInputType(callContext: NuAggregationFunctionCallContext): Either[ProcessCompilationError, Unit] = {
       flinkFunctionDefinition
         .getTypeInference(dataTypeFactory)
         .getInputTypeStrategy
@@ -110,7 +152,7 @@ sealed trait TableAggregator extends EnumEntry {
       }
     }
     def inferOutputType(
-        callContext: NuSingleParameterFunctionCallContext
+        callContext: NuAggregationFunctionCallContext
     ): Either[ProcessCompilationError, TypingResult] = {
       flinkFunctionDefinition
         .getTypeInference(dataTypeFactory)
@@ -120,7 +162,7 @@ sealed trait TableAggregator extends EnumEntry {
         .map(value => Right(value.getLogicalType.toTypingResult))
         .getOrElse(Left(buildError(inputType)))
     }
-    val callContext = NuSingleParameterFunctionCallContext(inputType, flinkFunctionDefinition)
+    val callContext = NuAggregationFunctionCallContext(inputType, flinkFunctionDefinition)
     validateInputType(callContext).flatMap(_ => inferOutputType(callContext))
   }
 
