@@ -49,9 +49,6 @@ object FlinkBaseUnboundedComponentProvider {
 
     val statefulComponents = List(
       ComponentDefinition("union-memo", UnionWithMemoTransformer).withRelativeDocs("DataSourcesAndSinks#unionmemo"),
-      ComponentDefinition("previousValue", PreviousValueTransformer).withRelativeDocs(
-        "DataSourcesAndSinks#previousvalue"
-      ),
       ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs(
         "AggregatesInTimeWindows#sliding-window"
       ),
@@ -66,7 +63,6 @@ object FlinkBaseUnboundedComponentProvider {
       ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs(
         "AggregatesInTimeWindows#full-outer-join"
       ),
-      ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay")
     )
 
     statefulComponents ++ statelessComponents
