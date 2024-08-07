@@ -5,13 +5,20 @@ import org.apache.flink.table.catalog.DataTypeFactory
 import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions, FunctionDefinition}
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.inference.CallContext
+import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
-import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.{NuAggregatorCallContext, buildError}
+import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.{
+  NuSingleParameterFunctionCallContext,
+  buildError,
+  dataTypeFactory
+}
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypeFactoryPreparer
 import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions.LogicalTypeConverter
+import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.util
 import java.util.Optional
@@ -35,14 +42,10 @@ object TableAggregator extends Enum[TableAggregator] {
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.FIRST_VALUE
   }
 
-  private def buildError(inputType: TypingResult)(implicit nodeId: NodeId) = {
-    CustomNodeError(
-      s"Invalid type: ${inputType.withoutValue.display}",
-      Some(aggregateByParamName)
-    )
-  }
+  private val dataTypeFactory   = DataTypeFactoryPreparer.prepare()
+  private val typeInfoDetection = TypingResultAwareTypeInformationDetection.apply(getClass.getClassLoader)
 
-  private class NuAggregatorCallContext(
+  private class NuSingleParameterFunctionCallContext(
       val dataTypeFactory: DataTypeFactory,
       val functionDefinition: FunctionDefinition,
       val argument: DataType
@@ -58,6 +61,27 @@ object TableAggregator extends Enum[TableAggregator] {
     override def isGroupedAggregation: Boolean                               = true
   }
 
+  private object NuSingleParameterFunctionCallContext {
+
+    def apply(
+        parameterType: TypingResult,
+        function: BuiltInFunctionDefinition
+    ): NuSingleParameterFunctionCallContext = {
+      val typeInfo = typeInfoDetection.forType(parameterType)
+      val dataType = TypeInfoDataTypeConverter.toDataType(dataTypeFactory, typeInfo)
+      new NuSingleParameterFunctionCallContext(dataTypeFactory, function, dataType)
+    }
+
+  }
+
+  // TODO: better error messages
+  private def buildError(inputType: TypingResult)(implicit nodeId: NodeId) = {
+    CustomNodeError(
+      s"Invalid type: ${inputType.withoutValue.display}",
+      Some(aggregateByParamName)
+    )
+  }
+
 }
 
 // TODO: extract call expression to TableAggregator
@@ -70,20 +94,34 @@ sealed trait TableAggregator extends EnumEntry {
 
   val flinkFunctionName: String = flinkFunctionDefinition.getName
 
-  def outputType(inputTypeTypingResult: TypingResult, inputTypeDataType: DataType, dataTypeFactory: DataTypeFactory)(
+  // TODO: separate functions for validating input type and infering output type?
+  def inferOutputType(inputType: TypingResult)(
       implicit nodeId: NodeId
   ): Either[ProcessCompilationError, TypingResult] = {
-    val typeInferenceStrategy = flinkFunctionDefinition.getTypeInference(dataTypeFactory).getInputTypeStrategy
-    val callContext =
-      new NuAggregatorCallContext(dataTypeFactory, flinkFunctionDefinition, inputTypeDataType)
-    typeInferenceStrategy.inferInputTypes(callContext, false).toScala match {
-      case Some(value) =>
-        value.asScala.headOption match {
-          case Some(value) => Right(value.getLogicalType.toTypingResult)
-          case None        => Left(buildError(inputTypeTypingResult))
-        }
-      case None => Left(buildError(inputTypeTypingResult))
+    def validateInputType(callContext: NuSingleParameterFunctionCallContext): Either[ProcessCompilationError, Unit] = {
+      flinkFunctionDefinition
+        .getTypeInference(dataTypeFactory)
+        .getInputTypeStrategy
+        .inferInputTypes(callContext, false)
+        .toScala
+        .flatMap(_.asScala.headOption) match {
+        case Some(_) => Right(())
+        case None    => Left(buildError(inputType))
+      }
     }
+    def inferOutputType(
+        callContext: NuSingleParameterFunctionCallContext
+    ): Either[ProcessCompilationError, TypingResult] = {
+      flinkFunctionDefinition
+        .getTypeInference(dataTypeFactory)
+        .getOutputTypeStrategy
+        .inferType(callContext)
+        .toScala
+        .map(value => Right(value.getLogicalType.toTypingResult))
+        .getOrElse(Left(buildError(inputType)))
+    }
+    val callContext = NuSingleParameterFunctionCallContext(inputType, flinkFunctionDefinition)
+    validateInputType(callContext).flatMap(_ => inferOutputType(callContext))
   }
 
 }

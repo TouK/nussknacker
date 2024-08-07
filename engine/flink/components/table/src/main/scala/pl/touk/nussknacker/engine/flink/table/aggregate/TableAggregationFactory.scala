@@ -42,8 +42,6 @@ object TableAggregationFactory {
       )
   }
 
-  private val dataTypeFactory = DataTypeFactoryPreparer.prepare()
-
 }
 
 class TableAggregationFactory
@@ -74,16 +72,12 @@ class TableAggregationFactory
         .find(_.displayName == aggregatorName)
         .getOrElse(throw new IllegalStateException("Aggregator not found. Should be invalid at parameter level."))
 
-      val aggregatorOutputTypeMaybe = {
-        val typeInfo = TypingResultAwareTypeInformationDetection
-          .apply(getClass.getClassLoader)
-          .forType(aggregateByParam.returnType)
-        val dataType = TypeInfoDataTypeConverter.toDataType(dataTypeFactory, typeInfo)
-        selectedAggregator.outputType(aggregateByParam.returnType, dataType, dataTypeFactory)
-      }
-
-      val aggregatorTypeErrors = aggregatorOutputTypeMaybe.swap.toOption.toList
-      val aggregatorOutputType = aggregatorOutputTypeMaybe.getOrElse(Unknown)
+      val (aggregatorTypeErrors, aggregatorOutputType) = selectedAggregator
+        .inferOutputType(aggregateByParam.returnType)
+        .fold(
+          errors => (errors :: Nil, Unknown),
+          outputType => (Nil, outputType)
+        )
 
       FinalResults.forValidation(context, errors = aggregatorTypeErrors)(ctx =>
         ctx.clearVariables

@@ -22,6 +22,8 @@ import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
+import scala.reflect.ClassTag
+
 class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks with FlinkSpec with Matchers with Inside {
 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
@@ -114,26 +116,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     )
     forAll(invalidSumCases) {
       case (input, aggregator) => {
-        val scenario = ScenarioBuilder
-          .streaming("test")
-          .source("start", TestScenarioRunner.testDataSource)
-          .customNode(
-            id = "aggregate",
-            outputVar = "agg",
-            customNodeRef = "aggregate",
-            "groupBy"     -> "'strKey'".spel,
-            "aggregateBy" -> "#input".spel,
-            "aggregator"  -> aggregator,
-          )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
-
-        val result = runner.runWithData(
-          scenario,
-          input,
-          Boundedness.BOUNDED,
-          Some(RuntimeExecutionMode.BATCH)
-        )
-
+        val result = runBatchAggregationScenario(input, aggregator)
         result.invalidValue.head should matchPattern {
           case CustomNodeError(_, _, Some(paramName)) if paramName == aggregateByParamName =>
         }
@@ -143,34 +126,23 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
 
   // TODO: add all cases
   test("should do aggregations correctly") {
-    val data = Table(
+    val intData = Table(
       ("aggregateByInput", "aggregator", "result"),
       (List(1, 2), "'Sum'".spel, 3),
+      (List(1, 2), "'First'".spel, 1),
     )
-    forAll(data) {
-      case (input, aggregator, expectedResult) => {
-        val scenario = ScenarioBuilder
-          .streaming("test")
-          .source("start", TestScenarioRunner.testDataSource)
-          .customNode(
-            id = "aggregate",
-            outputVar = "agg",
-            customNodeRef = "aggregate",
-            "groupBy"     -> "'strKey'".spel,
-            "aggregateBy" -> "#input".spel,
-            "aggregator"  -> aggregator,
-          )
-          .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
-
-        val result = runner.runWithData(
-          scenario,
-          input,
-          Boundedness.BOUNDED,
-          Some(RuntimeExecutionMode.BATCH)
-        )
-
-        result.validValue.successes shouldBe expectedResult :: Nil
-      }
+    val doubleData = Table(
+      ("aggregateByInput", "aggregator", "result"),
+      (List(1.1, 2.2), "'Sum'".spel, 3.3),
+      (List(1.1, 2.2), "'First'".spel, 1.1),
+    )
+    forAll(intData) { case (input, aggregator, expectedResult) =>
+      val result = runBatchAggregationScenario(input, aggregator)
+      result.validValue.successes shouldBe expectedResult :: Nil
+    }
+    forAll(doubleData) { case (input, aggregator, expectedResult) =>
+      val result = runBatchAggregationScenario(input, aggregator)
+      result.validValue.successes shouldBe expectedResult :: Nil
     }
   }
 
@@ -241,6 +213,31 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
         "aggregator"  -> "'First'".spel,
       )
       .emptySink(s"end$idSuffix", "dead-end")
+
+  def runBatchAggregationScenario[T: ClassTag, R: ClassTag](
+      input: List[T],
+      aggregator: Expression
+  ) = {
+    val scenario = ScenarioBuilder
+      .streaming("test")
+      .source("start", TestScenarioRunner.testDataSource)
+      .customNode(
+        id = "aggregate",
+        outputVar = "agg",
+        customNodeRef = "aggregate",
+        "groupBy"     -> "'strKey'".spel,
+        "aggregateBy" -> "#input".spel,
+        "aggregator"  -> aggregator,
+      )
+      .emptySink("end", TestScenarioRunner.testResultSink, "value" -> "#agg".spel)
+
+    runner.runWithData[T, R](
+      scenario,
+      input,
+      Boundedness.BOUNDED,
+      Some(RuntimeExecutionMode.BATCH)
+    )
+  }
 
 }
 
