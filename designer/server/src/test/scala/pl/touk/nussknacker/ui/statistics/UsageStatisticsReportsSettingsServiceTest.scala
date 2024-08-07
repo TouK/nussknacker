@@ -94,7 +94,7 @@ class UsageStatisticsReportsSettingsServiceTest
     RequestIdStat,
   ).map(_.name)
 
-  private val cfg = StatisticUrlConfig(encryptQueryParams = false)
+  private val cfg = StatisticUrlConfig()
 
   test("should determine query params with version and source") {
     val urls = new UsageStatisticsReportsSettingsService(
