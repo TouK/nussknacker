@@ -5,6 +5,8 @@
 * [#6527](https://github.com/TouK/nussknacker/pull/6527) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
     * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values 
 * [#6517](https://github.com/TouK/nussknacker/pull/6517) Allow using same variable names in a fragment and outside a fragment. Fix bleeding context from outside scenario into the fragment output node.
+    * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values
+* [#6559](https://github.com/TouK/nussknacker/pull/6559) [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
 
 1.16.2 (18 July 2024)
 -------------------------
