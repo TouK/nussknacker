@@ -791,8 +791,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val process = ScenarioBuilder
       .streaming("test")
       .source("source", "transaction-source")
-      .fragmentOneOut("sub", "fragment1", "outputDefinitionName", "fragmentOut", "param" -> "#input.accountId".spel)
-      .buildSimpleVariable("result-sink", resultVariable, "'result'".spel)
+      .fragmentOneOut("sub", "fragment1", "outputDefinitionName", "fragmentOut", "param" -> "#input.accountId")
+      .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
 
     val fragment = CanonicalProcess(
@@ -801,8 +801,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         FlatNode(
           FragmentInputDefinition("start", List(FragmentParameter(ParameterName("param"), FragmentClazzRef[String])))
         ),
-        FlatNode(Variable("myVar", "fragmentOut", "'fragmentOut'".spel)),
-        FlatNode(FragmentOutputDefinition("out1", "outputDefinitionName", List(Field("paramX", "'paramX'".spel))))
+        FlatNode(Variable("myVar", "fragmentOut", "'fragmentOut'")),
+        FlatNode(FragmentOutputDefinition("out1", "outputDefinitionName", List(Field("paramX", "'paramX'"))))
       ),
       List.empty
     )
