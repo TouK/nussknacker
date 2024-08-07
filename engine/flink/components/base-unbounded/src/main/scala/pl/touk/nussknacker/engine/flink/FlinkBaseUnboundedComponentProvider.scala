@@ -10,12 +10,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
   TumblingAggregateTransformer
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{
-  DelayTransformer,
-  PeriodicSourceFactory,
-  PreviousValueTransformer,
-  UnionWithMemoTransformer
-}
+import pl.touk.nussknacker.engine.flink.util.transformer.{PeriodicSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkBaseUnboundedComponentProvider extends ComponentProvider {
