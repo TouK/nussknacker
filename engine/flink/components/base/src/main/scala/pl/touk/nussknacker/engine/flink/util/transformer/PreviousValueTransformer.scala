@@ -7,8 +7,6 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.Component.AllowedProcessingModes
-import pl.touk.nussknacker.engine.api.component.ProcessingMode
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
@@ -17,9 +15,6 @@ import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   type Value = AnyRef
-
-  override def allowedProcessingModes: AllowedProcessingModes =
-    AllowedProcessingModes.SetOf(ProcessingMode.UnboundedStream, ProcessingMode.BoundedStream)
 
   @MethodToInvoke(returnType = classOf[Value])
   def execute(
