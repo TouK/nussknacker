@@ -45,6 +45,7 @@
     * The editor can be easily switched backed to 'raw' version similarly to the current Kafka Sink
   * [#6545](https://github.com/TouK/nussknacker/pull/6545) Non-physical columns are properly handled in Table Sink now
     * User need to provide only persisted column values now - values for computed columns and virtual columns are not required anymore
+* [#6559](https://github.com/TouK/nussknacker/pull/6559) [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
 
 1.16.2 (18 July 2024)
 -------------------------
