@@ -10,12 +10,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.sampleTransfo
   TumblingAggregateTransformer
 }
 import pl.touk.nussknacker.engine.flink.util.transformer.join.{FullOuterJoinTransformer, SingleSideJoinTransformer}
-import pl.touk.nussknacker.engine.flink.util.transformer.{
-  DelayTransformer,
-  PeriodicSourceFactory,
-  PreviousValueTransformer,
-  UnionWithMemoTransformer
-}
+import pl.touk.nussknacker.engine.flink.util.transformer.{PeriodicSourceFactory, UnionWithMemoTransformer}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkBaseUnboundedComponentProvider extends ComponentProvider {
@@ -49,9 +44,6 @@ object FlinkBaseUnboundedComponentProvider {
 
     val statefulComponents = List(
       ComponentDefinition("union-memo", UnionWithMemoTransformer).withRelativeDocs("DataSourcesAndSinks#unionmemo"),
-      ComponentDefinition("previousValue", PreviousValueTransformer).withRelativeDocs(
-        "DataSourcesAndSinks#previousvalue"
-      ),
       ComponentDefinition("aggregate-sliding", SlidingAggregateTransformerV2).withRelativeDocs(
         "AggregatesInTimeWindows#sliding-window"
       ),
@@ -66,7 +58,6 @@ object FlinkBaseUnboundedComponentProvider {
       ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs(
         "AggregatesInTimeWindows#full-outer-join"
       ),
-      ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay")
     )
 
     statefulComponents ++ statelessComponents

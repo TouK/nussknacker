@@ -47,7 +47,11 @@ object FlinkBaseComponentProvider {
         .withDesignerWideId("dead-end"),
       ComponentDefinition(name = "decision-table", component = DecisionTable)
         .withRelativeDocs("BasicNodes#decisiontable")
-        .withDesignerWideId("decision-table")
+        .withDesignerWideId("decision-table"),
+      ComponentDefinition("delay", DelayTransformer)
+        .withRelativeDocs("DataSourcesAndSinks#delay"),
+      ComponentDefinition("previousValue", PreviousValueTransformer)
+        .withRelativeDocs("DataSourcesAndSinks#previousvalue"),
     )
   }
 
