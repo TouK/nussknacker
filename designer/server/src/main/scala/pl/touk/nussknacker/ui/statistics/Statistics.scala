@@ -2,13 +2,10 @@ package pl.touk.nussknacker.ui.statistics
 
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.statistics.Encryption.{createSymmetricKey, nuPublicKey}
-import pl.touk.nussknacker.ui.statistics.Encryption.EncryptionTypes.{AES, RSA}
 import pl.touk.nussknacker.ui.util.IterableExtensions.Chunked
 
 import java.net.{URI, URL, URLEncoder}
 import java.nio.charset.StandardCharsets
-import java.util.Base64
 import scala.util.{Failure, Success, Try}
 
 sealed trait Statistics {
@@ -42,10 +39,9 @@ object Statistics extends LazyLogging {
       s"${URLEncoder.encode(entry._1, StandardCharsets.UTF_8)}=${URLEncoder.encode(entry._2, StandardCharsets.UTF_8)}"
 
     private def prepareUrlString(queryParams: Iterable[String], cfg: StatisticUrlConfig): Option[String] = {
-      val joinedQueryParams = if (queryParams.nonEmpty && cfg.encryptQueryParams) {
+      val joinedQueryParams = if (queryParams.nonEmpty && cfg.plainPublicEncryptionKey.isDefined) {
         val joinedQueryParams = joinQueryParamsToString(queryParams, cfg)
-        val encryptedQuery    = encryptQueryParams(joinedQueryParams)
-        Some(encryptedQuery)
+        cfg.plainPublicEncryptionKey.map(key => encryptQueryParams(key, joinedQueryParams))
       } else if (queryParams.nonEmpty) {
         Some(joinQueryParamsToString(queryParams, cfg))
       } else {
@@ -54,13 +50,9 @@ object Statistics extends LazyLogging {
       joinedQueryParams.map(jqp => prependWithAddress(jqp, cfg))
     }
 
-    private def encryptQueryParams(queryParams: String): String = {
-      val symmetricKey         = createSymmetricKey
-      val encryptedQueryParams = Encryption.encode(queryParams, AES, symmetricKey)
-      val encryptedSecretKey =
-        Encryption.encode(Base64.getEncoder.encodeToString(symmetricKey.getEncoded), RSA, nuPublicKey)
-
-      s"$encryptedParamsQueryParamKey=$encryptedQueryParams&$encryptionKeyQueryParamKey=$encryptedSecretKey"
+    private def encryptQueryParams(publicEncryptionKey: String, queryParams: String): String = {
+      val encryptionResult = Encryption.encrypt(publicEncryptionKey, queryParams)
+      s"$encryptedParamsQueryParamKey=${encryptionResult.encryptedValue}&$encryptionKeyQueryParamKey=${encryptionResult.encryptedSymmetricKey}"
     }
 
     private def joinQueryParamsToString(queryParams: Iterable[String], cfg: StatisticUrlConfig): String = {
