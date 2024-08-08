@@ -6,6 +6,7 @@ describe("Counts", () => {
     });
 
     beforeEach(() => {
+        cy.mockWindowDate();
         cy.visitNewProcess(seed, "counts");
     });
 
