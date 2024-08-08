@@ -14,6 +14,8 @@ jobs:
       - name: "Output variables"
         run: |
           df -ah
+          ls /opt/google
+          du -ah --max-depth 1 /opt/google
           ls /opt
           du -ah --max-depth 1 /opt
           ls /usr/lib
