@@ -64,7 +64,7 @@ class DefaultStreamExecutionEnvPreparer(
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
-    configureExecutionMode(env, jobConfig.executionMode)
+    configureExecutionMode(env, jobConfig.executionMode.getOrElse(ExecutionMode.default))
 
     (jobConfig.rocksDB, streamMetaData.spillStateToDisk) match {
       case (Some(config), Some(true)) if config.enable =>
@@ -80,9 +80,9 @@ class DefaultStreamExecutionEnvPreparer(
 
   private def configureExecutionMode(
       env: StreamExecutionEnvironment,
-      executionModeConfig: Option[ExecutionMode]
+      executionModeConfig: ExecutionMode
   ): Unit = {
-    executionModeConfig.foreach {
+    executionModeConfig match {
       case ExecutionMode.Streaming => env.setRuntimeMode(RuntimeExecutionMode.STREAMING)
       case ExecutionMode.Batch     => env.setRuntimeMode(RuntimeExecutionMode.BATCH)
       case ExecutionMode.Automatic => env.setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)

@@ -25,6 +25,7 @@ object FlinkJobConfig {
     val Streaming = Value("streaming")
     val Batch     = Value("batch")
     val Automatic = Value("automatic")
+    val default   = Streaming
   }
 
 }
