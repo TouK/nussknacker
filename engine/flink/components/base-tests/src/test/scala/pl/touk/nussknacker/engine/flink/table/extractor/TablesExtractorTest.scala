@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
+import org.apache.flink.api.connector.source.Boundedness
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog.{Column, ResolvedSchema}
 import org.scalatest.LoneElement
@@ -45,6 +46,37 @@ class TablesExtractorTest
       "someInt",
       "file.name"
     )
+    tableDefinition.boundedness shouldBe Boundedness.BOUNDED
+  }
+
+  test("determines boundedness correctly") {
+    val boundedTableName   = "boundedTable"
+    val unboundedTableName = "unboundedTable"
+    val statementsStr = s"""
+                           |CREATE TABLE $boundedTableName
+                           |(
+                           |    someString  STRING
+                           |) WITH (
+                           |      'connector' = 'datagen',
+                           |      'number-of-rows' = '1'
+                           |);
+                           |
+                           |CREATE TABLE $unboundedTableName
+                           |(
+                           |    someString  STRING
+                           |) WITH (
+                           |      'connector' = 'datagen'
+                           |);""".stripMargin
+
+    val statements        = SqlStatementReader.readSql(statementsStr)
+    val tablesDefinitions = TablesExtractor.extractTablesFromFlinkRuntime(statements).validValue
+
+    tablesDefinitions should matchPattern {
+      case List(
+            TableDefinition(`boundedTableName`, _, Boundedness.BOUNDED),
+            TableDefinition(`unboundedTableName`, _, Boundedness.CONTINUOUS_UNBOUNDED)
+          ) =>
+    }
   }
 
   test("extracts configuration from tables outside of builtin catalog and database") {
@@ -68,7 +100,8 @@ class TablesExtractorTest
 
     tablesDefinitions.loneElement shouldBe TableDefinition(
       tableName,
-      ResolvedSchema.of(Column.physical("someString", DataTypes.STRING()))
+      ResolvedSchema.of(Column.physical("someString", DataTypes.STRING())),
+      Boundedness.CONTINUOUS_UNBOUNDED
     )
   }
 

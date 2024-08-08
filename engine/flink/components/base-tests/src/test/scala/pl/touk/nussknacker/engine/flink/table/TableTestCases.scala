@@ -15,7 +15,9 @@ object TableTestCases {
           |    someIntComputed AS someInt * 2,
           |    `file.name` STRING NOT NULL METADATA
           |) WITH (
-          |      'connector' = '$connector'
+          |      'connector' = '$connector',
+          |      'path' = 'file:///tmp/whatever',
+          |      'format' = 'csv'
           |);""".stripMargin
 
   }
