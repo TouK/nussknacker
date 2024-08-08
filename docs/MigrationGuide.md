@@ -41,6 +41,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     If [#5457](https://github.com/TouK/nussknacker/pull/5457) migrations were applied, it should be a transparent change
     * Removed deprecated  `TypedObjectTypingResult.apply` methods - should be used `Typed.record` factory method
     * `Typed.record` factory method takes `Iterable` instead of `Map`
+  * [#6570](https://github.com/TouK/nussknacker/pull/6570) `TypingResult.canBeSubclassOf` generic parameter checking related changes. 
+    Generic parameters of `Typed[java.util.Map[X, Y]]`, `Typed[java.util.List[X]]`, `Typed[Array[X]]` were checked as they were either covariant or contravariant.
+    Now they are checked more strictly - depending on collection characteristic.
+    * `Key` parameters of `Typed[java.util.Map[Key, Value]]` is treated as invariant
+    * `Value` parameters of `Typed[java.util.Map[Key, Value]]` is treated as covariant
+    * `Element` parameters of `Typed[java.util.List[Element]]` is treated as covariant
+    * `Element` parameters of `Typed[Array[Element]]` is treated as covariant
 * [#6503](https://github.com/TouK/nussknacker/pull/6503) `FlinkTestScenarioRunner` cleanups
   * `runWithDataAndTimestampAssigner` method was removed. Instead, `timestampAssigner` was added as an optional parameter into `runWithData`
   * new `runWithDataWithType` was added allowing to test using other types than classes e.g. records
