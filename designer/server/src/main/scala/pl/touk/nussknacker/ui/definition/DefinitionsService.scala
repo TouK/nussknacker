@@ -130,9 +130,9 @@ object DefinitionsService {
     )
   }
 
-  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertyConfig = {
+  def createUIScenarioPropertyConfig(config: ScenarioPropertyConfig): UiScenarioPropertiesParameterConfig = {
     val editor = UiScenarioPropertyEditorDeterminer.determine(config)
-    UiScenarioPropertyConfig(config.defaultValue, editor, config.label, config.hintText)
+    UiScenarioPropertiesParameterConfig(config.defaultValue, editor, config.label, config.hintText)
   }
 
 }
