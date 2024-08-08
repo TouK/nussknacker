@@ -667,7 +667,9 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
 lazy val flinkMetricsDeferredReporter = (project in flink("metrics-deferred-reporter"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-flink-metrics-deferred-reporter",
+    name                                   := "nussknacker-flink-metrics-deferred-reporter",
+    crossPaths                             := false,
+    Compile / packageDoc / publishArtifact := false,
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV % Provided
@@ -2140,6 +2142,7 @@ lazy val modules = List[ProjectReference](
   flinkComponentsApi,
   flinkExtensionsApi,
   flinkScalaUtils,
+  flinkMetricsDeferredReporter,
   requestResponseComponentsUtils,
   requestResponseComponentsApi,
   componentsApi,
