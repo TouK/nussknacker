@@ -26,7 +26,6 @@ description: Flink specific model configuration
 | globalParameters.forceSyncInterpretationForSyncScenarioPart | Low        | boolean  | true                   | Forces synchronous interpretation for scenario parts that does not contain any services (enrichers, processors). Applies for scenarios with async enabled                   |
 | executionMode                                               | High       | string   | streaming              | Sets [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode). Allowed values: `streaming`, `batch`, `automatic`         |
 
-
 <!-- TODO 
 ### KAFKA
 -->
@@ -36,9 +35,9 @@ description: Flink specific model configuration
 Exception handling can be customized using provided `EspExceptionConsumer`. By default, there are two available:
 - `BrieflyLogging`
 - `VerboselyLogging`
-  More of them can be added with custom extensions. By default, basic error metrics are collected. If for some reason
-  it's not desirable, metrics collector can be turned off with `withRateMeter: false` setting.
-  When an exception is raised within a scenario, the handler uses `WithExceptionExtractor` to determine if it should be consumed
+More of them can be added with custom extensions. By default, basic error metrics are collected. If for some reason
+  it's not desirable, metrics collector can be turned off with `withRateMeter: false` setting. 
+When an exception is raised within a scenario, the handler uses `WithExceptionExtractor` to determine if it should be consumed
   (via `EspExceptionConsumer`) or rethrown. A custom extractor can be provided and indicated with optional `exceptionExtractor` setting.
   When no `exceptionExtractor` is set, handler uses `DefaultWithExceptionExtractor` (same as `exceptionExtractor: Default`).
 
