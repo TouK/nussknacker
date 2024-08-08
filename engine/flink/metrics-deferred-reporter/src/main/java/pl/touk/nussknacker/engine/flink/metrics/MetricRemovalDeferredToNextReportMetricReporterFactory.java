@@ -5,6 +5,14 @@ import org.apache.flink.metrics.reporter.MetricReporterFactory;
 
 import java.util.*;
 
+/*
+* Usage:
+* 1. Add nussknacker-flink-metrics-deferred-reporter.jar to dir with reporter to wrap (e.g. plugins/metrics-influx) in jobmanager and taskmanager
+* 2. Point to MetricRemovalDeferredToNextReportMetricReporterFactory and wrapped reporter in flink config e.g:
+*     metrics.reporter.influxdb_reporter.factory.class: pl.touk.nussknacker.engine.flink.metrics.MetricRemovalDeferredToNextReportMetricReporterFactory
+*     metrics.reporter.influxdb_reporter.delegate.factory.class: org.apache.flink.metrics.influxdb.InfluxdbReporterFactory
+*     metrics.reporter.influxdb_reporter.<other influx specific configs>: ...
+* */
 public class MetricRemovalDeferredToNextReportMetricReporterFactory implements MetricReporterFactory {
     private static final String DELEGATE_CLASS_PROPERTY_NAME = "delegate.factory.class";
 
