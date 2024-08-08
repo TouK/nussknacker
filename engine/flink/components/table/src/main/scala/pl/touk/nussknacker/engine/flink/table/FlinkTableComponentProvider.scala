@@ -43,7 +43,6 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
       tableComponentName,
       new TableSourceFactory(
         sqlStatements,
-        parsedConfig.enableFlinkBatchExecutionMode,
         testDataGenerationModeOrDefault
       )
     ) :: ComponentDefinition(
@@ -83,10 +82,8 @@ object FlinkTableComponentProvider {
 
 }
 
-// TODO: remove enableFlinkBatchExecutionMode after moving execution mode setting logic to executor
 final case class TableComponentProviderConfig(
     tableDefinitionFilePath: String,
-    enableFlinkBatchExecutionMode: Boolean,
     testDataGenerationMode: Option[TestDataGenerationMode]
 )
 

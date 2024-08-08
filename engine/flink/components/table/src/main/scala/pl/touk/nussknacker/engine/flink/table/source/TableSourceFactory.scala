@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory._
 
 class TableSourceFactory(
     sqlStatements: List[SqlStatement],
-    enableFlinkBatchExecutionMode: Boolean,
     testDataGenerationMode: TestDataGenerationMode
 ) extends SingleInputDynamicComponent[Source]
     with SourceFactory
@@ -60,7 +59,7 @@ class TableSourceFactory(
     val selectedTable = finalStateOpt.getOrElse(
       throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation")
     )
-    new TableSource(selectedTable, sqlStatements, enableFlinkBatchExecutionMode, testDataGenerationMode)
+    new TableSource(selectedTable, sqlStatements, testDataGenerationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List.empty
