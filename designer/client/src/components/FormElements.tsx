@@ -2,6 +2,7 @@ import { cx } from "@emotion/css";
 import React, { ButtonHTMLAttributes, DetailedHTMLProps, InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { styled } from "@mui/material";
 import { nodeInputCss } from "./NodeInput";
+import { nodeInput } from "./graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 export type InputWithFocusProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
@@ -10,7 +11,7 @@ export const NodeInput = styled("input")``;
 export type TextAreaWithFocusProps = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 
 export function TextArea({ className, ...props }: TextAreaWithFocusProps): JSX.Element {
-    return <textarea {...props} className={cx(className)} />;
+    return <textarea {...props} className={cx(className, nodeInput)} />;
 }
 
 export const TextAreaNode = styled(TextArea)(nodeInputCss);

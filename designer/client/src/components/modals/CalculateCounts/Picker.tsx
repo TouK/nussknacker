@@ -5,7 +5,7 @@ import { DTPicker } from "../../common/DTPicker";
 import moment from "moment/moment";
 import { cx } from "@emotion/css";
 import { styled } from "@mui/material";
-import { nodeInputWithError } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
+import { nodeInput, nodeInputWithError } from "../../graph/node-modal/NodeDetailsContent/NodeTableStyled";
 
 const dateFormat = "YYYY-MM-DD";
 const timeFormat = "HH:mm:ss";
@@ -24,7 +24,7 @@ export function Picker({ label, onChange, value }: PickerProps): JSX.Element {
     const datePickerStyle = useMemo(
         () => ({
             // TODO: styled
-            className: cx({ [nodeInputWithError]: !isValid }),
+            className: cx({ [nodeInputWithError]: !isValid, [nodeInput]: true }),
         }),
         [isValid],
     );
