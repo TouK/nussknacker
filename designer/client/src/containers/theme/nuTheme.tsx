@@ -124,9 +124,7 @@ export const nuTheme = (mode: PaletteMode, setMode: Dispatch<SetStateAction<Pale
                     fontWeight: "bold",
                 },
                 subtitle2: {
-                    color: palette.text.primary,
-                    fontSize: "15px",
-                    fontWeight: "500",
+                    fontWeight: "bold",
                 },
                 overline: {
                     fontSize: ".6875rem",
