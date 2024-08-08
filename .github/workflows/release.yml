@@ -2,29 +2,14 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      release_version:
+      test:
         description: "Released Nussknacker version"
-        required: true
+        required: false
         type: string
-      backport_release:
-        description: "Backport release - 'latest' tag won't be updated on docker"
-        required: true
-        default: true
-        type: boolean
-      release_candidate:
-        description: "Release candidate - 'latest' tag won't be updated on docker"
-        required: true
-        default: true
-        type: boolean
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      NUSSKNACKER_VERSION: ${{ inputs.release_version }}
-      NEXT_VERSION_RELEASE: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
-      SBT_RELEASE_NEXT_VERSION: ${{ format('{0} {1} with-defaults', 'release-version', inputs.release_version) }}
-      NU_INSTALLATION_EXAMPLE_ACCESS_TOKEN: ${{ secrets.NU_INSTALLATION_EXAMPLE_PAT }}
     steps:
       - name: "Output variables"
         run: |
@@ -37,137 +22,3 @@ jobs:
           du -ah --max-depth 1 "$AGENT_TOOLSDIRECTORY"
           ls /opt/hostedtoolcache
           du -ah --max-depth 1 /opt/hostedtoolcache
-          echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
-          echo Docker update latest is ${{ env.NEXT_VERSION_RELEASE }}
-          echo SBT release next version is ${{ env.SBT_RELEASE_NEXT_VERSION }}
-
-      - name: "Validate release branch name"
-        if: ${{ !startsWith(github.ref_name, 'release/') }}
-        run: |
-          echo Specified branch is not a release branch. Specified branch name: ${GITHUB_REF_NAME}. Expected branch name should start with 'release/'.
-          exit 1
-
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.11.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/checkout@v3
-
-      - uses: coursier/setup-action@v1
-        with:
-          jvm: temurin:1.11.0.17
-
-      - name: Get Node.js version
-        id: nvm
-        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-
-      - name: Cache ivy packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-
-      - name: "Config git"
-        run: |
-          git config --global user.name "GitHub Action Release bot"
-          git config --global user.email "support@nussknacker.io"
-
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
-
-      - name: List keys
-        run: gpg -K
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Setup buildx builder
-        uses: docker/setup-buildx-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
-          config-inline: |
-            [worker.oci]
-              max-parallelism = 1
-      - name: Try to free space
-        run: |
-          # Workaround to prevent "no space left on device" during buildx build - https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY/go"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Ruby"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY/Python"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY/PyPy"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY/CodeQL"
-      - name: "Build"
-        env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          # dockerUpBranchLatest is set to false because branch latest tags are used by cypress tests and
-          dockerUpLatest: ${{ env.NEXT_VERSION_RELEASE }}
-          # we don't update release-xxx-latest tag, because the image built during the release doesn't contain developer's extensions which are required by cypress tests
-          dockerUpBranchLatest: false
-        run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
-
-      - name: "Push to master"
-        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
-        run: git push origin HEAD:master -f
-
-      - name: Push installation example to GH nussknacker-installation-example repository
-        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
-        run: |
-          ./.github/workflows/scripts/publishNuInstallationExample.sh
-
-      - name: "Read nussknacker short description from file"
-        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
-        id: short_nu
-        run: echo "::set-output name=short::$(cat dockerhub/nussknacker/short.txt)"
-
-      - name: "Dockerhub publish readme nussknacker"
-        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: "touk/nussknacker"
-          short-description: ${{ steps.short_nu.outputs.short }}
-          readme-filepath: "dockerhub/nussknacker/README.md"
-
-      - name: "Read nussknacker-lite-runtime-app short description from file"
-        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
-        id: short_nu_lite
-        run: echo "::set-output name=short::$(cat dockerhub/nussknacker-lite-runtime-app/short.txt)"
-
-      - name: "Dockerhub publish readme nussknacker-lite-runtime-app"
-        if: ${{ env.NEXT_VERSION_RELEASE == 'true' }}
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: "touk/nussknacker-lite-runtime-app"
-          short-description: ${{ steps.short_nu_lite.outputs.short }}
-          readme-filepath: "dockerhub/nussknacker-lite-runtime-app/README.md"
-
-      - name: "Release"
-        uses: softprops/action-gh-release@v1
-        with:
-          files: nussknacker-dist/target/universal/nussknacker-*.tgz
-          draft: true
-          generate_release_notes: true
-
