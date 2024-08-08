@@ -37,7 +37,7 @@ object DataTypesConversions {
     def toTypingResult: TypedObjectTypingResult = {
       val fieldsTypes = rowType.getFields.asScala.map { field =>
         field.getName -> field.getType.toTypingResult
-      }.toMap
+      }
       Typed.record(fieldsTypes, Typed.typedClass[Row])
     }
 

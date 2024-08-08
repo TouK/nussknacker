@@ -29,9 +29,8 @@ class AvroSchemaTypeDefinitionExtractor(recordUnderlyingType: TypedClass) {
       case Schema.Type.RECORD => {
         val fields = schema.getFields.asScala
           .map(field => field.name() -> typeDefinition(field.schema()))
-          .toMap
 
-        TypedObjectTypingResult(fields, recordUnderlyingType)
+        Typed.record(fields, recordUnderlyingType)
       }
       case Schema.Type.ENUM =>
         Typed.typedClass[EnumSymbol]

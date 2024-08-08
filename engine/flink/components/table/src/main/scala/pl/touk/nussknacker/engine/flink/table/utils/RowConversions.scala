@@ -60,7 +60,8 @@ object RowConversions {
       // TODO: Instead of eagerly converting every map, we should check if target type is Row
       case javaMap: java.util.Map[String @unchecked, _] =>
         val row = Row.withNames()
-        // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
+        // We have to keep elements in the same order as specified in TypingResult, see SingleTypingResultExtension.toRowNested
+        // because TypingInfo generated based on TypingResult is order-sensitive, see TypingResultAwareTypeInformationDetection
         javaMap.asScala.toList.sortBy(_._1).foreach { case (fieldName, fieldValue) =>
           row.setField(fieldName, toRowNested(fieldValue))
         }
@@ -98,12 +99,14 @@ object RowConversions {
 
     def toRowNested: SingleTypingResult = {
       typingResult match {
-        case TypedObjectTypingResult(fields, objType, additionalInfo) =>
-          Typed.record(fields, objType.toRowNested, additionalInfo)
-        case TypedDict(dictId, valueType)            => TypedDict(dictId, valueType.toRowNested)
-        case TypedTaggedValue(underlying, tag)       => TypedTaggedValue(underlying.toRowNested, tag)
-        case TypedObjectWithValue(underlying, value) => TypedObjectWithValue(underlying.toRowNested, value)
-        case klass: TypedClass                       => klass.toRowNested
+        case TypedObjectTypingResult(fields, objType, additionalInfo)
+            if objType.klass == classOf[java.util.Map[_, _]] =>
+          Typed.record(fields.toList.sortBy(_._1), objType.toRowNested, additionalInfo)
+        case notMapBasedRecord: TypedObjectTypingResult => notMapBasedRecord
+        case TypedDict(dictId, valueType)               => TypedDict(dictId, valueType.toRowNested)
+        case TypedTaggedValue(underlying, tag)          => TypedTaggedValue(underlying.toRowNested, tag)
+        case TypedObjectWithValue(underlying, value)    => TypedObjectWithValue(underlying.toRowNested, value)
+        case klass: TypedClass                          => klass.toRowNested
       }
     }
 

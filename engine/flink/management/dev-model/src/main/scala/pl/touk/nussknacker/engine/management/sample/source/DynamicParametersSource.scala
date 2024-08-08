@@ -30,7 +30,7 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
   )(implicit nodeId: NodeId): FinalResults = {
     val paramsTyping = otherParams.map { case (paramName, definedParam) =>
       paramName.value -> definedParam.returnType
-    }.toMap
+    }
     FinalResults.forValidation(validationContext)(
       _.withVariable("input", Typed.record(paramsTyping), paramName = None)
     )

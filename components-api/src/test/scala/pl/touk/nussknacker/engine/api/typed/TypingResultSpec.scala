@@ -26,7 +26,7 @@ class TypingResultSpec
 
   private val intersectionSuperTypeFinder = CommonSupertypeFinder.Intersection
 
-  private def typeMap(args: (String, TypingResult)*) = Typed.record(args.toMap)
+  private def typeMap(args: (String, TypingResult)*) = Typed.record(args)
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 

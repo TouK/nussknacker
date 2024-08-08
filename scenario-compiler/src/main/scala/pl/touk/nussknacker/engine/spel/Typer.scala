@@ -325,7 +325,7 @@ private[spel] class Typer(
           if (literalKeys.size != keys.size) {
             invalid(MapWithExpressionKeysError)
           } else {
-            valid(Typed.record(literalKeys.zip(typedValues).toMap))
+            valid(Typed.record(literalKeys.zip(typedValues)))
           }
         }
       case e: MethodReference =>

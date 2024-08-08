@@ -66,8 +66,6 @@ class TableSource(
           .from(filteringInternalViewName)
       }
       .getOrElse(selectQuery)
-      // We have to keep elements in the same order as in TypingInfo generated based on TypingResults, see TypingResultAwareTypeInformationDetection
-      .select(tableDefinition.sourceRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala.toList.sorted.map($): _*)
 
     tableEnv.toDataStream(finalQuery)
   }
