@@ -23,6 +23,9 @@ object Statistics extends LazyLogging {
       encodeQueryParam(RequestIdStat.name -> requestId.value)
     )
 
+    private val encryptedParamsQueryParamKey = "encryptedParams"
+    private val encryptionKeyQueryParamKey   = "encryptionKey"
+
     override def prepareURLs(cfg: StatisticUrlConfig): Either[StatisticError, List[URL]] =
       rawStatistics.toList
         // Sorting for purpose of easier testing
@@ -36,12 +39,29 @@ object Statistics extends LazyLogging {
       s"${URLEncoder.encode(entry._1, StandardCharsets.UTF_8)}=${URLEncoder.encode(entry._2, StandardCharsets.UTF_8)}"
 
     private def prepareUrlString(queryParams: Iterable[String], cfg: StatisticUrlConfig): Option[String] = {
-      if (queryParams.nonEmpty) {
-        val queryParamsWithFingerprint = queryParams ++ queryParamsForEveryURL
-        Some(queryParamsWithFingerprint.mkString(cfg.nuStatsUrl, cfg.queryParamsSeparator, cfg.emptyString))
+      val joinedQueryParams = if (queryParams.nonEmpty && cfg.plainPublicEncryptionKey.isDefined) {
+        val joinedQueryParams = joinQueryParamsToString(queryParams, cfg)
+        cfg.plainPublicEncryptionKey.map(key => encryptQueryParams(key, joinedQueryParams))
+      } else if (queryParams.nonEmpty) {
+        Some(joinQueryParamsToString(queryParams, cfg))
       } else {
         None
       }
+      joinedQueryParams.map(jqp => prependWithAddress(jqp, cfg))
+    }
+
+    private def encryptQueryParams(publicEncryptionKey: String, queryParams: String): String = {
+      val encryptionResult = Encryption.encrypt(publicEncryptionKey, queryParams)
+      s"$encryptedParamsQueryParamKey=${encryptionResult.encryptedValue}&$encryptionKeyQueryParamKey=${encryptionResult.encryptedSymmetricKey}"
+    }
+
+    private def joinQueryParamsToString(queryParams: Iterable[String], cfg: StatisticUrlConfig): String = {
+      val queryParamsWithFingerprint = queryParams ++ queryParamsForEveryURL
+      queryParamsWithFingerprint.mkString(cfg.queryParamsSeparator)
+    }
+
+    private def prependWithAddress(joinedQueryParams: String, cfg: StatisticUrlConfig): String = {
+      s"${cfg.nuStatsUrl}$joinedQueryParams"
     }
 
   }
