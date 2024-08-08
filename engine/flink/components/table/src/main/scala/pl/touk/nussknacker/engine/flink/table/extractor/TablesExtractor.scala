@@ -1,24 +1,36 @@
 package pl.touk.nussknacker.engine.flink.table.extractor
 
+import cats.data.{NonEmptyList, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementNotExecutedError.statementNotExecutedErrorDescription
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TypeExtractor.extractTypingResult
 
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.{Failure, Success, Try}
 
-object TableExtractor extends LazyLogging {
+object TablesExtractor extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
+
+  def extractTablesFromFlinkRuntimeUnsafe(sqlStatements: List[SqlStatement]): List[TableDefinition] =
+    extractTablesFromFlinkRuntime(
+      sqlStatements
+    ).valueOr { errors =>
+      throw new IllegalStateException(
+        errors.toList
+          .map(_.message)
+          .mkString("Errors occurred when parsing sql component configuration file: ", ", ", "")
+      )
+    }
 
   // TODO: Make this extractor more memory/cpu efficient and ensure closing of resources. For more details see
   // https://github.com/TouK/nussknacker/pull/5627#discussion_r1512881038
   def extractTablesFromFlinkRuntime(
       sqlStatements: List[SqlStatement]
-  ): TableExtractorResult = {
+  ): ValidatedNel[SqlStatementNotExecutedError, List[TableDefinition]] = {
     val settings = EnvironmentSettings
       .newInstance()
       .build()
@@ -44,18 +56,15 @@ object TableExtractor extends LazyLogging {
         .getOrElse(
           throw new IllegalStateException(s"Table extractor could not locate a created table with path: $tablePath")
         )
-      typedTable = extractTypingResult(table)
-    } yield TableDefinition(tableName, typedTable.typingResult, typedTable.columns)
+    } yield TableDefinition(tableName, table.getResolvedSchema)
 
-    TableExtractorResult(tableDefinitions, sqlErrors)
+    NonEmptyList
+      .fromList(sqlErrors)
+      .map(_.invalid[List[TableDefinition]])
+      .getOrElse(tableDefinitions.valid)
   }
 
 }
-
-final case class TableExtractorResult(
-    tableDefinitions: List[TableDefinition],
-    sqlStatementExecutionErrors: List[SqlStatementNotExecutedError]
-)
 
 final case class SqlStatementNotExecutedError(
     statement: SqlStatement,

@@ -9,8 +9,6 @@ import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestD
 import pl.touk.nussknacker.engine.flink.table.TableComponentProviderConfig.TestDataGenerationMode.TestDataGenerationMode
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader
-import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
-import pl.touk.nussknacker.engine.flink.table.extractor.TableExtractor.extractTablesFromFlinkRuntime
 import pl.touk.nussknacker.engine.flink.table.join.TableJoinComponent
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
@@ -37,36 +35,21 @@ class FlinkTableComponentProvider extends ComponentProvider with LazyLogging {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-    val parsedConfig = TableComponentProviderConfig.parse(config)
-    val definition   = extractTableDefinitionsFromSqlFileOrThrow(parsedConfig.tableDefinitionFilePath)
+    val parsedConfig                    = TableComponentProviderConfig.parse(config)
     val testDataGenerationModeOrDefault = parsedConfig.testDataGenerationMode.getOrElse(TestDataGenerationMode.default)
+    val sqlStatements                   = readSqlFromFile(Paths.get(parsedConfig.tableDefinitionFilePath))
 
     ComponentDefinition(
       tableComponentName,
       new TableSourceFactory(
-        definition,
+        sqlStatements,
         parsedConfig.enableFlinkBatchExecutionMode,
         testDataGenerationModeOrDefault
       )
     ) :: ComponentDefinition(
       tableComponentName,
-      new TableSinkFactory(definition)
+      new TableSinkFactory(sqlStatements)
     ) :: configIndependentComponents
-  }
-
-  private def extractTableDefinitionsFromSqlFileOrThrow(filePath: String) = {
-    val sqlStatements = readSqlFromFile(Paths.get(filePath))
-    val results       = extractTablesFromFlinkRuntime(sqlStatements)
-
-    if (results.sqlStatementExecutionErrors.nonEmpty) {
-      throw new IllegalStateException(
-        "Errors occurred when parsing sql component configuration file: " + results.sqlStatementExecutionErrors
-          .map(_.message)
-          .mkString(", ")
-      )
-    }
-
-    TableSqlDefinitions(results.tableDefinitions, sqlStatements)
   }
 
   private def readSqlFromFile(pathToFile: Path) = Try(ResourceLoader.load(pathToFile)) match {
@@ -99,11 +82,6 @@ object FlinkTableComponentProvider {
   )
 
 }
-
-final case class TableSqlDefinitions(
-    tableDefinitions: List[TableDefinition],
-    sqlStatements: List[SqlStatement]
-)
 
 // TODO: remove enableFlinkBatchExecutionMode after moving execution mode setting logic to executor
 final case class TableComponentProviderConfig(

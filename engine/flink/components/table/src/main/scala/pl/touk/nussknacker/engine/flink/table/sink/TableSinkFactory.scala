@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.table.sink
 
 import cats.data.Validated.{invalid, valid}
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.component.BoundedStreamComponent
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -15,11 +15,14 @@ import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, NodeDepen
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{NodeId, Params}
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
+import pl.touk.nussknacker.engine.flink.table.TableDefinition
+import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
+import pl.touk.nussknacker.engine.flink.table.extractor.TablesExtractor
 import pl.touk.nussknacker.engine.flink.table.sink.TableSinkFactory._
 import pl.touk.nussknacker.engine.flink.table.source.TableSourceFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory
 import pl.touk.nussknacker.engine.flink.table.utils.TableComponentFactory.getSelectedTableUnsafe
-import pl.touk.nussknacker.engine.flink.table.{TableDefinition, TableSqlDefinitions}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.parameters.{
   SchemaBasedParameter,
@@ -29,6 +32,7 @@ import pl.touk.nussknacker.engine.util.parameters.{
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters._
 
 object TableSinkFactory {
   private val valueParameterName: ParameterName = ParameterName("Value")
@@ -51,14 +55,17 @@ object TableSinkFactory {
 
 final case class TransformationState(table: TableDefinition, valueParam: SchemaBasedParameter)
 
-class TableSinkFactory(definition: TableSqlDefinitions)
+class TableSinkFactory(sqlStatements: List[SqlStatement])
     extends SingleInputDynamicComponent[Sink]
     with SinkFactory
     with BoundedStreamComponent {
 
+  @transient
+  private lazy val tableDefinitions = TablesExtractor.extractTablesFromFlinkRuntimeUnsafe(sqlStatements)
+
   override type State = TransformationState
 
-  private val tableNameParameterDeclaration = TableComponentFactory.buildTableNameParam(definition.tableDefinitions)
+  private val tableNameParameterDeclaration = TableComponentFactory.buildTableNameParam(tableDefinitions)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -82,7 +89,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
 
     new TableSink(
       tableDefinition = finalState.table,
-      sqlStatements = definition.sqlStatements,
+      sqlStatements = sqlStatements,
       value = lazyValueParam
     )
   }
@@ -114,11 +121,11 @@ class TableSinkFactory(definition: TableSqlDefinitions)
           (`valueParameterName`, rawValueParamValue) :: Nil,
           _
         ) =>
-      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
+      val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
 
       val valueParameter = SingleSchemaBasedParameter(
         rawValueParameterDeclaration.createParameter(),
-        TypingResultOutputValidator.validate(_, selectedTable.typingResult)
+        TypingResultOutputValidator.validate(_, selectedTable.sinkRowDataType.getLogicalType.toTypingResult)
       )
       val valueParameterTypeErrors =
         valueParameter.validateParams(Map(valueParameterName -> rawValueParamValue)).fold(_.toList, _ => List.empty)
@@ -134,7 +141,7 @@ class TableSinkFactory(definition: TableSqlDefinitions)
           (`rawModeParameterName`, DefinedEagerParameter(false, _)) :: Nil,
           _
         ) => {
-      val selectedTable = getSelectedTableUnsafe(tableName, definition.tableDefinitions)
+      val selectedTable = getSelectedTableUnsafe(tableName, tableDefinitions)
 
       val tableValueParamValidation = buildNonRawValueParameter(selectedTable)
 
@@ -172,25 +179,25 @@ class TableSinkFactory(definition: TableSqlDefinitions)
 
   private def buildNonRawValueParameter(
       table: TableDefinition
-  )(implicit nodeId: NodeId) = {
+  )(implicit nodeId: NodeId): ValidatedNel[CustomNodeError, SchemaBasedRecordParameter] = {
     val tableColumnValueParams =
-      table.columns.map(c => {
-        if (restrictedParamNamesForNonRawMode.contains(ParameterName(c.columnName))) {
+      table.sinkRowDataType.toLogicalRowTypeUnsafe.getFields.asScala.toList.map(field => {
+        if (restrictedParamNamesForNonRawMode.contains(ParameterName(field.getName))) {
           invalid(
             NonEmptyList.one(
               CustomNodeError(
                 nodeId.id,
-                s"Sink's output record's field name '${c.columnName}' is restricted. Please use raw editor for this case.",
+                s"Sink's output record's field name '${field.getName}' is restricted. Please use raw editor for this case.",
                 None
               )
             )
           )
         } else {
           val param: SchemaBasedParameter = SingleSchemaBasedParameter(
-            value = Parameter(ParameterName(c.columnName), c.typingResult).copy(isLazyParameter = true),
-            validator = TypingResultOutputValidator.validate(_, c.typingResult)
+            value = Parameter(ParameterName(field.getName), field.getType.toTypingResult).copy(isLazyParameter = true),
+            validator = TypingResultOutputValidator.validate(_, field.getType.toTypingResult)
           )
-          valid(c.columnName -> param)
+          valid(field.getName -> param)
         }
       })
     tableColumnValueParams.sequence.map(params => SchemaBasedRecordParameter(ListMap(params: _*)))

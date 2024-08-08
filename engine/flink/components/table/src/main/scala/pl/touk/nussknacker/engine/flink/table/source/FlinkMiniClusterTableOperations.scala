@@ -6,8 +6,9 @@ import io.circe.parser.parse
 import org.apache.commons.io.FileUtils
 import org.apache.flink.configuration.{Configuration, CoreOptions, PipelineOptions}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.table.api.Expressions.$
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
-import org.apache.flink.table.api.{EnvironmentSettings, Schema, TableDescriptor, TableEnvironment}
+import org.apache.flink.table.api.{EnvironmentSettings, Schema, Table, TableDescriptor, TableEnvironment}
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
@@ -42,7 +43,7 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   ): TestData = generateTestData(
     limit = limit,
     schema = schema,
-    buildSourceTable = createLiveDataGeneratorTable(sqlStatements, tableName)
+    buildSourceTable = createLiveDataGeneratorTable(sqlStatements, tableName, schema)
   )
 
   def generateRandomTestData(amount: Int, schema: Schema): TestData = generateTestData(
@@ -57,16 +58,16 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
   private def generateTestData(
       limit: Int,
       schema: Schema,
-      buildSourceTable: TableEnvironment => TableName
+      buildSourceTable: TableEnvironment => Table
   ): TestData =
     // setting context classloader because Flink in multiple places relies on it and without this temporary override it doesnt have
     // the necessary classes
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       implicit val env: TableEnvironment    = MiniClusterEnvBuilder.buildTableEnv
-      val inputTableName                    = buildSourceTable(env)
+      val sourceTable                       = buildSourceTable(env)
       val (outputFilePath, outputTableName) = createTempFileTable(schema)
       val generatedRows = Try {
-        insertDataAndAwait(inputTableName, outputTableName, limit)
+        insertDataAndAwait(sourceTable, outputTableName, limit)
         readRecordsFromFilesUnderPath(outputFilePath)
       }
       cleanup(outputFilePath)
@@ -95,19 +96,16 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
     }
   }
 
-  private def insertDataAndAwait(inputTableName: TableName, outputTableName: TableName, limit: Int)(
-      implicit env: TableEnvironment
-  ): Unit = {
-    val inputTable = env.from(s"`$inputTableName`").limit(limit)
+  private def insertDataAndAwait(inputTable: Table, outputTableName: TableName, limit: Int): Unit = {
     // TODO: Avoid blocking the thread. Refactor `generateTestData` to return future and use a separate blocking thread
     //  pool here
-    inputTable.insertInto(outputTableName).execute().await()
+    inputTable.limit(limit).insertInto(outputTableName).execute().await()
   }
 
   private def createRandomDataGeneratorTable(
       amountOfRecordsToGenerate: Int,
       flinkTableSchema: Schema,
-  )(env: TableEnvironment): TableName = {
+  )(env: TableEnvironment): Table = {
     val tableName = generateTableName
     env.createTemporaryTable(
       tableName,
@@ -117,15 +115,16 @@ object FlinkMiniClusterTableOperations extends LazyLogging {
         .schema(flinkTableSchema)
         .build()
     )
-    tableName
+    env.from(tableName)
   }
 
   private def createLiveDataGeneratorTable(
       sqlStatements: List[SqlStatement],
       tableName: TableName,
-  )(env: TableEnvironment): TableName = {
+      schema: Schema
+  )(env: TableEnvironment): Table = {
     TableSource.executeSqlDDL(sqlStatements, env)
-    tableName
+    env.from(s"`$tableName`").select(schema.getColumns.asScala.map(_.getName).map($).toList: _*)
   }
 
   private def createTempFileTable(flinkTableSchema: Schema)(implicit env: TableEnvironment): (Path, TableName) = {

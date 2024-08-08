@@ -17,18 +17,20 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
   * [#6462](https://github.com/TouK/nussknacker/pull/6462) `CustomStreamTransformer.canHaveManyInputs` field was
     removed. You don't need to implement any other method in replacement, just remove this method.
-* [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
-    * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
-* [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait
-  changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a
-  single `TestRecord` and returns a list of results instead of a single result.
-* [#6520](https://github.com/TouK/nussknacker/pull/6520) `ExplicitTypeInformationSource` trait was removed - now
-  `TypeInformation` produced by `SourceFunction` passed to `StreamExecutionEnvironment.addSource` is detected based
-  on `TypingResult` (thanks to `GenericTypeInformationDetection`)
-  * `BlockingQueueSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
-  * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
-  * `CollectionSource`'s `TypeInformation` implicit parameter was removed
-  * `EmptySource`'s `TypeInformation` implicit parameter was removed
+  * [#6418](https://github.com/TouK/nussknacker/pull/6418) Improvement: Pass implicit nodeId to `EagerServiceWithStaticParameters.returnType`
+      * Now method `returnType` from `EagerServiceWithStaticParameters` requires implicit nodeId param
+  * [#6340](https://github.com/TouK/nussknacker/pull/6340) `TestRecordParser` trait used in `SourceTestSupport` trait
+    changed to work on lists instead of single records - its `parse` method now takes `List[TestRecord]` instead of a
+    single `TestRecord` and returns a list of results instead of a single result.
+  * [#6520](https://github.com/TouK/nussknacker/pull/6520) `ExplicitTypeInformationSource` trait was removed - now
+    `TypeInformation` produced by `SourceFunction` passed to `StreamExecutionEnvironment.addSource` is detected based
+    on `TypingResult` (thanks to `GenericTypeInformationDetection`)
+    * `BlockingQueueSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
+    * `EmitWatermarkAfterEachElementCollectionSource.create` takes `ClassTag` implicit parameter instead of `TypeInformation`
+    * `CollectionSource`'s `TypeInformation` implicit parameter was removed
+    * `EmptySource`'s `TypeInformation` implicit parameter was removed
+  * [#6545](https://github.com/TouK/nussknacker/pull/6545) `FlinkSink.prepareTestValue` was replaced by `prepareTestValueFunction` -
+    a non-parameter method returning a function. Thanks to that, `FlinkSink` is not serialized during test data preparation.
 * [#6436](https://github.com/TouK/nussknacker/pull/6436) Changes to `TypingResult` of SpEL expressions that are maps or lists:
     * `TypedObjectTypingResult.valueOpt` now returns a `java.util.Map` instead of `scala.collection.immutable.Map`
         * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
