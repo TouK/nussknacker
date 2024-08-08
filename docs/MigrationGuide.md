@@ -31,11 +31,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * `EmptySource`'s `TypeInformation` implicit parameter was removed
   * [#6545](https://github.com/TouK/nussknacker/pull/6545) `FlinkSink.prepareTestValue` was replaced by `prepareTestValueFunction` -
     a non-parameter method returning a function. Thanks to that, `FlinkSink` is not serialized during test data preparation.
-* [#6436](https://github.com/TouK/nussknacker/pull/6436) Changes to `TypingResult` of SpEL expressions that are maps or lists:
+* `TypingResult` API changes
+  * [#6436](https://github.com/TouK/nussknacker/pull/6436) Changes to `TypingResult` of SpEL expressions that are maps or lists:
     * `TypedObjectTypingResult.valueOpt` now returns a `java.util.Map` instead of `scala.collection.immutable.Map`
-        * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
+      * NOTE: selection (`.?`) or operations from the `#COLLECTIONS` helper cause the map to lose track of its keys/values, reverting its `fields` to an empty Map
     * SpEL list expression are now typed as `TypedObjectWithValue`, with the `underlying` `TypedClass` equal to the `TypedClass` before this change, and with `value` equal to a `java.util.List` of the elements' values.
-        * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+      * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the list to lose track of its values, reverting it to a value-less `TypedClass` like before the change
+  * [#6566](https://github.com/TouK/nussknacker/pull/6566) `TypedObjectTypingResult.fields` are backed by `ListMap` for correct `RowTypeInfo`'s fields order purpose.
+    If [#5457](https://github.com/TouK/nussknacker/pull/5457) migrations were applied, it should be a transparent change
+    * Removed deprecated  `TypedObjectTypingResult.apply` methods - should be used `Typed.record` factory method
+    * `Typed.record` factory method takes `Iterable` instead of `Map`
 * [#6503](https://github.com/TouK/nussknacker/pull/6503) `FlinkTestScenarioRunner` cleanups
   * `runWithDataAndTimestampAssigner` method was removed. Instead, `timestampAssigner` was added as an optional parameter into `runWithData`
   * new `runWithDataWithType` was added allowing to test using other types than classes e.g. records

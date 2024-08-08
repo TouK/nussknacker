@@ -129,7 +129,7 @@ class BuiltInNodeCompiler(expressionCompiler: ExpressionCompiler) {
 
     val typedObject = compiledRecord match {
       case Valid(fields) =>
-        Typed.record(fields.map(f => (f.field.name, typedExprToTypingResult(Some(f.typedExpression)))).toMap)
+        Typed.record(fields.map(f => (f.field.name, typedExprToTypingResult(Some(f.typedExpression)))))
       case Invalid(_) => Unknown
     }
 
