@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.engine.flink.table.aggregate
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.table.catalog.DataTypeFactory
-import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
 import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.transformation.{
@@ -13,11 +10,9 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
-import pl.touk.nussknacker.engine.flink.table.utils.DataTypeFactoryPreparer
-import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 object TableAggregationFactory {
 

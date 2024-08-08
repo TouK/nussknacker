@@ -276,8 +276,7 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
     runner.runWithData[T, R](
       scenario,
       input,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
   }
 

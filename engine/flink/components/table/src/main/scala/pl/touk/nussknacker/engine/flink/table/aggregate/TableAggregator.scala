@@ -5,13 +5,11 @@ import org.apache.flink.table.catalog.DataTypeFactory
 import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions, FunctionDefinition}
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.inference.CallContext
-import org.apache.flink.table.types.logical.{IntType, MultisetType}
 import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory.aggregateByParamName
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregator.{
   NuAggregationFunctionCallContext,
