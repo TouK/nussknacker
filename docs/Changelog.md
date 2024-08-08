@@ -1,6 +1,6 @@
 # Changelog
 
-1.16.3
+1.16.3 (8 August 2024)
 -------------------------
 * [#6527](https://github.com/TouK/nussknacker/pull/6527) Typed SpEL list expressions will now infer their compile-time known values, instead of only the supertype of its elements. These values can be used in custom components or validators.
     * NOTE: selection (`.?`), projection (`.!`) or operations from the `#COLLECTIONS` helper cause the typed list to lose its elements' values 
