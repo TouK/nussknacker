@@ -28,6 +28,15 @@ jobs:
     steps:
       - name: "Output variables"
         run: |
+          df -ah
+          ls /opt
+          du -ah --max-depth 1 /opt
+          ls /usr/lib
+          du -ah --max-depth 1 /usr/lib
+          ls "$AGENT_TOOLSDIRECTORY"
+          du -ah --max-depth 1 "$AGENT_TOOLSDIRECTORY"
+          ls /opt/hostedtoolcache
+          du -ah --max-depth 1 /opt/hostedtoolcache
           echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
           echo Docker update latest is ${{ env.NEXT_VERSION_RELEASE }}
           echo SBT release next version is ${{ env.SBT_RELEASE_NEXT_VERSION }}
