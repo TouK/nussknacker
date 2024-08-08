@@ -18,6 +18,8 @@ jobs:
           du -ah --max-depth 1 /opt/microsoft
           ls /usr/local
           du -ah --max-depth 1 /usr/local
+          ls /usr/local/share
+          du -ah --max-depth 1 /usr/local/share
           ls /usr/local/lib
           du -ah --max-depth 1 /usr/local/lib
           ls /opt/google
