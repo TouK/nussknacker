@@ -1,4 +1,3 @@
-import { Box, Chip, Typography } from "@mui/material";
 import i18next from "i18next";
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
@@ -22,6 +21,7 @@ import {
     ScenarioDetailsItemWrapper,
 } from "./ScenarioDetailsComponents";
 import { MoreScenarioDetailsButton } from "./buttons/MoreScenarioDetailsButton";
+import { CategoryDetails } from "./CategoryDetails";
 
 const ScenarioDetails = memo((props: ToolbarPanelProps) => {
     const scenario = useSelector((state: RootState) => getScenario(state));
@@ -43,7 +43,7 @@ const ScenarioDetails = memo((props: ToolbarPanelProps) => {
             <SwitchTransition>
                 <CssFade key={transitionKey}>
                     <PanelScenarioDetails>
-                        <Typography variant={"body2"}>{scenario.processCategory} /</Typography>
+                        <CategoryDetails scenario={scenario} />
                         <ScenarioDetailsItemWrapper>
                             <PanelScenarioDetailsIcon>
                                 <ProcessingModeIcon />
