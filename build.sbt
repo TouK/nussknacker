@@ -508,8 +508,8 @@ lazy val distribution: Project = sbt
     },
     devArtifacts                             := {
       modelArtifacts.value ++ List(
-        (flinkDevModel / assembly).value -> "model/devModel.jar",
-        (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar",
+        (flinkDevModel / assembly).value                  -> "model/devModel.jar",
+        (flinkPeriodicDeploymentManager / assembly).value -> "managers/flinkPeriodicDM.jar",
       )
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
@@ -711,18 +711,6 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java"))
     extensionsApi,
     flinkComponentsUtils % Provided
   )
-
-lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm"))
-  .settings(commonSettings)
-  .settings(assemblyNoScala("devPeriodicDm.jar"): _*)
-  .settings(
-    name := "nussknacker-dev-periodic-dm",
-    libraryDependencies ++= {
-      Seq(
-      )
-    }
-  )
-  .dependsOn(flinkPeriodicDeploymentManager, deploymentManagerApi % Provided)
 
 lazy val flinkTests = (project in flink("tests"))
   .settings(commonSettings)
@@ -2012,7 +2000,7 @@ lazy val designer = (project in file("designer/server"))
     liteEmbeddedDeploymentManager     % Provided,
     liteK8sDeploymentManager          % Provided,
     developmentTestsDeploymentManager % Provided,
-    devPeriodicDM                     % Provided,
+    flinkPeriodicDeploymentManager    % Provided,
     schemedKafkaComponentsUtils       % Provided,
   )
 
@@ -2106,7 +2094,6 @@ lazy val modules = List[ProjectReference](
   flinkDevModel,
   flinkDevModelJava,
   flinkTableApiComponents,
-  devPeriodicDM,
   defaultModel,
   openapiComponents,
   scenarioCompiler,

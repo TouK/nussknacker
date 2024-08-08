@@ -45,9 +45,10 @@
     * The editor can be easily switched backed to 'raw' version similarly to the current Kafka Sink
   * [#6545](https://github.com/TouK/nussknacker/pull/6545) Non-physical columns are properly handled in Table Sink now
     * User need to provide only persisted column values now - values for computed columns and virtual columns are not required anymore
-* [#6559](https://github.com/TouK/nussknacker/pull/6559) [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
+* [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode)
   can now be set for Flink-based scenario types under `modelConfig.executionMode`.
+* [#6572](https://github.com/TouK/nussknacker/pull/6572) Introduction to FlinkPeriodicDeploymentManagerProvider
 
 1.16.3 (8 August 2024)
 -------------------------
