@@ -44,6 +44,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#6503](https://github.com/TouK/nussknacker/pull/6503) `FlinkTestScenarioRunner` cleanups
   * `runWithDataAndTimestampAssigner` method was removed. Instead, `timestampAssigner` was added as an optional parameter into `runWithData`
   * new `runWithDataWithType` was added allowing to test using other types than classes e.g. records
+* [#6567](https://github.com/TouK/nussknacker/pull/6567) Removed ability to set Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode) 
+  in sources: `TableSource`, `CollectionSource` and in `FlinkTestScenarioRunner.runWithData` method. Now you can
+  configure it under `modelConfig.executionMode` or for test purposes through `FlinkTestScenarioRunnerBuilder.withExecutionMode` method.
+  
 
 ### REST API changes
 
