@@ -24,7 +24,7 @@ description: Flink specific model configuration
 | globalParameters.explicitUidInStatefulOperators             | Low        | boolean  | true                   | Should consistent [operator uuids](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/upgrading/#matching-operator-state) be used                              |
 | globalParameters.useTypingResultTypeInformation             | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                  |
 | globalParameters.forceSyncInterpretationForSyncScenarioPart | Low        | boolean  | true                   | Forces synchronous interpretation for scenario parts that does not contain any services (enrichers, processors). Applies for scenarios with async enabled                   |
-| executionMode                                               | High       | string   | streaming              | Sets [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode). Allowed values: `streaming`, `batch`, `automatic`         |
+| executionMode                                               | High       | string   | streaming              | Sets [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode). Allowed values: `streaming`, `batch`                      |
 
 <!-- TODO 
 ### KAFKA

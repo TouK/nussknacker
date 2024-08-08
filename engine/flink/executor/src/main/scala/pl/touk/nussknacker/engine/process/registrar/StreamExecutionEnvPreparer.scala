@@ -85,7 +85,6 @@ class DefaultStreamExecutionEnvPreparer(
     executionModeConfig match {
       case ExecutionMode.Streaming => env.setRuntimeMode(RuntimeExecutionMode.STREAMING)
       case ExecutionMode.Batch     => env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-      case ExecutionMode.Automatic => env.setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     }
   }
 
