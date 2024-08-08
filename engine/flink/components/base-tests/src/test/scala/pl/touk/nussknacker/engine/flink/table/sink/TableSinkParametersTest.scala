@@ -18,10 +18,11 @@ import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.PatientScalaFutures
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -89,7 +90,6 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
     s"""
        |{
        |  tableDefinitionFilePath: $sqlTablesDefinitionFilePath
-       |  enableFlinkBatchExecutionMode: true
        |}
        |""".stripMargin
   )
@@ -101,6 +101,7 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
 
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
+    .withExecutionMode(ExecutionMode.Batch)
     .withExtraComponents(singleRecordBatchTable :: tableComponents)
     .build()
 

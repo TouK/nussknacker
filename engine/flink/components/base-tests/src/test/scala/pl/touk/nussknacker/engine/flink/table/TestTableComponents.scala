@@ -15,10 +15,9 @@ object TestTableComponents {
     ComponentDefinition(
       oneRecordTableSourceName,
       new TableSourceFactory(
-        List(
+        sqlStatements = List(
           s"CREATE TABLE $oneRecordTableName ($testColumnName INT) WITH ('connector' = 'datagen', 'number-of-rows' = '1')"
         ),
-        enableFlinkBatchExecutionMode = true,
         testDataGenerationMode = TestDataGenerationMode.Live
       )
     )

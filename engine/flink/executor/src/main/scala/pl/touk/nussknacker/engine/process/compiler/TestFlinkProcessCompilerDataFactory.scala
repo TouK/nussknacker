@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.connector.source.Boundedness
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -110,6 +111,7 @@ class StubbedSourcePreparer(
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
           returnType = typingResult,
+          boundedness = Boundedness.BOUNDED
         ) {
           override val contextInitializer: ContextInitializer[Object] = sourceWithContextInitializer.contextInitializer
         }
@@ -117,7 +119,8 @@ class StubbedSourcePreparer(
         new CollectionSource[Object](
           list = samples,
           timestampAssigner = originalSource.timestampAssignerForTest,
-          returnType = typingResult
+          returnType = typingResult,
+          boundedness = Boundedness.BOUNDED
         )
     }
   }

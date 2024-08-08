@@ -70,8 +70,7 @@ class TableJoinTest
         delayedProduct
       ),
       OrderOrProduct.`type`,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.validValue.errors shouldBe empty
@@ -105,8 +104,7 @@ class TableJoinTest
         delayedProduct
       ),
       OrderOrProduct.`type`,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.validValue.errors shouldBe empty
@@ -147,8 +145,7 @@ class TableJoinTest
         orderReferringToExistingProduct
       ),
       OrderOrProduct.`type`,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.validValue.errors shouldBe empty
@@ -172,8 +169,7 @@ class TableJoinTest
       ),
       List(orderReferringToNonExistingProduct),
       OrderOrProduct.`type`,
-      Boundedness.BOUNDED,
-      Some(RuntimeExecutionMode.BATCH)
+      Boundedness.BOUNDED
     )
 
     enrichedOrders.invalidValue.toList should matchPattern {

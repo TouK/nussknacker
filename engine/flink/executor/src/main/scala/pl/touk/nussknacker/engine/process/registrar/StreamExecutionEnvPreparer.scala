@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.runtime.state.StateBackend
 import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.util.{FlinkUserCodeClassLoaders, OutputTag}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
+import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode.ExecutionMode
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.process.util.StateConfiguration
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
@@ -61,6 +64,7 @@ class DefaultStreamExecutionEnvPreparer(
     streamMetaData.parallelism.foreach(env.setParallelism)
 
     configureCheckpoints(env, streamMetaData)
+    configureExecutionMode(env, jobConfig.executionMode)
 
     (jobConfig.rocksDB, streamMetaData.spillStateToDisk) match {
       case (Some(config), Some(true)) if config.enable =>
@@ -71,6 +75,17 @@ class DefaultStreamExecutionEnvPreparer(
         logger.warn("RocksDB not configured, cannot use spillStateToDisk")
       case _ =>
         logger.info("Using default state backend configured by cluster")
+    }
+  }
+
+  private def configureExecutionMode(
+      env: StreamExecutionEnvironment,
+      executionModeConfig: Option[ExecutionMode]
+  ): Unit = {
+    executionModeConfig.foreach {
+      case ExecutionMode.Streaming => env.setRuntimeMode(RuntimeExecutionMode.STREAMING)
+      case ExecutionMode.Batch     => env.setRuntimeMode(RuntimeExecutionMode.BATCH)
+      case ExecutionMode.Automatic => env.setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     }
   }
 
