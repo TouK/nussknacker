@@ -24,7 +24,11 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.restmodel.definition.UiScenarioPropertyConfig
+import pl.touk.nussknacker.restmodel.definition.{
+  UiScenarioPropertiesAdditionalInfoConfig,
+  UiScenarioPropertiesConfig,
+  UiScenarioPropertiesParameterConfig
+}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
   NodeValidationError,
   NodeValidationErrorType,
@@ -257,24 +261,24 @@ class BaseFlowTest
     val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings = Decoder[Map[String, UiScenarioPropertyConfig]].decodeJson(settingsJson).toOption.get
+    val settings = Decoder[Map[String, UiScenarioPropertiesConfig]].decodeJson(settingsJson).toOption.get
     val streamingDefaultPropertyConfig =
       FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioPropertyConfig(p._2))
 
     val underTest = Map(
-      "environment" -> UiScenarioPropertyConfig(
+      "environment" -> UiScenarioPropertiesParameterConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
-      "maxEvents" -> UiScenarioPropertyConfig(
+      "maxEvents" -> UiScenarioPropertiesParameterConfig(
         defaultValue = None,
         editor = StringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
-      "numberOfThreads" -> UiScenarioPropertyConfig(
+      "numberOfThreads" -> UiScenarioPropertiesParameterConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
         label = Some("Number of threads"),
