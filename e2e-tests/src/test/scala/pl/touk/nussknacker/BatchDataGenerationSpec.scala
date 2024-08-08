@@ -55,7 +55,8 @@ class BatchDataGenerationSpec
                |   "record": {
                |      "datetime": "${regexes.localDateRegex}",
                |      "client_id": "[a-z\\\\d]{100}",
-               |      "amount": "${regexes.decimalRegex}"
+               |      "amount": "${regexes.decimalRegex}",
+               |      "file.name": "[a-z\\\\d]{100}"
                |   }
                |}
                |""".stripMargin)
@@ -79,7 +80,8 @@ class BatchDataGenerationSpec
                |   "record": {
                |      "datetime": "2024-01-01 10:00:00",
                |      "client_id": "client1",
-               |      "amount": 100.1
+               |      "amount": 100.1,
+               |      "file.name": "transactions.ndjson"
                |   }
                |}
                |""".stripMargin)
@@ -110,7 +112,9 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                "datetime": "2024-01-01T10:00:00",
            |                "client_id": "client1",
-           |                "amount": 100.1
+           |                "amount": 100.1,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
            |              }
            |            }
            |          }
@@ -124,7 +128,9 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                "datetime": "2024-01-01T10:00:00",
            |                "client_id": "client1",
-           |                "amount": 100.1
+           |                "amount": 100.1,
+           |                "amountDoubled": 200.20,
+           |                "file.name": "transactions.ndjson"
            |              }
            |            }
            |          }
@@ -163,7 +169,7 @@ class BatchDataGenerationSpec
       )
       .multiPart(
         "testData",
-        """{"sourceId":"sourceId","record":{"datetime":"2024-07-19 08:56:08.485","client_id":"aClientId","amount":123123.12}}""",
+        """{"sourceId":"sourceId","record":{"datetime":"2024-07-19 08:56:08.485","client_id":"aClientId","amount":123123.12,"file.name":"foo.ndjson"}}""",
         "text/ plain"
       )
       .post(
@@ -183,7 +189,9 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                 "datetime": "2024-07-19T08:56:08.485",
            |                 "client_id": "aClientId",
-           |                 "amount": 123123.12
+           |                 "amount": 123123.12,
+           |                 "amountDoubled": 246246.24,
+           |                 "file.name": "foo.ndjson"
            |              }
            |            }
            |          }
@@ -197,7 +205,9 @@ class BatchDataGenerationSpec
            |              "pretty": {
            |                 "datetime": "2024-07-19T08:56:08.485",
            |                 "client_id": "aClientId",
-           |                 "amount": 123123.12
+           |                 "amount": 123123.12,
+           |                 "amountDoubled": 246246.24,
+           |                 "file.name": "foo.ndjson"
            |              }
            |            }
            |          }

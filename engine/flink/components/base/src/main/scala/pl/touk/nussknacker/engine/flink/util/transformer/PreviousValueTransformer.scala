@@ -7,15 +7,12 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.UnboundedStreamComponent
+import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
-case object PreviousValueTransformer
-    extends CustomStreamTransformer
-    with UnboundedStreamComponent
-    with ExplicitUidInOperatorsSupport {
+case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
   type Value = AnyRef
 
@@ -23,7 +20,7 @@ case object PreviousValueTransformer
   def execute(
       @ParamName("groupBy") groupBy: LazyParameter[CharSequence],
       @ParamName("value") value: LazyParameter[Value]
-  ) = FlinkCustomStreamTransformation(
+  ): FlinkCustomStreamTransformation with ReturningType = FlinkCustomStreamTransformation(
     (start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
       val valueTypeInfo = ctx.typeInformationDetection.forType[AnyRef](value.returnType)
       setUidToNodeIdIfNeed(

@@ -16,7 +16,8 @@ trait FlinkSink extends Sink with Serializable {
 
   type Value <: AnyRef
 
-  def prepareTestValue(value: Value): AnyRef = value
+  // It has to be function in order to avoid serialization of whole FlinkSink for testing mechanism
+  def prepareTestValueFunction: Value => AnyRef = identity
 
   def prepareValue(
       dataStream: DataStream[Context],

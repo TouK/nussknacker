@@ -7,10 +7,13 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
+import pl.touk.nussknacker.engine.flink.table.utils.DataTypesConversions._
 import pl.touk.nussknacker.engine.flink.table.TableDefinition
 import pl.touk.nussknacker.engine.flink.table.extractor.SqlStatementReader.SqlStatement
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions
 import pl.touk.nussknacker.engine.flink.table.utils.RowConversions.TypingResultExtension
+
+import scala.jdk.CollectionConverters._
 
 class TableSink(
     tableDefinition: TableDefinition,
@@ -55,7 +58,9 @@ class TableSink(
         flinkNodeContext.typeInformationDetection.forType(value.returnType.toRowNested)
       )
 
-    val inputValueTable = tableEnv.fromDataStream(streamOfRows).select(tableDefinition.columnNames.map($): _*)
+    val inputValueTable = tableEnv
+      .fromDataStream(streamOfRows)
+      .select(tableDefinition.sinkRowDataType.toLogicalRowTypeUnsafe.getFieldNames.asScala.toList.map($): _*)
 
     sqlStatements.foreach(tableEnv.executeSql)
 
