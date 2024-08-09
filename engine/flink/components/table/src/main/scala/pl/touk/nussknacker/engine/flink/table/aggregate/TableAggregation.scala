@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.VariableConstants.KeyVariableName
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.process.{
   AbstractLazyParameterInterpreterFunction,
   FlinkCustomNodeContext,
@@ -33,6 +34,7 @@ class TableAggregation(
     groupByLazyParam: LazyParameter[AnyRef],
     aggregateByLazyParam: LazyParameter[AnyRef],
     selectedAggregator: TableAggregator,
+    aggregationResultType: TypingResult,
     nodeId: NodeId
 ) extends FlinkCustomStreamTransformation
     with Serializable {
@@ -69,7 +71,7 @@ class TableAggregation(
         new AggregateResultContextFunction(context.convertToEngineRuntimeContext),
         context.typeInformationDetection.forValueWithContext(
           ValidationContext.empty.withVariableUnsafe(KeyVariableName, groupByLazyParam.returnType),
-          aggregateByLazyParam.returnType
+          aggregationResultType
         )
       )
   }

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.parameter.ParameterName
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
 import pl.touk.nussknacker.engine.flink.table.aggregate.TableAggregationFactory._
 
@@ -43,7 +43,8 @@ class TableAggregationFactory
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
-  override type State = Nothing
+  case class TableAggregationTransformationState(aggregatorOutputType: TypingResult)
+  override type State = TableAggregationTransformationState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
       implicit nodeId: NodeId
@@ -74,7 +75,11 @@ class TableAggregationFactory
           outputType => (Nil, outputType)
         )
 
-      FinalResults.forValidation(context, errors = aggregatorTypeErrors)(ctx =>
+      FinalResults.forValidation(
+        context,
+        errors = aggregatorTypeErrors,
+        state = Some(TableAggregationTransformationState(aggregatorOutputType))
+      )(ctx =>
         ctx.clearVariables
           .withVariable(outName, value = aggregatorOutputType, paramName = Some(outputVarParamName))
           .andThen(
@@ -96,6 +101,13 @@ class TableAggregationFactory
     val groupByLazyParam     = groupByParam.extractValueUnsafe(params)
     val aggregateByLazyParam = aggregateByParam.extractValueUnsafe(params)
     val aggregatorVal        = aggregatorFunctionParam.extractValueUnsafe(params)
+    val aggregationResultType = finalState
+      .getOrElse(
+        throw new IllegalStateException(
+          "Context transformation state was not properly passed to component's implementation."
+        )
+      )
+      .aggregatorOutputType
 
     val aggregator = TableAggregator.values
       .find(_.displayName == aggregatorVal)
@@ -109,6 +121,7 @@ class TableAggregationFactory
       groupByLazyParam = groupByLazyParam,
       aggregateByLazyParam = aggregateByLazyParam,
       selectedAggregator = aggregator,
+      aggregationResultType = aggregationResultType,
       nodeId = nodeId
     )
   }

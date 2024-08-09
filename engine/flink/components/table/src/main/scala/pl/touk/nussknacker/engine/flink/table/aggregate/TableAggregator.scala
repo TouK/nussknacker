@@ -5,6 +5,7 @@ import org.apache.flink.table.catalog.DataTypeFactory
 import org.apache.flink.table.functions.{BuiltInFunctionDefinition, BuiltInFunctionDefinitions, FunctionDefinition}
 import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.inference.CallContext
+import org.apache.flink.table.types.logical.RawType
 import org.apache.flink.table.types.utils.TypeInfoDataTypeConverter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
@@ -25,15 +26,31 @@ import java.util.Optional
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
-// TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
-//  inconsistency in naming and may be confusing for users
-// TODO: add remaining aggregations: COUNT, LISTAGG, LAG, LEAD, JSON aggs
+/*
+    TODO: add remaining aggregations functions:
+     Table API - based
+     - LISTAGG
+     - ARRAY_AGG - after adding support for array
+     - SUM0 - probably through specific parameter in standard SUM
+     - COLLECT - after adding support for multiset
+     SQL - based
+     - LEAD
+     - LAG
+
+    TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
+     inconsistency in naming and may be confusing for users
+ */
 object TableAggregator extends Enum[TableAggregator] {
   val values = findValues
 
   case object Average extends TableAggregator {
     override val displayName: String                                = "Average"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.AVG
+  }
+
+  case object Count extends TableAggregator {
+    override val displayName: String                                = "Count"
+    override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.COUNT
   }
 
   case object Max extends TableAggregator {
@@ -46,6 +63,10 @@ object TableAggregator extends Enum[TableAggregator] {
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.MIN
   }
 
+  // As of Flink 1.19, time-related types are not supported in FIRST_VALUE aggregate function.
+  // See: https://issues.apache.org/jira/browse/FLINK-15867
+  // See AggFunctionFactory.createFirstValueAggFunction
+  // TODO: add validation for the above case
   case object First extends TableAggregator {
     override val displayName: String                                = "First"
     override def flinkFunctionDefinition: BuiltInFunctionDefinition = BuiltInFunctionDefinitions.FIRST_VALUE
@@ -157,7 +178,12 @@ sealed trait TableAggregator extends EnumEntry {
         .getOutputTypeStrategy
         .inferType(callContext)
         .toScala
-        .map(value => Right(value.getLogicalType.toTypingResult))
+        .map(value =>
+          value.getLogicalType match {
+            case _: RawType[_] => Left(buildError(inputType))
+            case other         => Right(other.toTypingResult)
+          }
+        )
         .getOrElse(Left(buildError(inputType)))
     }
     val callContext = NuAggregationFunctionCallContext(inputType, flinkFunctionDefinition)
