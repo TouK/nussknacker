@@ -44,9 +44,11 @@ public class MetricRemovalDeferredToNextReportMetricReporter implements MetricRe
 
     @Override
     public synchronized void report() {
-        ((Scheduled) delegate).report();
-        //todo: maybe removal should be done even in case when delegate.report() throw some exception
-        metricsToRemoveAfterNextReport.forEach(metricTuple -> delegate.notifyOfRemovedMetric(metricTuple.f0, metricTuple.f1, metricTuple.f2));
-        metricsToRemoveAfterNextReport.clear();
+        try {
+            ((Scheduled) delegate).report();
+        } finally {
+            metricsToRemoveAfterNextReport.forEach(metricTuple -> delegate.notifyOfRemovedMetric(metricTuple.f0, metricTuple.f1, metricTuple.f2));
+            metricsToRemoveAfterNextReport.clear();
+        }
     }
 }
