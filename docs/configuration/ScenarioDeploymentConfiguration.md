@@ -8,7 +8,7 @@ sidebar_position: 3
 Deployment of a scenario onto the [Engine](../about/engines) is managed by the Designer's extension called [Deployment Manager](../about/GLOSSARY#deployment-manager).
 To enable a given [Deployment Manager](../about/GLOSSARY#deployment-manager) its jar package has to be placed in the Designer's classpath. Nussknacker is distributed with three default [Deployment Managers](../about/GLOSSARY#deployment-manager) (`flinkStreaming`, `lite-k8s`, `lite-embedded`). Their jars are located in the `managers` directory. 
 
-Deployment specific configuration is provided in the `deploymentConfig` section of the configuration file - check [configuration areas](./Common.md#configuration-areas) to understand the structure of the configuration file.
+Deployment specific configuration is provided in the `deploymentConfig` section of the configuration file - check [configuration areas](./Common.mdx#configuration-areas) to understand the structure of the configuration file.
 
 Below is a snippet of scenario deployment configuration.
 
@@ -168,7 +168,7 @@ Please note that you cannot override names or labels configured by Nussknacker.
 
 In most cases, the Model configuration values passed to the Lite Engine runtime are the ones from
 the `modelConfig` section
-of [main configuration file](./Common.md#configuration-areas).
+of [main configuration file](./Common.mdx#configuration-areas).
 However, there are two exception to this rule:
 
 - there
@@ -273,7 +273,7 @@ ingress {
 
 ### Configuring Prometheus metrics
 
-Just like in [Designer installation](../configuration/Common.md#basic-environment-variables), you can
+Just like in [Designer installation](../configuration/Common.mdx#basic-environment-variables), you can
 attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods.
 Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics
 will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration
