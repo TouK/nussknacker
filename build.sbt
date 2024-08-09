@@ -637,6 +637,7 @@ lazy val flinkDeploymentManager = (project in flink("management"))
 lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic"))
   .settings(commonSettings)
   .settings(assemblyNoScala("nussknacker-flink-periodic-manager.jar"): _*)
+  .settings(publishAssemblySettings: _*)
   .settings(
     name := "nussknacker-flink-periodic-manager",
     libraryDependencies ++= {
