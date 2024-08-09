@@ -48,7 +48,6 @@
 * [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode)
   can now be set for Flink-based scenario types under `modelConfig.executionMode`.
-* [#6572](https://github.com/TouK/nussknacker/pull/6572) Introduction to FlinkPeriodicDeploymentManagerProvider
 
 1.16.3 (8 August 2024)
 -------------------------
