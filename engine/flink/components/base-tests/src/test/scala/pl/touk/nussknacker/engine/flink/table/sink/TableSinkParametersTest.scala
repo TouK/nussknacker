@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
-import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
@@ -102,7 +101,7 @@ class TableSinkParametersTest extends AnyFunSuite with FlinkSpec with Matchers w
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExecutionMode(ExecutionMode.Batch)
-    .withExtraComponents(singleRecordBatchTable :: tableComponents)
+    .withExtraComponents(tableComponents)
     .build()
 
   override protected def afterAll(): Unit = {

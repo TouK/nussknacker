@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.table.sink
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
+import org.apache.flink.api.connector.source.Boundedness
 import org.scalatest.LoneElement
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,7 +11,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.table.FlinkTableComponentProvider
 import pl.touk.nussknacker.engine.flink.table.SpelValues._
-import pl.touk.nussknacker.engine.flink.table.TestTableComponents._
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -139,7 +139,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
   private lazy val runner: FlinkTestScenarioRunner = TestScenarioRunner
     .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
     .withExecutionMode(ExecutionMode.Batch)
-    .withExtraComponents(singleRecordBatchTable :: tableComponents)
+    .withExtraComponents(tableComponents)
     .build()
 
   override protected def afterAll(): Unit = {
@@ -250,7 +250,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -259,8 +259,10 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
         "Value"      -> primitiveTypesExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
+    val result = runner.runWithData(
+      scenario = scenario,
+      List(1),
+      Boundedness.BOUNDED
     )
     result shouldBe Symbol("valid")
 
@@ -279,7 +281,7 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
 
     val scenario = ScenarioBuilder
       .streaming("test")
-      .source("start", oneRecordTableSourceName, "Table" -> s"'$oneRecordTableName'".spel)
+      .source("source", TestScenarioRunner.testDataSource)
       .emptySink(
         "end",
         "table",
@@ -288,10 +290,12 @@ class TableFileSinkTest extends AnyFunSuite with FlinkSpec with Matchers with Pa
         "Value"      -> valueExpression
       )
 
-    val result = runner.runWithoutData(
-      scenario = scenario
+    val result = runner.runWithData(
+      scenario = scenario,
+      List(1),
+      Boundedness.BOUNDED
     )
-    result.isValid shouldBe true
+    result shouldBe Symbol("valid")
 
     getLinesOfSingleFileInDirectoryEventually(oneColumnOutputDirectory).loneElement shouldBe "str"
   }
