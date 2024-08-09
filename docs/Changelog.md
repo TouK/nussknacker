@@ -48,6 +48,7 @@
 * [#6559](https://github.com/TouK/nussknacker/pull/6559) Extension: Move previousValue and delay components from unbounded to base Flink components
 * [#6567](https://github.com/TouK/nussknacker/pull/6567) Flink's [execution mode](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/execution_mode)
   can now be set for Flink-based scenario types under `modelConfig.executionMode`.
+* [#6570](https://github.com/TouK/nussknacker/pull/6570) Generic parameters of collection types are better typed now: e.g. `List[Integer]` can be passed to `List[Number]` but not the other way
 
 1.16.3 (8 August 2024)
 -------------------------
