@@ -5,20 +5,6 @@ import org.apache.flink.api.java.typeutils.RowTypeInfo
 import org.apache.flink.types.Row
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{
-  SingleTypingResult,
-  Typed,
-  TypedClass,
-  TypedDict,
-  TypedNull,
-  TypedObjectTypingResult,
-  TypedObjectWithValue,
-  TypedTaggedValue,
-  TypedUnion,
-  TypingResult,
-  Unknown
-}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -55,22 +41,6 @@ object RowConversions {
     )
   }
 
-  def toRowNested(value: Any): Any = {
-    value match {
-      // TODO: Instead of eagerly converting every map, we should check if target type is Row
-      case javaMap: java.util.Map[String @unchecked, _] =>
-        val row = Row.withNames()
-        // We have to keep elements in the same order as specified in TypingResult, see SingleTypingResultExtension.toRowNested
-        // because TypingInfo generated based on TypingResult is order-sensitive, see TypingResultAwareTypeInformationDetection
-        javaMap.asScala.toList.sortBy(_._1).foreach { case (fieldName, fieldValue) =>
-          row.setField(fieldName, toRowNested(fieldValue))
-        }
-        row
-      case _ =>
-        value
-    }
-  }
-
   implicit class TypeInformationDetectionExtension(typeInformationDetection: TypeInformationDetection) {
 
     def contextRowTypeInfo(validationContext: ValidationContext): TypeInformation[_] = {
@@ -78,49 +48,6 @@ object RowConversions {
         validationContext.localVariables.mapValuesNow(typeInformationDetection.forType).unzip
       val variablesRow = new RowTypeInfo(typeInfos.toArray[TypeInformation[_]], fieldNames.toArray)
       Types.ROW(Types.STRING :: variablesRow :: validationContext.parent.map(contextRowTypeInfo).toList: _*)
-    }
-
-  }
-
-  implicit class TypingResultExtension(typingResult: TypingResult) {
-
-    def toRowNested: TypingResult = {
-      typingResult match {
-        case result: SingleTypingResult => result.toRowNested
-        case union: TypedUnion          => Typed(union.possibleTypes.map(_.toRowNested))
-        case TypedNull                  => TypedNull
-        case Unknown                    => Unknown
-      }
-    }
-
-  }
-
-  implicit class SingleTypingResultExtension(typingResult: SingleTypingResult) {
-
-    def toRowNested: SingleTypingResult = {
-      typingResult match {
-        case TypedObjectTypingResult(fields, objType, additionalInfo)
-            if objType.klass == classOf[java.util.Map[_, _]] =>
-          Typed.record(fields.toList.sortBy(_._1), objType.toRowNested, additionalInfo)
-        case notMapBasedRecord: TypedObjectTypingResult => notMapBasedRecord
-        case TypedDict(dictId, valueType)               => TypedDict(dictId, valueType.toRowNested)
-        case TypedTaggedValue(underlying, tag)          => TypedTaggedValue(underlying.toRowNested, tag)
-        case TypedObjectWithValue(underlying, value)    => TypedObjectWithValue(underlying.toRowNested, value)
-        case klass: TypedClass                          => klass.toRowNested
-      }
-    }
-
-  }
-
-  implicit class TypedClassExtension(typedClass: TypedClass) {
-
-    def toRowNested: TypedClass = {
-      if (typedClass.klass == classOf[java.util.Map[_, _]]) {
-        // TODO: Instead of eagerly converting every map, we should check if target type is Row
-        Typed.typedClass[Row]
-      } else {
-        typedClass
-      }
     }
 
   }
