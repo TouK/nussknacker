@@ -2,180 +2,156 @@
 title: Basics
 sidebar_position: 1
 ---
-# Model configuration
+# Configuration
 
-Model definition is part of a scenario type definition. There can be multiple scenario types in one Nussknacker installation, consequently there will also be multiple model definitions in such a case. 
-Check [configuration areas](../Common.md#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](../ScenarioDeploymentConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
+## Minimal configuration file
 
-Model defines how to configure [components](../../about/GLOSSARY#component) and certain runtime behavior (e.g. error handling) for a given scenario type. Model configuration is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
+The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using
+additional configuration files. Check [Conventions section](#conventions) for more details how to amend and override the minimal configuration file.
+This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file.
 
-* Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the Designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
-* There is additional set of defaults, taken from `defaultModelConfig.conf` if it exists on the classpath. The standard Nussknacker installation uses the one from [here](https://github.com/TouK/nussknacker/blob/staging/defaultModel/src/main/resources/defaultModelConfig.conf), installations using certain code customizations may use a different one.       
-                 
-## ClassPath configuration
+The location and name of the configuration files is defined by the `CONFIG_FILE` environment variable. Consult [Basic environment variables](../configuration/Common.mdx#basic-environment-variables) for information on how this variable is resolved.
 
-Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
+Details of K8s based configuration can be found in  [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker).
+## Configuration areas
 
-By default, in case of Flink streaming scenario type, the following configuration is used:
-```
-classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common", "flink-dropwizard-metrics-deps/"]
-```
-Make sure you have all necessary entries properly configured:
-- Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
-- All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
-- `flinkExecutor.jar` for Flink engine. This contains executor of scenarios in Flink cluster.
+Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-Note that as classPath elements you can use:
-- full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")
-- file paths (absolute or relative to Nussknacker installation dir)
-- paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
+* [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
+* Scenario Types configuration, comprising of:
+    * [Model](./model/ModelConfiguration.md) configuration.
+    * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
+    * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
-If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR` [environment variable](../../configuration/Common.md#basic-environment-variables).
+[Model](../about/GLOSSARY#model) configuration defines which components and which [Processing Mode](../about/ProcessingModes) will be available for the user.
+[Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration defines how scenario using these components will be deployed on the [Engine](../about/engine).
+[Category](./DesignerConfiguration.md/#scenario-type-categories) defines who has access to the given combination of [Model](../about/GLOSSARY#model) and [Scenario Deployment](./ScenarioDeploymentConfiguration.md).
 
-<!-- TODO 
-### Object naming
--->
+The Scenario Type is a convenient umbrella term that groups all these things. Diagram below presents main relationships between configuration areas.
 
-## Components configuration 
+![Configuration areas](img/configuration_areas.png "configuration areas")
 
-Nussknacker comes with a set of provided components. Some of them (e.g. `filter`, `variable`, aggregations in Flink, `for-each`, `union`) are 
-predefined and accessible by default. Others need additional configuration - the most important ones are enrichers, where you have to set e.g. JDBC URL or external service address.
+### Configuration file
 
-Check Integration documentation for the details on how to configure the following components:
-- [OpenAPI](../../integration/OpenAPI.md) Supports accessing external APIs directly from scenario 
-- [SQL](../../integration/Sql.md)         Supports access to SQL database engines    
-- [Machine Learning](../../integration/MachineLearning.md)         Infers ML models
+Let's see how those concepts look in fragment of the configuration file:
+
+<pre>
+{/* Somehow, everything which is in the "pre" block is treated as jsx by Docusaurus*/}
+{/* so, we need to escape "{" */}
+{/* and add leading spaces in a special way. If not jsx parser will remove them */}
+{/* Finally, do not worry - this is a valid jsx comment - you will not see it on Nu page*/}
+
+<b># Designer configuration </b> <br/>
+environment: "local"  <br/>
+... <br/>
+ <br/>
+# Each scenario type is configured here  <br/>
+scenarioTypes {"{"}  <br/>
+{" "} "scenario-type-1": {"{"}<br/>
+{" "}   # Configuration of scenario deployment (Flink used as example here)  <br/>
+{" "}   <b>deploymentConfig:</b> {"{"} <br/>
+{" "}     type: "flinkStreaming" <br/>
+{" "}     restUrl: "http://localhost:8081" <br/>
+{" "}   } <br/>
+{" "}   # Configuration of model <br/>
+{" "}   <b>modelConfig</b>: {"{"} <br/>
+{" "}     classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink"] <br/>
+{" "}     restartStrategy.default.strategy: disable <br/>
+{" "}     components {"{"} <br/>
+{" "}       ... <br/>
+{" "}     } <br/>
+{" "}   } <br/>
+{" "}   <b>category</b>: "Default" <br/>
+{" "} } <br/>
+} <br/>
+</pre>
+
+It is worth noting that one Nussknacker Designer may be used to work with multiple Scenario Types and allow user:
+
+* To use different set of components depending on the category
+* To deploy scenarios on different [Engines](../about/engines)
+
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
+
+## Environment variables
+
+All configuration options are described in [Configuration](./DesignerConfiguration.md).
+
+Some of them can be configured using already predefined environment variables, which is mostly useful in the Docker setup.
+The table below shows all the predefined environment variables used in the Nussknacker image. `$NUSSKNACKER_DIR` is a placeholder pointing to the Nussknacker installation directory.
+
+Because we use [HOCON](#conventions), you can set (or override) any configuration value used by Nussknacker even if the already predefined environment variable does not exist. This is achieved by setting the JVM property `-Dconfig.override_with_env_vars=true` and setting environment variables following conventions described [here](https://github.com/lightbend/config?tab=readme-ov-file#optional-system-or-env-variable-overrides).
+
+### Basic environment variables
+
+| Variable name                 | Type            | Default value                                                                                                                                 | Description                                                                                                                                                                                                                                               |
+|-------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| JDK_JAVA_OPTIONS              | string          |                                                                                                                                               | Custom JVM options, e.g `-Xmx512M`                                                                                                                                                                                                                        |
+| JAVA_DEBUG_PORT               | int             |                                                                                                                                               | Port to Remote JVM Debugger. By default debugger is turned off.                                                                                                                                                                                           |
+| CONFIG_FILE                   | string          | $NUSSKNACKER_DIR/conf/application.conf                                                                                                        | Location of application configuration. You can pass comma separated list of files, they will be merged in given order, using HOCON fallback mechanism                                                                                                     |
+| LOGBACK_FILE                  | string          | $NUSSKNACKER_DIR/conf/docker-logback.xml                                                                                                      | Location of logging configuration                                                                                                                                                                                                                         |
+| WORKING_DIR                   | string          | $NUSSKNACKER_DIR                                                                                                                              | Location of working directory                                                                                                                                                                                                                             |
+| STORAGE_DIR                   | string          | $WORKING_DIR/storage                                                                                                                          | Location of HSQLDB database storage                                                                                                                                                                                                                       |
+| CLASSPATH                     | string          | $NUSSKNACKER_DIR/lib/*:$NUSSKNACKER_DIR/managers/*                                                                                            | Classpath of the Designer, _lib_ directory contains related jar libraries (e.g. database driver), _managers_ directory contains deployment manager providers                                                                                              |
+| LOGS_DIR                      | string          | $WORKING_DIR/logs                                                                                                                             | Location of logs                                                                                                                                                                                                                                          |
+| HTTP_INTERFACE                | string          | 0.0.0.0                                                                                                                                       | Network address Nussknacker binds to                                                                                                                                                                                                                      |
+| HTTP_PORT                     | string          | 8080                                                                                                                                          | HTTP port used by Nussknacker                                                                                                                                                                                                                             |
+| HTTP_PUBLIC_PATH              | string          |                                                                                                                                               | Public HTTP path prefix the Designer UI is served at, e.g. using external proxy like [nginx](#configuring-the-designer-with-nginx-http-public-path)                                                                                                       |
+| DB_URL                        | string          | jdbc:hsqldb:file:$\{STORAGE_DIR}/db;sql.syntax_ora=true                                                                                        | [See also](../configuration/DesignerConfiguration.md#database-configuration) for more information                                                                                                                           |
+| DB_DRIVER                     | string          | org.hsqldb.jdbc.JDBCDriver                                                                                                                    | Database driver class name                                                                                                                                                                                                                                |
+| DB_USER                       | string          | SA                                                                                                                                            | User used for connection to database                                                                                                                                                                                                                      |
+| DB_PASSWORD                   | string          |                                                                                                                                               | Password used for connection to database                                                                                                                                                                                                                  |
+| DB_CONNECTION_TIMEOUT         | int             | 30000                                                                                                                                         | Connection to database timeout in milliseconds                                                                                                                                                                                                            |
+| AUTHENTICATION_METHOD         | string          | BasicAuth                                                                                                                                     | Method of authentication. One of: BasicAuth, OAuth2                                                                                                                                                                                                       |
+| AUTHENTICATION_USERS_FILE     | string          | $NUSSKNACKER_DIR/conf/users.conf                                                                                                              | Location of users configuration file                                                                                                                                                                                                                      |
+| AUTHENTICATION_HEADERS_ACCEPT | string          | application/json                                                                                                                              |                                                                                                                                                                                                                                                           |
+| FLINK_REST_URL                | string          | http://localhost:8081                                                                                                                         | URL to Flink's REST API - used for scenario deployment                                                                                                                                                                                                    |
+| FLINK_ROCKSDB_ENABLE          | boolean         | true                                                                                                                                          | Enable RocksDB state backend support                                                                                                                                                                                                                      |
+| KAFKA_ADDRESS                 | string          | localhost:9092                                                                                                                                | Kafka address used by Kafka components (sources, sinks)                                                                                                                                                                                                   |
+| KAFKA_AUTO_OFFSET_RESET       | string          |                                                                                                                                               | See [Kafka documentation](https://kafka.apache.org/documentation/#consumerconfigs_auto.offset.reset). For development purposes it may be convenient to set this value to 'earliest', when not set the default from Kafka ('latest' at the moment) is used |
+| SCHEMA_REGISTRY_URL           | string          | http://localhost:8082                                                                                                                         | Address of Confluent Schema registry used for storing data model                                                                                                                                                                                          |
+| GRAFANA_URL                   | string          | /grafana                                                                                                                                      | URL to Grafana, used in UI. Should be relative to Nussknacker URL to avoid additional CORS configuration                                                                                                                                                  |
+| INFLUXDB_URL                  | string          | http://localhost:8086                                                                                                                         | URL to InfluxDB used by counts mechanism                                                                                                                                                                                                                  |
+| MODEL_CLASS_PATH              | list of strings | (for flink) `"model/defaultModel.jar", "model/flinkExecutor.jar", "components/flink", "components/common", "flink-dropwizard-metrics-deps/"]` | Classpath of model (jars that will be used for execution of scenarios)                                                                                                                                                                                    |
+| PROMETHEUS_METRICS_PORT       | int             |                                                                                                                                               | When defined, JMX MBeans are exposed as Prometheus metrics on this port                                                                                                                                                                                   |
+| PROMETHEUS_AGENT_CONFIG_FILE  | int             | $NUSSKNACKER_DIR/conf/jmx_prometheus.yaml                                                                                                     | Default configuration for JMX Prometheus agent. Used only when agent is enabled. See `PROMETHEUS_METRICS_PORT`                                                                                                                                            |
+| TABLES_DEFINITION_FILE        | string          | $NUSSKNACKER_DIR/conf/dev-tables-definition.sql                                                                                               | Location of file containing definitions of tables for Flink Table API components in Flink Sql                                                                                                                                                             |
+
+### OAuth2 environment variables
+
+| Variable name                                   | Type    | Default value     |
+|-------------------------------------------------|---------|-------------------|
+| OAUTH2_CLIENT_SECRET                            | string  |                   |
+| OAUTH2_CLIENT_ID                                | string  |                   |
+| OAUTH2_AUTHORIZE_URI                            | string  |                   |
+| OAUTH2_REDIRECT_URI                             | string  |                   |
+| OAUTH2_ACCESS_TOKEN_URI                         | string  |                   |
+| OAUTH2_PROFILE_URI                              | string  |                   |
+| OAUTH2_PROFILE_FORMAT                           | string  |                   |
+| OAUTH2_IMPLICIT_GRANT_ENABLED                   | boolean |                   |
+| OAUTH2_ACCESS_TOKEN_IS_JWT                      | boolean | false             |
+| OAUTH2_USERINFO_FROM_ID_TOKEN                   | string  | false             |
+| OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY               | string  |                   |
+| OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY_FILE          | string  |                   |
+| OAUTH2_JWT_AUTH_SERVER_CERTIFICATE              | string  |                   |
+| OAUTH2_JWT_AUTH_SERVER_CERTIFICATE_FILE         | string  |                   |
+| OAUTH2_JWT_ID_TOKEN_NONCE_VERIFICATION_REQUIRED | string  |                   |
+| OAUTH2_GRANT_TYPE                               | string  | authorization_code |
+| OAUTH2_RESPONSE_TYPE                            | string  | code              |
+| OAUTH2_SCOPE                                    | string  | read:user         |
+| OAUTH2_AUDIENCE                                 | string  |                   |
+| OAUTH2_USERNAME_CLAIM                           | string  |                   |
 
 
-### Configuration of component providers
+## Conventions
 
-Below you can see typical component configuration, each section describes configuration of one component provider.
+* We use HOCON (see the [introduction](https://github.com/lightbend/config#using-hocon-the-json-superset) or the [full specification](https://github.com/lightbend/config/blob/master/HOCON.md) for details) as our main configuration format. [Lightbend config library](https://github.com/lightbend/config/tree/master) is used for parsing configuration files - you can check the [documentation](https://github.com/lightbend/config#standard-behavior) for details on conventions of file names and merging of configuration files.
+* `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HOCON fallback mechanism). This mechanism is used to extend or override default configuration contained in the [minimal configuration file](#minimal-configuration-file)  - see docker demo for example:
+    * [setting multiple configuration files](https://github.com/TouK/nussknacker-installation-example/blob/master/docker-compose.yml#L29)
+    * [file with configuration override](https://github.com/TouK/nussknacker-installation-example/blob/master/designer/application-customizations.conf)
+* If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
-```
-  components {
-    sqlHsql {
-      providerType: sql
-      jdbcUrl: jdbc:hsql...//
-      admin/pass
-    }
-    sqlOracle {
-      providerType: sql
-      jdbcUrl: jdbc:oracle...//
-      admin/pass
-    }
-    prinzH20 {
-      providerType: prinzH20
-      h2oLocation:
-    }
-    prinzMlFlow {
-      #this is not needed, as configuration is named just as provider
-      #providerType: prinzMLFlow
-      mlFlowUrl:
-    }
-    #we can disable particular component provider, if it's not needed in our installation
-    #note: you cannot disable certain basic components like filter, variable, choice and split
-    aggregation {
-      disabled: true
-    }
-  }
-```
+It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.md) for the details.
 
-Common configuration options that area available for component providers:
-* `providerType` - type of provider
-* `disabled` - allow to disable given component provider (default `false`)
-* `componentPrefix` - prefix that will be added to components provided by provider (default empty string)
-
-### Configuration of UI attributes of components
-
-In model configuration you can also define some UI attributes of components. This can be useful for tweaking of appearance of generated components (like from OpenAPI), 
-in most cases you should not need to defined these settings. The settings you can configure include:
-* icons - `icon` property
-* documentation - `docsUrl` property
-* should component be disabled - `disabled` property
-* in which toolbox panel the component should appear (`componentGroup` property)  
-* `params` configuration (allows to override default component settings):
-  * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
-  * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
-  * `defaultValue`
-  * `label`
-  * `hintText`
-
-Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L18) for more examples):
-```
-  componentsUiConfig {
-    customerService {
-      params {
-        serviceIdParameter {
-            defaultValue: "customerId-10"
-            editor: "StringParameterEditor"
-            validators: [ 
-              {
-                type: "RegExpParameterValidator"
-                pattern: "customerId-[0-9]*"
-                message: "has to match customer id format"
-                description: "really has to match..."
-              }
-            ]
-            label: "Customer id (from CRM!)"
-            hintText: "Input customerID in proper format"
-        }
-      }
-      docsUrl: "https://en.wikipedia.org/wiki/Customer_service"
-      icon: "icon_file.svg"
-    }
-  }
-```
-
-As a key in the configuration you can use component name or full component identifier which is in the `componentType-componentName` format.
-The second approach is mostly useful when there is more than one component with the same name (e.g. `source-kafka` and `sink-kafka` components). 
-Available component types:
-- `source` - for components located in the `sources` toolbox panel
-- `sink` - for components located in the `sinks` toolbox panel
-- `service` - for components located in the `enrichers` and `services` toolbox panels
-- `custom` - for components located in the `custom` and `optionalEndingCustom` toolbox panels
-- `built-in` - for built-in components (`choice`, `filter`, `record-variable`, `split`, `variable`) located in the `base` toolbox panel
-
-### Component links
-
-You can add additional links that will be shown in `Components` tab. They can be used e.g. to point to 
-custom dashboards with component performance or point to some external system (link to documentation is configured by default). 
-The config format is as follows:
-```
-componentLinks: [
-  {
-    id: "sourceSystem"
-    title: "Source system"
-    icon: "/assets/components/CustomNode.svg"
-    url: "https://myCustom.com/dataSource/$componentName" 
-    supportedComponentTypes: ["service"]
-  }
-]
-```
-Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$componentName` which are replaced by component data. Param `supportedComponentTypes` means component's types which can support links.
-
-### Component group mapping
-
-You can override default grouping of basic components in toolbox panels with `componentsGroupMapping` setting. Component
-names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.). If you use this configuration, you
-must place it repeatedly in all configured processing types.
-
-## Scenario properties
-
-It's possible to add additional properties for scenario. 
-They can be used for allowing more detailed scenario information (e.g. pass information about marketing campaign target etc.), 
-they can also be used in various Nussknacker extensions: 
-
-Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L61) for more examples):
-
-```
-scenarioPropertiesConfig {
-  campaignType: {
-    editor: { type: "StringParameterEditor" }
-    validators: [ { type: "MandatoryParameterValidator" } ]
-    label: "Campaign type"
-    defaultValue: "Generic campaign"
-  }
-  ...
-}
-```
-Configuration is similar to [component configuration](#configuration-of-ui-attributes-of-components)
+## What is next?
+Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration key - see the [configuration file](#configuration-file). The details of enrichers configuration are in the [Integration chapter](../integration/) of the documentation.
