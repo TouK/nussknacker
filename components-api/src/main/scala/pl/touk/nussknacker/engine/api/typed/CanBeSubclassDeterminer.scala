@@ -168,10 +168,8 @@ trait CanBeSubclassDeterminer {
           ) if javaMapClass.isAssignableFrom(superclass) =>
         // Map's key generic param is invariant. We can't just check givenKeyParam == superclassKeyParam because of Unknown type which is a kind of wildcard
         condNel(
-          canBeSubclassOf(givenKeyParam, superclassKeyParam).isValid && canBeSubclassOf(
-            givenKeyParam,
-            superclassKeyParam
-          ).isValid,
+          canBeSubclassOf(givenKeyParam, superclassKeyParam).isValid &&
+            canBeSubclassOf(superclassKeyParam, givenKeyParam).isValid,
           (),
           s"Key types of Maps ${givenKeyParam.display} and ${superclassKeyParam.display} are not equals"
         ) andThen (_ => canBeSubclassOf(givenValueParam, superclassValueParam))
