@@ -118,6 +118,8 @@ Cypress.Commands.overwrite<"matchImage", "element">(
 
         cy.wait(200);
 
+        options.maxDiffThreshold = 0.0000001;
+
         if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
             let path = null;
             const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold");
