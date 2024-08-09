@@ -1816,6 +1816,7 @@ lazy val flinkTableApiComponents = (project in flink("components/table"))
     componentsUtils      % Provided,
     flinkComponentsUtils % Provided,
     jsonUtils            % Provided,
+    testUtils            % Test,
   )
 
 lazy val copyClientDist = taskKey[Unit]("copy designer client")
