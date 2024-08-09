@@ -8,6 +8,8 @@ exports[`ProcessStateIcon tests should show data from loaded process.state 1`] =
   display: flex;
   width: 100%;
   height: 100%;
+  width: 20px;
+  height: 20px;
 }
 
 <div>
@@ -32,6 +34,8 @@ exports[`ProcessStateIcon tests should show defaults for loaded process.state wi
   display: flex;
   width: 100%;
   height: 100%;
+  width: 20px;
+  height: 20px;
 }
 
 <div>
@@ -55,6 +59,8 @@ exports[`ProcessStateIcon tests should show defaults for missing process.state a
   display: flex;
   width: 100%;
   height: 100%;
+  width: 20px;
+  height: 20px;
 }
 
 <div>
@@ -78,6 +84,8 @@ exports[`ProcessStateIcon tests should show defaults if loadedProcess is empty 1
   display: flex;
   width: 100%;
   height: 100%;
+  width: 20px;
+  height: 20px;
 }
 
 <div>
@@ -101,6 +109,8 @@ exports[`ProcessStateIcon tests should show loadedProcess data 1`] = `
   display: flex;
   width: 100%;
   height: 100%;
+  width: 20px;
+  height: 20px;
 }
 
 <div>
