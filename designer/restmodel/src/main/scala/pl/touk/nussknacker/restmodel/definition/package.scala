@@ -21,11 +21,10 @@ package object definition {
 
   // This class contains various views on definitions, used in a different FE contexts
   @JsonCodec(encodeOnly = true) final case class UIDefinitions(
-      // This is dedicated view for the components toolbox panel
       componentGroups: List[UIComponentGroup],
       components: Map[ComponentId, UIComponentDefinition],
       classes: List[TypingResult],
-      scenarioPropertiesConfig: Map[String, UiScenarioPropertyConfig],
+      scenarioPropertiesConfig: Map[String, UiScenarioPropertiesConfig],
       edgesForNodes: List[UINodeEdges],
       customActions: List[UICustomAction]
   )
@@ -119,14 +118,19 @@ package object definition {
       components: List[UIComponentNodeTemplate]
   )
 
-  @JsonCodec final case class UiScenarioPropertyConfig(
+  @JsonCodec sealed trait UiScenarioPropertiesConfig
+
+  @JsonCodec final case class UiScenarioPropertiesAdditionalInfoConfig(docsUrl: Option[String])
+      extends UiScenarioPropertiesConfig
+
+  @JsonCodec final case class UiScenarioPropertiesParameterConfig(
       // This attribute is deprecated on BE and FE as it's not used anywhere.
       // Right now it's only kept because an external project uses it but it will be removed in the future.
       defaultValue: Option[String],
       editor: ParameterEditor,
       label: Option[String],
       hintText: Option[String]
-  )
+  ) extends UiScenarioPropertiesConfig
 
   object UIParameter {
     implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] =
