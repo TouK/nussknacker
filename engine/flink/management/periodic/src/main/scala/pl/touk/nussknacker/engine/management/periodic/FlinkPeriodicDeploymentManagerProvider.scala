@@ -4,9 +4,11 @@ import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
-import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
+import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.{
@@ -18,17 +20,19 @@ import pl.touk.nussknacker.engine.{
 
 import scala.concurrent.duration.FiniteDuration
 
-class PeriodicDeploymentManagerProvider(
-    delegate: DeploymentManagerProvider,
-    schedulePropertyExtractorFactory: SchedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
-    processConfigEnricherFactory: ProcessConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
-    listenerFactory: PeriodicProcessListenerFactory = EmptyPeriodicProcessListenerFactory,
-    additionalDeploymentDataProvider: AdditionalDeploymentDataProvider = DefaultAdditionalDeploymentDataProvider,
-    customActionsProviderFactory: PeriodicCustomActionsProviderFactory = PeriodicCustomActionsProviderFactory.noOp
-) extends DeploymentManagerProvider
-    with LazyLogging {
+class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
 
-  override def name: String = s"${delegate.name}Periodic"
+  private val delegate = new FlinkStreamingDeploymentManagerProvider()
+
+  private val cronConfig = CronSchedulePropertyExtractor.CronPropertyDefaultName -> ScenarioPropertyConfig(
+    defaultValue = None,
+    editor = Some(StringParameterEditor),
+    validators = Some(List(MandatoryParameterValidator, CronParameterValidator.delegate)),
+    label = Some("Schedule"),
+    hintText = Some("Quartz cron syntax. You can specify multiple schedulers separated by '|'.")
+  )
+
+  override def name: String = "flinkPeriodic"
 
   override def createDeploymentManager(
       modelData: BaseModelData,
@@ -36,36 +40,39 @@ class PeriodicDeploymentManagerProvider(
       config: Config,
       scenarioStateCacheTTL: Option[FiniteDuration]
   ): ValidatedNel[String, DeploymentManager] = {
-    logger.info("Creating periodic scenario manager")
+    logger.info("Creating FlinkPeriodic scenario manager")
     delegate.createDeploymentManager(modelData, dependencies, config, scenarioStateCacheTTL).map {
       delegateDeploymentManager =>
         import net.ceedubs.ficus.Ficus._
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
         val periodicBatchConfig = config.as[PeriodicBatchConfig]("deploymentManager")
         val flinkConfig         = config.rootAs[FlinkConfig]
+
         PeriodicDeploymentManager(
           delegate = delegateDeploymentManager,
-          schedulePropertyExtractorFactory = schedulePropertyExtractorFactory,
-          processConfigEnricherFactory = processConfigEnricherFactory,
+          schedulePropertyExtractorFactory = _ => CronSchedulePropertyExtractor(),
+          processConfigEnricherFactory = ProcessConfigEnricherFactory.noOp,
           periodicBatchConfig = periodicBatchConfig,
           flinkConfig = flinkConfig,
           originalConfig = config,
           modelData = modelData,
-          listenerFactory,
-          additionalDeploymentDataProvider,
-          customActionsProviderFactory,
+          EmptyPeriodicProcessListenerFactory,
+          DefaultAdditionalDeploymentDataProvider,
+          new WithRunNowPeriodicCustomActionsProviderFactory,
           dependencies
         )
     }
 
   }
 
-  override def metaDataInitializer(config: Config): MetaDataInitializer = delegate.metaDataInitializer(config)
+  override def metaDataInitializer(config: Config): MetaDataInitializer =
+    delegate.metaDataInitializer(config)
 
   override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
-    delegate.scenarioPropertiesConfig(config)
+    Map(cronConfig) ++ delegate.scenarioPropertiesConfig(config)
 
-  override def defaultEngineSetupName: EngineSetupName = delegate.defaultEngineSetupName
+  override def defaultEngineSetupName: EngineSetupName =
+    delegate.defaultEngineSetupName
 
   override def engineSetupIdentity(config: Config): Any =
     delegate.engineSetupIdentity(config)
