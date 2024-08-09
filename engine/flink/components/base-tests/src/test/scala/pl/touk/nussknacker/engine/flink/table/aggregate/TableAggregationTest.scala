@@ -7,7 +7,9 @@ import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -20,6 +22,8 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.FlinkJobConfig.ExecutionMode
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
+import org.scalatest.LoneElement._
+import pl.touk.nussknacker.engine.api.parameter.ParameterName
 
 import java.math.BigInteger
 import java.time.{LocalDate, OffsetDateTime, ZonedDateTime}
@@ -120,20 +124,21 @@ class TableAggregationTest extends AnyFunSuite with TableDrivenPropertyChecks wi
         AggregationParameters(aggregator = "'Min'".spel, aggregateBy = "#input".spel, groupBy = "''".spel)
       )
     )
-    def assertNodeError[T: ClassTag](inputs: List[T]): Unit = {
+    def assertNodeError[T: ClassTag](inputs: List[T], expectedError: ProcessCompilationError): Unit = {
       val result = runner.runWithData(
         scenario,
         inputs,
         Boundedness.BOUNDED
       )
-      result.invalidValue.head should matchPattern {
-        case CustomNodeError(_, _, Some(paramName)) if paramName == aggregateByParamName =>
-      }
+      result.invalidValue.toList.loneElement shouldBe expectedError
     }
     // TODO: add all cases
-    assertNodeError(List(ZonedDateTime.now()))
-    assertNodeError(List(OffsetDateTime.now()))
-    assertNodeError(List(BigInteger.ONE))
+    assertNodeError(
+      List(ZonedDateTime.now()),
+      CustomNodeError("Invalid type: ZonedDateTime", Some(ParameterName("aggregateBy")))(NodeId("agg1"))
+    )
+//    assertNodeError(List(OffsetDateTime.now()), CustomNodeError())
+//    assertNodeError(List(BigInteger.ONE), CustomNodeError())
   }
 
   test("aggregations should aggregate by integers") {

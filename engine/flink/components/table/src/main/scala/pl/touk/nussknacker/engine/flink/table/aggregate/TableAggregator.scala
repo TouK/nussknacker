@@ -27,18 +27,20 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
 /*
-    TODO: add remaining aggregations functions:
+   TODO: add remaining aggregations functions:
      Table API - based
      - LISTAGG
      - ARRAY_AGG - after adding support for array
      - SUM0 - probably through specific parameter in standard SUM
      - COLLECT - after adding support for multiset
-     SQL - based
+     SQL - based (but these may not work without windows)
      - LEAD
      - LAG
 
-    TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
+   TODO: unify aggregator function definitions with unbounded-streaming ones. Current duplication may lead to
      inconsistency in naming and may be confusing for users
+
+   TODO: add distinct parameter - but not for First and Last aggregators
  */
 object TableAggregator extends Enum[TableAggregator] {
   val values = findValues
@@ -145,7 +147,6 @@ object TableAggregator extends Enum[TableAggregator] {
 }
 
 // TODO: extract call expression to TableAggregator
-// TODO: add distinct
 sealed trait TableAggregator extends EnumEntry {
 
   val displayName: String

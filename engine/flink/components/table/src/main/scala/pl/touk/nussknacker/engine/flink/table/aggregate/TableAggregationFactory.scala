@@ -43,7 +43,11 @@ class TableAggregationFactory
     extends CustomStreamTransformer
     with SingleInputDynamicComponent[FlinkCustomStreamTransformation] {
 
-  case class TableAggregationTransformationState(aggregatorOutputType: TypingResult)
+  case class TableAggregationTransformationState(
+      selectedAggregator: TableAggregator,
+      aggregatorResultType: TypingResult
+  )
+
   override type State = TableAggregationTransformationState
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(
@@ -78,7 +82,7 @@ class TableAggregationFactory
       FinalResults.forValidation(
         context,
         errors = aggregatorTypeErrors,
-        state = Some(TableAggregationTransformationState(aggregatorOutputType))
+        state = Some(TableAggregationTransformationState(selectedAggregator, aggregatorOutputType))
       )(ctx =>
         ctx.clearVariables
           .withVariable(outName, value = aggregatorOutputType, paramName = Some(outputVarParamName))
@@ -100,19 +104,11 @@ class TableAggregationFactory
 
     val groupByLazyParam     = groupByParam.extractValueUnsafe(params)
     val aggregateByLazyParam = aggregateByParam.extractValueUnsafe(params)
-    val aggregatorVal        = aggregatorFunctionParam.extractValueUnsafe(params)
-    val aggregationResultType = finalState
+    val TableAggregationTransformationState(selectedAggregator, aggregatorOutputType) = finalState
       .getOrElse(
         throw new IllegalStateException(
           "Context transformation state was not properly passed to component's implementation."
         )
-      )
-      .aggregatorOutputType
-
-    val aggregator = TableAggregator.values
-      .find(_.displayName == aggregatorVal)
-      .getOrElse(
-        throw new IllegalStateException("Specified aggregator not found. Should be invalid at parameter level.")
       )
 
     val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
@@ -120,8 +116,8 @@ class TableAggregationFactory
     new TableAggregation(
       groupByLazyParam = groupByLazyParam,
       aggregateByLazyParam = aggregateByLazyParam,
-      selectedAggregator = aggregator,
-      aggregationResultType = aggregationResultType,
+      selectedAggregator = selectedAggregator,
+      aggregationResultType = aggregatorOutputType,
       nodeId = nodeId
     )
   }
