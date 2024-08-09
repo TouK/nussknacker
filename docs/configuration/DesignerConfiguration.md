@@ -4,7 +4,7 @@ sidebar_position: 4
 ---
 # Designer configuration
 
-Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./Common.md#configuration-areas) to understand where Designer configuration should be
+Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./index.mdx#configuration-areas) to understand where Designer configuration should be
 placed in the Nussknacker configuration.
 
 The default Designer configuration can be found in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
