@@ -122,6 +122,12 @@ class TypingResultSpec
     Typed
       .fromDetailedType[java.util.Map[BigDecimal, Number]]
       .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe false
+    Typed
+      .fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[_, BigDecimal]]) shouldBe true
+    Typed
+      .fromDetailedType[java.util.Map[_, BigDecimal]]
+      .canBeSubclassOf(Typed.fromDetailedType[java.util.Map[BigDecimal, BigDecimal]]) shouldBe true
 
     // For arrays it might be tricky
     Typed.fromDetailedType[Array[BigDecimal]].canBeSubclassOf(Typed.fromDetailedType[Array[BigDecimal]]) shouldBe true

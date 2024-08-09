@@ -168,7 +168,7 @@ trait CanBeSubclassDeterminer {
           ) if javaMapClass.isAssignableFrom(superclass) =>
         // key is invariant
         condNel(
-          givenKeyParam == superclassKeyParam || superclassKeyParam == Unknown,
+          givenKeyParam.canBeSubclassOf(superclassKeyParam) && superclassKeyParam.canBeSubclassOf(givenKeyParam),
           (),
           s"Key types of Maps ${givenKeyParam.display} and ${superclassKeyParam.display} are not equals"
         ) andThen (_ => canBeSubclassOf(givenValueParam, superclassValueParam))
