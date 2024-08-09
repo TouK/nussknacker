@@ -34,7 +34,7 @@ object DataTypesExtensions {
         case multiset: MultisetType =>
           TypedMultiset(multiset.getElementType.toTypingResult)
         // TODO: handle complex types like maps, lists, rows, raws and types alignment
-        case _ => Typed.typedClass(logicalType.getDefaultConversion)
+        case _ => Typed(logicalType.getDefaultConversion)
       }
     }
 
