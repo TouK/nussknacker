@@ -482,9 +482,10 @@ lazy val distribution: Project = sbt
   .settings(
     managerArtifacts                         := {
       List(
-        (flinkDeploymentManager / assembly).value        -> "managers/nussknacker-flink-manager.jar",
-        (liteK8sDeploymentManager / assembly).value      -> "managers/lite-k8s-manager.jar",
-        (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
+        (flinkDeploymentManager / assembly).value         -> "managers/nussknacker-flink-manager.jar",
+        (flinkPeriodicDeploymentManager / assembly).value -> "managers/nussknacker-flink-periodic-manager.jar",
+        (liteK8sDeploymentManager / assembly).value       -> "managers/lite-k8s-manager.jar",
+        (liteEmbeddedDeploymentManager / assembly).value  -> "managers/lite-embedded-manager.jar"
       )
     },
     componentArtifacts                       := {
@@ -508,8 +509,7 @@ lazy val distribution: Project = sbt
     },
     devArtifacts                             := {
       modelArtifacts.value ++ List(
-        (flinkDevModel / assembly).value                  -> "model/devModel.jar",
-        (flinkPeriodicDeploymentManager / assembly).value -> "managers/flinkPeriodicDM.jar",
+        (flinkDevModel / assembly).value -> "model/devModel.jar"
       )
     },
     Universal / packageName                  := ("nussknacker" + "-" + version.value),
