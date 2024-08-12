@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.deployment.EngineSetupName
@@ -68,7 +68,7 @@ class FlinkPeriodicDeploymentManagerProvider extends DeploymentManagerProvider w
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     delegate.metaDataInitializer(config)
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] =
     Map(cronConfig) ++ delegate.scenarioPropertiesConfig(config)
 
   override def defaultEngineSetupName: EngineSetupName =
