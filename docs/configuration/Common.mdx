@@ -19,7 +19,7 @@ Nussknacker configuration is divided into several configuration areas, each area
 
 * [Designer](../about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
-  * [Model](./model/ModelConfiguration.md) configuration.
+  * [Model](./model/ModelConfiguration.mdx) configuration.
   * [Scenario Deployment](./ScenarioDeploymentConfiguration.md) configuration,
   * [Category](./DesignerConfiguration.md/#scenario-type-categories) configuration
 
@@ -151,7 +151,7 @@ Because we use [HOCON](#conventions), you can set (or override) any configuratio
   * [file with configuration override](https://github.com/TouK/nussknacker-installation-example/blob/master/designer/application-customizations.conf)
 * If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
-It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.md) for the details.
+It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](./model/ModelConfiguration.mdx) for the details.
 
 ## What is next?
 Most likely you will want to configure enrichers - they are configured under the `modelConfig.components` configuration key - see the [configuration file](#configuration-file). The details of enrichers configuration are in the [Integration chapter](../integration/) of the documentation.
