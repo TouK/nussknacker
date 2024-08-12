@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus._
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.definition.{
   DateParameterEditor,
   LiteralIntegerValidator,
@@ -238,9 +238,9 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] =
     Map(
-      "deploymentManagerProperty" -> ScenarioPropertyConfig(None, None, None, None, None)
+      "deploymentManagerProperty" -> ScenarioPropertiesParameterConfig(None, None, None, None, None)
     ) ++ FlinkStreamingPropertiesConfig.properties
 
   override def name: String = "development-tests"

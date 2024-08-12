@@ -23,7 +23,7 @@ import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestProcessi
 import pl.touk.nussknacker.test.mock.{MockDeploymentManager, StubFragmentRepository, TestAdditionalUIConfigProvider}
 import pl.touk.nussknacker.test.config.ConfigWithScalaVersion
 import pl.touk.nussknacker.test.utils.domain.ProcessTestData
-import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
+import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioAdditionalFieldConfig
 import pl.touk.nussknacker.ui.security.api.AdminUser
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -260,7 +260,7 @@ class DefinitionsServiceSpec extends AnyFunSuite with Matchers with PatientScala
     val definitions = prepareDefinitions(model, List.empty)
 
     definitions.scenarioPropertiesConfig shouldBe TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride
-      .mapValuesNow(createUIScenarioPropertyConfig)
+      .mapValuesNow(createUIScenarioAdditionalFieldConfig)
   }
 
   private def prepareDefinitions(model: ModelData, fragmentScenarios: List[CanonicalProcess]) = {

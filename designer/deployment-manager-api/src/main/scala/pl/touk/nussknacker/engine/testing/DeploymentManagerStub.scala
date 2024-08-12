@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.testing
 
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.component.ScenarioPropertyConfig
+import pl.touk.nussknacker.engine.api.component.ScenarioPropertiesParameterConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -88,7 +88,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
   override def metaDataInitializer(config: Config): MetaDataInitializer =
     FlinkStreamingPropertiesConfig.metaDataInitializer
 
-  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertyConfig] =
+  override def scenarioPropertiesConfig(config: Config): Map[String, ScenarioPropertiesParameterConfig] =
     FlinkStreamingPropertiesConfig.properties
 
 }
@@ -97,8 +97,8 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 // TODO: Replace this class by a BaseDeploymentManagerProvider with default stubbed behavior
 object FlinkStreamingPropertiesConfig {
 
-  private val parallelismConfig: (String, ScenarioPropertyConfig) = StreamMetaData.parallelismName ->
-    ScenarioPropertyConfig(
+  private val parallelismConfig: (String, ScenarioPropertiesParameterConfig) = StreamMetaData.parallelismName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
@@ -118,8 +118,8 @@ object FlinkStreamingPropertiesConfig {
     FixedExpressionValue("true", "Asynchronous")
   )
 
-  private val spillStateConfig: (String, ScenarioPropertyConfig) = StreamMetaData.spillStateToDiskName ->
-    ScenarioPropertyConfig(
+  private val spillStateConfig: (String, ScenarioPropertiesParameterConfig) = StreamMetaData.spillStateToDiskName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
       validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
@@ -127,9 +127,9 @@ object FlinkStreamingPropertiesConfig {
       hintText = None
     )
 
-  private val asyncInterpretationConfig: (String, ScenarioPropertyConfig) =
+  private val asyncInterpretationConfig: (String, ScenarioPropertiesParameterConfig) =
     StreamMetaData.useAsyncInterpretationName ->
-      ScenarioPropertyConfig(
+      ScenarioPropertiesParameterConfig(
         defaultValue = None,
         editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
         validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
@@ -137,8 +137,8 @@ object FlinkStreamingPropertiesConfig {
         hintText = None
       )
 
-  private val checkpointIntervalConfig: (String, ScenarioPropertyConfig) = StreamMetaData.checkpointIntervalName ->
-    ScenarioPropertyConfig(
+  private val checkpointIntervalConfig: (String, ScenarioPropertiesParameterConfig) = StreamMetaData.checkpointIntervalName ->
+    ScenarioPropertiesParameterConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
@@ -146,7 +146,7 @@ object FlinkStreamingPropertiesConfig {
       hintText = None
     )
 
-  val properties: Map[String, ScenarioPropertyConfig] =
+  val properties: Map[String, ScenarioPropertiesParameterConfig] =
     Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
 
   val metaDataInitializer: MetaDataInitializer = MetaDataInitializer(

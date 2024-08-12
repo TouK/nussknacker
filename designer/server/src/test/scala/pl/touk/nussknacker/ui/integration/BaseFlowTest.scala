@@ -24,17 +24,8 @@ import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentO
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.SpelExtension._
-import pl.touk.nussknacker.restmodel.definition.{
-  UiScenarioPropertiesAdditionalInfoConfig,
-  UiScenarioPropertiesConfig,
-  UiScenarioPropertiesParameterConfig
-}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{
-  NodeValidationError,
-  NodeValidationErrorType,
-  ValidationErrors,
-  ValidationResult
-}
+import pl.touk.nussknacker.restmodel.definition.{UiScenarioAdditionalFieldConfig, UiScenarioPropertiesConfig}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.base.it.NuItTest
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig
 import pl.touk.nussknacker.test.config.WithSimplifiedDesignerConfig.TestCategory.Category1
@@ -44,9 +35,9 @@ import pl.touk.nussknacker.test.utils.domain.ProcessTestData
 import pl.touk.nussknacker.test.utils.domain.ScenarioToJsonHelper.{ScenarioGraphToJson, ScenarioToJson}
 import pl.touk.nussknacker.test.utils.domain.TestProcessUtil.toJson
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.ScenarioValidationRequest
-import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioPropertyConfig
+import pl.touk.nussknacker.ui.api.description.NodesApiEndpoints.Dtos.NodeValidationRequest
+import pl.touk.nussknacker.ui.definition.DefinitionsService.createUIScenarioAdditionalFieldConfig
 import pl.touk.nussknacker.ui.process.ProcessService.CreateScenarioCommand
 import pl.touk.nussknacker.ui.process.marshall.CanonicalProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -261,37 +252,38 @@ class BaseFlowTest
     val settingsJson        = response.extractFieldJsonValue("scenarioPropertiesConfig")
     val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-    val settings = Decoder[Map[String, UiScenarioPropertiesConfig]].decodeJson(settingsJson).toOption.get
+    val settings = Decoder[UiScenarioPropertiesConfig].decodeJson(settingsJson).toOption.get
+    val additionalFields = settings.additionalFieldsConfig
     val streamingDefaultPropertyConfig =
-      FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioPropertyConfig(p._2))
+      FlinkStreamingPropertiesConfig.properties.map(p => p._1 -> createUIScenarioAdditionalFieldConfig(p._2))
 
     val underTest = Map(
-      "environment" -> UiScenarioPropertiesParameterConfig(
+      "environment" -> UiScenarioAdditionalFieldConfig(
         defaultValue = Some("test"),
         editor = StringParameterEditor,
         label = Some("Environment"),
         hintText = None
       ),
-      "maxEvents" -> UiScenarioPropertiesParameterConfig(
+      "maxEvents" -> UiScenarioAdditionalFieldConfig(
         defaultValue = None,
         editor = StringParameterEditor,
         label = Some("Max events"),
         hintText = Some("Maximum number of events")
       ),
-      "numberOfThreads" -> UiScenarioPropertiesParameterConfig(
+      "numberOfThreads" -> UiScenarioAdditionalFieldConfig(
         defaultValue = Some("1"),
         editor = FixedValuesParameterEditor(fixedPossibleValues),
         label = Some("Number of threads"),
         hintText = None
       ),
-      TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioPropertyConfig(
+      TestAdditionalUIConfigProvider.scenarioPropertyName -> createUIScenarioAdditionalFieldConfig(
         TestAdditionalUIConfigProvider.scenarioPropertyConfigOverride(
           TestAdditionalUIConfigProvider.scenarioPropertyName
         )
       )
     ) ++ streamingDefaultPropertyConfig
 
-    settings shouldBe underTest
+    additionalFields shouldBe underTest
   }
 
   test("validate process scenario properties") {
