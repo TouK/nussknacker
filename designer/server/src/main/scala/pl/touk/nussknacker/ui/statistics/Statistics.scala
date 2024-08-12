@@ -39,9 +39,9 @@ object Statistics extends LazyLogging {
       s"${URLEncoder.encode(entry._1, StandardCharsets.UTF_8)}=${URLEncoder.encode(entry._2, StandardCharsets.UTF_8)}"
 
     private def prepareUrlString(queryParams: Iterable[String], cfg: StatisticUrlConfig): Option[String] = {
-      val joinedQueryParams = if (queryParams.nonEmpty && cfg.plainPublicEncryptionKey.isDefined) {
+      val joinedQueryParams = if (queryParams.nonEmpty && cfg.publicEncryptionKey.plainPublicEncryptionKey.isDefined) {
         val joinedQueryParams = joinQueryParamsToString(queryParams, cfg)
-        cfg.plainPublicEncryptionKey.map(key => encryptQueryParams(key, joinedQueryParams))
+        cfg.publicEncryptionKey.plainPublicEncryptionKey.map(key => encryptQueryParams(key, joinedQueryParams))
       } else if (queryParams.nonEmpty) {
         Some(joinQueryParamsToString(queryParams, cfg))
       } else {
@@ -51,8 +51,14 @@ object Statistics extends LazyLogging {
     }
 
     private def encryptQueryParams(publicEncryptionKey: String, queryParams: String): String = {
-      val encryptionResult = Encryption.encrypt(publicEncryptionKey, queryParams)
-      s"$encryptedParamsQueryParamKey=${encryptionResult.encryptedValue}&$encryptionKeyQueryParamKey=${encryptionResult.encryptedSymmetricKey}"
+      val encryptionResult = Encryption.encrypt(PublicEncryptionKey(Some(publicEncryptionKey)), queryParams)
+      encryptionResult match {
+        case Success(encryptionResult) =>
+          s"$encryptedParamsQueryParamKey=${encryptionResult.encryptedValue}&$encryptionKeyQueryParamKey=${encryptionResult.encryptedSymmetricKey}"
+        case Failure(exception) =>
+          exception.printStackTrace()
+          queryParams
+      }
     }
 
     private def joinQueryParamsToString(queryParams: Iterable[String], cfg: StatisticUrlConfig): String = {
