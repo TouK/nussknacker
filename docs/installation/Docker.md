@@ -20,5 +20,5 @@ details.
 ## Container configuration
 
 For basic usage, most things can be configured using environment variables. In other cases, can be mounted volume with
-own configuration file. See [configuration](../configuration/Common.md#environment-variables) section for more details. 
+own configuration file. See [configuration](../configuration/Common.mdx#environment-variables) section for more details. 
 `$NUSSKNACKER_DIR` is pointing to /opt/nussknacker.
