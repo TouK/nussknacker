@@ -7,6 +7,6 @@ final case class UsageStatisticsReportsConfig(
     fingerprint: Option[String],
     // source from which Nussknacker was downloaded
     source: Option[String],
-    // TODO: switch to true once logstash is ready
-    encrypted: Boolean = false
+    // TODO: switch once logstash is ready
+    encryptionEnabled: Boolean = false
 )

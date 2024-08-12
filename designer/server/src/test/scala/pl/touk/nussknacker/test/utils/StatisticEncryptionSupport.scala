@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.test.utils
 
+import pl.touk.nussknacker.ui.statistics.EncryptionType
+
 import java.nio.charset.StandardCharsets
 import java.security.{Key, KeyFactory}
 import java.security.spec.{EncodedKeySpec, PKCS8EncodedKeySpec}
@@ -9,7 +11,7 @@ import javax.crypto.spec.SecretKeySpec
 
 object StatisticEncryptionSupport {
 
-  private val privateKeyForTest =
+  val privateKeyForTest =
     "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDBxZLtcp68Jpw3ExiD3RwSMSZot2E6afCMYnY+EMzle3NdK+lwg/cSUoaetKJT" +
       "i0IZFShug4ehCNND0mAKf1F2+QbLC+GXrvTh0xVfQAzDruLJMjCSeXK9n2DIvxWcNdU1dkKi+VR7dafKM1oibPsD9sQhAWKfahcRq9TdfeEfVj" +
       "pMQmiPubgsZ+orzW4jAtCdJqpDW+bJwJpbGXtLokGanAWRqsGKH8uMyADMn29PmvTL9CLaBQbEA/4FNI8TRmYZtPMvjbZZ4zku0yug/5viG6F8" +
@@ -46,14 +48,14 @@ object StatisticEncryptionSupport {
   }
 
   def decode(symmetricKeyToDecode: String, queryParamsToDecode: String): String = {
-    val decodedSymmetricKey = decode(symmetricKeyToDecode, privateKey, "RSA")
+    val decodedSymmetricKey = decode(symmetricKeyToDecode, privateKey, EncryptionType.RSA)
     val symmetricKey        = new SecretKeySpec(decodedSymmetricKey, "AES")
-    val decodedQueryParams  = decode(queryParamsToDecode, symmetricKey, "AES")
+    val decodedQueryParams  = decode(queryParamsToDecode, symmetricKey, EncryptionType.AES)
     new String(decodedQueryParams, StandardCharsets.UTF_8)
   }
 
-  private def decode(toDecode: String, key: Key, encryptionType: String): Array[Byte] = {
-    val cipher: Cipher = Cipher.getInstance(encryptionType)
+  private def decode(toDecode: String, key: Key, encryptionType: EncryptionType.Value): Array[Byte] = {
+    val cipher: Cipher = Cipher.getInstance(encryptionType.encryption)
     cipher.init(Cipher.DECRYPT_MODE, key)
     cipher.doFinal(Base64.getDecoder.decode(toDecode))
   }
